@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMeasurementGuide } from '@/hooks/useMeasurementGuide';
-import { getMeasurementSystem } from '@/i18n/config';
+import { Ruler, Info, Grid, ArrowsUpDown } from "lucide-react";
 
 interface MeasurementGuideModalProps {
   open: boolean;
@@ -23,7 +22,7 @@ interface MeasurementGuideModalProps {
 export function MeasurementGuideModal({ open, onClose, onOpenChange }: MeasurementGuideModalProps) {
   const { t } = useTranslation();
   const [dontShowAgain, setDontShowAgain] = React.useState(false);
-  const measurementSystem = getMeasurementSystem();
+  const measurementSystem = 'metric'; // Default to metric, can be expanded later
   
   const handleClose = () => {
     if (onClose) {
@@ -43,17 +42,23 @@ export function MeasurementGuideModal({ open, onClose, onOpenChange }: Measureme
   
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{t('measurementGuide.title', 'Measurement Guide')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Ruler className="h-5 w-5" />
+            {t('measurementGuide.title', 'Measurement Guide')}
+          </DialogTitle>
           <DialogDescription>
-            {t('measurementGuide.description', 'Learn how measurements work in this floor plan tool.')}
+            {t('measurementGuide.description', 'Learn how measurements and scaling work in this drawing tool.')}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <h3 className="font-medium">{t('measurementGuide.currentSystem', 'Your System')}</h3>
+        <div className="py-4 space-y-6">
+          <div className="space-y-2 bg-slate-50 p-4 rounded-md">
+            <h3 className="font-medium flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              {t('measurementGuide.currentSystem', 'Your System')}
+            </h3>
             <p>
               {t('measurementGuide.usingSystem', 'You are currently using the {{system}} system.', {
                 system: measurementSystem === 'metric' 
@@ -63,20 +68,32 @@ export function MeasurementGuideModal({ open, onClose, onOpenChange }: Measureme
             </p>
           </div>
           
-          <div className="space-y-2">
-            <h3 className="font-medium">{t('measurementGuide.scale', 'Scale Information')}</h3>
+          <div className="space-y-2 border border-gray-200 p-4 rounded-md">
+            <h3 className="font-medium flex items-center gap-2">
+              <Grid className="h-4 w-4" />
+              {t('measurementGuide.scale', 'Scale Information')}
+            </h3>
             <p>
               {measurementSystem === 'metric'
-                ? t('measurementGuide.metricScale', 'Each grid square represents 1 meter.')
-                : t('measurementGuide.imperialScale', 'Each grid square represents 3 feet.')}
+                ? t('measurementGuide.metricScale', 'Each grid square represents 1 meter, with minor grid lines showing 10cm increments.')
+                : t('measurementGuide.imperialScale', 'Each grid square represents 3 feet, with minor grid lines showing 6-inch increments.')}
             </p>
+            <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <div className="h-3 w-6 border border-gray-300"></div>
+              <span>{measurementSystem === 'metric' ? '= 1 meter' : '= 3 feet'}</span>
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <h3 className="font-medium">{t('measurementGuide.changingSystem', 'Changing Measurement System')}</h3>
-            <p>
-              {t('measurementGuide.systemChangeInfo', 'Your measurement system is determined by your language selection. Change the language to switch between metric and imperial.')}
-            </p>
+          <div className="space-y-2 bg-blue-50 p-4 rounded-md">
+            <h3 className="font-medium flex items-center gap-2">
+              <ArrowsUpDown className="h-4 w-4" />
+              {t('measurementGuide.drawing', 'Drawing Guidelines')}
+            </h3>
+            <ul className="list-disc ml-5 space-y-1">
+              <li>{t('measurementGuide.straightLine', 'Straight lines are automatically detected when drawing')}</li>
+              <li>{t('measurementGuide.snapGrid', 'Lines will snap to the grid when close enough')}</li>
+              <li>{t('measurementGuide.smoothing', 'Path smoothing eliminates small jitters in your drawing')}</li>
+            </ul>
           </div>
           
           <div className="flex items-center space-x-2 pt-4">
@@ -89,7 +106,7 @@ export function MeasurementGuideModal({ open, onClose, onOpenChange }: Measureme
               htmlFor="dont-show-again"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              {t('measurementGuide.dontShowAgain', "Don't show this again")}
+              {t('measurementGuide.dontShowAgain', "Don't show this guide again")}
             </label>
           </div>
         </div>

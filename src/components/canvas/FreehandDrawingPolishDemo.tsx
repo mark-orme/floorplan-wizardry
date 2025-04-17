@@ -7,6 +7,9 @@ import { BrushCursorPreview } from './BrushCursorPreview';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
+import { saveCanvasToLocalStorage, loadCanvasFromLocalStorage, clearSavedCanvasData } from '@/utils/autosave/canvasAutoSave';
+import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
 
 export const FreehandDrawingPolishDemo: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,6 +19,8 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
   const [lineThickness, setLineThickness] = useState(2);
   const [autoStraighten, setAutoStraighten] = useState(true);
   const [smoothing, setSmoothing] = useState(true);
+  const [showGuide, setShowGuide] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Initialize canvas
   useEffect(() => {
@@ -34,6 +39,11 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
     canvas.freeDrawingBrush = brush;
     
     fabricCanvasRef.current = canvas;
+
+    // Attempt to load saved state
+    if (loadCanvasFromLocalStorage(canvas)) {
+      toast.success("Drawing restored from previous session");
+    }
     
     return () => {
       canvas.dispose();
@@ -43,7 +53,7 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
   
   // Use our freehand drawing polish hook
   const { brushCursorRef } = useFreehandDrawingPolish({
-    fabricCanvasRef,
+    canvas: fabricCanvasRef.current,
     autoStraighten,
     simplificationThreshold: smoothing ? 2.5 : 0
   });
@@ -66,6 +76,34 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
     canvas.clear();
     canvas.backgroundColor = '#f0f0f0';
     canvas.renderAll();
+    toast.success("Canvas cleared");
+  };
+
+  // Handle save canvas
+  const handleSave = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    if (saveCanvasToLocalStorage(canvas)) {
+      setLastSaved(new Date());
+      toast.success("Drawing saved");
+    } else {
+      toast.error("Failed to save drawing");
+    }
+  };
+  
+  // Open measurement guide
+  const handleOpenGuide = () => {
+    setShowGuide(true);
+  };
+
+  // Close measurement guide
+  const handleCloseGuide = (dontShowAgain: boolean) => {
+    setShowGuide(false);
+    
+    if (dontShowAgain) {
+      localStorage.setItem('dontShowMeasurementGuide', 'true');
+    }
   };
   
   return (
@@ -118,6 +156,14 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
         <Button variant="outline" onClick={handleClear}>
           Clear
         </Button>
+
+        <Button variant="outline" onClick={handleSave}>
+          Save
+        </Button>
+
+        <Button variant="outline" onClick={handleOpenGuide}>
+          Measurement Guide
+        </Button>
       </div>
       
       <div className="relative border rounded-md overflow-hidden">
@@ -129,6 +175,12 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
           lineColor={lineColor}
           lineThickness={lineThickness}
         />
+        
+        {lastSaved && (
+          <div className="absolute top-2 left-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">
+            Last saved: {lastSaved.toLocaleTimeString()}
+          </div>
+        )}
       </div>
       
       <div className="text-sm text-gray-500">
@@ -137,10 +189,15 @@ export const FreehandDrawingPolishDemo: React.FC = () => {
           <li>Path simplification using Douglas-Peucker algorithm</li>
           <li>Auto-straightening of nearly straight lines</li>
           <li>Brush preview cursor matching line thickness</li>
-          <li>Grid snapping (when enabled)</li>
+          <li>Persistent saving of drawings</li>
         </ul>
       </div>
+
+      <MeasurementGuideModal 
+        open={showGuide} 
+        onClose={handleCloseGuide}
+        onOpenChange={setShowGuide}
+      />
     </div>
   );
 };
-

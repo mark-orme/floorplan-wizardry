@@ -1,7 +1,6 @@
 
 import { useEffect, useRef } from 'react';
 import { Canvas, Path, Point } from 'fabric'; 
-import { DrawingMode } from '@/constants/drawingModes';
 
 // Tolerance for the simplification algorithm
 const SIMPLIFICATION_TOLERANCE = 2;
@@ -12,10 +11,9 @@ const STRAIGHTEN_THRESHOLD_DEGREES = 5;
  * Interface for the freehand drawing polish hook
  */
 interface UseFreehandDrawingPolishProps {
-  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  canvas: Canvas | null;
   autoStraighten?: boolean;
   simplificationThreshold?: number;
-  brushPreviewSize?: number;
 }
 
 interface FreehandDrawingPolishResult {
@@ -29,7 +27,7 @@ interface FreehandDrawingPolishResult {
  * - Curve smoothing (applies Bezier curve fitting)
  */
 export const useFreehandDrawingPolish = ({
-  fabricCanvasRef,
+  canvas,
   autoStraighten = true,
   simplificationThreshold = SIMPLIFICATION_TOLERANCE
 }: UseFreehandDrawingPolishProps): FreehandDrawingPolishResult => {
@@ -38,7 +36,6 @@ export const useFreehandDrawingPolish = ({
   const brushCursorRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     // Only apply to drawing mode
@@ -75,7 +72,7 @@ export const useFreehandDrawingPolish = ({
       canvas.off('path:created', handlePathCreated);
       canvas.off('mouse:up', handleMouseUp);
     };
-  }, [fabricCanvasRef, autoStraighten, simplificationThreshold]);
+  }, [canvas, autoStraighten, simplificationThreshold]);
 
   return { brushCursorRef };
 };
@@ -98,7 +95,8 @@ function simplifyPath(path: Path, tolerance: number): void {
   // Create a new path data from simplified points
   const newPathData = createPathData(simplified);
   
-  // Update the path - using type assertion to handle the Fabric.js typing
+  // Update the path - using type assertion for Fabric.js
+  // This is necessary due to Fabric.js type definitions being incomplete
   path.path = newPathData as any;
 }
 
@@ -250,8 +248,7 @@ function tryStraightenPath(path: Path): void {
       ['L', lastPoint.x, lastPoint.y]
     ];
     
-    // Use type assertion to handle the Fabric.js typing
+    // Use type assertion for Fabric.js
     path.path = newPath as any;
   }
 }
-

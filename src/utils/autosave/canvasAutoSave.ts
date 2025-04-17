@@ -1,12 +1,10 @@
+
 /**
  * Canvas autosave utilities
  * Handles automatic saving and loading of canvas state
  * @module utils/autosave/canvasAutoSave
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { serializeCanvas } from '../fabric/canvasSerializationUtils';
-import logger from '../logger';
-import { toast } from 'sonner';
 
 // Storage keys
 const STORAGE_KEY_CANVAS = 'canvas_autosave_data';
@@ -33,27 +31,19 @@ export const saveCanvasToLocalStorage = (canvas: FabricCanvas | null): boolean =
       return false;
     }
     
-    // Temporarily set canvas to only include drawing objects for serialization
-    const allObjects = [...canvas.getObjects()];
-    canvas.clear();
-    objects.forEach(obj => canvas.add(obj));
-    
     // Serialize canvas
-    const serializedCanvas = serializeCanvas(canvas);
-    
-    // Restore all objects
-    canvas.clear();
-    allObjects.forEach(obj => canvas.add(obj));
+    const json = canvas.toJSON();
+    const serializedCanvas = JSON.stringify(json);
     
     // Save to localStorage with timestamp and version
     localStorage.setItem(STORAGE_KEY_CANVAS, serializedCanvas);
     localStorage.setItem(STORAGE_KEY_TIMESTAMP, new Date().toISOString());
     localStorage.setItem(STORAGE_KEY_VERSION, CURRENT_VERSION);
     
-    logger.info('Canvas state autosaved to localStorage');
+    console.info('Canvas state autosaved to localStorage');
     return true;
   } catch (error) {
-    logger.error('Error autosaving canvas to localStorage:', error);
+    console.error('Error autosaving canvas to localStorage:', error);
     return false;
   }
 };
@@ -73,47 +63,25 @@ export const loadCanvasFromLocalStorage = (canvas: FabricCanvas | null): boolean
     const savedTimestamp = localStorage.getItem(STORAGE_KEY_TIMESTAMP);
     
     if (!savedData || !savedVersion || !savedTimestamp) {
-      logger.info('No autosaved canvas data found');
+      console.info('No autosaved canvas data found');
       return false;
     }
     
     // Version check
     if (savedVersion !== CURRENT_VERSION) {
-      logger.warn('Autosaved canvas version mismatch - cannot load');
-      toast.info('Previous autosaved drawing found but format is incompatible');
+      console.warn('Autosaved canvas version mismatch - cannot load');
       return false;
     }
     
-    // Keep track of grid objects
-    const gridObjects = canvas.getObjects().filter(obj => (obj as any).isGrid);
-    
     // Load from JSON
     canvas.loadFromJSON(savedData, () => {
-      // Add grid objects back
-      gridObjects.forEach(obj => {
-        if (!canvas.contains(obj)) {
-          canvas.add(obj);
-        }
-      });
-      
-      // Send grid objects to the back
-      gridObjects.forEach(obj => {
-        canvas.sendToBack(obj);
-      });
-      
       canvas.renderAll();
-      
-      // Show toast with time elapsed since save
-      const savedDate = new Date(savedTimestamp);
-      const timeElapsed = getTimeElapsedString(savedDate);
-      toast.success(`Restored your drawing from ${timeElapsed} ago`);
+      console.info('Loaded canvas state from localStorage');
     });
     
-    logger.info('Loaded canvas state from localStorage');
     return true;
   } catch (error) {
-    logger.error('Error loading canvas from localStorage:', error);
-    toast.error('Failed to restore your previous drawing');
+    console.error('Error loading canvas from localStorage:', error);
     return false;
   }
 };
@@ -125,7 +93,7 @@ export const clearSavedCanvasData = (): void => {
   localStorage.removeItem(STORAGE_KEY_CANVAS);
   localStorage.removeItem(STORAGE_KEY_TIMESTAMP);
   localStorage.removeItem(STORAGE_KEY_VERSION);
-  logger.info('Cleared autosaved canvas data');
+  console.info('Cleared autosaved canvas data');
 };
 
 /**
@@ -133,7 +101,7 @@ export const clearSavedCanvasData = (): void => {
  * @param date The past date
  * @returns Human-readable time elapsed string
  */
-const getTimeElapsedString = (date: Date): string => {
+export const getTimeElapsedString = (date: Date): string => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   
