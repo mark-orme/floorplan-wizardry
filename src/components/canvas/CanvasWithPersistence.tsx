@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -32,7 +31,6 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   const [isCanvasReady, setIsCanvasReady] = useState(false);
   const [collaboratorsCount, setCollaboratorsCount] = useState(0);
   
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -57,24 +55,31 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     };
   }, [width, height, onCanvasReady]);
   
-  // Set up auto-save
   const { saveCanvas, loadCanvas, lastSaved, isSaving, isLoading } = useAutoSaveCanvas({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady,
     storageKey: storageKey,
     onSave: (success) => {
       if (success) {
-        toast.success('Canvas saved', { id: 'canvas-save' });
+        toast.success('Canvas saved');
       }
     },
     onLoad: (success) => {
       if (success) {
-        toast.success('Canvas loaded', { id: 'canvas-load' });
+        toast.success('Canvas loaded');
       }
     }
   });
-  
-  // Set up real-time collaboration
+
+  useEffect(() => {
+    if (!isCanvasReady) return;
+    
+    const hasSavedData = localStorage.getItem(storageKey) !== null;
+    if (hasSavedData) {
+      loadCanvas();
+    }
+  }, [isCanvasReady, loadCanvas, storageKey]);
+
   const { collaborators, syncCanvas } = useRealtimeCanvasSync({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady && enableCollaboration,
@@ -83,23 +88,19 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     }
   });
   
-  // Update collaborators count
   useEffect(() => {
     setCollaboratorsCount(collaborators.length);
   }, [collaborators]);
-  
-  // Track canvas metrics
+
   const { metrics } = useCanvasMetrics({
     fabricCanvasRef
   });
-  
-  // Monitor canvas performance with Sentry
+
   useSentryCanvasMonitoring({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady
   });
-  
-  // Set up canvas change handlers for collaboration
+
   useEffect(() => {
     if (!fabricCanvasRef.current || !enableCollaboration || !isCanvasReady) return;
     
@@ -114,7 +115,6 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     fabricCanvasRef.current.on('object:modified', handleObjectModified);
     fabricCanvasRef.current.on('path:created', handlePathCreated);
     
-    // Initial sync
     const initialSyncTimer = setTimeout(() => {
       syncCanvas(userName);
     }, 1000);

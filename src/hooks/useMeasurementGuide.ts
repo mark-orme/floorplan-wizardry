@@ -1,53 +1,35 @@
 
 import { useState, useCallback, useEffect } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-/**
- * Hook for managing the measurement guide modal
- * @returns {Object} Measurement guide state and handler functions
- */
 export const useMeasurementGuide = () => {
-  /**
-   * State for controlling measurement guide visibility
-   */
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useLocalStorage('dontShowMeasurementGuide', false);
   
-  // Check local storage on initial mount
+  // Check if it's first visit on mount
   useEffect(() => {
-    const dontShow = localStorage.getItem('dontShowMeasurementGuide') === 'true';
-    if (!dontShow) {
-      // Show the guide automatically on first visit
-      // Unless the user has chosen not to see it
-      const firstVisit = !localStorage.getItem('hasVisitedBefore');
-      if (firstVisit) {
-        setShowMeasurementGuide(true);
-        localStorage.setItem('hasVisitedBefore', 'true');
-      }
+    if (!dontShowAgain && !localStorage.getItem('hasSeenMeasurementGuide')) {
+      setShowMeasurementGuide(true);
+      localStorage.setItem('hasSeenMeasurementGuide', 'true');
     }
-  }, []);
-  
-  /**
-   * Handles closing the measurement guide
-   * @param {boolean} dontShowAgain - If true, stores preference in localStorage
-   */
-  const handleCloseMeasurementGuide = useCallback((dontShowAgain: boolean) => {
+  }, [dontShowAgain]);
+
+  const handleCloseMeasurementGuide = useCallback((dontShow: boolean) => {
     setShowMeasurementGuide(false);
-    
-    if (dontShowAgain) {
-      localStorage.setItem('dontShowMeasurementGuide', 'true');
+    if (dontShow) {
+      setDontShowAgain(true);
     }
-  }, []);
-  
-  /**
-   * Opens the measurement guide modal
-   */
+  }, [setDontShowAgain]);
+
   const openMeasurementGuide = useCallback(() => {
     setShowMeasurementGuide(true);
   }, []);
-  
+
   return {
     showMeasurementGuide,
     setShowMeasurementGuide,
     handleCloseMeasurementGuide,
-    openMeasurementGuide
+    openMeasurementGuide,
+    dontShowAgain
   };
 };

@@ -1,7 +1,8 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 interface UseCanvasPersistenceResult {
   isSaving: boolean;
@@ -12,7 +13,8 @@ interface UseCanvasPersistenceResult {
 }
 
 export const useCanvasPersistence = (
-  canvas: FabricCanvas | null
+  canvas: FabricCanvas | null,
+  storageKey = 'canvas_state'
 ): UseCanvasPersistenceResult => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,26 +25,27 @@ export const useCanvasPersistence = (
     
     try {
       setIsSaving(true);
-      const json = canvas.toJSON(['id', 'type']);
-      localStorage.setItem('canvas_state', JSON.stringify(json));
-      localStorage.setItem('canvas_saved_at', new Date().toISOString());
+      const json = canvas.toJSON();
+      localStorage.setItem(storageKey, JSON.stringify(json));
+      localStorage.setItem(`${storageKey}_timestamp`, new Date().toISOString());
       setLastSaved(new Date());
+      logger.debug('Canvas state saved successfully');
       toast.success('Drawing saved successfully');
     } catch (error) {
-      console.error('Error saving canvas:', error);
+      logger.error('Error saving canvas:', error);
       toast.error('Failed to save drawing');
     } finally {
       setIsSaving(false);
     }
-  }, [canvas]);
+  }, [canvas, storageKey]);
 
   const loadCanvas = useCallback(async () => {
     if (!canvas) return;
     
     try {
       setIsLoading(true);
-      const savedState = localStorage.getItem('canvas_state');
-      const savedAt = localStorage.getItem('canvas_saved_at');
+      const savedState = localStorage.getItem(storageKey);
+      const savedTimestamp = localStorage.getItem(`${storageKey}_timestamp`);
       
       if (!savedState) {
         toast.info('No saved drawing found');
@@ -51,18 +54,18 @@ export const useCanvasPersistence = (
 
       canvas.loadFromJSON(JSON.parse(savedState), () => {
         canvas.renderAll();
-        if (savedAt) {
-          setLastSaved(new Date(savedAt));
+        if (savedTimestamp) {
+          setLastSaved(new Date(savedTimestamp));
         }
         toast.success('Drawing loaded successfully');
       });
     } catch (error) {
-      console.error('Error loading canvas:', error);
+      logger.error('Error loading canvas:', error);
       toast.error('Failed to load drawing');
     } finally {
       setIsLoading(false);
     }
-  }, [canvas]);
+  }, [canvas, storageKey]);
 
   return {
     isSaving,
