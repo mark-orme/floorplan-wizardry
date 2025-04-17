@@ -53,7 +53,7 @@ export const FloorPlanEditor: React.FC = () => {
       canvasOperations.canvas
     );
 
-    // Mark success
+    // Mark success with explicit status
     canvasTransaction.current?.finish("ok");
   };
 
@@ -125,5 +125,3 @@ export const FloorPlanEditor: React.FC = () => {
     </div>
   );
 };
-
-
