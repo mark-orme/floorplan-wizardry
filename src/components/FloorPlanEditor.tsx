@@ -43,7 +43,8 @@ export const FloorPlanEditor: React.FC = () => {
     }
   });
 
-  const canvasTransaction = React.useRef(
+  // Create a ref to hold the transaction
+  const canvasTransaction = useRef(
     startCanvasTransaction('FloorPlanEditor', canvas)
   );
 
@@ -51,6 +52,7 @@ export const FloorPlanEditor: React.FC = () => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
     
+    // Finish the transaction with success status
     canvasTransaction.current.finish('ok', {
       canvasWidth: canvasOperations.canvas.width,
       canvasHeight: canvasOperations.canvas.height

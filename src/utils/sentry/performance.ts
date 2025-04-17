@@ -1,3 +1,4 @@
+
 /**
  * Sentry performance monitoring utilities
  * @module utils/sentry/performance
@@ -162,14 +163,14 @@ export function measurePerformance<T>(
 /**
  * Start a canvas performance transaction
  * 
- * @param name - Transaction name
+ * @param name - Transaction name (required)
  * @param canvas - Canvas object (required)
  * @param options - Optional transaction options (tags, data)
  * @returns Transaction object
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas: FabricCanvas | null = null,
+  canvas: FabricCanvas | null,
   options: Record<string, unknown> = {}
 ): {
   name: string;
