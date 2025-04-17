@@ -1,40 +1,41 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
-/**
- * Serialize canvas state for floor plan storage
- */
 export const serializeCanvasState = (canvas: FabricCanvas) => {
-  // Only serialize non-grid objects
-  const objects = canvas.getObjects()
-    .filter(obj => !(obj as any).isGrid)
-    .map(obj => ({
-      ...obj.toJSON(['id', 'name', 'isGrid', 'objectType']),
-      type: obj.type
-    }));
-
-  return {
-    objects,
-    version: '1.0',
-    timestamp: new Date().toISOString()
-  };
+  try {
+    const canvasJson = canvas.toJSON(['id', 'name', 'layerId', 'selectable']);
+    const objects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
+    
+    return {
+      canvasJson,
+      objects: objects.map(obj => ({
+        id: (obj as any).id,
+        type: obj.type,
+        data: obj.toJSON(['id', 'name', 'layerId'])
+      }))
+    };
+  } catch (error) {
+    console.error('Error serializing canvas state:', error);
+    return null;
+  }
 };
 
-/**
- * Deserialize canvas state for floor plan restoration
- */
-export const deserializeCanvasState = (
-  canvas: FabricCanvas,
-  state: ReturnType<typeof serializeCanvasState>
-) => {
-  // Clear existing non-grid objects
-  const nonGridObjects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
-  canvas.remove(...nonGridObjects);
-
-  // Load serialized objects
-  state.objects.forEach(objData => {
-    canvas.loadFromJSON(objData, () => {
-      canvas.requestRenderAll();
+export const deserializeCanvasState = (canvas: FabricCanvas, state: any) => {
+  try {
+    if (!state) return false;
+    
+    // Clear existing objects except grid
+    const nonGridObjects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
+    canvas.remove(...nonGridObjects);
+    
+    // Load canvas state
+    canvas.loadFromJSON(state.canvasJson, () => {
+      canvas.renderAll();
     });
-  });
+    
+    return true;
+  } catch (error) {
+    console.error('Error deserializing canvas state:', error);
+    return false;
+  }
 };

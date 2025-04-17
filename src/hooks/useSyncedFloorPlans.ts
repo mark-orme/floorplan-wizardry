@@ -1,4 +1,3 @@
-
 /**
  * Hook for syncing floor plans between canvas and state
  * This hook provides persistence and synchronization for floor plans
@@ -8,6 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { toast } from "sonner";
+import { serializeCanvasState } from '@/utils/canvas/canvasSerializer';
 
 /**
  * Hook to synchronize floor plans with the canvas and localStorage
@@ -73,6 +73,49 @@ export const useSyncedFloorPlans = () => {
       return false;
     }
   }, []);
+
+  const saveFloorPlan = useCallback((canvas: FabricCanvas): FloorPlan | null => {
+    try {
+      const serializedState = serializeCanvasState(canvas);
+      
+      if (!serializedState) {
+        throw new Error('Failed to serialize canvas state');
+      }
+      
+      const newFloorPlan: FloorPlan = {
+        id: `floor-${Date.now()}`,
+        name: `Floor ${floorPlans.length + 1}`,
+        label: `Floor ${floorPlans.length + 1}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        order: floorPlans.length,
+        canvasState: serializedState,
+        walls: [],
+        rooms: [],
+        strokes: [],
+        canvasData: null,
+        canvasJson: null,
+        gia: 0,
+        level: floorPlans.length,
+        index: floorPlans.length,
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          paperSize: 'A4',
+          level: floorPlans.length
+        }
+      };
+      
+      setFloorPlans(prev => [...prev, newFloorPlan]);
+      toast.success('Floor plan saved successfully');
+      
+      return newFloorPlan;
+    } catch (error) {
+      console.error('Error saving floor plan:', error);
+      toast.error('Failed to save floor plan');
+      return null;
+    }
+  }, [floorPlans, setFloorPlans]);
   
   return {
     // State setters and getters
@@ -109,11 +152,7 @@ export const useSyncedFloorPlans = () => {
      * @param {FabricCanvas} canvas - The fabric canvas to save from
      * @returns {FloorPlan|null} The saved floor plan or null on failure
      */
-    saveFloorPlan: (canvas: FabricCanvas): FloorPlan | null => {
-      console.log("Saving canvas state to floor plan");
-      // Implementation would save canvas state to floor plan
-      return null;
-    },
+    saveFloorPlan,
     
     /**
      * Calculates Gross Internal Area from floor plans
