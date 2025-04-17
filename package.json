@@ -4,18 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test:coverage": "vitest run --coverage",
-    "test:ci": "vitest run --coverage --threshold=80",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
-    "test:e2e:codegen": "playwright codegen"
-  }
+  "dev": "vite",
+  "build": "vite build",
+  "build:dev": "vite build --mode development",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "test:coverage": "vitest run --coverage",
+  "test:ci": "vitest run --coverage --threshold=80",
+  "test:e2e": "playwright test",
+  "test:e2e:headed": "playwright test --headed",
+  "test:e2e:debug": "playwright test --debug",
+  "test:e2e:codegen": "playwright codegen"
+}
 }
   },
   "dependencies": {
