@@ -24,7 +24,7 @@ export function startCanvasTransaction(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string) => void; // Simplified to one parameter
+  finish: (status?: string) => void; // Optional parameter with default
 } {
   if (!isSentryInitialized()) {
     return {
@@ -48,7 +48,7 @@ export function startCanvasTransaction(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok') => { // Simplified to one parameter
+      finish: (status = 'ok') => { // Default parameter
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
@@ -90,7 +90,7 @@ export function startCanvasTracking(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string) => void; // Simplified to one parameter
+  finish: (status?: string) => void; // Optional parameter with default
 } {
   if (!isSentryInitialized()) {
     return {
@@ -114,7 +114,7 @@ export function startCanvasTracking(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok') => { // Simplified to one parameter
+      finish: (status = 'ok') => { // Default parameter
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
