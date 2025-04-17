@@ -1,4 +1,4 @@
 
-import { MeasurementGuide } from "../MeasurementGuide";
+import { MeasurementGuide } from "./MeasurementGuide";
 
 export { MeasurementGuide };
