@@ -11,6 +11,12 @@
     "preview": "vite preview",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --coverage --threshold=80"
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:codegen": "playwright codegen"
+  }
+}
   },
   "dependencies": {
     "@commitlint/cli": "^19.8.0",
