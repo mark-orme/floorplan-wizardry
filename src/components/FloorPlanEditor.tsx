@@ -1,14 +1,10 @@
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import {
-  trackUserInteraction,
-  InteractionCategory
-} from "@/utils/sentry/userInteractions";
 import { startCanvasTracking } from "@/utils/sentry/performance";
 import { safeFinish } from "@/utils/sentry/safeFinish";
 
@@ -55,62 +51,52 @@ export const FloorPlanEditor: React.FC = () => {
     }
   };
 
-  const handleUndo = () => {
-    if (canvasRef.current?.undo) {
-      canvasRef.current.undo();
-      setCanUndo(canvasRef.current.canUndo);
-      setCanRedo(canvasRef.current.canRedo);
+  const handleCanvasOperations = {
+    undo: () => {
+      if (canvasRef.current?.undo) {
+        canvasRef.current.undo();
+        setCanUndo(canvasRef.current.canUndo);
+        setCanRedo(canvasRef.current.canRedo);
+      }
+    },
+    redo: () => {
+      if (canvasRef.current?.redo) {
+        canvasRef.current.redo();
+        setCanUndo(canvasRef.current.canUndo);
+        setCanRedo(canvasRef.current.canRedo);
+      }
+    },
+    clear: () => {
+      if (canvasRef.current?.clearCanvas) {
+        canvasRef.current.clearCanvas();
+      }
+    },
+    save: () => {
+      if (canvasRef.current?.saveCanvas) {
+        canvasRef.current.saveCanvas();
+      }
     }
-  };
-
-  const handleRedo = () => {
-    if (canvasRef.current?.redo) {
-      canvasRef.current.redo();
-      setCanUndo(canvasRef.current.canUndo);
-      setCanRedo(canvasRef.current.canRedo);
-    }
-  };
-
-  const handleClear = () => {
-    if (canvasRef.current?.clearCanvas) {
-      canvasRef.current.clearCanvas();
-    }
-  };
-
-  const handleSave = () => {
-    if (canvasRef.current?.saveCanvas) {
-      canvasRef.current.saveCanvas();
-    }
-  };
-
-  const handleOpenMeasurementGuide = () => {
-    openMeasurementGuide();
-  };
-
-  const handleCloseMeasurementGuideWithTracking = () => {
-    trackUserInteraction("close_measurement_guide", InteractionCategory.TOOL);
-    handleCloseMeasurementGuide();
   };
 
   return (
     <div className="flex flex-col h-full bg-white">
       <FloorPlanEditorToolbar
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onClear={handleClear}
-        onSave={handleSave}
+        onUndo={handleCanvasOperations.undo}
+        onRedo={handleCanvasOperations.redo}
+        onClear={handleCanvasOperations.clear}
+        onSave={handleCanvasOperations.save}
         canUndo={canvasRef.current?.canUndo || false}
         canRedo={canvasRef.current?.canRedo || false}
       />
 
       <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
-        <MeasurementGuideButton onClick={handleOpenMeasurementGuide} />
+        <MeasurementGuideButton onClick={openMeasurementGuide} />
         <FloorPlanCanvas onCanvasReady={handleCanvasReady} />
       </div>
 
       <MeasurementGuideModal
         open={showMeasurementGuide}
-        onClose={handleCloseMeasurementGuideWithTracking}
+        onClose={handleCloseMeasurementGuide}
       />
 
       <RestoreDrawingButton

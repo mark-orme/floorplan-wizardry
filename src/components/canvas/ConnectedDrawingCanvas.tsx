@@ -1,252 +1,117 @@
 
-import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject, Line, PencilBrush } from "fabric";
-import { CanvasEventManager } from "./CanvasEventManager";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useDrawingContext } from "@/contexts/DrawingContext";
-import { toast } from "sonner";
+import React, { useRef, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 
-/**
- * Props for ConnectedDrawingCanvas component
- */
 interface ConnectedDrawingCanvasProps {
-  width?: number;
-  height?: number;
-  onCanvasRef?: (ref: any) => void;
-  tool?: DrawingMode;
-  lineColor?: string;
-  lineThickness?: number;
+  width: number;
+  height: number;
+  onCanvasRef: (canvasOperations: any) => void;
 }
 
-/**
- * Connected drawing canvas component
- * Manages canvas state and provides drawing functionality
- */
 export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
-  width = 800,
-  height = 600,
-  onCanvasRef,
-  tool = DrawingMode.SELECT,
-  lineColor = "#000000",
-  lineThickness = 2
+  width,
+  height,
+  onCanvasRef
 }) => {
-  // Access drawing context
-  const { 
-    activeTool: contextTool, 
-    lineColor: contextLineColor, 
-    lineThickness: contextLineThickness 
-  } = useDrawingContext();
-  
-  // Use props or context values
-  const activeTool = tool || contextTool;
-  const activeLineColor = lineColor || contextLineColor;
-  const activeLineThickness = lineThickness || contextLineThickness;
-  
-  // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gridLayerRef = useRef<FabricObject[]>([]);
-  const operationsRef = useRef<any>(null);
-  
-  // State
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-  const [initialized, setInitialized] = useState(false);
-  
-  // Initialize canvas
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+
   useEffect(() => {
-    if (!canvasRef.current || initialized) return;
-    
+    if (!canvasRef.current || fabricCanvasRef.current) return;
+
     try {
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+      // Initialize fabric canvas
+      const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
-        selection: activeTool === DrawingMode.SELECT,
+        selection: true,
         backgroundColor: "#ffffff"
       });
-      
-      setCanvas(fabricCanvas);
-      setInitialized(true);
-      
-      // Create grid
-      const gridObjects = createGrid(fabricCanvas);
-      gridLayerRef.current = gridObjects;
-      fabricCanvas.renderAll();
-      
-      // Clean up canvas on unmount
+
+      fabricCanvasRef.current = canvas;
+
+      // Setup canvas operations
+      const canvasOperations = {
+        canvas,
+        undo: () => {
+          if (historyIndexRef.current > 0) {
+            historyIndexRef.current--;
+            const prevState = historyRef.current[historyIndexRef.current];
+            canvas.loadFromJSON(JSON.parse(prevState), canvas.renderAll.bind(canvas));
+            return true;
+          }
+          return false;
+        },
+        redo: () => {
+          if (historyIndexRef.current < historyRef.current.length - 1) {
+            historyIndexRef.current++;
+            const nextState = historyRef.current[historyIndexRef.current];
+            canvas.loadFromJSON(JSON.parse(nextState), canvas.renderAll.bind(canvas));
+            return true;
+          }
+          return false;
+        },
+        clearCanvas: () => {
+          canvas.clear();
+          canvas.setBackgroundColor("#ffffff", canvas.renderAll.bind(canvas));
+          saveCanvasState();
+        },
+        saveCanvas: () => {
+          saveCanvasState();
+          return true;
+        },
+        canUndo: historyIndexRef.current > 0,
+        canRedo: historyIndexRef.current < historyRef.current.length - 1
+      };
+
+      // Setup canvas event listeners
+      const saveCanvasState = () => {
+        const json = JSON.stringify(canvas.toJSON());
+        
+        // If we're not at the end of the history, remove future states
+        if (historyIndexRef.current < historyRef.current.length - 1) {
+          historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+        }
+        
+        historyRef.current.push(json);
+        historyIndexRef.current = historyRef.current.length - 1;
+        
+        // Update undo/redo availability
+        canvasOperations.canUndo = historyIndexRef.current > 0;
+        canvasOperations.canRedo = historyIndexRef.current < historyRef.current.length - 1;
+      };
+
+      // Setup object added/modified event listeners
+      canvas.on('object:added', saveCanvasState);
+      canvas.on('object:modified', saveCanvasState);
+      canvas.on('object:removed', saveCanvasState);
+
+      // Initial canvas state
+      saveCanvasState();
+
+      // Pass canvas operations to parent
+      onCanvasRef(canvasOperations);
+
+      // Cleanup on unmount
       return () => {
-        fabricCanvas.dispose();
+        canvas.off('object:added', saveCanvasState);
+        canvas.off('object:modified', saveCanvasState);
+        canvas.off('object:removed', saveCanvasState);
+        canvas.dispose();
+        fabricCanvasRef.current = null;
       };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      toast.error(`Failed to initialize canvas: ${errorMsg}`);
+      console.error("Error initializing canvas:", error);
     }
-  }, [width, height, activeTool, initialized]);
+  }, [width, height, onCanvasRef]);
 
-  // Create grid function
-  const createGrid = (fabricCanvas: FabricCanvas) => {
-    try {
-      const gridSize = 20;
-      const gridObjects: FabricObject[] = [];
-      
-      // Create horizontal grid lines
-      for (let i = 0; i <= height; i += gridSize) {
-        const lineProps = {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        };
-        const line = new Line([0, i, width, i], lineProps as any);
-        fabricCanvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      // Create vertical grid lines
-      for (let i = 0; i <= width; i += gridSize) {
-        const lineProps = {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        };
-        const line = new Line([i, 0, i, height], lineProps as any);
-        fabricCanvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      return gridObjects;
-    } catch (error) {
-      toast.error("Failed to create grid");
-      return [];
-    }
-  };
-
-  // Initialize the drawing brush when canvas is initialized
-  useEffect(() => {
-    if (canvas && initialized) {
-      // Ensure the drawing brush is initialized
-      if (!canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush = new PencilBrush(canvas);
-      }
-      
-      // Configure the brush
-      canvas.freeDrawingBrush.color = activeLineColor;
-      canvas.freeDrawingBrush.width = activeLineThickness;
-    }
-  }, [canvas, initialized, activeLineColor, activeLineThickness]);
-  
-  // Expose canvas operations to parent component
-  useEffect(() => {
-    if (!onCanvasRef || !canvas) return;
-    
-    // Simple history for undo/redo
-    const history: FabricObject[][] = [];
-    let historyIndex = -1;
-    let canUndo = false;
-    let canRedo = false;
-    
-    const saveCurrentState = () => {
-      const currentState = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
-      history.push([...currentState]);
-      historyIndex = history.length - 1;
-      canUndo = historyIndex > 0;
-      canRedo = false;
-    };
-    
-    const undo = () => {
-      if (historyIndex > 0) {
-        historyIndex--;
-        canUndo = historyIndex > 0;
-        canRedo = true;
-        
-        // Restore previous state
-        const prevState = history[historyIndex];
-        canvas.clear();
-        
-        // Re-add grid
-        createGrid(canvas);
-        
-        // Add objects from history
-        prevState.forEach(obj => canvas.add(obj));
-        canvas.renderAll();
-      }
-    };
-    
-    const redo = () => {
-      if (historyIndex < history.length - 1) {
-        historyIndex++;
-        canUndo = true;
-        canRedo = historyIndex < history.length - 1;
-        
-        // Restore next state
-        const nextState = history[historyIndex];
-        canvas.clear();
-        
-        // Re-add grid
-        createGrid(canvas);
-        
-        // Add objects from history
-        nextState.forEach(obj => canvas.add(obj));
-        canvas.renderAll();
-      }
-    };
-    
-    const clearCanvas = () => {
-      const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
-      canvas.clear();
-      
-      // Re-add grid objects
-      gridObjects.forEach(obj => canvas.add(obj));
-      canvas.renderAll();
-      
-      // Save state after clearing
-      saveCurrentState();
-    };
-    
-    const saveCanvas = () => {
-      if (canvas) {
-        const dataURL = canvas.toDataURL({
-          format: 'png',
-          quality: 1,
-          multiplier: 1
-        });
-        
-        // Create download link
-        const link = document.createElement('a');
-        link.href = dataURL;
-        link.download = 'floor-plan.png';
-        link.click();
-      }
-    };
-    
-    const operations = {
-      canvas,
-      canUndo,
-      canRedo,
-      undo,
-      redo,
-      clearCanvas,
-      saveCanvas,
-      saveCurrentState,
-      getCanvas: () => canvas
-    };
-    
-    onCanvasRef(operations);
-    operationsRef.current = operations;
-  }, [canvas, onCanvasRef]);
-  
   return (
-    <>
-      <canvas ref={canvasRef} className="border border-gray-200" />
-      
-      {canvas && (
-        <CanvasEventManager
-          canvas={canvas}
-          tool={activeTool}
-          lineThickness={activeLineThickness}
-          lineColor={activeLineColor}
-          gridLayerRef={gridLayerRef}
-        />
-      )}
-    </>
+    <canvas
+      ref={canvasRef}
+      className="border border-gray-200 rounded"
+      data-testid="floor-plan-canvas"
+    />
   );
 };
