@@ -110,7 +110,7 @@ export const FloorPlanEditorToolbarWithToast = ({
 };
 
 // Import the DrawingToolbar component to forward operations
-import { DrawingToolbar } from "./DrawingToolbar";
+import { DrawingToolbar } from "../DrawingToolbar";
 
 // Export the FloorPlanEditorToolbar component
 export const FloorPlanEditorToolbar = FloorPlanEditorToolbarWithToast;

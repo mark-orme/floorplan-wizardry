@@ -18,7 +18,7 @@ import logger from '../../logger';
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas: FabricCanvas | null,
+  canvas: FabricCanvas | null = null,
   options: Record<string, unknown> = {}
 ): {
   name: string;
