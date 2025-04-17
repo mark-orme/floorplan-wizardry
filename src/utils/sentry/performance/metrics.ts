@@ -1,23 +1,13 @@
 
-/**
- * Performance metrics utilities for Sentry
- * @module utils/sentry/performance/metrics
- */
 import * as Sentry from '@sentry/react';
 import { isSentryInitialized } from '../core';
 import logger from '../../logger';
+import { Canvas as FabricCanvas } from 'fabric';
 
-/**
- * Measures performance of a function and reports to Sentry
- * 
- * @param name - Name of the operation being measured
- * @param fn - Function to measure
- * @param options - Optional transaction options
- * @returns Result of the function execution
- */
 export function measurePerformance<T>(
   name: string,
   fn: () => T,
+  canvas: FabricCanvas | null = null,  // Optional canvas argument
   options: Record<string, unknown> = {}
 ): T {
   // Skip if Sentry is not initialized
@@ -45,7 +35,8 @@ export function measurePerformance<T>(
     // Add performance data to the transaction
     transaction.setData({
       durationMs: duration,
-      status: 'ok'
+      status: 'ok',
+      canvasObjects: canvas ? canvas.getObjects().length : 0
     });
     
     // Set transaction status

@@ -44,7 +44,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   // Create a ref to hold the transaction
   const canvasTransaction = useRef(
-    startCanvasTracking('FloorPlanEditor')
+    startCanvasTracking('FloorPlanEditor')  // Pass canvas here
   );
 
   const handleCanvasReady = (canvasOperations: any) => {
