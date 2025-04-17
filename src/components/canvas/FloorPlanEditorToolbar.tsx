@@ -10,6 +10,7 @@ interface FloorPlanEditorToolbarProps {
   onSave: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  children?: React.ReactNode;
 }
 
 export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
@@ -18,7 +19,8 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
   onClear,
   onSave,
   canUndo,
-  canRedo
+  canRedo,
+  children
 }) => {
   return (
     <div className="flex items-center gap-2 p-2 bg-white/95 backdrop-blur-sm border-b shadow-sm">
@@ -67,6 +69,8 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
         <Save className="h-4 w-4 mr-1" />
         <span className="hidden sm:inline">Save</span>
       </Button>
+      
+      {children}
     </div>
   );
 };

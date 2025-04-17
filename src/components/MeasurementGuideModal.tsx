@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useState } from 'react';
-import { Ruler, MousePointer2, Grid, ArrowsMaximize } from 'lucide-react';
+import { Ruler, MousePointer2, Grid, Maximize2 } from 'lucide-react';
 
 export interface MeasurementGuideModalProps {
   open: boolean;
@@ -60,7 +60,7 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold flex items-center gap-2">
-              <ArrowsMaximize className="h-4 w-4" />
+              <Maximize2 className="h-4 w-4" />
               Area Measurement
             </h3>
             <div className="pl-6">
