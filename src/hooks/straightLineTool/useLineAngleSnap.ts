@@ -20,6 +20,9 @@ export const useLineAngleSnap = ({
   
   /**
    * Snap a line to standard angles
+   * @param start Starting point
+   * @param end End point to be adjusted
+   * @returns Adjusted end point
    */
   const snapToAngle = useCallback((start: Point, end: Point): Point => {
     if (!anglesEnabled) return end;
