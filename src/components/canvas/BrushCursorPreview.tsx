@@ -1,6 +1,7 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { usePointerPosition } from '@/hooks/usePointerPosition';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface BrushCursorPreviewProps {
@@ -8,75 +9,46 @@ interface BrushCursorPreviewProps {
   tool: DrawingMode;
   lineColor: string;
   lineThickness: number;
-  visible?: boolean;
 }
 
-/**
- * Cursor preview that matches the brush/pencil size and color
- */
 export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   fabricCanvas,
   tool,
   lineColor,
-  lineThickness,
-  visible = true
+  lineThickness
 }) => {
-  const cursorRef = useRef<HTMLDivElement>(null);
+  const { position } = usePointerPosition(fabricCanvas);
+  const [showPreview, setShowPreview] = useState(false);
   
-  // Show cursor only for drawing tools
-  const shouldShowCursor = visible && (
-    tool === DrawingMode.DRAW ||
-    tool === DrawingMode.LINE ||
-    tool === DrawingMode.STRAIGHT_LINE
-  );
-  
-  // Set cursor size based on line thickness
-  const cursorSize = Math.max(lineThickness, 4);
-  
-  // Track mouse position and update cursor
+  // Only show preview for drawing tools
   useEffect(() => {
-    if (!fabricCanvas || !cursorRef.current) return;
-    
-    const cursor = cursorRef.current;
-    
-    const updateCursorPosition = (e: MouseEvent) => {
-      const rect = fabricCanvas.getElement().getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      cursor.style.left = `${x}px`;
-      cursor.style.top = `${y}px`;
-    };
-    
-    const canvasEl = fabricCanvas.getElement();
-    
-    if (shouldShowCursor) {
-      cursor.style.display = 'block';
-      canvasEl.addEventListener('mousemove', updateCursorPosition);
-    } else {
-      cursor.style.display = 'none';
-    }
-    
-    return () => {
-      canvasEl.removeEventListener('mousemove', updateCursorPosition);
-    };
-  }, [fabricCanvas, shouldShowCursor]);
+    setShowPreview(
+      tool === DrawingMode.PEN || 
+      tool === DrawingMode.HIGHLIGHTER || 
+      tool === DrawingMode.STRAIGHT_LINE
+    );
+  }, [tool]);
   
-  if (!shouldShowCursor) return null;
+  if (!showPreview || !position) return null;
   
   return (
     <div
-      ref={cursorRef}
-      className="pointer-events-none absolute z-50 transform -translate-x-1/2 -translate-y-1/2"
+      className="pointer-events-none fixed z-50"
       style={{
-        width: `${cursorSize}px`,
-        height: `${cursorSize}px`,
-        backgroundColor: lineColor,
-        opacity: 0.6,
-        borderRadius: '50%',
-        border: '1px solid white',
-        boxShadow: '0 0 0 1px rgba(0,0,0,0.2)'
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: 'translate(-50%, -50%)'
       }}
-    />
+    >
+      <div
+        style={{
+          width: `${lineThickness}px`,
+          height: `${lineThickness}px`,
+          backgroundColor: lineColor,
+          borderRadius: '50%',
+          opacity: tool === DrawingMode.HIGHLIGHTER ? 0.4 : 0.8
+        }}
+      />
+    </div>
   );
 };

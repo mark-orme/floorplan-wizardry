@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Geometry';
 
 interface LineDistanceTooltipProps {
   startPoint: Point;
   endPoint: Point;
-  distance: number | null;
+  distance: number;
   angle?: number | null;
   unit?: string;
   isSnapped?: boolean;
-  snapType?: 'grid' | 'angle' | 'object' | 'both' | null;
+  snapType?: string | null;
 }
 
 export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
@@ -17,43 +17,38 @@ export const LineDistanceTooltip: React.FC<LineDistanceTooltipProps> = ({
   endPoint,
   distance,
   angle = null,
-  unit = 'px',
+  unit = 'm',
   isSnapped = false,
   snapType = null
 }) => {
-  if (!distance) return null;
+  // Calculate position (midpoint of the line)
+  const positionX = (startPoint.x + endPoint.x) / 2;
+  const positionY = (startPoint.y + endPoint.y) / 2;
   
-  // Calculate midpoint for tooltip positioning
-  const midX = (startPoint.x + endPoint.x) / 2;
-  const midY = (startPoint.y + endPoint.y) / 2;
+  // Format distance (rounded to 2 decimal places)
+  const formattedDistance = distance.toFixed(2);
   
-  // Determine background color based on snap type
-  let bgColor = 'rgba(0, 0, 0, 0.75)';
-  if (isSnapped) {
-    if (snapType === 'grid') bgColor = 'rgba(59, 130, 246, 0.85)';  // Blue
-    if (snapType === 'angle') bgColor = 'rgba(249, 115, 22, 0.85)'; // Orange
-    if (snapType === 'object') bgColor = 'rgba(139, 92, 246, 0.85)'; // Purple
-    if (snapType === 'both') bgColor = 'rgba(16, 185, 129, 0.85)';  // Green
-  }
+  // Format angle if available (rounded to 1 decimal place)
+  const formattedAngle = angle !== null ? angle.toFixed(1) : null;
   
   return (
-    <div 
-      className="absolute pointer-events-none z-50 px-2 py-1 rounded-md flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2 text-white text-xs font-medium shadow-lg"
+    <div
+      className="absolute pointer-events-none z-50 bg-black/80 text-white px-2 py-1 rounded text-xs whitespace-nowrap"
       style={{
-        left: midX,
-        top: midY - 10, // Offset a bit above the line
-        backgroundColor: bgColor,
-        minWidth: '60px'
+        left: `${positionX}px`,
+        top: `${positionY}px`,
+        transform: 'translate(-50%, -50%)'
       }}
     >
-      <div className="whitespace-nowrap">
-        {distance.toFixed(1)} {unit}
+      <div className="flex flex-col items-center">
+        <span className="font-medium">{formattedDistance} {unit}</span>
+        {formattedAngle !== null && (
+          <span className="text-xs text-gray-300">{formattedAngle}°</span>
+        )}
+        {isSnapped && snapType && (
+          <span className="text-xs text-green-300">Snapped to {snapType}</span>
+        )}
       </div>
-      {angle !== null && (
-        <div className="text-xs opacity-80">
-          {angle.toFixed(1)}°
-        </div>
-      )}
     </div>
   );
 };

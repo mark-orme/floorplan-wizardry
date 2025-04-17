@@ -1,168 +1,145 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
-import logger from '@/utils/logger';
+import { captureCanvasState, applyCanvasState } from '@/utils/canvas/canvasStateCapture';
 
 interface UseAutoSaveCanvasProps {
   canvas: FabricCanvas | null;
-  canvasId: string;
-  autoSaveInterval?: number;
+  autoSaveInterval?: number; // in milliseconds
+  storageKey?: string;
   onSave?: (success: boolean) => void;
   onRestore?: (success: boolean) => void;
 }
 
-export function useAutoSaveCanvas({
+export const useAutoSaveCanvas = ({
   canvas,
-  canvasId,
-  autoSaveInterval = 30000,
+  autoSaveInterval = 30000, // Default: save every 30 seconds
+  storageKey = 'canvas_autosave',
   onSave,
   onRestore
-}: UseAutoSaveCanvasProps) {
+}: UseAutoSaveCanvasProps) => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [canRestore, setCanRestore] = useState(false);
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const timerRef = useRef<number | null>(null);
   
-  const stateKey = `canvas_${canvasId}_state`;
-  const timestampKey = `canvas_${canvasId}_timestamp`;
-  
-  useEffect(() => {
-    const savedState = localStorage.getItem(stateKey);
-    const savedTimestamp = localStorage.getItem(timestampKey);
-    
-    if (savedState && savedTimestamp) {
-      setCanRestore(true);
-      setLastSaved(new Date(savedTimestamp));
-    }
-  }, [stateKey, timestampKey]);
-  
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const saveCanvas = () => {
-      if (canvas) {
-        saveCurrentCanvas();
-      }
-    };
-    
-    if (autoSaveIntervalRef.current) {
-      clearInterval(autoSaveIntervalRef.current);
-    }
-    
-    autoSaveIntervalRef.current = setInterval(saveCanvas, autoSaveInterval);
-    
-    const handleModification = () => {
-      logger.debug('Canvas modified, will be saved on next interval');
-    };
-    
-    canvas.on('object:added', handleModification);
-    canvas.on('object:modified', handleModification);
-    canvas.on('object:removed', handleModification);
-    
-    return () => {
-      if (autoSaveIntervalRef.current) {
-        clearInterval(autoSaveIntervalRef.current);
-      }
-      
-      if (canvas) {
-        canvas.off('object:added', handleModification);
-        canvas.off('object:modified', handleModification);
-        canvas.off('object:removed', handleModification);
-      }
-    };
-  }, [canvas, autoSaveInterval]);
-  
-  const saveCurrentCanvas = async () => {
-    if (!canvas) {
-      if (onSave) onSave(false);
-      return false;
-    }
+  // Check if there's saved canvas data
+  const canRestore = useCallback((): boolean => {
+    return !!localStorage.getItem(`${storageKey}_data`);
+  }, [storageKey]);
+
+  // Save canvas state to localStorage
+  const saveCanvas = useCallback((): boolean => {
+    if (!canvas) return false;
     
     try {
       setIsSaving(true);
       
-      const json = JSON.stringify(canvas.toJSON());
-      
-      localStorage.setItem(stateKey, json);
-      
-      const now = new Date();
-      localStorage.setItem(timestampKey, now.toISOString());
-      
-      setLastSaved(now);
-      setCanRestore(true);
-      setIsSaving(false);
-      
-      logger.info(`Canvas saved to localStorage (id: ${canvasId})`);
-      if (onSave) onSave(true);
-      
-      return true;
-    } catch (error) {
-      logger.error('Error saving canvas:', error);
-      setIsSaving(false);
-      if (onSave) onSave(false);
-      
-      return false;
-    }
-  };
-  
-  const restoreCanvas = async () => {
-    if (!canvas) {
-      if (onRestore) onRestore(false);
-      return false;
-    }
-    
-    try {
-      setIsLoading(true);
-      
-      const savedState = localStorage.getItem(stateKey);
-      if (!savedState) {
-        setIsLoading(false);
-        if (onRestore) onRestore(false);
+      // Get canvas state
+      const state = captureCanvasState(canvas);
+      if (!state) {
+        console.warn("No canvas state to save");
         return false;
       }
       
-      canvas.loadFromJSON(savedState, () => {
-        canvas.renderAll();
-        setIsLoading(false);
-        if (onRestore) onRestore(true);
-      });
+      // Save to localStorage
+      localStorage.setItem(`${storageKey}_data`, state);
+      localStorage.setItem(`${storageKey}_timestamp`, new Date().toISOString());
       
-      logger.info(`Canvas restored from localStorage (id: ${canvasId})`);
+      // Update last saved timestamp
+      setLastSaved(new Date());
       
+      console.log("Canvas state saved");
+      
+      // Call onSave callback if provided
+      onSave?.(true);
       return true;
     } catch (error) {
-      logger.error('Error restoring canvas:', error);
-      setIsLoading(false);
-      if (onRestore) onRestore(false);
-      
+      console.error("Error saving canvas state:", error);
+      onSave?.(false);
       return false;
+    } finally {
+      setIsSaving(false);
     }
-  };
-  
-  const clearSavedCanvas = () => {
+  }, [canvas, storageKey, onSave]);
+
+  // Restore canvas state from localStorage
+  const restoreCanvas = useCallback((): boolean => {
+    if (!canvas) return false;
+    
     try {
-      localStorage.removeItem(stateKey);
-      localStorage.removeItem(timestampKey);
-      setCanRestore(false);
-      setLastSaved(null);
+      // Get saved state
+      const state = localStorage.getItem(`${storageKey}_data`);
+      if (!state) {
+        console.warn("No saved canvas state found");
+        onRestore?.(false);
+        return false;
+      }
       
-      logger.info(`Canvas state cleared from localStorage (id: ${canvasId})`);
+      // Apply state to canvas
+      applyCanvasState(canvas, state);
       
+      console.log("Canvas state restored");
+      onRestore?.(true);
       return true;
     } catch (error) {
-      logger.error('Error clearing canvas state:', error);
+      console.error("Error restoring canvas state:", error);
+      onRestore?.(false);
       return false;
     }
-  };
-  
+  }, [canvas, storageKey, onRestore]);
+
+  // Set up auto-save interval
+  useEffect(() => {
+    // Clear previous timer if any
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
+    }
+    
+    if (!canvas) return;
+    
+    // Start auto-save timer
+    timerRef.current = window.setInterval(() => {
+      const hasObjectsToSave = (canvas.getObjects() || []).some(
+        obj => !(obj as any).isGrid
+      );
+      
+      if (hasObjectsToSave) {
+        saveCanvas();
+      }
+    }, autoSaveInterval);
+    
+    // Clean up on unmount
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
+      }
+    };
+  }, [canvas, autoSaveInterval, saveCanvas]);
+
+  // Cleanup and final save on component unmount
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (canvas) {
+        saveCanvas();
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (canvas) {
+        saveCanvas();
+      }
+    };
+  }, [canvas, saveCanvas]);
+
   return {
-    saveCanvas: saveCurrentCanvas,
+    saveCanvas,
     restoreCanvas,
-    clearSavedCanvas,
-    canRestore,
     lastSaved,
     isSaving,
-    isLoading
+    canRestore
   };
-}
+};
