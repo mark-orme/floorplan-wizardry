@@ -6,7 +6,7 @@
 // Define message types for type safety
 type WorkerMessageData = {
   id: string;
-  type: 'calculateArea' | 'calculateDistance' | 'snapToGrid' | 'optimizePoints' | 'batchProcess';
+  type: 'calculateArea' | 'calculateDistance' | 'snapToGrid' | 'optimizePoints' | 'batchProcess' | 'optimizeCanvasState';
   payload: any;
   transferList?: ArrayBuffer[];
 };
@@ -68,6 +68,10 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         
       case 'batchProcess':
         result = processBatchOperations(payload.operations);
+        break;
+        
+      case 'optimizeCanvasState':
+        result = optimizeCanvasState(payload.state);
         break;
         
       default:
@@ -255,14 +259,14 @@ function optimizePointsArray(
     const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
     
     if (t < 0) {
-      // Point is before start of line, return distance to start
+      // Point is before start of line, use distance to start
       const pdx = point.x - lineStart.x;
       const pdy = point.y - lineStart.y;
       return Math.sqrt(pdx * pdx + pdy * pdy);
     }
     
     if (t > 1) {
-      // Point is after end of line, return distance to end
+      // Point is after end of line, use distance to end
       const pdx = point.x - lineEnd.x;
       const pdy = point.y - lineEnd.y;
       return Math.sqrt(pdx * pdx + pdy * pdy);
@@ -282,7 +286,7 @@ function optimizePointsArray(
     epsilon: number
   ): { x: number, y: number }[] => {
     // Find the point with the maximum distance
-    let dmax = 0;
+    let maxDistance = 0;
     let index = 0;
     const end = pointList.length - 1;
     
@@ -293,14 +297,14 @@ function optimizePointsArray(
         pointList[end]
       );
       
-      if (d > dmax) {
+      if (d > maxDistance) {
         index = i;
-        dmax = d;
+        maxDistance = d;
       }
     }
     
     // If max distance is greater than epsilon, recursively simplify
-    if (dmax > epsilon) {
+    if (maxDistance > epsilon) {
       // Recursive call
       const firstHalf = douglasPeucker(
         pointList.slice(0, index + 1),
@@ -352,5 +356,90 @@ function processBatchOperations(operations: { type: string; payload: any }[]): a
       default:
         throw new Error(`Unknown batch operation type: ${op.type}`);
     }
+  });
+}
+
+/**
+ * Optimize canvas state for transmission
+ * Removes unnecessary precision and compresses object data
+ */
+function optimizeCanvasState(state: string): string {
+  if (!state) return '';
+  
+  try {
+    const parsed = JSON.parse(state);
+    
+    // Only optimize if we have objects
+    if (parsed.objects && Array.isArray(parsed.objects)) {
+      // Perform optimization - reduce precision for coordinates
+      parsed.objects = parsed.objects.map((obj: any) => {
+        // Process coordinates with less precision if present
+        if (obj.points) {
+          obj.points = optimizePoints(obj.points);
+        }
+        
+        // Handle path data if present
+        if (obj.path) {
+          obj.path = optimizePath(obj.path);
+        }
+        
+        // Simplify other numeric properties
+        ['left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'].forEach(prop => {
+          if (typeof obj[prop] === 'number') {
+            obj[prop] = Number(obj[prop].toFixed(2));
+          }
+        });
+        
+        return obj;
+      });
+      
+      return JSON.stringify(parsed);
+    }
+    
+    // If no objects or not an array, return original
+    return state;
+  } catch (error) {
+    // Return original on error
+    return state;
+  }
+}
+
+/**
+ * Optimize points by reducing precision
+ */
+function optimizePoints(points: any[]): any[] {
+  if (!Array.isArray(points)) return points;
+  
+  return points.map(point => {
+    if (typeof point.x === 'number' && typeof point.y === 'number') {
+      return {
+        x: Number(point.x.toFixed(1)),
+        y: Number(point.y.toFixed(1))
+      };
+    }
+    return point;
+  });
+}
+
+/**
+ * Optimize path data by simplifying commands
+ */
+function optimizePath(path: any[]): any[] {
+  if (!Array.isArray(path)) return path;
+  
+  return path.map(cmd => {
+    // Each path command is an array where first item is the command
+    if (Array.isArray(cmd)) {
+      return cmd.map((val, index) => {
+        // First item is the command letter
+        if (index === 0) return val;
+        // Other items are coordinates that can be rounded
+        if (typeof val === 'number') {
+          return Number(val.toFixed(1));
+        }
+        return val;
+      });
+    }
+    return cmd;
   });
 }

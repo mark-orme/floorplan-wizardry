@@ -1,321 +1,264 @@
-
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from 'sonner';
-import logger from '@/utils/logger';
+import { getPusher, subscribeSyncChannel, UPDATE_EVENT, PRESENCE_EVENT, isUpdateFromThisDevice } from '@/utils/syncService';
 import { captureCanvasState, applyCanvasState } from '@/utils/canvas/canvasStateCapture';
+import { useOptimizedGeometryWorker } from '@/hooks/useOptimizedGeometryWorker';
+import logger from '@/utils/logger';
+import throttle from 'lodash/throttle';
 
-// Simplified Pusher-like interface for our local implementation
-const UPDATE_EVENT = 'canvas-update';
-const PRESENCE_EVENT = 'presence-update';
+// Worker color assignment
+const COLLABORATOR_COLORS = [
+  '#FF5733', '#33FF57', '#3357FF', '#F033FF', '#FF33F0',
+  '#33FFF0', '#F0FF33', '#FF8033', '#8033FF', '#33FF80'
+];
 
-// Generate a unique device ID for this client session
-const generateUniqueId = () => `user-${Math.random().toString(36).substring(2, 9)}`;
-
+// Collaborator information
 export interface Collaborator {
   id: string;
   name: string;
   color: string;
   lastActive: number;
   isActive: boolean;
-  lastSeen: Date;
-}
-
-export interface RealtimeCanvasSyncResult {
-  collaborators: Collaborator[];
-  syncCanvas: (userName: string) => void;
-  lastSyncTimestamp: number | null;
+  lastSeen?: Date;
 }
 
 interface UseRealtimeCanvasSyncProps {
   canvas: FabricCanvas | null;
-  enabled: boolean;
-  throttleMs?: number;
+  enabled?: boolean;
+  userName?: string;
+  updateThrottleMs?: number;
+  presenceUpdateIntervalMs?: number;
   onRemoteUpdate?: (sender: string, timestamp: number) => void;
 }
 
-const COLORS = [
-  '#FF5733', '#33FF57', '#3357FF', '#F033FF', '#FF33A1',
-  '#33FFF5', '#F5FF33', '#FF8C33', '#8C33FF', '#33FF8C'
-];
-
-// Simple mock implementation for demo purposes
-// In a real app, this would be replaced with actual Pusher or similar service
-class MockChannel {
-  private listeners: Record<string, Array<(data: any) => void>> = {};
-  private name: string;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  bind(event: string, callback: (data: any) => void) {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(callback);
-    return this;
-  }
-
-  unbind(event: string, callback: (data: any) => void) {
-    if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-    }
-    return this;
-  }
-
-  trigger(event: string, data: any) {
-    // In a real implementation, this would send to the server
-    // For now, we'll just simulate by directly calling handlers
-    setTimeout(() => {
-      if (this.listeners[event]) {
-        this.listeners[event].forEach(callback => callback(data));
-      }
-    }, 10);
-    return this;
-  }
-}
-
-// Basic channel subscription function
-const subscribeToChannel = (channelName: string) => {
-  return new MockChannel(channelName);
-};
-
-// Function to check if an update is from this device
-const isUpdateFromThisDevice = (sourceDeviceId: string, currentDeviceId: string): boolean => {
-  return sourceDeviceId === currentDeviceId;
-};
-
-export const useRealtimeCanvasSync = ({
+export function useRealtimeCanvasSync({
   canvas,
   enabled = true,
-  throttleMs = 500,
+  userName = 'Anonymous',
+  updateThrottleMs = 500,
+  presenceUpdateIntervalMs = 30000,
   onRemoteUpdate
-}: UseRealtimeCanvasSyncProps): RealtimeCanvasSyncResult => {
+}: UseRealtimeCanvasSyncProps) {
+  // Track collaborators
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number | null>(null);
-  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const userId = useRef<string>(generateUniqueId());
+  
+  // Channel reference
   const channelRef = useRef<any>(null);
   
-  // Initialize channel
-  useEffect(() => {
-    if (!enabled) return;
+  // Track user ID
+  const userIdRef = useRef<string>(`user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+  
+  // Get worker hook for geometry optimizations during sync operations
+  const { optimizePoints } = useOptimizedGeometryWorker();
+  
+  // Throttle update function to prevent excessive network traffic
+  const throttledSync = useCallback(
+    throttle((senderName: string) => {
+      if (!canvas || !channelRef.current) return;
+      
+      try {
+        // Get canvas state
+        const state = captureCanvasState(canvas);
+        
+        // Skip empty updates
+        if (!state) return;
+        
+        // Send update event with device ID to prevent loops
+        channelRef.current.trigger(UPDATE_EVENT, {
+          senderId: userIdRef.current,
+          senderName,
+          state,
+          timestamp: Date.now()
+        });
+        
+        logger.debug('Canvas sync sent', { sender: senderName, stateLength: state.length });
+      } catch (error) {
+        logger.error('Error syncing canvas:', error);
+      }
+    }, updateThrottleMs),
+    [canvas, updateThrottleMs]
+  );
+  
+  // Send presence update to show user is still active
+  const sendPresenceUpdate = useCallback(() => {
+    if (!channelRef.current) return;
     
     try {
-      // Subscribe to the canvas sync channel
-      const channelName = `canvas-collab-${window.location.pathname.replace(/\//g, '-') || 'default'}`;
-      channelRef.current = subscribeToChannel(channelName);
-      
-      logger.info(`[RealtimeSync] Subscribed to channel: ${channelName}`);
-      
-      // Initialize presence
-      notifyPresence();
-      
-      return () => {
-        // Clean up channel subscription
-        channelRef.current = null;
-        logger.info(`[RealtimeSync] Unsubscribed from channel`);
-      };
+      channelRef.current.trigger(PRESENCE_EVENT, {
+        id: userIdRef.current,
+        name: userName,
+        lastActive: Date.now()
+      });
     } catch (error) {
-      logger.error('[RealtimeSync] Error initializing channel:', error);
-      toast.error('Failed to initialize collaborative editing');
+      logger.error('Error sending presence update:', error);
     }
-  }, [enabled]);
+  }, [userName]);
   
-  // Set up listeners for real-time updates
-  useEffect(() => {
-    if (!enabled || !canvas || !channelRef.current) return;
-    
-    const handleCanvasUpdate = (data: any) => {
-      try {
-        // Ignore updates from this device
-        if (isUpdateFromThisDevice(data.deviceId, userId.current)) {
-          logger.debug('[RealtimeSync] Ignored update from this device');
-          return;
-        }
-        
-        // Apply the canvas state
-        applyCanvasState(canvas, data.canvasState);
-        
-        // Update last sync timestamp
-        setLastSyncTimestamp(data.timestamp);
-        
-        // Update collaborator information
-        updateCollaboratorStatus(data.userName, data.timestamp);
-        
-        // Callback if provided
-        if (onRemoteUpdate) {
-          onRemoteUpdate(data.userName, data.timestamp);
-        }
-        
-        logger.info(`[RealtimeSync] Applied canvas update from ${data.userName}`);
-        
-        // Show toast notification
-        toast.info(`Canvas updated by ${data.userName}`, {
-          id: 'canvas-update-notification',
-          duration: 2000
-        });
-      } catch (error) {
-        logger.error('[RealtimeSync] Error handling canvas update:', error);
-      }
-    };
-    
-    const handlePresenceUpdate = (data: any) => {
-      try {
-        // Ignore updates from this device
-        if (isUpdateFromThisDevice(data.deviceId, userId.current)) {
-          return;
-        }
-        
-        // Update collaborator list
-        updateCollaboratorStatus(data.userName, data.timestamp);
-        
-        logger.info(`[RealtimeSync] Presence update from ${data.userName}`);
-      } catch (error) {
-        logger.error('[RealtimeSync] Error handling presence update:', error);
-      }
-    };
-    
-    // Bind event handlers to channel
-    channelRef.current.bind(`client-${UPDATE_EVENT}`, handleCanvasUpdate);
-    channelRef.current.bind(`client-${PRESENCE_EVENT}`, handlePresenceUpdate);
-    
-    return () => {
-      // Unbind event handlers
-      if (channelRef.current) {
-        channelRef.current.unbind(`client-${UPDATE_EVENT}`, handleCanvasUpdate);
-        channelRef.current.unbind(`client-${PRESENCE_EVENT}`, handlePresenceUpdate);
-      }
-    };
-  }, [canvas, enabled, onRemoteUpdate]);
+  // Manually sync canvas now - exposed for external triggers
+  const syncCanvas = useCallback((senderName: string = userName) => {
+    throttledSync(senderName);
+  }, [userName, throttledSync]);
   
-  // Helper function to update collaborator status
-  const updateCollaboratorStatus = (userName: string, timestamp: number) => {
-    setCollaborators(prev => {
-      // Find existing collaborator
-      const existingIndex = prev.findIndex(c => c.name === userName);
+  // Process canvas update events
+  const handleCanvasUpdate = useCallback(async (data: any) => {
+    if (!canvas) return;
+    
+    try {
+      // Ignore updates from this device
+      if (isUpdateFromThisDevice(data.senderId)) {
+        return;
+      }
       
-      if (existingIndex >= 0) {
+      // Apply the state
+      applyCanvasState(canvas, data.state);
+      
+      // Call update callback if provided
+      if (onRemoteUpdate) {
+        onRemoteUpdate(data.senderName || 'Unknown', data.timestamp || Date.now());
+      }
+      
+      // Update collaborator activity
+      setCollaborators(prev => {
+        const collaborator = prev.find(c => c.id === data.senderId);
+        if (collaborator) {
+          // Update existing collaborator
+          return prev.map(c => c.id === data.senderId ? {
+            ...c,
+            lastActive: Date.now(),
+            isActive: true,
+            lastSeen: new Date()
+          } : c);
+        } else if (data.senderName) {
+          // Add new collaborator with next available color
+          const colorIndex = prev.length % COLLABORATOR_COLORS.length;
+          return [...prev, {
+            id: data.senderId,
+            name: data.senderName,
+            color: COLLABORATOR_COLORS[colorIndex],
+            lastActive: Date.now(),
+            isActive: true,
+            lastSeen: new Date()
+          }];
+        }
+        return prev;
+      });
+      
+      logger.debug('Canvas update received', { sender: data.senderName });
+    } catch (error) {
+      logger.error('Error handling canvas update:', error);
+    }
+  }, [canvas, onRemoteUpdate]);
+  
+  // Process presence update events
+  const handlePresenceUpdate = useCallback((data: any) => {
+    // Update collaborator list with activity info
+    setCollaborators(prev => {
+      const existing = prev.find(c => c.id === data.id);
+      if (existing) {
         // Update existing collaborator
-        const updated = [...prev];
-        updated[existingIndex] = {
-          ...updated[existingIndex],
-          lastActive: timestamp,
+        return prev.map(c => c.id === data.id ? {
+          ...c,
+          name: data.name || c.name,
+          lastActive: data.lastActive || Date.now(),
           isActive: true,
           lastSeen: new Date()
-        };
-        return updated;
-      } else {
-        // Add new collaborator
-        const color = COLORS[prev.length % COLORS.length];
+        } : c);
+      } else if (data.name) {
+        // Add new collaborator with next available color
+        const colorIndex = prev.length % COLLABORATOR_COLORS.length;
         return [...prev, {
-          id: `user-${Math.random().toString(36).substring(2, 9)}`,
-          name: userName,
-          color,
-          lastActive: timestamp,
+          id: data.id,
+          name: data.name,
+          color: COLLABORATOR_COLORS[colorIndex],
+          lastActive: data.lastActive || Date.now(),
           isActive: true,
           lastSeen: new Date()
         }];
       }
+      return prev;
     });
-  };
-  
-  // Cleanup inactive collaborators
-  useEffect(() => {
-    if (!enabled) return;
-    
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setCollaborators(prev => 
-        prev.map(collaborator => ({
-          ...collaborator,
-          isActive: now - collaborator.lastActive < 60000 // Active if seen in the last minute
-        }))
-      );
-    }, 30000); // Check every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, [enabled]);
-  
-  // Notify presence
-  const notifyPresence = useCallback(() => {
-    if (!enabled || !channelRef.current) return;
-    
-    try {
-      const timestamp = Date.now();
-      
-      // Trigger a client event for presence
-      channelRef.current.trigger(`client-${PRESENCE_EVENT}`, {
-        userName: userId.current,
-        deviceId: userId.current, // Using userId as deviceId for simplicity
-        timestamp
-      });
-      
-      logger.debug('[RealtimeSync] Presence notification sent');
-    } catch (error) {
-      logger.error('[RealtimeSync] Error sending presence notification:', error);
-    }
-  }, [enabled]);
-  
-  // Send periodic presence updates
-  useEffect(() => {
-    if (!enabled) return;
-    
-    const interval = setInterval(notifyPresence, 30000); // Every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, [enabled, notifyPresence]);
-  
-  // Function to sync canvas state
-  const syncCanvas = useCallback((userName: string) => {
-    if (!enabled || !canvas || !channelRef.current) return;
-    
-    // Clear any pending sync timeouts
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current);
-    }
-    
-    // Set a timeout to throttle frequent updates
-    syncTimeoutRef.current = setTimeout(() => {
-      try {
-        const timestamp = Date.now();
-        const canvasState = captureCanvasState(canvas);
-        
-        // Trigger a client event to broadcast the canvas update
-        channelRef.current.trigger(`client-${UPDATE_EVENT}`, {
-          userName,
-          deviceId: userId.current, // Using userId as deviceId for simplicity
-          timestamp,
-          canvasState
-        });
-        
-        // Update the last sync timestamp
-        setLastSyncTimestamp(timestamp);
-        
-        // Update own collaborator status
-        updateCollaboratorStatus(userName, timestamp);
-        
-        logger.debug(`[RealtimeSync] Canvas synced by ${userName}`);
-      } catch (error) {
-        logger.error('[RealtimeSync] Error syncing canvas:', error);
-        toast.error('Failed to sync canvas');
-      }
-    }, throttleMs);
-  }, [canvas, enabled, throttleMs]);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
-      }
-    };
   }, []);
   
-  return {
-    collaborators,
-    syncCanvas,
-    lastSyncTimestamp
-  };
-};
+  // Mark inactive collaborators
+  const checkCollaboratorActivity = useCallback(() => {
+    const now = Date.now();
+    const INACTIVE_THRESHOLD_MS = 60000; // 1 minute
+    
+    setCollaborators(prev => prev.map(collaborator => ({
+      ...collaborator,
+      isActive: now - collaborator.lastActive < INACTIVE_THRESHOLD_MS
+    })));
+  }, []);
+  
+  // Set up canvas event listeners for auto-sync
+  useEffect(() => {
+    if (!canvas || !enabled) return;
+    
+    // Listen for canvas changes to auto-sync
+    const handleModified = () => {
+      syncCanvas();
+    };
+    
+    // Add event listeners
+    canvas.on('object:modified', handleModified);
+    canvas.on('object:added', handleModified);
+    canvas.on('object:removed', handleModified);
+    
+    // Clean up listeners
+    return () => {
+      canvas.off('object:modified', handleModified);
+      canvas.off('object:added', handleModified);
+      canvas.off('object:removed', handleModified);
+    };
+  }, [canvas, enabled, syncCanvas]);
+  
+  // Set up sync channel subscription
+  useEffect(() => {
+    if (!enabled) return;
+    
+    try {
+      // Create channel name based on URL path
+      const channelName = `canvas-collab-${window.location.pathname.replace(/\//g, '-') || 'default'}`;
+      
+      // Subscribe to channel
+      const channel = subscribeSyncChannel(channelName);
+      channelRef.current = channel;
+      
+      // Set up event listeners
+      channel.bind(UPDATE_EVENT, handleCanvasUpdate);
+      channel.bind(PRESENCE_EVENT, handlePresenceUpdate);
+      
+      // Send initial presence update
+      sendPresenceUpdate();
+      
+      // Set up periodic presence updates to keep collaboration active
+      const presenceInterval = setInterval(sendPresenceUpdate, presenceUpdateIntervalMs);
+      
+      // Check for inactive collaborators periodically
+      const activityInterval = setInterval(checkCollaboratorActivity, 10000);
+      
+      logger.info('Canvas sync enabled');
+      
+      // Clean up
+      return () => {
+        if (channel) {
+          // Unbind all events
+          channel.unbind(UPDATE_EVENT, handleCanvasUpdate);
+          channel.unbind(PRESENCE_EVENT, handlePresenceUpdate);
+        }
+        
+        // Clear intervals
+        clearInterval(presenceInterval);
+        clearInterval(activityInterval);
+        
+        logger.info('Canvas sync disabled');
+      };
+    } catch (error) {
+      logger.error('Error setting up canvas sync:', error);
+      return undefined;
+    }
+  }, [enabled, handleCanvasUpdate, handlePresenceUpdate, sendPresenceUpdate, 
+      presenceUpdateIntervalMs, checkCollaboratorActivity]);
+  
+  return { collaborators, syncCanvas };
+}
