@@ -1,4 +1,3 @@
-
 /**
  * Floor Plan Canvas component
  * Handles canvas rendering and initialization
@@ -65,7 +64,7 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
     const transaction = startCanvasTransaction('grid.created', fabricCanvas, {
       gridObjects: gridObjects.length
     });
-    transaction.finish('ok', { gridObjects: gridObjects.length });
+    transaction.finish('ok');
   };
   
   // Set ready state after a short delay to ensure DOM is fully rendered

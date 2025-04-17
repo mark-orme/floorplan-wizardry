@@ -32,10 +32,10 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
     
     try {
       onUndo();
-      perfTransaction.finish('ok', {});
+      perfTransaction.finish('ok');
     } catch (error) {
       logger.error("Error performing undo:", error);
-      perfTransaction.finish('error', { error: String(error) });
+      perfTransaction.finish('error');
     }
   };
 
@@ -44,10 +44,10 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
     
     try {
       onRedo();
-      perfTransaction.finish('ok', {});
+      perfTransaction.finish('ok');
     } catch (error) {
       logger.error("Error performing redo:", error);
-      perfTransaction.finish('error', { error: String(error) });
+      perfTransaction.finish('error');
     }
   };
 
@@ -67,10 +67,10 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
       toast.success("Canvas cleared");
       logger.info("Canvas cleared by user");
       
-      perfTransaction.finish('ok', {});
+      perfTransaction.finish('ok');
     } catch (error) {
       logger.error("Error clearing canvas:", error);
-      perfTransaction.finish('error', { error: String(error) });
+      perfTransaction.finish('error');
     }
   };
 
@@ -88,12 +88,12 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
       toast.success("Canvas saved");
       logger.info("Canvas state saved");
       
-      transaction.finish('ok', {});
+      transaction.finish('ok');
     } catch (error) {
       logger.error("Error saving canvas:", error);
       toast.error("Failed to save canvas");
       
-      transaction.finish('error', { error: String(error) });
+      transaction.finish('error');
     }
   };
 
