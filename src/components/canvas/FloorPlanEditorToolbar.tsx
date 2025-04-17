@@ -21,13 +21,14 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
   canRedo
 }) => {
   return (
-    <div className="flex items-center gap-2 p-2 border-b">
+    <div className="flex items-center gap-2 p-2 bg-white/95 backdrop-blur-sm border-b shadow-sm">
       <Button
         variant="outline"
         size="sm"
         onClick={onUndo}
         disabled={!canUndo}
         title="Undo"
+        className="transition-all hover:bg-primary/10 hover:border-primary/30 disabled:opacity-40"
       >
         <Undo2 className="h-4 w-4 mr-1" />
         <span className="hidden sm:inline">Undo</span>
@@ -39,6 +40,7 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
         onClick={onRedo}
         disabled={!canRedo}
         title="Redo"
+        className="transition-all hover:bg-primary/10 hover:border-primary/30 disabled:opacity-40"
       >
         <Redo2 className="h-4 w-4 mr-1" />
         <span className="hidden sm:inline">Redo</span>
@@ -49,6 +51,7 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
         size="sm"
         onClick={onClear}
         title="Clear Canvas"
+        className="transition-all hover:bg-red-50 hover:border-red-200"
       >
         <Trash2 className="h-4 w-4 mr-1" />
         <span className="hidden sm:inline">Clear</span>
@@ -59,6 +62,7 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
         size="sm"
         onClick={onSave}
         title="Save Canvas"
+        className="transition-all hover:bg-blue-50 hover:border-blue-200"
       >
         <Save className="h-4 w-4 mr-1" />
         <span className="hidden sm:inline">Save</span>
