@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
@@ -21,11 +20,10 @@ export const DrawingToolbarModals = () => {
       <Button
         variant="ghost"
         size="sm"
-        className={`h-8 w-8 p-0 relative flex items-center justify-center ${isIOS ? 'touch-none' : ''}`}
+        className={`relative h-8 w-8 p-0 flex items-center justify-center ${isIOS ? 'touch-none' : ''}`}
         onClick={() => setShowMeasurementGuide(true)}
         title="Measurement Guide"
         aria-label="Measurement Guide"
-        role="button"
         style={{ touchAction: isIOS ? 'none' : 'auto' }}
       >
         <Ruler className="h-4 w-4" />
@@ -34,19 +32,8 @@ export const DrawingToolbarModals = () => {
 
       <MeasurementGuideModal 
         open={showMeasurementGuide} 
-        onClose={(dontShowAgain) => {
-          handleCloseMeasurementGuide(dontShowAgain);
-          if (dontShowAgain) {
-            localStorage.setItem('dontShowMeasurementGuide', 'true');
-          }
-        }}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCloseMeasurementGuide(false);
-          } else {
-            setShowMeasurementGuide(true);
-          }
-        }} 
+        onClose={handleCloseMeasurementGuide}
+        onOpenChange={setShowMeasurementGuide}
       />
     </>
   );

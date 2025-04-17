@@ -13,7 +13,7 @@ export const MeasurementGuideButton: React.FC<MeasurementGuideButtonProps> = ({ 
       variant="outline"
       size="sm"
       onClick={onClick}
-      className="absolute top-4 right-4 gap-2 bg-white shadow-sm hover:bg-gray-50 z-10"
+      className="absolute top-4 right-4 gap-2 bg-white shadow-sm hover:bg-gray-50 z-10 transition-all duration-200"
     >
       <Ruler className="h-4 w-4" />
       <span className="hidden sm:inline">Measurement Guide</span>

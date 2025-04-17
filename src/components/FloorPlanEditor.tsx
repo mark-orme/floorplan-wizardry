@@ -1,5 +1,4 @@
-
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
@@ -23,21 +22,6 @@ export const FloorPlanEditor: React.FC = () => {
     setShowMeasurementGuide
   } = useMeasurementGuide();
 
-  const {
-    showPrompt: showRestorePrompt,
-    timeElapsed,
-    isRestoring,
-    handleRestore,
-    handleDismiss
-  } = useRestorePrompt({
-    canvas,
-    canvasId: "main-canvas",
-    onRestore: () => {
-      setCanUndo(canvasRef.current?.canUndo || false);
-      setCanRedo(canvasRef.current?.canRedo || false);
-    }
-  });
-
   const { saveCanvas, loadCanvas } = useCanvasPersistence(canvas);
 
   const handleCanvasReady = (canvasOperations: any) => {
@@ -49,7 +33,28 @@ export const FloorPlanEditor: React.FC = () => {
       setShowMeasurementGuide(true);
       localStorage.setItem('hasSeenMeasurementGuide', 'true');
     }
+    // Load any saved canvas state
+    loadCanvas();
   };
+
+  // Auto-save canvas changes
+  useEffect(() => {
+    if (!canvas) return;
+
+    const handleCanvasModification = () => {
+      saveCanvas();
+    };
+
+    canvas.on('object:modified', handleCanvasModification);
+    canvas.on('object:added', handleCanvasModification);
+    canvas.on('object:removed', handleCanvasModification);
+
+    return () => {
+      canvas.off('object:modified', handleCanvasModification);
+      canvas.off('object:added', handleCanvasModification);
+      canvas.off('object:removed', handleCanvasModification);
+    };
+  }, [canvas, saveCanvas]);
 
   const handleCanvasOperations = {
     undo: () => {
