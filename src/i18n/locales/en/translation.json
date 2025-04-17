@@ -1,0 +1,66 @@
+
+{
+  "app": {
+    "title": "Floor Plan Drawing Tool",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "canvas": {
+    "toolbar": {
+      "select": "Select",
+      "draw": "Freehand Wall",
+      "straightLine": "Straight Line",
+      "wall": "Wall",
+      "eraser": "Eraser",
+      "undo": "Undo",
+      "redo": "Redo",
+      "delete": "Delete Selected",
+      "save": "Save",
+      "thickness": "Thickness",
+      "color": "Color"
+    },
+    "messages": {
+      "lineThicknessUpdated": "Line thickness set to",
+      "colorUpdated": "Line color updated",
+      "canvasError": "Error initializing drawing canvas",
+      "stateSaved": "Drawing state saved",
+      "undoSuccess": "Undo successful",
+      "redoSuccess": "Redo successful"
+    },
+    "tooltips": {
+      "select": "Click to select objects. Drag to move.",
+      "draw": "Click and drag to draw freeform.",
+      "straightLine": "Click to start line, click again to end. Hold Shift for 45° angles.",
+      "wall": "Click to start wall, click again to end. Walls snap to grid.",
+      "eraser": "Click on objects to erase them."
+    },
+    "measurement": {
+      "meters": "m",
+      "feet": "ft",
+      "sqMeters": "m²",
+      "sqFeet": "ft²"
+    }
+  },
+  "toolVisualizer": {
+    "defaultHint": "Select a tool to begin."
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "units": "Measurement Units",
+    "grid": "Show Grid",
+    "collaboration": "Real-time Collaboration"
+  }
+}

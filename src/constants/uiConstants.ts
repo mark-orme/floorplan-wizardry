@@ -1,13 +1,15 @@
-
 /**
  * UI constants used throughout the application
  * Centralizes UI values to avoid magic strings and numbers
  * @module uiConstants
  */
 
+import i18n from 'i18next';
+
 /**
  * UI feedback messages
  * Standardized text for consistent user notifications
+ * Note: These values are now pulled from i18n translations
  * @constant {Object}
  */
 export const UI_MESSAGES = {
@@ -16,42 +18,42 @@ export const UI_MESSAGES = {
    * Displayed when user changes the drawing line thickness
    * @constant {string}
    */
-  LINE_THICKNESS_UPDATED: "Line thickness set to",
+  LINE_THICKNESS_UPDATED: () => i18n.t('canvas.messages.lineThicknessUpdated'),
   
   /**
    * Color updated message
    * Displayed when user changes the drawing line color
    * @constant {string}
    */
-  COLOR_UPDATED: "Line color updated",
+  COLOR_UPDATED: () => i18n.t('canvas.messages.colorUpdated'),
   
   /**
    * Canvas drawing error message
    * Displayed when canvas fails to initialize
    * @constant {string}
    */
-  CANVAS_ERROR: "Error initializing drawing canvas",
+  CANVAS_ERROR: () => i18n.t('canvas.messages.canvasError'),
   
   /**
    * Success message for state save
    * Displayed when drawing state is successfully saved
    * @constant {string}
    */
-  STATE_SAVED: "Drawing state saved",
+  STATE_SAVED: () => i18n.t('canvas.messages.stateSaved'),
   
   /**
    * Message for successful undo
    * Displayed when undo operation completes
    * @constant {string}
    */
-  UNDO_SUCCESS: "Undo successful",
+  UNDO_SUCCESS: () => i18n.t('canvas.messages.undoSuccess'),
   
   /**
    * Message for successful redo
    * Displayed when redo operation completes
    * @constant {string}
    */
-  REDO_SUCCESS: "Redo successful"
+  REDO_SUCCESS: () => i18n.t('canvas.messages.redoSuccess')
 };
 
 /**

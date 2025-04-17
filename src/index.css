@@ -1,19 +1,28 @@
 
+/* Add this at the top of your index.css file */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* RTL Support */
+html[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+html[dir="rtl"] .rtl-reverse {
+  flex-direction: row-reverse;
 }
 
-.canvas-container {
-  width: 100%;
-  height: 100%;
+html[dir="rtl"] .rtl-margin-right {
+  margin-left: 0;
+  margin-right: 0.5rem;
 }
+
+html[dir="rtl"] .rtl-margin-left {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* Keep existing content below */

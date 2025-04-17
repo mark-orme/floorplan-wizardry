@@ -11,6 +11,7 @@ import {
   Eraser, 
   Ruler
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ToolVisualizerProps {
   tool: DrawingMode;
@@ -21,6 +22,7 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
   tool,
   isApplePencil = false
 }) => {
+  const { t } = useTranslation();
   const [hint, setHint] = useState<string>('');
   const [showHint, setShowHint] = useState(false);
   
@@ -30,36 +32,36 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
     
     switch (tool) {
       case DrawingMode.SELECT:
-        newHint = 'Click to select objects. Drag to move.';
+        newHint = t('canvas.tooltips.select');
         break;
       case DrawingMode.DRAW:
         newHint = isApplePencil ? 
-          'Draw with pressure sensitivity. Press harder for thicker lines.' : 
-          'Click and drag to draw freeform.';
+          t('canvas.tooltips.draw_pencil', 'Draw with pressure sensitivity. Press harder for thicker lines.') : 
+          t('canvas.tooltips.draw');
         break;
       case DrawingMode.STRAIGHT_LINE:
-        newHint = 'Click to start line, click again to end. Hold Shift for 45° angles.';
+        newHint = t('canvas.tooltips.straightLine');
         break;
       case DrawingMode.WALL:
-        newHint = 'Click to start wall, click again to end. Walls snap to grid.';
+        newHint = t('canvas.tooltips.wall');
         break;
       case DrawingMode.ROOM:
-        newHint = 'Click and drag to create a room.';
+        newHint = t('canvas.tooltips.room', 'Click and drag to create a room.');
         break;
       case DrawingMode.ERASER:
-        newHint = 'Click on objects to erase them.';
+        newHint = t('canvas.tooltips.eraser');
         break;
       case DrawingMode.TEXT:
-        newHint = 'Click to add text, type to edit.';
+        newHint = t('canvas.tooltips.text', 'Click to add text, type to edit.');
         break;
       case DrawingMode.HAND:
-        newHint = 'Click and drag to pan the canvas.';
+        newHint = t('canvas.tooltips.hand', 'Click and drag to pan the canvas.');
         break;
       case DrawingMode.MEASURE:
-        newHint = 'Click and drag to measure distance.';
+        newHint = t('canvas.tooltips.measure', 'Click and drag to measure distance.');
         break;
       default:
-        newHint = 'Select a tool to begin.';
+        newHint = t('toolVisualizer.defaultHint');
     }
     
     setHint(newHint);
@@ -71,7 +73,7 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
     }, 5000);
     
     return () => clearTimeout(timer);
-  }, [tool, isApplePencil]);
+  }, [tool, isApplePencil, t]);
   
   // Get the appropriate icon for the current tool
   const getToolIcon = () => {
@@ -118,10 +120,10 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
       {/* Keyboard shortcuts reminder */}
       <div className="fixed bottom-16 left-4 bg-white/80 text-xs text-gray-600 px-2 py-1 rounded-md">
         <div className="flex flex-col gap-1">
-          <div>⌘Z / Ctrl+Z: Undo</div>
-          <div>⌘⇧Z / Ctrl+Shift+Z: Redo</div>
-          <div>Delete / Backspace: Remove</div>
-          <div>Esc: Deselect</div>
+          <div>⌘Z / Ctrl+Z: {t('common.undo', 'Undo')}</div>
+          <div>⌘⇧Z / Ctrl+Shift+Z: {t('common.redo', 'Redo')}</div>
+          <div>Delete / Backspace: {t('common.remove', 'Remove')}</div>
+          <div>Esc: {t('common.deselect', 'Deselect')}</div>
         </div>
       </div>
     </>

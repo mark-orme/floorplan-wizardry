@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { captureMessage } from '@/utils/sentry';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface ToolbarProps {
   activeTool: DrawingMode;
@@ -53,6 +54,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onLineThicknessChange,
   onLineColorChange
 }: ToolbarProps): JSX.Element => {
+  const { t } = useTranslation();
+
   // Log when the active tool changes to help debug
   useEffect(() => {
     console.log("Active tool in Toolbar:", activeTool);
@@ -94,58 +97,58 @@ export const Toolbar: React.FC<ToolbarProps> = ({
       }
     });
     
-    toast.success("Issue reported to developers. Thank you!");
+    toast.success(t('common.reportSent', "Issue reported to developers. Thank you!"));
   };
 
   return (
-    <div className="flex flex-wrap gap-2 bg-white">
-      <div className="flex items-center gap-1">
+    <div className="flex flex-wrap gap-2 bg-white rtl-reverse">
+      <div className="flex items-center gap-1 rtl-reverse">
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.SELECT ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.SELECT)}
-          title="Select Tool"
+          title={t('canvas.toolbar.select')}
         >
           <Pointer className="h-4 w-4" />
-          <span className="ml-1">Select</span>
+          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.select')}</span>
         </Button>
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.DRAW ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.DRAW)}
-          title="Freehand Wall Tool"
+          title={t('canvas.toolbar.draw')}
         >
           <Pencil className="h-4 w-4" />
-          <span className="ml-1">Freehand Wall</span>
+          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.draw')}</span>
         </Button>
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
           onClick={handleStraightLineClick}
-          title="Straight Line Tool"
+          title={t('canvas.toolbar.straightLine')}
           data-test-id="straight-line-button"
           className={activeTool === DrawingMode.STRAIGHT_LINE ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
         >
           <Minus className="h-4 w-4" />
-          <span className="ml-1">Straight Line</span>
+          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.straightLine')}</span>
         </Button>
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.WALL ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.WALL)}
-          title="Wall Tool"
+          title={t('canvas.toolbar.wall')}
         >
           <Ruler className="h-4 w-4" />
-          <span className="ml-1">Wall</span>
+          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.wall')}</span>
         </Button>
         <Button 
           size="sm" 
           variant={activeTool === DrawingMode.ERASER ? 'default' : 'outline'} 
           onClick={() => onToolChange(DrawingMode.ERASER)}
-          title="Eraser Tool"
+          title={t('canvas.toolbar.eraser')}
         >
           <Eraser className="h-4 w-4" />
-          <span className="ml-1">Eraser</span>
+          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.eraser')}</span>
         </Button>
         
         {/* Add a button to report line tool issues */}
@@ -153,50 +156,50 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           <Button 
             size="sm" 
             variant="outline" 
-            className="ml-2 text-amber-600 border-amber-600"
+            className="ml-2 text-amber-600 border-amber-600 rtl-margin-right"
             onClick={reportStraightLineIssue}
-            title="Report Issue with Line Tool"
+            title={t('common.reportIssue', "Report Issue with Line Tool")}
           >
-            <AlertCircle className="h-4 w-4 mr-1" />
-            <span className="text-xs">Report Issue</span>
+            <AlertCircle className="h-4 w-4 mr-1 rtl-margin-left" />
+            <span className="text-xs">{t('common.reportIssue', "Report Issue")}</span>
           </Button>
         )}
       </div>
       
       <Separator orientation="vertical" className="h-8" />
       
-      <div className="flex items-center gap-1">
-        <Button size="sm" variant="outline" onClick={onUndo} title="Undo">
-          <Undo2 className="h-4 w-4" />
+      <div className="flex items-center gap-1 rtl-reverse">
+        <Button size="sm" variant="outline" onClick={onUndo} title={t('common.undo', "Undo")}>
+          <Undo2 className="h-4 w-4 rtl-mirror" />
         </Button>
-        <Button size="sm" variant="outline" onClick={onRedo} title="Redo">
-          <Redo2 className="h-4 w-4" />
+        <Button size="sm" variant="outline" onClick={onRedo} title={t('common.redo', "Redo")}>
+          <Redo2 className="h-4 w-4 rtl-mirror" />
         </Button>
       </div>
       
       <Separator orientation="vertical" className="h-8" />
       
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 rtl-reverse">
         <Button 
           size="sm" 
           variant="outline" 
           onClick={onDelete} 
-          title="Delete Selected"
+          title={t('canvas.toolbar.delete')}
           className="bg-red-50 border-red-200 hover:bg-red-100"
         >
           <Trash className="h-4 w-4 text-red-500" />
-          <span className="ml-1 text-red-500">Delete Selected</span>
+          <span className="ml-1 rtl-margin-right text-red-500">{t('canvas.toolbar.delete')}</span>
         </Button>
-        <Button size="sm" variant="outline" onClick={onSave} title="Save Canvas">
+        <Button size="sm" variant="outline" onClick={onSave} title={t('common.save', "Save Canvas")}>
           <Save className="h-4 w-4" />
         </Button>
       </div>
       
       <Separator orientation="vertical" className="h-8" />
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 rtl-reverse">
         <div className="flex flex-col gap-1">
-          <Label htmlFor="line-thickness" className="text-xs">Thickness</Label>
+          <Label htmlFor="line-thickness" className="text-xs">{t('canvas.toolbar.thickness')}</Label>
           <Input
             id="line-thickness"
             type="number"
@@ -209,7 +212,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </div>
         
         <div className="flex flex-col gap-1">
-          <Label htmlFor="line-color" className="text-xs">Color</Label>
+          <Label htmlFor="line-color" className="text-xs">{t('canvas.toolbar.color')}</Label>
           <Input
             id="line-color"
             type="color"

@@ -8,6 +8,8 @@ import React from 'react';
 import { Point } from '@/types/core/Point';
 import { PIXELS_PER_METER, AREA_PRECISION } from '@/constants/numerics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useUnitConversion } from '@/hooks/useUnitConversion';
+import { useTranslation } from 'react-i18next';
 
 // Define these constants locally since they may not exist in numerics.ts yet
 const DISTANCE_PRECISION = 2;
@@ -57,14 +59,6 @@ const calculateAngle = (p1: Point, p2: Point): number => {
 };
 
 /**
- * Format distance for display
- */
-const formatDistance = (pixels: number): string => {
-  const meters = pixels / PIXELS_PER_METER;
-  return `${meters.toFixed(DISTANCE_PRECISION)}m`;
-};
-
-/**
  * Get nearest standard angle
  */
 const getNearestStandardAngle = (angle: number): number | null => {
@@ -89,8 +83,11 @@ export const MeasurementTooltip: React.FC<MeasurementTooltipProps> = ({
   showGridPosition = false,
   className = ''
 }) => {
+  const { t } = useTranslation();
+  const { formatDistance, distanceUnit, measurementSystem } = useUnitConversion();
+  
   // Calculate measurements
-  const distance = calculatePixelDistance(startPoint, endPoint);
+  const pixelDistance = calculatePixelDistance(startPoint, endPoint);
   const angle = calculateAngle(startPoint, endPoint);
   const nearestStandardAngle = getNearestStandardAngle(angle);
   
@@ -98,8 +95,11 @@ export const MeasurementTooltip: React.FC<MeasurementTooltipProps> = ({
   const midpointX = (startPoint.x + endPoint.x) / 2;
   const midpointY = (startPoint.y + endPoint.y) / 2;
   
-  // Format distance and angle
-  const formattedDistance = formatDistance(distance);
+  // Convert pixel distance to meters
+  const distanceInMeters = pixelDistance / PIXELS_PER_METER;
+  
+  // Format distance using our localization utility
+  const formattedDistance = formatDistance(distanceInMeters);
   const formattedAngle = angle.toFixed(1) + '°';
   
   return (

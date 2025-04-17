@@ -7,6 +7,8 @@
 import React from 'react';
 import type { Point } from '@/types/geometryTypes';
 import { PIXELS_PER_METER } from '@/constants/numerics';
+import { useUnitConversion } from '@/hooks/useUnitConversion';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Constants for distance tooltip
@@ -47,10 +49,6 @@ interface DistanceTooltipProps {
   endPoint: Point;
   /** Distance in pixels */
   distance?: number;
-  /** Unit of measurement */
-  unit?: string;
-  /** Whether tooltip is visible */
-  visible?: boolean;
   /** Position adjustment factor */
   positionAdjust?: number;
   /** Conversion factor from pixels to measurement units */
@@ -59,6 +57,8 @@ interface DistanceTooltipProps {
   showAngle?: boolean;
   /** Fixed CSS class for overrides */
   className?: string;
+  /** Whether tooltip is visible */
+  visible?: boolean;
 }
 
 /**
@@ -72,13 +72,15 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   startPoint,
   endPoint,
   distance: propDistance,
-  unit = 'm',
   visible = true,
   positionAdjust = TOOLTIP_CONSTANTS.OFFSET,
   pixelsPerUnit = TOOLTIP_CONSTANTS.PIXELS_PER_METER,
   showAngle = true,
   className = ''
 }) => {
+  const { t } = useTranslation();
+  const { formatDistance } = useUnitConversion();
+  
   if (!visible) return null;
   
   // Calculate midpoint for tooltip position
@@ -86,16 +88,16 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
   const midY = (startPoint.y + endPoint.y) / 2;
   
   // Calculate distance if not provided
-  const distance = propDistance !== undefined ? propDistance : Math.sqrt(
+  const distanceInPixels = propDistance !== undefined ? propDistance : Math.sqrt(
     Math.pow(endPoint.x - startPoint.x, 2) + 
     Math.pow(endPoint.y - startPoint.y, 2)
   );
   
-  // Convert distance from pixels to measurement units
-  const convertedDistance = distance / pixelsPerUnit;
+  // Convert distance from pixels to meters
+  const distanceInMeters = distanceInPixels / pixelsPerUnit;
   
-  // Format the distance
-  const formattedDistance = convertedDistance.toFixed(2);
+  // Format the distance using our localization utility
+  const formattedDistance = formatDistance(distanceInMeters);
   
   // Calculate angle if needed
   let angleDisplay = null;
@@ -132,7 +134,7 @@ export const DistanceTooltip: React.FC<DistanceTooltipProps> = ({
       data-testid="distance-tooltip"
     >
       <div className="flex items-center">
-        <span className="font-medium">{formattedDistance} {unit}</span>
+        <span className="font-medium">{formattedDistance}</span>
         {angleDisplay}
       </div>
     </div>

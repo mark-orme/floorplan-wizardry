@@ -1,14 +1,12 @@
 
-/**
- * Application entry module
- * Re-exports from main modules
- * @module main
- */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { setupSentry, initializeApp } from './main/index';
+
+// Import i18n config
+import './i18n/config';
 
 // Initialize Sentry first if available
 if (typeof setupSentry === 'function') {
