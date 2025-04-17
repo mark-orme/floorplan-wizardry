@@ -9,6 +9,7 @@ import {
 import { startPerformanceTransaction } from "@/utils/sentry/performance";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
+import { Canvas as FabricCanvas } from "fabric";
 
 interface FloorPlanEditorToolbarProps {
   onUndo: () => void;
@@ -28,7 +29,7 @@ export const FloorPlanEditorToolbarWithToast = ({
   canRedo
 }: FloorPlanEditorToolbarProps) => {
   const handleUndo = () => {
-    const perfTransaction = startPerformanceTransaction('canvas.undo', {});
+    const perfTransaction = startPerformanceTransaction('canvas.undo', null);
     
     try {
       onUndo();
@@ -40,7 +41,7 @@ export const FloorPlanEditorToolbarWithToast = ({
   };
 
   const handleRedo = () => {
-    const perfTransaction = startPerformanceTransaction('canvas.redo', {});
+    const perfTransaction = startPerformanceTransaction('canvas.redo', null);
     
     try {
       onRedo();
@@ -52,7 +53,7 @@ export const FloorPlanEditorToolbarWithToast = ({
   };
 
   const handleClear = () => {
-    const perfTransaction = startPerformanceTransaction('canvas.clear', {});
+    const perfTransaction = startPerformanceTransaction('canvas.clear', null);
     
     try {
       const objectCountBefore = 0; // This would need to be passed in if needed
@@ -75,7 +76,7 @@ export const FloorPlanEditorToolbarWithToast = ({
   };
 
   const handleSave = () => {
-    const transaction = startPerformanceTransaction('canvas.save', {});
+    const transaction = startPerformanceTransaction('canvas.save', null);
     
     try {
       onSave();
