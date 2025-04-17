@@ -10,6 +10,11 @@ import { Ruler } from "lucide-react";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import logger from "@/utils/logger";
+import { RestoreDrawingPrompt } from "./canvas/RestoreDrawingPrompt";
+import { useRestorePrompt } from "@/hooks/useRestorePrompt";
+import { useSentryCanvasMonitoring } from "@/hooks/useSentryCanvasMonitoring";
+import { startPerformanceTransaction } from "@/utils/sentry/performance";
+import { configureSentryContext } from "@/utils/sentry/initialization";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -21,11 +26,53 @@ export const FloorPlanEditor: React.FC = () => {
     openMeasurementGuide 
   } = useMeasurementGuide();
 
+  // Initialize Sentry canvas monitoring
+  const { captureCanvasState } = useSentryCanvasMonitoring({
+    canvas,
+    enabled: true
+  });
+
+  // Use restore prompt hook
+  const {
+    showPrompt: showRestorePrompt,
+    timeElapsed,
+    isRestoring,
+    handleRestore,
+    handleDismiss
+  } = useRestorePrompt({
+    canvas,
+    canvasId: "main-canvas",
+    onRestore: () => {
+      setCanUndo(canvasRef.current?.canUndo || false);
+      setCanRedo(canvasRef.current?.canRedo || false);
+    }
+  });
+
   const handleCanvasReady = (canvasOperations: any) => {
-    setCanvas(canvasOperations.canvas);
-    canvasRef.current = canvasOperations;
-    toast.success("Canvas ready! Start drawing!");
-    logger.info("Canvas initialized successfully");
+    // Track canvas initialization performance
+    const transaction = startPerformanceTransaction('canvas.initialization');
+    
+    try {
+      setCanvas(canvasOperations.canvas);
+      canvasRef.current = canvasOperations;
+      
+      // Update Sentry context with canvas info
+      configureSentryContext({
+        canvasInfo: {
+          width: canvasOperations.canvas.width,
+          height: canvasOperations.canvas.height,
+          objectCount: canvasOperations.canvas.getObjects().length
+        }
+      });
+      
+      toast.success("Canvas ready! Start drawing!");
+      logger.info("Canvas initialized successfully");
+      
+      transaction.finish('ok');
+    } catch (error) {
+      logger.error("Error initializing canvas:", error);
+      transaction.finish('error');
+    }
   };
 
   const handleUndo = () => {
@@ -34,6 +81,9 @@ export const FloorPlanEditor: React.FC = () => {
       setCanUndo(canvasRef.current.canUndo);
       setCanRedo(canvasRef.current.canRedo);
       logger.debug("Undo operation performed");
+      
+      // Capture canvas state after undo
+      captureCanvasState();
     }
   };
 
@@ -43,6 +93,9 @@ export const FloorPlanEditor: React.FC = () => {
       setCanUndo(canvasRef.current.canUndo);
       setCanRedo(canvasRef.current.canRedo);
       logger.debug("Redo operation performed");
+      
+      // Capture canvas state after redo
+      captureCanvasState();
     }
   };
 
@@ -51,14 +104,26 @@ export const FloorPlanEditor: React.FC = () => {
       canvasRef.current.clearCanvas();
       toast.success("Canvas cleared");
       logger.info("Canvas cleared by user");
+      
+      // Capture canvas state after clear
+      captureCanvasState();
     }
   };
 
   const handleSave = () => {
     if (canvasRef.current?.saveCanvas) {
-      canvasRef.current.saveCanvas();
-      toast.success("Canvas saved");
-      logger.info("Canvas state saved");
+      const transaction = startPerformanceTransaction('canvas.save');
+      
+      try {
+        canvasRef.current.saveCanvas();
+        toast.success("Canvas saved");
+        logger.info("Canvas state saved");
+        transaction.finish('ok');
+      } catch (error) {
+        logger.error("Error saving canvas:", error);
+        toast.error("Failed to save canvas");
+        transaction.finish('error');
+      }
     }
   };
 
@@ -101,6 +166,15 @@ export const FloorPlanEditor: React.FC = () => {
         open={showMeasurementGuide} 
         onClose={handleCloseMeasurementGuide} 
       />
+      
+      {showRestorePrompt && (
+        <RestoreDrawingPrompt
+          timeElapsed={timeElapsed}
+          onRestore={handleRestore}
+          onDismiss={handleDismiss}
+          isRestoring={isRestoring}
+        />
+      )}
     </div>
   );
 };
