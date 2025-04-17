@@ -42,11 +42,50 @@ export const usePaperSizeManager = ({
   const [paperSizes, setPaperSizes] = useState<PaperSize[]>(STANDARD_PAPER_SIZES);
   const [infiniteCanvas, setInfiniteCanvas] = useState(false);
   
-  // Change paper size
-  const changePaperSize = useCallback((sizeId: string) => {
-    const newSize = paperSizes.find(size => size.id === sizeId);
+  // Change paper size - now accepts either a string ID or a PaperSize object
+  const changePaperSize = useCallback((sizeIdOrObject: string | PaperSize): void => {
+    // If we received a PaperSize object directly, use it
+    if (typeof sizeIdOrObject === 'object') {
+      setCurrentPaperSize(sizeIdOrObject);
+      
+      if (onPaperSizeChange) {
+        onPaperSizeChange(sizeIdOrObject);
+      }
+      
+      // Apply to canvas if available
+      const canvas = fabricCanvasRef.current;
+      if (canvas) {
+        // Save current objects
+        const objects = canvas.getObjects();
+        
+        // Set new dimensions
+        canvas.setDimensions({
+          width: sizeIdOrObject.width,
+          height: sizeIdOrObject.height
+        });
+        
+        // Center objects if they're now outside the canvas
+        objects.forEach(obj => {
+          const objBounds = obj.getBoundingRect();
+          
+          if (objBounds.left > sizeIdOrObject.width || objBounds.top > sizeIdOrObject.height) {
+            obj.set({
+              left: Math.min(objBounds.left, sizeIdOrObject.width - objBounds.width),
+              top: Math.min(objBounds.top, sizeIdOrObject.height - objBounds.height)
+            });
+          }
+        });
+        
+        canvas.renderAll();
+        toast.success(`Paper size changed to ${sizeIdOrObject.name} ${sizeIdOrObject.orientation}`);
+      }
+      return;
+    }
+    
+    // If we received a string ID, find the corresponding PaperSize
+    const newSize = paperSizes.find(size => size.id === sizeIdOrObject);
     if (!newSize) {
-      toast.error(`Invalid paper size: ${sizeId}`);
+      toast.error(`Invalid paper size: ${sizeIdOrObject}`);
       return;
     }
     

@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 
 // Define the PaperSize interface locally to fix the import error
 interface PaperSize {
+  id: string;
   name: string;
   width: number;
   height: number;
@@ -12,7 +13,7 @@ interface MemoizedPaperSizeSelectorProps {
   currentPaperSize: PaperSize;
   paperSizes: PaperSize[];
   infiniteCanvas: boolean;
-  onChangePaperSize: (size: PaperSize) => void;
+  onChangePaperSize: (size: PaperSize | string) => void; // Updated to accept either PaperSize or string
   onToggleInfiniteCanvas: () => void;
 }
 
