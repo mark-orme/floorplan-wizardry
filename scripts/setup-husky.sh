@@ -20,4 +20,3 @@ cp scripts/commit-msg .husky/commit-msg
 chmod +x .husky/commit-msg
 
 echo "✅ Husky setup complete with commitlint integration"
-
