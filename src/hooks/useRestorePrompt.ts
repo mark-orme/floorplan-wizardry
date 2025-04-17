@@ -1,7 +1,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useLocalStorage } from './useLocalStorage';
+import { loadCanvasFromLocalStorage, clearSavedCanvasData } from '@/utils/autosave/canvasAutoSave';
+import logger from '@/utils/logger';
 
 interface UseRestorePromptProps {
   canvas: FabricCanvas | null;
@@ -9,6 +10,9 @@ interface UseRestorePromptProps {
   onRestore: () => void;
 }
 
+/**
+ * Hook to manage the canvas restore prompt
+ */
 export const useRestorePrompt = ({
   canvas,
   canvasId,
@@ -18,60 +22,79 @@ export const useRestorePrompt = ({
   const [timeElapsed, setTimeElapsed] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
   
-  // Storage keys based on canvas ID
-  const timestampKey = `canvas_timestamp_${canvasId}`;
-  
-  // Use local storage hook to check for saved timestamp
-  const [savedTimestamp] = useLocalStorage<string | null>(timestampKey, null);
-  
-  // Check if we should show the restore prompt
+  // Check for saved data on mount
   useEffect(() => {
-    const checkForRestore = async () => {
-      if (!canvas || !savedTimestamp) return;
+    if (!canvas) return;
+    
+    const savedTimestamp = localStorage.getItem('canvas_autosave_timestamp');
+    if (!savedTimestamp) return;
+    
+    try {
+      const savedDate = new Date(savedTimestamp);
+      const now = new Date();
       
-      try {
-        const savedDate = new Date(savedTimestamp);
-        const now = new Date();
-        const diffMs = now.getTime() - savedDate.getTime();
-        
-        // If the save is less than 5 minutes old, don't show the prompt
-        if (diffMs < 5 * 60 * 1000) return;
-        
-        // Format the time elapsed string
-        setTimeElapsed(formatTimeElapsed(diffMs));
-        
-        // Show the prompt
-        setShowPrompt(true);
-      } catch (error) {
-        console.error('Error checking for restore:', error);
+      // Calculate time difference
+      const diffMs = now.getTime() - savedDate.getTime();
+      
+      // Only show prompt if saved less than 7 days ago
+      if (diffMs > 7 * 24 * 60 * 60 * 1000) {
+        clearSavedCanvasData();
+        return;
       }
-    };
-    
-    // Check after a short delay to allow the application to initialize
-    const timer = setTimeout(() => {
-      checkForRestore();
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, [canvas, canvasId, savedTimestamp]);
+      
+      // Calculate human-readable time elapsed
+      let timeString = '';
+      
+      // Convert to seconds
+      const diffSec = Math.floor(diffMs / 1000);
+      
+      if (diffSec < 60) {
+        timeString = `${diffSec} seconds`;
+      } else if (diffSec < 3600) {
+        const minutes = Math.floor(diffSec / 60);
+        timeString = `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+      } else if (diffSec < 86400) {
+        const hours = Math.floor(diffSec / 3600);
+        timeString = `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else {
+        const days = Math.floor(diffSec / 86400);
+        timeString = `${days} day${days !== 1 ? 's' : ''}`;
+      }
+      
+      setTimeElapsed(timeString);
+      setShowPrompt(true);
+    } catch (error) {
+      logger.error('Error calculating restore prompt time:', error);
+    }
+  }, [canvas, canvasId]);
   
-  // Handle restore button click
+  // Handle restore action
   const handleRestore = useCallback(() => {
     if (!canvas) return;
     
     setIsRestoring(true);
     
-    // Call the provided restore function
-    onRestore();
-    
-    // Hide the prompt after restoration
-    setShowPrompt(false);
-    setIsRestoring(false);
+    try {
+      const success = loadCanvasFromLocalStorage(canvas);
+      
+      if (success) {
+        // If successful, call the onRestore callback
+        onRestore();
+      }
+    } catch (error) {
+      logger.error('Error restoring canvas:', error);
+    } finally {
+      setIsRestoring(false);
+      setShowPrompt(false);
+    }
   }, [canvas, onRestore]);
   
-  // Handle dismiss button click
+  // Handle dismiss action
   const handleDismiss = useCallback(() => {
     setShowPrompt(false);
+    
+    // Clear the saved data when dismissed
+    clearSavedCanvasData();
   }, []);
   
   return {
@@ -82,28 +105,3 @@ export const useRestorePrompt = ({
     handleDismiss
   };
 };
-
-// Helper function to format time elapsed
-function formatTimeElapsed(diffMs: number): string {
-  const diffSec = Math.floor(diffMs / 1000);
-  
-  if (diffSec < 60) {
-    return `${diffSec} seconds`;
-  }
-  
-  const diffMin = Math.floor(diffSec / 60);
-  
-  if (diffMin < 60) {
-    return `${diffMin} minute${diffMin !== 1 ? 's' : ''}`;
-  }
-  
-  const diffHour = Math.floor(diffMin / 60);
-  
-  if (diffHour < 24) {
-    return `${diffHour} hour${diffHour !== 1 ? 's' : ''}`;
-  }
-  
-  const diffDay = Math.floor(diffHour / 24);
-  
-  return `${diffDay} day${diffDay !== 1 ? 's' : ''}`;
-}

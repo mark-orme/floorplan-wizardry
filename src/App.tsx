@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { isRTL } from "@/i18n/config";
+import logger from "@/utils/logger";
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -15,6 +16,7 @@ function App() {
   useEffect(() => {
     document.documentElement.dir = isRTL() ? 'rtl' : 'ltr';
     document.documentElement.lang = i18n.language;
+    logger.info(`Language changed to ${i18n.language}, direction: ${isRTL() ? 'rtl' : 'ltr'}`);
   }, [i18n.language]);
   
   return (

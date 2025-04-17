@@ -1,120 +1,92 @@
 
-/**
- * Modal component for displaying measurement guidelines
- * Provides educational information about measurement tools
- * @module MeasurementGuideModal
- */
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { Ruler, Grid } from "lucide-react";
+import { useMeasurementGuide } from '@/hooks/useMeasurementGuide';
+import { getMeasurementSystem } from '@/i18n/config';
 
-/**
- * Props for the MeasurementGuideModal component
- */
 interface MeasurementGuideModalProps {
-  /** Whether the modal is open */
   open: boolean;
-  /** Function to set the open state */
-  onOpenChange: (open: boolean) => void;
+  onClose: (dontShowAgain: boolean) => void;
 }
 
-/**
- * Modal that displays measurement guidelines and tips
- * @param {MeasurementGuideModalProps} props - Component props
- * @returns {JSX.Element} Rendered component
- */
-export const MeasurementGuideModal = ({ open, onOpenChange }: MeasurementGuideModalProps) => {
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+export function MeasurementGuideModal({ open, onClose }: MeasurementGuideModalProps) {
+  const { t } = useTranslation();
+  const [dontShowAgain, setDontShowAgain] = React.useState(false);
+  const measurementSystem = getMeasurementSystem();
   
-  // Check local storage on initial load
-  useEffect(() => {
-    const dontShow = localStorage.getItem('dontShowMeasurementGuide') === 'true';
-    setDontShowAgain(dontShow);
-  }, []);
-
-  /**
-   * Handle closing the modal with option to not show again
-   */
   const handleClose = () => {
-    if (dontShowAgain) {
-      localStorage.setItem('dontShowMeasurementGuide', 'true');
-    }
-    onOpenChange(false);
+    onClose(dontShowAgain);
   };
-
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Ruler className="h-5 w-5" />
-            Measurement Guide
-          </DialogTitle>
+          <DialogTitle>{t('measurementGuide.title', 'Measurement Guide')}</DialogTitle>
           <DialogDescription>
-            Tips for accurate floor plan measurements
+            {t('measurementGuide.description', 'Learn how measurements work in this floor plan tool.')}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-4 my-4">
-          <div className="p-3 border rounded-md">
-            <h3 className="font-medium mb-1 flex items-center gap-2">
-              <Grid className="h-4 w-4" />
-              Grid System
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Each small grid square represents 0.5 meters. Large grid lines appear every 1 meter.
+        
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <h3 className="font-medium">{t('measurementGuide.currentSystem', 'Your System')}</h3>
+            <p>
+              {t('measurementGuide.usingSystem', 'You are currently using the {{system}} system.', {
+                system: measurementSystem === 'metric' 
+                  ? t('measurementGuide.metric', 'metric') 
+                  : t('measurementGuide.imperial', 'imperial')
+              })}
             </p>
           </div>
-
-          <div className="p-3 border rounded-md">
-            <h3 className="font-medium mb-1 flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Drawing Walls
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Use the "Line" tool to draw walls. Click to start, move to the end point, then click again.
-              Hold Shift while drawing to snap to 45° and 90° angles.
+          
+          <div className="space-y-2">
+            <h3 className="font-medium">{t('measurementGuide.scale', 'Scale Information')}</h3>
+            <p>
+              {measurementSystem === 'metric'
+                ? t('measurementGuide.metricScale', 'Each grid square represents 1 meter.')
+                : t('measurementGuide.imperialScale', 'Each grid square represents 3 feet.')}
             </p>
           </div>
-
-          <div className="p-3 border rounded-md">
-            <h3 className="font-medium mb-1 flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-              </svg>
-              Measuring Areas
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Use the "Polygon" tool to outline rooms. Close the shape by clicking near the starting point.
-              The area will be calculated automatically.
+          
+          <div className="space-y-2">
+            <h3 className="font-medium">{t('measurementGuide.changingSystem', 'Changing Measurement System')}</h3>
+            <p>
+              {t('measurementGuide.systemChangeInfo', 'Your measurement system is determined by your language selection. Change the language to switch between metric and imperial.')}
             </p>
           </div>
-        </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <div className="flex items-center space-x-2">
+          
+          <div className="flex items-center space-x-2 pt-4">
             <Checkbox
-              id="dontShow"
+              id="dont-show-again"
               checked={dontShowAgain}
               onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
             />
-            <Label htmlFor="dontShow" className="text-sm">Don't show again</Label>
+            <label
+              htmlFor="dont-show-again"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              {t('measurementGuide.dontShowAgain', "Don't show this again")}
+            </label>
           </div>
-          <Button onClick={handleClose}>Got it</Button>
+        </div>
+        
+        <DialogFooter>
+          <Button onClick={handleClose}>
+            {t('common.close', 'Close')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-};
+}
