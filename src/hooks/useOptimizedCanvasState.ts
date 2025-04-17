@@ -1,9 +1,9 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Canvas as FabricCanvas, Point } from 'fabric';
 import { batchCanvasOperations, debounce } from '@/utils/canvas/renderOptimizer';
 import { useOptimizedObjectManagement } from './useOptimizedObjectManagement';
 import { Point as AppPoint } from '@/types/core/Point';
+import { serializeCanvasState } from '@/utils/canvas/canvasSerializer';
 
 interface UseOptimizedCanvasStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -185,6 +185,36 @@ export const useOptimizedCanvasState = ({
       updateCanvasState();
     });
   }, [fabricCanvasRef, updateCanvasState]);
+
+  const handleFloorSelect = useCallback((index: number) => {
+    if (index >= 0 && index < floorPlans.length && index !== currentFloor) {
+      // Add Sentry breadcrumb for floor change
+      Sentry.addBreadcrumb({
+        category: 'floorplan',
+        message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
+        level: 'info',
+        data: {
+          previousFloor: currentFloor,
+          newFloor: index,
+          floorName: floorPlans[index]?.name
+        }
+      });
+      
+      // Clear history when switching floors
+      historyRef.current = { past: [], future: [] };
+      
+      // Save current canvas state to floor plan array
+      if (fabricCanvasRef.current && floorPlans[currentFloor]) {
+        const updatedFloorPlans = [...floorPlans];
+        const canvasState = serializeCanvasState(fabricCanvasRef.current);
+        updatedFloorPlans[currentFloor] = {
+          ...updatedFloorPlans[currentFloor],
+          canvasState
+        };
+        setFloorPlans(updatedFloorPlans);
+      }
+    }
+  }, [fabricCanvasRef, floorPlans, currentFloor, historyRef, setFloorPlans]);
   
   return {
     canvasState,
