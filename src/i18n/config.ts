@@ -1,4 +1,3 @@
-
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -17,6 +16,9 @@ const resources = {
   }
 };
 
+// Define RTL languages for our helper function
+const rtlLanguages = ['ar', 'he', 'fa', 'ur'];
+
 i18n
   // Detect user language
   .use(LanguageDetector)
@@ -32,22 +34,36 @@ i18n
       escapeValue: false, // React already safes from XSS
     },
     
-    // RTL support
+    // Define supported languages
     supportedLngs: ['en', 'ar'],
-    // Define RTL languages
-    rtl: ['ar'],
     
-    // Measurement system by locale
-    // Can be accessed in the app via i18n.getDataByLanguage(i18n.language).measurement
-    customData: {
-      en: {
-        measurement: 'imperial'
-      },
-      ar: {
-        measurement: 'metric'
-      }
+    // Custom data for measurement systems by locale
+    // Can be accessed via i18n.getDataByLanguage(i18n.language)?.customData?.measurement
+    ns: ['translation'],
+    defaultNS: 'translation',
+    
+    // Store custom data about measurement systems
+    // These must be passed as part of i18n options
+    backend: {
+      // This is just a placeholder for other backend options if needed
+    },
+    
+    // Store additional custom information
+    returnObjects: true,
+    
+    // Other standard options
+    react: {
+      useSuspense: false,
     }
   });
+
+// Add custom data to language resources
+i18n.addResourceBundle('en', 'translation', {}, true, true);
+i18n.addResourceBundle('ar', 'translation', {}, true, true);
+
+// Set custom data for measurement systems
+i18n.services.resourceStore.data.en.customData = { measurement: 'imperial' };
+i18n.services.resourceStore.data.ar.customData = { measurement: 'metric' };
 
 // Export configured i18n instance
 export default i18n;
@@ -61,6 +77,5 @@ export const getMeasurementSystem = (): 'metric' | 'imperial' => {
 
 // Helper for RTL detection
 export const isRTL = (): boolean => {
-  const rtlLanguages = ['ar', 'he', 'fa', 'ur'];
   return rtlLanguages.includes(i18n.language);
 };

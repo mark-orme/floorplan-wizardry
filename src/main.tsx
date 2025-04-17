@@ -5,7 +5,7 @@ import App from './App';
 import './index.css';
 import { setupSentry, initializeApp } from './main/index';
 
-// Import i18n config
+// Import i18n config - must be before App import to ensure translations are loaded
 import './i18n/config';
 
 // Initialize Sentry first if available
