@@ -13,8 +13,7 @@ import { RestoreDrawingPrompt } from "./canvas/RestoreDrawingPrompt";
 import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { useSentryCanvasMonitoring } from "@/hooks/useSentryCanvasMonitoring";
 import { 
-  startPerformanceTransaction, 
-  finishPerformanceTransaction 
+  startPerformanceTransaction
 } from "@/utils/sentry/performance";
 import { configureSentryContext } from "@/utils/sentry/initialization";
 import { 

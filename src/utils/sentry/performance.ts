@@ -138,12 +138,12 @@ export function measurePerformance<T>(
     const result = callback();
     
     // Finish the transaction with success
-    finishPerformanceTransaction(transaction, 'ok');
+    transaction.finish('ok');
     
     return result;
   } catch (error) {
     // Finish the transaction with error
-    finishPerformanceTransaction(transaction, 'error', { 
+    transaction.finish('error', { 
       error: error instanceof Error ? error.message : String(error) 
     });
     
