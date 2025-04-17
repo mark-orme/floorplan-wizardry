@@ -5,7 +5,7 @@ import { Point } from '@/types/core/Point';
 interface SnapFeedbackIndicatorProps {
   point: Point;
   visible: boolean;
-  type?: 'grid' | 'angle' | 'both';
+  type?: 'grid' | 'angle' | 'both' | 'object';
   size?: number;
   duration?: number;
 }
@@ -40,7 +40,8 @@ export const SnapFeedbackIndicator: React.FC<SnapFeedbackIndicatorProps> = ({
   const colors = {
     grid: '#3b82f6', // Blue
     angle: '#f97316', // Orange
-    both: '#8b5cf6'   // Purple
+    both: '#8b5cf6',  // Purple
+    object: '#10b981'  // Green
   };
   
   const color = colors[type] || colors.grid;

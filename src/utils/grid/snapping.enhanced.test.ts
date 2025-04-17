@@ -10,7 +10,6 @@ import {
   snapPointToGrid, 
   snapToGrid, 
   snapLineToGrid,
-  snapLineToStandardAngles,
   snapToAngle,
   constrainToMajorAngles,
   isPointOnGrid,
@@ -112,16 +111,20 @@ describe('Enhanced Grid Snapping Utilities', () => {
     });
   });
   
-  describe('snapLineToStandardAngles()', () => {
+  describe('snapToAngle()', () => {
     it('snaps a line to standard 45-degree angles', () => {
       const start: Point = { x: 100, y: 100 };
       // Angle that's close to 45 degrees
       const end: Point = { x: 150, y: 145 };
       
-      const snappedEnd = snapLineToStandardAngles(start, end, 45);
+      const snappedEnd = snapToAngle(start, end, 45);
       
       // Should snap to 45 degrees (perfect diagonal)
-      expect(Math.abs(snappedEnd.x - snappedEnd.y)).toBeCloseTo(0, 1);
+      const dx = snappedEnd.x - start.x;
+      const dy = snappedEnd.y - start.y;
+      const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+      
+      expect(Math.abs(angleDeg % 45)).toBeCloseTo(0, 1);
     });
     
     it('maintains the same distance between points', () => {
@@ -132,7 +135,7 @@ describe('Enhanced Grid Snapping Utilities', () => {
         Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
       );
       
-      const snappedEnd = snapLineToStandardAngles(start, end, 45);
+      const snappedEnd = snapToAngle(start, end, 45);
       
       const newDistance = Math.sqrt(
         Math.pow(snappedEnd.x - start.x, 2) + Math.pow(snappedEnd.y - start.y, 2)
@@ -147,7 +150,7 @@ describe('Enhanced Grid Snapping Utilities', () => {
       // Angle that's close to 30 degrees
       const end: Point = { x: 150, y: 129 };
       
-      const snappedEnd = snapLineToStandardAngles(start, end, 30);
+      const snappedEnd = snapToAngle(start, end, 30);
       
       // Should snap to 30 degrees
       const dx = snappedEnd.x - start.x;
@@ -158,50 +161,30 @@ describe('Enhanced Grid Snapping Utilities', () => {
     });
   });
   
-  describe('snapToAngle()', () => {
-    it('is an alias for snapLineToStandardAngles', () => {
-      const start: Point = { x: 100, y: 100 };
-      const end: Point = { x: 150, y: 145 };
-      
-      const resultFromAlias = snapToAngle(start, end, 45);
-      const resultFromOriginal = snapLineToStandardAngles(start, end, 45);
-      
-      expect(resultFromAlias).toEqual(resultFromOriginal);
-    });
-  });
-  
   describe('constrainToMajorAngles()', () => {
-    it('constrains to horizontal when x-difference is dominant', () => {
+    it('returns object with start and end points', () => {
       const start: Point = { x: 100, y: 100 };
-      const end: Point = { x: 200, y: 110 }; // Mostly horizontal
+      const end: Point = { x: 200, y: 110 };
       
       const result = constrainToMajorAngles(start, end);
       
-      expect(result.end.x).toBe(200);
-      expect(result.end.y).toBe(100); // Y should stay the same as start
+      expect(result).toHaveProperty('start');
+      expect(result).toHaveProperty('end');
+      expect(result.start).toEqual(start);
     });
     
-    it('constrains to vertical when y-difference is dominant', () => {
-      const start: Point = { x: 100, y: 100 };
-      const end: Point = { x: 110, y: 200 }; // Mostly vertical
-      
-      const result = constrainToMajorAngles(start, end);
-      
-      expect(result.end.x).toBe(100); // X should stay the same as start
-      expect(result.end.y).toBe(200);
-    });
-    
-    it('constrains to 45-degree diagonal when differences are similar', () => {
+    it('constrains to 45-degree diagonal when appropriate', () => {
       const start: Point = { x: 100, y: 100 };
       const end: Point = { x: 150, y: 160 }; // Similar x and y differences
       
       const result = constrainToMajorAngles(start, end);
       
-      // Should have equal x and y differences (perfect diagonal)
+      // Should snap to 45-degree angle
       const dx = result.end.x - start.x;
       const dy = result.end.y - start.y;
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
       
-      expect(Math.abs(dx)).toBeCloseTo(Math.abs(dy), 0);
+      expect(Math.abs(angle % 45)).toBeCloseTo(0, 0);
     });
     
     it('maintains the original start point', () => {

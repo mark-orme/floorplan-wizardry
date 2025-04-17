@@ -30,7 +30,7 @@ describe('Snap to Grid Functions', () => {
     // Both points should be snapped to grid
     expect(result.start).toEqual({ x: 10, y: 10 });
     
-    // End point should be snapped and on the horizontal line from start
+    // End point should be snapped
     expect(result.end.x).toBe(50);
     expect(result.end.y).toBe(10); // Should be horizontally aligned with start
   });

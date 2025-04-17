@@ -2,7 +2,7 @@
 import { describe, test, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSnapToGrid } from '@/hooks/useSnapToGrid';
-import { snap, snapPointToGrid, snapLineToGrid } from '@/utils/grid/snapping';
+import { snapPointToGrid, snapLineToGrid, snap } from '@/utils/grid/snapping';
 import { Point } from '@/types/core/Point';
 
 describe('Snap to Grid Functions', () => {
