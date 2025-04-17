@@ -1,9 +1,11 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 import { DrawingTool, UseCanvasStateResult } from "@/types/canvasStateTypes";
 import { loadCanvasState, saveCanvasState } from "@/utils/persistence";
+import logger from "@/utils/logger";
 
 export const useCanvasState = (): UseCanvasStateResult => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
