@@ -14,7 +14,7 @@ export interface PerformanceTransaction {
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string, data?: Record<string, unknown>) => void;
+  finish: (status: string, data?: Record<string, unknown>) => void;
 }
 
 /**
@@ -34,7 +34,7 @@ export function startPerformanceTransaction(
       name,
       startTime: performance.now(),
       transaction: null,
-      finish: () => {} // No-op finish function
+      finish: (status: string, data?: Record<string, unknown>) => {} // No-op finish function
     };
   }
   
@@ -82,7 +82,7 @@ export function startPerformanceTransaction(
       name,
       startTime: performance.now(),
       transaction: null,
-      finish: () => {} // No-op finish function
+      finish: (status: string, data?: Record<string, unknown>) => {} // No-op finish function
     };
   }
 }
