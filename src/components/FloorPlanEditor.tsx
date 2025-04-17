@@ -10,7 +10,7 @@ import {
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
 
-// Import our new component modules
+// Import our component modules
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
 import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
 import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
