@@ -1,3 +1,4 @@
+
 /**
  * Canvas Monitoring Utilities for Sentry
  * Provides tools for tracking canvas-related issues and reporting them to Sentry
@@ -6,9 +7,10 @@ import { Canvas as FabricCanvas } from 'fabric';
 import * as Sentry from '@sentry/react';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
+import { startCanvasTransaction as startSentryCanvasTransaction } from '@/utils/sentry/performance';
 
 // Create a specialized transaction for canvas operations
-export function startCanvasTransaction(operation: string): {
+export function startCanvasTransaction(operation: string, canvas: FabricCanvas | null = null): {
   finish: (status?: 'ok' | 'error') => void;
   addData: (data: Record<string, any>) => void;
 } {

@@ -38,9 +38,9 @@ export function startCanvasTransaction(
     // Add canvas data if available
     if (canvas) {
       transaction.setData('canvas', {
-        width: canvas ? canvas.width : 0,
-        height: canvas ? canvas.height : 0,
-        objectCount: canvas ? canvas.getObjects().length : 0
+        width: canvas.width,
+        height: canvas.height,
+        objectCount: canvas.getObjects().length
       });
     }
 
