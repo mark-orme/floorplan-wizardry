@@ -53,10 +53,7 @@ export const FloorPlanEditor: React.FC = () => {
     canvasRef.current = canvasOperations;
     
     // Finish the transaction with success status
-    canvasTransaction.current.finish('ok', {
-      canvasWidth: canvasOperations.canvas.width,
-      canvasHeight: canvasOperations.canvas.height
-    });
+    canvasTransaction.current.finish('ok');
   };
 
   const handleUndo = () => {

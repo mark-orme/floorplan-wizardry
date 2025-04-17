@@ -24,14 +24,12 @@ export function measurePerformance<T>(
     const result = callback();
     
     // Finish the transaction with success
-    transaction.finish('ok', {});
+    transaction.finish('ok');
     
     return result;
   } catch (error) {
     // Finish the transaction with error
-    transaction.finish('error', { 
-      error: error instanceof Error ? error.message : String(error) 
-    });
+    transaction.finish('error');
     
     // Re-throw the error
     throw error;

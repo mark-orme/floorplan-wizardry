@@ -14,7 +14,7 @@ export interface PerformanceTransaction {
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string, data?: Record<string, unknown>) => void;
+  finish: (status?: string) => void; // Simplified finish signature with one argument
 }
 
 /**
@@ -54,7 +54,7 @@ export function startPerformanceTransaction(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok', data = {}) => {
+      finish: (status = 'ok') => { // Simplified signature with one argument
         if (transaction) {
           // Calculate the actual duration
           const endTime = performance.now();
@@ -63,8 +63,7 @@ export function startPerformanceTransaction(
           // Add data to transaction
           transaction.setData({
             status,
-            durationMs: duration,
-            ...data
+            durationMs: duration
           });
           
           // Set status and finish
@@ -92,18 +91,16 @@ export function startPerformanceTransaction(
  * 
  * @param transaction - Transaction object to finish
  * @param status - Transaction status
- * @param data - Additional data to include
  */
 export function finishPerformanceTransaction(
   transaction: PerformanceTransaction,
-  status: 'ok' | 'error' | 'cancelled' = 'ok',
-  data: Record<string, unknown> = {}
+  status: 'ok' | 'error' | 'cancelled' = 'ok'
 ): void {
   if (!transaction || !transaction.transaction) return;
   
   try {
-    // Execute the transaction's finish method with the provided parameters
-    transaction.finish(status, data);
+    // Execute the transaction's finish method with the provided status
+    transaction.finish(status);
     
     // Log performance info
     logger.debug(`Performance transaction ${transaction.name} completed:`, {

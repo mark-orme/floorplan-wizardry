@@ -35,7 +35,7 @@ export function trackGridCreationPerformance(
     duration,
     objectCount
   });
-  transaction.finish('ok', metrics);
+  transaction.finish('ok');
   
   logger.debug('Grid creation performance:', metrics);
   return metrics;

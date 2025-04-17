@@ -51,20 +51,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
       // Call the parent's onCanvasReady callback
       onCanvasReady(canvasOperations);
       
-      // Finish the transaction with success status and data
-      transaction.finish('ok', {
-        status: 'success',
-        canvasWidth: canvasOperations.canvas.width,
-        canvasHeight: canvasOperations.canvas.height
-      });
+      // Finish the transaction with success status
+      transaction.finish('ok');
     } catch (error) {
       logger.error("Error initializing canvas:", error);
       
       // Finish the transaction with error status
-      transaction.finish('error', { 
-        error: String(error),
-        status: 'error'
-      });
+      transaction.finish('error');
     }
   };
 

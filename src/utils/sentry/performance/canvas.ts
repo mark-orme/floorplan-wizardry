@@ -24,7 +24,7 @@ export function startCanvasTransaction(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string, data?: Record<string, unknown>) => void;
+  finish: (status?: string) => void; // Simplified to one argument
 } {
   if (!isSentryInitialized()) {
     return {
@@ -48,7 +48,7 @@ export function startCanvasTransaction(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok', data = {}) => {
+      finish: (status = 'ok') => { // Simplified to one argument
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
@@ -56,8 +56,7 @@ export function startCanvasTransaction(
           transaction.setData({
             status,
             durationMs: duration,
-            canvasObjects: canvas ? canvas.getObjects().length : 0,
-            ...data
+            canvasObjects: canvas ? canvas.getObjects().length : 0
           });
 
           transaction.status = status;
@@ -91,7 +90,7 @@ export function startCanvasTracking(
   name: string;
   startTime: number;
   transaction: any;
-  finish: (status?: string, data?: Record<string, unknown>) => void;
+  finish: (status?: string) => void; // Simplified to one argument
 } {
   if (!isSentryInitialized()) {
     return {
@@ -115,15 +114,14 @@ export function startCanvasTracking(
       name,
       startTime,
       transaction,
-      finish: (status = 'ok', data = {}) => {
+      finish: (status = 'ok') => { // Simplified to one argument
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
           transaction.setData({
             status,
-            durationMs: duration,
-            ...data
+            durationMs: duration
           });
 
           transaction.status = status;
