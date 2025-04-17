@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -9,7 +8,7 @@ import {
   trackUserInteraction, 
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
-import { startCanvasTransaction, startCanvasTracking } from "@/utils/sentry/performance";
+import { startCanvasTracking } from "@/utils/sentry/performance";
 
 // Import the missing components
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
@@ -45,7 +44,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   // Create a ref to hold the transaction
   const canvasTransaction = useRef(
-    startCanvasTracking('FloorPlanEditor', canvas)  // Pass required name parameter
+    startCanvasTracking('FloorPlanEditor', canvas)
   );
 
   const handleCanvasReady = (canvasOperations: any) => {

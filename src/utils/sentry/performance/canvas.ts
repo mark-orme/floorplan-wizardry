@@ -8,7 +8,7 @@ import { PerformanceTransaction } from './core';
 /**
  * Start a canvas-specific performance transaction
  * @param name Transaction name
- * @param canvas FabricCanvas instance
+ * @param canvas FabricCanvas instance (optional)
  * @param options Additional transaction options
  * @returns Transaction object with finish method
  */
