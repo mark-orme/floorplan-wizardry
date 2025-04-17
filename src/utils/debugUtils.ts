@@ -4,6 +4,7 @@
  * @module utils/debugUtils
  */
 import { LogData } from './logger';
+import { LogLevel, isLevelEnabled } from './logger/loggerConfig';
 
 // Store for throttled logs
 const throttledLogs: Record<string, { lastTime: number; count: number }> = {};

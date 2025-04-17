@@ -4,14 +4,7 @@
  * Provides consistent logging with severity levels, throttling, and environment awareness
  */
 import { log, info, warn, error, debug, devLog } from './debugUtils';
-
-// Log levels
-export enum LogLevel {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error'
-}
+import { LogLevel, isLevelEnabled } from './logger/loggerConfig';
 
 // Interface for structured log data
 export interface LogData {
@@ -36,9 +29,11 @@ class Logger {
   }
   
   /**
-   * Log a debug message (only in development)
+   * Log a debug message (only in development or when explicitly enabled)
    */
   debug(message: string, data?: LogData | any): void {
+    if (!isLevelEnabled(this.namespace, LogLevel.DEBUG)) return;
+    
     // Convert non-object data to LogData format
     const formattedData = this.formatData(data);
     debug(this.namespace, message, formattedData);
@@ -48,6 +43,8 @@ class Logger {
    * Log an info message
    */
   info(message: string, data?: LogData | any): void {
+    if (!isLevelEnabled(this.namespace, LogLevel.INFO)) return;
+    
     const formattedData = this.formatData(data);
     info(this.namespace, message, formattedData);
   }
@@ -56,6 +53,8 @@ class Logger {
    * Log a dev-only message (stripped in production)
    */
   dev(message: string, data?: LogData | any): void {
+    if (process.env.NODE_ENV === 'production') return;
+    
     const formattedData = this.formatData(data);
     devLog(this.namespace, message, formattedData);
   }
@@ -64,6 +63,8 @@ class Logger {
    * Log a warning message
    */
   warn(message: string, data?: LogData | any): void {
+    if (!isLevelEnabled(this.namespace, LogLevel.WARN)) return;
+    
     const formattedData = this.formatData(data);
     warn(this.namespace, message, formattedData);
   }
@@ -72,6 +73,8 @@ class Logger {
    * Log an error message
    */
   error(message: string, data?: LogData | any): void {
+    if (!isLevelEnabled(this.namespace, LogLevel.ERROR)) return;
+    
     const formattedData = this.formatData(data);
     error(this.namespace, message, formattedData);
   }
@@ -80,6 +83,8 @@ class Logger {
    * Group related logs together
    */
   group(name: string, callback: () => void): void {
+    if (process.env.NODE_ENV === 'production') return;
+    
     const groupKey = `${this.namespace}:${name}`;
     console.group(`[${groupKey}]`);
     callback();
@@ -90,6 +95,8 @@ class Logger {
    * Time an operation
    */
   time<T>(label: string, operation: () => T): T {
+    if (process.env.NODE_ENV === 'production') return operation();
+    
     const timeLabel = `${this.namespace}:${label}`;
     console.time(timeLabel);
     const result = operation();
