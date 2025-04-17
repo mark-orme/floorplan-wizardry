@@ -163,13 +163,13 @@ export function measurePerformance<T>(
  * Start a canvas performance transaction
  * 
  * @param name - Transaction name
- * @param canvas - Optional canvas object
+ * @param canvas - Canvas object (required)
  * @param options - Optional transaction options (tags, data)
  * @returns Transaction object
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas?: FabricCanvas | null,
+  canvas: FabricCanvas | null,
   options: Record<string, unknown> = {}
 ): {
   name: string;

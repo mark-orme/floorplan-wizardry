@@ -4,7 +4,7 @@ import { ConnectedDrawingCanvas } from "./ConnectedDrawingCanvas";
 import { useSentryCanvasMonitoring } from "@/hooks/useSentryCanvasMonitoring";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
-import { startPerformanceTransaction } from "@/utils/sentry/performance";
+import { startPerformanceTransaction, startCanvasTransaction } from "@/utils/sentry/performance";
 import { configureSentryContext } from "@/utils/sentry/initialization";
 import { trackCanvasOperation } from "@/utils/sentry/userInteractions";
 import logger from "@/utils/logger";
