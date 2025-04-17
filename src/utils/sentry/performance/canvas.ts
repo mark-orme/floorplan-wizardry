@@ -78,12 +78,21 @@ export function startCanvasTransaction(
 }
 
 /**
- * Ensure a default canvas transaction method that works even without a canvas
+ * Start canvas tracking without requiring a canvas object
  * 
  * @param name - Transaction name
+ * @param options - Optional transaction options
  * @returns Transaction object
  */
-export function startCanvasTracking(name: string) {
+export function startCanvasTracking(
+  name: string,
+  options: Record<string, unknown> = {}
+): {
+  name: string;
+  startTime: number;
+  transaction: any;
+  finish: (status?: string, data?: Record<string, unknown>) => void;
+} {
   if (!isSentryInitialized()) {
     return {
       name,
@@ -96,7 +105,8 @@ export function startCanvasTracking(name: string) {
   try {
     const transaction = Sentry.startTransaction({
       name: `canvas.${name}`,
-      op: 'performance'
+      op: 'performance',
+      ...options
     });
 
     const startTime = performance.now();

@@ -15,6 +15,7 @@ import { resetGridProgress } from "@/utils/gridManager";
 import { useCanvasInitialization } from "./canvas/useCanvasInitialization";
 import { useDebugPanel } from "./canvas/useDebugPanel";
 import { CanvasRetryButton } from "./canvas/CanvasRetryButton";
+import { startCanvasTransaction } from "@/utils/sentry/performance";
 
 // Constants for component
 const CANVAS_WIDTH = 800;
@@ -59,6 +60,12 @@ export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
   const handleGridCreated = (gridObjects: FabricObject[]) => {
     console.log(`Grid created with ${gridObjects.length} objects`);
     gridLayerRef.current = gridObjects;
+    
+    // Track grid creation performance
+    const transaction = startCanvasTransaction('grid.created', fabricCanvas, {
+      gridObjects: gridObjects.length
+    });
+    transaction.finish('ok', { gridObjects: gridObjects.length });
   };
   
   // Set ready state after a short delay to ensure DOM is fully rendered
