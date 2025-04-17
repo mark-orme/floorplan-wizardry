@@ -1,4 +1,3 @@
-
 /**
  * Sentry performance monitoring utilities
  * @module utils/sentry/performance
@@ -170,7 +169,7 @@ export function measurePerformance<T>(
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas: FabricCanvas | null,
+  canvas: FabricCanvas | null = null,
   options: Record<string, unknown> = {}
 ): {
   name: string;
