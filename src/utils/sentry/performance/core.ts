@@ -43,7 +43,7 @@ export function startPerformanceTransaction(
     const transaction = Sentry.startTransaction({
       name,
       op: 'performance',
-      ...(options || {})
+      ...options
     });
     
     // Store start time for duration calculation
