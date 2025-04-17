@@ -1,48 +1,65 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
-import { snapPointToGrid } from '@/utils/grid/snapping';
-import { lineToolLogger } from '@/utils/logger';
 
+/**
+ * Options for useEnhancedGridSnapping hook
+ */
 export interface UseEnhancedGridSnappingOptions {
-  initialSnapEnabled?: boolean;
+  /**
+   * Grid size in pixels
+   */
   gridSize?: number;
+  
+  /**
+   * Initial snap enabled state
+   */
+  initialSnapEnabled?: boolean;
+  
+  /**
+   * Snap threshold in pixels
+   */
   snapThreshold?: number;
 }
 
 /**
- * Enhanced grid snapping hook with better performance
+ * Enhanced grid snapping hook with improved reliability
  */
-export const useEnhancedGridSnapping = ({
-  initialSnapEnabled = true,
-  gridSize = 20,
-  snapThreshold = 5
-}: UseEnhancedGridSnappingOptions = {}) => {
+export const useEnhancedGridSnapping = (options: UseEnhancedGridSnappingOptions = {}) => {
+  const {
+    gridSize = 20,
+    initialSnapEnabled = true,
+    snapThreshold = 5
+  } = options;
+  
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
   
   /**
-   * Snap a point to the grid
-   */
-  const snapToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return point;
-    return snapPointToGrid(point, gridSize);
-  }, [snapEnabled, gridSize]);
-  
-  /**
-   * Toggle grid snapping
+   * Toggle grid snapping on/off
    */
   const toggleGridSnapping = useCallback(() => {
-    setSnapEnabled(prev => {
-      const newValue = !prev;
-      lineToolLogger.debug(`Grid snapping ${newValue ? 'enabled' : 'disabled'}`);
-      return newValue;
-    });
+    setSnapEnabled(prev => !prev);
   }, []);
+  
+  /**
+   * Snap a point to the nearest grid point
+   */
+  const snapToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) {
+      return point;
+    }
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [snapEnabled, gridSize]);
   
   return {
     snapEnabled,
-    snapToGrid,
     toggleGridSnapping,
+    snapToGrid,
+    gridSize,
     snapThreshold
   };
 };

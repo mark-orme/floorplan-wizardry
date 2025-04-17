@@ -14,6 +14,7 @@ import { typeSafetyRules } from './eslint/type-safety-rules.js';
 import { testMockValidationRules } from './eslint/typescript/test-mock-validation.js';
 import { fabricTestTypingRules } from './eslint/fabric-test-typing-rules.js';
 import { fabricSafetyRules } from './eslint/typescript/fabric-safety.js';
+import { jsxExtensionValidationRule } from './eslint/typescript/jsx-extension-validation.js';
 
 export default [
   baseConfig,
@@ -30,5 +31,6 @@ export default [
   typeSafetyRules,
   testMockValidationRules,
   fabricTestTypingRules,
-  fabricSafetyRules
+  fabricSafetyRules,
+  jsxExtensionValidationRule
 ];

@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
