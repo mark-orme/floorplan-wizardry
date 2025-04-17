@@ -1,4 +1,3 @@
-
 /**
  * Sentry performance monitoring utilities
  * @module utils/sentry/performance
@@ -170,7 +169,7 @@ export function measurePerformance<T>(
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas: FabricCanvas | null,
+  canvas: FabricCanvas | null = null,
   options: Record<string, unknown> = {}
 ): {
   name: string;
@@ -178,7 +177,6 @@ export function startCanvasTransaction(
   transaction: any;
   finish: (status?: string, data?: Record<string, unknown>) => void;
 } {
-  // If Sentry isn't initialized, return a no-op transaction object
   if (!isSentryInitialized()) {
     return {
       name,
@@ -187,16 +185,16 @@ export function startCanvasTransaction(
       finish: () => {} // No-op finish function
     };
   }
-  
+
   try {
     const transaction = Sentry.startTransaction({
       name: `canvas.${name}`,
       op: 'performance',
       ...options
     });
-    
+
     const startTime = performance.now();
-    
+
     return {
       name,
       startTime,
@@ -205,14 +203,14 @@ export function startCanvasTransaction(
         if (transaction) {
           const endTime = performance.now();
           const duration = endTime - startTime;
-          
+
           transaction.setData({
             status,
             durationMs: duration,
             canvasObjects: canvas ? canvas.getObjects().length : 0,
             ...data
           });
-          
+
           transaction.status = status;
           transaction.finish();
         }
@@ -220,6 +218,62 @@ export function startCanvasTransaction(
     };
   } catch (error) {
     logger.error(`Error starting transaction ${name}:`, error);
+    
+    return {
+      name,
+      startTime: performance.now(),
+      transaction: null,
+      finish: () => {} // No-op finish function
+    };
+  }
+}
+
+/**
+ * Ensure a default canvas transaction method that works even without a canvas
+ * 
+ * @param name - Transaction name
+ * @returns Transaction object
+ */
+export function startCanvasTracking(name: string) {
+  if (!isSentryInitialized()) {
+    return {
+      name,
+      startTime: performance.now(),
+      transaction: null,
+      finish: () => {} // No-op finish function
+    };
+  }
+
+  try {
+    const transaction = Sentry.startTransaction({
+      name: `canvas.${name}`,
+      op: 'performance'
+    });
+
+    const startTime = performance.now();
+
+    return {
+      name,
+      startTime,
+      transaction,
+      finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
+        if (transaction) {
+          const endTime = performance.now();
+          const duration = endTime - startTime;
+
+          transaction.setData({
+            status,
+            durationMs: duration,
+            ...data
+          });
+
+          transaction.status = status;
+          transaction.finish();
+        }
+      }
+    };
+  } catch (error) {
+    logger.error(`Error starting canvas tracking for ${name}:`, error);
     
     return {
       name,
