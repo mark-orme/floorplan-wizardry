@@ -9,7 +9,7 @@ import {
   trackUserInteraction, 
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
-import { startCanvasTransaction } from "@/utils/sentry/performance";
+import { startCanvasTransaction, startCanvasTracking } from "@/utils/sentry/performance";
 
 // Import the missing components
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
