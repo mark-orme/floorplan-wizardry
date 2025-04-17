@@ -111,7 +111,6 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
       syncCanvas(userName);
     };
     
-    // Attach event handlers
     fabricCanvasRef.current.on('object:modified', handleObjectModified);
     fabricCanvasRef.current.on('path:created', handlePathCreated);
     
@@ -128,37 +127,30 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
       clearTimeout(initialSyncTimer);
     };
   }, [fabricCanvasRef.current, enableCollaboration, isCanvasReady, syncCanvas, userName]);
-  
-  // Load canvas data on initial mount
-  useEffect(() => {
-    if (!isCanvasReady) return;
-    
-    // Check if there's saved data
-    const hasSavedData = localStorage.getItem(storageKey) !== null;
-    
-    if (hasSavedData) {
-      loadCanvas();
-    }
-  }, [isCanvasReady, loadCanvas, storageKey]);
-  
+
   return (
-    <div className="relative">
-      <canvas ref={canvasRef} className="border border-gray-200 rounded-md shadow-md" />
+    <div className="relative w-full h-full">
+      <canvas 
+        ref={canvasRef}
+        className="w-full h-full"
+        data-testid="persistent-canvas"
+      />
       
       {showControls && (
-        <div className="absolute bottom-2 right-2 flex gap-2">
+        <div className="absolute top-2 right-2 flex gap-2">
           <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={saveCanvas} 
+            variant="secondary" 
+            size="sm"
+            onClick={() => saveCanvas()}
             disabled={isSaving}
           >
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={loadCanvas} 
+          
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => loadCanvas()}
             disabled={isLoading}
           >
             {isLoading ? 'Loading...' : 'Load'}
@@ -167,14 +159,8 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
       )}
       
       {enableCollaboration && collaboratorsCount > 0 && (
-        <div className="absolute top-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+        <div className="absolute top-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
           {collaboratorsCount} {collaboratorsCount === 1 ? 'person' : 'people'} editing
-        </div>
-      )}
-      
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-2 left-2 bg-white/80 px-2 py-1 rounded text-xs">
-          FPS: {metrics.fps} | Objects: {metrics.objectCount}
         </div>
       )}
     </div>

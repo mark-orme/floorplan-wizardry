@@ -12,9 +12,6 @@ interface UseCanvasAutoSaveProps {
   historyIndex: number;
 }
 
-/**
- * Hook to handle auto-saving the canvas to Supabase
- */
 export const useCanvasAutoSave = ({
   canvas,
   historyStack,
@@ -22,10 +19,15 @@ export const useCanvasAutoSave = ({
 }: UseCanvasAutoSaveProps) => {
   const { saveToSupabase, isLoggedIn } = useSupabaseFloorPlans();
   const syncTimeoutRef = useRef<number | null>(null);
+  const lastSaveRef = useRef<string | null>(null);
 
   // Debounced sync with Supabase if user is logged in
   useEffect(() => {
     if (!canvas || !isLoggedIn || historyStack.length === 0) return;
+
+    // Don't sync if content hasn't changed
+    const currentState = historyStack[historyIndex];
+    if (currentState === lastSaveRef.current) return;
 
     // Clear existing timeout
     if (syncTimeoutRef.current) {
@@ -37,8 +39,8 @@ export const useCanvasAutoSave = ({
       // Use the most recent canvas state for cloud sync
       const canvasState = JSON.parse(historyStack[historyIndex]);
       
-      // We need to format this as a FloorPlan for Supabase
-      const floorPlans: FloorPlan[] = [{ 
+      // Format as a FloorPlan for Supabase
+      const floorPlan: FloorPlan = {
         id: HISTORY_KEY,
         name: `Floor Plan (${new Date().toLocaleDateString()})`,
         label: `Floor Plan (${new Date().toLocaleDateString()})`,
@@ -58,9 +60,10 @@ export const useCanvasAutoSave = ({
           paperSize: 'A4',
           level: 0
         }
-      }];
+      };
       
-      saveToSupabase(floorPlans);
+      saveToSupabase([floorPlan]);
+      lastSaveRef.current = currentState;
       logger.debug("Canvas state synced to cloud");
     }, 5000); // Sync after 5 seconds of inactivity
     
@@ -71,4 +74,8 @@ export const useCanvasAutoSave = ({
       }
     };
   }, [canvas, historyStack, historyIndex, isLoggedIn, saveToSupabase]);
+
+  return {
+    lastSaveRef
+  };
 };
