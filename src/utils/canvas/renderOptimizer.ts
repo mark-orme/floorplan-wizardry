@@ -1,42 +1,29 @@
 
 import { Canvas as FabricCanvas } from 'fabric';
 
-const animationFrames = new Map<string, number>();
+/**
+ * Optimize canvas performance by configuring rendering and caching settings
+ * @param canvas Fabric canvas instance to optimize
+ */
+export const optimizeCanvasPerformance = (canvas: FabricCanvas): void => {
+  if (!canvas) return;
 
-export const requestOptimizedRender = (
-  canvas: FabricCanvas,
-  id: string = 'default'
-): void => {
-  if (animationFrames.has(id)) {
-    cancelAnimationFrame(animationFrames.get(id)!);
-  }
-  
-  const frameId = requestAnimationFrame(() => {
-    canvas.requestRenderAll();
-    animationFrames.delete(id);
+  // Disable automatic rendering for better performance control
+  canvas.renderOnAddRemove = false;
+
+  // Enable object caching for improved rendering speed
+  canvas.forEachObject(obj => {
+    // Disable caching for path and group objects to prevent potential rendering issues
+    obj.objectCaching = !['path', 'group'].includes(obj.type || '');
   });
-  
-  animationFrames.set(id, frameId);
+
+  // Enable retina scaling for crisp rendering on high-DPI displays
+  canvas.enableRetinaScaling = true;
+
+  // Optimize selection and interaction performance
+  canvas.skipTargetFind = false;
 };
 
-export const cancelOptimizedRender = (id: string = 'default'): void => {
-  if (animationFrames.has(id)) {
-    cancelAnimationFrame(animationFrames.get(id)!);
-    animationFrames.delete(id);
-  }
-};
+// Export existing functions from the previous renderOptimizer implementation
+export * from './renderOptimizer';
 
-export const createSmoothEventHandler = <T extends (...args: any[]) => void>(
-  callback: T,
-  throttleTime: number = 16
-): T => {
-  let lastRun = 0;
-  
-  return ((...args: Parameters<T>) => {
-    const now = performance.now();
-    if (now - lastRun >= throttleTime) {
-      lastRun = now;
-      return callback(...args);
-    }
-  }) as T;
-};
