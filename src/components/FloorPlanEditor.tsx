@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -9,6 +10,12 @@ import {
   InteractionCategory 
 } from "@/utils/sentry/userInteractions";
 import { startCanvasTransaction } from "@/utils/sentry/performance";
+
+// Import the missing components
+import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
+import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
+import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
+import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
