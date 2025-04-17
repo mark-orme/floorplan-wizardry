@@ -24,7 +24,7 @@ export const useMemoizedDrawingComponents = ({
   lineColor: string;
   lineThickness: number;
   showGuide: boolean;
-  handleCloseGuide: (dontShowAgain: boolean) => void;
+  handleCloseGuide: () => void;
   handleOpenGuideChange: (open: boolean) => void;
 }) => {
   

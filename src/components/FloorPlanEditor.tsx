@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -99,7 +100,7 @@ export const FloorPlanEditor: React.FC = () => {
 
       <MeasurementGuideModal
         open={showMeasurementGuide}
-        onClose={handleCloseMeasurementGuide}
+        onClose={() => handleCloseMeasurementGuide(false)}
         onOpenChange={setShowMeasurementGuide}
       />
     </div>

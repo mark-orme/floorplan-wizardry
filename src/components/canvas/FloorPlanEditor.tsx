@@ -132,7 +132,7 @@ export const FloorPlanEditor: React.FC = () => {
 
       <MeasurementGuideModal
         open={showMeasurementGuide}
-        onClose={handleCloseMeasurementGuide}
+        onClose={() => handleCloseMeasurementGuide(false)}
         onOpenChange={setShowMeasurementGuide}
       />
 
