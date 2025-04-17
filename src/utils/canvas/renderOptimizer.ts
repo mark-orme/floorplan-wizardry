@@ -2,6 +2,34 @@
 import { Canvas as FabricCanvas } from 'fabric';
 
 /**
+ * Safely get clientX from a pointer event
+ * @param evt Mouse or Touch event
+ * @returns clientX coordinate
+ */
+const getClientX = (evt: MouseEvent | TouchEvent): number => {
+  if ('clientX' in evt) {
+    return evt.clientX;
+  } else if (evt.touches && evt.touches.length > 0) {
+    return evt.touches[0].clientX;
+  }
+  return 0;
+};
+
+/**
+ * Safely get clientY from a pointer event
+ * @param evt Mouse or Touch event
+ * @returns clientY coordinate
+ */
+const getClientY = (evt: MouseEvent | TouchEvent): number => {
+  if ('clientY' in evt) {
+    return evt.clientY;
+  } else if (evt.touches && evt.touches.length > 0) {
+    return evt.touches[0].clientY;
+  }
+  return 0;
+};
+
+/**
  * Optimize canvas performance by configuring rendering and caching settings
  * @param canvas Fabric canvas instance to optimize
  */
@@ -56,8 +84,8 @@ const setupEventDelegation = (canvas: FabricCanvas): void => {
     if (evt.altKey === true) {
       this.isDragging = true;
       this.selection = false;
-      this.lastPosX = evt.clientX;
-      this.lastPosY = evt.clientY;
+      this.lastPosX = getClientX(evt);
+      this.lastPosY = getClientY(evt);
     }
   });
   
@@ -67,12 +95,12 @@ const setupEventDelegation = (canvas: FabricCanvas): void => {
       const vpt = this.viewportTransform;
       if (!vpt) return;
       
-      vpt[4] += e.clientX - this.lastPosX;
-      vpt[5] += e.clientY - this.lastPosY;
+      vpt[4] += getClientX(e) - this.lastPosX;
+      vpt[5] += getClientY(e) - this.lastPosY;
       
       this.requestRenderAll();
-      this.lastPosX = e.clientX;
-      this.lastPosY = e.clientY;
+      this.lastPosX = getClientX(e);
+      this.lastPosY = getClientY(e);
     }
   });
   

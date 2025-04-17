@@ -1,8 +1,9 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Point } from 'fabric';
 import { batchCanvasOperations, debounce } from '@/utils/canvas/renderOptimizer';
 import { useOptimizedObjectManagement } from './useOptimizedObjectManagement';
+import { Point as AppPoint } from '@/types/core/Point';
 
 interface UseOptimizedCanvasStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -59,10 +60,10 @@ export const useOptimizedCanvasState = ({
     // Clamp zoom between reasonable values
     newZoom = Math.max(0.1, Math.min(10, newZoom));
     
-    canvas.zoomToPoint(
-      { x: canvas.width! / 2, y: canvas.height! / 2 },
-      newZoom
-    );
+    // Create a proper Fabric.js Point object for the center
+    const centerPoint = new Point(canvas.width! / 2, canvas.height! / 2);
+    
+    canvas.zoomToPoint(centerPoint, newZoom);
     
     setZoom(newZoom);
     canvas.requestRenderAll();
