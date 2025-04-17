@@ -22,7 +22,8 @@ export const FloorPlanEditor: React.FC = () => {
   const {
     showMeasurementGuide,
     handleCloseMeasurementGuide,
-    openMeasurementGuide
+    openMeasurementGuide,
+    setShowMeasurementGuide
   } = useMeasurementGuide();
 
   const {
@@ -97,6 +98,7 @@ export const FloorPlanEditor: React.FC = () => {
       <MeasurementGuideModal
         open={showMeasurementGuide}
         onClose={handleCloseMeasurementGuide}
+        onOpenChange={setShowMeasurementGuide}
       />
 
       <RestoreDrawingButton

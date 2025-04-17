@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { HelpCircle, Ruler } from "lucide-react";
+import { Ruler } from "lucide-react";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { isIOSPlatform } from "@/utils/fabric/events";
 
@@ -34,6 +34,7 @@ export const DrawingToolbarModals = () => {
 
       <MeasurementGuideModal 
         open={showMeasurementGuide} 
+        onClose={handleCloseMeasurementGuide}
         onOpenChange={(open) => {
           if (!open) {
             handleCloseMeasurementGuide(false);

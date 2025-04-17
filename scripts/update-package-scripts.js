@@ -15,7 +15,8 @@ packageJson.scripts = {
   "dev:enhanced": "vite --config vite.config.enhanced.ts",
   "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
   "lint:ci": "eslint . --ext ts,tsx",
-  "test:coverage": "vitest run --coverage && node scripts/check-coverage.js"
+  "test:coverage": "vitest run --coverage && node scripts/check-coverage.js",
+  "test:e2e": "playwright test"
 };
 
 // Write the updated package.json
