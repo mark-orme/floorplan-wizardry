@@ -34,7 +34,6 @@ export const useCanvasDrawingLogger = ({
       logger.debug('Canvas debug details', {
         viewportTransform: canvas.viewportTransform,
         renderOnAddRemove: canvas.renderOnAddRemove,
-        stateful: canvas.stateful,
         selection: canvas.selection
       });
     }
