@@ -16,20 +16,33 @@ import { getMeasurementSystem } from '@/i18n/config';
 
 interface MeasurementGuideModalProps {
   open: boolean;
-  onClose: (dontShowAgain: boolean) => void;
+  onClose?: (dontShowAgain: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function MeasurementGuideModal({ open, onClose }: MeasurementGuideModalProps) {
+export function MeasurementGuideModal({ open, onClose, onOpenChange }: MeasurementGuideModalProps) {
   const { t } = useTranslation();
   const [dontShowAgain, setDontShowAgain] = React.useState(false);
   const measurementSystem = getMeasurementSystem();
   
   const handleClose = () => {
-    onClose(dontShowAgain);
+    if (onClose) {
+      onClose(dontShowAgain);
+    }
+  };
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      handleClose();
+    }
+    
+    if (onOpenChange) {
+      onOpenChange(isOpen);
+    }
   };
   
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>{t('measurementGuide.title', 'Measurement Guide')}</DialogTitle>
