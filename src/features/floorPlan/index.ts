@@ -13,5 +13,16 @@ export { FloorPlanActions } from '@/components/property/FloorPlanActions';
 export { useFloorPlanQuery } from '@/hooks/query/useFloorPlanQuery';
 
 // Types (importing from the updated floorPlanTypes)
-export type { FloorPlan, Room, Wall, Stroke, Point, FloorPlanMetadata, StrokeTypeLiteral, StrokeType, RoomTypeLiteral } from '@/types/floorPlanTypes';
+export type { 
+  FloorPlan, 
+  Room, 
+  Wall, 
+  Stroke, 
+  Point, 
+  FloorPlanMetadata, 
+  StrokeTypeLiteral, 
+  StrokeType, 
+  RoomTypeLiteral 
+} from '@/types/floorPlanTypes';
+
 export { PaperSize } from '@/types/floorPlanTypes';

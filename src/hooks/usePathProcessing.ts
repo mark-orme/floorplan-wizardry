@@ -39,32 +39,6 @@ export interface UsePathProcessingProps {
 }
 
 /**
- * Extract points from a path object
- * 
- * @param path - Fabric path object
- * @returns Array of point coordinates
- */
-const extractPointsFromPath = (path: FabricPath): Point[] => {
-  const points: Point[] = [];
-  const pathData = path.path;
-  
-  if (!pathData || !Array.isArray(pathData)) {
-    return points;
-  }
-  
-  // Extract points from path data
-  // This is a simplified version
-  for (let i = 0; i < pathData.length; i++) {
-    const segment = pathData[i];
-    if (segment[0] === 'L' || segment[0] === 'M') {
-      points.push({ x: segment[1], y: segment[2] });
-    }
-  }
-  
-  return points;
-};
-
-/**
  * Convert drawing tool to stroke type
  * @param tool - The drawing tool
  * @returns The corresponding stroke type
@@ -186,11 +160,16 @@ export const usePathProcessing = ({
       const updatedFloorPlans = [...prevFloorPlans];
       
       if (updatedFloorPlans[currentFloor]) {
+        // Ensure the strokes array exists
+        if (!updatedFloorPlans[currentFloor].strokes) {
+          updatedFloorPlans[currentFloor].strokes = [];
+        }
+        
         // Update existing floor plan
         updatedFloorPlans[currentFloor] = {
           ...updatedFloorPlans[currentFloor],
           strokes: [
-            ...updatedFloorPlans[currentFloor].strokes,
+            ...updatedFloorPlans[currentFloor].strokes!,
             stroke
           ],
           updatedAt: new Date().toISOString()
@@ -206,4 +185,30 @@ export const usePathProcessing = ({
   return {
     processCreatedPath
   };
+};
+
+/**
+ * Helper function for extracting points from a path
+ * 
+ * @param path - Fabric path object
+ * @returns Array of point coordinates
+ */
+const extractPointsFromPath = (path: FabricPath): Point[] => {
+  const points: Point[] = [];
+  const pathData = path.path;
+  
+  if (!pathData || !Array.isArray(pathData)) {
+    return points;
+  }
+  
+  // Extract points from path data
+  // This is a simplified version
+  for (let i = 0; i < pathData.length; i++) {
+    const segment = pathData[i];
+    if (segment[0] === 'L' || segment[0] === 'M') {
+      points.push({ x: segment[1], y: segment[2] });
+    }
+  }
+  
+  return points;
 };

@@ -71,9 +71,21 @@ export function createMockFloorPlanDrawingResult(
       
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
-        props.setFloorPlan({ ...props.floorPlan });
+        props.setFloorPlan((prevFloorPlan) => {
+          // Check if strokes property exists, create it if it doesn't
+          return {
+            ...prevFloorPlan,
+            strokes: [...(prevFloorPlan.strokes || [])]
+          };
+        });
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
         const updatedFloorPlans = [...props.floorPlans];
+        if (updatedFloorPlans[props.currentFloor]) {
+          // Create strokes array if it doesn't exist
+          if (!updatedFloorPlans[props.currentFloor].strokes) {
+            updatedFloorPlans[props.currentFloor].strokes = [];
+          }
+        }
         props.setFloorPlans(updatedFloorPlans);
       }
     },
@@ -87,14 +99,18 @@ export function createMockFloorPlanDrawingResult(
       
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
-        props.setFloorPlan({
-          ...props.floorPlan,
-          strokes: [...props.floorPlan.strokes, stroke]
-        });
+        props.setFloorPlan((prevFloorPlan) => ({
+          ...prevFloorPlan,
+          strokes: [...(prevFloorPlan.strokes || []), stroke]
+        }));
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
         const updatedFloorPlans = [...props.floorPlans];
         const currentFloorPlan = updatedFloorPlans[props.currentFloor];
         if (currentFloorPlan) {
+          // Create strokes array if it doesn't exist
+          if (!currentFloorPlan.strokes) {
+            currentFloorPlan.strokes = [];
+          }
           currentFloorPlan.strokes = [...currentFloorPlan.strokes, stroke];
           props.setFloorPlans(updatedFloorPlans);
         }

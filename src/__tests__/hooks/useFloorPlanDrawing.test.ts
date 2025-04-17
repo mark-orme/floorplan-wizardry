@@ -145,8 +145,8 @@ describe('useFloorPlanDrawing', () => {
     const updatedFloorPlan = updateFn(mockFloorPlan);
     
     // Verify the updated floor plan includes a new stroke with our points
-    expect(updatedFloorPlan.strokes.length).toBe(1);
-    expect(updatedFloorPlan.strokes[0].points).toEqual([startPoint, endPoint]);
+    expect(updatedFloorPlan.strokes?.length).toBe(1);
+    expect(updatedFloorPlan.strokes?.[0].points).toEqual([startPoint, endPoint]);
   });
   
   it('should add a stroke when addStroke is called', () => {
@@ -180,8 +180,8 @@ describe('useFloorPlanDrawing', () => {
     const updatedFloorPlan = updateFn(mockFloorPlan);
     
     // Verify the updated floor plan includes our stroke
-    expect(updatedFloorPlan.strokes.length).toBe(1);
-    expect(updatedFloorPlan.strokes[0]).toEqual(mockStroke);
+    expect(updatedFloorPlan.strokes?.length).toBe(1);
+    expect(updatedFloorPlan.strokes?.[0]).toEqual(mockStroke);
   });
   
   it('should calculate areas when calculateAreas is called', () => {

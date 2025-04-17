@@ -1,12 +1,19 @@
+
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Canvas as FabricCanvas, Point } from 'fabric';
 import { batchCanvasOperations, debounce } from '@/utils/canvas/renderOptimizer';
 import { useOptimizedObjectManagement } from './useOptimizedObjectManagement';
 import { Point as AppPoint } from '@/types/core/Point';
 import { serializeCanvasState } from '@/utils/canvas/canvasSerializer';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import * as Sentry from '@sentry/browser'; // Add Sentry import if needed
 
 interface UseOptimizedCanvasStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  floorPlans?: FloorPlan[]; // Make these props optional since they may not always be provided
+  currentFloor?: number;
+  setFloorPlans?: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  historyRef?: React.MutableRefObject<{past: any[], future: any[]}>;
 }
 
 /**
@@ -14,7 +21,11 @@ interface UseOptimizedCanvasStateProps {
  * Reduces renders and improves performance for canvas operations
  */
 export const useOptimizedCanvasState = ({
-  fabricCanvasRef
+  fabricCanvasRef,
+  floorPlans,
+  currentFloor,
+  setFloorPlans,
+  historyRef
 }: UseOptimizedCanvasStateProps) => {
   // Canvas state
   const [zoom, setZoom] = useState(1);
@@ -186,19 +197,28 @@ export const useOptimizedCanvasState = ({
     });
   }, [fabricCanvasRef, updateCanvasState]);
 
+  // This function should only be defined if all required dependencies are provided
   const handleFloorSelect = useCallback((index: number) => {
+    // Check if we have all required props and the floor selection is valid
+    if (!floorPlans || typeof currentFloor !== 'number' || !historyRef || !setFloorPlans) {
+      console.warn('Missing required props for floor selection');
+      return;
+    }
+    
     if (index >= 0 && index < floorPlans.length && index !== currentFloor) {
-      // Add Sentry breadcrumb for floor change
-      Sentry.addBreadcrumb({
-        category: 'floorplan',
-        message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
-        level: 'info',
-        data: {
-          previousFloor: currentFloor,
-          newFloor: index,
-          floorName: floorPlans[index]?.name
-        }
-      });
+      // Add Sentry breadcrumb for floor change if Sentry is available
+      if (Sentry) {
+        Sentry.addBreadcrumb({
+          category: 'floorplan',
+          message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
+          level: 'info',
+          data: {
+            previousFloor: currentFloor,
+            newFloor: index,
+            floorName: floorPlans[index]?.name
+          }
+        });
+      }
       
       // Clear history when switching floors
       historyRef.current = { past: [], future: [] };
@@ -238,6 +258,9 @@ export const useOptimizedCanvasState = ({
     // Undo/Redo support
     createSnapshot,
     restoreSnapshot,
+    
+    // Floor selection
+    handleFloorSelect,
     
     // Force refresh state
     updateCanvasState

@@ -1,11 +1,18 @@
+
 /**
  * Drawing utilities
  * @module drawing
  */
 
 // Re-export types from floorPlanTypes.ts using export type for TypeScript isolatedModules compatibility
-export type { FloorPlan, Wall, Room, Stroke, PaperSize } from '@/types/floorPlanTypes';
-export type { Point } from '@/types/core/Point';
+export type { 
+  FloorPlan, 
+  Wall, 
+  Room, 
+  Stroke, 
+  PaperSize,
+  Point
+} from '@/types/floorPlanTypes';
 
 import { 
   PIXELS_PER_METER,
@@ -77,7 +84,6 @@ export * from './fabricPath'; // Use new modular path utilities
 export * from './floorPlanStorage';
 
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { Point } from '@/types/core/Point';
 
 /**
  * Drawing utility functions
