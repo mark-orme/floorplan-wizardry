@@ -12,17 +12,17 @@ import { CanvasActions } from './toolbar/CanvasActions';
 
 export interface DrawingToolbarProps {
   /** Active drawing tool */
-  activeTool: DrawingMode;
+  activeTool?: DrawingMode;
   /** Current line color */
-  lineColor: string;
+  lineColor?: string;
   /** Current line thickness */
-  lineThickness: number;
+  lineThickness?: number;
   /** Tool change handler */
-  onToolChange: (tool: DrawingMode) => void;
+  onToolChange?: (tool: DrawingMode) => void;
   /** Color change handler */
-  onColorChange: (color: string) => void;
+  onColorChange?: (color: string) => void;
   /** Thickness change handler */
-  onThicknessChange: (thickness: number) => void;
+  onThicknessChange?: (thickness: number) => void;
   /** Clear canvas handler */
   onClear?: () => void;
   /** Save canvas handler */

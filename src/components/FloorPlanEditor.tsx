@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -45,7 +44,7 @@ export const FloorPlanEditor: React.FC = () => {
 
   // Create a ref to hold the transaction
   const canvasTransaction = useRef(
-    startCanvasTransaction('FloorPlanEditor', null, {})
+    startCanvasTracking('FloorPlanEditor')
   );
 
   const handleCanvasReady = (canvasOperations: any) => {
