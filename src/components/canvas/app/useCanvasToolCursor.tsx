@@ -31,6 +31,21 @@ export const useCanvasToolCursor = ({
       case DrawingMode.ERASER:
         canvasRef.current.style.cursor = 'cell';
         break;
+      case DrawingMode.STRAIGHT_LINE:
+      case DrawingMode.WALL:
+        // Hide default cursor, using custom preview instead
+        canvasRef.current.style.cursor = 'none';
+        break;
+      case DrawingMode.RECTANGLE:
+      case DrawingMode.CIRCLE:
+        canvasRef.current.style.cursor = 'crosshair';
+        break;
+      case DrawingMode.TEXT:
+        canvasRef.current.style.cursor = 'text';
+        break;
+      case DrawingMode.MEASURE:
+        canvasRef.current.style.cursor = 'help';
+        break;
       default:
         canvasRef.current.style.cursor = 'crosshair';
     }

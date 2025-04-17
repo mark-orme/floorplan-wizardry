@@ -39,8 +39,8 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
       className={cn(
         'flex items-center justify-center transition-all duration-200',
         isActive 
-          ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90 border-primary/70' 
-          : 'hover:bg-accent/50 hover:border-primary/30 shadow-sm hover:shadow',
+          ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90 border-primary/70 ring-2 ring-primary/20 ring-offset-1' 
+          : 'hover:bg-accent/50 hover:border-primary/30 shadow-sm hover:shadow hover:ring-1 hover:ring-primary/10',
         className
       )}
     >
