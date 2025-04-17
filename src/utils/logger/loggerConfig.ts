@@ -1,93 +1,93 @@
 
 /**
- * Logger Configuration
- * Centralized control for logging behavior across the application
+ * Logger configuration
+ * Controls logging levels and namespaces
  */
 
-// Log level definitions
+// Define log levels
 export enum LogLevel {
-  NONE = 0,    // No logging
-  ERROR = 1,   // Only errors
-  WARN = 2,    // Errors and warnings
-  INFO = 3,    // Errors, warnings, and info
-  DEBUG = 4    // All logs
+  NONE = 0,
+  ERROR = 1,
+  WARN = 2,
+  INFO = 3,
+  DEBUG = 4
 }
 
-// Module-specific log level configuration
-export interface ModuleLogConfig {
-  level: LogLevel;
-  enabled: boolean;
+// Store for log level configuration
+interface LoggerConfig {
+  global: LogLevel;
+  namespaces: Record<string, LogLevel>;
+  enabled: Record<string, boolean>;
 }
 
 // Default configuration
-const defaultModuleConfig: ModuleLogConfig = {
-  level: process.env.NODE_ENV === 'production' ? LogLevel.ERROR : LogLevel.DEBUG,
-  enabled: true
+const config: LoggerConfig = {
+  global: process.env.NODE_ENV === 'production' ? LogLevel.ERROR : LogLevel.DEBUG,
+  namespaces: {},
+  enabled: {}
 };
 
-// Module-specific configurations
-const moduleConfigs: Record<string, ModuleLogConfig> = {
-  'line-tool': { 
-    level: process.env.NODE_ENV === 'production' ? LogLevel.WARN : LogLevel.DEBUG, 
-    enabled: true 
-  },
-  'grid': { 
-    level: process.env.NODE_ENV === 'production' ? LogLevel.ERROR : LogLevel.INFO, 
-    enabled: true 
-  },
-  'canvas': { 
-    level: process.env.NODE_ENV === 'production' ? LogLevel.ERROR : LogLevel.INFO, 
-    enabled: true 
-  },
-  'tools': { 
-    level: process.env.NODE_ENV === 'production' ? LogLevel.ERROR : LogLevel.INFO, 
-    enabled: true 
+/**
+ * Check if a specific log level is enabled for a namespace
+ * @param namespace The logging namespace
+ * @param level The log level to check
+ * @returns Whether the log level is enabled
+ */
+export function isLevelEnabled(namespace: string, level: LogLevel): boolean {
+  // Check if namespace is explicitly disabled
+  if (config.enabled[namespace] === false) {
+    return false;
   }
-};
+  
+  // Get namespace-specific level or fall back to global
+  const namespaceLevel = config.namespaces[namespace] ?? config.global;
+  
+  // Enable if requested level is less than or equal to configured level
+  return level <= namespaceLevel;
+}
 
-// Get configuration for a specific module
-export const getModuleConfig = (namespace: string): ModuleLogConfig => {
-  return moduleConfigs[namespace] || defaultModuleConfig;
-};
+/**
+ * Set log level for a specific namespace
+ * @param namespace The logging namespace
+ * @param level The log level to set
+ */
+export function setNamespaceLevel(namespace: string, level: LogLevel): void {
+  config.namespaces[namespace] = level;
+  config.enabled[namespace] = true;
+}
 
-// Check if a log level is enabled for a module
-export const isLevelEnabled = (namespace: string, level: LogLevel): boolean => {
-  const config = getModuleConfig(namespace);
-  return config.enabled && level <= config.level;
-};
+/**
+ * Completely enable or disable a namespace
+ * @param namespace The logging namespace
+ * @param enabled Whether to enable the namespace
+ */
+export function setNamespaceEnabled(namespace: string, enabled: boolean): void {
+  config.enabled[namespace] = enabled;
+}
 
-// Set log level for a specific module
-export const setLogLevel = (namespace: string, level: LogLevel): void => {
-  if (moduleConfigs[namespace]) {
-    moduleConfigs[namespace].level = level;
-  } else {
-    moduleConfigs[namespace] = { ...defaultModuleConfig, level };
-  }
-};
+/**
+ * Set global log level
+ * @param level The log level to set globally
+ */
+export function setGlobalLevel(level: LogLevel): void {
+  config.global = level;
+}
 
-// Enable/disable logging for a specific module
-export const enableLogging = (namespace: string, enabled: boolean): void => {
-  if (moduleConfigs[namespace]) {
-    moduleConfigs[namespace].enabled = enabled;
-  } else {
-    moduleConfigs[namespace] = { ...defaultModuleConfig, enabled };
-  }
-};
+/**
+ * Enable or disable all debug logging
+ * @param enabled Whether to enable all debug logging
+ */
+export function setGlobalDebug(enabled: boolean): void {
+  config.global = enabled ? LogLevel.DEBUG : LogLevel.INFO;
+}
 
-// Global setting to disable all debug logging at once
-export const setGlobalDebugLogging = (enabled: boolean): void => {
-  Object.keys(moduleConfigs).forEach(namespace => {
-    moduleConfigs[namespace].enabled = enabled;
-  });
-};
-
-// Initialize development helper for console
+// Expose configuration controls globally in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
   (window as any).__logger = {
-    setLevel: setLogLevel,
-    enable: enableLogging,
-    setGlobalDebug: setGlobalDebugLogging,
-    getConfig: getModuleConfig,
-    levels: LogLevel
+    setLevel: setNamespaceLevel,
+    enable: setNamespaceEnabled,
+    setGlobalLevel,
+    setGlobalDebug,
+    LogLevel
   };
 }

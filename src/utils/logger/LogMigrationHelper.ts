@@ -1,260 +1,161 @@
 
 /**
- * Log Migration Helper Utility
- * Helps identify and migrate raw console.log statements to the structured logger
- * 
- * Usage (in development console):
- * __logMigration.scanConsoleUsage() - Scan for direct console usage
- * __logMigration.generateMigrationPlan() - Get suggested replacements
+ * Utility to help migrate from console.* calls to structured logger
+ * Identifies raw console calls and provides replacement suggestions
  */
 
-// Track overridden console methods
-const originalConsoleMethods = {
-  log: console.log,
-  info: console.info,
-  warn: console.warn,
-  error: console.error,
-  debug: console.debug
-};
-
-// Store console usage data
 interface ConsoleUsage {
-  method: 'log' | 'info' | 'warn' | 'error' | 'debug';
-  args: any[];
-  stack: string;
-  timestamp: Date;
-  file?: string;
-  line?: number;
-  suggestedReplacement?: string;
+  method: string;
+  count: number;
+  stack: string[];
+  messages: string[];
 }
 
-const consoleUsageData: ConsoleUsage[] = [];
-
-/**
- * Extract filename and line number from stack trace
- */
-function extractSourceInfo(stack: string): { file?: string; line?: number } {
-  // Try to extract filename and line number from stack trace
-  const stackLines = stack.split('\n');
-  const callerLine = stackLines.find(line => 
-    line.includes('.ts:') || 
-    line.includes('.tsx:') || 
-    line.includes('.js:')
-  );
+class LogMigrationHelper {
+  private usages: Record<string, ConsoleUsage> = {};
+  private originalConsoleMethods: Record<string, Function> = {};
+  private isScanning = false;
   
-  if (!callerLine) return {};
-  
-  const fileMatch = callerLine.match(/\/([^\/]+\.(ts|tsx|js))\:(\d+)\:(\d+)/);
-  if (fileMatch) {
-    return {
-      file: fileMatch[1],
-      line: parseInt(fileMatch[3], 10)
-    };
-  }
-  
-  return {};
-}
-
-/**
- * Generate a suggested logger replacement
- */
-function generateLoggerReplacement(usage: ConsoleUsage): string {
-  if (!usage.file) return '';
-  
-  const module = usage.file.replace(/\.(ts|tsx|js)$/, '').toLowerCase();
-  let namespace = 'app';
-  
-  // Try to determine appropriate namespace
-  if (module.includes('grid')) namespace = 'grid';
-  else if (module.includes('canvas')) namespace = 'canvas';
-  else if (module.includes('line') || module.includes('tool')) namespace = 'tools';
-  
-  const methodMap: Record<string, string> = {
-    'log': 'info',
-    'info': 'info',
-    'warn': 'warn',
-    'error': 'error',
-    'debug': 'debug'
-  };
-  
-  const logMethod = methodMap[usage.method] || 'info';
-  
-  // Simple replacement for string-only logs
-  if (usage.args.length === 1 && typeof usage.args[0] === 'string') {
-    return `logger.${logMethod}('${usage.args[0].replace(/'/g, "\\'")}');`;
-  }
-  
-  // Handle message + data
-  if (usage.args.length > 1 && typeof usage.args[0] === 'string') {
-    return `logger.${logMethod}('${usage.args[0].replace(/'/g, "\\'")}', ${JSON.stringify(usage.args.slice(1))});`;
-  }
-  
-  // Default case
-  return `logger.${logMethod}('Log message', ${JSON.stringify(usage.args)});`;
-}
-
-/**
- * Override console methods to track usage
- */
-function installConsoleTracker() {
-  // Override console.log
-  console.log = (...args: any[]) => {
-    const stack = new Error().stack || '';
-    const sourceInfo = extractSourceInfo(stack);
-    
-    consoleUsageData.push({
-      method: 'log',
-      args,
-      stack,
-      timestamp: new Date(),
-      ...sourceInfo
-    });
-    
-    // Call original method
-    originalConsoleMethods.log(...args);
-  };
-  
-  // Similarly override other methods
-  console.info = (...args: any[]) => {
-    const stack = new Error().stack || '';
-    const sourceInfo = extractSourceInfo(stack);
-    
-    consoleUsageData.push({
-      method: 'info',
-      args,
-      stack,
-      timestamp: new Date(),
-      ...sourceInfo
-    });
-    
-    originalConsoleMethods.info(...args);
-  };
-  
-  console.warn = (...args: any[]) => {
-    const stack = new Error().stack || '';
-    const sourceInfo = extractSourceInfo(stack);
-    
-    consoleUsageData.push({
-      method: 'warn',
-      args,
-      stack,
-      timestamp: new Date(),
-      ...sourceInfo
-    });
-    
-    originalConsoleMethods.warn(...args);
-  };
-  
-  console.error = (...args: any[]) => {
-    const stack = new Error().stack || '';
-    const sourceInfo = extractSourceInfo(stack);
-    
-    consoleUsageData.push({
-      method: 'error',
-      args,
-      stack,
-      timestamp: new Date(),
-      ...sourceInfo
-    });
-    
-    originalConsoleMethods.error(...args);
-  };
-  
-  console.debug = (...args: any[]) => {
-    const stack = new Error().stack || '';
-    const sourceInfo = extractSourceInfo(stack);
-    
-    consoleUsageData.push({
-      method: 'debug',
-      args,
-      stack,
-      timestamp: new Date(),
-      ...sourceInfo
-    });
-    
-    originalConsoleMethods.debug(...args);
-  };
-}
-
-/**
- * Restore original console methods
- */
-function restoreConsoleMethods() {
-  console.log = originalConsoleMethods.log;
-  console.info = originalConsoleMethods.info;
-  console.warn = originalConsoleMethods.warn;
-  console.error = originalConsoleMethods.error;
-  console.debug = originalConsoleMethods.debug;
-}
-
-/**
- * Scan for console usage
- */
-function scanConsoleUsage(durationMs = 5000) {
-  consoleUsageData.length = 0; // Clear previous data
-  installConsoleTracker();
-  
-  console.log('[LogMigrationHelper] Scanning for console usage for', durationMs, 'ms');
-  
-  setTimeout(() => {
-    restoreConsoleMethods();
-    console.log(`[LogMigrationHelper] Scan complete. Found ${consoleUsageData.length} console usages.`);
-  }, durationMs);
-  
-  return consoleUsageData;
-}
-
-/**
- * Generate migration plan
- */
-function generateMigrationPlan() {
-  // Process data and add suggested replacements
-  const processedData = consoleUsageData.map(usage => {
-    return {
-      ...usage,
-      suggestedReplacement: generateLoggerReplacement(usage)
-    };
-  });
-  
-  // Group by file
-  const byFile: Record<string, ConsoleUsage[]> = {};
-  processedData.forEach(usage => {
-    if (!usage.file) return;
-    
-    if (!byFile[usage.file]) {
-      byFile[usage.file] = [];
+  /**
+   * Start scanning for console usage
+   */
+  scanConsoleUsage(): void {
+    if (this.isScanning) {
+      console.warn("Already scanning for console usage");
+      return;
     }
-    byFile[usage.file].push(usage);
-  });
-  
-  // Create report
-  console.log('[LogMigrationHelper] Migration Plan:');
-  Object.entries(byFile).forEach(([file, usages]) => {
-    console.group(`File: ${file} (${usages.length} usages)`);
-    usages.forEach(usage => {
-      console.log(
-        `Line ${usage.line}: console.${usage.method}(...) → ${usage.suggestedReplacement}`
-      );
+    
+    this.isScanning = true;
+    this.usages = {};
+    
+    // Store original methods
+    const methods = ['log', 'debug', 'info', 'warn', 'error'];
+    methods.forEach(method => {
+      this.originalConsoleMethods[method] = console[method];
+      
+      // Override method to track usage
+      console[method] = (...args: any[]) => {
+        // Call original method
+        this.originalConsoleMethods[method].apply(console, args);
+        
+        // Capture stack trace
+        const error = new Error();
+        const stack = error.stack || '';
+        const stackLines = stack.split('\n').slice(2); // Skip Error and this function
+        const caller = stackLines[0]?.trim() || 'unknown';
+        
+        // Store usage data
+        if (!this.usages[caller]) {
+          this.usages[caller] = {
+            method,
+            count: 0,
+            stack: stackLines,
+            messages: []
+          };
+        }
+        
+        this.usages[caller].count++;
+        this.usages[caller].messages.push(args.map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+        ).join(' '));
+      };
     });
-    console.groupEnd();
-  });
+    
+    console.info("Console usage scanning started. Interact with your app to capture logs.");
+  }
   
-  return { byFile, allUsages: processedData };
+  /**
+   * Stop scanning and restore original console methods
+   */
+  stopScanning(): void {
+    if (!this.isScanning) {
+      return;
+    }
+    
+    // Restore original methods
+    Object.keys(this.originalConsoleMethods).forEach(method => {
+      console[method] = this.originalConsoleMethods[method];
+    });
+    
+    this.isScanning = false;
+    console.info("Console usage scanning stopped.");
+  }
+  
+  /**
+   * Generate a migration plan for console calls
+   */
+  generateMigrationPlan(): void {
+    if (Object.keys(this.usages).length === 0) {
+      console.info("No console usage detected. Run scanConsoleUsage() first and interact with your app.");
+      return;
+    }
+    
+    console.group("Console Usage Migration Plan");
+    
+    Object.entries(this.usages).forEach(([caller, usage]) => {
+      console.groupCollapsed(`${caller} (${usage.count} calls to console.${usage.method})`);
+      
+      console.log("Sample messages:", usage.messages.slice(0, 3));
+      console.log("Stack trace:", usage.stack.slice(0, 3));
+      
+      // Suggest replacement
+      const namespace = this.extractNamespace(caller);
+      const methodMap: Record<string, string> = {
+        'log': 'info',
+        'debug': 'debug',
+        'info': 'info',
+        'warn': 'warn', 
+        'error': 'error'
+      };
+      
+      const suggestedMethod = methodMap[usage.method] || 'info';
+      const messageSample = usage.messages[0] || '"message"';
+      
+      console.log("Suggested replacement:");
+      console.log(`import logger from '@/utils/logger';`);
+      console.log(`logger.${suggestedMethod}(${JSON.stringify(messageSample)}, { /* contextual data */ });`);
+      
+      // For component-specific logs
+      if (namespace) {
+        console.log("Or with namespace:");
+        console.log(`const ${namespace}Logger = logger.forNamespace('${namespace}');`);
+        console.log(`${namespace}Logger.${suggestedMethod}(${JSON.stringify(messageSample)}, { /* contextual data */ });`);
+      }
+      
+      console.groupEnd();
+    });
+    
+    console.groupEnd();
+  }
+  
+  /**
+   * Extract a namespace from a caller string
+   */
+  private extractNamespace(caller: string): string | null {
+    // Extract component or module name from stack trace
+    const match = caller.match(/at\s+(\w+)\s+\(/);
+    if (match && match[1]) {
+      return match[1].charAt(0).toLowerCase() + match[1].slice(1);
+    }
+    
+    // Extract filename if no component name
+    const fileMatch = caller.match(/\(([^:]+)\./);
+    if (fileMatch && fileMatch[1]) {
+      const parts = fileMatch[1].split('/');
+      const filename = parts[parts.length - 1];
+      return filename.charAt(0).toLowerCase() + filename.slice(1).replace(/\.[jt]sx?$/, '');
+    }
+    
+    return null;
+  }
 }
 
-// Expose to dev console
+// Create and export singleton
+const logMigration = new LogMigrationHelper();
+
+// Expose to window in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-  (window as any).__logMigration = {
-    scanConsoleUsage,
-    generateMigrationPlan,
-    getUsageData: () => consoleUsageData,
-    installTracker: installConsoleTracker,
-    restore: restoreConsoleMethods
-  };
+  (window as any).__logMigration = logMigration;
 }
 
-export default {
-  scanConsoleUsage,
-  generateMigrationPlan,
-  getUsageData: () => consoleUsageData
-};
+export default logMigration;
