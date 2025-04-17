@@ -8,11 +8,17 @@
 import { 
   type PerformanceTransaction,
   startPerformanceTransaction,
-  finishPerformanceTransaction,
+  finishPerformanceTransaction
+} from './performance/core';
+
+import {
   startCanvasTransaction,
-  startCanvasTracking,
+  startCanvasTracking
+} from './performance/canvas';
+
+import {
   measurePerformance
-} from './performance/index';
+} from './performance/metrics';
 
 export {
   type PerformanceTransaction,
