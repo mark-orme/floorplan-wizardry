@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';

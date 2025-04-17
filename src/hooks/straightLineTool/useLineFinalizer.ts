@@ -12,25 +12,11 @@ export const useLineFinalizer = (
   /**
    * Finalize a line by setting its final coordinates
    */
-  const finalizeLine = useCallback((
-    line: Line,
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number
-  ) => {
+  const finalizeLine = useCallback((line: Line) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     try {
-      // Update line coordinates
-      line.set({
-        x1,
-        y1,
-        x2,
-        y2
-      });
-      
       // Mark line as complete
       (line as any).isComplete = true;
       

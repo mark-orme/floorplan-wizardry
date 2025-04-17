@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -155,7 +154,7 @@ export const useLineStateActions = ({
           finalPoint.y
         );
         
-        // Finalize the line
+        // Finalize the line with the simplified signature
         finalizeLine(coreState.currentLine);
       }
     }
