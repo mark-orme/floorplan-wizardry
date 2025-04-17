@@ -1,3 +1,4 @@
+
 /**
  * Main hook for floor plan operations
  * Combines specialized floor plan hooks for various functionalities
@@ -86,8 +87,8 @@ export const useFloorPlans = ({
   
   // Initialize floor plan drawing functionality with proper implementation
   const { drawFloorPlan } = useFloorPlanDrawing({
-    fabricCanvas: fabricCanvasRef.current,
-    gridLayer: gridLayerRef.current,
+    fabricCanvasRef: fabricCanvasRef,
+    gridLayerRef: gridLayerRef.current,
     onDrawComplete: recalculateGIA
   });
 
@@ -166,7 +167,7 @@ export const useFloorPlans = ({
       clearDrawings();
       
       // Draw the floor plan
-      drawFloorPlan(floorPlans[floorIndex]);
+      drawFloorPlan(fabricCanvasRef.current, floorPlans[floorIndex]);
       
       // Recalculate GIA after drawing
       setTimeout(recalculateGIA, 200);

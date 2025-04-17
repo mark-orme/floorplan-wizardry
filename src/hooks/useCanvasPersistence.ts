@@ -4,6 +4,9 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 
+// Export the history key for other hooks to use
+export const HISTORY_KEY = 'canvas_state';
+
 interface UseCanvasPersistenceResult {
   isSaving: boolean;
   isLoading: boolean;
@@ -14,7 +17,7 @@ interface UseCanvasPersistenceResult {
 
 export const useCanvasPersistence = (
   canvas: FabricCanvas | null,
-  storageKey = 'canvas_state'
+  storageKey = HISTORY_KEY
 ): UseCanvasPersistenceResult => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

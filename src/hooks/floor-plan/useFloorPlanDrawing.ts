@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling floor plan drawing and editing
  * Integrates Fabric.js for interactive drawing capabilities
@@ -19,8 +18,10 @@ import { useSnapToGrid } from '@/hooks/useSnapToGrid';
 interface UseFloorPlanDrawingProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  /** Grid layer objects */
+  gridLayerRef?: FabricObject[] | any[];
   /** Current drawing tool */
-  tool: DrawingMode;
+  tool?: DrawingMode;
   /** Initial line color */
   initialLineColor?: string;
   /** Initial line thickness */
@@ -37,6 +38,8 @@ interface UseFloorPlanDrawingProps {
   setFloorPlan?: React.Dispatch<React.SetStateAction<FloorPlan>>;
   /** Set gross internal area function */
   setGia?: React.Dispatch<React.SetStateAction<number>>;
+  /** Callback to trigger when drawing is complete */
+  onDrawComplete?: () => void;
 }
 
 /**
@@ -78,7 +81,7 @@ interface UseFloorPlanDrawingResult {
 export const useFloorPlanDrawing = (
   props: UseFloorPlanDrawingProps
 ): UseFloorPlanDrawingResult => {
-  const { fabricCanvasRef, tool } = props;
+  const { fabricCanvasRef, tool, onDrawComplete } = props;
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
@@ -117,10 +120,14 @@ export const useFloorPlanDrawing = (
       }
       
       canvas.renderAll();
+      
+      if (onDrawComplete) {
+        onDrawComplete();
+      }
     } catch (error) {
       logger.error('Error drawing floor plan:', error);
     }
-  }, []);
+  }, [onDrawComplete]);
   
   /**
    * Start drawing at a point
