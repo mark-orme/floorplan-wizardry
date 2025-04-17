@@ -46,16 +46,19 @@ export function startPerformanceTransaction(
       ...(options || {})
     });
     
+    // Store start time for duration calculation
+    const startTime = performance.now();
+    
     // Return transaction details with finish method
     return {
       name,
-      startTime: performance.now(),
+      startTime,
       transaction,
       finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
         if (transaction) {
           // Calculate the actual duration
           const endTime = performance.now();
-          const duration = endTime - transaction.startTime;
+          const duration = endTime - startTime;
           
           // Add data to transaction
           transaction.setData({
@@ -65,7 +68,7 @@ export function startPerformanceTransaction(
           });
           
           // Set status and finish
-          transaction.setStatus(status);
+          transaction.status = status;
           transaction.finish();
         }
       }
@@ -110,7 +113,7 @@ export function finishPerformanceTransaction(
     });
     
     // Set status and finish
-    transaction.transaction.setStatus(status);
+    transaction.transaction.status = status;
     transaction.transaction.finish();
     
     // Log performance info
