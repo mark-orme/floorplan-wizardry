@@ -20,7 +20,7 @@ export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
   const { setCanUndo, setCanRedo } = useDrawingContext();
   const canvasRef = useRef<any>(null);
-  const canvasTransaction = useRef<any>(null);
+  const canvasTransaction = useRef<{ finish: (status: string) => void } | null>(null);
 
   const {
     showMeasurementGuide,
