@@ -10,7 +10,7 @@ import {
 } from "@/utils/sentry/userInteractions";
 import { startCanvasTracking } from "@/utils/sentry/performance";
 
-// Import the missing components
+// Components
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
 import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
 import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
@@ -43,18 +43,18 @@ export const FloorPlanEditor: React.FC = () => {
     }
   });
 
-  useEffect(() => {
-    if (canvas) {
-      canvasTransaction.current = startCanvasTracking('FloorPlanEditor', canvas);
-    }
-  }, [canvas]);
-
   const handleCanvasReady = (canvasOperations: any) => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
 
-    // Finish the transaction with success status
-    canvasTransaction.current?.finish('ok');
+    // Start tracking once canvas is ready
+    canvasTransaction.current = startCanvasTracking(
+      "FloorPlanEditor",
+      canvasOperations.canvas
+    );
+
+    // Mark success
+    canvasTransaction.current?.finish("ok");
   };
 
   const handleUndo = () => {
@@ -90,7 +90,7 @@ export const FloorPlanEditor: React.FC = () => {
   };
 
   const handleCloseMeasurementGuideWithTracking = () => {
-    trackUserInteraction('close_measurement_guide', InteractionCategory.TOOL);
+    trackUserInteraction("close_measurement_guide", InteractionCategory.TOOL);
     handleCloseMeasurementGuide();
   };
 
@@ -125,4 +125,5 @@ export const FloorPlanEditor: React.FC = () => {
     </div>
   );
 };
+
 
