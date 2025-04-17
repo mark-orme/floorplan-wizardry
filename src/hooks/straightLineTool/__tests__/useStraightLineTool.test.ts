@@ -1,3 +1,4 @@
+
 /**
  * Tests for the straight line tool hook
  * Ensures line drawing functionality works correctly
@@ -41,7 +42,11 @@ vi.mock('../useLineState', () => ({
     startDrawing: vi.fn(),
     continueDrawing: vi.fn(),
     completeDrawing: vi.fn(),
-    cancelDrawing: vi.fn()
+    cancelDrawing: vi.fn(),
+    // Add the missing properties 
+    setStartPoint: vi.fn(),
+    setCurrentPoint: vi.fn(),
+    setCurrentLine: vi.fn()
   }),
   InputMethod: {
     MOUSE: 'mouse',
@@ -114,7 +119,11 @@ describe('useStraightLineTool', () => {
       startDrawing: vi.fn(),
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
-      cancelDrawing: vi.fn()
+      cancelDrawing: vi.fn(),
+      // Add the missing properties
+      setStartPoint: vi.fn(),
+      setCurrentPoint: vi.fn(),
+      setCurrentLine: vi.fn()
     });
   });
   
@@ -205,7 +214,11 @@ describe('useStraightLineTool', () => {
       startDrawing: mockStartDrawing,
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
-      cancelDrawing: vi.fn()
+      cancelDrawing: vi.fn(),
+      // Add the missing properties
+      setStartPoint: vi.fn(),
+      setCurrentPoint: vi.fn(),
+      setCurrentLine: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
@@ -261,7 +274,11 @@ describe('useStraightLineTool', () => {
       startDrawing: vi.fn(),
       continueDrawing: vi.fn(),
       completeDrawing: vi.fn(),
-      cancelDrawing: mockCancelDrawing
+      cancelDrawing: mockCancelDrawing,
+      // Add the missing properties
+      setStartPoint: vi.fn(),
+      setCurrentPoint: vi.fn(),
+      setCurrentLine: vi.fn()
     });
     
     const { result } = renderHook(() => useStraightLineTool({
@@ -326,7 +343,11 @@ describe('useStraightLineTool', () => {
       startDrawing: vi.fn(),
       continueDrawing: vi.fn(),
       completeDrawing: mockCompleteDrawing,
-      cancelDrawing: vi.fn()
+      cancelDrawing: vi.fn(),
+      // Add the missing properties
+      setStartPoint: vi.fn(),
+      setCurrentPoint: vi.fn(),
+      setCurrentLine: vi.fn()
     });
     
     renderHook(() => useStraightLineTool({
