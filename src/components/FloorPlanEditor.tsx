@@ -11,6 +11,11 @@ import {
 import { startCanvasTracking } from "@/utils/sentry/performance";
 import { safeFinish } from "@/utils/sentry/safeFinish";
 
+import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
+import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
+import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
+import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
+
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
   const { setCanUndo, setCanRedo } = useDrawingContext();
@@ -42,10 +47,9 @@ export const FloorPlanEditor: React.FC = () => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
 
-    // ✅ Safely start and finish tracking with correct arguments
     if (canvasOperations.canvas) {
       canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
-      safeFinish(canvasTransaction.current);
+      safeFinish(canvasTransaction.current, 'ok');
     }
   };
 
