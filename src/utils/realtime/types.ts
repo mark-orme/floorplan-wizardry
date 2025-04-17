@@ -26,4 +26,4 @@ export interface CollaboratorInfo {
   isActive: boolean;
 }
 
-export { Collaborator as RealtimeCanvasSyncResult } from '@/hooks/realtime/useRealtimeCanvasSync';
+export type { Collaborator as RealtimeCanvasSyncResult } from '@/hooks/realtime/useRealtimeCanvasSync';

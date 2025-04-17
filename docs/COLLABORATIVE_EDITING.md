@@ -18,7 +18,7 @@ The collaborative editing system uses a WebSocket-based approach with Pusher to 
 
 This is the core hook that manages synchronization between multiple clients. It:
 
-- Establishes a Pusher connection to a channel specific to the current canvas
+- Establishes a connection to a channel specific to the current canvas
 - Listens for updates from other users
 - Broadcasts local changes to all other connected users
 - Tracks collaborator presence and activity
@@ -112,7 +112,7 @@ Potential enhancements to the collaborative editing system:
 
 Common issues and their solutions:
 
-- **Updates not syncing**: Check Pusher connection status and channel subscription
+- **Updates not syncing**: Check connection status and channel subscription
 - **Duplicate updates**: Ensure `isUpdateFromThisDevice` is working correctly
 - **Grid disappearing**: Verify grid objects are being preserved in `applyCanvasState`
 - **Performance issues**: Increase throttle time or optimize serialization/deserialization
