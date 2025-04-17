@@ -1,3 +1,4 @@
+
 /**
  * Sentry performance monitoring utilities
  * @module utils/sentry/performance
