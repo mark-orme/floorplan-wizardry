@@ -53,10 +53,14 @@ export function startPerformanceTransaction(
       transaction,
       finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
         if (transaction) {
+          // Calculate the actual duration
+          const endTime = performance.now();
+          const duration = endTime - transaction.startTime;
+          
           // Add data to transaction
           transaction.setData({
             status,
-            durationMs: performance.now() - performance.now(), // This is incorrect, fixing below
+            durationMs: duration,
             ...data
           });
           

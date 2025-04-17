@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingToolbar } from "./canvas/DrawingToolbar";
@@ -80,7 +79,7 @@ export const FloorPlanEditor: React.FC = () => {
       toast.success("Canvas ready! Start drawing!");
       logger.info("Canvas initialized successfully");
       
-      transaction.finish('ok');
+      transaction.finish('ok', {});
     } catch (error) {
       logger.error("Error initializing canvas:", error);
       transaction.finish('error', { error: String(error) });
@@ -104,7 +103,7 @@ export const FloorPlanEditor: React.FC = () => {
       
       captureCanvasState();
       
-      perfTransaction.finish('ok');
+      perfTransaction.finish('ok', {});
     }
   };
 
@@ -125,7 +124,7 @@ export const FloorPlanEditor: React.FC = () => {
       
       captureCanvasState();
       
-      perfTransaction.finish('ok');
+      perfTransaction.finish('ok', {});
     }
   };
 
@@ -148,7 +147,7 @@ export const FloorPlanEditor: React.FC = () => {
         
         captureCanvasState();
         
-        perfTransaction.finish('ok');
+        perfTransaction.finish('ok', {});
       } catch (error) {
         logger.error("Error clearing canvas:", error);
         perfTransaction.finish('error', { error: String(error) });
@@ -175,7 +174,7 @@ export const FloorPlanEditor: React.FC = () => {
         toast.success("Canvas saved");
         logger.info("Canvas state saved");
         
-        transaction.finish('ok');
+        transaction.finish('ok', {});
       } catch (error) {
         logger.error("Error saving canvas:", error);
         toast.error("Failed to save canvas");
