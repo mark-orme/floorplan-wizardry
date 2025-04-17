@@ -47,14 +47,11 @@ export const FloorPlanEditor: React.FC = () => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
 
-    // Start tracking once canvas is ready
-    canvasTransaction.current = startCanvasTracking(
-      "FloorPlanEditor",
-      canvasOperations.canvas
-    );
-
-    // Mark success with explicit status
-    canvasTransaction.current?.finish("ok");
+    // ✅ Safely start and finish tracking with correct argument
+    if (canvasOperations.canvas) {
+      canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
+      canvasTransaction.current?.finish("ok");
+    }
   };
 
   const handleUndo = () => {
