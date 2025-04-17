@@ -44,7 +44,7 @@ export const useStraightLineToolRefactored = (
   const lineRef = useRef<Line | null>(null);
   
   // Get line initialization functions
-  const { isActive, setIsActive, initializeTool } = useLineInitialization();
+  const { isActive, setIsActive, initializeTool, initializeLine, cleanupLine } = useLineInitialization();
   
   // Get line interaction state and functions
   const { 
@@ -74,44 +74,6 @@ export const useStraightLineToolRefactored = (
   }, [tool, setIsActive]);
   
   /**
-   * Initialize line on canvas
-   */
-  const initializeLine = useCallback((
-    canvas: FabricCanvas,
-    startPoint: Point,
-    options: {
-      color: string;
-      thickness: number;
-      dashed?: boolean;
-    }
-  ) => {
-    const line = new Line([startPoint.x, startPoint.y, startPoint.x, startPoint.y], {
-      stroke: options.color,
-      strokeWidth: options.thickness,
-      strokeDashArray: options.dashed ? [5, 5] : undefined,
-      selectable: false
-    });
-    
-    canvas.add(line);
-    canvas.renderAll();
-    
-    lineRef.current = line;
-    return line;
-  }, []);
-  
-  /**
-   * Clean up line
-   */
-  const cleanupLine = useCallback((canvas: FabricCanvas) => {
-    if (lineRef.current && canvas.contains(lineRef.current)) {
-      canvas.remove(lineRef.current);
-      canvas.renderAll();
-    }
-    
-    lineRef.current = null;
-  }, []);
-  
-  /**
    * Start drawing a line
    * @param canvas Fabric canvas
    * @param pointer Starting point
@@ -129,11 +91,16 @@ export const useStraightLineToolRefactored = (
     startLineDrawing(snappedPoint);
     
     // Initialize line on canvas
-    initializeLine(canvas, snappedPoint, {
+    const line = initializeLine(snappedPoint.x, snappedPoint.y, {
       color: options.color,
       thickness: options.thickness,
       dashed: options.dashed
     });
+    
+    canvas.add(line);
+    canvas.renderAll();
+    
+    lineRef.current = line;
   }, [isActive, options, snapToGrid, startLineDrawing, initializeLine]);
   
   /**

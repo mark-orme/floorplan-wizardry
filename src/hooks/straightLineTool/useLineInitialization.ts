@@ -1,13 +1,15 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { Line } from 'fabric';
 import { lineToolLogger } from '@/utils/logger';
 
 /**
- * Hook for managing line tool initialization state
+ * Hook for managing line tool initialization
  */
 export const useLineInitialization = () => {
   const [isActive, setIsActive] = useState(false);
   const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const lineRef = useRef<Line | null>(null);
   
   /**
    * Initialize the tool
@@ -18,10 +20,43 @@ export const useLineInitialization = () => {
     lineToolLogger.debug('Line tool initialized');
   }, []);
   
+  /**
+   * Initialize line on canvas
+   */
+  const initializeLine = useCallback((
+    startX: number,
+    startY: number,
+    options: {
+      color: string;
+      thickness: number;
+      dashed?: boolean;
+    }
+  ) => {
+    const line = new Line([startX, startY, startX, startY], {
+      stroke: options.color,
+      strokeWidth: options.thickness,
+      strokeDashArray: options.dashed ? [5, 5] : undefined,
+      selectable: false
+    });
+    
+    lineRef.current = line;
+    return line;
+  }, []);
+  
+  /**
+   * Clean up line
+   */
+  const cleanupLine = useCallback(() => {
+    lineRef.current = null;
+  }, []);
+  
   return {
     isActive,
     isToolInitialized,
     setIsActive,
-    initializeTool
+    initializeTool,
+    initializeLine,
+    cleanupLine,
+    lineRef
   };
 };

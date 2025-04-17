@@ -11,7 +11,8 @@ export const useLinePreview = (gridSize = 20, snapTolerance = 5) => {
   // Reuse existing hooks for grid and angle snapping
   const { snapToGrid } = useEnhancedGridSnapping({
     gridSize,
-    initialSnapEnabled: true
+    initialSnapEnabled: true,
+    snapThreshold: snapTolerance
   });
   const { snapToAngle } = useLineAngleSnap({
     enabled: true
