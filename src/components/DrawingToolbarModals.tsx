@@ -34,7 +34,12 @@ export const DrawingToolbarModals = () => {
 
       <MeasurementGuideModal 
         open={showMeasurementGuide} 
-        onClose={handleCloseMeasurementGuide}
+        onClose={(dontShowAgain) => {
+          handleCloseMeasurementGuide(dontShowAgain);
+          if (dontShowAgain) {
+            localStorage.setItem('dontShowMeasurementGuide', 'true');
+          }
+        }}
         onOpenChange={(open) => {
           if (!open) {
             handleCloseMeasurementGuide(false);

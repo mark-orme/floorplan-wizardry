@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useState } from 'react';
+import { Ruler, MousePointer2, Grid, ArrowsMaximize } from 'lucide-react';
 
 export interface MeasurementGuideModalProps {
   open: boolean;
@@ -31,33 +32,69 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Measurement Guide</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Ruler className="h-5 w-5" />
+            Measurement Guide
+          </DialogTitle>
           <DialogDescription>
-            Learn how to use the measurement tools effectively.
+            Learn how to use the measurement tools effectively
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        
+        <div className="space-y-6">
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold">Distance Measurement</h3>
-            <p className="text-sm text-gray-500">
-              Click and drag to measure the distance between two points. The measurement will display in the preferred unit.
-            </p>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <MousePointer2 className="h-4 w-4" />
+              Distance Measurement
+            </h3>
+            <div className="pl-6">
+              <p className="text-sm text-gray-500">
+                • Click and drag to measure the distance between two points<br />
+                • Double-click to finish a measurement<br />
+                • Press ESC to cancel the current measurement
+              </p>
+            </div>
           </div>
+
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold">Area Measurement</h3>
-            <p className="text-sm text-gray-500">
-              Draw a closed shape to automatically calculate the area. The result will show in square meters and square feet.
-            </p>
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <ArrowsMaximize className="h-4 w-4" />
+              Area Measurement
+            </h3>
+            <div className="pl-6">
+              <p className="text-sm text-gray-500">
+                • Click to start drawing a shape<br />
+                • Continue clicking to add points<br />
+                • Double-click to close the shape and calculate area<br />
+                • Areas are shown in both square meters and square feet
+              </p>
+            </div>
           </div>
+
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold">Grid Snapping</h3>
-            <p className="text-sm text-gray-500">
-              Enable grid snapping for precise measurements. The grid size can be adjusted in the settings.
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Grid className="h-4 w-4" />
+              Grid and Snapping
+            </h3>
+            <div className="pl-6">
+              <p className="text-sm text-gray-500">
+                • Enable grid snapping for precise measurements<br />
+                • Hold SHIFT to temporarily disable snapping<br />
+                • Adjust grid size in settings for different scales<br />
+                • Use arrow keys for fine adjustments
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 p-4 rounded-md">
+            <p className="text-sm text-blue-700">
+              <strong>Pro Tip:</strong> For the most accurate measurements, zoom in and use the grid snapping feature. All measurements are automatically saved with your drawing.
             </p>
           </div>
         </div>
+
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <div className="flex items-center space-x-2">
             <Checkbox 
