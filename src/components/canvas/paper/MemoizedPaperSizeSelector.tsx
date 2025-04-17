@@ -1,6 +1,12 @@
 
 import React, { useMemo } from 'react';
-import { PaperSize } from '@/types/core/PaperSize';
+
+// Define the PaperSize interface locally to fix the import error
+interface PaperSize {
+  name: string;
+  width: number;
+  height: number;
+}
 
 interface MemoizedPaperSizeSelectorProps {
   currentPaperSize: PaperSize;

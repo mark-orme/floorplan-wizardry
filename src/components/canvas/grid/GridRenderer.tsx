@@ -1,5 +1,4 @@
-
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
@@ -147,4 +146,3 @@ export const GridRendererComponent = React.memo<GridRendererProps>(({
 });
 
 GridRendererComponent.displayName = 'GridRendererComponent';
-

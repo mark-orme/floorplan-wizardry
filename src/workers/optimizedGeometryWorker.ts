@@ -1,4 +1,3 @@
-
 /**
  * Web Worker for optimized geometry calculations
  * Uses transferable objects for better performance
@@ -18,7 +17,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
   
   try {
     let result;
-    let transferables: ArrayBuffer[] = [];
+    let transferables: Transferable[] = [];
     
     // Process different calculation types
     switch (type) {
@@ -39,7 +38,9 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
             points: snappedResult.points,
             buffer: snappedResult.buffer
           };
-          transferables.push(snappedResult.buffer);
+          if (snappedResult.buffer) {
+            transferables.push(snappedResult.buffer);
+          }
         } else {
           result = snappedResult.points;
         }
@@ -57,7 +58,9 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
             points: optimizedResult.points,
             buffer: optimizedResult.buffer
           };
-          transferables.push(optimizedResult.buffer);
+          if (optimizedResult.buffer) {
+            transferables.push(optimizedResult.buffer);
+          }
         } else {
           result = optimizedResult.points;
         }
@@ -71,12 +74,19 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         throw new Error(`Unknown calculation type: ${type}`);
     }
     
-    // Send result back to main thread
-    self.postMessage({
+    // Send result back to main thread with proper formatting for postMessage
+    const message = {
       id,
       success: true,
       result
-    }, transferables);
+    };
+    
+    // Use the correct postMessage format with transferables
+    if (transferables.length > 0) {
+      self.postMessage(message, { transfer: transferables });
+    } else {
+      self.postMessage(message);
+    }
   } catch (error) {
     // Send error back to main thread
     self.postMessage({
