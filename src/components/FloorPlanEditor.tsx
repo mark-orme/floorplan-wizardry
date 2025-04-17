@@ -112,7 +112,7 @@ export const FloorPlanEditor: React.FC = () => {
       // Capture canvas state after undo
       captureCanvasState();
       
-      finishPerformanceTransaction(perfTransaction, 'ok');
+      perfTransaction.finish('ok');
     }
   };
 
@@ -135,7 +135,7 @@ export const FloorPlanEditor: React.FC = () => {
       // Capture canvas state after redo
       captureCanvasState();
       
-      finishPerformanceTransaction(perfTransaction, 'ok');
+      perfTransaction.finish('ok');
     }
   };
 
@@ -161,10 +161,10 @@ export const FloorPlanEditor: React.FC = () => {
         // Capture canvas state after clear
         captureCanvasState();
         
-        finishPerformanceTransaction(perfTransaction, 'ok');
+        perfTransaction.finish('ok');
       } catch (error) {
         logger.error("Error clearing canvas:", error);
-        finishPerformanceTransaction(perfTransaction, 'error', { error: String(error) });
+        perfTransaction.finish('error', { error: String(error) });
         
         // Track error with higher severity
         trackCanvasOperation('clear_failed', {
@@ -190,7 +190,7 @@ export const FloorPlanEditor: React.FC = () => {
         toast.success("Canvas saved");
         logger.info("Canvas state saved");
         
-        finishPerformanceTransaction(transaction, 'ok');
+        transaction.finish('ok');
       } catch (error) {
         logger.error("Error saving canvas:", error);
         toast.error("Failed to save canvas");
@@ -200,7 +200,7 @@ export const FloorPlanEditor: React.FC = () => {
           error: String(error)
         }, InteractionSeverity.ERROR);
         
-        finishPerformanceTransaction(transaction, 'error', { error: String(error) });
+        transaction.finish('error', { error: String(error) });
       }
     }
   };

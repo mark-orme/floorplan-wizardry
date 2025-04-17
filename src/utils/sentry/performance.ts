@@ -14,21 +14,27 @@ export interface PerformanceTransaction {
   name: string;
   startTime: number;
   transaction: any;
+  finish: (status?: string, data?: Record<string, unknown>) => void;
 }
 
 /**
  * Start a performance transaction
  * 
  * @param name - Transaction name
+ * @param options - Optional transaction options (tags, data)
  * @returns Transaction object
  */
-export function startPerformanceTransaction(name: string): PerformanceTransaction {
+export function startPerformanceTransaction(
+  name: string,
+  options?: Record<string, unknown>
+): PerformanceTransaction {
   // Only start if Sentry is initialized
   if (!isSentryInitialized()) {
     return {
       name,
       startTime: performance.now(),
-      transaction: null
+      transaction: null,
+      finish: () => {} // No-op finish function
     };
   }
   
@@ -36,24 +42,40 @@ export function startPerformanceTransaction(name: string): PerformanceTransactio
     // Start a new transaction
     const transaction = Sentry.startTransaction({
       name,
-      op: 'performance'
+      op: 'performance',
+      ...(options || {})
     });
     
-    // Return transaction details
+    // Return transaction details with finish method
     return {
       name,
       startTime: performance.now(),
-      transaction
+      transaction,
+      finish: (status: string = 'ok', data: Record<string, unknown> = {}) => {
+        if (transaction) {
+          // Add data to transaction
+          transaction.setData({
+            status,
+            durationMs: performance.now() - performance.now(),
+            ...data
+          });
+          
+          // Set status and finish
+          transaction.setStatus(status);
+          transaction.finish();
+        }
+      }
     };
   } catch (error) {
     // Log error but don't break app flow
     logger.error(`Error starting transaction ${name}:`, error);
     
-    // Return placeholder
+    // Return placeholder with no-op finish
     return {
       name,
       startTime: performance.now(),
-      transaction: null
+      transaction: null,
+      finish: () => {} // No-op finish function
     };
   }
 }

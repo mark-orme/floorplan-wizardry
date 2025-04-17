@@ -64,17 +64,12 @@ export const useSentryCanvasMonitoring = ({
         
         // Report slow renders
         if (renderTime > 100) {
-          const transaction = startPerformanceTransaction('canvas.slow-render', {
-            tags: {
-              renderTime: `${Math.round(renderTime)}ms`,
-              objectCount: String(canvas.getObjects().length),
-            },
-            data: {
-              renderTime,
-              objectCount: canvas.getObjects().length,
-              canvasWidth: canvas.width,
-              canvasHeight: canvas.height,
-            },
+          const transaction = startPerformanceTransaction('canvas.slow-render');
+          transaction.transaction?.setData({
+            renderTime,
+            objectCount: canvas.getObjects().length,
+            canvasWidth: canvas.width,
+            canvasHeight: canvas.height,
           });
           transaction.finish('warning');
           
@@ -151,13 +146,7 @@ export const useSentryCanvasMonitoring = ({
     captureCanvasState: () => {
       if (!canvas || !isSentryInitialized()) return;
       
-      const transaction = startPerformanceTransaction('canvas.state-capture', {
-        data: {
-          objectCount: canvas.getObjects().length,
-          width: canvas.width,
-          height: canvas.height,
-        },
-      });
+      const transaction = startPerformanceTransaction('canvas.state-capture');
       
       try {
         // Update Sentry context with current canvas state
