@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
@@ -111,7 +112,7 @@ export class GridRenderer {
 }
 
 // React component wrapper for class-based implementation
-export const GridRendererComponent: React.FC<GridRendererProps> = ({
+export const GridRendererComponent = React.memo<GridRendererProps>(({
   canvas,
   onGridCreated,
   showGrid = true
@@ -139,4 +140,11 @@ export const GridRendererComponent: React.FC<GridRendererProps> = ({
   }, [canvas, showGrid, onGridCreated]);
   
   return null; // This component doesn't render anything
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if canvas reference changes or showGrid changes
+  return prevProps.canvas === nextProps.canvas && 
+         prevProps.showGrid === nextProps.showGrid;
+});
+
+GridRendererComponent.displayName = 'GridRendererComponent';
+
