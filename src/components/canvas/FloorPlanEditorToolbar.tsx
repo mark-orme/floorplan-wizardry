@@ -19,14 +19,14 @@ interface FloorPlanEditorToolbarProps {
   canRedo: boolean;
 }
 
-export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
+export const FloorPlanEditorToolbarWithToast = ({
   onUndo,
   onRedo,
   onClear,
   onSave,
   canUndo,
   canRedo
-}) => {
+}: FloorPlanEditorToolbarProps) => {
   const handleUndo = () => {
     const perfTransaction = startPerformanceTransaction('canvas.undo', {});
     
@@ -103,9 +103,14 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
       onRedo={handleRedo}
       onClear={handleClear}
       onSave={handleSave}
+      canUndo={canUndo}
+      canRedo={canRedo}
     />
   );
 };
 
 // Import the DrawingToolbar component to forward operations
 import { DrawingToolbar } from "./DrawingToolbar";
+
+// Export the FloorPlanEditorToolbar component
+export const FloorPlanEditorToolbar = FloorPlanEditorToolbarWithToast;
