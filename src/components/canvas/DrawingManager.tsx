@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -31,8 +32,7 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
   disableAutoSave = false,
   enableCollaboration = true,
   userName = 'Anonymous',
-  onCollaboratorUpdate,
-  handleCloseGuide = () => {}
+  onCollaboratorUpdate
 }) => {
   // State for grid and guide modal
   const [isGridReady, setIsGridReady] = useState(false);
@@ -110,11 +110,8 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
     setIsGridReady(isCreated);
   }, []);
   
-  const handleCloseGuide = useCallback((dontShowAgain: boolean) => {
+  const handleCloseGuide = useCallback(() => {
     setShowGuide(false);
-    if (dontShowAgain) {
-      localStorage.setItem('hideDrawingGuide', 'true');
-    }
   }, []);
   
   const handleOpenGuideChange = useCallback((open: boolean) => {
