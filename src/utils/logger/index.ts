@@ -1,99 +1,88 @@
 
 /**
- * Logger Utility
- * Provides consistent logging with severity levels and metadata
+ * Structured logger for application
+ * Provides consistent logging with namespace support and no-op in production
  */
+import { LogLevel, isLevelEnabled } from "./loggerConfig";
 
-// Log levels
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-// Interface for structured log data
-interface LogData {
-  [key: string]: any;
-}
-
-/**
- * Logger class with severity levels and structured data
- */
 class Logger {
-  private debugEnabled: boolean;
-  
-  constructor() {
-    this.debugEnabled = process.env.NODE_ENV !== 'production';
+  private namespace: string;
+
+  constructor(namespace: string) {
+    this.namespace = namespace;
   }
-  
+
   /**
-   * Log a debug message (only in development)
+   * Log a debug message
+   * Only displayed in development and when debug is enabled
    */
-  debug(message: string, data?: LogData): void {
-    if (!this.debugEnabled) return;
-    this.log('debug', message, data);
+  debug(message: string, context: Record<string, any> = {}): void {
+    if (process.env.NODE_ENV === "production") return;
+    if (!isLevelEnabled(this.namespace, LogLevel.DEBUG)) return;
+    
+    console.debug(`[${this.namespace}] ${message}`, context);
   }
-  
+
   /**
    * Log an info message
    */
-  info(message: string, data?: LogData): void {
-    this.log('info', message, data);
+  info(message: string, context: Record<string, any> = {}): void {
+    if (process.env.NODE_ENV === "production" && 
+        !isLevelEnabled(this.namespace, LogLevel.INFO)) return;
+    
+    console.info(`[${this.namespace}] ${message}`, context);
   }
-  
+
   /**
    * Log a warning message
    */
-  warn(message: string, data?: LogData): void {
-    this.log('warn', message, data);
+  warn(message: string, context: Record<string, any> = {}): void {
+    if (process.env.NODE_ENV === "production" && 
+        !isLevelEnabled(this.namespace, LogLevel.WARN)) return;
+    
+    console.warn(`[${this.namespace}] ${message}`, context);
   }
-  
+
   /**
    * Log an error message
    */
-  error(message: string, data?: LogData): void {
-    this.log('error', message, data);
+  error(message: string, error?: unknown, context: Record<string, any> = {}): void {
+    // Errors are always logged, even in production
+    console.error(
+      `[${this.namespace}] ${message}`, 
+      error instanceof Error ? error : context,
+      error instanceof Error ? context : {}
+    );
   }
   
   /**
-   * Internal log method
+   * Create a child logger with a more specific namespace
    */
-  private log(level: LogLevel, message: string, data: LogData = {}): void {
-    const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      level,
-      message,
-      ...data
-    };
-    
-    switch (level) {
-      case 'debug':
-        console.debug(`${timestamp} debug:`, message, data);
-        break;
-      case 'info':
-        console.info(`${timestamp} info:`, message, data);
-        break;
-      case 'warn':
-        console.warn(`${timestamp} warning:`, message, data);
-        break;
-      case 'error':
-        console.error(`${timestamp} error:`, message, data);
-        break;
-    }
-    
-    // In production, we could also send logs to a centralized service
-    if (process.env.NODE_ENV === 'production') {
-      this.sendToSentry(level, message, data);
-    }
+  child(childNamespace: string): Logger {
+    return new Logger(`${this.namespace}:${childNamespace}`);
   }
   
   /**
-   * Send logs to Sentry in production
+   * Get the logger's namespace
    */
-  private sendToSentry(level: LogLevel, message: string, data: LogData): void {
-    // Implement Sentry integration here if needed
-    // We already have a separate Sentry utility
-    // This is a stub for future implementation
+  getNamespace(): string {
+    return this.namespace;
   }
 }
 
-// Create and export a singleton instance
-const logger = new Logger();
+/**
+ * Create a logger for a specific namespace
+ */
+export function createLogger(namespace: string): Logger {
+  return new Logger(namespace);
+}
+
+// Pre-configured loggers for common areas
+export const lineToolLogger = createLogger("lineTool");
+export const gridLogger = createLogger("grid");
+export const canvasLogger = createLogger("canvas");
+export const perfLogger = createLogger("performance");
+
+// Default export for general usage
+const logger = createLogger("app");
 export default logger;
