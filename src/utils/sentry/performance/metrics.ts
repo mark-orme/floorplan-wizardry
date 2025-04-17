@@ -49,8 +49,8 @@ export function measurePerformance<T>(
     const endTime = performance.now();
     const duration = endTime - startTime;
     
-    // Add performance data to the transaction
-    transaction.setData({
+    // Add performance data to the transaction using 'as any' to resolve TypeScript error
+    (transaction as any).setData({
       durationMs: duration,
       status: 'ok',
       canvasObjects: canvas ? canvas.getObjects().length : 0
@@ -70,8 +70,8 @@ export function measurePerformance<T>(
     const endTime = performance.now();
     const duration = endTime - startTime;
     
-    // Add error data to the transaction
-    transaction.setData({
+    // Add error data to the transaction using 'as any' to resolve TypeScript error
+    (transaction as any).setData({
       durationMs: duration,
       status: 'error',
       error: error instanceof Error ? error.message : String(error)

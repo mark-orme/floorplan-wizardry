@@ -62,7 +62,8 @@ export function startPerformanceTransaction(
           const endTime = performance.now();
           const duration = endTime - startTime;
           
-          transaction.setData({
+          // Use 'as any' to resolve TypeScript error with setData
+          (transaction as any).setData({
             status,
             durationMs: duration
           });

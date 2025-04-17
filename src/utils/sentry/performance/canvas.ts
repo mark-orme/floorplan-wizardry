@@ -22,7 +22,7 @@ export function startCanvasTransaction(
       name,
       startTime: performance.now(),
       transaction: null,
-      finish: () => {} // No-op finish function
+      finish: (status?: string) => {} // No-op finish function
     };
   }
 
@@ -53,7 +53,8 @@ export function startCanvasTransaction(
           const endTime = performance.now();
           const duration = endTime - startTime;
 
-          transaction.setData({
+          // Use 'as any' to resolve TypeScript error with setData
+          (transaction as any).setData({
             status,
             durationMs: duration,
             canvasObjects: canvas ? canvas.getObjects().length : 0
@@ -71,7 +72,7 @@ export function startCanvasTransaction(
       name,
       startTime: performance.now(),
       transaction: null,
-      finish: () => {} // No-op finish function
+      finish: (status?: string) => {} // No-op finish function
     };
   }
 }
