@@ -7,6 +7,7 @@ import { ReliableGridLayer } from '@/components/canvas/ReliableGridLayer';
 import { BrushCursorPreview } from '@/components/canvas/BrushCursorPreview';
 import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
 import { useMemoizedDrawingComponents } from '@/hooks/useMemoizedDrawingComponents';
+import { useRealtimeCanvasSync } from '@/hooks/useRealtimeCanvasSync';
 
 interface DrawingManagerProps {
   fabricCanvas: FabricCanvas | null;
@@ -16,6 +17,9 @@ interface DrawingManagerProps {
   showGrid?: boolean;
   storageKey?: string;
   disableAutoSave?: boolean;
+  enableCollaboration?: boolean;
+  userName?: string;
+  onCollaboratorUpdate?: (count: number) => void;
 }
 
 export const DrawingManager: React.FC<DrawingManagerProps> = ({
@@ -25,7 +29,10 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
   lineThickness,
   showGrid = true,
   storageKey = 'drawing_autosave',
-  disableAutoSave = false
+  disableAutoSave = false,
+  enableCollaboration = true,
+  userName = 'Anonymous',
+  onCollaboratorUpdate
 }) => {
   // State for grid and guide modal
   const [isGridReady, setIsGridReady] = useState(false);
@@ -40,6 +47,63 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
     enabled: !disableAutoSave && !!fabricCanvas,
     storageKey: storageKey
   });
+  
+  // Real-time collaboration
+  const { collaborators, syncCanvas } = useRealtimeCanvasSync({
+    canvas: fabricCanvas,
+    enabled: enableCollaboration && !!fabricCanvas,
+    onRemoteUpdate: (sender, timestamp) => {
+      console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    }
+  });
+  
+  // Update collaborator count for parent components
+  useEffect(() => {
+    if (onCollaboratorUpdate && collaborators.length > 0) {
+      onCollaboratorUpdate(collaborators.length);
+    }
+  }, [collaborators, onCollaboratorUpdate]);
+  
+  // Set up canvas change handlers for collaboration
+  useEffect(() => {
+    if (!fabricCanvas || !enableCollaboration) return;
+    
+    const handleObjectModified = () => {
+      syncCanvas(userName);
+    };
+    
+    const handlePathCreated = () => {
+      syncCanvas(userName);
+    };
+    
+    const handleObjectAdded = () => {
+      syncCanvas(userName);
+    };
+    
+    const handleObjectRemoved = () => {
+      syncCanvas(userName);
+    };
+    
+    // Attach event handlers
+    fabricCanvas.on('object:modified', handleObjectModified);
+    fabricCanvas.on('path:created', handlePathCreated);
+    fabricCanvas.on('object:added', handleObjectAdded);
+    fabricCanvas.on('object:removed', handleObjectRemoved);
+    
+    // Initial sync
+    const initialSyncTimer = setTimeout(() => {
+      syncCanvas(userName);
+    }, 1000);
+    
+    return () => {
+      // Remove event handlers
+      fabricCanvas.off('object:modified', handleObjectModified);
+      fabricCanvas.off('path:created', handlePathCreated);
+      fabricCanvas.off('object:added', handleObjectAdded);
+      fabricCanvas.off('object:removed', handleObjectRemoved);
+      clearTimeout(initialSyncTimer);
+    };
+  }, [fabricCanvas, enableCollaboration, syncCanvas, userName]);
   
   // Memoize handlers to prevent unnecessary re-renders
   const handleGridCreated = useCallback((isCreated: boolean) => {
@@ -108,6 +172,13 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
       
       {/* Measurement Guide Modal */}
       {measurementGuide}
+      
+      {/* Collaboration Indicator */}
+      {enableCollaboration && collaborators.length > 0 && (
+        <div className="absolute top-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+          {collaborators.length} {collaborators.length === 1 ? 'person' : 'people'} editing
+        </div>
+      )}
     </>
   );
 };

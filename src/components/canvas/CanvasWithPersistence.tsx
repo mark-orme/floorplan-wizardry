@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useCanvasMetrics } from '@/hooks/useCanvasMetrics';
 import { useSentryCanvasMonitoring } from '@/hooks/useSentryCanvasMonitoring';
+import { useRealtimeCanvasSync } from '@/hooks/useRealtimeCanvasSync';
 
 interface CanvasWithPersistenceProps {
   width: number;
@@ -13,6 +14,8 @@ interface CanvasWithPersistenceProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
   showControls?: boolean;
   storageKey?: string;
+  enableCollaboration?: boolean;
+  userName?: string;
 }
 
 export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
@@ -20,11 +23,14 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   height,
   onCanvasReady,
   showControls = true,
-  storageKey = 'canvas_autosave'
+  storageKey = 'canvas_autosave',
+  enableCollaboration = true,
+  userName = 'User'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [isCanvasReady, setIsCanvasReady] = useState(false);
+  const [collaboratorsCount, setCollaboratorsCount] = useState(0);
   
   // Initialize canvas
   useEffect(() => {
@@ -56,13 +62,31 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady,
     storageKey: storageKey,
-    onSave: () => {
-      toast.success('Canvas saved', { id: 'canvas-save' });
+    onSave: (success) => {
+      if (success) {
+        toast.success('Canvas saved', { id: 'canvas-save' });
+      }
     },
-    onLoad: () => {
-      toast.success('Canvas loaded', { id: 'canvas-load' });
+    onLoad: (success) => {
+      if (success) {
+        toast.success('Canvas loaded', { id: 'canvas-load' });
+      }
     }
   });
+  
+  // Set up real-time collaboration
+  const { collaborators, syncCanvas } = useRealtimeCanvasSync({
+    canvas: fabricCanvasRef.current,
+    enabled: isCanvasReady && enableCollaboration,
+    onRemoteUpdate: (sender, timestamp) => {
+      console.log(`Received canvas update from ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    }
+  });
+  
+  // Update collaborators count
+  useEffect(() => {
+    setCollaboratorsCount(collaborators.length);
+  }, [collaborators]);
   
   // Track canvas metrics
   const { metrics } = useCanvasMetrics({
@@ -74,6 +98,36 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady
   });
+  
+  // Set up canvas change handlers for collaboration
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !enableCollaboration || !isCanvasReady) return;
+    
+    const handleObjectModified = () => {
+      syncCanvas(userName);
+    };
+    
+    const handlePathCreated = () => {
+      syncCanvas(userName);
+    };
+    
+    // Attach event handlers
+    fabricCanvasRef.current.on('object:modified', handleObjectModified);
+    fabricCanvasRef.current.on('path:created', handlePathCreated);
+    
+    // Initial sync
+    const initialSyncTimer = setTimeout(() => {
+      syncCanvas(userName);
+    }, 1000);
+    
+    return () => {
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.off('object:modified', handleObjectModified);
+        fabricCanvasRef.current.off('path:created', handlePathCreated);
+      }
+      clearTimeout(initialSyncTimer);
+    };
+  }, [fabricCanvasRef.current, enableCollaboration, isCanvasReady, syncCanvas, userName]);
   
   // Load canvas data on initial mount
   useEffect(() => {
@@ -109,6 +163,12 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
           >
             {isLoading ? 'Loading...' : 'Load'}
           </Button>
+        </div>
+      )}
+      
+      {enableCollaboration && collaboratorsCount > 0 && (
+        <div className="absolute top-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+          {collaboratorsCount} {collaboratorsCount === 1 ? 'person' : 'people'} editing
         </div>
       )}
       
