@@ -27,7 +27,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         width,
         height,
         selection: true,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff"  // Set background color during initialization
       });
 
       fabricCanvasRef.current = canvas;
@@ -55,7 +55,8 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         },
         clearCanvas: () => {
           canvas.clear();
-          canvas.setBackgroundColor("#ffffff", canvas.renderAll.bind(canvas));
+          canvas.backgroundColor = "#ffffff";  // Directly set backgroundColor
+          canvas.renderAll();
           saveCanvasState();
         },
         saveCanvas: () => {
