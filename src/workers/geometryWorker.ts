@@ -1,27 +1,23 @@
 
 /**
- * Web Worker for optimized geometry calculations
+ * Web worker for optimized geometry calculations
+ * Uses transferable objects for better performance
  */
 
-// Define worker message data type
+// Define types for worker messages
 type WorkerMessageData = {
   id: string;
-  type: string;
+  type: 'calculateArea' | 'calculateDistance' | 'optimizePoints' | 'snapToGrid';
   payload: any;
 };
 
-// Point interface
-interface Point {
-  x: number;
-  y: number;
-}
-
-// Handle incoming messages
+// Listen for messages from the main thread
 self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
   const { id, type, payload } = event.data;
   
   try {
     let result;
+    let transferables: Transferable[] = [];
     
     // Process different calculation types
     switch (type) {
@@ -33,12 +29,44 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         result = calculateDistance(payload.start, payload.end);
         break;
         
-      case 'simplifyPath':
-        result = simplifyPath(payload.points, payload.tolerance);
+      case 'optimizePoints':
+        const optimizedResult = optimizePointsArray(
+          payload.points, 
+          payload.tolerance || 1,
+          payload.useTransferable || false
+        );
+        
+        if (payload.useTransferable) {
+          result = {
+            points: optimizedResult.points,
+            buffer: optimizedResult.buffer
+          };
+          if (optimizedResult.buffer) {
+            transferables.push(optimizedResult.buffer);
+          }
+        } else {
+          result = optimizedResult.points;
+        }
         break;
         
       case 'snapToGrid':
-        result = snapPointsToGrid(payload.points, payload.gridSize);
+        const snappedResult = snapPointsToGrid(
+          payload.points, 
+          payload.gridSize,
+          payload.useTransferable || false
+        );
+        
+        if (payload.useTransferable) {
+          result = {
+            points: snappedResult.points,
+            buffer: snappedResult.buffer
+          };
+          if (snappedResult.buffer) {
+            transferables.push(snappedResult.buffer);
+          }
+        } else {
+          result = snappedResult.points;
+        }
         break;
         
       default:
@@ -46,11 +74,19 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
     }
     
     // Send result back to main thread
-    self.postMessage({
-      id,
-      success: true,
-      result
-    });
+    if (transferables.length > 0) {
+      self.postMessage({
+        id,
+        success: true,
+        result
+      }, transferables);
+    } else {
+      self.postMessage({
+        id,
+        success: true,
+        result
+      });
+    }
   } catch (error) {
     // Send error back to main thread
     self.postMessage({
@@ -63,108 +99,222 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
 
 /**
  * Calculate area of a polygon using Shoelace formula
+ * Supports both regular arrays and TypedArrays
  */
-function calculatePolygonArea(points: Point[]): number {
-  if (points.length < 3) return 0;
-  
-  let area = 0;
-  const n = points.length;
-  
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
+function calculatePolygonArea(points: { x: number, y: number }[] | Float32Array): number {
+  if (points instanceof Float32Array) {
+    // Process typed array format (x,y pairs)
+    const count = points.length / 2;
+    if (count < 3) return 0;
+    
+    let area = 0;
+    for (let i = 0; i < count; i++) {
+      const j = (i + 1) % count;
+      const xi = points[i * 2];
+      const yi = points[i * 2 + 1];
+      const xj = points[j * 2];
+      const yj = points[j * 2 + 1];
+      
+      area += xi * yj;
+      area -= xj * yi;
+    }
+    
+    return Math.abs(area) / 2;
+  } else {
+    // Process object format {x, y}
+    if (points.length < 3) return 0;
+    
+    let area = 0;
+    const n = points.length;
+    
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += points[i].x * points[j].y;
+      area -= points[j].x * points[i].y;
+    }
+    
+    return Math.abs(area) / 2;
   }
-  
-  return Math.abs(area) / 2;
 }
 
 /**
  * Calculate distance between two points
  */
-function calculateDistance(start: Point, end: Point): number {
+function calculateDistance(
+  start: { x: number, y: number }, 
+  end: { x: number, y: number }
+): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
- * Simplify a path using Douglas-Peucker algorithm
+ * Convert between array formats
  */
-function simplifyPath(points: Point[], tolerance: number): Point[] {
-  if (points.length <= 2) return [...points];
+function pointsToTypedArray(points: { x: number, y: number }[]): Float32Array {
+  const result = new Float32Array(points.length * 2);
   
-  // Helper function to calculate perpendicular distance
-  const perpendicularDistance = (point: Point, start: Point, end: Point): number => {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    
-    // Handle case when start and end are the same point
-    if (dx === 0 && dy === 0) {
-      const d = calculateDistance(point, start);
-      return d;
-    }
-    
-    // Calculate perpendicular distance
-    const lineLengthSquared = dx * dx + dy * dy;
-    const t = ((point.x - start.x) * dx + (point.y - start.y) * dy) / lineLengthSquared;
-    
-    if (t < 0) {
-      // Point is before start, use distance to start
-      return calculateDistance(point, start);
-    }
-    
-    if (t > 1) {
-      // Point is after end, use distance to end
-      return calculateDistance(point, end);
-    }
-    
-    // Calculate perpendicular intersection point
-    const projectionX = start.x + t * dx;
-    const projectionY = start.y + t * dy;
-    
-    // Return distance to intersection point
-    return calculateDistance(point, { x: projectionX, y: projectionY });
-  };
+  for (let i = 0; i < points.length; i++) {
+    result[i * 2] = points[i].x;
+    result[i * 2 + 1] = points[i].y;
+  }
   
-  // Recursive implementation of Douglas-Peucker
-  const douglasPeucker = (pointList: Point[], epsilon: number): Point[] => {
-    // Find the point with the maximum distance
-    let maxDistance = 0;
-    let maxIndex = 0;
-    const end = pointList.length - 1;
-    
-    for (let i = 1; i < end; i++) {
-      const distance = perpendicularDistance(pointList[i], pointList[0], pointList[end]);
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        maxIndex = i;
-      }
-    }
-    
-    // If max distance is greater than epsilon, recursively simplify
-    if (maxDistance > epsilon) {
-      // Recursive call
-      const firstSegment = douglasPeucker(pointList.slice(0, maxIndex + 1), epsilon);
-      const secondSegment = douglasPeucker(pointList.slice(maxIndex), epsilon);
-      
-      // Concatenate results (remove duplicate point)
-      return [...firstSegment.slice(0, -1), ...secondSegment];
-    } else {
-      // Just return the end points
-      return [pointList[0], pointList[end]];
-    }
-  };
+  return result;
+}
+
+function typedArrayToPoints(array: Float32Array): { x: number, y: number }[] {
+  const points = [];
   
-  return douglasPeucker(points, tolerance);
+  for (let i = 0; i < array.length; i += 2) {
+    points.push({
+      x: array[i],
+      y: array[i + 1]
+    });
+  }
+  
+  return points;
 }
 
 /**
  * Snap points to a grid
  */
-function snapPointsToGrid(points: Point[], gridSize: number): Point[] {
-  return points.map(point => ({
+function snapPointsToGrid(
+  points: { x: number, y: number }[] | Float32Array, 
+  gridSize: number,
+  useTransferable: boolean = false
+): { points: any, buffer?: ArrayBuffer } {
+  // Convert typed array to points if needed
+  const isTypedArray = points instanceof Float32Array;
+  const workingPoints = isTypedArray 
+    ? typedArrayToPoints(points as Float32Array) 
+    : points as { x: number, y: number }[];
+  
+  // Snap each point to grid
+  const snappedPoints = workingPoints.map(point => ({
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
   }));
+  
+  // Return in requested format
+  if (useTransferable) {
+    const typedResult = pointsToTypedArray(snappedPoints);
+    return {
+      points: typedResult,
+      buffer: typedResult.buffer
+    };
+  }
+  
+  return { points: snappedPoints };
+}
+
+/**
+ * Optimize a points array by removing unnecessary points
+ * Uses Ramer-Douglas-Peucker algorithm
+ */
+function optimizePointsArray(
+  points: { x: number, y: number }[] | Float32Array, 
+  tolerance: number = 1,
+  useTransferable: boolean = false
+): { points: any, buffer?: ArrayBuffer } {
+  // Convert typed array to points if needed
+  const isTypedArray = points instanceof Float32Array;
+  const workingPoints = isTypedArray 
+    ? typedArrayToPoints(points as Float32Array) 
+    : [...(points as { x: number, y: number }[])];
+  
+  if (workingPoints.length <= 2) {
+    // Not enough points to optimize
+    if (useTransferable) {
+      const typedResult = pointsToTypedArray(workingPoints);
+      return { points: typedResult, buffer: typedResult.buffer };
+    }
+    return { points: workingPoints };
+  }
+  
+  // Implementation of Ramer-Douglas-Peucker algorithm
+  const rdp = (pointList: { x: number, y: number }[], epsilon: number): { x: number, y: number }[] => {
+    // Find the point with the maximum distance
+    let maxDistance = 0;
+    let index = 0;
+    const end = pointList.length - 1;
+    
+    for (let i = 1; i < end; i++) {
+      const distance = perpendicularDistance(pointList[i], pointList[0], pointList[end]);
+      
+      if (distance > maxDistance) {
+        index = i;
+        maxDistance = distance;
+      }
+    }
+    
+    // If max distance is greater than epsilon, recursively simplify
+    if (maxDistance > epsilon) {
+      const firstHalf = rdp(pointList.slice(0, index + 1), epsilon);
+      const secondHalf = rdp(pointList.slice(index), epsilon);
+      
+      // Concat the two parts and remove duplicate point
+      return [...firstHalf.slice(0, -1), ...secondHalf];
+    } else {
+      // Just return first and last point
+      return [pointList[0], pointList[end]];
+    }
+  };
+  
+  // Calculate perpendicular distance
+  const perpendicularDistance = (
+    point: { x: number, y: number },
+    lineStart: { x: number, y: number },
+    lineEnd: { x: number, y: number }
+  ): number => {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
+    
+    // If line is just a point, return distance to that point
+    if (dx === 0 && dy === 0) {
+      const pdx = point.x - lineStart.x;
+      const pdy = point.y - lineStart.y;
+      return Math.sqrt(pdx * pdx + pdy * pdy);
+    }
+    
+    // Calculate perpendicular distance
+    const lineLengthSquared = dx * dx + dy * dy;
+    const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
+    
+    if (t < 0) {
+      // Point is before start of line, use distance to start
+      const pdx = point.x - lineStart.x;
+      const pdy = point.y - lineStart.y;
+      return Math.sqrt(pdx * pdx + pdy * pdy);
+    }
+    
+    if (t > 1) {
+      // Point is after end of line, use distance to end
+      const pdx = point.x - lineEnd.x;
+      const pdy = point.y - lineEnd.y;
+      return Math.sqrt(pdx * pdx + pdy * pdy);
+    }
+    
+    // Point is between start and end of line, calculate perpendicular distance
+    const nearestX = lineStart.x + t * dx;
+    const nearestY = lineStart.y + t * dy;
+    const pdx = point.x - nearestX;
+    const pdy = point.y - nearestY;
+    
+    return Math.sqrt(pdx * pdx + pdy * pdy);
+  };
+  
+  // Run the algorithm
+  const result = rdp(workingPoints, tolerance);
+  
+  // Return in requested format
+  if (useTransferable) {
+    const typedResult = pointsToTypedArray(result);
+    return {
+      points: typedResult,
+      buffer: typedResult.buffer
+    };
+  }
+  
+  return { points: result };
 }

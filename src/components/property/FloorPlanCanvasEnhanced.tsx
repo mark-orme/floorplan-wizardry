@@ -7,7 +7,6 @@ import { useTouchGestures } from "@/hooks/useTouchGestures";
 import { usePaperSizeManager } from "@/hooks/usePaperSizeManager";
 import { DrawingLayers } from "@/components/canvas/DrawingLayers";
 import { DrawingMode } from "@/constants/drawingModes";
-import { PaperSizeSelector } from "@/components/canvas/PaperSizeSelector";
 import { CanvasDiagnostics } from "@/components/canvas/CanvasDiagnostics";
 import { useFloorPlanCanvas } from "@/hooks/useFloorPlanCanvas";
 import { AreaCalculationDisplay } from "./AreaCalculationDisplay";
@@ -15,7 +14,8 @@ import { MemoizedToolIndicator } from "../canvas/tools/MemoizedToolIndicator";
 import { CalculateAreaButton } from "./CalculateAreaButton";
 import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
 import { CanvasCollaborationIndicator } from "@/components/canvas/app/CanvasCollaborationIndicator";
-import { MemoizedPaperSizeSelector } from "../canvas/paper/MemoizedPaperSizeSelector";
+import { EnhancedMemoizedPaperSizeSelector } from "../canvas/paper/EnhancedMemoizedPaperSizeSelector";
+import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 
 interface FloorPlanCanvasEnhancedProps {
   /** Callback for canvas error */
@@ -32,7 +32,7 @@ interface FloorPlanCanvasEnhancedProps {
   enableSync?: boolean;
 }
 
-export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = ({
+export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = React.memo(({
   onCanvasError,
   initialTool = DrawingMode.SELECT,
   initialLineColor = "#000000",
@@ -67,30 +67,28 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     onCanvasError
   });
   
+  // Use virtualized canvas for performance optimization
+  const { performanceMetrics, refreshVirtualization } = useVirtualizedCanvas(
+    fabricCanvasRef,
+    { enabled: true }
+  );
+  
   // Set up real-time sync if enabled - with memoized handlers
   const syncCanvas = useCallback((sender: string) => {
-    // Implement sync logic with transferables
-    // This will be called by the hook when changes are detected
-  }, []);
+    // Use transferable objects for better performance
+    if (fabricCanvasRef.current) {
+      refreshVirtualization();
+    }
+  }, [refreshVirtualization]);
   
   const { collaborators } = useRealtimeCanvasSync({
     canvas: fabricCanvasRef.current,
     enabled: enableSync,
     onRemoteUpdate: useCallback((sender: string, timestamp: number) => {
       console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
-    }, [])
+      refreshVirtualization();
+    }, [refreshVirtualization])
   });
-  
-  // Sync canvas on significant changes
-  useEffect(() => {
-    if (enableSync && fabricCanvasRef.current) {
-      const syncTimer = setTimeout(() => {
-        syncCanvas('User');
-      }, 1000);
-      
-      return () => clearTimeout(syncTimer);
-    }
-  }, [layers, activeLayerId, enableSync, syncCanvas]);
   
   // Use paper size manager hook
   const { currentPaperSize, paperSizes, infiniteCanvas, changePaperSize, toggleInfiniteCanvas } = 
@@ -99,17 +97,32 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   // Memoized handlers
   const handleZoomChange = useCallback((zoom: number) => {
     setCanvasZoom(zoom);
-  }, [setCanvasZoom]);
+    refreshVirtualization();
+  }, [setCanvasZoom, refreshVirtualization]);
   
   const memoizedCalculateArea = useCallback(() => {
     calculateArea();
   }, [calculateArea]);
+  
+  // Memoized performance metric display
+  const performanceDisplay = useMemo(() => {
+    if (process.env.NODE_ENV === 'production') return null;
+    
+    return (
+      <div className="absolute bottom-16 right-4 bg-white/80 text-xs p-2 rounded shadow">
+        <div>FPS: {performanceMetrics.fps}</div>
+        <div>Objects: {performanceMetrics.objectCount}</div>
+        <div>Visible: {performanceMetrics.visibleObjectCount}</div>
+      </div>
+    );
+  }, [performanceMetrics]);
   
   return (
     <div 
       ref={canvasContainerRef}
       className="h-full w-full relative overflow-hidden"
       data-testid="enhanced-floor-plan-wrapper"
+      data-canvas-ready={!!fabricCanvasRef.current}
     >
       <CanvasControllerProvider>
         <EnhancedCanvas
@@ -157,8 +170,8 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         {/* Area calculation display - extracted to component */}
         <AreaCalculationDisplay areaM2={calculatedArea.areaM2} />
         
-        {/* Paper size controls - now using memoized version */}
-        <MemoizedPaperSizeSelector
+        {/* Paper size controls - using optimized version */}
+        <EnhancedMemoizedPaperSizeSelector
           currentPaperSize={currentPaperSize}
           paperSizes={paperSizes}
           infiniteCanvas={infiniteCanvas}
@@ -166,12 +179,19 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
           onToggleInfiniteCanvas={toggleInfiniteCanvas}
         />
         
-        {/* Tool selection indicators - now using memoized version */}
+        {/* Tool selection indicators - using memoized version */}
         <MemoizedToolIndicator activeTool={tool} />
         
         {/* Calculate Area button - extracted to component */}
         <CalculateAreaButton onClick={memoizedCalculateArea} />
+        
+        {/* Performance metrics display */}
+        {performanceDisplay}
       </CanvasControllerProvider>
     </div>
   );
-};
+});
+
+FloorPlanCanvasEnhanced.displayName = 'FloorPlanCanvasEnhanced';
+
+export default FloorPlanCanvasEnhanced;
