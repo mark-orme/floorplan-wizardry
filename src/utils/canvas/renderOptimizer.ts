@@ -22,6 +22,64 @@ export const optimizeCanvasPerformance = (canvas: FabricCanvas): void => {
 
   // Optimize selection and interaction performance
   canvas.skipTargetFind = false;
+
+  // Set stateful properties for better garbage collection
+  canvas.selection = false; // We'll handle selection manually for better control
+  
+  // Set better defaults for interactive objects
+  const defaultObjectProps = {
+    transparentCorners: true,
+    cornerColor: 'rgba(0,0,255,0.5)',
+    cornerSize: 8,
+    cornerStyle: 'circle',
+    borderColor: '#2C8CF4',
+    padding: 5
+  };
+  
+  canvas.getObjects().forEach(obj => {
+    if (obj.selectable) {
+      obj.set(defaultObjectProps);
+    }
+  });
+
+  // Set up event delegation for better performance
+  setupEventDelegation(canvas);
+};
+
+/**
+ * Set up event delegation to reduce the number of individual event handlers
+ */
+const setupEventDelegation = (canvas: FabricCanvas): void => {
+  // Use event delegation instead of individual object handlers
+  canvas.on('mouse:down', function(opt) {
+    const evt = opt.e;
+    if (evt.altKey === true) {
+      this.isDragging = true;
+      this.selection = false;
+      this.lastPosX = evt.clientX;
+      this.lastPosY = evt.clientY;
+    }
+  });
+  
+  canvas.on('mouse:move', function(opt) {
+    if (this.isDragging) {
+      const e = opt.e;
+      const vpt = this.viewportTransform;
+      if (!vpt) return;
+      
+      vpt[4] += e.clientX - this.lastPosX;
+      vpt[5] += e.clientY - this.lastPosY;
+      
+      this.requestRenderAll();
+      this.lastPosX = e.clientX;
+      this.lastPosY = e.clientY;
+    }
+  });
+  
+  canvas.on('mouse:up', function() {
+    this.isDragging = false;
+    this.selection = true;
+  });
 };
 
 /**
@@ -77,4 +135,65 @@ export const createSmoothEventHandler = <T extends (...args: any[]) => void>(
       return callback(...args);
     }
   }) as T;
+};
+
+/**
+ * Batch multiple canvas operations for better performance
+ * @param canvas Fabric canvas instance
+ * @param operations Functions to execute in batch
+ */
+export const batchCanvasOperations = (
+  canvas: FabricCanvas,
+  operations: Array<(canvas: FabricCanvas) => void>
+): void => {
+  // Temporarily disable rendering
+  const originalRenderOnAddRemove = canvas.renderOnAddRemove;
+  canvas.renderOnAddRemove = false;
+  
+  try {
+    // Execute all operations
+    operations.forEach(operation => operation(canvas));
+    
+    // Request a single render
+    requestOptimizedRender(canvas, 'batch-operations');
+  } finally {
+    // Restore original setting
+    canvas.renderOnAddRemove = originalRenderOnAddRemove;
+  }
+};
+
+/**
+ * Debounce a function to limit execution frequency
+ * @param fn Function to debounce
+ * @param wait Wait time in milliseconds
+ * @param immediate Whether to execute immediately
+ * @returns Debounced function
+ */
+export const debounce = <T extends (...args: any[]) => any>(
+  fn: T,
+  wait: number = 100,
+  immediate: boolean = false
+): ((...args: Parameters<T>) => void) => {
+  let timeout: number | null = null;
+  
+  return function(this: any, ...args: Parameters<T>) {
+    const context = this;
+    
+    const later = function() {
+      timeout = null;
+      if (!immediate) fn.apply(context, args);
+    };
+    
+    const callNow = immediate && !timeout;
+    
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    
+    timeout = window.setTimeout(later, wait);
+    
+    if (callNow) {
+      fn.apply(context, args);
+    }
+  };
 };
