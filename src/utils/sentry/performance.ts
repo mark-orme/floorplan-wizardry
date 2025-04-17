@@ -170,7 +170,7 @@ export function measurePerformance<T>(
  */
 export function startCanvasTransaction(
   name: string, 
-  canvas: FabricCanvas | null = null,
+  canvas: FabricCanvas | null,
   options: Record<string, unknown> = {}
 ): {
   name: string;
