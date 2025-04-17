@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -10,12 +9,7 @@ import {
   InteractionCategory
 } from "@/utils/sentry/userInteractions";
 import { startCanvasTracking } from "@/utils/sentry/performance";
-
-// Components
-import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
-import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
-import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
-import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
+import { safeFinish } from "@/utils/sentry/safeFinish";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
@@ -51,10 +45,7 @@ export const FloorPlanEditor: React.FC = () => {
     // ✅ Safely start and finish tracking with correct arguments
     if (canvasOperations.canvas) {
       canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
-      // Ensure finish is called with the 'ok' status
-      if (canvasTransaction.current) {
-        canvasTransaction.current.finish("ok");
-      }
+      safeFinish(canvasTransaction.current);
     }
   };
 
