@@ -53,7 +53,8 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
               <p className="text-sm text-gray-500">
                 • Click and drag to measure the distance between two points<br />
                 • Double-click to finish a measurement<br />
-                • Press ESC to cancel the current measurement
+                • Press ESC to cancel the current measurement<br />
+                • Hold SHIFT while dragging to snap to 45° angles
               </p>
             </div>
           </div>
@@ -66,9 +67,10 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
             <div className="pl-6">
               <p className="text-sm text-gray-500">
                 • Click to start drawing a shape<br />
-                • Continue clicking to add points<br />
+                • Continue clicking to add points to your shape<br />
                 • Double-click to close the shape and calculate area<br />
-                • Areas are shown in both square meters and square feet
+                • Areas are shown in both square meters and square feet<br />
+                • Press BACKSPACE to remove the last point
               </p>
             </div>
           </div>
@@ -83,7 +85,8 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
                 • Enable grid snapping for precise measurements<br />
                 • Hold SHIFT to temporarily disable snapping<br />
                 • Adjust grid size in settings for different scales<br />
-                • Use arrow keys for fine adjustments
+                • Use arrow keys for fine adjustments<br />
+                • Press G to toggle grid visibility
               </p>
             </div>
           </div>
@@ -91,6 +94,12 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
           <div className="bg-blue-50 p-4 rounded-md">
             <p className="text-sm text-blue-700">
               <strong>Pro Tip:</strong> For the most accurate measurements, zoom in and use the grid snapping feature. All measurements are automatically saved with your drawing.
+            </p>
+          </div>
+
+          <div className="bg-yellow-50 p-4 rounded-md">
+            <p className="text-sm text-yellow-700">
+              <strong>Note:</strong> You can access this guide anytime by clicking the measurement guide button in the toolbar.
             </p>
           </div>
         </div>

@@ -4,20 +4,17 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { useRestorePrompt } from "@/hooks/useRestorePrompt";
+import { useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { startCanvasTracking } from "@/utils/sentry/performance";
-import { safeFinish } from "@/utils/sentry/safeFinish";
-
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
 import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
 import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
-import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
+import { DrawingToolbarModals } from "./DrawingToolbarModals";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
   const { setCanUndo, setCanRedo } = useDrawingContext();
   const canvasRef = useRef<any>(null);
-  const canvasTransaction = useRef<{ finish: (status: string) => void } | null>(null);
 
   const {
     showMeasurementGuide,
@@ -41,14 +38,16 @@ export const FloorPlanEditor: React.FC = () => {
     }
   });
 
+  const { saveCanvas, loadCanvas } = useCanvasPersistence(canvas);
+
   const handleCanvasReady = (canvasOperations: any) => {
     setCanvas(canvasOperations.canvas);
     canvasRef.current = canvasOperations;
-
-    if (canvasOperations.canvas) {
-      canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
-      // Explicitly pass 'ok' status to finish method
-      safeFinish(canvasTransaction.current, 'ok');
+    // Show measurement guide on first visit
+    const firstVisit = !localStorage.getItem('hasSeenMeasurementGuide');
+    if (firstVisit) {
+      setShowMeasurementGuide(true);
+      localStorage.setItem('hasSeenMeasurementGuide', 'true');
     }
   };
 
@@ -72,11 +71,7 @@ export const FloorPlanEditor: React.FC = () => {
         canvasRef.current.clearCanvas();
       }
     },
-    save: () => {
-      if (canvasRef.current?.saveCanvas) {
-        canvasRef.current.saveCanvas();
-      }
-    }
+    save: saveCanvas
   };
 
   return (
@@ -88,7 +83,9 @@ export const FloorPlanEditor: React.FC = () => {
         onSave={handleCanvasOperations.save}
         canUndo={canvasRef.current?.canUndo || false}
         canRedo={canvasRef.current?.canRedo || false}
-      />
+      >
+        <DrawingToolbarModals />
+      </FloorPlanEditorToolbar>
 
       <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
         <MeasurementGuideButton onClick={openMeasurementGuide} />
@@ -99,14 +96,6 @@ export const FloorPlanEditor: React.FC = () => {
         open={showMeasurementGuide}
         onClose={handleCloseMeasurementGuide}
         onOpenChange={setShowMeasurementGuide}
-      />
-
-      <RestoreDrawingButton
-        showPrompt={showRestorePrompt}
-        timeElapsed={timeElapsed}
-        isRestoring={isRestoring}
-        onRestore={handleRestore}
-        onDismiss={handleDismiss}
       />
     </div>
   );
