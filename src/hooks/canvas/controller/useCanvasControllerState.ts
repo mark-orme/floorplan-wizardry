@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { DrawingTool, CanvasState, DEFAULT_CANVAS_STATE } from '@/hooks/useCanvasState';
+import { DrawingTool } from '@/types/canvasStateTypes';
+import { DEFAULT_CANVAS_STATE } from '@/types/canvasStateTypes';
 
 /**
  * Hook for managing canvas controller state

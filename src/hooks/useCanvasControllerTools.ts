@@ -5,7 +5,7 @@
  * @module useCanvasControllerTools
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 import { useCanvasToolsManager } from "./canvas/controller/useCanvasToolsManager";

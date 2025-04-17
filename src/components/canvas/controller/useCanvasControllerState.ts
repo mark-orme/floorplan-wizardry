@@ -4,7 +4,8 @@
  * Provides a unified interface for all canvas state management
  * @module components/canvas/controller/useCanvasControllerState
  */
-import { useCanvasState, UseCanvasStateResult } from "@/hooks/useCanvasState";
+import { useCanvasState } from "@/hooks/useCanvasState";
+import { UseCanvasStateResult } from "@/types/canvasStateTypes";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import { useState } from "react";
 import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";

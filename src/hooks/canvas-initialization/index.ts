@@ -7,7 +7,7 @@
 
 import { useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "../useCanvasState";
+import { DrawingTool } from "@/types/canvasStateTypes";
 import { DebugInfoState } from "@/types/drawingTypes";
 
 // Added createGrid to the props interface

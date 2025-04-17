@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -5,7 +6,7 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";

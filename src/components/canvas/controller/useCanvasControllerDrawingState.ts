@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingState } from "@/types/drawingTypes";
 

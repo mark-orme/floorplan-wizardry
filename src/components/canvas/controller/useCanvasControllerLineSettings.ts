@@ -1,11 +1,10 @@
-
 /**
  * Hook for managing line settings in the canvas controller
  * @module useCanvasControllerLineSettings
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { DrawingTool } from "@/hooks/useCanvasState";
+import { DrawingTool } from "@/types/canvasStateTypes";
 
 /**
  * Props for the useCanvasControllerLineSettings hook
