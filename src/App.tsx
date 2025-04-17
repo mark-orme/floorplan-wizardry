@@ -9,10 +9,14 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { isRTL } from "@/i18n/config";
 import logger from "@/utils/logger";
 import { initializeSentry, configureSentryContext } from "@/utils/sentry/initialization";
+import { initializeInteractionTracking } from "@/utils/sentry/userInteractions";
 import * as Sentry from '@sentry/react';
 
 // Initialize Sentry as early as possible
 initializeSentry();
+
+// Initialize user interaction tracking
+initializeInteractionTracking();
 
 // Create a Sentry error boundary component
 const SentryErrorBoundary = ({ children }: { children: React.ReactNode }) => (

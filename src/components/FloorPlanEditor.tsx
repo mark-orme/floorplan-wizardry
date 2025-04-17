@@ -13,8 +13,17 @@ import logger from "@/utils/logger";
 import { RestoreDrawingPrompt } from "./canvas/RestoreDrawingPrompt";
 import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { useSentryCanvasMonitoring } from "@/hooks/useSentryCanvasMonitoring";
-import { startPerformanceTransaction } from "@/utils/sentry/performance";
+import { 
+  startPerformanceTransaction, 
+  finishPerformanceTransaction 
+} from "@/utils/sentry/performance";
 import { configureSentryContext } from "@/utils/sentry/initialization";
+import { 
+  trackCanvasOperation, 
+  InteractionCategory, 
+  InteractionSeverity,
+  trackUserInteraction 
+} from "@/utils/sentry/userInteractions";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -45,6 +54,7 @@ export const FloorPlanEditor: React.FC = () => {
     onRestore: () => {
       setCanUndo(canvasRef.current?.canUndo || false);
       setCanRedo(canvasRef.current?.canRedo || false);
+      trackCanvasOperation('restored', { timeElapsed });
     }
   });
 
@@ -65,48 +75,102 @@ export const FloorPlanEditor: React.FC = () => {
         }
       });
       
+      // Track canvas ready event
+      trackCanvasOperation('initialized', {
+        width: canvasOperations.canvas.width,
+        height: canvasOperations.canvas.height,
+        objectCount: canvasOperations.canvas.getObjects().length,
+        renderingBackend: canvasOperations.canvas.contextContainer?.constructor?.name || 'unknown'
+      });
+      
       toast.success("Canvas ready! Start drawing!");
       logger.info("Canvas initialized successfully");
       
-      transaction.finish('ok');
+      finishPerformanceTransaction(transaction, 'ok');
     } catch (error) {
       logger.error("Error initializing canvas:", error);
-      transaction.finish('error');
+      finishPerformanceTransaction(transaction, 'error', { error: String(error) });
     }
   };
 
   const handleUndo = () => {
     if (canvasRef.current?.undo) {
+      const perfTransaction = startPerformanceTransaction('canvas.undo');
+      
       canvasRef.current.undo();
       setCanUndo(canvasRef.current.canUndo);
       setCanRedo(canvasRef.current.canRedo);
       logger.debug("Undo operation performed");
       
+      // Track undo operation with state information
+      trackCanvasOperation('undo', {
+        canUndo: canvasRef.current.canUndo,
+        canRedo: canvasRef.current.canRedo,
+        objectCount: canvas?.getObjects().length || 0
+      });
+      
       // Capture canvas state after undo
       captureCanvasState();
+      
+      finishPerformanceTransaction(perfTransaction, 'ok');
     }
   };
 
   const handleRedo = () => {
     if (canvasRef.current?.redo) {
+      const perfTransaction = startPerformanceTransaction('canvas.redo');
+      
       canvasRef.current.redo();
       setCanUndo(canvasRef.current.canUndo);
       setCanRedo(canvasRef.current.canRedo);
       logger.debug("Redo operation performed");
       
+      // Track redo operation with state information
+      trackCanvasOperation('redo', {
+        canUndo: canvasRef.current.canUndo,
+        canRedo: canvasRef.current.canRedo,
+        objectCount: canvas?.getObjects().length || 0
+      });
+      
       // Capture canvas state after redo
       captureCanvasState();
+      
+      finishPerformanceTransaction(perfTransaction, 'ok');
     }
   };
 
   const handleClear = () => {
     if (canvasRef.current?.clearCanvas) {
-      canvasRef.current.clearCanvas();
-      toast.success("Canvas cleared");
-      logger.info("Canvas cleared by user");
+      const perfTransaction = startPerformanceTransaction('canvas.clear');
       
-      // Capture canvas state after clear
-      captureCanvasState();
+      try {
+        // Get object count before clearing
+        const objectCountBefore = canvas?.getObjects().length || 0;
+        
+        canvasRef.current.clearCanvas();
+        
+        // Track clear operation with before/after state
+        trackCanvasOperation('cleared', {
+          objectCountBefore,
+          objectCountAfter: canvas?.getObjects().length || 0
+        });
+        
+        toast.success("Canvas cleared");
+        logger.info("Canvas cleared by user");
+        
+        // Capture canvas state after clear
+        captureCanvasState();
+        
+        finishPerformanceTransaction(perfTransaction, 'ok');
+      } catch (error) {
+        logger.error("Error clearing canvas:", error);
+        finishPerformanceTransaction(perfTransaction, 'error', { error: String(error) });
+        
+        // Track error with higher severity
+        trackCanvasOperation('clear_failed', {
+          error: String(error)
+        }, InteractionSeverity.ERROR);
+      }
     }
   };
 
@@ -116,15 +180,40 @@ export const FloorPlanEditor: React.FC = () => {
       
       try {
         canvasRef.current.saveCanvas();
+        
+        // Track save operation with state
+        trackCanvasOperation('saved', {
+          objectCount: canvas?.getObjects().length || 0,
+          timestamp: new Date().toISOString()
+        });
+        
         toast.success("Canvas saved");
         logger.info("Canvas state saved");
-        transaction.finish('ok');
+        
+        finishPerformanceTransaction(transaction, 'ok');
       } catch (error) {
         logger.error("Error saving canvas:", error);
         toast.error("Failed to save canvas");
-        transaction.finish('error');
+        
+        // Track save error with higher severity
+        trackCanvasOperation('save_failed', {
+          error: String(error)
+        }, InteractionSeverity.ERROR);
+        
+        finishPerformanceTransaction(transaction, 'error', { error: String(error) });
       }
     }
+  };
+
+  // Track measurement guide interactions
+  const handleOpenMeasurementGuide = () => {
+    trackUserInteraction('open_measurement_guide', InteractionCategory.TOOL);
+    openMeasurementGuide();
+  };
+  
+  const handleCloseMeasurementGuideWithTracking = () => {
+    trackUserInteraction('close_measurement_guide', InteractionCategory.TOOL);
+    handleCloseMeasurementGuide();
   };
 
   // Update undo/redo state
@@ -148,7 +237,7 @@ export const FloorPlanEditor: React.FC = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={openMeasurementGuide}
+            onClick={handleOpenMeasurementGuide}
             className="flex items-center gap-1"
           >
             <Ruler className="h-4 w-4" />
@@ -164,7 +253,7 @@ export const FloorPlanEditor: React.FC = () => {
       
       <MeasurementGuideModal 
         open={showMeasurementGuide} 
-        onClose={handleCloseMeasurementGuide} 
+        onClose={handleCloseMeasurementGuideWithTracking} 
       />
       
       {showRestorePrompt && (
