@@ -34,7 +34,7 @@ export function captureError(
 
   // Apply rate limiting to avoid flooding with the same error
   if (shouldRateLimitError(errorId)) {
-    logger.debug(`Rate limited error [${errorId}]:`, sanitizedError.message);
+    logger.debug(`Rate limited error [${errorId}]:`, { message: sanitizedError.message });
     return;
   }
 

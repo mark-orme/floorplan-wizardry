@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Canvas, CanvasProps } from '@/components/Canvas';
 import { CanvasFallback } from '@/components/canvas/CanvasFallback';
@@ -51,7 +52,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   
   // Handle canvas error
   const handleCanvasError = (err: Error) => {
-    logger.error("Canvas error:", err);
+    logger.error("Canvas error:", { error: err });
     setError(err);
     setRetryCount(prev => prev + 1);
     
@@ -70,7 +71,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   const handleRetry = () => {
     // Check if we've exceeded max retries
     if (retryCount >= maxRetries * 2) {
-      logger.warn("Too many retry attempts, suggesting page refresh");
+      logger.warn("Too many retry attempts, suggesting page refresh", { retryCount });
       captureMessage("User attempted too many canvas retries", "canvas-retry-limit", {
         level: "warning",
         extra: {
@@ -89,7 +90,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     // Force remount by using a key
     setRetryCount(prev => prev + 1);
     
-    logger.info("User initiated canvas retry:", retryCount + 1);
+    logger.info("User initiated canvas retry:", { count: retryCount + 1 });
   };
   
   // Handle canvas ready

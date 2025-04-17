@@ -3,6 +3,7 @@
  * Enhanced Debug utilities
  * @module utils/debugUtils
  */
+import { LogData } from './logger';
 
 // Store for throttled logs
 const throttledLogs: Record<string, { lastTime: number; count: number }> = {};
@@ -23,13 +24,13 @@ const isDebugEnabled = () => {
  * @param {string} level - Log level (log, warn, error, info)
  * @param {string} key - Unique key for this log type
  * @param {string} message - Log message
- * @param {any[]} args - Additional arguments
+ * @param {LogData} data - Additional data to log
  */
 export const throttledConsole = (
   level: 'log' | 'warn' | 'error' | 'info' | 'debug',
   key: string,
   message: string,
-  ...args: any[]
+  data?: LogData
 ): void => {
   // Skip non-error logs in production unless explicitly enabled
   if (isProduction() && level !== 'error' && !isDebugEnabled()) {
@@ -57,53 +58,62 @@ export const throttledConsole = (
   }
   
   // Log the current message
-  console[level](`[${key}] ${message}`, ...args);
+  if (data && Object.keys(data).length > 0) {
+    console[level](`[${key}] ${message}`, data);
+  } else {
+    console[level](`[${key}] ${message}`);
+  }
+  
   logInfo.lastTime = now;
 };
 
 /**
  * Log with throttling
  */
-export const log = (key: string, message: string, ...args: any[]): void => {
-  throttledConsole('log', key, message, ...args);
+export const log = (key: string, message: string, data?: LogData): void => {
+  throttledConsole('log', key, message, data);
 };
 
 /**
  * Debug with throttling - only shown in development
  */
-export const debug = (key: string, message: string, ...args: any[]): void => {
-  throttledConsole('debug', key, message, ...args);
+export const debug = (key: string, message: string, data?: LogData): void => {
+  throttledConsole('debug', key, message, data);
 };
 
 /**
  * Warn with throttling
  */
-export const warn = (key: string, message: string, ...args: any[]): void => {
-  throttledConsole('warn', key, message, ...args);
+export const warn = (key: string, message: string, data?: LogData): void => {
+  throttledConsole('warn', key, message, data);
 };
 
 /**
  * Error with throttling
  */
-export const error = (key: string, message: string, ...args: any[]): void => {
+export const error = (key: string, message: string, data?: LogData): void => {
   // Never throttle errors
-  console.error(`[${key}] ${message}`, ...args);
+  if (data && Object.keys(data).length > 0) {
+    console.error(`[${key}] ${message}`, data);
+  } else {
+    console.error(`[${key}] ${message}`);
+  }
 };
 
 /**
  * Info with throttling
  */
-export const info = (key: string, message: string, ...args: any[]): void => {
-  throttledConsole('info', key, message, ...args);
+export const info = (key: string, message: string, data?: LogData): void => {
+  throttledConsole('info', key, message, data);
 };
 
 /**
  * Conditionally log based on environment
  * Only logs in development or when debug is explicitly enabled
  */
-export const devLog = (key: string, message: string, ...args: any[]): void => {
+export const devLog = (key: string, message: string, data?: LogData): void => {
   if (!isProduction() || isDebugEnabled()) {
-    log(key, message, ...args);
+    log(key, message, data);
   }
 };
 

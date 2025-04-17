@@ -29,7 +29,7 @@ export const useGridZoom = ({
     
     // Handle extreme zoom levels
     if (zoomLevel > 3 || zoomLevel < 0.3) {
-      logger.info("Regenerating grid for extreme zoom level:", zoomLevel);
+      logger.info("Regenerating grid for extreme zoom level:", { zoomLevel });
       
       // Only recreate if grid was previously initialized
       if (gridInitializedRef.current) {

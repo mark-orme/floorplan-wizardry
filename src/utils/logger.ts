@@ -14,7 +14,7 @@ export enum LogLevel {
 }
 
 // Interface for structured log data
-interface LogData {
+export interface LogData {
   [key: string]: any;
 }
 
@@ -38,36 +38,42 @@ class Logger {
   /**
    * Log a debug message (only in development)
    */
-  debug(message: string, data?: LogData): void {
-    debug(this.namespace, message, data);
+  debug(message: string, data?: LogData | any): void {
+    // Convert non-object data to LogData format
+    const formattedData = this.formatData(data);
+    debug(this.namespace, message, formattedData);
   }
   
   /**
    * Log an info message
    */
-  info(message: string, data?: LogData): void {
-    info(this.namespace, message, data);
+  info(message: string, data?: LogData | any): void {
+    const formattedData = this.formatData(data);
+    info(this.namespace, message, formattedData);
   }
   
   /**
    * Log a dev-only message (stripped in production)
    */
-  dev(message: string, data?: LogData): void {
-    devLog(this.namespace, message, data);
+  dev(message: string, data?: LogData | any): void {
+    const formattedData = this.formatData(data);
+    devLog(this.namespace, message, formattedData);
   }
   
   /**
    * Log a warning message
    */
-  warn(message: string, data?: LogData): void {
-    warn(this.namespace, message, data);
+  warn(message: string, data?: LogData | any): void {
+    const formattedData = this.formatData(data);
+    warn(this.namespace, message, formattedData);
   }
   
   /**
    * Log an error message
    */
-  error(message: string, data?: LogData): void {
-    error(this.namespace, message, data);
+  error(message: string, data?: LogData | any): void {
+    const formattedData = this.formatData(data);
+    error(this.namespace, message, formattedData);
   }
   
   /**
@@ -89,6 +95,24 @@ class Logger {
     const result = operation();
     console.timeEnd(timeLabel);
     return result;
+  }
+  
+  /**
+   * Format log data to ensure it's a proper LogData object
+   * @param data Data to format
+   * @returns Formatted LogData object
+   */
+  private formatData(data: any): LogData {
+    if (data === undefined || data === null) {
+      return {};
+    }
+    
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      return data;
+    }
+    
+    // Convert primitive values to an object
+    return { value: data };
   }
 }
 

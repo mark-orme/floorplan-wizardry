@@ -169,7 +169,7 @@ export const useCanvasInteraction = ({
     if (!fabricCanvasRef.current) return;
     
     if (tool === "select") {
-      logger.info("Setting up selection mode for tool:", tool);
+      logger.info("Setting up selection mode for tool:", { tool });
       enablePointSelection();
     } else {
       disableSelection(fabricCanvasRef.current);
