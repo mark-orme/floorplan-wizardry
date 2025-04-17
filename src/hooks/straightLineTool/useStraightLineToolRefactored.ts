@@ -4,8 +4,8 @@
  * Combines line initialization, interaction, and grid alignment
  * @module hooks/straightLineTool/useStraightLineToolRefactored
  */
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useLineInitialization } from './useLineInitialization';
@@ -41,9 +41,10 @@ export const useStraightLineToolRefactored = (
   options: StraightLineToolOptions
 ): StraightLineToolRefactoredResult => {
   const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const lineRef = useRef<Line | null>(null);
   
   // Get line initialization functions
-  const { initializeLine, cleanupLine, lineRef } = useLineInitialization();
+  const { isActive, setIsActive, initializeTool } = useLineInitialization();
   
   // Get line interaction state and functions
   const { 
@@ -61,18 +62,54 @@ export const useStraightLineToolRefactored = (
     threshold: options.gridSettings?.threshold ?? 10
   });
   
-  // Check if the tool is active
-  const isActive = tool === DrawingMode.STRAIGHT_LINE;
-  
   // Initialize the tool
   useEffect(() => {
-    setIsToolInitialized(isActive);
+    setIsToolInitialized(tool === DrawingMode.STRAIGHT_LINE);
+    setIsActive(tool === DrawingMode.STRAIGHT_LINE);
     
     // Cleanup on unmount
     return () => {
       setIsToolInitialized(false);
     };
-  }, [isActive]);
+  }, [tool, setIsActive]);
+  
+  /**
+   * Initialize line on canvas
+   */
+  const initializeLine = useCallback((
+    canvas: FabricCanvas,
+    startPoint: Point,
+    options: {
+      color: string;
+      thickness: number;
+      dashed?: boolean;
+    }
+  ) => {
+    const line = new Line([startPoint.x, startPoint.y, startPoint.x, startPoint.y], {
+      stroke: options.color,
+      strokeWidth: options.thickness,
+      strokeDashArray: options.dashed ? [5, 5] : undefined,
+      selectable: false
+    });
+    
+    canvas.add(line);
+    canvas.renderAll();
+    
+    lineRef.current = line;
+    return line;
+  }, []);
+  
+  /**
+   * Clean up line
+   */
+  const cleanupLine = useCallback((canvas: FabricCanvas) => {
+    if (lineRef.current && canvas.contains(lineRef.current)) {
+      canvas.remove(lineRef.current);
+      canvas.renderAll();
+    }
+    
+    lineRef.current = null;
+  }, []);
   
   /**
    * Start drawing a line
@@ -123,7 +160,7 @@ export const useStraightLineToolRefactored = (
     
     // Update the line
     updateLine(canvas, lineRef.current, correctedPoint);
-  }, [isDrawing, lineRef, snapToGrid, autoStraighten, updateLine]);
+  }, [isDrawing, snapToGrid, autoStraighten, updateLine]);
   
   /**
    * End drawing a line
@@ -139,7 +176,7 @@ export const useStraightLineToolRefactored = (
     
     // Line is kept on canvas, but we clear our reference
     lineRef.current = null;
-  }, [isDrawing, lineRef, completeDrawing]);
+  }, [isDrawing, completeDrawing]);
   
   /**
    * Cancel drawing a line
@@ -154,8 +191,13 @@ export const useStraightLineToolRefactored = (
     cancelLineDrawing(canvas, lineRef.current);
     
     // Clean up the line
-    cleanupLine(canvas);
-  }, [cancelLineDrawing, cleanupLine, lineRef]);
+    if (lineRef.current && canvas.contains(lineRef.current)) {
+      canvas.remove(lineRef.current);
+      canvas.renderAll();
+    }
+    
+    lineRef.current = null;
+  }, [cancelLineDrawing]);
   
   return {
     isActive,

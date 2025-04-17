@@ -4,9 +4,10 @@ import { Point } from '@/types/core/Point';
 import { snapPointToGrid } from '@/utils/grid/snapping';
 import { lineToolLogger } from '@/utils/logger';
 
-interface UseEnhancedGridSnappingOptions {
+export interface UseEnhancedGridSnappingOptions {
   initialSnapEnabled?: boolean;
   gridSize?: number;
+  snapThreshold?: number;
 }
 
 /**
@@ -14,7 +15,8 @@ interface UseEnhancedGridSnappingOptions {
  */
 export const useEnhancedGridSnapping = ({
   initialSnapEnabled = true,
-  gridSize = 20
+  gridSize = 20,
+  snapThreshold = 5
 }: UseEnhancedGridSnappingOptions = {}) => {
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
   
@@ -40,6 +42,7 @@ export const useEnhancedGridSnapping = ({
   return {
     snapEnabled,
     snapToGrid,
-    toggleGridSnapping
+    toggleGridSnapping,
+    snapThreshold
   };
 };

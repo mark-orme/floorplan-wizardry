@@ -1,197 +1,150 @@
-import { useEffect, useCallback } from 'react';
+
+import { useEffect, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
+import { useLineToolHandlers } from './useLineToolHandlers';
 import { InputMethod } from './useLineInputMethod';
-import { MeasurementData, UseStraightLineToolResult } from '../useStraightLineTool.d';
-import { FabricEventNames } from '@/types/fabric-events';
-import { useLineToolState } from './useLineToolState';
-import { useTooltipPortal } from './useTooltipPortal';
-import { useLinePointerEvents } from './useLinePointerEvents';
+import { LineDistanceTooltip } from '@/components/canvas/LineDistanceTooltip';
+import { createPortal } from 'react-dom';
 
 interface UseStraightLineToolProps {
   canvas: FabricCanvas | null;
   enabled: boolean;
-  lineColor?: string;
-  lineThickness?: number;
-  saveCurrentState?: () => void;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState: () => void;
 }
 
-/**
- * Hook for using the straight line drawing tool
- */
 export const useStraightLineTool = ({
   canvas,
   enabled,
-  lineColor = '#000000',
-  lineThickness = 2,
-  saveCurrentState = () => {}
-}: UseStraightLineToolProps): UseStraightLineToolResult => {
-  // Get tool state from the modular hooks
+  lineColor,
+  lineThickness,
+  saveCurrentState
+}: UseStraightLineToolProps) => {
+  const [tooltipPortalContainer, setTooltipPortalContainer] = useState<HTMLElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [tooltipData, setTooltipData] = useState<{
+    startPoint: Point | null;
+    endPoint: Point | null;
+  }>({
+    startPoint: null,
+    endPoint: null
+  });
+
   const {
-    lineState,
-    measurementData,
-    updateMeasurementData,
-    isEnabled,
-    fabricCanvasRef
-  } = useLineToolState(canvas, enabled, lineColor, lineThickness, saveCurrentState);
-  
-  // Get input method functions from the lineState
-  const inputMethod = lineState.inputMethod;
-  const isPencilMode = lineState.isPencilMode;
-  
-  // Get tooltip functionality
-  const { renderTooltip } = useTooltipPortal(
-    lineState.isDrawing,
-    lineState.startPoint,
-    lineState.currentPoint,
-    measurementData
-  );
-  
-  // Get pointer event handlers
-  const { handlePointerDown, handlePointerMove, handlePointerUp } = useLinePointerEvents(
-    canvas,
-    lineState.isActive,
-    lineState.startDrawing,
-    lineState.continueDrawing,
-    lineState.completeDrawing,
-    updateMeasurementData,
-    lineState.startPoint,
-    lineState.snapEnabled,
-    lineState.anglesEnabled,
-    (e) => {
-      // Set input method based on pointer type
-      lineState.setInputMethod(e.pointerType === 'pen' ? InputMethod.PENCIL : InputMethod.MOUSE);
-    },
-    saveCurrentState
-  );
-  
-  /**
-   * Set up and clean up event handlers
-   */
-  useEffect(() => {
-    // If not enabled or no canvas, do nothing
-    if (!enabled || !canvas) {
-      if (lineState.isActive) {
-        lineState.resetDrawingState();
-      }
-      return;
-    }
-    
-    // Update canvas ref
-    fabricCanvasRef.current = canvas;
-    
-    // Initialize tool
-    lineState.initializeTool();
-    
-    // Disable selection and set cursor
-    canvas.selection = false;
-    canvas.defaultCursor = 'crosshair';
-    
-    // Set up event handlers
-    canvas.on(FabricEventNames.MOUSE_DOWN, handlePointerDown);
-    canvas.on(FabricEventNames.MOUSE_MOVE, handlePointerMove);
-    canvas.on(FabricEventNames.MOUSE_UP, handlePointerUp);
-    
-    // Set up keyboard event handlers
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && lineState.isDrawing) {
-        lineState.cancelDrawing();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    
-    // Clean up
-    return () => {
-      // Reset tool state
-      if (lineState.isActive) {
-        lineState.resetDrawingState();
-      }
-      
-      // Reset canvas state
-      if (canvas) {
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        
-        // Remove event handlers
-        canvas.off(FabricEventNames.MOUSE_DOWN, handlePointerDown);
-        canvas.off(FabricEventNames.MOUSE_MOVE, handlePointerMove);
-        canvas.off(FabricEventNames.MOUSE_UP, handlePointerUp);
-      }
-      
-      // Remove keyboard event handlers
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [canvas, enabled, fabricCanvasRef, handlePointerDown, handlePointerMove, handlePointerUp, lineState]);
-  
-  /**
-   * Toggle snap to grid
-   */
-  const toggleGridSnapping = useCallback(() => {
-    lineState.toggleSnap();
-  }, [lineState]);
-  
-  /**
-   * Toggle angle constraints
-   */
-  const toggleAngles = useCallback(() => {
-    lineState.toggleAngles();
-  }, [lineState]);
-  
-  /**
-   * Start drawing at a point
-   */
-  const startDrawing = useCallback((point: Point) => {
-    lineState.startDrawing(point);
-  }, [lineState]);
-  
-  /**
-   * Continue drawing to a point
-   */
-  const continueDrawing = useCallback((point: Point) => {
-    lineState.continueDrawing(point);
-  }, [lineState]);
-  
-  /**
-   * End drawing
-   */
-  const endDrawing = useCallback(() => {
-    if (lineState.isDrawing && lineState.currentPoint) {
-      lineState.completeDrawing(lineState.currentPoint);
-      saveCurrentState();
-    }
-  }, [lineState, saveCurrentState]);
-  
-  /**
-   * Cancel drawing
-   */
-  const cancelDrawing = useCallback(() => {
-    lineState.cancelDrawing();
-  }, [lineState]);
-  
-  return {
-    isActive: lineState.isActive,
-    isEnabled,
-    currentLine: lineState.currentLine,
-    isToolInitialized: lineState.isToolInitialized,
-    isDrawing: lineState.isDrawing,
+    isActive,
     inputMethod,
     isPencilMode,
-    snapEnabled: lineState.snapEnabled,
-    anglesEnabled: lineState.anglesEnabled,
+    snapEnabled,
+    anglesEnabled,
+    shiftKeyPressed,
+    measurementData,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    toggleGridSnapping,
+    toggleAngles
+  } = useLineToolHandlers({
+    canvas,
+    enabled,
+    lineColor,
+    lineThickness,
+    saveCurrentState
+  });
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const existingContainer = document.getElementById('line-tooltip-container');
+      if (existingContainer) {
+        setTooltipPortalContainer(existingContainer);
+      } else {
+        const container = document.createElement('div');
+        container.id = 'line-tooltip-container';
+        container.style.position = 'absolute';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '1000';
+        document.body.appendChild(container);
+        setTooltipPortalContainer(container);
+      }
+    }
+
+    return () => {
+      const container = document.getElementById('line-tooltip-container');
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isActive && measurementData.distance !== null && canvas) {
+      setIsDrawing(true);
+      
+      if (canvas && canvas.getActiveObjects().length > 0) {
+        const activeObject = canvas.getActiveObjects()[0];
+        if (activeObject && activeObject.type === 'line') {
+          const line = activeObject as any;
+          if (line.x1 !== undefined && line.y1 !== undefined && 
+              line.x2 !== undefined && line.y2 !== undefined) {
+            setTooltipData({
+              startPoint: { x: line.x1, y: line.y1 },
+              endPoint: { x: line.x2, y: line.y2 }
+            });
+          }
+        }
+      }
+    } else {
+      setIsDrawing(false);
+    }
+  }, [isActive, measurementData, canvas]);
+
+  useEffect(() => {
+    if (!canvas || !enabled) return;
+    
+    const canvasElement = canvas.getElement();
+    
+    canvasElement.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      canvasElement.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [canvas, enabled, handleMouseDown, handleMouseMove, handleMouseUp]);
+  
+  const renderTooltip = useCallback(() => {
+    if (!tooltipPortalContainer || !isActive || !measurementData.distance) return null;
+    
+    return createPortal(
+      <LineDistanceTooltip
+        startPoint={tooltipData.startPoint || { x: 0, y: 0 }}
+        endPoint={tooltipData.endPoint || { x: 0, y: 0 }}
+        distance={measurementData.distance}
+        angle={measurementData.angle}
+        unit={measurementData.unit}
+        isSnapped={measurementData.snapped}
+        snapType={measurementData.snapType}
+      />,
+      tooltipPortalContainer
+    );
+  }, [tooltipPortalContainer, isActive, measurementData, tooltipData]);
+
+  return {
+    isActive,
+    inputMethod,
+    isPencilMode,
+    snapEnabled,
+    anglesEnabled,
+    shiftKeyPressed,
     measurementData,
     toggleGridSnapping,
     toggleAngles,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    renderTooltip
+    renderTooltip,
+    isDrawing
   };
 };
-
-// Re-export InputMethod enum
-export { InputMethod } from './useLineInputMethod';
