@@ -1,9 +1,10 @@
+
 import React, { useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
-import { ensureGridIsPresent, setupGridMonitoring } from "@/utils/grid/gridVisibilityManager";
+import { ensureGridIsPresent } from "@/utils/grid/gridVisibilityManager";
 
 interface GridRendererProps {
   canvas: FabricCanvas;
@@ -33,8 +34,20 @@ export class GridRenderer {
       this.createGrid();
       
       // Set up monitoring
-      this.monitoringCleanup = setupGridMonitoring(this.canvas, 3000);
+      this.setupMonitoring();
     }
+  }
+
+  private setupMonitoring(): void {
+    // Set up internal monitoring instead of using external function
+    const intervalId = setInterval(() => {
+      this.checkAndFixGrid();
+    }, 3000);
+    
+    // Store cleanup function
+    this.monitoringCleanup = () => {
+      clearInterval(intervalId);
+    };
   }
 
   private createGrid(): FabricObject[] {

@@ -1,4 +1,3 @@
-
 /**
  * Grid visibility manager
  * Ensures grid is visible and properly maintained
@@ -6,7 +5,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createBasicEmergencyGrid } from '@/utils/gridCreationUtils';
-import logger from '@/utils/logger';
+import logger from "@/utils/logger";
 import * as Sentry from '@sentry/react';
 import { captureMessage, captureError } from '@/utils/sentry';
 
