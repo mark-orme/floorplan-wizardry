@@ -109,3 +109,19 @@ jobs:
             playwright-report/accessibility-violations.json
           retention-days: 30
 
+  # Security scan job (optional - uncomment when needed)
+  # security:
+  #   runs-on: ubuntu-latest
+  #   needs: [test]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+  #         cache: 'npm'
+  #     - run: npm ci
+  #     - run: npm audit --audit-level=moderate
+  #     - uses: github/codeql-action/init@v2
+  #       with:
+  #         languages: javascript, typescript
+  #     - uses: github/codeql-action/analyze@v2

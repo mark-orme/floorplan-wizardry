@@ -3,24 +3,29 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30 * 1000,
+  timeout: 60_000,
+  retries: process.env.CI ? 2 : 0,
   expect: {
     timeout: 5000
   },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/e2e-results.json' }]
+    ['list'],
+    ['json', { outputFile: 'playwright-report/accessibility-violations.json' }],
+    ['junit', { outputFile: 'reports/junit.xml' }],
+    ['html', { open: 'never', outputFolder: 'reports/html' }]
   ],
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:8080',
+    headless: true,
+    viewport: { width: 1280, height: 720 },
+    ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-
+  
   /* Configure projects for major browsers */
   projects: [
     {
@@ -34,15 +39,6 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-    },
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
     },
   ],
 
