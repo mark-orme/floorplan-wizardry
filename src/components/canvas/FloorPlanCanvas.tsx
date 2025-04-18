@@ -19,9 +19,17 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const [canRedo, setCanRedo] = useState<boolean>(false);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   
-  // Adaptive canvas sizes based on device
-  const width = isMobile ? window.innerWidth - 32 : 800;
-  const height = isMobile ? window.innerHeight * 0.6 : 600;
+  // Set consistent canvas dimensions for both mobile and desktop
+  const width = 800; // Fixed width for consistency
+  const height = 600; // Fixed height for consistency
+  
+  const containerStyle = {
+    width: '100%',
+    maxWidth: width,
+    height: 'auto',
+    aspectRatio: `${width}/${height}`,
+    overflow: 'hidden'
+  };
   
   const handleCanvasRef = useCallback((canvas: FabricCanvas) => {
     setCanvas(canvas);
@@ -150,32 +158,34 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   };
   
   return (
-    <div className={`relative border border-border rounded-md bg-white shadow-sm w-full h-full ${isMobile ? 'mobile-canvas-container' : ''}`}>
-      <ConnectedDrawingCanvas
-        width={width}
-        height={height}
-        showGrid={true}
-        onCanvasReady={handleCanvasRef}
-      />
-      
-      {isMobile && (
-        <MobileDrawingToolbar 
-          activeTool={activeTool}
-          onToolChange={handleToolChange}
-          lineColor={lineColor}
-          lineThickness={lineThickness}
-          onLineColorChange={handleLineColorChange}
-          onLineThicknessChange={handleLineThicknessChange}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onClear={handleClear}
-          onSave={handleSave}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          canUndo={canUndo}
-          canRedo={canRedo}
+    <div className="flex flex-col items-center w-full min-h-0">
+      <div style={containerStyle} className="relative border border-border rounded-md bg-white shadow-sm">
+        <ConnectedDrawingCanvas
+          width={width}
+          height={height}
+          showGrid={true}
+          onCanvasReady={handleCanvasRef}
         />
-      )}
+        
+        {isMobile && (
+          <MobileDrawingToolbar 
+            activeTool={activeTool}
+            onToolChange={handleToolChange}
+            lineColor={lineColor}
+            lineThickness={lineThickness}
+            onLineColorChange={handleLineColorChange}
+            onLineThicknessChange={handleLineThicknessChange}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onClear={handleClear}
+            onSave={handleSave}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        )}
+      </div>
     </div>
   );
 };
