@@ -22,13 +22,17 @@ interface DrawingToolbarProps {
   onClear?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   onSave,
   onClear,
   onUndo,
-  onRedo
+  onRedo,
+  canUndo = false,
+  canRedo = false
 }) => {
   const { 
     activeTool, 
@@ -36,9 +40,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     lineColor, 
     setLineColor, 
     lineThickness, 
-    setLineThickness,
-    canUndo,
-    canRedo
+    setLineThickness
   } = useDrawingContext();
 
   const tools = [
