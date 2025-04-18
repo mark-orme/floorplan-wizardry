@@ -1,12 +1,14 @@
 
-import { useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGridLayer } from '@/utils/grid/gridCreator';
+import { useRef } from 'react';
+import { Object as FabricObject } from 'fabric';
+import { useCanvasInitialization } from './useCanvasInitialization';
+import { useReliableGrid } from '../grid/useReliableGrid';
 import { DebugInfoState, DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 
 interface CanvasDependenciesProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  width: number;
+  height: number;
 }
 
 interface HistoryState {
@@ -15,47 +17,35 @@ interface HistoryState {
 }
 
 export const useCanvasDependencies = ({ 
-  canvasRef, 
-  fabricCanvasRef: externalFabricCanvasRef 
+  canvasRef,
+  width,
+  height
 }: CanvasDependenciesProps) => {
-  const internalFabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const fabricCanvasRef = externalFabricCanvasRef || internalFabricCanvasRef;
-  const gridLayerRef = useRef<FabricObject[]>([]);
   const historyRef = useRef<HistoryState>({
     past: [],
     future: []
   });
-  
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
-    ...DEFAULT_DEBUG_STATE,
-    canvasDimensions: { width: 0, height: 0 }
+
+  // Initialize canvas with error handling
+  const { canvas, isInitialized, error } = useCanvasInitialization({
+    canvasRef,
+    width,
+    height
   });
 
-  // Create a wrapper function to match the expected signature
-  const createGrid = (canvas: FabricCanvas): FabricObject[] => {
-    if (!canvas) return [];
-    
-    try {
-      // Use the existing createGridLayer function
-      return createGridLayer(
-        canvas, 
-        gridLayerRef, 
-        { width: canvas.width || 800, height: canvas.height || 600 }, 
-        setDebugInfo
-      );
-    } catch (error) {
-      console.error('Error creating grid:', error);
-      return [];
-    }
-  };
+  // Initialize grid with reliability features
+  const { isGridCreated, gridObjects, reinitializeGrid } = useReliableGrid({
+    canvas,
+    enabled: isInitialized
+  });
 
   return {
-    canvasRef,
-    fabricCanvasRef,
-    gridLayerRef,
+    canvas,
+    isInitialized,
+    isGridCreated,
+    error,
     historyRef,
-    debugInfo,
-    setDebugInfo,
-    createGrid
+    gridObjects,
+    reinitializeGrid
   };
 };

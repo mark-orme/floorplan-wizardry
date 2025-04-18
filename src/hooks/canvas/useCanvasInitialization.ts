@@ -1,120 +1,87 @@
 
-import { useState, useEffect } from "react";
-import { Canvas as FabricCanvas, Line } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
-import logger from "@/utils/logger";
+import { useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 interface UseCanvasInitializationProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   width: number;
   height: number;
-  tool: DrawingMode;
+  onReady?: (canvas: FabricCanvas) => void;
 }
 
 export const useCanvasInitialization = ({
   canvasRef,
   width,
   height,
-  tool
+  onReady
 }: UseCanvasInitializationProps) => {
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const initAttemptsRef = useRef(0);
+  const MAX_INIT_ATTEMPTS = 3;
 
-  // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current || initialized) return;
-    
-    try {
-      logger.info("Initializing canvas", { 
-        canvasWidth: width, 
-        canvasHeight: height, 
-        initialTool: tool 
-      });
-      
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
-        selection: tool === DrawingMode.SELECT,
-        backgroundColor: "#ffffff"
-      });
-      
-      setCanvas(fabricCanvas);
-      setInitialized(true);
-      
-      captureMessage("Canvas initialized", "canvas-init", {
-        tags: { component: "ConnectedDrawingCanvas" },
-        extra: { canvasWidth: width, canvasHeight: height, initialTool: tool }
-      });
-      
-      // Create grid
-      createGrid(fabricCanvas);
-      
-      // Clean up canvas on unmount
-      return () => {
-        logger.info("Disposing canvas");
-        fabricCanvas.dispose();
-      };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("Failed to initialize canvas", { error: errorMsg });
-      captureError(error as Error, "canvas-init-error");
-      toast.error(`Failed to initialize canvas: ${errorMsg}`);
-    }
-  }, [width, height, tool, initialized, canvasRef]);
+    const initializeCanvas = () => {
+      try {
+        if (!canvasRef.current) {
+          throw new Error('Canvas element not found');
+        }
 
-  // Create grid function
-  const createGrid = (fabricCanvas: FabricCanvas) => {
-    try {
-      logger.info("Creating grid");
-      
-      const gridSize = 20;
-      const gridObjects: any[] = [];
-      
-      // Create horizontal grid lines
-      for (let i = 0; i <= height; i += gridSize) {
-        const line = new Line([0, i, width, i], {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        } as any);
-        fabricCanvas.add(line);
-        gridObjects.push(line);
+        // Create new Fabric canvas instance
+        const canvas = new FabricCanvas(canvasRef.current, {
+          width,
+          height,
+          backgroundColor: '#ffffff',
+          selection: true,
+          renderOnAddRemove: true
+        });
+
+        // Store canvas reference
+        fabricCanvasRef.current = canvas;
+        setIsInitialized(true);
+        setError(null);
+        initAttemptsRef.current = 0;
+
+        // Notify parent component
+        if (onReady) {
+          onReady(canvas);
+        }
+
+        logger.info('Canvas initialized successfully');
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to initialize canvas');
+        logger.error('Canvas initialization error:', error);
+        setError(error);
+
+        // Retry initialization if not exceeded max attempts
+        if (initAttemptsRef.current < MAX_INIT_ATTEMPTS) {
+          initAttemptsRef.current++;
+          setTimeout(initializeCanvas, 500);
+        } else {
+          toast.error('Failed to initialize canvas after multiple attempts');
+        }
       }
-      
-      // Create vertical grid lines
-      for (let i = 0; i <= width; i += gridSize) {
-        const line = new Line([i, 0, i, height], {
-          stroke: "#e0e0e0",
-          selectable: false,
-          evented: false,
-          objectType: "grid"
-        } as any);
-        fabricCanvas.add(line);
-        gridObjects.push(line);
-      }
-      
-      captureMessage("Grid created", "grid-create", {
-        tags: { component: "ConnectedDrawingCanvas", action: "gridCreate" },
-        extra: { tool, lineThickness: 1, lineColor: "#e0e0e0" }
-      });
-      
-      return gridObjects;
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("Failed to create grid", { error: errorMsg });
-      captureError(error as Error, "grid-create-error");
-      toast.error(`Failed to create grid: ${errorMsg}`);
-      return [];
+    };
+
+    if (!isInitialized && !error) {
+      initializeCanvas();
     }
-  };
+
+    // Cleanup function
+    return () => {
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
+      }
+    };
+  }, [canvasRef, width, height, onReady, isInitialized]);
 
   return {
-    canvas,
-    initialized,
-    setInitialized,
-    createGrid
+    canvas: fabricCanvasRef.current,
+    isInitialized,
+    error
   };
 };
