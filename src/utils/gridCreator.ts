@@ -24,6 +24,15 @@ export const createGrid = (
   const gridObjects: any[] = [];
   
   try {
+    // Clear any existing grid
+    const existingGrid = canvas.getObjects().filter(obj => 
+      (obj as any).isGrid === true || (obj as any).objectType === 'grid'
+    );
+    
+    existingGrid.forEach(obj => {
+      canvas.remove(obj);
+    });
+    
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
@@ -38,7 +47,6 @@ export const createGrid = (
       line.set('objectType', 'grid');
       
       canvas.add(line);
-      // Use sendToBack instead of moveTo
       canvas.sendToBack(line);
       gridObjects.push(line);
     }
@@ -57,12 +65,13 @@ export const createGrid = (
       line.set('objectType', 'grid');
       
       canvas.add(line);
-      // Use sendToBack instead of moveTo
       canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
+    // Force render
     canvas.renderAll();
+    console.log(`Created grid with ${gridObjects.length} lines`);
     return gridObjects;
   } catch (error) {
     console.error('Error creating grid:', error);

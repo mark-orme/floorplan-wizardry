@@ -43,6 +43,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
         try {
           const gridObjects = createGrid(canvas, width, height);
           canvas.renderAll();
+          console.info(`Grid created with ${gridObjects.length} objects`);
         } catch (error) {
           console.error('Error creating grid:', error);
         }

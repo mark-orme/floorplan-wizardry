@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
@@ -90,6 +89,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
       canvas.freeDrawingBrush.width = lineThickness;
     }
     
+    console.log('Canvas received in FloorPlanCanvas component', canvas);
     setCanvas(canvas);
     
     if (onCanvasReady) {
