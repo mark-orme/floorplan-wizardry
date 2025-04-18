@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas tools and operations
  */
@@ -110,8 +111,10 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
   ) as CanvasInteractionsResult;
 
   // Initialize line settings
-  const { handleLineThicknessChange, handleLineColorChange } = useLineSettings({
-    fabricCanvasRef
+  const { handleLineThicknessChange, handleLineColorChange, applyLineSettings } = useLineSettings({
+    fabricCanvasRef,
+    lineThickness,
+    lineColor
   });
 
   // Initialize measurement guide
@@ -161,6 +164,7 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     // Styling operations
     handleLineThicknessChange,
     handleLineColorChange,
+    applyLineSettings,
     
     // Help operations
     openMeasurementGuide,
