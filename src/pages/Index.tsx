@@ -8,14 +8,11 @@ import { AuthSection } from "@/components/auth/AuthSection";
 import { CollaborationToggle } from "@/components/collaboration/CollaborationToggle";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { trackComponentLoad, markPerformance } from "@/utils/healthMonitoring";
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from "@/constants/drawingModes";
 
 export const Index = () => {
   const [enableSync, setEnableSync] = useState(true);
   const { isMobile, isTablet } = useWindowDimensions();
   
-  // Track page load in health monitoring
   useEffect(() => {
     trackComponentLoad('IndexPage');
     markPerformance('index-page-mounted');
