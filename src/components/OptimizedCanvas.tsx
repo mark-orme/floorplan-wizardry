@@ -1,197 +1,147 @@
 
-/**
- * Optimized Canvas Component
- * Performance-optimized canvas with virtualization and memoization
- */
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
-import { OptimizedGridLayer } from '@/components/canvas/OptimizedGridLayer';
-import { canvasLogger } from '@/utils/logger';
-import { DrawingMode } from '@/constants/drawingModes';
+import React, { useCallback, useEffect, useRef } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
+import { optimizeForStylus, preventTouchBehaviors } from "@/utils/canvas/canvasHelpers";
+import { applyIOSEventFixes } from "@/utils/fabric/events";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OptimizedCanvasProps {
-  width?: number;
-  height?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
+  width: number;
+  height: number;
+  onCanvasReady: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
   tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
   showGrid?: boolean;
-  className?: string;
 }
 
-export const OptimizedCanvas = React.memo(({
-  width = 800,
-  height = 600,
+export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
+  width,
+  height,
   onCanvasReady,
   onError,
   tool = DrawingMode.SELECT,
-  lineColor = '#000000',
+  lineColor = "#000000",
   lineThickness = 2,
-  showGrid = true,
-  className = ''
-}: OptimizedCanvasProps) => {
+  showGrid = true
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const isMobile = useIsMobile();
   
-  // Performance optimization hook
-  const { 
-    performanceMetrics,
-    needsVirtualization,
-    forceOptimize
-  } = useCanvasOptimization({
-    fabricCanvasRef,
-    viewportWidth: width,
-    viewportHeight: height
-  });
-  
-  // Memoized canvas initialization
-  const initializeCanvas = useCallback(() => {
+  // Initialize canvas
+  useEffect(() => {
     if (!canvasRef.current) return;
     
     try {
-      // Create Fabric.js canvas
+      console.log("Initializing canvas...");
+      
+      // Create canvas with mobile-friendly options
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
-        backgroundColor: '#FFFFFF',
         selection: tool === DrawingMode.SELECT,
-        preserveObjectStacking: true,
-        renderOnAddRemove: false, // Optimize rendering
-        enableRetinaScaling: true
+        backgroundColor: "#ffffff",
+        // Mobile-specific settings
+        enableRetinaScaling: true,
+        renderOnAddRemove: false, // Improve performance on mobile
+        fireRightClick: true, // Enable right-click on mobile
+        stopContextMenu: true, // Prevent context menu on mobile
       });
       
-      // Store canvas in ref
       fabricCanvasRef.current = canvas;
       
-      // Configure for current tool
-      configureForTool(canvas, tool);
+      // Set initial brush properties
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
       
-      // Mark as initialized
-      setIsInitialized(true);
-      
-      // Call ready callback
-      if (onCanvasReady) {
-        onCanvasReady(canvas);
+      // Apply mobile-specific optimizations
+      if (isMobile) {
+        // Optimize for stylus and touch input
+        optimizeForStylus(canvas);
+        
+        // Apply iOS-specific fixes
+        applyIOSEventFixes(canvasRef.current);
+        
+        // Prevent default touch behaviors during drawing
+        const cleanup = preventTouchBehaviors(canvasRef.current);
+        
+        // Add touch-specific class
+        canvasRef.current.classList.add("mobile-optimized-canvas");
+        
+        console.log("Mobile optimizations applied to canvas");
       }
       
-      canvasLogger.info('Canvas initialized successfully');
-      return canvas;
+      // Notify that canvas is ready
+      onCanvasReady(canvas);
+      console.log("Canvas initialized successfully!");
+      
     } catch (error) {
-      canvasLogger.error('Failed to initialize canvas', error);
+      console.error("Error initializing canvas:", error);
       if (onError && error instanceof Error) {
         onError(error);
       }
-      return null;
-    }
-  }, [width, height, tool, onCanvasReady, onError]);
-  
-  // Configure canvas for specific tool
-  const configureForTool = useCallback((canvas: FabricCanvas, selectedTool: DrawingMode) => {
-    if (!canvas) return;
-    
-    // Reset canvas modes
-    canvas.isDrawingMode = false;
-    canvas.selection = false;
-    
-    // Configure based on tool
-    switch (selectedTool) {
-      case DrawingMode.SELECT:
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        canvas.hoverCursor = 'move';
-        break;
-        
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        if (canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush.color = lineColor;
-          canvas.freeDrawingBrush.width = lineThickness;
-        }
-        canvas.defaultCursor = 'crosshair';
-        break;
-        
-      case DrawingMode.STRAIGHT_LINE:
-        canvas.defaultCursor = 'crosshair';
-        canvas.hoverCursor = 'crosshair';
-        break;
-        
-      default:
-        canvas.defaultCursor = 'default';
     }
     
-    canvasLogger.debug('Canvas configured for tool', { tool: selectedTool });
-  }, [lineColor, lineThickness]);
-  
-  // Initialize canvas on mount
-  useEffect(() => {
-    const canvas = initializeCanvas();
-    
-    // Clean up on unmount
+    // Cleanup
     return () => {
       if (fabricCanvasRef.current) {
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
       }
     };
-  }, [initializeCanvas]);
+  }, [width, height, lineColor, lineThickness, onCanvasReady, onError, tool, isMobile]);
   
-  // Handle tool changes
-  useEffect(() => {
-    if (fabricCanvasRef.current) {
-      configureForTool(fabricCanvasRef.current, tool);
-    }
-  }, [tool, configureForTool]);
-  
-  // Handle line appearance changes
+  // Update drawing tools when they change
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !canvas.freeDrawingBrush) return;
+    if (!canvas) return;
     
-    canvas.freeDrawingBrush.color = lineColor;
-    canvas.freeDrawingBrush.width = lineThickness;
-  }, [lineColor, lineThickness]);
-  
-  // Re-optimize when needed
-  useEffect(() => {
-    if (isInitialized) {
-      forceOptimize();
+    // Update drawing mode based on tool
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+    
+    // Update brush properties if in drawing mode
+    if (canvas.isDrawingMode) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
     }
-  }, [isInitialized, forceOptimize]);
-  
-  // Display performance metrics in development
-  const perfDebug = useMemo(() => process.env.NODE_ENV !== 'production' && (
-    <div className="absolute bottom-2 left-2 text-xs text-gray-500 bg-white/80 p-1 rounded">
-      FPS: {performanceMetrics.fps} | 
-      Objects: {performanceMetrics.objectCount} | 
-      Visible: {performanceMetrics.visibleObjectCount} |
-      Virtual: {needsVirtualization ? 'Yes' : 'No'}
-    </div>
-  ), [performanceMetrics, needsVirtualization]);
+    
+    // Update cursor style based on tool
+    switch (tool) {
+      case DrawingMode.DRAW:
+        canvas.defaultCursor = "crosshair";
+        break;
+      case DrawingMode.SELECT:
+        canvas.defaultCursor = "default";
+        break;
+      case DrawingMode.HAND:
+        canvas.defaultCursor = "grab";
+        break;
+      default:
+        canvas.defaultCursor = "default";
+    }
+    
+    canvas.renderAll();
+  }, [tool, lineColor, lineThickness]);
   
   return (
-    <div className={`relative ${className}`}>
-      <canvas 
-        ref={canvasRef}
-        className="border border-gray-200 shadow"
-        data-testid="optimized-canvas"
-      />
-      
-      {isInitialized && fabricCanvasRef.current && (
-        <OptimizedGridLayer
-          canvas={fabricCanvasRef.current}
-          showGrid={showGrid}
-        />
-      )}
-      
-      {perfDebug}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="touch-manipulation"
+      data-testid="optimized-canvas"
+      style={{
+        touchAction: "none", // Critical for preventing browser gestures
+        WebkitTapHighlightColor: "transparent", // Remove tap highlight on iOS
+        WebkitTouchCallout: "none", // Disable callout on long press
+        WebkitUserSelect: "none", // Disable text selection on iOS
+        width: "100%",
+        height: "100%"
+      }}
+    />
   );
-});
-
-OptimizedCanvas.displayName = 'OptimizedCanvas';
+};
 
 export default OptimizedCanvas;

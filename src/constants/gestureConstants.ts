@@ -74,7 +74,7 @@ export const TOUCH = {
    * Improves reliability of touch gestures, especially on older devices
    * @constant {number}
    */
-  DEBOUNCE: 50,
+  DEBOUNCE: 100,
   
   /**
    * Default touch tolerance to make touch targets easier to hit
@@ -82,7 +82,7 @@ export const TOUCH = {
    * Based on standard touch accessibility guidelines
    * @constant {number}
    */
-  DEFAULT_TOLERANCE: 8,
+  DEFAULT_TOLERANCE: 10,
   
   /**
    * Increased touch tolerance specifically for iOS devices
@@ -90,7 +90,7 @@ export const TOUCH = {
    * Provides more accurate touch target acquisition on iOS
    * @constant {number}
    */
-  IOS_TOLERANCE: 15
+  IOS_TOLERANCE: 20
 };
 
 /**
