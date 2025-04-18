@@ -118,3 +118,17 @@ export function setupGridVisibilityCheck(canvas: FabricCanvas, intervalMs = 5000
   
   return () => clearInterval(intervalId);
 }
+
+/**
+ * Reset grid progress tracking
+ * This is added to fix the import error
+ */
+export function resetGridProgress(): void {
+  console.info('Grid progress reset');
+  
+  // Clear any local storage related to grid
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem('grid_initialized');
+    window.localStorage.removeItem('grid_creation_attempts');
+  }
+}

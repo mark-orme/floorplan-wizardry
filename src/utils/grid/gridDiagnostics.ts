@@ -1,11 +1,9 @@
-
 /**
  * Grid diagnostics and repair utilities
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createGrid } from '@/utils/canvasGrid';
-import { createBasicEmergencyGrid } from '@/utils/gridCreationUtils';
-import { resetGridProgress } from '@/utils/gridCreationUtils';
+import { createBasicEmergencyGrid, resetGridProgress } from '@/utils/gridCreationUtils';
 import logger from '@/utils/logger';
 
 export interface GridDiagnosticResult {

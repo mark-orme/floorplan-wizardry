@@ -10,7 +10,7 @@ import { createGrid, setGridVisibility, forceGridVisibility, GridOptions } from 
 
 // Re-export individual utility files for direct imports
 export { createGrid };
-export { createBasicEmergencyGrid, resetGridProgress } from '../gridCreationUtils';
+export { createBasicEmergencyGrid, resetGridProgress } from '@/utils/gridCreationUtils';
 export { 
   forceGridCreationAndVisibility,
   setGridVisibility,
