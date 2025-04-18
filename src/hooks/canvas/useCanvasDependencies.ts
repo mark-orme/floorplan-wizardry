@@ -1,7 +1,7 @@
 
 import { useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from '@/utils/grid/gridCreator';
+import { createGridLayer } from '@/utils/grid/gridCreator';
 import { DebugInfoState, DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 
 interface CanvasDependenciesProps {
@@ -31,6 +31,24 @@ export const useCanvasDependencies = ({
     canvasDimensions: { width: 0, height: 0 }
   });
 
+  // Create a wrapper function to match the expected signature
+  const createGrid = (canvas: FabricCanvas): FabricObject[] => {
+    if (!canvas) return [];
+    
+    try {
+      // Use the existing createGridLayer function
+      return createGridLayer(
+        canvas, 
+        gridLayerRef, 
+        { width: canvas.width || 800, height: canvas.height || 600 }, 
+        setDebugInfo
+      );
+    } catch (error) {
+      console.error('Error creating grid:', error);
+      return [];
+    }
+  };
+
   return {
     canvasRef,
     fabricCanvasRef,
@@ -41,4 +59,3 @@ export const useCanvasDependencies = ({
     createGrid
   };
 };
-
