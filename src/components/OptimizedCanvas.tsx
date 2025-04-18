@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -39,7 +40,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   const isIOS = useIsIOS();
   const initTime = useRef(Date.now());
   
-  // Use grid monitoring hook
+  // Use grid monitoring hook with only the required parameters
   const { runGridDiagnostics } = useGridMonitoring(canvas, showGrid);
   
   // Initialize canvas
