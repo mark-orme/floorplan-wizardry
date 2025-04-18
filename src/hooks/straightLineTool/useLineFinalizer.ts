@@ -1,50 +1,49 @@
 
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
-/**
- * Hook for finalizing and removing lines
- */
 export const useLineFinalizer = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
   saveCurrentState: () => void
 ) => {
-  /**
-   * Finalize a line by setting its final coordinates
-   */
   const finalizeLine = useCallback((line: Line) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
+    if (!canvas || !line) return;
+
     try {
-      // Mark line as complete
-      (line as any).isComplete = true;
-      
-      // Update canvas
-      canvas.renderAll();
-      
-      // Save current state for undo/redo
+      // Ensure line is selectable and visible
+      line.set({
+        selectable: true,
+        evented: true,
+        objectType: 'wall'
+      });
+
+      canvas.requestRenderAll();
       saveCurrentState();
+      logger.debug('Line finalized', { lineId: line.id });
     } catch (error) {
-      console.error('Error finalizing line:', error);
+      logger.error('Error finalizing line:', error);
+      toast.error('Error completing line draw');
     }
   }, [fabricCanvasRef, saveCurrentState]);
-  
-  /**
-   * Remove a line from the canvas
-   */
+
   const removeLine = useCallback((line: Line) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
+    if (!canvas || !line) return;
+
     try {
       canvas.remove(line);
-      canvas.renderAll();
+      canvas.requestRenderAll();
+      saveCurrentState();
+      logger.debug('Line removed', { lineId: line.id });
     } catch (error) {
-      console.error('Error removing line:', error);
+      logger.error('Error removing line:', error);
+      toast.error('Error removing line');
     }
-  }, [fabricCanvasRef]);
-  
+  }, [fabricCanvasRef, saveCurrentState]);
+
   return {
     finalizeLine,
     removeLine

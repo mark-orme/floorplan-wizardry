@@ -20,11 +20,6 @@ export const saveCanvasState = async (canvas: FabricCanvas | null) => {
     // If user is logged in, save to Supabase
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      // For now, save additional metadata to localStorage
-      localStorage.setItem('canvas_user_id', user.id);
-      localStorage.setItem('canvas_user_email', user.email || '');
-      
-      // Convert canvas data to string for JSON compatibility
       const canvasData = JSON.stringify(json) as Json;
       
       const { error } = await supabase
@@ -38,9 +33,8 @@ export const saveCanvasState = async (canvas: FabricCanvas | null) => {
 
       if (error) throw error;
       logger.info("Canvas state saved to Supabase");
+      toast.success("Drawing saved");
     }
-    
-    logger.info("Canvas state saved successfully");
   } catch (error) {
     logger.error('Error saving canvas state:', error);
     toast.error('Failed to save drawing');
@@ -65,29 +59,30 @@ export const loadCanvasState = async (canvas: FabricCanvas | null) => {
       if (error) throw error;
       
       if (data) {
-        // Parse the stringified JSON data from Supabase
         const parsedData = typeof data.data === 'string' 
           ? JSON.parse(data.data)
           : data.data;
           
         canvasData = parsedData;
+        logger.info("Loaded canvas state from Supabase");
       }
     }
 
-    // Fall back to localStorage if no cloud data or user not logged in
+    // Fall back to localStorage if no cloud data
     if (!canvasData) {
       const savedState = localStorage.getItem('canvas_objects');
-      if (!savedState) {
-        logger.info("No saved canvas state found");
-        return;
+      if (savedState) {
+        canvasData = JSON.parse(savedState);
+        logger.info("Loaded canvas state from localStorage");
       }
-      canvasData = JSON.parse(savedState);
     }
 
-    canvas.loadFromJSON(canvasData, () => {
-      canvas.renderAll();
-      logger.info("Canvas state restored successfully");
-    });
+    if (canvasData) {
+      canvas.loadFromJSON(canvasData, () => {
+        canvas.renderAll();
+        toast.success("Drawing restored");
+      });
+    }
   } catch (error) {
     logger.error('Error loading canvas state:', error);
     toast.error('Failed to load saved drawing');

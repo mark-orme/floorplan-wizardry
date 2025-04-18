@@ -1,18 +1,21 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { toast } from 'sonner';
 
 export const useMeasurementGuide = () => {
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useLocalStorage('dontShowMeasurementGuide', false);
-  
-  // Check if it's first visit on mount
+  const [hasShownInitialGuide, setHasShownInitialGuide] = useLocalStorage('hasShownInitialGuide', false);
+
+  // Enhanced first visit check
   useEffect(() => {
-    if (!dontShowAgain && !localStorage.getItem('hasSeenMeasurementGuide')) {
+    if (!dontShowAgain && !hasShownInitialGuide) {
       setShowMeasurementGuide(true);
-      localStorage.setItem('hasSeenMeasurementGuide', 'true');
+      setHasShownInitialGuide(true);
+      toast.info("Welcome! Check out the measurement guide to get started.");
     }
-  }, [dontShowAgain]);
+  }, [dontShowAgain, hasShownInitialGuide, setHasShownInitialGuide]);
 
   const handleCloseMeasurementGuide = useCallback((dontShow: boolean) => {
     setShowMeasurementGuide(false);
@@ -25,11 +28,17 @@ export const useMeasurementGuide = () => {
     setShowMeasurementGuide(true);
   }, []);
 
+  const resetGuidePreferences = useCallback(() => {
+    setDontShowAgain(false);
+    setHasShownInitialGuide(false);
+  }, [setDontShowAgain, setHasShownInitialGuide]);
+
   return {
     showMeasurementGuide,
     setShowMeasurementGuide,
     handleCloseMeasurementGuide,
     openMeasurementGuide,
-    dontShowAgain
+    dontShowAgain,
+    resetGuidePreferences
   };
 };
