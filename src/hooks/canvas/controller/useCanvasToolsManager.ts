@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -216,12 +215,9 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
   
   /**
    * Handle selection of a floor plan
-   * @param {number} index - Floor plan index
    */
   const handleFloorSelect = useCallback((index: number) => {
-    // Only switch if valid index and different from current
     if (index >= 0 && index < floorPlans.length && index !== currentFloor) {
-      // Add Sentry breadcrumb for floor change
       Sentry.addBreadcrumb({
         category: 'floorplan',
         message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
@@ -232,18 +228,32 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
           floorName: floorPlans[index]?.name
         }
       });
-      
-      // Clear history when switching floors
-      historyRef.current = { past: [], future: [] };
-      
-      // Save current canvas state to floor plan array
+
       if (fabricCanvasRef.current && floorPlans[currentFloor]) {
         const updatedFloorPlans = [...floorPlans];
         
-        // TODO: Save canvas state to floor plan
-        // This would involve serializing canvas state
+        // Save current canvas state to floor plan
+        const canvasState = fabricCanvasRef.current.toJSON(['id', 'name', 'isGrid']);
+        updatedFloorPlans[currentFloor] = {
+          ...updatedFloorPlans[currentFloor],
+          canvasState
+        };
         
         setFloorPlans(updatedFloorPlans);
+        
+        // Clear history when switching floors
+        historyRef.current = { past: [], future: [] };
+        
+        // Load the selected floor's canvas state
+        if (floorPlans[index]?.canvasState) {
+          fabricCanvasRef.current.loadFromJSON(floorPlans[index].canvasState, () => {
+            fabricCanvasRef.current?.renderAll();
+            toast.success(`Loaded floor ${index + 1}`);
+          });
+        } else {
+          fabricCanvasRef.current.clear();
+          fabricCanvasRef.current.renderAll();
+        }
       }
     }
   }, [fabricCanvasRef, floorPlans, currentFloor, historyRef, setFloorPlans]);
