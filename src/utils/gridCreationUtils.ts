@@ -25,10 +25,12 @@ export function createBasicEmergencyGrid(canvas: FabricCanvas): FabricObject[] {
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
         stroke: '#e0e0e0',
-        strokeWidth: 0.5,
+        strokeWidth: 1, // Increased line width for better visibility on mobile
         selectable: false,
         evented: false,
-        hoverCursor: 'default'
+        hoverCursor: 'default',
+        opacity: 1, // Full opacity for better visibility
+        visible: true // Ensure visibility is set
       });
       
       // Mark as grid object
@@ -44,10 +46,12 @@ export function createBasicEmergencyGrid(canvas: FabricCanvas): FabricObject[] {
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
         stroke: '#e0e0e0',
-        strokeWidth: 0.5,
+        strokeWidth: 1, // Increased line width for better visibility on mobile
         selectable: false,
         evented: false,
-        hoverCursor: 'default'
+        hoverCursor: 'default',
+        opacity: 1, // Full opacity for better visibility
+        visible: true // Ensure visibility is set
       });
       
       // Mark as grid object
@@ -113,6 +117,19 @@ export function setupGridVisibilityCheck(canvas: FabricCanvas, intervalMs = 5000
     if (gridObjects.length === 0) {
       console.log("Grid missing, recreating during visibility check");
       createBasicEmergencyGrid(canvas);
+    } else {
+      // Ensure all grid objects are visible
+      let visibilityChanged = false;
+      gridObjects.forEach(obj => {
+        if (!obj.visible) {
+          obj.set('visible', true);
+          visibilityChanged = true;
+        }
+      });
+      
+      if (visibilityChanged) {
+        canvas.requestRenderAll();
+      }
     }
   }, intervalMs);
   

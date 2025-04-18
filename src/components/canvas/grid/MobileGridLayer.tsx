@@ -1,8 +1,10 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsIOS } from '@/hooks/use-ios';
 import { createBasicEmergencyGrid, setupGridVisibilityCheck } from '@/utils/gridCreationUtils';
+import { enhanceGridForIOS } from '@/utils/grid/gridVisibilityManager';
 
 interface MobileGridLayerProps {
   canvas: FabricCanvas | null;
@@ -20,16 +22,24 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
   onGridCreated 
 }) => {
   const isMobile = useIsMobile();
+  const isIOS = useIsIOS();
+  const initialized = useRef(false);
   
   useEffect(() => {
-    if (!canvas || !isMobile) return;
+    if (!canvas || !isMobile || initialized.current) return;
     
     // Create initial grid
     console.log("MobileGridLayer: Creating mobile-optimized grid");
     const gridObjects = createBasicEmergencyGrid(canvas);
+    initialized.current = true;
     
     if (onGridCreated) {
       onGridCreated(gridObjects);
+    }
+    
+    // Apply iOS-specific enhancements
+    if (isIOS) {
+      enhanceGridForIOS(canvas);
     }
     
     // Set up more frequent visibility checks for mobile
@@ -57,7 +67,7 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
         canvas.requestRenderAll();
       }
     };
-  }, [canvas, isMobile, onGridCreated]);
+  }, [canvas, isMobile, isIOS, onGridCreated]);
   
   // Update grid visibility when it changes
   useEffect(() => {
