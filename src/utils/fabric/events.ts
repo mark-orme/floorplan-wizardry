@@ -5,13 +5,21 @@
  */
 
 /**
+ * Check if current device is running iOS
+ * @returns boolean indicating if the device is running iOS
+ */
+export function isIOSPlatform(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
+
+/**
  * Apply iOS-specific fixes to canvas element
  * @param canvasElement The canvas DOM element
  * @returns Cleanup function
  */
 export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): () => void {
   // Identify iOS devices
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isIOS = isIOSPlatform();
   
   if (!isIOS) return () => {};
   
@@ -73,7 +81,7 @@ export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): () => void
  */
 export function addIOSTouchHandlers(canvas: any) {
   // Only apply on iOS devices
-  if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) return;
+  if (!isIOSPlatform()) return;
   
   const originalTouchStart = canvas.__onTouchStart;
   const originalTouchMove = canvas.__onTouchMove;
