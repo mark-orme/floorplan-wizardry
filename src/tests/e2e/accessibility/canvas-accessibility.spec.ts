@@ -1,6 +1,6 @@
 
 import { test, expect } from '@playwright/test';
-import AxeBuilder from 'axe-playwright';
+import { AxeBuilder } from '@axe-core/playwright';
 
 test.describe('Canvas Accessibility', () => {
   test.beforeEach(async ({ page }) => {
