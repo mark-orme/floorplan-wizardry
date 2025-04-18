@@ -1,10 +1,8 @@
 
 /**
- * @deprecated This file is kept for backward compatibility.
- * Please use the modular hooks from src/hooks/property-page instead.
+ * Property page hook that combines all functionality
+ * @module usePropertyPage
  */
 
-import { usePropertyPage } from './property-page';
+export { usePropertyPage } from './property-page';
 
-// Re-export for backward compatibility
-export { usePropertyPage };
