@@ -5,6 +5,8 @@ import { DrawingMode } from '@/constants/drawingModes';
 interface DrawingContextType {
   activeTool: DrawingMode;
   setActiveTool: (tool: DrawingMode) => void;
+  tool: DrawingMode;  // Add this property
+  setTool: (tool: DrawingMode) => void;  // Add this property
   lineColor: string;
   setLineColor: (color: string) => void;
   lineThickness: number;
@@ -27,10 +29,16 @@ export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
+  // Set tool as alias for activeTool to maintain compatibility with both naming conventions
+  const tool = activeTool;
+  const setTool = setActiveTool;
+
   return (
     <DrawingContext.Provider value={{
       activeTool,
       setActiveTool,
+      tool,
+      setTool,
       lineColor,
       setLineColor,
       lineThickness,
