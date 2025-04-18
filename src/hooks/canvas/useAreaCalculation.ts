@@ -17,13 +17,25 @@ export const useAreaCalculation = (canvas: FabricCanvas | null) => {
       }
       
       let totalArea = 0;
+      let validPolygons = 0;
+      
       for (const polygon of polygons) {
         const points = (polygon as any).points || [];
-        const area = await calculatePolygonArea(points);
-        totalArea += area;
+        if (points.length >= 3) { // Only calculate if polygon has at least 3 points
+          const area = await calculatePolygonArea(points);
+          if (!isNaN(area) && isFinite(area)) {
+            totalArea += area;
+            validPolygons++;
+          }
+        }
       }
       
-      const areaM2 = totalArea / 10000;
+      if (validPolygons === 0) {
+        toast.warning("No valid polygons found for area calculation");
+        return { areaM2: 0 };
+      }
+      
+      const areaM2 = totalArea / 10000; // Convert to square meters
       toast.success(`Area calculated: ${areaM2.toFixed(2)} m²`);
       return { areaM2 };
     } catch (error) {

@@ -19,13 +19,19 @@ export const useCanvasToolManager = ({
   const configureToolSettings = useCallback(() => {
     if (!canvas) return;
     
+    // Reset canvas state
     canvas.isDrawingMode = false;
     canvas.selection = false;
+    canvas.defaultCursor = 'default';
     
+    // Configure based on tool
     switch (tool) {
       case DrawingMode.SELECT:
         canvas.selection = true;
-        canvas.defaultCursor = 'default';
+        canvas.forEachObject(obj => {
+          obj.selectable = true;
+          obj.evented = true;
+        });
         break;
         
       case DrawingMode.DRAW:
@@ -33,14 +39,33 @@ export const useCanvasToolManager = ({
         if (canvas.freeDrawingBrush) {
           canvas.freeDrawingBrush.color = lineColor;
           canvas.freeDrawingBrush.width = lineThickness;
+          canvas.freeDrawingBrush.limitedToCanvasBounds = true;
         }
         canvas.defaultCursor = 'crosshair';
+        canvas.forEachObject(obj => {
+          obj.selectable = false;
+          obj.evented = false;
+        });
         break;
         
       case DrawingMode.STRAIGHT_LINE:
         canvas.defaultCursor = 'crosshair';
+        canvas.forEachObject(obj => {
+          obj.selectable = false;
+          obj.evented = false;
+        });
+        break;
+        
+      default:
+        // Ensure objects are selectable by default for unknown tools
+        canvas.forEachObject(obj => {
+          obj.selectable = true;
+          obj.evented = true;
+        });
         break;
     }
+    
+    canvas.requestRenderAll();
   }, [canvas, tool, lineColor, lineThickness]);
 
   useEffect(() => {

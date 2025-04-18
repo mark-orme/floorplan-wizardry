@@ -7,13 +7,14 @@ const STORAGE_KEY = 'canvas_state';
 
 export const persistCanvasState = async (canvas: FabricCanvas): Promise<boolean> => {
   try {
-    const state = canvas.toJSON(['id', 'name', 'objectType']);
+    const state = canvas.toJSON(['id', 'name', 'objectType', 'selectable', 'evented']);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     localStorage.setItem(`${STORAGE_KEY}_timestamp`, new Date().toISOString());
     logger.info('Canvas state persisted successfully');
     return true;
   } catch (error) {
     logger.error('Failed to persist canvas state:', error);
+    toast.error('Failed to save canvas state');
     return false;
   }
 };
@@ -26,7 +27,12 @@ export const restoreCanvasState = async (canvas: FabricCanvas): Promise<boolean>
       return false;
     }
 
-    canvas.loadFromJSON(JSON.parse(savedState), () => {
+    const parsedState = JSON.parse(savedState);
+    if (!parsedState || typeof parsedState !== 'object') {
+      throw new Error('Invalid canvas state format');
+    }
+
+    canvas.loadFromJSON(parsedState, () => {
       canvas.renderAll();
       logger.info('Canvas state restored successfully');
       toast.success('Canvas restored successfully');
@@ -41,7 +47,12 @@ export const restoreCanvasState = async (canvas: FabricCanvas): Promise<boolean>
 };
 
 export const clearCanvasState = (): void => {
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(`${STORAGE_KEY}_timestamp`);
-  logger.info('Canvas state cleared');
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(`${STORAGE_KEY}_timestamp`);
+    logger.info('Canvas state cleared');
+  } catch (error) {
+    logger.error('Error clearing canvas state:', error);
+    toast.error('Failed to clear canvas state');
+  }
 };
