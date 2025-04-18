@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { createGrid } from '@/utils/gridCreator';
 
 interface ConnectedDrawingCanvasProps {
@@ -73,7 +73,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
     
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
-      const line = new fabric.Line([0, i, width, i], {
+      const line = new Line([0, i, width, i], {
         stroke: gridColor,
         selectable: false,
         evented: false,
@@ -86,13 +86,13 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       canvas.add(line);
       // Move to back instead of using sendToBack which might not be available
-      canvas.moveTo(line, 0);
+      canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
     // Create vertical lines
     for (let i = 0; i <= width; i += gridSize) {
-      const line = new fabric.Line([i, 0, i, height], {
+      const line = new Line([i, 0, i, height], {
         stroke: gridColor,
         selectable: false,
         evented: false,
@@ -105,7 +105,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       
       canvas.add(line);
       // Move to back instead of using sendToBack
-      canvas.moveTo(line, 0);
+      canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
