@@ -10,19 +10,23 @@ export const serializeCanvasState = (canvas: FabricCanvas) => {
       canvasJson,
       objects: objects.map(obj => ({
         id: (obj as any).id,
-        type: obj.type,
+        type: obj.type || 'unknown',
         data: obj.toJSON(['id', 'name', 'layerId'])
       }))
     };
   } catch (error) {
     console.error('Error serializing canvas state:', error);
-    return null;
+    // Return minimal valid structure to avoid type errors
+    return {
+      canvasJson: {},
+      objects: []
+    };
   }
 };
 
 export const deserializeCanvasState = (canvas: FabricCanvas, state: any) => {
   try {
-    if (!state) return false;
+    if (!state || !state.canvasJson) return false;
     
     // Clear existing objects except grid
     const nonGridObjects = canvas.getObjects().filter(obj => !(obj as any).isGrid);

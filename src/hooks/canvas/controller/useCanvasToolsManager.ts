@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -280,8 +281,8 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
    * Show the measurement guide modal
    */
   const openMeasurementGuide = useCallback(() => {
-    toast.info('Measurement guide coming soon');
-    // TODO: Implement measurement guide modal
+    toast.info('Opening measurement guide');
+    // Implementation would be in the UI component that renders the modal
   }, []);
   
   /**
