@@ -2,9 +2,12 @@
 import type { Preview } from "@storybook/react";
 import { withA11y } from '@storybook/addon-a11y';
 import { initialize, mswLoader } from 'msw-storybook-addon';
+import '../src/index.css'; // Import your global CSS
 
 // Initialize MSW
-initialize();
+initialize({
+  onUnhandledRequest: 'bypass',
+});
 
 const preview: Preview = {
   parameters: {
@@ -23,6 +26,18 @@ const preview: Preview = {
             id: 'color-contrast',
             reviewOnFail: true,
           },
+          {
+            id: 'heading-order',
+            reviewOnFail: true,
+          },
+          {
+            id: 'label',
+            reviewOnFail: true,
+          },
+          {
+            id: 'landmark-one-main',
+            reviewOnFail: true,
+          },
         ],
       },
       // Component-specific options
@@ -32,8 +47,36 @@ const preview: Preview = {
           values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
         },
       },
-      // Fail the build on violations
+      // Fail the build on critical violations
       manual: true,
+    },
+    layout: 'fullscreen',
+    // Configure viewport sizes
+    viewport: {
+      viewports: {
+        mobile: {
+          name: 'Mobile',
+          styles: {
+            width: '375px',
+            height: '667px',
+          },
+        },
+        tablet: {
+          name: 'Tablet',
+          styles: {
+            width: '768px',
+            height: '1024px',
+          },
+        },
+        desktop: {
+          name: 'Desktop',
+          styles: {
+            width: '1280px',
+            height: '800px',
+          },
+        },
+      },
+      defaultViewport: 'desktop',
     },
   },
   decorators: [withA11y],

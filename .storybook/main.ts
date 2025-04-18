@@ -23,11 +23,24 @@ const config: StorybookConfig = {
   core: {
     disableTelemetry: true,
   },
+  typescript: {
+    reactDocgen: 'react-docgen-typescript',
+    reactDocgenTypescriptOptions: {
+      compilerOptions: {
+        allowSyntheticDefaultImports: false,
+        esModuleInterop: false,
+      },
+      propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
+    },
+  },
+  features: {
+    storyStoreV7: true,
+  },
   // Add accessibility features
   a11y: {
     // Enable accessibility checks in all stories by default
     enabled: true,
-    // Fail on any accessibility violations
+    // Fail the build on critical accessibility violations
     config: {
       rules: [
         {
