@@ -3,7 +3,7 @@
 
 ## Overview
 
-The drawing feature provides interactive canvas-based tools for creating and manipulating vector and raster graphics. This module is designed for floor plan editing, architectural drawing, and general-purpose vector graphics creation.
+The drawing feature provides interactive canvas-based tools for creating and manipulating vector graphics. This module is designed for floor plan editing, architectural drawing, and general-purpose vector graphics creation.
 
 ## Key Components
 
@@ -30,39 +30,27 @@ The drawing feature is built using:
 - **Fabric.js**: Core canvas manipulation library
 - **React**: Component-based UI architecture
 - **TypeScript**: Type-safe development
+- **@tanstack/react-query**: State management
 - **Sentry**: Error tracking and performance monitoring
 
 ## Usage
-
-The drawing feature is typically used through the `CanvasApp` component, which provides a complete drawing environment. Individual tools can be accessed through the `Toolbar` component.
 
 ```tsx
 import { CanvasApp } from "@/components/canvas/CanvasApp";
 import { Toolbar } from "@/components/canvas/Toolbar";
 import { DrawingMode } from "@/constants/drawingModes";
-import { useState } from "react";
 
 function DrawingPage() {
   const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
-  const [lineThickness, setLineThickness] = useState(2);
-  const [lineColor, setLineColor] = useState("#000000");
   
   return (
     <div className="flex flex-col h-screen">
       <Toolbar
         activeTool={tool}
         onToolChange={setTool}
-        lineThickness={lineThickness}
-        onLineThicknessChange={setLineThickness}
-        lineColor={lineColor}
-        onLineColorChange={setLineColor}
       />
       <div className="flex-1">
-        <CanvasApp 
-          tool={tool}
-          lineThickness={lineThickness}
-          lineColor={lineColor}
-        />
+        <CanvasApp tool={tool} />
       </div>
     </div>
   );
@@ -87,5 +75,3 @@ The drawing feature has comprehensive Sentry integration for monitoring:
 - Drawing operations
 - Performance metrics
 - Error tracking with detailed context
-
-Each drawing operation and tool change is tracked with appropriate context to help debug issues and understand user behavior.

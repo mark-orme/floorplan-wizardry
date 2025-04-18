@@ -1,4 +1,3 @@
-
 # Contributing to Floor Plan Editor
 
 ## 🎯 Project Goals
@@ -34,19 +33,19 @@ The Floor Plan Editor is an advanced architectural and interior design tool that
 
 ## 📊 Development Metrics
 
-[![Build Status](https://github.com/[OWNER]/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/[OWNER]/floor-plan-editor/actions)
-[![Coverage Status](https://codecov.io/gh/[OWNER]/floor-plan-editor/branch/main/graph/badge.svg)](https://codecov.io/gh/[OWNER]/floor-plan-editor)
+[![Build Status](https://github.com/floor-plan-team/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/floor-plan-team/floor-plan-editor/actions)
+[![Coverage Status](https://codecov.io/gh/floor-plan-team/floor-plan-editor/branch/main/graph/badge.svg)](https://codecov.io/gh/floor-plan-team/floor-plan-editor)
 [![Accessibility](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA-brightgreen)](https://www.w3.org/TR/WCAG21/)
 
 We track:
-- Code coverage
-- Performance benchmarks
-- Accessibility compliance
+- Code coverage through Jest and Codecov
+- Performance benchmarks using Lighthouse
+- Accessibility compliance with WCAG 2.1 AA standards
 
 ## 🤝 Contribution Workflow
 
 ### 1. Find an Issue
-- Check [GitHub Issues](https://github.com/[OWNER]/floor-plan-editor/issues)
+- Check [GitHub Issues](https://github.com/floor-plan-team/floor-plan-editor/issues)
 - Look for "good first issue" or "help wanted" labels
 
 ### 2. Create a Branch
@@ -85,6 +84,7 @@ git checkout -b feature/description-of-change
 - Use React.memo for component optimization
 - Implement lazy loading where possible
 - Minimize re-renders
+- Use virtualization for large lists
 
 ### Testing
 - 100% test coverage for utility functions
@@ -96,6 +96,7 @@ git checkout -b feature/description-of-change
 - WCAG 2.1 AA compliance
 - Keyboard navigation support
 - Screen reader compatibility
+- Proper ARIA attributes
 
 ## 🐛 Reporting Bugs
 
@@ -123,4 +124,3 @@ Be respectful, inclusive, and constructive. We follow the [Contributor Covenant]
 ## 💖 Thank You
 
 Your contributions make this project better for everyone!
-

@@ -1,7 +1,7 @@
 
 # Floor Plan Editor
 
-[![CI](https://github.com/owner/repo/workflows/CI/badge.svg)](https://github.com/owner/repo/actions)
+[![CI](https://github.com/floor-plan-team/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/floor-plan-team/floor-plan-editor/actions)
 [![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](./coverage/lcov-report/index.html)
 
 ## Overview
@@ -25,7 +25,15 @@ An advanced floor plan editor built with React, TypeScript, and Fabric.js. This 
 - **TypeScript**: Type-safe development
 - **Fabric.js**: Canvas manipulation library
 - **Shadcn/UI**: UI component library
-- **Logger**: Custom logger utility for tracking application events
+- **@tanstack/react-query**: Data fetching and state management
+- **Sentry**: Error tracking and monitoring
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start the development server: `npm run dev`
+4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
 ## Architecture
 
@@ -38,38 +46,7 @@ The application follows a modular architecture:
 - **constants/**: Application constants and enumerations
 - **types/**: TypeScript type definitions
 
-## Getting Started
-
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
-
-## Key Components
-
-### Straight Line Tool
-
-The straight line tool allows users to draw precise straight lines on the canvas. Key features include:
-- Real-time measurement display
-- Grid snapping capability
-- Apple Pencil and stylus support
-- Line color and thickness customization
-
-### Grid System
-
-The grid system provides visual guides and precise measurement references:
-- Small grid (0.1m) for detailed precision
-- Large grid (1.0m) for primary measurements
-- Toggle grid visibility
-- Grid snapping for precise drawing
-
-## Debugging and Monitoring
-
-The application includes comprehensive logging:
-- Log levels (DEBUG, INFO, WARN, ERROR)
-- Timestamp-based logging
-- Component-specific logging
-- Event tracking for drawing operations
+For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
 
 ## Contributing
 

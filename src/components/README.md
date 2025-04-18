@@ -12,29 +12,23 @@ This directory contains reusable React components used throughout the applicatio
 
 ## Key Components
 
-### StraightLineToolDemo
+### Canvas Components
 
-A standalone component for demonstrating the straight line drawing functionality:
+The canvas components provide the core drawing functionality:
 
 ```typescript
-import { StraightLineToolDemo } from '@/components/StraightLineToolDemo';
-
-function MyPage() {
-  return (
-    <div className="container">
-      <h1>Straight Line Tool Demo</h1>
-      <StraightLineToolDemo />
-    </div>
-  );
-}
+import { CanvasApp } from '@/components/canvas/CanvasApp';
+import { Toolbar } from '@/components/canvas/Toolbar';
+import { GridLayer } from '@/components/canvas/grid/GridLayer';
 ```
 
 Features:
 - Canvas initialization
-- Straight line drawing
-- Color and thickness controls
-- Canvas clearing functionality
-- Status indicators
+- Drawing tools integration
+- Grid system
+- Layer management
+- Measurement tools
+- History management
 
 ## Component Guidelines
 
@@ -44,11 +38,9 @@ Features:
 4. **Apply proper error boundaries** for resilience
 5. **Implement proper TypeScript typing**
 
-## Example Usage
+## Error Handling
 
-### Canvas Components
-
-Canvas components should be wrapped in proper error boundaries:
+Components should implement proper error handling:
 
 ```tsx
 <ErrorBoundary componentName="DrawingTool">
@@ -56,44 +48,17 @@ Canvas components should be wrapped in proper error boundaries:
 </ErrorBoundary>
 ```
 
-### Handling User Input
-
-Components should provide appropriate feedback for user interactions:
-
-```tsx
-<Button 
-  onClick={handleAction}
-  disabled={isLoading}
->
-  {isLoading ? 'Processing...' : 'Draw Line'}
-</Button>
-```
-
 ## State Management
 
-Components should manage their state appropriately:
-
-- Use `useState` for simple component state
-- Use custom hooks for complex logic
-- Implement proper cleanup in `useEffect` return functions
-
-## Error Handling
-
-Components should implement proper error handling:
-
-```tsx
-try {
-  // Component operation
-} catch (error) {
-  logger.error('Component error', error);
-  setError('Something went wrong. Please try again.');
-}
-```
+Components use a combination of:
+- Local state with useState
+- Application state with @tanstack/react-query
+- Context for shared state
+- Custom hooks for complex logic
 
 ## Styling
 
-Components should follow the project's styling conventions:
-
+Components follow these styling principles:
 - Use Tailwind CSS for styling
 - Follow responsive design principles
 - Ensure accessibility compliance
