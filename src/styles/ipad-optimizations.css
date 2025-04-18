@@ -55,7 +55,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Make grid lines more visible on iOS */
+/* Make grid lines more visible on iOS - much more aggressive styles */
 .ios-canvas line[object-type="grid"],
 .ios-canvas line.grid-line,
 canvas line[object-type="grid"],
@@ -64,8 +64,20 @@ canvas line.grid-line,
   stroke-opacity: 1 !important; /* Force full opacity */
   visibility: visible !important;
   opacity: 1 !important;
-  stroke-width: 1px !important; /* Force wider lines */
+  stroke-width: 1.5px !important; /* Wider lines for better visibility */
   pointer-events: none !important; /* Prevent interaction with grid lines */
+  stroke: rgba(0, 0, 0, 0.6) !important; /* Darker stroke */
+  z-index: 100 !important; /* Ensure grid appears above other elements */
+}
+
+/* Special styles for iOS grids to ensure visibility */
+.ios-device canvas line,
+.ios-device .canvas-container line,
+.enhanced-grid-ios line {
+  stroke: rgba(0, 0, 0, 0.7) !important; /* Higher contrast */
+  stroke-width: 1.5px !important; /* More visible lines */
+  vector-effect: non-scaling-stroke !important; /* Maintain width when scaled */
+  shape-rendering: crispEdges !important; /* Crisp rendering for grid lines */
 }
 
 /* Force grid visibility on all iOS devices */
@@ -77,4 +89,27 @@ canvas line.grid-line,
   height: 100%;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Add high contrast dotted grid pattern to iOS devices as backup */
+.ios-device .canvas-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.2;
+}
+
+/* Override any settings that might hide grid on iOS devices */
+.ios-canvas .grid-container * {
+  visibility: visible !important;
+  opacity: 1 !important;
 }
