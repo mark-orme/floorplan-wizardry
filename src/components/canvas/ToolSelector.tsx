@@ -8,11 +8,15 @@ import { StraightLine } from '@/components/icons/StraightLine';
 interface ToolSelectorProps {
   activeTool: DrawingMode;
   onToolChange: (tool: DrawingMode) => void;
+  orientation?: 'horizontal' | 'vertical';
+  compact?: boolean;
 }
 
 export const ToolSelector: React.FC<ToolSelectorProps> = ({
   activeTool,
   onToolChange,
+  orientation = 'vertical',
+  compact = false
 }) => {
   const tools = [
     { id: DrawingMode.SELECT, name: 'Select', icon: <MousePointer className="h-4 w-4" /> },
@@ -26,6 +30,27 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
     { id: DrawingMode.ERASER, name: 'Eraser', icon: <Eraser className="h-4 w-4" /> }
   ];
   
+  // If in compact/horizontal mode (for mobile), render a simplified version
+  if (compact && orientation === 'horizontal') {
+    return (
+      <div className="flex flex-row gap-1 p-1 bg-background/80 backdrop-blur-sm rounded-lg border shadow-md">
+        {tools.slice(0, 5).map((tool) => (
+          <Button
+            key={tool.id}
+            size="icon"
+            variant={activeTool === tool.id ? 'default' : 'outline'}
+            onClick={() => onToolChange(tool.id)}
+            className="h-9 w-9"
+            title={tool.name}
+          >
+            <span className="text-base">{tool.icon}</span>
+          </Button>
+        ))}
+      </div>
+    );
+  }
+  
+  // Standard full version with all tools and controls
   return (
     <div className="flex flex-wrap gap-2 p-4 bg-white w-full max-w-md mx-auto">
       {tools.map((tool) => (
