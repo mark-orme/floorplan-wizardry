@@ -2,8 +2,16 @@
 import { DrawingMode } from "@/constants/drawingModes";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
+import { useCanvasUndoRedo } from "@/hooks/useCanvasUndoRedo";
 
 export const useToolbarActions = (canvas: FabricCanvas | null) => {
+  // Initialize canvas undo/redo functionality
+  const { undo, redo, canUndo, canRedo } = useCanvasUndoRedo({
+    canvas,
+    maxHistoryStates: 50,
+    captureDelay: 300
+  });
+
   const handleToolChange = (tool: DrawingMode) => {
     if (canvas) {
       canvas.isDrawingMode = tool === DrawingMode.DRAW;
@@ -19,29 +27,12 @@ export const useToolbarActions = (canvas: FabricCanvas | null) => {
 
   const handleUndo = () => {
     if (!canvas) return;
-
-    if (canvas.getObjects().length > 0) {
-      const objects = canvas.getObjects();
-      const lastObject = objects[objects.length - 1];
-      canvas.remove(lastObject);
-      canvas.renderAll();
-      toast.success("Undo successful");
-    } else {
-      toast.info("Nothing to undo");
-    }
+    undo();
   };
 
   const handleRedo = () => {
-    if (!canvas?.historyUndo?.length) {
-      toast.info("Nothing to redo");
-      return;
-    }
-
-    const lastUndo = canvas.historyUndo[canvas.historyUndo.length - 1];
-    canvas.add(lastUndo);
-    canvas.historyUndo.pop();
-    canvas.renderAll();
-    toast.success("Redo successful");
+    if (!canvas) return;
+    redo();
   };
 
   const handleClear = () => {
@@ -106,6 +97,8 @@ export const useToolbarActions = (canvas: FabricCanvas | null) => {
     handleRedo,
     handleClear,
     handleSave,
-    handleDelete
+    handleDelete,
+    canUndo,
+    canRedo
   };
 };
