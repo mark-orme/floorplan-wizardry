@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
@@ -6,7 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileDrawingToolbar } from './MobileDrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
 import { TouchGestureHandler } from './TouchGestureHandler';
-import '../styles/mobile-canvas.css';
+import '@/styles/mobile-canvas.css';
 
 interface FloorPlanCanvasProps {
   onCanvasReady?: (canvas: any) => void;
@@ -22,9 +21,8 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [zoom, setZoom] = useState<number>(1);
   
-  // Set consistent canvas dimensions for both mobile and desktop
-  const width = 800; // Fixed width for consistency
-  const height = 600; // Fixed height for consistency
+  const width = 800;
+  const height = 600;
   
   const containerStyle = {
     width: '100%',
@@ -35,11 +33,9 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     position: 'relative' as const
   };
   
-  // Apply mobile-specific styles
   useEffect(() => {
     if (!canvas) return;
     
-    // Apply mobile-specific optimizations when needed
     if (isMobile && canvas.wrapperEl) {
       canvas.wrapperEl.classList.add('mobile-canvas-wrapper');
     }
@@ -55,10 +51,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     setCanvas(canvas);
     
     if (onCanvasReady) {
-      // Track undo/redo state
       const updateUndoRedoState = () => {
-        // This would be connected to your actual history management
-        // For now, just a placeholder logic
         setCanUndo(true);
         setCanRedo(false);
       };
@@ -67,21 +60,18 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
       canvas.on('object:modified', updateUndoRedoState);
       canvas.on('object:removed', updateUndoRedoState);
       
-      // Add necessary operations to the canvas object before passing it up
       const canvasOperations = {
         canvas,
         undo: () => {
           console.log("Undo operation");
-          // Implement undo logic here if needed
         },
         redo: () => {
           console.log("Redo operation");
-          // Implement redo logic here if needed
         },
         clearCanvas: () => {
           const objects = canvas.getObjects();
           objects.forEach(obj => {
-            if (!(obj as any).isGrid) { // Don't remove grid objects
+            if (!(obj as any).isGrid) {
               canvas.remove(obj);
             }
           });
@@ -89,7 +79,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
         },
         saveCanvas: () => {
           console.log("Save operation");
-          // Implement save logic here if needed
         },
         canUndo: true,
         canRedo: false
@@ -102,7 +91,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const handleToolChange = (tool: DrawingMode) => {
     setActiveTool(tool);
     if (canvas) {
-      // Configure canvas based on selected tool
       canvas.isDrawingMode = tool === DrawingMode.DRAW;
       
       if (tool === DrawingMode.SELECT) {
@@ -133,12 +121,10 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   };
   
   const handleUndo = () => {
-    // Implement actual undo logic here
     console.log("Undo triggered");
   };
   
   const handleRedo = () => {
-    // Implement actual redo logic here
     console.log("Redo triggered");
   };
   
@@ -146,7 +132,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     if (canvas) {
       const objects = canvas.getObjects();
       objects.forEach(obj => {
-        if (!(obj as any).isGrid) { // Don't remove grid objects
+        if (!(obj as any).isGrid) {
           canvas.remove(obj);
         }
       });
@@ -155,7 +141,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   };
   
   const handleSave = () => {
-    // Implement save logic here
     console.log("Save triggered");
   };
   
@@ -187,7 +172,6 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
           onCanvasReady={handleCanvasRef}
         />
         
-        {/* Add touch gesture handler for mobile optimizations */}
         {canvas && isMobile && (
           <TouchGestureHandler 
             canvas={canvas} 
