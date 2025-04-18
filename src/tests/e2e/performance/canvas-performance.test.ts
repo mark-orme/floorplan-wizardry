@@ -18,6 +18,17 @@ interface PerformanceResults {
   }>;
 }
 
+// Custom window interface for performance metrics
+declare global {
+  interface Window {
+    _perfMetrics?: {
+      frames: number;
+      startTime: number;
+      frameTimes: number[];
+    };
+  }
+}
+
 // Ensure the report directory exists
 const reportDir = path.join(process.cwd(), 'playwright-report');
 if (!fs.existsSync(reportDir)) {
@@ -188,13 +199,15 @@ test.describe('Canvas Performance Tests', () => {
       ? ((performanceMetrics.memoryAfter - memoryBefore) / memoryBefore) * 100
       : 0;
     
-    // Record test results
+    // Record test results with all required metric properties
     await recordTestResults('drawing-performance', {
       initialRender: 0, // Not applicable for this test
       interactionTime: performanceMetrics.avgFrameTime || 0,
       fps: performanceMetrics.fps || 60,
       layoutShift: 0, // Not measured for this test
       memoryIncrease,
+      avgFrameTime: performanceMetrics.avgFrameTime || 0,
+      slowFrames: performanceMetrics.slowFrames || 0
     });
     
     // Validate drawing performance
@@ -204,7 +217,14 @@ test.describe('Canvas Performance Tests', () => {
   });
   
   // Helper function to record test results
-  async function recordTestResults(testName: string, metrics: Record<string, number>) {
+  async function recordTestResults(testName: string, metrics: {
+    initialRender: number;
+    interactionTime: number;
+    fps: number;
+    layoutShift: number;
+    memoryIncrease: number;
+    [key: string]: number;
+  }) {
     try {
       // Read existing results
       const resultsJson = fs.readFileSync(resultsFilePath, 'utf8');

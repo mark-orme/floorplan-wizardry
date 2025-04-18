@@ -1,9 +1,10 @@
+
 /**
  * Web worker for optimized geometry calculations
  * Uses transferable objects for better performance
  */
 
-import { Point, calculatePolygonArea, calculateDistance, optimizePoints, snapPointsToGrid, perpendicularDistance } from '../utils/geometry/engine';
+import { Point, calculatePolygonArea, calculateDistance, optimizePoints, snapPointsToGrid, perpendicularDistance } from './engine';
 
 // Define types for worker messages
 type WorkerMessageData = {
