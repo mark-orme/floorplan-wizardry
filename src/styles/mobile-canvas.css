@@ -1,6 +1,7 @@
 
 /* Mobile canvas optimizations */
-.touch-optimized-canvas {
+.touch-optimized-canvas,
+.mobile-canvas-wrapper {
   touch-action: none;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -31,7 +32,13 @@
     overscroll-behavior: none;
   }
   
-  /* Fix for tool buttons on small screens */
+  /* Maintain aspect ratio for the canvas */
+  .canvas-container canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Mobile toolbar styles to match desktop experience */
   .mobile-drawing-tools {
     position: fixed;
     bottom: 0;
@@ -89,4 +96,28 @@
   gap: 0.25rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 50;
+}
+
+/* Consistent canvas appearance across devices */
+.canvas-container {
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+/* Force consistent scaling on mobile */
+@media (max-width: 768px) {
+  .upper-canvas, .lower-canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 800px;
+  }
+  
+  /* Fix toolbar positioning to match desktop */
+  .mobile-drawing-toolbar {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
 }

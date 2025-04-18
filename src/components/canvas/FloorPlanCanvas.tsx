@@ -1,10 +1,12 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileDrawingToolbar } from './MobileDrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
+import { TouchGestureHandler } from './TouchGestureHandler';
+import '../styles/mobile-canvas.css';
 
 interface FloorPlanCanvasProps {
   onCanvasReady?: (canvas: any) => void;
@@ -18,6 +20,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const [canUndo, setCanUndo] = useState<boolean>(false);
   const [canRedo, setCanRedo] = useState<boolean>(false);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [zoom, setZoom] = useState<number>(1);
   
   // Set consistent canvas dimensions for both mobile and desktop
   const width = 800; // Fixed width for consistency
@@ -28,8 +31,25 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     maxWidth: width,
     height: 'auto',
     aspectRatio: `${width}/${height}`,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    position: 'relative' as const
   };
+  
+  // Apply mobile-specific styles
+  useEffect(() => {
+    if (!canvas) return;
+    
+    // Apply mobile-specific optimizations when needed
+    if (isMobile && canvas.wrapperEl) {
+      canvas.wrapperEl.classList.add('mobile-canvas-wrapper');
+    }
+    
+    return () => {
+      if (canvas && canvas.wrapperEl) {
+        canvas.wrapperEl.classList.remove('mobile-canvas-wrapper');
+      }
+    };
+  }, [canvas, isMobile]);
   
   const handleCanvasRef = useCallback((canvas: FabricCanvas) => {
     setCanvas(canvas);
@@ -141,19 +161,19 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   
   const handleZoomIn = () => {
     if (canvas) {
-      let zoom = canvas.getZoom();
-      zoom = zoom * 1.1;
-      if (zoom > 20) zoom = 20;
-      canvas.setZoom(zoom);
+      const newZoom = zoom * 1.1;
+      setZoom(newZoom);
+      canvas.setZoom(newZoom);
+      canvas.renderAll();
     }
   };
   
   const handleZoomOut = () => {
     if (canvas) {
-      let zoom = canvas.getZoom();
-      zoom = zoom / 1.1;
-      if (zoom < 0.1) zoom = 0.1;
-      canvas.setZoom(zoom);
+      const newZoom = zoom / 1.1;
+      setZoom(newZoom);
+      canvas.setZoom(newZoom);
+      canvas.renderAll();
     }
   };
   
@@ -166,6 +186,15 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
           showGrid={true}
           onCanvasReady={handleCanvasRef}
         />
+        
+        {/* Add touch gesture handler for mobile optimizations */}
+        {canvas && isMobile && (
+          <TouchGestureHandler 
+            canvas={canvas} 
+            lineThickness={lineThickness}
+            tool={activeTool}
+          />
+        )}
         
         {isMobile && (
           <MobileDrawingToolbar 
