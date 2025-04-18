@@ -141,13 +141,13 @@ export function useCRDTCollaboration({
     try {
       // Apply changes to the document - Automerge v2+ returns a tuple with new doc
       // but not a patch, so we need to handle this differently
-      const newDoc = Automerge.applyChanges(docRef.current, [changes])[0];
+      const [newDoc] = Automerge.applyChanges(docRef.current, [changes]);
       
       // Update the document reference
       docRef.current = newDoc;
       
       // We need to manually determine what changed
-      if (newDoc.objects) {
+      if (newDoc && newDoc.objects) {
         // Get all existing objects for faster lookup
         const existingObjects = canvas.getObjects().reduce<Record<string, FabricObject>>((acc, obj) => {
           if (obj.id) {
@@ -160,17 +160,30 @@ export function useCRDTCollaboration({
         Object.entries(newDoc.objects).forEach(([objId, objData]) => {
           if (!objData) return;
           
+          // Type checking for objData
+          const typedObjData = objData as Record<string, unknown>;
+          
           // Check if object exists in canvas
           if (existingObjects[objId]) {
             // Update existing object
             const obj = existingObjects[objId];
             
             // Safely update properties with type checking
-            if (objData.left !== undefined) obj.set('left', objData.left);
-            if (objData.top !== undefined) obj.set('top', objData.top);
-            if (objData.scaleX !== undefined) obj.set('scaleX', objData.scaleX);
-            if (objData.scaleY !== undefined) obj.set('scaleY', objData.scaleY);
-            if (objData.angle !== undefined) obj.set('angle', objData.angle);
+            if ('left' in typedObjData && typeof typedObjData.left === 'number') {
+              obj.set('left', typedObjData.left);
+            }
+            if ('top' in typedObjData && typeof typedObjData.top === 'number') {
+              obj.set('top', typedObjData.top);
+            }
+            if ('scaleX' in typedObjData && typeof typedObjData.scaleX === 'number') {
+              obj.set('scaleX', typedObjData.scaleX);
+            }
+            if ('scaleY' in typedObjData && typeof typedObjData.scaleY === 'number') {
+              obj.set('scaleY', typedObjData.scaleY);
+            }
+            if ('angle' in typedObjData && typeof typedObjData.angle === 'number') {
+              obj.set('angle', typedObjData.angle);
+            }
             
             // Set coordinates after updating properties
             obj.setCoords();
