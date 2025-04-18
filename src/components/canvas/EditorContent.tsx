@@ -1,11 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { OptimizedCanvasController } from '@/components/OptimizedCanvasController';
-import { MobileToolbar } from '@/components/canvas/MobileToolbar';
-import { DrawingMode } from '@/constants/drawingModes';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface EditorContentProps {
   forceRefreshKey: number;
@@ -44,35 +43,13 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const [canvasReady, setCanvasReady] = useState(false);
   const [canvasInstance, setCanvasInstance] = useState<FabricCanvas | null>(null);
   
-  const [dimensions, setDimensions] = useState({
-    width: 800,
-    height: 600
-  });
-  
-  useEffect(() => {
-    if (isMobile) {
-      const mobileWidth = Math.min(window.innerWidth - 32, 800);
-      const mobileHeight = Math.min(window.innerHeight - 240, 600);
-      
-      setDimensions({
-        width: mobileWidth,
-        height: mobileHeight
-      });
-    } else {
-      setDimensions({
-        width: 800,
-        height: 600
-      });
-    }
-  }, [isMobile]);
-  
   const handleCanvasReady = (canvas: FabricCanvas) => {
     setCanvas(canvas);
     setCanvasInstance(canvas);
     setCanvasReady(true);
     
     if (isMobile) {
-      toast.info("Use two fingers to pan and zoom. Tap and hold to select objects.", {
+      toast.info("Use pinch gestures to zoom, two fingers to pan", {
         duration: 5000,
         id: "mobile-canvas-tips"
       });
@@ -83,43 +60,15 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     console.error("Canvas error:", error);
     toast.error("Failed to initialize drawing canvas");
   };
-  
-  const handleToolChange = (newTool: DrawingMode) => {
-    if (onToolChange) {
-      onToolChange(newTool);
-    }
-  };
-  
-  const handleZoomIn = () => {
-    if (canvasInstance) {
-      const currentZoom = canvasInstance.getZoom();
-      canvasInstance.setZoom(Math.min(currentZoom * 1.2, 5.0));
-      canvasInstance.renderAll();
-    }
-  };
-  
-  const handleZoomOut = () => {
-    if (canvasInstance) {
-      const currentZoom = canvasInstance.getZoom();
-      canvasInstance.setZoom(Math.max(currentZoom / 1.2, 0.5));
-      canvasInstance.renderAll();
-    }
-  };
-  
+
   return (
     <div className="flex-1 overflow-hidden relative">
       <div className="w-full h-full relative flex items-center justify-center bg-background">
-        <div 
-          className="relative w-full h-full"
-          style={{ 
-            maxWidth: isMobile ? '100%' : '800px',
-            maxHeight: isMobile ? '100%' : '600px'
-          }}
-        >
+        <div className="relative w-full h-full max-w-[800px] max-h-[600px]">
           <OptimizedCanvasController
             key={`canvas-${forceRefreshKey}`}
-            width={dimensions.width}
-            height={dimensions.height}
+            width={800}
+            height={600}
             tool={tool}
             lineColor={lineColor}
             lineThickness={lineThickness}
@@ -127,19 +76,6 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             onCanvasReady={handleCanvasReady}
             onError={handleCanvasError}
           />
-          
-          {isMobile && (
-            <MobileToolbar
-              activeTool={tool}
-              onToolChange={handleToolChange}
-              onUndo={onUndo || (() => {})}
-              onRedo={onRedo || (() => {})}
-              onClear={onClear || (() => {})}
-              onSave={onSave || (() => {})}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-            />
-          )}
         </div>
       </div>
     </div>
