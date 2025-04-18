@@ -11,10 +11,10 @@
 /* Make toolbar buttons larger on mobile for better touch targets */
 @media (max-width: 768px) {
   .drawing-toolbar button {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 10px;
-    margin: 4px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 8px;
+    margin: 2px;
   }
   
   /* Ensure grid lines are visible on mobile */
@@ -30,6 +30,35 @@
     overflow: hidden;
     overscroll-behavior: none;
   }
+  
+  /* Fix for tool buttons on small screens */
+  .mobile-drawing-tools {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #e2e8f0;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 100;
+  }
+  
+  /* Canvas adjustments for mobile toolbar */
+  .mobile-canvas-container {
+    padding-bottom: 70px;
+  }
+  
+  /* Ensure proper touch targets for all interactive elements */
+  .mobile-button {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* iOS specific optimizations */
@@ -37,4 +66,27 @@
   stroke: rgba(0, 0, 0, 0.7) !important; /* Higher contrast */
   stroke-width: 1.5px !important;
   vector-effect: non-scaling-stroke !important;
+}
+
+/* Grid visibility enhancement for mobile */
+.mobile-grid line {
+  stroke-opacity: 0.8 !important;
+  stroke-width: 1px !important;
+  vector-effect: non-scaling-stroke !important;
+}
+
+/* Active tool indicator for mobile */
+.active-tool-indicator {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 50;
 }
