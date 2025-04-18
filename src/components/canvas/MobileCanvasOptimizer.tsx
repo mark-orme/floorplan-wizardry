@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Point as FabricPoint } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MobileCanvasOptimizerProps {
@@ -52,13 +52,11 @@ export const MobileCanvasOptimizer: React.FC<MobileCanvasOptimizerProps> = ({ ca
       hammer.get('pinch').set({ enable: true });
       
       hammer.on('pinch', (ev: any) => {
-        const center = {
-          x: ev.center.x,
-          y: ev.center.y
-        };
+        // Create a proper fabric Point instead of a simple object
+        const fabricPoint = new FabricPoint(ev.center.x, ev.center.y);
         
         const zoom = canvas.getZoom() * ev.scale;
-        canvas.zoomToPoint(center, zoom);
+        canvas.zoomToPoint(fabricPoint, zoom);
       });
       
       // Ensure grid is visible

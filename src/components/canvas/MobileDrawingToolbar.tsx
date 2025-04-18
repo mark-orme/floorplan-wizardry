@@ -14,10 +14,10 @@ import {
   Save,
   Trash,
   Ruler,
-  LineIcon,
   ZoomIn,
   ZoomOut
 } from 'lucide-react';
+import LineIcon from '@/components/icons/LineIcon'; // Changed from lucide-react import to our custom icon
 import { DrawingMode } from '@/constants/drawingModes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
