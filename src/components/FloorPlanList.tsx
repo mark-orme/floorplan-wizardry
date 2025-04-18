@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { FixedSizeList } from 'react-window';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FloorPlan } from '@/types/floorPlanTypes';
 
