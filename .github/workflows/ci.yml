@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -109,19 +108,55 @@ jobs:
             playwright-report/accessibility-violations.json
           retention-days: 30
 
-  # Security scan job (optional - uncomment when needed)
-  # security:
-  #   runs-on: ubuntu-latest
-  #   needs: [test]
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 18
-  #         cache: 'npm'
-  #     - run: npm ci
-  #     - run: npm audit --audit-level=moderate
-  #     - uses: github/codeql-action/init@v2
-  #       with:
-  #         languages: javascript, typescript
-  #     - uses: github/codeql-action/analyze@v2
+  # Security scan job (now enabled and enhanced)
+  security:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - run: npm ci
+      
+      # Run npm audit with fail on high or critical issues
+      - name: Run npm security audit
+        run: |
+          echo "Running npm audit..."
+          npm audit --audit-level=high
+          if [ $? -ne 0 ]; then
+            echo "::error::High or critical security vulnerabilities found. Please resolve these issues."
+            exit 1
+          fi
+      
+      # Set up and run CodeQL analysis
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, typescript
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript,typescript"
+          
+      - name: Check for critical CodeQL alerts
+        run: |
+          ALERTS=$(gh api graphql -f query='
+            query {
+              repository(owner: "${{ github.repository_owner }}", name: "${{ github.event.repository.name }}") {
+                vulnerabilityAlerts(first: 100) {
+                  nodes {
+                    securityVulnerability {
+                      severity
+                    }
+                  }
+                }
+              }
+            }' | jq '.data.repository.vulnerabilityAlerts.nodes[] | select(.securityVulnerability.severity == "CRITICAL")')
+          
+          if [ -n "$ALERTS" ]; then
+            echo "::error::Critical security vulnerabilities found. Please resolve these issues."
+            exit 1
+          fi

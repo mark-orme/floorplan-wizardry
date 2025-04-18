@@ -23,6 +23,21 @@ const config: StorybookConfig = {
   core: {
     disableTelemetry: true,
   },
+  // Add accessibility features
+  a11y: {
+    // Enable accessibility checks in all stories by default
+    enabled: true,
+    // Fail on any accessibility violations
+    config: {
+      rules: [
+        {
+          // Critical rules should cause immediate failures
+          id: 'critical',
+          reviewOnFail: true,
+        },
+      ],
+    },
+  },
 };
 
 export default config;

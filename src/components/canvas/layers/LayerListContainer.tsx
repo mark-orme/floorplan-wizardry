@@ -21,7 +21,10 @@ export const LayerListContainer: React.FC<LayerListContainerProps> = ({
   onDeleteLayer
 }) => {
   return (
-    <div className="max-h-[50vh] overflow-hidden">
+    <div className="max-h-[50vh] overflow-hidden border border-gray-200 rounded-md">
+      <div className="p-2 bg-gray-50 font-medium border-b border-gray-200">
+        Layers ({layers.length})
+      </div>
       <VirtualizedLayerList
         layers={layers}
         activeLayerId={activeLayerId}
@@ -29,7 +32,7 @@ export const LayerListContainer: React.FC<LayerListContainerProps> = ({
         onToggleVisibility={onToggleVisibility}
         onToggleLock={onToggleLock}
         onDeleteLayer={onDeleteLayer}
-        listHeight={Math.min(layers.length * 40, 300)}
+        listHeight={Math.min(layers.length * 40 + 2, 300)} /* Ensure height is appropriate */
       />
     </div>
   );
