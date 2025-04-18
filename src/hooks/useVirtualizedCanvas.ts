@@ -24,6 +24,8 @@ export const useVirtualizedCanvas = (
     visibleObjectCount: 0
   });
   
+  const [needsVirtualization, setNeedsVirtualization] = useState(false);
+  
   const performanceIntervalRef = useRef<number | null>(null);
   
   // Initialize performance monitoring
@@ -56,7 +58,7 @@ export const useVirtualizedCanvas = (
   
   // Force refresh virtualization
   const refreshVirtualization = useCallback(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current) return 0;
     
     // Update object visibility based on viewport
     const canvas = canvasRef.current;
@@ -64,7 +66,7 @@ export const useVirtualizedCanvas = (
     
     // Get canvas viewport bounds
     const vpt = canvas.viewportTransform;
-    if (!vpt) return;
+    if (!vpt) return 0;
     
     const vpWidth = canvas.width || 0;
     const vpHeight = canvas.height || 0;
@@ -122,6 +124,7 @@ export const useVirtualizedCanvas = (
   
   return {
     performanceMetrics,
+    needsVirtualization,
     refreshVirtualization
   };
 };

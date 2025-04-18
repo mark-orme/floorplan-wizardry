@@ -4,6 +4,9 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { persistCanvasState, restoreCanvasState } from '@/utils/canvas/persistenceManager';
 
+// Export the history key so it can be imported by other files
+export const HISTORY_KEY = 'canvas_state';
+
 export const useCanvasPersistence = (canvas: FabricCanvas | null) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

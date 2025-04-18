@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
 import logger from '@/utils/logger';
