@@ -1,126 +1,116 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { createSimpleGrid } from '@/utils/simpleGridCreator';
-import { useDrawingContext } from '@/contexts/DrawingContext';
-import { DrawingMode } from '@/constants/drawingModes';
-import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
+import { createGrid } from '@/utils/gridCreator';
 
 interface ConnectedDrawingCanvasProps {
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
   showGrid?: boolean;
-  tool?: DrawingMode;
-  lineColor?: string;
-  lineThickness?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
 export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
-  width = 800,
-  height = 600,
-  showGrid = true,
-  tool = DrawingMode.SELECT,
-  lineColor = '#000000',
-  lineThickness = 2,
+  width,
+  height,
+  showGrid = false,
   onCanvasReady
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const gridObjectsRef = useRef<any[]>([]);
-  const { setCanUndo, setCanRedo } = useDrawingContext();
-  const initializeAttempted = useRef(false);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
 
-  // Initialize canvas only once
+  // Initialize canvas
   useEffect(() => {
-    if (canvasRef.current && !initializeAttempted.current) {
-      initializeAttempted.current = true;
-      try {
-        console.log("Initializing canvas");
-        const fabricCanvas = new FabricCanvas(canvasRef.current, {
-          width,
-          height,
-          backgroundColor: '#ffffff',
-          selection: tool === DrawingMode.SELECT,
-          isDrawingMode: tool === DrawingMode.DRAW
-        });
-        
-        // Configure freeDrawingBrush
-        if (fabricCanvas.freeDrawingBrush) {
-          fabricCanvas.freeDrawingBrush.color = lineColor;
-          fabricCanvas.freeDrawingBrush.width = lineThickness;
+    if (!canvasRef.current) return;
+
+    console.info('Initializing canvas');
+    
+    try {
+      // Create canvas instance
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        selection: true,
+        preserveObjectStacking: true
+      });
+      
+      fabricCanvasRef.current = canvas;
+      
+      // Create grid if needed
+      if (showGrid) {
+        console.info('Creating grid for initialized canvas');
+        try {
+          const gridObjects = createSimpleGrid(canvas, width, height);
+          canvas.renderAll();
+        } catch (error) {
+          console.error('Error creating grid:', error);
         }
-        
-        // Track changes for undo/redo state
-        fabricCanvas.on('object:added', () => {
-          setCanUndo(true);
-        });
-        
-        fabricCanvas.on('object:removed', () => {
-          // Check if there are still objects left
-          setCanUndo(fabricCanvas.getObjects().length > 0);
-        });
-        
-        setCanvas(fabricCanvas);
-        setIsInitialized(true);
-        
-        if (onCanvasReady) {
-          onCanvasReady(fabricCanvas);
-        }
-      } catch (error) {
-        console.error("Failed to initialize canvas:", error);
       }
+      
+      // Notify parent component
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
+    } catch (error) {
+      console.error('Failed to initialize canvas', error);
     }
     
+    // Cleanup function
     return () => {
-      if (canvas) {
-        canvas.dispose();
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
       }
     };
-  }, [canvasRef.current]); // Only run when canvas ref is available
+  }, [width, height, showGrid, onCanvasReady]);
 
-  // Create grid separately after canvas is initialized
-  useEffect(() => {
-    if (canvas && showGrid && gridObjectsRef.current.length === 0) {
-      console.log("Creating grid for initialized canvas");
-      const gridObjects = createSimpleGrid(canvas);
-      gridObjectsRef.current = gridObjects;
-    }
-  }, [canvas, showGrid]);
-
-  // Update grid visibility when showGrid changes
-  useEffect(() => {
-    if (canvas && gridObjectsRef.current.length > 0) {
-      gridObjectsRef.current.forEach(obj => {
-        obj.set('visible', showGrid);
+  // Simple grid creation function
+  const createSimpleGrid = (canvas: FabricCanvas, width: number, height: number) => {
+    const gridSize = 20;
+    const gridColor = 'rgba(200, 200, 200, 0.5)';
+    const gridObjects = [];
+    
+    // Create horizontal lines
+    for (let i = 0; i <= height; i += gridSize) {
+      const line = new fabric.Line([0, i, width, i], {
+        stroke: gridColor,
+        selectable: false,
+        evented: false,
+        strokeWidth: 1
       });
-      canvas.requestRenderAll();
-    }
-  }, [canvas, showGrid]);
-
-  // Update tool settings when they change
-  useEffect(() => {
-    if (canvas) {
-      canvas.isDrawingMode = tool === DrawingMode.DRAW;
-      canvas.selection = tool === DrawingMode.SELECT;
       
-      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.freeDrawingBrush.width = lineThickness;
-      }
+      // Add metadata to identify grid objects
+      (line as any).isGrid = true;
+      (line as any).objectType = 'grid';
       
-      canvas.renderAll();
+      canvas.add(line);
+      // Move to back instead of using sendToBack which might not be available
+      canvas.moveTo(line, 0);
+      gridObjects.push(line);
     }
-  }, [canvas, tool, lineColor, lineThickness]);
+    
+    // Create vertical lines
+    for (let i = 0; i <= width; i += gridSize) {
+      const line = new fabric.Line([i, 0, i, height], {
+        stroke: gridColor,
+        selectable: false,
+        evented: false,
+        strokeWidth: 1
+      });
+      
+      // Add metadata to identify grid objects
+      (line as any).isGrid = true;
+      (line as any).objectType = 'grid';
+      
+      canvas.add(line);
+      // Move to back instead of using sendToBack
+      canvas.moveTo(line, 0);
+      gridObjects.push(line);
+    }
+    
+    return gridObjects;
+  };
 
-  return (
-    <div className="relative w-full h-full" data-testid="canvas-container">
-      <canvas 
-        ref={canvasRef} 
-        className="border rounded shadow-sm touch-optimized-canvas"
-      />
-      {canvas && <MobileCanvasOptimizer canvas={canvas} />}
-    </div>
-  );
+  return <canvas ref={canvasRef} />;
 };

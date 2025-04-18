@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react';
+
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ConnectedDrawingCanvas } from './ConnectedDrawingCanvas';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,6 +21,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const [canRedo, setCanRedo] = useState<boolean>(false);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [zoom, setZoom] = useState<number>(1);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
   const height = 600;
@@ -33,21 +35,54 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     position: 'relative' as const
   };
   
+  // Ensure consistent sizing between mobile and desktop
   useEffect(() => {
     if (!canvas) return;
     
+    const resizeCanvas = () => {
+      if (canvasContainerRef.current) {
+        const containerWidth = canvasContainerRef.current.clientWidth;
+        const scale = containerWidth / width;
+        
+        // Maintain aspect ratio
+        if (canvas.wrapperEl) {
+          canvas.wrapperEl.style.transform = `scale(${scale})`;
+          canvas.wrapperEl.style.transformOrigin = 'top left';
+          canvas.wrapperEl.style.width = `${width}px`;
+          canvas.wrapperEl.style.height = `${height}px`;
+        }
+      }
+    };
+    
+    // Apply mobile-specific classes
     if (isMobile && canvas.wrapperEl) {
       canvas.wrapperEl.classList.add('mobile-canvas-wrapper');
     }
     
+    // Initial resize and add resize listener
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
     return () => {
+      window.removeEventListener('resize', resizeCanvas);
       if (canvas && canvas.wrapperEl) {
         canvas.wrapperEl.classList.remove('mobile-canvas-wrapper');
       }
     };
-  }, [canvas, isMobile]);
+  }, [canvas, isMobile, width, height]);
   
   const handleCanvasRef = useCallback((canvas: FabricCanvas) => {
+    if (!canvas) return;
+    
+    // Set initial drawing mode to match the active tool
+    canvas.isDrawingMode = activeTool === DrawingMode.DRAW;
+    
+    // Set brush settings
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+    
     setCanvas(canvas);
     
     if (onCanvasReady) {
@@ -86,7 +121,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
       
       onCanvasReady(canvasOperations);
     }
-  }, [onCanvasReady]);
+  }, [onCanvasReady, activeTool, lineColor, lineThickness]);
   
   const handleToolChange = (tool: DrawingMode) => {
     setActiveTool(tool);
@@ -164,7 +199,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   
   return (
     <div className="flex flex-col items-center w-full min-h-0">
-      <div style={containerStyle} className="relative border border-border rounded-md bg-white shadow-sm">
+      <div ref={canvasContainerRef} style={containerStyle} className="relative border border-border rounded-md bg-white shadow-sm">
         <ConnectedDrawingCanvas
           width={width}
           height={height}
