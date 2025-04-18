@@ -1,126 +1,96 @@
-# Contributing to Floor Plan Editor
+
+# Contributing to Floor Plan Designer
 
 ## 🎯 Project Goals
 
-The Floor Plan Editor is an advanced architectural and interior design tool that aims to provide:
-- Precise drawing capabilities
-- Real-time measurement tools
-- Collaborative floor plan creation
-- High performance and accessibility
+Our mission is to create the most intuitive and powerful web-based floor plan design tool, focusing on:
+- Precision drawing capabilities
+- Innovative collaboration features
+- Exceptional user experience
+- Robust performance and accessibility
 
-## 💻 Getting Started
+## 💻 Development Setup
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 18+ (recommended)
 - npm 9+
 - Git
+- A modern web browser
 
-### Local Development Setup
-1. Fork the repository
-2. Clone your fork:
-   ```bash
-   git clone https://github.com/[YOUR_USERNAME]/floor-plan-editor.git
-   cd floor-plan-editor
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
+### Local Development
 
-## 📊 Development Metrics
-
-[![Build Status](https://github.com/floor-plan-team/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/floor-plan-team/floor-plan-editor/actions)
-[![Coverage Status](https://codecov.io/gh/floor-plan-team/floor-plan-editor/branch/main/graph/badge.svg)](https://codecov.io/gh/floor-plan-team/floor-plan-editor)
-[![Accessibility](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA-brightgreen)](https://www.w3.org/TR/WCAG21/)
-
-We track:
-- Code coverage through Jest and Codecov
-- Performance benchmarks using Lighthouse
-- Accessibility compliance with WCAG 2.1 AA standards
-
-## 🤝 Contribution Workflow
-
-### 1. Find an Issue
-- Check [GitHub Issues](https://github.com/floor-plan-team/floor-plan-editor/issues)
-- Look for "good first issue" or "help wanted" labels
-
-### 2. Create a Branch
+1. Fork the repository on GitHub
+2. Clone your forked repository
 ```bash
-git checkout -b feature/description-of-change
+git clone https://github.com/[YOUR_USERNAME]/floor-plan-editor.git
+cd floor-plan-editor
 ```
 
-### 3. Make Changes
-- Follow our [Development Guidelines](#development-guidelines)
-- Write tests for new functionality
-- Ensure all tests pass: `npm test`
+3. Install dependencies
+```bash
+npm install
+```
 
-### 4. Commit Changes
-- Use conventional commit messages
-- Example: 
-  - `feat: add straight line drawing tool`
-  - `fix: resolve grid snapping issue`
-  - `docs: update README with new features`
+4. Start development server
+```bash
+npm run dev
+```
 
-### 5. Pull Request
-- Open a PR against the `main` branch
-- Describe changes in the PR description
-- Link any related issues
+5. Run tests
+```bash
+npm test           # Run all tests
+npm run test:watch # Watch mode
+npm run test:e2e   # End-to-end tests
+```
 
-## 💡 Development Guidelines
+## 🔍 Development Workflow
 
-### Code Quality
-- No `any` or `@ts-ignore`
-- Explicit return types
-- JSDoc comments for public functions
-- Avoid magic numbers
-- Keep files under 200 lines
-- No circular dependencies
+### Branching Strategy
+- `main`: Stable production branch
+- `develop`: Active development branch
+- Feature branches: `feature/description-of-change`
+- Bugfix branches: `bugfix/description-of-issue`
 
-### Performance
-- Use React.memo for component optimization
-- Implement lazy loading where possible
-- Minimize re-renders
-- Use virtualization for large lists
+### Commit Guidelines
+- Use conventional commits
+- Format: `<type>(scope): description`
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
-### Testing
+Example:
+```bash
+git commit -m "feat(canvas): add straight line drawing tool"
+```
+
+## 🧪 Testing
+
 - 100% test coverage for utility functions
 - Component tests with React Testing Library
 - E2E tests with Playwright
 - Accessibility tests with Axe
 
-### Accessibility
-- WCAG 2.1 AA compliance
-- Keyboard navigation support
-- Screen reader compatibility
-- Proper ARIA attributes
+## 📝 Code Style
 
-## 🐛 Reporting Bugs
+- Follow TypeScript best practices
+- Use ESLint and Prettier
+- No `any` types
+- Explicit return types
+- JSDoc comments for public functions
 
-1. Search existing issues
-2. Use the bug report template
-3. Provide:
-   - Steps to reproduce
-   - Expected vs. actual behavior
-   - Browser/device information
-   - Screenshots or screen recordings
+## 🚀 Pull Request Process
 
-## 🚀 Feature Requests
+1. Create a feature branch
+2. Implement your changes
+3. Write tests
+4. Run `npm test` and ensure all tests pass
+5. Submit a pull request to `develop` branch
+6. Describe changes in PR description
 
-1. Check existing feature requests
-2. Use the feature request template
-3. Describe:
-   - The problem you're solving
-   - Proposed solution
-   - Potential implementation approaches
+## 🤝 Code of Conduct
 
-## 📝 Code of Conduct
+We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/2/0/code_of_conduct/) Code of Conduct.
 
-Be respectful, inclusive, and constructive. We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
+## 💡 Need Help?
 
-## 💖 Thank You
-
-Your contributions make this project better for everyone!
+- Open an issue on GitHub
+- Join our community discussions
+- Check our [documentation](docs/)

@@ -1,57 +1,73 @@
 
-# Floor Plan Editor
+# Floor Plan Designer
 
-[![CI](https://github.com/floor-plan-team/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/floor-plan-team/floor-plan-editor/actions)
-[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](./coverage/lcov-report/index.html)
+[![CI Pipeline](https://github.com/floor-plan-team/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/floor-plan-team/floor-plan-editor/actions)
+[![Test Coverage](https://img.shields.io/codecov/c/github/floor-plan-team/floor-plan-editor/main.svg)](https://codecov.io/gh/floor-plan-team/floor-plan-editor)
+[![Accessibility](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA-brightgreen)](https://www.w3.org/TR/WCAG21/)
 
-## Overview
+## 🏗 Project Overview
 
-An advanced floor plan editor built with React, TypeScript, and Fabric.js. This application provides a comprehensive set of drawing tools for creating architectural floor plans, measuring spaces, and collaborating in real-time.
+Floor Plan Designer is an advanced, collaborative web-based architectural drawing tool built with cutting-edge web technologies. Designed for architects, interior designers, and spatial planners, it provides a comprehensive suite of drawing and measurement tools.
 
-## Features
+## ✨ Key Features
 
-- **Professional Drawing Tools**: Straight lines, walls, freehand drawing
-- **Measurement Tools**: Real-time measurements with area calculations
-- **Grid System**: Precise grid with snapping for accurate drawing
-- **Multi-floor Support**: Create and manage multiple floors
-- **Collaboration**: Real-time collaboration via Pusher
-- **History Management**: Comprehensive undo/redo functionality
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Error Monitoring**: Integrated error logging and debugging tools
+- 📏 Precise Measurement Tools
+- 🖌 Professional Drawing Capabilities
+- 📊 Multi-floor Support
+- 🤝 Real-time Collaboration
+- 📜 Comprehensive Undo/Redo Functionality
+- 📱 Responsive Design
+- ♿ Full Accessibility Support
 
-## Technology Stack
+## 🚀 Technology Stack
 
-- **React**: UI components and state management
-- **TypeScript**: Type-safe development
-- **Fabric.js**: Canvas manipulation library
-- **Shadcn/UI**: UI component library
-- **@tanstack/react-query**: Data fetching and state management
-- **Sentry**: Error tracking and monitoring
+- **Frontend**: React 18 with TypeScript
+- **Canvas**: Fabric.js for advanced graphics
+- **State Management**: @tanstack/react-query
+- **UI Components**: Shadcn/UI
+- **Styling**: Tailwind CSS
+- **Error Tracking**: Sentry
+- **Testing**: Vitest, Playwright
+- **Accessibility**: @axe-core/playwright
 
-## Getting Started
+## 🔧 Getting Started
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
+### Prerequisites
+- Node.js 18+
+- npm 9+
 
-## Architecture
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/floor-plan-team/floor-plan-editor.git
 
-The application follows a modular architecture:
+# Navigate to project directory
+cd floor-plan-editor
 
-- **components/**: UI components organized by feature
-- **hooks/**: Reusable React hooks for logic encapsulation
-- **utils/**: Utility functions for common operations
-- **features/**: Feature-specific code organized by domain
-- **constants/**: Application constants and enumerations
-- **types/**: TypeScript type definitions
+# Install dependencies
+npm install
 
-For detailed architecture information, see [docs/architecture.md](docs/architecture.md).
+# Start development server
+npm run dev
 
-## Contributing
+# Run tests
+npm test
+```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to contribute to this project.
+## 📚 Documentation
 
-## License
+- [Component Architecture](docs/architecture.md)
+- [Development Guidelines](docs/development-guidelines.md)
+- [Contribution Guide](CONTRIBUTING.md)
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contribution Guidelines](CONTRIBUTING.md) for details on how to get started.
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for more details.
+
+## 🛡️ Security
+
+For security concerns, please read our [Security Policy](SECURITY.md) and report issues responsibly.
