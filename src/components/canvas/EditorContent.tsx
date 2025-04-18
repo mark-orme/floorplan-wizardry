@@ -5,6 +5,8 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingToolbar } from '@/components/canvas/DrawingToolbar';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
 interface EditorContentProps {
   forceRefreshKey: number;
@@ -42,6 +44,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const isMobile = useIsMobile();
   const [canvasReady, setCanvasReady] = useState(false);
   const [canvasInstance, setCanvasInstance] = useState<FabricCanvas | null>(null);
+  const { canUndo, canRedo } = useDrawingContext();
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
     setCanvas(canvas);
@@ -61,21 +64,40 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     toast.error("Failed to initialize drawing canvas");
   };
 
+  // Ensure grid is displayed by using showGridDebug
+  useEffect(() => {
+    if (canvasInstance) {
+      console.log("Canvas ready, showing grid:", showGridDebug);
+    }
+  }, [canvasInstance, showGridDebug]);
+
   return (
-    <div className="flex-1 overflow-hidden relative">
-      <div className="w-full h-full relative flex items-center justify-center bg-background">
-        <div className="relative w-full h-full max-w-[800px] max-h-[600px]">
-          <OptimizedCanvasController
-            key={`canvas-${forceRefreshKey}`}
-            width={800}
-            height={600}
-            tool={tool}
-            lineColor={lineColor}
-            lineThickness={lineThickness}
-            showGrid={showGridDebug}
-            onCanvasReady={handleCanvasReady}
-            onError={handleCanvasError}
-          />
+    <div className="flex flex-col h-full">
+      {/* Drawing toolbar - now visible on both mobile and desktop */}
+      <DrawingToolbar
+        onSave={onSave}
+        onClear={onClear}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
+      
+      <div className="flex-1 overflow-hidden relative">
+        <div className="w-full h-full relative flex items-center justify-center bg-background">
+          <div className="relative w-full h-full">
+            <OptimizedCanvasController
+              key={`canvas-${forceRefreshKey}`}
+              width={800}
+              height={600}
+              tool={tool}
+              lineColor={lineColor}
+              lineThickness={lineThickness}
+              showGrid={showGridDebug}
+              onCanvasReady={handleCanvasReady}
+              onError={handleCanvasError}
+            />
+          </div>
         </div>
       </div>
     </div>

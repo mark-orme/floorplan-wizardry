@@ -1,8 +1,9 @@
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { OptimizedCanvas } from './OptimizedCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
+import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 
 interface OptimizedCanvasControllerProps {
   width: number;
@@ -28,6 +29,7 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   className = ''
 }) => {
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const gridObjectsRef = useRef<any[]>([]);
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
     fabricCanvasRef.current = canvas;
@@ -41,6 +43,13 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
       canvas.freeDrawingBrush.width = lineThickness;
     }
     
+    // Create grid for the canvas
+    if (showGrid) {
+      console.log("Creating grid for canvas");
+      const gridObjects = createSimpleGrid(canvas);
+      gridObjectsRef.current = gridObjects;
+    }
+    
     // Make sure touch events work well on mobile
     canvas.allowTouchScrolling = tool === DrawingMode.HAND;
     
@@ -52,6 +61,37 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
     
     onCanvasReady(canvas);
   };
+
+  // Update grid visibility when showGrid changes
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (canvas && gridObjectsRef.current.length > 0) {
+      gridObjectsRef.current.forEach(obj => {
+        obj.set('visible', showGrid);
+      });
+      canvas.requestRenderAll();
+    } else if (canvas && showGrid && gridObjectsRef.current.length === 0) {
+      // Create grid if it doesn't exist and should be shown
+      const gridObjects = createSimpleGrid(canvas);
+      gridObjectsRef.current = gridObjects;
+    }
+  }, [showGrid]);
+
+  // Update tool settings when they change
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+    
+    if (canvas.isDrawingMode) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+    
+    canvas.requestRenderAll();
+  }, [tool, lineColor, lineThickness]);
 
   return (
     <div className={`relative w-full h-full ${className}`} data-testid="canvas-controller">

@@ -6,15 +6,16 @@ import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
-import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
+import { EditorContent } from "./canvas/EditorContent";
 import { DrawingToolbarModals } from "./DrawingToolbarModals";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
-  const { tool, setTool, setCanUndo, setCanRedo } = useDrawingContext();
+  const { activeTool, setActiveTool, lineColor, lineThickness, setCanUndo, setCanRedo } = useDrawingContext();
   const canvasRef = useRef<any>(null);
+  const [showGridDebug, setShowGridDebug] = React.useState(true);
 
   const {
     showMeasurementGuide,
@@ -26,9 +27,10 @@ export const FloorPlanEditor: React.FC = () => {
   const { saveCanvas, loadCanvas } = useCanvasPersistence(canvas);
 
   const handleCanvasReady = (canvasOperations: any) => {
-    setCanvas(canvasOperations.canvas);
+    setCanvas(canvasOperations);
     canvasRef.current = canvasOperations;
     loadCanvas();
+    console.log("Canvas ready in FloorPlanEditor");
   };
 
   useEffect(() => {
@@ -69,25 +71,30 @@ export const FloorPlanEditor: React.FC = () => {
         canvasRef.current.clearCanvas();
       }
     },
-    save: saveCanvas
+    save: saveCanvas,
+    toggleGrid: () => {
+      setShowGridDebug(!showGridDebug);
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <FloorPlanEditorToolbar
+      <EditorContent
+        forceRefreshKey={0}
+        setCanvas={handleCanvasReady}
+        showGridDebug={showGridDebug}
+        tool={activeTool}
+        lineThickness={lineThickness}
+        lineColor={lineColor}
+        enableSync={true}
+        onToolChange={setActiveTool}
+        onLineThicknessChange={(thickness) => {}}
+        onLineColorChange={(color) => {}}
         onUndo={handleCanvasOperations.undo}
         onRedo={handleCanvasOperations.redo}
         onClear={handleCanvasOperations.clear}
         onSave={handleCanvasOperations.save}
-        canUndo={canvasRef.current?.canUndo || false}
-        canRedo={canvasRef.current?.canRedo || false}
-      >
-        <DrawingToolbarModals />
-      </FloorPlanEditorToolbar>
-
-      <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
-        <FloorPlanCanvas onCanvasReady={handleCanvasReady} />
-      </div>
+      />
 
       <MeasurementGuideModal
         open={showMeasurementGuide}
