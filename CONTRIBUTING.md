@@ -32,6 +32,17 @@ The Floor Plan Editor is an advanced architectural and interior design tool that
    npm run dev
    ```
 
+## 📊 Development Metrics
+
+[![Build Status](https://github.com/[OWNER]/floor-plan-editor/workflows/CI/badge.svg)](https://github.com/[OWNER]/floor-plan-editor/actions)
+[![Coverage Status](https://codecov.io/gh/[OWNER]/floor-plan-editor/branch/main/graph/badge.svg)](https://codecov.io/gh/[OWNER]/floor-plan-editor)
+[![Accessibility](https://img.shields.io/badge/accessibility-WCAG%202.1%20AA-brightgreen)](https://www.w3.org/TR/WCAG21/)
+
+We track:
+- Code coverage
+- Performance benchmarks
+- Accessibility compliance
+
 ## 🤝 Contribution Workflow
 
 ### 1. Find an Issue
@@ -109,13 +120,7 @@ git checkout -b feature/description-of-change
 
 Be respectful, inclusive, and constructive. We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
 
-## 📊 Development Metrics
-
-We track:
-- Code coverage
-- Performance benchmarks
-- Accessibility compliance
-
 ## 💖 Thank You
 
 Your contributions make this project better for everyone!
+
