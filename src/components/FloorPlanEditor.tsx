@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
@@ -7,14 +6,15 @@ import { useRestorePrompt } from "@/hooks/useRestorePrompt";
 import { useCanvasPersistence } from "@/hooks/useCanvasPersistence";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
 import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
-import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
 import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
 import { DrawingToolbarModals } from "./DrawingToolbarModals";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const FloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
   const { setCanUndo, setCanRedo } = useDrawingContext();
   const canvasRef = useRef<any>(null);
+  const isMobile = useIsMobile();
 
   const {
     showMeasurementGuide,
@@ -82,19 +82,20 @@ export const FloorPlanEditor: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <FloorPlanEditorToolbar
-        onUndo={handleCanvasOperations.undo}
-        onRedo={handleCanvasOperations.redo}
-        onClear={handleCanvasOperations.clear}
-        onSave={handleCanvasOperations.save}
-        canUndo={canvasRef.current?.canUndo || false}
-        canRedo={canvasRef.current?.canRedo || false}
-      >
-        <DrawingToolbarModals />
-      </FloorPlanEditorToolbar>
+      {!isMobile && (
+        <FloorPlanEditorToolbar
+          onUndo={handleCanvasOperations.undo}
+          onRedo={handleCanvasOperations.redo}
+          onClear={handleCanvasOperations.clear}
+          onSave={handleCanvasOperations.save}
+          canUndo={canvasRef.current?.canUndo || false}
+          canRedo={canvasRef.current?.canRedo || false}
+        >
+          <DrawingToolbarModals />
+        </FloorPlanEditorToolbar>
+      )}
 
-      <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
-        <MeasurementGuideButton onClick={openMeasurementGuide} />
+      <div className={`flex-1 overflow-auto ${isMobile ? 'p-0' : 'p-4'} flex flex-col items-center justify-center bg-gray-50`}>
         <FloorPlanCanvas onCanvasReady={handleCanvasReady} />
       </div>
 

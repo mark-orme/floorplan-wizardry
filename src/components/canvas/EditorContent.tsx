@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { OptimizedCanvasController } from '@/components/OptimizedCanvasController';
-import { ToolSelector } from '@/components/canvas/ToolSelector';
+import { MobileToolbar } from '@/components/canvas/MobileToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,25 +42,21 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const isMobile = useIsMobile();
   const [canvasReady, setCanvasReady] = useState(false);
   
-  // Default canvas dimensions - adjust for mobile
   const [dimensions, setDimensions] = useState({
     width: 800,
     height: 600
   });
   
-  // Adjust dimensions based on device
   useEffect(() => {
     if (isMobile) {
-      // Get dimensions that fit the mobile viewport
       const mobileWidth = Math.min(window.innerWidth - 32, 800);
-      const mobileHeight = Math.min(window.innerHeight - 240, 600); // More room for tools
+      const mobileHeight = Math.min(window.innerHeight - 240, 600);
       
       setDimensions({
         width: mobileWidth,
         height: mobileHeight
       });
     } else {
-      // Use default dimensions for desktop
       setDimensions({
         width: 800,
         height: 600
@@ -69,12 +64,10 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     }
   }, [isMobile]);
   
-  // Handle canvas ready
   const handleCanvasReady = (canvas: FabricCanvas) => {
     setCanvas(canvas);
     setCanvasReady(true);
     
-    // Show mobile-specific toast message
     if (isMobile) {
       toast.info("Use two fingers to pan and zoom. Tap and hold to select objects.", {
         duration: 5000,
@@ -83,13 +76,11 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     }
   };
   
-  // Handle canvas error
   const handleCanvasError = (error: Error) => {
     console.error("Canvas error:", error);
     toast.error("Failed to initialize drawing canvas");
   };
   
-  // Handle tool change
   const handleToolChange = (newTool: DrawingMode) => {
     if (onToolChange) {
       onToolChange(newTool);
@@ -100,7 +91,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     <div className="flex-1 overflow-hidden relative">
       <div className="w-full h-full relative flex items-center justify-center bg-background">
         <div 
-          className={`relative ${isMobile ? 'w-full h-full p-2' : 'w-[800px] h-[600px]'}`}
+          className="relative w-full h-full"
           style={{ 
             maxWidth: isMobile ? '100%' : '800px',
             maxHeight: isMobile ? '100%' : '600px'
@@ -119,22 +110,14 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           />
           
           {isMobile && canvasReady && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full">
-              <ToolSelector 
-                activeTool={tool} 
-                onToolChange={handleToolChange}
-                orientation="horizontal"
-                compact={true}
-                lineColor={lineColor}
-                lineThickness={lineThickness}
-                onLineColorChange={onLineColorChange}
-                onLineThicknessChange={onLineThicknessChange}
-                onUndo={onUndo}
-                onRedo={onRedo}
-                onClear={onClear}
-                onSave={onSave}
-              />
-            </div>
+            <MobileToolbar
+              activeTool={tool}
+              onToolChange={onToolChange}
+              onUndo={onUndo}
+              onRedo={onRedo}
+              onClear={onClear}
+              onSave={onSave}
+            />
           )}
         </div>
       </div>
