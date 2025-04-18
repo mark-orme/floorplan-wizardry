@@ -10,4 +10,3 @@ export interface DrawingLayer {
   type?: 'internal' | 'external' | 'extension' | 'note' | 'measurement';
   objects: FabricObject[];
 }
-
