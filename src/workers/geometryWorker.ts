@@ -1,3 +1,4 @@
+
 /**
  * Web worker for optimized geometry calculations
  * Uses transferable objects for better performance

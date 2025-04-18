@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -160,3 +161,4 @@ jobs:
             echo "::error::Critical security vulnerabilities found. Please resolve these issues."
             exit 1
           fi
+
