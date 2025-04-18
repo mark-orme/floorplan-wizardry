@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useDrawingContext } from "@/contexts/DrawingContext";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
@@ -102,12 +101,14 @@ export const FloorPlanEditor: React.FC = () => {
       if (canvasRef.current?.clearCanvas) {
         canvasRef.current.clearCanvas();
         saveCanvasToLocalStorage(canvas);
+        toast.success("Canvas cleared");
       }
     },
     save: () => {
       if (canvasRef.current?.saveCanvas) {
         canvasRef.current.saveCanvas();
-        toast.success('Drawing saved successfully');
+        saveCanvasToLocalStorage(canvas);
+        toast.success("Drawing saved successfully");
       }
     }
   };
