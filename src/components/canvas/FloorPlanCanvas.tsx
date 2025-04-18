@@ -21,6 +21,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
   const [canRedo, setCanRedo] = useState<boolean>(false);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [zoom, setZoom] = useState<number>(1);
+  const [canvasInitialized, setCanvasInitialized] = useState<boolean>(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   
   const width = 800;
@@ -63,8 +64,14 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     
+    // Set canvas as initialized after a short delay to ensure DOM is ready
+    const initTimeout = setTimeout(() => {
+      setCanvasInitialized(true);
+    }, 300);
+    
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      clearTimeout(initTimeout);
       if (canvas && canvas.wrapperEl) {
         canvas.wrapperEl.classList.remove('mobile-canvas-wrapper');
       }
@@ -207,7 +214,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasReady 
           onCanvasReady={handleCanvasRef}
         />
         
-        {canvas && isMobile && (
+        {canvas && canvasInitialized && isMobile && (
           <TouchGestureHandler 
             canvas={canvas} 
             lineThickness={lineThickness}

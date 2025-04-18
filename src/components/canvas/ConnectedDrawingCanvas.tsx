@@ -41,7 +41,7 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       if (showGrid) {
         console.info('Creating grid for initialized canvas');
         try {
-          const gridObjects = createSimpleGrid(canvas, width, height);
+          const gridObjects = createGrid(canvas, width, height);
           canvas.renderAll();
         } catch (error) {
           console.error('Error creating grid:', error);
@@ -64,53 +64,6 @@ export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
       }
     };
   }, [width, height, showGrid, onCanvasReady]);
-
-  // Simple grid creation function
-  const createSimpleGrid = (canvas: FabricCanvas, width: number, height: number) => {
-    const gridSize = 20;
-    const gridColor = 'rgba(200, 200, 200, 0.5)';
-    const gridObjects = [];
-    
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: gridColor,
-        selectable: false,
-        evented: false,
-        strokeWidth: 1
-      });
-      
-      // Add metadata to identify grid objects
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      canvas.add(line);
-      // Move to back instead of using sendToBack which might not be available
-      canvas.sendToBack(line);
-      gridObjects.push(line);
-    }
-    
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new Line([i, 0, i, height], {
-        stroke: gridColor,
-        selectable: false,
-        evented: false,
-        strokeWidth: 1
-      });
-      
-      // Add metadata to identify grid objects
-      (line as any).isGrid = true;
-      (line as any).objectType = 'grid';
-      
-      canvas.add(line);
-      // Move to back instead of using sendToBack
-      canvas.sendToBack(line);
-      gridObjects.push(line);
-    }
-    
-    return gridObjects;
-  };
 
   return <canvas ref={canvasRef} />;
 };
