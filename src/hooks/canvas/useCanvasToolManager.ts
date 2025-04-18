@@ -2,6 +2,7 @@
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { initializeBrush } from '@/utils/drawings/brushManager';
 
 interface UseCanvasToolManagerProps {
   canvas: FabricCanvas | null;
@@ -36,12 +37,7 @@ export const useCanvasToolManager = ({
         
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
-        if (canvas.freeDrawingBrush) {
-          canvas.freeDrawingBrush.color = lineColor;
-          canvas.freeDrawingBrush.width = lineThickness;
-          // Fix: Use 'limitedToCanvasSize' instead of 'limitedToCanvasBounds'
-          canvas.freeDrawingBrush.limitedToCanvasSize = true;
-        }
+        initializeBrush(canvas, lineColor, lineThickness);
         canvas.defaultCursor = 'crosshair';
         canvas.forEachObject(obj => {
           obj.selectable = false;

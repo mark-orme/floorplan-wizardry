@@ -23,6 +23,7 @@ export const useGridMonitoring = ({
     try {
       const visibleGridObjects = gridObjects.filter(obj => obj.visible);
       
+      // Handle grid visibility issues
       if (visibleGridObjects.length === 0) {
         logger.warn('Grid visibility issue detected');
         gridObjects.forEach(obj => {
@@ -31,6 +32,7 @@ export const useGridMonitoring = ({
         canvas.requestRenderAll();
       }
       
+      // Handle grid alignment issues
       const misalignedObjects = gridObjects.filter(obj => {
         const bounds = obj.getBoundingRect();
         return bounds.left < 0 || bounds.top < 0;
@@ -39,10 +41,21 @@ export const useGridMonitoring = ({
       if (misalignedObjects.length > 0) {
         logger.warn('Grid alignment issue detected');
         misalignedObjects.forEach(obj => {
-          // Fix: Create a proper Fabric.js Point object instead of a simple object
           const originPoint = new Point(0, 0);
           obj.setPositionByOrigin(originPoint, 'left', 'top');
         });
+        canvas.requestRenderAll();
+      }
+
+      // Check for damaged or corrupted grid objects
+      const damagedObjects = gridObjects.filter(obj => 
+        !obj.width || !obj.height || 
+        Number.isNaN(obj.left) || Number.isNaN(obj.top)
+      );
+
+      if (damagedObjects.length > 0) {
+        logger.error('Damaged grid objects detected');
+        canvas.remove(...damagedObjects);
         canvas.requestRenderAll();
       }
     } catch (error) {
@@ -52,7 +65,6 @@ export const useGridMonitoring = ({
   }, [canvas, gridObjects, onGridError]);
   
   useEffect(() => {
-    // Start monitoring interval
     monitoringIntervalRef.current = window.setInterval(checkGridHealth, 5000);
     
     return () => {
