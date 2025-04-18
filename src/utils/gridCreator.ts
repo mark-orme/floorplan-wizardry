@@ -38,8 +38,8 @@ export const createGrid = (
       line.set('objectType', 'grid');
       
       canvas.add(line);
-      // Use moveTo instead of sendToBack
-      canvas.moveTo(line, 0);
+      // Use sendToBack instead of moveTo
+      canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
@@ -57,8 +57,8 @@ export const createGrid = (
       line.set('objectType', 'grid');
       
       canvas.add(line);
-      // Use moveTo instead of sendToBack
-      canvas.moveTo(line, 0);
+      // Use sendToBack instead of moveTo
+      canvas.sendToBack(line);
       gridObjects.push(line);
     }
     
