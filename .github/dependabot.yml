@@ -1,0 +1,23 @@
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    # Look for package files in the root directory
+    directory: "/"
+    # Check for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+    # Allow up to 10 open pull requests at a time
+    open-pull-requests-limit: 10
+    # Add assignees
+    assignees:
+      - "project-maintainer"
+    # Group all minor and patch updates
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
