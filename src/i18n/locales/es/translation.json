@@ -1,0 +1,66 @@
+
+{
+  "app": {
+    "title": "Herramienta de Dibujo de Planos",
+    "loading": "Cargando...",
+    "error": "Ha ocurrido un error"
+  },
+  "canvas": {
+    "toolbar": {
+      "select": "Seleccionar",
+      "draw": "Pared a Mano Alzada",
+      "straightLine": "Línea Recta",
+      "wall": "Pared",
+      "eraser": "Borrador",
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "delete": "Eliminar Selección",
+      "save": "Guardar",
+      "thickness": "Grosor",
+      "color": "Color"
+    },
+    "messages": {
+      "lineThicknessUpdated": "Grosor de línea establecido a",
+      "colorUpdated": "Color de línea actualizado",
+      "canvasError": "Error al inicializar el lienzo de dibujo",
+      "stateSaved": "Estado del dibujo guardado",
+      "undoSuccess": "Deshacer exitoso",
+      "redoSuccess": "Rehacer exitoso"
+    },
+    "tooltips": {
+      "select": "Haz clic para seleccionar objetos. Arrastra para mover.",
+      "draw": "Haz clic y arrastra para dibujar libremente.",
+      "straightLine": "Haz clic para iniciar la línea, vuelve a hacer clic para terminar. Mantén Shift para ángulos de 45°.",
+      "wall": "Haz clic para iniciar la pared, vuelve a hacer clic para terminar. Las paredes se ajustan a la cuadrícula.",
+      "eraser": "Haz clic en los objetos para borrarlos."
+    },
+    "measurement": {
+      "meters": "m",
+      "feet": "pies",
+      "sqMeters": "m²",
+      "sqFeet": "pies²"
+    }
+  },
+  "toolVisualizer": {
+    "defaultHint": "Selecciona una herramienta para comenzar."
+  },
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "theme": "Tema",
+    "units": "Unidades de Medida",
+    "grid": "Mostrar Cuadrícula",
+    "collaboration": "Colaboración en Tiempo Real"
+  }
+}

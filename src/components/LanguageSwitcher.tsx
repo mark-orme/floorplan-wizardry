@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ interface Language {
 
 const languages: Language[] = [
   { code: 'en', name: 'English', nativeName: 'English', direction: 'ltr' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', direction: 'ltr' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', direction: 'rtl' },
 ];
 

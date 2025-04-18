@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 // Import locale resources
 import enTranslation from './locales/en/translation.json';
 import arTranslation from './locales/ar/translation.json';
+import esTranslation from './locales/es/translation.json';
 
 // Resources configuration
 const resources = {
@@ -13,6 +14,9 @@ const resources = {
   },
   ar: {
     translation: arTranslation
+  },
+  es: {
+    translation: esTranslation
   }
 };
 
@@ -35,7 +39,7 @@ i18n
     },
     
     // Define supported languages
-    supportedLngs: ['en', 'ar'],
+    supportedLngs: ['en', 'ar', 'es'],
     
     // Custom data for measurement systems by locale
     // Can be accessed via i18n.getDataByLanguage(i18n.language)?.customData?.measurement
@@ -60,10 +64,12 @@ i18n
 // Add custom data to language resources
 i18n.addResourceBundle('en', 'translation', {}, true, true);
 i18n.addResourceBundle('ar', 'translation', {}, true, true);
+i18n.addResourceBundle('es', 'translation', {}, true, true);
 
 // Set custom data for measurement systems
 i18n.services.resourceStore.data.en.customData = { measurement: 'imperial' };
 i18n.services.resourceStore.data.ar.customData = { measurement: 'metric' };
+i18n.services.resourceStore.data.es.customData = { measurement: 'metric' };
 
 // Export configured i18n instance
 export default i18n;
