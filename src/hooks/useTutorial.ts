@@ -6,7 +6,7 @@ export interface TutorialStep {
   title: string;
   description: string;
   targetSelector?: string;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
+  placement?: 'top' | 'bottom' | 'left' | 'right' | 'center';
 }
 
 export function useTutorial() {

@@ -125,6 +125,7 @@ function getDialogPosition(targetRect: DOMRect, placement: string) {
         left: `${targetRect.right + padding}px`,
         transform: 'translateY(-50%)'
       };
+    case 'center':
     default:
       return {
         top: '50%',
