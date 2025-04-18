@@ -1,4 +1,3 @@
-
 /**
  * Base ESLint configuration
  * Shared rules for all files
@@ -92,6 +91,12 @@ export const baseConfig = {
     
     // Enhancing code readability
     "max-lines-per-function": ["warn", { "max": 100, "skipBlankLines": true, "skipComments": true }],
-    "complexity": ["warn", { "max": 10 }]
+    "complexity": ["warn", { "max": 10 }],
+    
+    // Prevent TODO comments
+    "no-warning-comments": ["error", { 
+      "terms": ["todo", "fixme", "xxx"],
+      "location": "anywhere"
+    }]
   }
 };

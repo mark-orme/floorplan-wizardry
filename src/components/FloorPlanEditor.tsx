@@ -69,6 +69,7 @@ export const FloorPlanEditor: React.FC = () => {
       canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
       safeFinish(canvasTransaction.current, 'ok');
       
+      // Initialize measurement guide for first-time users
       const firstVisit = !localStorage.getItem('hasSeenMeasurementGuide');
       if (firstVisit) {
         setShowMeasurementGuide(true);
@@ -144,3 +145,4 @@ export const FloorPlanEditor: React.FC = () => {
     </div>
   );
 };
+
