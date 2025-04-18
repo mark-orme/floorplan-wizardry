@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -157,7 +156,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       }
       toast.error("Canvas initialization failed");
     }
-  }, [canvasRef, width, height, tool, lineColor, lineThickness, onCanvasReady, onError, initialized, isMobile, isIOS, runGridDiagnostics]);
+  }, [canvasRef, width, height, tool, lineColor, lineThickness, onCanvasReady, onError, initialized, isMobile, isIOS, runGridDiagnostics, showGrid]);
   
   // Update canvas properties when tool, color, or thickness changes
   useEffect(() => {
