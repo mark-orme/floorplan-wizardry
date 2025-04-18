@@ -31,11 +31,30 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
     fabricCanvasRef.current = canvas;
+    
+    // Set up proper tool based on the current drawing mode
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+    
+    if (canvas.isDrawingMode) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+    
+    // Make sure touch events work well on mobile
+    canvas.allowTouchScrolling = tool === DrawingMode.HAND;
+    
+    // Apply custom CSS to the canvas container to make it touch-friendly
+    if (canvas.wrapperEl) {
+      canvas.wrapperEl.classList.add('touch-manipulation');
+      canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
+    }
+    
     onCanvasReady(canvas);
   };
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative w-full h-full ${className}`} data-testid="canvas-controller">
       <OptimizedCanvas
         fabricCanvasRef={fabricCanvasRef}
         width={width}

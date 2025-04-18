@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { OptimizedCanvasController } from '@/components/OptimizedCanvasController';
 import { MobileToolbar } from '@/components/canvas/MobileToolbar';
@@ -41,6 +42,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [canvasReady, setCanvasReady] = useState(false);
+  const [canvasInstance, setCanvasInstance] = useState<FabricCanvas | null>(null);
   
   const [dimensions, setDimensions] = useState({
     width: 800,
@@ -66,6 +68,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
     setCanvas(canvas);
+    setCanvasInstance(canvas);
     setCanvasReady(true);
     
     if (isMobile) {
@@ -84,6 +87,22 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   const handleToolChange = (newTool: DrawingMode) => {
     if (onToolChange) {
       onToolChange(newTool);
+    }
+  };
+  
+  const handleZoomIn = () => {
+    if (canvasInstance) {
+      const currentZoom = canvasInstance.getZoom();
+      canvasInstance.setZoom(Math.min(currentZoom * 1.2, 5.0));
+      canvasInstance.renderAll();
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (canvasInstance) {
+      const currentZoom = canvasInstance.getZoom();
+      canvasInstance.setZoom(Math.max(currentZoom / 1.2, 0.5));
+      canvasInstance.renderAll();
     }
   };
   
@@ -109,14 +128,16 @@ export const EditorContent: React.FC<EditorContentProps> = ({
             onError={handleCanvasError}
           />
           
-          {isMobile && canvasReady && (
+          {isMobile && (
             <MobileToolbar
               activeTool={tool}
-              onToolChange={onToolChange}
-              onUndo={onUndo}
-              onRedo={onRedo}
-              onClear={onClear}
-              onSave={onSave}
+              onToolChange={handleToolChange}
+              onUndo={onUndo || (() => {})}
+              onRedo={onRedo || (() => {})}
+              onClear={onClear || (() => {})}
+              onSave={onSave || (() => {})}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
             />
           )}
         </div>
