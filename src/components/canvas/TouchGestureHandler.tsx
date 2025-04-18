@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Point } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface TouchGestureHandlerProps {
@@ -106,7 +106,7 @@ export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
           
           try {
             // Convert to fabric point
-            const zoomPoint = new fabric.Point(canvasX, canvasY);
+            const zoomPoint = new Point(canvasX, canvasY);
             canvas.zoomToPoint(zoomPoint, limitedZoom);
           } catch (error) {
             // Fallback if zoomToPoint fails
