@@ -52,11 +52,11 @@ export const MobileCanvasOptimizer: React.FC<MobileCanvasOptimizerProps> = ({ ca
       hammer.get('pinch').set({ enable: true });
       
       hammer.on('pinch', (ev: any) => {
-        // Create a proper fabric Point instead of a simple object
-        const fabricPoint = new FabricPoint(ev.center.x, ev.center.y);
+        // Create a proper fabric Point object instead of a simple object literal
+        const center = new FabricPoint(ev.center.x, ev.center.y);
         
         const zoom = canvas.getZoom() * ev.scale;
-        canvas.zoomToPoint(fabricPoint, zoom);
+        canvas.zoomToPoint(center, zoom);
       });
       
       // Ensure grid is visible
@@ -69,6 +69,20 @@ export const MobileCanvasOptimizer: React.FC<MobileCanvasOptimizerProps> = ({ ca
           });
         }
       });
+      
+      // Force grid creation if no grid is found
+      if (!objects.some(obj => (obj as any).isGrid || (obj as any).objectType === 'grid')) {
+        try {
+          console.log("No grid found on mobile, forcing grid creation");
+          // Import canvasGrid with dynamic import to avoid circular dependencies
+          import('@/utils/canvasGrid').then(({ createGrid }) => {
+            createGrid(canvas);
+            canvas.requestRenderAll();
+          });
+        } catch (error) {
+          console.error("Error creating emergency grid on mobile:", error);
+        }
+      }
       
       // Refresh the canvas
       canvas.requestRenderAll();

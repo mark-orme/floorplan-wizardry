@@ -1,9 +1,10 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ReliableGridLayer } from './ReliableGridLayer';
+import { SimpleGridLayer } from './SimpleGridLayer';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { toast } from 'sonner';
+import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
 
 interface CanvasWithReliableGridProps {
   width: number;
@@ -29,11 +30,14 @@ export const CanvasWithReliableGrid: React.FC<CanvasWithReliableGridProps> = ({
     if (!canvasRef.current || canvas) return;
     
     try {
+      console.log("Initializing canvas");
       const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
-        selection: true
+        selection: true,
+        preserveObjectStacking: true,
+        renderOnAddRemove: true
       });
       
       setCanvas(fabricCanvas);
@@ -42,7 +46,10 @@ export const CanvasWithReliableGrid: React.FC<CanvasWithReliableGridProps> = ({
         onCanvasReady(fabricCanvas);
       }
       
+      console.log("Canvas initialized successfully");
+      
       return () => {
+        console.log("Disposing canvas");
         fabricCanvas.dispose();
       };
     } catch (error) {
@@ -92,12 +99,21 @@ export const CanvasWithReliableGrid: React.FC<CanvasWithReliableGridProps> = ({
       />
       
       {canvas && (
-        <ReliableGridLayer 
-          canvas={canvas}
-          gridSpacing={gridSpacing}
-          showDebugInfo={showGridDebug}
-          onGridCreated={handleGridCreated}
-        />
+        <>
+          {/* Use our more reliable SimpleGridLayer first */}
+          <SimpleGridLayer canvas={canvas} />
+          
+          {/* Also keep the previous grid components as fallback */}
+          <ReliableGridLayer 
+            canvas={canvas}
+            gridSpacing={gridSpacing}
+            showDebugInfo={showGridDebug}
+            onGridCreated={handleGridCreated}
+          />
+          
+          {/* Add mobile optimizations */}
+          <MobileCanvasOptimizer canvas={canvas} />
+        </>
       )}
       
       {showGridDebug && (
@@ -119,6 +135,21 @@ export const CanvasWithReliableGrid: React.FC<CanvasWithReliableGridProps> = ({
               className="px-2 py-1 bg-green-500 text-white rounded text-xs flex-1"
             >
               Restore
+            </button>
+            <button 
+              onClick={() => {
+                if (canvas) {
+                  // Force grid creation
+                  import('@/utils/simpleGridCreator').then(({ createSimpleGrid }) => {
+                    const grid = createSimpleGrid(canvas);
+                    setIsGridCreated(grid.length > 0);
+                    toast.success(`Created grid with ${grid.length} lines`);
+                  });
+                }
+              }}
+              className="px-2 py-1 bg-purple-500 text-white rounded text-xs flex-1"
+            >
+              Fix Grid
             </button>
           </div>
         </div>
