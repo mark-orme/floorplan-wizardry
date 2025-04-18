@@ -1,6 +1,9 @@
 
 # Floor Plan Editor
 
+[![CI](https://github.com/owner/repo/workflows/CI/badge.svg)](https://github.com/owner/repo/actions)
+[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](./coverage/lcov-report/index.html)
+
 ## Overview
 
 An advanced floor plan editor built with React, TypeScript, and Fabric.js. This application provides a comprehensive set of drawing tools for creating architectural floor plans, measuring spaces, and collaborating in real-time.

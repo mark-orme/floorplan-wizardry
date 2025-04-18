@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -29,6 +30,16 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run test:coverage
+      - name: Update coverage badges
+        run: node scripts/update-badges.js
+      - name: Commit badge updates
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "docs: update coverage badges [skip ci]" || echo "No changes to commit"
+          git push
   
   build:
     runs-on: ubuntu-latest
