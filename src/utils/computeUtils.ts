@@ -1,7 +1,6 @@
 
 /**
  * Central utility for offloading heavy computations to workers
- * Maps computational bottlenecks to appropriate worker implementations
  * @module utils/computeUtils
  */
 import { useOptimizedGeometryWorker } from '@/hooks/useOptimizedGeometryWorker';
