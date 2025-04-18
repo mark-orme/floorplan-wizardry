@@ -1,90 +1,127 @@
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useVirtualizationEngine } from './useVirtualizationEngine';
-import { useCanvasMetrics } from './useCanvasMetrics';
+import { measurePerformance } from '@/utils/performance/canvasPerformance';
+import { PerformanceMetrics } from '@/types/canvas';
+
+interface UseVirtualizedCanvasOptions {
+  enabled?: boolean;
+  measureInterval?: number;
+}
 
 export const useVirtualizedCanvas = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  options: { 
-    enabled?: boolean; 
-    paddingPx?: number;
-    objectLimit?: number;
-  } = {}
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  options: UseVirtualizedCanvasOptions = {}
 ) => {
-  // Apply defaults for any missing options
-  const mergedOptions = {
-    enabled: options.enabled ?? true,
-    paddingPx: options.paddingPx ?? 200,
-    objectLimit: options.objectLimit ?? 500
-  };
-  
-  const canvasWidth = useRef(800);
-  const canvasHeight = useRef(600);
-  
-  // Update dimensions when needed
-  const updateDimensions = useCallback(() => {
-    if (fabricCanvasRef.current?.lowerCanvasEl) {
-      canvasWidth.current = fabricCanvasRef.current.lowerCanvasEl.width || 800;
-      canvasHeight.current = fabricCanvasRef.current.lowerCanvasEl.height || 600;
-    }
-  }, [fabricCanvasRef]);
-
   const { 
-    visibleArea,
-    visibleObjectCount,
-    needsVirtualization,
-    updateVirtualization,
-    setVirtualization
-  } = useVirtualizationEngine({
-    fabricCanvasRef,
-    viewportWidth: canvasWidth.current,
-    viewportHeight: canvasHeight.current,
-    paddingPx: mergedOptions.paddingPx
+    enabled = true,
+    measureInterval = 1000 
+  } = options;
+  
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
+    fps: 0,
+    objectCount: 0,
+    visibleObjectCount: 0
   });
-
-  const { metrics, updateObjectCount } = useCanvasMetrics({
-    fabricCanvasRef
-  });
-
-  const performanceMetrics = {
-    ...metrics,
-    visibleObjectCount
-  };
-
-  // Set up canvas optimization
+  
+  const performanceIntervalRef = useRef<number | null>(null);
+  
+  // Initialize performance monitoring
   useEffect(() => {
-    if (!fabricCanvasRef.current || !mergedOptions.enabled) return;
+    if (!enabled || !canvasRef.current) return;
     
-    updateDimensions();
-    
-    const canvas = fabricCanvasRef.current;
-    canvas.renderOnAddRemove = false;
-    canvas.skipTargetFind = needsVirtualization;
-    canvas.enableRetinaScaling = true;
-    
-    canvas.forEachObject(obj => {
-      obj.objectCaching = !['path', 'group'].includes(obj.type || '');
-    });
-    
-    const cleanup = () => {
-      canvas.renderOnAddRemove = true;
-      canvas.skipTargetFind = false;
+    const updatePerformanceMetrics = () => {
+      if (!canvasRef.current) return;
+      
+      const metrics = measurePerformance(canvasRef.current);
+      setPerformanceMetrics(metrics);
     };
     
-    return cleanup;
-  }, [fabricCanvasRef, mergedOptions.enabled, needsVirtualization, updateDimensions]);
-
+    // Initial measurement
+    updatePerformanceMetrics();
+    
+    // Set up interval
+    performanceIntervalRef.current = window.setInterval(
+      updatePerformanceMetrics, 
+      measureInterval
+    );
+    
+    return () => {
+      if (performanceIntervalRef.current) {
+        window.clearInterval(performanceIntervalRef.current);
+        performanceIntervalRef.current = null;
+      }
+    };
+  }, [canvasRef, enabled, measureInterval]);
+  
+  // Force refresh virtualization
   const refreshVirtualization = useCallback(() => {
-    if (fabricCanvasRef.current && mergedOptions.enabled) {
-      updateVirtualization();
-    }
-  }, [fabricCanvasRef, mergedOptions.enabled, updateVirtualization]);
-
+    if (!canvasRef.current) return;
+    
+    // Update object visibility based on viewport
+    const canvas = canvasRef.current;
+    const objects = canvas.getObjects();
+    
+    // Get canvas viewport bounds
+    const vpt = canvas.viewportTransform;
+    if (!vpt) return;
+    
+    const vpWidth = canvas.width || 0;
+    const vpHeight = canvas.height || 0;
+    
+    // Calculate viewport bounds
+    const vpBounds = {
+      left: -vpt[4] / vpt[0],
+      top: -vpt[5] / vpt[3],
+      right: (-vpt[4] + vpWidth) / vpt[0],
+      bottom: (-vpt[5] + vpHeight) / vpt[3]
+    };
+    
+    // Update objects based on visibility
+    let visibleCount = 0;
+    
+    objects.forEach(obj => {
+      // Skip grid objects
+      if ((obj as any).isGrid) return;
+      
+      const bounds = obj.getBoundingRect();
+      
+      // Check if object is in viewport
+      const isVisible = (
+        bounds.left < vpBounds.right &&
+        bounds.left + bounds.width > vpBounds.left &&
+        bounds.top < vpBounds.bottom &&
+        bounds.top + bounds.height > vpBounds.top
+      );
+      
+      // Update visibility
+      if (isVisible) {
+        visibleCount++;
+        if (!obj.visible) {
+          obj.visible = true;
+          obj.dirty = true;
+        }
+      } else if (obj.visible && !(obj as any).alwaysVisible) {
+        obj.visible = false;
+        obj.dirty = true;
+      }
+    });
+    
+    // Update performance metrics
+    const metrics = measurePerformance(canvas);
+    setPerformanceMetrics({
+      ...metrics,
+      visibleObjectCount: visibleCount
+    });
+    
+    // Request render
+    canvas.requestRenderAll();
+    
+    return visibleCount;
+  }, [canvasRef]);
+  
   return {
     performanceMetrics,
-    needsVirtualization,
-    visibleArea,
     refreshVirtualization
   };
 };
