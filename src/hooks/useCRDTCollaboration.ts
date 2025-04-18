@@ -139,54 +139,47 @@ export function useCRDTCollaboration({
     if (!docRef.current || !canvas || !enabled) return;
     
     try {
-      // Apply changes to the document
-      const [newDoc, patch] = Automerge.applyChanges(docRef.current, [changes]);
-      
-      // If no actual changes were made, return early
-      if (!patch || Object.keys(patch).length === 0) return;
+      // Apply changes to the document - Automerge v2+ returns a tuple with new doc
+      // but not a patch, so we need to handle this differently
+      const newDoc = Automerge.applyChanges(docRef.current, [changes])[0];
       
       // Update the document reference
       docRef.current = newDoc;
       
-      // Apply changes to canvas objects
-      if (patch.objects) {
+      // We need to manually determine what changed
+      if (newDoc.objects) {
         // Get all existing objects for faster lookup
-        const existingObjects = canvas.getObjects().reduce((acc, obj) => {
+        const existingObjects = canvas.getObjects().reduce<Record<string, FabricObject>>((acc, obj) => {
           if (obj.id) {
             acc[obj.id] = obj;
           }
           return acc;
-        }, {} as Record<string, FabricObject>);
+        }, {});
         
-        // Process each changed object
-        Object.entries(patch.objects).forEach(([objId, objPatch]) => {
-          if (!objPatch) return;
+        // Process each object in the document
+        Object.entries(newDoc.objects).forEach(([objId, objData]) => {
+          if (!objData) return;
           
           // Check if object exists in canvas
           if (existingObjects[objId]) {
             // Update existing object
             const obj = existingObjects[objId];
             
-            if (objPatch.left !== undefined) obj.set('left', objPatch.left);
-            if (objPatch.top !== undefined) obj.set('top', objPatch.top);
-            if (objPatch.scaleX !== undefined) obj.set('scaleX', objPatch.scaleX);
-            if (objPatch.scaleY !== undefined) obj.set('scaleY', objPatch.scaleY);
-            if (objPatch.angle !== undefined) obj.set('angle', objPatch.angle);
+            // Safely update properties with type checking
+            if (objData.left !== undefined) obj.set('left', objData.left);
+            if (objData.top !== undefined) obj.set('top', objData.top);
+            if (objData.scaleX !== undefined) obj.set('scaleX', objData.scaleX);
+            if (objData.scaleY !== undefined) obj.set('scaleY', objData.scaleY);
+            if (objData.angle !== undefined) obj.set('angle', objData.angle);
             
             // Set coordinates after updating properties
             obj.setCoords();
           } else {
             // Create new object if it doesn't exist
             // This is a simplified version - in a real app, you would 
-            // need to create the proper object type based on objPatch.type
+            // need to create the proper object type based on objData.type
             // and set all relevant properties
-            const objectData = (newDoc.objects as any)[objId];
-            if (!objectData || !objectData.type) return;
-            
-            // Here we would create the proper Fabric object based on type
-            // This is just a placeholder as the actual implementation
-            // would depend on your application's object types
-            logger.info('Would create new object from CRDT data', { objectData });
+            logger.info('Would create new object from CRDT data', { objectData: objData });
             
             // Example (not implemented here):
             // const newObj = createFabricObject(objectData);
