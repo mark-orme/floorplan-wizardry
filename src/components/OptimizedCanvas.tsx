@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -139,18 +138,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       console.error("Error initializing canvas:", error);
       
       // Report error to Sentry
-      captureError(error, "canvas-init-error", {
-        level: 'error',
-        tags: {
-          isMobile: String(isMobile),
-          isIOS: String(isIOS)
-        },
-        extra: {
-          dimensions: `${width}x${height}`,
-          timeElapsed: Date.now() - initTime.current,
-          canvasState: canvasRef.current ? 'available' : 'missing'
-        }
-      });
+      captureError(error, "canvas-init-error");
       
       if (onError && error instanceof Error) {
         onError(error);

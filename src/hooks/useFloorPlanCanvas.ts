@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject, Path } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
-import { DrawingLayer } from '@/components/canvas/DrawingLayers';
+import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 import { calculateGIA, formatArea } from '@/utils/calculations/internalAreaCalculator';
 import { toast } from 'sonner';
 import { resetInitializationState } from '@/utils/canvas/safeCanvasInitialization';
