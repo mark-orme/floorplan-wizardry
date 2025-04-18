@@ -100,7 +100,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setFloorPlans,
     setGia,
     createGrid,
-    recalculateGIA
+    recalculateGIA  // Pass the recalculateGIA function to the manager
   });
 
   return toolFunctions;

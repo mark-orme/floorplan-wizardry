@@ -29,6 +29,7 @@ interface UseCanvasToolsManagerProps {
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
   createGrid: (canvas: FabricCanvas) => any[];
+  recalculateGIA?: () => void; // Add this property
 }
 
 interface CanvasInteractionsResult {
