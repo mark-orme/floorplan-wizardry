@@ -1,4 +1,3 @@
-
 {
   "app": {
     "title": "Floor Plan Drawing Tool",
@@ -62,5 +61,31 @@
     "units": "Measurement Units",
     "grid": "Show Grid",
     "collaboration": "Real-time Collaboration"
+  },
+  "tutorial": {
+    "welcome": {
+      "title": "Welcome to Floor Plan Creator!",
+      "description": "Let's walk through the main features of the application."
+    },
+    "tools": {
+      "title": "Drawing Tools",
+      "description": "Use these tools to create walls, draw lines, and modify your floor plan."
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "description": "Press \"Ctrl + Z\" to undo, \"Ctrl + Y\" to redo, and \"Delete\" to remove selected elements. Use Shift while drawing for straight lines."
+    },
+    "collaboration": {
+      "title": "Real-time Collaboration",
+      "description": "Multiple users can work on the same floor plan simultaneously. Changes sync automatically."
+    },
+    "drawing": {
+      "title": "Drawing Walls",
+      "description": "Select the wall tool and click to start drawing. Click again to finish. Hold Shift for perfect angles."
+    },
+    "measurements": {
+      "title": "Measurements",
+      "description": "As you draw, measurements will appear to help you create accurate floor plans."
+    }
   }
 }

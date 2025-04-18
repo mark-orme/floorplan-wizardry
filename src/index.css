@@ -1,28 +1,111 @@
-
-/* Add this at the top of your index.css file */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* RTL Support */
-html[dir="rtl"] .rtl-mirror {
-  transform: scaleX(-1);
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+ 
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 215.9 31.6% 15.9%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --accent: 215.9 31.6% 15.9%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 217.2 32.6% 17.5%;
+ 
+    --radius: 0.5rem;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
 }
 
-html[dir="rtl"] .rtl-reverse {
-  flex-direction: row-reverse;
+.tutorial-highlight {
+  position: relative;
+  z-index: 51;
+  outline: 2px solid theme('colors.primary.500');
+  outline-offset: 4px;
+  border-radius: 4px;
+  animation: tutorial-pulse 2s infinite;
 }
 
-html[dir="rtl"] .rtl-margin-right {
-  margin-left: 0;
-  margin-right: 0.5rem;
+.tutorial-dialog {
+  z-index: 52;
 }
 
-html[dir="rtl"] .rtl-margin-left {
-  margin-right: 0;
-  margin-left: 0.5rem;
+@keyframes tutorial-pulse {
+  0% {
+    outline-color: theme('colors.primary.500');
+    outline-offset: 4px;
+  }
+  50% {
+    outline-color: theme('colors.primary.400');
+    outline-offset: 8px;
+  }
+  100% {
+    outline-color: theme('colors.primary.500');
+    outline-offset: 4px;
+  }
 }
-
-/* Keep existing content below */

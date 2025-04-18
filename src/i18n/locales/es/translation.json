@@ -1,4 +1,3 @@
-
 {
   "app": {
     "title": "Herramienta de Dibujo de Planos",
@@ -62,5 +61,31 @@
     "units": "Unidades de Medida",
     "grid": "Mostrar Cuadrícula",
     "collaboration": "Colaboración en Tiempo Real"
+  },
+  "tutorial": {
+    "welcome": {
+      "title": "¡Bienvenido al Creador de Planos!",
+      "description": "Veamos las características principales de la aplicación."
+    },
+    "tools": {
+      "title": "Herramientas de Dibujo",
+      "description": "Use estas herramientas para crear paredes, dibujar líneas y modificar su plano."
+    },
+    "shortcuts": {
+      "title": "Atajos de Teclado",
+      "description": "Presione \"Ctrl + Z\" para deshacer, \"Ctrl + Y\" para rehacer y \"Suprimir\" para eliminar elementos seleccionados. Use Shift mientras dibuja para líneas rectas."
+    },
+    "collaboration": {
+      "title": "Colaboración en Tiempo Real",
+      "description": "Varios usuarios pueden trabajar en el mismo plano simultáneamente. Los cambios se sincronizan automáticamente."
+    },
+    "drawing": {
+      "title": "Dibujando Paredes",
+      "description": "Seleccione la herramienta de pared y haga clic para comenzar a dibujar. Haga clic nuevamente para terminar. Mantenga presionada la tecla Shift para ángulos perfectos."
+    },
+    "measurements": {
+      "title": "Mediciones",
+      "description": "Mientras dibuja, aparecerán mediciones para ayudarlo a crear planos precisos."
+    }
   }
 }
