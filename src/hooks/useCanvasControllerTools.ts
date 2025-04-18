@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas drawing tools
  * Centralizes the control and operation of canvas tools and actions
@@ -100,7 +99,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setFloorPlans,
     setGia,
     createGrid,
-    recalculateGIA  // Pass the recalculateGIA function to the manager
+    recalculateGIA
   });
 
   return toolFunctions;

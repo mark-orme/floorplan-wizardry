@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and operations
  */
@@ -13,6 +12,8 @@ import { useCanvasStateEffects } from "./useCanvasStateEffects";
 import { useCanvasFloorOperations } from "./useCanvasFloorOperations";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
+import { useLineSettings } from "@/hooks/useLineSettings";
+import { useMeasurementGuideDialog } from "@/hooks/useMeasurementGuideDialog";
 
 interface UseCanvasToolsManagerProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -29,7 +30,7 @@ interface UseCanvasToolsManagerProps {
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   setGia: React.Dispatch<React.SetStateAction<number>>;
   createGrid: (canvas: FabricCanvas) => any[];
-  recalculateGIA?: () => void; // Add this property
+  recalculateGIA?: () => void;
 }
 
 interface CanvasInteractionsResult {
@@ -108,6 +109,14 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     lineColor
   ) as CanvasInteractionsResult;
 
+  // Initialize line settings
+  const { handleLineThicknessChange, handleLineColorChange } = useLineSettings({
+    fabricCanvasRef
+  });
+
+  // Initialize measurement guide
+  const { isOpen, openMeasurementGuide, handleOpenChange } = useMeasurementGuideDialog();
+
   // Connect to Pusher for real-time updates
   const floorplanId = floorPlans[0]?.id;
   const { isConnected: isPusherConnected } = usePusherConnection(floorplanId);
@@ -134,22 +143,6 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     isPusherConnected,
     snapEnabled
   });
-
-  const handleLineThicknessChange = useCallback((thickness: number) => {
-    if (fabricCanvasRef.current?.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.width = thickness;
-    }
-  }, [fabricCanvasRef]);
-
-  const handleLineColorChange = useCallback((color: string) => {
-    if (fabricCanvasRef.current?.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.color = color;
-    }
-  }, [fabricCanvasRef]);
-
-  const openMeasurementGuide = useCallback(() => {
-    toast.info('Opening measurement guide');
-  }, []);
 
   return {
     // Canvas tool operations
@@ -179,6 +172,8 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     // Canvas state
     drawingState,
     currentZoom,
-    isPusherConnected
+    isPusherConnected,
+    measurementGuideOpen: isOpen,
+    onMeasurementGuideOpenChange: handleOpenChange
   };
 };
