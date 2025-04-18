@@ -39,9 +39,38 @@ export const useCanvasController = (canvas: FabricCanvas | null) => {
     saveCanvasToLocalStorage(canvas);
     toast.success(`Deleted ${selectedObjects.length} object(s)`);
   }, [canvas]);
+  
+  const saveCanvas = useCallback(async () => {
+    if (!canvas) return false;
+    
+    try {
+      // Save to local storage
+      saveCanvasToLocalStorage(canvas);
+      
+      // Save selected objects state
+      const activeObjects = canvas.getActiveObjects();
+      if (activeObjects.length > 0) {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        
+        // Reselect objects after saving
+        canvas.setActiveObject(new fabric.ActiveSelection(activeObjects, { canvas }));
+        canvas.requestRenderAll();
+      }
+      
+      toast.success("Canvas saved successfully");
+      return true;
+    } catch (error) {
+      console.error("Error saving canvas:", error);
+      toast.error("Failed to save canvas");
+      return false;
+    }
+  }, [canvas]);
 
   return {
     clearCanvas,
-    deleteSelectedObjects
+    deleteSelectedObjects,
+    saveCanvas
   };
 };
+
