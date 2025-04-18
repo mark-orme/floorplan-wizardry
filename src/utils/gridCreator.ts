@@ -1,5 +1,6 @@
 
 import { Canvas as FabricCanvas, Line } from 'fabric';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 /**
  * Creates a grid on the canvas
@@ -20,7 +21,15 @@ export const createGrid = (
     return [];
   }
 
-  const gridColor = 'rgba(200, 200, 200, 0.5)';
+  // Determine if we're on mobile from window size if hook not available
+  const isMobileDevice = typeof window !== 'undefined' &&
+    (window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  
+  // Set grid color based on device type
+  const gridColor = isMobileDevice 
+    ? 'rgba(180, 180, 180, 0.8)' // More visible on mobile
+    : 'rgba(200, 200, 200, 0.5)';
+  
   const gridObjects: any[] = [];
   
   try {
@@ -33,18 +42,22 @@ export const createGrid = (
       canvas.remove(obj);
     });
     
+    console.log(`Creating grid with size ${gridSize}px on canvas ${width}x${height}`);
+    
     // Create horizontal lines
     for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
         stroke: gridColor,
         selectable: false,
         evented: false,
-        strokeWidth: 1
+        strokeWidth: isMobileDevice ? 1.5 : 1,
+        hoverCursor: 'default'
       });
       
       // Add metadata
       line.set('isGrid', true);
       line.set('objectType', 'grid');
+      line.set('gridType', 'horizontal');
       
       canvas.add(line);
       canvas.sendToBack(line);
@@ -57,12 +70,14 @@ export const createGrid = (
         stroke: gridColor,
         selectable: false,
         evented: false,
-        strokeWidth: 1
+        strokeWidth: isMobileDevice ? 1.5 : 1,
+        hoverCursor: 'default'
       });
       
       // Add metadata
       line.set('isGrid', true);
       line.set('objectType', 'grid');
+      line.set('gridType', 'vertical');
       
       canvas.add(line);
       canvas.sendToBack(line);
