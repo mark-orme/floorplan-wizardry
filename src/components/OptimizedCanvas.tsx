@@ -38,10 +38,24 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     try {
       console.log("Initializing canvas...");
       
+      // Calculate dimensions based on viewport if on mobile
+      let canvasWidth = width;
+      let canvasHeight = height;
+      
+      if (isMobile) {
+        // Make canvas fit the mobile viewport with some padding
+        canvasWidth = Math.min(window.innerWidth - 32, width);
+        canvasHeight = Math.min(window.innerHeight - 120, height);
+        
+        // Ensure minimum dimensions for usability
+        canvasWidth = Math.max(canvasWidth, 300);
+        canvasHeight = Math.max(canvasHeight, 400);
+      }
+      
       // Create canvas with mobile-friendly options
       const canvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
+        width: canvasWidth,
+        height: canvasHeight,
         selection: tool === DrawingMode.SELECT,
         backgroundColor: "#ffffff",
         // Mobile-specific settings
@@ -55,7 +69,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       
       // Set initial brush properties
       canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
+      canvas.freeDrawingBrush.width = isMobile ? Math.max(lineThickness, 3) : lineThickness;
       
       // Apply mobile-specific optimizations
       if (isMobile) {
@@ -70,6 +84,15 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
         
         // Add touch-specific class
         canvasRef.current.classList.add("mobile-optimized-canvas");
+        
+        // Add meta viewport to disable unwanted zooming
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (!viewport) {
+          viewport = document.createElement('meta');
+          viewport.setAttribute('name', 'viewport');
+          document.head.appendChild(viewport);
+        }
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         
         console.log("Mobile optimizations applied to canvas");
       }
@@ -106,7 +129,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     // Update brush properties if in drawing mode
     if (canvas.isDrawingMode) {
       canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
+      canvas.freeDrawingBrush.width = isMobile ? Math.max(lineThickness, 3) : lineThickness;
     }
     
     // Update cursor style based on tool
@@ -125,7 +148,31 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     }
     
     canvas.renderAll();
-  }, [tool, lineColor, lineThickness]);
+  }, [tool, lineColor, lineThickness, isMobile]);
+  
+  // Add window resize handler
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleResize = () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      // Adjust canvas size on window resize for mobile
+      const newWidth = Math.min(window.innerWidth - 32, width);
+      const newHeight = Math.min(window.innerHeight - 120, height);
+      
+      canvas.setWidth(Math.max(newWidth, 300));
+      canvas.setHeight(Math.max(newHeight, 400));
+      canvas.renderAll();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isMobile, width, height]);
   
   return (
     <canvas
@@ -138,7 +185,10 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
         WebkitTouchCallout: "none", // Disable callout on long press
         WebkitUserSelect: "none", // Disable text selection on iOS
         width: "100%",
-        height: "100%"
+        height: "100%",
+        border: "1px solid #e0e0e0",
+        borderRadius: "4px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
       }}
     />
   );
