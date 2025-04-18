@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and operations
  * @module canvas/controller/useCanvasToolsManager
@@ -12,6 +11,7 @@ import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 import { createFloorPlan } from "@/utils/floorPlanUtils";
+import { serializeCanvasState, deserializeCanvasState } from "@/utils/canvas/canvasSerializer";
 import * as Sentry from '@sentry/react';
 
 /**
@@ -234,7 +234,7 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
         const updatedFloorPlans = [...floorPlans];
         
         // Save current canvas state to floor plan
-        const canvasState = fabricCanvasRef.current.toJSON(['id', 'name', 'isGrid']);
+        const canvasState = serializeCanvasState(fabricCanvasRef.current);
         updatedFloorPlans[currentFloor] = {
           ...updatedFloorPlans[currentFloor],
           canvasState
@@ -247,10 +247,12 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
         
         // Load the selected floor's canvas state
         if (floorPlans[index]?.canvasState) {
-          fabricCanvasRef.current.loadFromJSON(floorPlans[index].canvasState, () => {
-            fabricCanvasRef.current?.renderAll();
+          const loadSuccess = deserializeCanvasState(fabricCanvasRef.current, floorPlans[index].canvasState);
+          if (loadSuccess) {
             toast.success(`Loaded floor ${index + 1}`);
-          });
+          } else {
+            toast.error(`Failed to load floor ${index + 1}`);
+          }
         } else {
           fabricCanvasRef.current.clear();
           fabricCanvasRef.current.renderAll();
