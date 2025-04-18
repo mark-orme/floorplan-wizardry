@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Point } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
 
@@ -39,7 +39,9 @@ export const useGridMonitoring = ({
       if (misalignedObjects.length > 0) {
         logger.warn('Grid alignment issue detected');
         misalignedObjects.forEach(obj => {
-          obj.setPositionByOrigin({ x: 0, y: 0 }, 'left', 'top');
+          // Fix: Create a proper Fabric.js Point object instead of a simple object
+          const originPoint = new Point(0, 0);
+          obj.setPositionByOrigin(originPoint, 'left', 'top');
         });
         canvas.requestRenderAll();
       }

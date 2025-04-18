@@ -39,7 +39,8 @@ export const useCanvasToolManager = ({
         if (canvas.freeDrawingBrush) {
           canvas.freeDrawingBrush.color = lineColor;
           canvas.freeDrawingBrush.width = lineThickness;
-          canvas.freeDrawingBrush.limitedToCanvasBounds = true;
+          // Fix: Use 'limitedToCanvasSize' instead of 'limitedToCanvasBounds'
+          canvas.freeDrawingBrush.limitedToCanvasSize = true;
         }
         canvas.defaultCursor = 'crosshair';
         canvas.forEachObject(obj => {
