@@ -1,143 +1,120 @@
 
-/**
- * Grid Creation Utilities
- * Fallback methods for grid creation when normal methods fail
- */
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
-import logger from '@/utils/logger';
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 
 /**
- * Create a basic emergency grid when normal grid creation fails
- * @param canvas Fabric canvas instance
+ * Creates a basic emergency grid on canvas
+ * This simpler approach is more reliable on mobile devices
+ * @param canvas - Fabric canvas instance
  * @returns Array of created grid objects
  */
 export function createBasicEmergencyGrid(canvas: FabricCanvas): FabricObject[] {
   if (!canvas) {
-    logger.error('Cannot create emergency grid: Canvas is null');
-    console.error('Cannot create emergency grid: Canvas is null');
+    console.error("Cannot create grid: Canvas is null");
     return [];
   }
+
+  const gridObjects: FabricObject[] = [];
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
   
   try {
-    logger.info('Creating emergency grid');
-    console.log('🚨 Creating emergency grid');
-    
-    const emergencyGridObjects: FabricObject[] = [];
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    const gridSize = 20;
-    
-    // Create horizontal grid lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: '#EEEEEE',
-        strokeWidth: 0.5,
-        selectable: false,
-        evented: false,
-        objectType: 'grid'
-      } as any);
-      
-      canvas.add(line);
-      emergencyGridObjects.push(line);
-    }
+    // Use a simple grid pattern with fewer lines for better mobile performance
+    const gridSize = 40; // Larger grid size for mobile
     
     // Create vertical grid lines
     for (let i = 0; i <= width; i += gridSize) {
       const line = new Line([i, 0, i, height], {
-        stroke: '#EEEEEE',
+        stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
-        objectType: 'grid'
-      } as any);
+        hoverCursor: 'default'
+      });
+      
+      // Mark as grid object
+      (line as any).objectType = 'grid';
+      (line as any).isGrid = true;
       
       canvas.add(line);
-      emergencyGridObjects.push(line);
+      canvas.sendToBack(line);
+      gridObjects.push(line);
     }
     
-    // Create larger grid lines (every 100px)
-    for (let i = 0; i <= width; i += 100) {
-      const line = new Line([i, 0, i, height], {
-        stroke: '#DDDDDD',
-        strokeWidth: 1,
-        selectable: false,
-        evented: false,
-        objectType: 'grid'
-      } as any);
-      
-      canvas.add(line);
-      emergencyGridObjects.push(line);
-    }
-    
-    for (let i = 0; i <= height; i += 100) {
+    // Create horizontal grid lines
+    for (let i = 0; i <= height; i += gridSize) {
       const line = new Line([0, i, width, i], {
-        stroke: '#DDDDDD',
-        strokeWidth: 1,
+        stroke: '#e0e0e0',
+        strokeWidth: 0.5,
         selectable: false,
         evented: false,
-        objectType: 'grid'
-      } as any);
+        hoverCursor: 'default'
+      });
+      
+      // Mark as grid object
+      (line as any).objectType = 'grid';
+      (line as any).isGrid = true;
       
       canvas.add(line);
-      emergencyGridObjects.push(line);
+      canvas.sendToBack(line);
+      gridObjects.push(line);
     }
     
-    // Send all grid objects to the back
-    emergencyGridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.sendToBack(obj);
-      }
-    });
-    
+    // Force a render to ensure grid is visible
     canvas.requestRenderAll();
+    console.log(`Created emergency grid with ${gridObjects.length} lines`);
     
-    logger.info(`Created ${emergencyGridObjects.length} emergency grid objects`);
-    console.log(`✅ Created ${emergencyGridObjects.length} emergency grid objects`);
+    // After a short delay, force another render to ensure grid is visible
+    setTimeout(() => {
+      canvas.requestRenderAll();
+    }, 100);
     
-    return emergencyGridObjects;
+    return gridObjects;
   } catch (error) {
-    logger.error('Failed to create emergency grid:', error);
-    console.error('Failed to create emergency grid:', error);
+    console.error("Error creating basic emergency grid:", error);
     return [];
   }
 }
 
 /**
- * Utility to reset grid system progress
+ * Verify grid visibility and recreate if needed
+ * @param canvas - Fabric canvas instance
+ * @param gridObjects - Existing grid objects
+ * @returns Whether grid was fixed
  */
-export function resetGridProgress(): void {
-  try {
-    // Clear any stored grid state
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('grid_initialized');
-      window.localStorage.removeItem('grid_created');
-      window.localStorage.removeItem('grid_error');
-    }
-    
-    logger.info('Reset grid progress');
-    console.log('Reset grid progress');
-  } catch (error) {
-    logger.error('Error resetting grid progress:', error);
-    console.error('Error resetting grid progress:', error);
+export function verifyAndFixGrid(canvas: FabricCanvas, gridObjects: FabricObject[]): boolean {
+  if (!canvas) return false;
+  
+  // Check if grid objects exist on canvas
+  const gridExists = gridObjects.some(obj => canvas.contains(obj));
+  
+  if (!gridExists) {
+    console.log("Grid missing, recreating");
+    createBasicEmergencyGrid(canvas);
+    return true;
   }
+  
+  return false;
 }
 
 /**
- * Global utility for managing grid state
+ * Sets up a periodic check for grid visibility
+ * @param canvas - Fabric canvas instance
+ * @param intervalMs - Check interval in milliseconds
+ * @returns Cleanup function
  */
-export function initGridGlobals(): void {
-  if (typeof window !== 'undefined') {
-    // Add global grid helper functions
-    (window as any).createGrid = createBasicEmergencyGrid;
-    (window as any).resetGridProgress = resetGridProgress;
+export function setupGridVisibilityCheck(canvas: FabricCanvas, intervalMs = 5000): () => void {
+  if (!canvas) return () => {};
+  
+  const intervalId = setInterval(() => {
+    const gridObjects = canvas.getObjects().filter(obj => 
+      (obj as any).isGrid === true || (obj as any).objectType === 'grid'
+    );
     
-    // Add emergency reload function
-    (window as any).emergencyReload = () => {
-      resetGridProgress();
-      window.location.reload();
-    };
-  }
+    if (gridObjects.length === 0) {
+      console.log("Grid missing, recreating during visibility check");
+      createBasicEmergencyGrid(canvas);
+    }
+  }, intervalMs);
+  
+  return () => clearInterval(intervalId);
 }
-
-// Initialize grid globals when this module loads
-initGridGlobals();

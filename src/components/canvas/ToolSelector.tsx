@@ -10,18 +10,34 @@ interface ToolSelectorProps {
   onToolChange: (tool: DrawingMode) => void;
   orientation?: 'horizontal' | 'vertical';
   compact?: boolean;
+  lineColor?: string;
+  lineThickness?: number;
+  onLineColorChange?: (color: string) => void;
+  onLineThicknessChange?: (thickness: number) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onClear?: () => void;
+  onSave?: () => void;
 }
 
 export const ToolSelector: React.FC<ToolSelectorProps> = ({
   activeTool,
   onToolChange,
   orientation = 'vertical',
-  compact = false
+  compact = false,
+  lineColor = '#000000',
+  lineThickness = 2,
+  onLineColorChange,
+  onLineThicknessChange,
+  onUndo,
+  onRedo,
+  onClear,
+  onSave
 }) => {
   const tools = [
     { id: DrawingMode.SELECT, name: 'Select', icon: <MousePointer className="h-4 w-4" /> },
     { id: DrawingMode.DRAW, name: 'Freehand', icon: <Pencil className="h-4 w-4" /> },
-    { id: DrawingMode.STRAIGHT_LINE, name: 'Line', icon: <StraightLine className="h-4 w-4" /> },
+    { id: DrawingMode.STRAIGHT_LINE, name: 'Line', icon: <StraightLine className="h-4 w-4" size={16} /> },
     { id: DrawingMode.RECTANGLE, name: 'Rectangle', icon: "□" },
     { id: DrawingMode.CIRCLE, name: 'Circle', icon: "○" },
     { id: DrawingMode.TEXT, name: 'Text', icon: <Type className="h-4 w-4" /> },
@@ -33,19 +49,54 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   // If in compact/horizontal mode (for mobile), render a simplified version
   if (compact && orientation === 'horizontal') {
     return (
-      <div className="flex flex-row gap-1 p-1 bg-background/80 backdrop-blur-sm rounded-lg border shadow-md">
-        {tools.slice(0, 5).map((tool) => (
-          <Button
-            key={tool.id}
-            size="icon"
-            variant={activeTool === tool.id ? 'default' : 'outline'}
-            onClick={() => onToolChange(tool.id)}
-            className="h-9 w-9"
-            title={tool.name}
-          >
-            <span className="text-base">{tool.icon}</span>
-          </Button>
-        ))}
+      <div className="flex flex-col gap-2 w-full max-w-md mx-auto px-2">
+        <div className="flex flex-wrap gap-1">
+          {tools.map((tool) => (
+            <Button
+              key={tool.id}
+              size="sm"
+              variant={activeTool === tool.id ? 'default' : 'outline'}
+              onClick={() => onToolChange(tool.id)}
+              className="flex-1 min-w-[80px] h-10"
+              title={tool.name}
+            >
+              <span className="mr-1">{tool.icon}</span>
+              {tool.name}
+            </Button>
+          ))}
+        </div>
+        
+        <div className="flex flex-col w-full gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm w-16">Color:</span>
+            <input
+              type="color"
+              className="w-8 h-8 p-0 border-0"
+              value={lineColor}
+              onChange={(e) => onLineColorChange?.(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm w-16">Width:</span>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={lineThickness}
+              onChange={(e) => onLineThicknessChange?.(parseInt(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm w-10">{lineThickness}px</span>
+          </div>
+          
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={onUndo}>Undo</Button>
+            <Button variant="outline" className="flex-1" onClick={onRedo}>Redo</Button>
+            <Button variant="outline" className="flex-1" onClick={onClear}>Clear</Button>
+            <Button variant="outline" className="flex-1" onClick={onSave}>Save</Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -71,7 +122,8 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
           <input
             type="color"
             className="w-8 h-8 p-0 border-0"
-            defaultValue="#000000"
+            value={lineColor}
+            onChange={(e) => onLineColorChange?.(e.target.value)}
           />
         </div>
         
@@ -81,17 +133,18 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
             type="range"
             min="1"
             max="20"
-            defaultValue="2"
+            value={lineThickness}
+            onChange={(e) => onLineThicknessChange?.(parseInt(e.target.value))}
             className="flex-1"
           />
-          <span className="text-sm">2px</span>
+          <span className="text-sm">{lineThickness}px</span>
         </div>
         
         <div className="flex gap-2 mt-2">
-          <Button variant="outline" className="flex-1">Undo</Button>
-          <Button variant="outline" className="flex-1">Redo</Button>
-          <Button variant="outline" className="flex-1">Clear</Button>
-          <Button variant="outline" className="flex-1">Save</Button>
+          <Button variant="outline" className="flex-1" onClick={onUndo}>Undo</Button>
+          <Button variant="outline" className="flex-1" onClick={onRedo}>Redo</Button>
+          <Button variant="outline" className="flex-1" onClick={onClear}>Clear</Button>
+          <Button variant="outline" className="flex-1" onClick={onSave}>Save</Button>
         </div>
       </div>
     </div>

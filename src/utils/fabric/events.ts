@@ -36,15 +36,24 @@ export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): () => void
     e.preventDefault();
   };
   
+  // iOS-specific fix: prevent document level gestures
+  const preventGestures = (e: TouchEvent) => {
+    if (e.touches.length > 1) {
+      e.preventDefault(); // Prevent pinch-zoom at document level
+    }
+  };
+  
   // Add event listeners with passive: false to prevent default behavior
   canvasElement.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
   document.body.addEventListener('touchmove', preventElasticScroll, { passive: false });
+  document.addEventListener('gesturestart', preventGestures as any, { passive: false });
+  document.addEventListener('gesturechange', preventGestures as any, { passive: false });
   
   // Add iOS-specific class for additional CSS rules
   canvasElement.classList.add('ios-canvas');
   document.body.classList.add('ios-body');
   
-  // Add iOS-specific style to disable selection
+  // Add iOS-specific style to disable selection and improve touch handling
   const styleElement = document.createElement('style');
   styleElement.id = 'ios-canvas-fixes';
   styleElement.innerHTML = `
@@ -52,12 +61,20 @@ export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): () => void
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+      touch-action: none;
     }
     .ios-body {
       overflow: hidden;
       position: fixed;
       width: 100%;
       height: 100%;
+      overscroll-behavior: none;
+    }
+    
+    /* Prevent all default touch behaviors on iOS */
+    body * {
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
   `;
   document.head.appendChild(styleElement);
@@ -66,6 +83,8 @@ export function applyIOSEventFixes(canvasElement: HTMLCanvasElement): () => void
   return () => {
     canvasElement.removeEventListener('touchend', preventDoubleTapZoom);
     document.body.removeEventListener('touchmove', preventElasticScroll);
+    document.removeEventListener('gesturestart', preventGestures as any);
+    document.removeEventListener('gesturechange', preventGestures as any);
     canvasElement.classList.remove('ios-canvas');
     document.body.classList.remove('ios-body');
     const style = document.getElementById('ios-canvas-fixes');

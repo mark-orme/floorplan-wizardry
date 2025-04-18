@@ -15,6 +15,13 @@ interface EditorContentProps {
   lineThickness: number;
   lineColor: string;
   enableSync?: boolean;
+  onToolChange?: (tool: DrawingMode) => void;
+  onLineThicknessChange?: (thickness: number) => void;
+  onLineColorChange?: (color: string) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onClear?: () => void;
+  onSave?: () => void;
 }
 
 export const EditorContent: React.FC<EditorContentProps> = ({
@@ -24,7 +31,14 @@ export const EditorContent: React.FC<EditorContentProps> = ({
   tool,
   lineThickness,
   lineColor,
-  enableSync = true
+  enableSync = true,
+  onToolChange,
+  onLineThicknessChange,
+  onLineColorChange,
+  onUndo,
+  onRedo,
+  onClear,
+  onSave
 }) => {
   const isMobile = useIsMobile();
   const [canvasReady, setCanvasReady] = useState(false);
@@ -40,7 +54,7 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     if (isMobile) {
       // Get dimensions that fit the mobile viewport
       const mobileWidth = Math.min(window.innerWidth - 32, 800);
-      const mobileHeight = Math.min(window.innerHeight - 120, 600);
+      const mobileHeight = Math.min(window.innerHeight - 240, 600); // More room for tools
       
       setDimensions({
         width: mobileWidth,
@@ -75,6 +89,13 @@ export const EditorContent: React.FC<EditorContentProps> = ({
     toast.error("Failed to initialize drawing canvas");
   };
   
+  // Handle tool change
+  const handleToolChange = (newTool: DrawingMode) => {
+    if (onToolChange) {
+      onToolChange(newTool);
+    }
+  };
+  
   return (
     <div className="flex-1 overflow-hidden relative">
       <div className="w-full h-full relative flex items-center justify-center bg-background">
@@ -98,12 +119,20 @@ export const EditorContent: React.FC<EditorContentProps> = ({
           />
           
           {isMobile && canvasReady && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full">
               <ToolSelector 
                 activeTool={tool} 
-                onToolChange={() => {}} // We'll handle changes via parent
+                onToolChange={handleToolChange}
                 orientation="horizontal"
                 compact={true}
+                lineColor={lineColor}
+                lineThickness={lineThickness}
+                onLineColorChange={onLineColorChange}
+                onLineThicknessChange={onLineThicknessChange}
+                onUndo={onUndo}
+                onRedo={onRedo}
+                onClear={onClear}
+                onSave={onSave}
               />
             </div>
           )}
