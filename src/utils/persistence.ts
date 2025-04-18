@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import logger from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { Json } from '@/types/supabase';
 
 type FloorPlan = Database['public']['Tables']['floor_plans']['Row'];
 
@@ -23,12 +24,15 @@ export const saveCanvasState = async (canvas: FabricCanvas | null) => {
       localStorage.setItem('canvas_user_id', user.id);
       localStorage.setItem('canvas_user_email', user.email || '');
       
+      // Convert canvas data to string for JSON compatibility
+      const canvasData = JSON.stringify(json) as Json;
+      
       const { error } = await supabase
         .from('floor_plans')
         .upsert({
           user_id: user.id,
           name: 'My Floor Plan',
-          data: json,
+          data: canvasData,
           updated_at: new Date().toISOString()
         });
 
@@ -59,7 +63,15 @@ export const loadCanvasState = async (canvas: FabricCanvas | null) => {
         .maybeSingle();
 
       if (error) throw error;
-      if (data) canvasData = data.data;
+      
+      if (data) {
+        // Parse the stringified JSON data from Supabase
+        const parsedData = typeof data.data === 'string' 
+          ? JSON.parse(data.data)
+          : data.data;
+          
+        canvasData = parsedData;
+      }
     }
 
     // Fall back to localStorage if no cloud data or user not logged in

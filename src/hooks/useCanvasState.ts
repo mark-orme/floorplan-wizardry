@@ -72,6 +72,47 @@ export const useCanvasState = (): UseCanvasStateResult => {
     }
   }, [canvas, activeTool, lineThickness, lineColor]);
 
+  // Add autosave functionality to save the canvas when changes are made
+  useEffect(() => {
+    if (!canvas) return;
+
+    const saveOnChange = () => {
+      if (mountedRef.current) {
+        saveCanvasState(canvas);
+      }
+    };
+
+    // Debounce the save to prevent too many saves
+    let saveTimeout: number | null = null;
+    
+    const debouncedSave = () => {
+      if (saveTimeout) {
+        window.clearTimeout(saveTimeout);
+      }
+      
+      saveTimeout = window.setTimeout(saveOnChange, 2000);
+    };
+
+    // Attach event listeners for canvas changes
+    canvas.on('object:modified', debouncedSave);
+    canvas.on('object:added', debouncedSave);
+    canvas.on('object:removed', debouncedSave);
+
+    return () => {
+      // Clean up event listeners
+      if (canvas) {
+        canvas.off('object:modified', debouncedSave);
+        canvas.off('object:added', debouncedSave);
+        canvas.off('object:removed', debouncedSave);
+      }
+      
+      // Clear any pending timeout
+      if (saveTimeout) {
+        window.clearTimeout(saveTimeout);
+      }
+    };
+  }, [canvas]);
+
   return {
     canvas,
     setCanvas,
