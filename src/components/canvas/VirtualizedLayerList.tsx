@@ -1,7 +1,7 @@
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
-import { DrawingLayer } from '../canvas/types/DrawingLayer';
+import { DrawingLayer } from './types/DrawingLayer';
 
 interface VirtualizedLayerListProps {
   layers: DrawingLayer[];
@@ -33,11 +33,14 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         className={`flex items-center gap-2 px-2 py-1 ${
           activeLayerId === layer.id ? 'bg-blue-100' : 'hover:bg-gray-100'
         }`}
+        role="listitem"
+        aria-selected={activeLayerId === layer.id}
       >
         <button
           onClick={() => onToggleVisibility(layer.id)}
           className="p-1 rounded hover:bg-gray-200"
           title={layer.visible ? 'Hide layer' : 'Show layer'}
+          aria-label={layer.visible ? `Hide ${layer.name} layer` : `Show ${layer.name} layer`}
         >
           {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
         </button>
@@ -46,6 +49,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
           onClick={() => onToggleLock(layer.id)}
           className="p-1 rounded hover:bg-gray-200"
           title={layer.locked ? 'Unlock layer' : 'Lock layer'}
+          aria-label={layer.locked ? `Unlock ${layer.name} layer` : `Lock ${layer.name} layer`}
         >
           {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
         </button>
@@ -53,6 +57,14 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         <div 
           className="flex-1 cursor-pointer truncate"
           onClick={() => onLayerClick(layer.id)}
+          role="button"
+          aria-label={`Select ${layer.name} layer`}
+          tabIndex={0}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              onLayerClick(layer.id);
+            }
+          }}
         >
           {layer.name}
         </div>
@@ -62,6 +74,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
             onClick={() => onDeleteLayer(layer.id)}
             className="p-1 rounded hover:bg-red-100 hover:text-red-600"
             title="Delete layer"
+            aria-label={`Delete ${layer.name} layer`}
           >
             <Trash2 size={14} />
           </button>
@@ -77,6 +90,8 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
       itemSize={ITEM_HEIGHT}
       width="100%"
       className="scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400"
+      role="list"
+      aria-label="Drawing layers"
     >
       {renderLayer}
     </FixedSizeList>
