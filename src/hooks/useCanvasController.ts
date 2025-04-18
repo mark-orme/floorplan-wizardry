@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
 import { toast } from 'sonner';
 import { saveCanvasToLocalStorage } from '@/utils/autosave/canvasAutoSave';
 
@@ -54,7 +54,7 @@ export const useCanvasController = (canvas: FabricCanvas | null) => {
         canvas.renderAll();
         
         // Reselect objects after saving
-        canvas.setActiveObject(new fabric.ActiveSelection(activeObjects, { canvas }));
+        canvas.setActiveObject(new ActiveSelection(activeObjects, { canvas }));
         canvas.requestRenderAll();
       }
       
@@ -73,4 +73,3 @@ export const useCanvasController = (canvas: FabricCanvas | null) => {
     saveCanvas
   };
 };
-
