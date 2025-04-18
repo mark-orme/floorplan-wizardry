@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
-import { DrawingLayer } from './types/DrawingLayer';
+import { DrawingLayer } from '../canvas/types/DrawingLayer';
 
 interface VirtualizedLayerListProps {
   layers: DrawingLayer[];
