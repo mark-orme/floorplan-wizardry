@@ -1,0 +1,40 @@
+
+/* Mobile canvas optimizations */
+.touch-optimized-canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Make toolbar buttons larger on mobile for better touch targets */
+@media (max-width: 768px) {
+  .drawing-toolbar button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    margin: 4px;
+  }
+  
+  /* Ensure grid lines are visible on mobile */
+  canvas line[objectType="grid"],
+  canvas line.grid-line {
+    stroke-opacity: 1 !important;
+    visibility: visible !important;
+    stroke-width: 1px !important;
+  }
+  
+  /* Improved scrolling behavior on mobile */
+  .canvas-container {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+/* iOS specific optimizations */
+.ios-canvas line {
+  stroke: rgba(0, 0, 0, 0.7) !important; /* Higher contrast */
+  stroke-width: 1.5px !important;
+  vector-effect: non-scaling-stroke !important;
+}

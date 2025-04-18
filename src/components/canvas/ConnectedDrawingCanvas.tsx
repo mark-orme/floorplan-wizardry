@@ -1,118 +1,126 @@
 
-import React, { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import React, { useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { createSimpleGrid } from '@/utils/simpleGridCreator';
+import { useDrawingContext } from '@/contexts/DrawingContext';
+import { DrawingMode } from '@/constants/drawingModes';
+import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
 
 interface ConnectedDrawingCanvasProps {
-  width: number;
-  height: number;
-  onCanvasRef: (canvasOperations: any) => void;
+  width?: number;
+  height?: number;
+  showGrid?: boolean;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
 export const ConnectedDrawingCanvas: React.FC<ConnectedDrawingCanvasProps> = ({
-  width,
-  height,
-  onCanvasRef
+  width = 800,
+  height = 600,
+  showGrid = true,
+  tool = DrawingMode.SELECT,
+  lineColor = '#000000',
+  lineThickness = 2,
+  onCanvasReady
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const historyRef = useRef<string[]>([]);
-  const historyIndexRef = useRef<number>(-1);
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const gridObjectsRef = useRef<any[]>([]);
+  const { setCanUndo, setCanRedo } = useDrawingContext();
+  const initializeAttempted = useRef(false);
 
+  // Initialize canvas only once
   useEffect(() => {
-    if (!canvasRef.current || fabricCanvasRef.current) return;
-
-    try {
-      // Initialize fabric canvas
-      const canvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
-        selection: true,
-        backgroundColor: "#ffffff"  // Set background color during initialization
-      });
-
-      fabricCanvasRef.current = canvas;
-
-      // Setup canvas operations
-      const canvasOperations = {
-        canvas,
-        undo: () => {
-          if (historyIndexRef.current > 0) {
-            historyIndexRef.current--;
-            const prevState = historyRef.current[historyIndexRef.current];
-            canvas.loadFromJSON(JSON.parse(prevState), canvas.renderAll.bind(canvas));
-            return true;
-          }
-          return false;
-        },
-        redo: () => {
-          if (historyIndexRef.current < historyRef.current.length - 1) {
-            historyIndexRef.current++;
-            const nextState = historyRef.current[historyIndexRef.current];
-            canvas.loadFromJSON(JSON.parse(nextState), canvas.renderAll.bind(canvas));
-            return true;
-          }
-          return false;
-        },
-        clearCanvas: () => {
-          canvas.clear();
-          canvas.backgroundColor = "#ffffff";  // Directly set backgroundColor
-          canvas.renderAll();
-          saveCanvasState();
-        },
-        saveCanvas: () => {
-          saveCanvasState();
-          return true;
-        },
-        canUndo: historyIndexRef.current > 0,
-        canRedo: historyIndexRef.current < historyRef.current.length - 1
-      };
-
-      // Setup canvas event listeners
-      const saveCanvasState = () => {
-        const json = JSON.stringify(canvas.toJSON());
+    if (canvasRef.current && !initializeAttempted.current) {
+      initializeAttempted.current = true;
+      try {
+        console.log("Initializing canvas");
+        const fabricCanvas = new FabricCanvas(canvasRef.current, {
+          width,
+          height,
+          backgroundColor: '#ffffff',
+          selection: tool === DrawingMode.SELECT,
+          isDrawingMode: tool === DrawingMode.DRAW
+        });
         
-        // If we're not at the end of the history, remove future states
-        if (historyIndexRef.current < historyRef.current.length - 1) {
-          historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+        // Configure freeDrawingBrush
+        if (fabricCanvas.freeDrawingBrush) {
+          fabricCanvas.freeDrawingBrush.color = lineColor;
+          fabricCanvas.freeDrawingBrush.width = lineThickness;
         }
         
-        historyRef.current.push(json);
-        historyIndexRef.current = historyRef.current.length - 1;
+        // Track changes for undo/redo state
+        fabricCanvas.on('object:added', () => {
+          setCanUndo(true);
+        });
         
-        // Update undo/redo availability
-        canvasOperations.canUndo = historyIndexRef.current > 0;
-        canvasOperations.canRedo = historyIndexRef.current < historyRef.current.length - 1;
-      };
-
-      // Setup object added/modified event listeners
-      canvas.on('object:added', saveCanvasState);
-      canvas.on('object:modified', saveCanvasState);
-      canvas.on('object:removed', saveCanvasState);
-
-      // Initial canvas state
-      saveCanvasState();
-
-      // Pass canvas operations to parent
-      onCanvasRef(canvasOperations);
-
-      // Cleanup on unmount
-      return () => {
-        canvas.off('object:added', saveCanvasState);
-        canvas.off('object:modified', saveCanvasState);
-        canvas.off('object:removed', saveCanvasState);
-        canvas.dispose();
-        fabricCanvasRef.current = null;
-      };
-    } catch (error) {
-      console.error("Error initializing canvas:", error);
+        fabricCanvas.on('object:removed', () => {
+          // Check if there are still objects left
+          setCanUndo(fabricCanvas.getObjects().length > 0);
+        });
+        
+        setCanvas(fabricCanvas);
+        setIsInitialized(true);
+        
+        if (onCanvasReady) {
+          onCanvasReady(fabricCanvas);
+        }
+      } catch (error) {
+        console.error("Failed to initialize canvas:", error);
+      }
     }
-  }, [width, height, onCanvasRef]);
+    
+    return () => {
+      if (canvas) {
+        canvas.dispose();
+      }
+    };
+  }, [canvasRef.current]); // Only run when canvas ref is available
+
+  // Create grid separately after canvas is initialized
+  useEffect(() => {
+    if (canvas && showGrid && gridObjectsRef.current.length === 0) {
+      console.log("Creating grid for initialized canvas");
+      const gridObjects = createSimpleGrid(canvas);
+      gridObjectsRef.current = gridObjects;
+    }
+  }, [canvas, showGrid]);
+
+  // Update grid visibility when showGrid changes
+  useEffect(() => {
+    if (canvas && gridObjectsRef.current.length > 0) {
+      gridObjectsRef.current.forEach(obj => {
+        obj.set('visible', showGrid);
+      });
+      canvas.requestRenderAll();
+    }
+  }, [canvas, showGrid]);
+
+  // Update tool settings when they change
+  useEffect(() => {
+    if (canvas) {
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
+      
+      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+      }
+      
+      canvas.renderAll();
+    }
+  }, [canvas, tool, lineColor, lineThickness]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="border border-gray-200 rounded"
-      data-testid="floor-plan-canvas"
-    />
+    <div className="relative w-full h-full" data-testid="canvas-container">
+      <canvas 
+        ref={canvasRef} 
+        className="border rounded shadow-sm touch-optimized-canvas"
+      />
+      {canvas && <MobileCanvasOptimizer canvas={canvas} />}
+    </div>
   );
 };
