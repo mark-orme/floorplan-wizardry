@@ -73,27 +73,32 @@ export const useWebGLContext = ({
       };
       
       // Override fabric's render method for specific objects if needed
-      if (shaderProgramRef.current) {
-        // Store original mouse:down event handler
-        const originalMouseDownHandler = fabricCanvas.__eventListeners && 
-          fabricCanvas.__eventListeners['mouse:down'] ? 
-          [...fabricCanvas.__eventListeners['mouse:down']] : [];
-        
-        // Add custom handler that uses WebGL for rendering brush strokes
-        fabricCanvas.on('mouse:down', function(opt) {
-          // Execute original handlers
-          originalMouseDownHandler.forEach(handler => handler(opt));
-          
+      if (shaderProgramRef.current && fabricCanvas) {
+        // Instead of accessing private __eventListeners, use the public API
+        // Store the original mouse:down handler by creating our own wrapper
+        const customMouseDownHandler = (opt: any) => {
+          // Only proceed if drawing mode is active and WebGL context is available
           if (fabricCanvas.isDrawingMode && glContextRef.current && shaderProgramRef.current) {
-            // Add WebGL-accelerated brushstrokes
+            // Add WebGL-accelerated brushstrokes logic here if needed
+            // This is where we would implement custom WebGL rendering for brush strokes
           }
-        });
+        };
+        
+        // Add our custom handler
+        fabricCanvas.on('mouse:down', customMouseDownHandler);
+        
+        // Make sure to clean this up in the return function below
       }
     } catch (error) {
       console.error('Failed to initialize WebGL context:', error);
     }
 
     return () => {
+      if (fabricCanvas) {
+        // Clean up event listeners
+        fabricCanvas.off('mouse:down');
+      }
+      
       if (glContextRef.current) {
         // Clean up WebGL resources
         if (shaderProgramRef.current) {
