@@ -84,7 +84,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
           e,
-          pointer: { x, y }
+          pointer: fabricPoint // Use fabricPoint here instead of plain object
         });
       }
     };
@@ -110,7 +110,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
           const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
           fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
             e,
-            pointer: point
+            pointer: fabricPoint // Use fabricPoint here instead of plain object
           });
         });
       }
@@ -135,7 +135,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
           e, 
-          pointer: { x, y } 
+          pointer: fabricPoint // Use fabricPoint here instead of plain object
         });
       }
     };
