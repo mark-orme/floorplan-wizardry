@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -69,19 +70,19 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
     if (!fabricCanvas || !enableCollaboration) return;
     
     const handleObjectModified = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     const handlePathCreated = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     const handleObjectAdded = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     const handleObjectRemoved = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     // Attach event handlers
@@ -92,7 +93,7 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
     
     // Initial sync
     const initialSyncTimer = setTimeout(() => {
-      syncCanvas(userName);
+      syncCanvas();
     }, 1000);
     
     return () => {

@@ -74,7 +74,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = R
   );
   
   // Set up real-time sync if enabled - with memoized handlers
-  const syncCanvas = useCallback((sender: string) => {
+  const syncCanvas = useCallback(() => {
     // Use transferable objects for better performance
     if (fabricCanvasRef.current) {
       refreshVirtualization();
@@ -84,10 +84,10 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = R
   const { collaborators } = useRealtimeCanvasSync({
     canvas: fabricCanvasRef.current,
     enabled: enableSync,
-    onRemoteUpdate: useCallback((sender: string, timestamp: number) => {
-      console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    onRemoteUpdate: () => {
+      console.log(`Canvas updated at ${new Date().toLocaleString()}`);
       refreshVirtualization();
-    }, [refreshVirtualization])
+    }
   });
   
   // Use paper size manager hook

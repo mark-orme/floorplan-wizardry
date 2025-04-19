@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -106,18 +107,18 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     if (!fabricCanvasRef.current || !enableCollaboration || !isCanvasReady) return;
     
     const handleObjectModified = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     const handlePathCreated = () => {
-      syncCanvas(userName);
+      syncCanvas();
     };
     
     fabricCanvasRef.current.on('object:modified', handleObjectModified);
     fabricCanvasRef.current.on('path:created', handlePathCreated);
     
     const initialSyncTimer = setTimeout(() => {
-      syncCanvas(userName);
+      syncCanvas();
     }, 1000);
     
     return () => {
