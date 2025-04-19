@@ -43,6 +43,7 @@ export function useVirtualizedCanvas(
   }: UseVirtualizedCanvasProps = {}
 ) {
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(INITIAL_METRICS);
+  const [needsVirtualization, setNeedsVirtualization] = useState(false);
   const frameCountRef = useRef(0);
   const lastFrameTimeRef = useRef(0);
   const updateTimeoutRef = useRef<number | null>(null);
@@ -174,8 +175,9 @@ export function useVirtualizedCanvas(
     
     canvas.on('zoom:changed', handleViewportChange);
     
-    // Use custom event instead of 'pan:moved' which might not be in the type definitions
-    canvas.on('viewport:translate', handleViewportChange);
+    // Use standard mouse events instead of custom viewport:translate event
+    canvas.on('mouse:move', handleViewportChange);
+    canvas.on('mouse:up', handleViewportChange);
     
     return () => {
       clearInterval(refreshInterval);
@@ -186,7 +188,8 @@ export function useVirtualizedCanvas(
       
       // Remove event listeners
       canvas.off('zoom:changed', handleViewportChange);
-      canvas.off('viewport:translate', handleViewportChange);
+      canvas.off('mouse:move', handleViewportChange);
+      canvas.off('mouse:up', handleViewportChange);
       
       // Restore original renderAll
       if (canvas.renderAll !== originalRenderAll) {
@@ -197,6 +200,7 @@ export function useVirtualizedCanvas(
   
   return {
     performanceMetrics,
+    needsVirtualization,
     refreshVirtualization
   };
 }

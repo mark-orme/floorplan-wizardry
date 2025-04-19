@@ -8,7 +8,8 @@ import { Canvas as FabricCanvas } from 'fabric';
 import logger from '../logger';
 
 // Define interface for pressure-sensitive pointer events
-export interface EnhancedPointerEvent extends Omit<PointerEvent, 'pressure'> {
+export interface EnhancedPointerEvent extends PointerEvent {
+  // Redefine these properties as optional to avoid type errors
   pressure?: number;
   tiltX?: number;
   tiltY?: number;

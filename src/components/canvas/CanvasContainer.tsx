@@ -92,12 +92,15 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     toast.error(errorMsg);
   };
 
+  // Safely check if canvasReady exists in debug info
+  const isCanvasReady = localDebugInfo?.canvasReady || false;
+
   return (
     <div 
       id="canvas-container" 
       className="flex-1 w-full h-full overflow-hidden relative"
       data-testid="canvas-container"
-      data-canvas-ready={localDebugInfo.canvasReady ? "true" : "false"}
+      data-canvas-ready={isCanvasReady ? "true" : "false"}
     >
       <Canvas
         width={dimensions.width}

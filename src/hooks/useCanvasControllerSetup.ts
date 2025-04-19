@@ -10,6 +10,7 @@ import { DebugInfoState } from "@/types/drawingTypes";
 import { DrawingMode } from "@/constants/drawingModes";
 import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
 import logger from "@/utils/logger";
+import { adaptCoreToDrawingDebugInfo, adaptDrawingToCoreDebugInfo } from "@/utils/debugInfoAdapter";
 
 /**
  * Props interface for useCanvasControllerSetup hook
@@ -62,6 +63,19 @@ export const useCanvasControllerSetup = ({
     resetInitializationState();
   }, []);
   
+  // Create a wrapped setDebugInfo function that adapts between types
+  const setCompatibleDebugInfo = (debugInfo: any) => {
+    if (typeof debugInfo === 'function') {
+      setDebugInfo((prev: DebugInfoState) => {
+        const compatiblePrev = adaptDrawingToCoreDebugInfo(prev);
+        const nextCoreState = debugInfo(compatiblePrev);
+        return adaptCoreToDrawingDebugInfo(nextCoreState);
+      });
+    } else {
+      setDebugInfo(adaptCoreToDrawingDebugInfo(debugInfo));
+    }
+  };
+  
   // Initialize canvas and grid with improved error handling
   const { 
     canvasRef, 
@@ -72,7 +86,7 @@ export const useCanvasControllerSetup = ({
     tool,
     currentFloor,
     setZoomLevel,
-    setDebugInfo,
+    setDebugInfo: setCompatibleDebugInfo,
     setHasError,
     setErrorMessage
   });
@@ -92,7 +106,7 @@ export const useCanvasControllerSetup = ({
         logger.warn("Fabric canvas not initialized");
       } else {
         logger.info("Canvas setup complete with dimensions:", canvasDimensions);
-        setDebugInfo(prev => ({
+        setCompatibleDebugInfo((prev: any) => ({
           ...prev,
           dimensionsSet: true,
           canvasInitialized: true
@@ -104,7 +118,7 @@ export const useCanvasControllerSetup = ({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [canvasRef, fabricCanvasRef, canvasDimensions, setDebugInfo]);
+  }, [canvasRef, fabricCanvasRef, canvasDimensions, setCompatibleDebugInfo]);
 
   return {
     canvasRef,

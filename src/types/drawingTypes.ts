@@ -1,4 +1,3 @@
-
 /**
  * Common types for drawing operations
  */
@@ -111,6 +110,27 @@ export interface DebugInfoState {
   canvasHeight: number;
   lastRenderTime: number;
   eventCount: number;
+  
+  // Added properties to match core/DebugInfo version
+  hasError?: boolean;
+  errorMessage?: string;
+  lastInitTime?: number;
+  lastGridCreationTime?: number;
+  eventHandlersSet?: boolean;
+  canvasEventsRegistered?: boolean;
+  gridRendered?: boolean;
+  toolsInitialized?: boolean;
+  gridCreated?: boolean;
+  canvasInitialized?: boolean;
+  dimensionsSet?: boolean;
+  brushInitialized?: boolean;
+  canvasReady?: boolean;
+  canvasCreated?: boolean;
+  performanceStats?: any;
+  showDebugInfo?: boolean;
+  lastError?: string;
+  lastRefresh?: number;
+  lastErrorTime?: number;
 }
 
 // Performance stats
@@ -129,4 +149,3 @@ export interface DistanceToolState {
   distance: number | null;
   angle: number | null;
 }
-
