@@ -114,25 +114,6 @@ export const useCRDTSync = ({
     }
   }, [canvas, userId, userName]);
   
-  // Set up canvas event listeners
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    const handleModification = () => {
-      syncLocalChanges();
-    };
-    
-    canvas.on('object:modified', handleModification);
-    canvas.on('object:added', handleModification);
-    canvas.on('object:removed', handleModification);
-    
-    return () => {
-      canvas.off('object:modified', handleModification);
-      canvas.off('object:added', handleModification);
-      canvas.off('object:removed', handleModification);
-    };
-  }, [canvas, enabled, syncLocalChanges]);
-  
   return {
     isConnected: providerRef.current?.wsconnected || false,
     syncLocalChanges
