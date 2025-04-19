@@ -1,3 +1,8 @@
+
+/**
+ * Structured logger for application
+ * Provides consistent logging with namespace support and no-op in production
+ */
 import winston from 'winston';
 import { LogLevel, isLevelEnabled } from "./loggerConfig";
 
