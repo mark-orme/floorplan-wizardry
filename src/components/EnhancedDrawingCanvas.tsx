@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { OptimizedCanvas } from './OptimizedCanvas';
 import { useStylusInput } from '@/hooks/useStylusInput';
+import { usePredictiveDrawing } from '@/hooks/usePredictiveDrawing';
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface EnhancedDrawingCanvasProps {
@@ -19,7 +20,7 @@ export const EnhancedDrawingCanvas: React.FC<EnhancedDrawingCanvasProps> = ({
   baseWidth = 2,
   baseColor = "#000000"
 }) => {
-  const canvasRef = React.useRef<FabricCanvas | null>(null);
+  const canvasRef = useRef<FabricCanvas | null>(null);
 
   const handleCanvasReady = (canvas: FabricCanvas) => {
     canvasRef.current = canvas;
@@ -28,18 +29,21 @@ export const EnhancedDrawingCanvas: React.FC<EnhancedDrawingCanvasProps> = ({
     }
   };
 
-  // Use our new stylus input hook
+  // Use our optimized input hooks
   useStylusInput({
     fabricCanvas: canvasRef.current,
     baseWidth,
     baseColor
   });
 
+  const { handlePointerMove } = usePredictiveDrawing(canvasRef.current);
+
   return (
     <OptimizedCanvas
       width={width}
       height={height}
       onCanvasReady={handleCanvasReady}
+      onPointerMove={handlePointerMove}
     />
   );
 };

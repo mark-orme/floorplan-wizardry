@@ -1,6 +1,5 @@
-
 import { useEffect, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Shadow } from 'fabric';
 import { BrushEffects } from '@/utils/canvas/brushes/AdvancedBrushEffects';
 import { toast } from 'sonner';
 
@@ -20,6 +19,11 @@ export const useStylusInput = ({
 
   const handleStylusInput = useCallback((e: PointerEvent) => {
     if (!fabricCanvas?.isDrawingMode) return;
+
+    // Palm rejection - ignore touches that are likely palm contacts
+    if (e.width > 20 || e.height > 20) {
+      return; // Likely a palm touch
+    }
 
     // Calculate velocity if we have a previous point
     let velocity = 0;
@@ -44,9 +48,10 @@ export const useStylusInput = ({
     if (fabricCanvas.freeDrawingBrush) {
       fabricCanvas.freeDrawingBrush.width = BrushEffects.calculateBrushWidth(params);
       fabricCanvas.freeDrawingBrush.color = BrushEffects.calculateBrushColor(params);
+      
       // Set opacity through shadow
       const opacity = BrushEffects.calculateBrushOpacity(params);
-      fabricCanvas.freeDrawingBrush.shadow = new fabric.Shadow({
+      fabricCanvas.freeDrawingBrush.shadow = new Shadow({
         color: baseColor,
         blur: 0,
         offsetX: 0,
@@ -59,7 +64,7 @@ export const useStylusInput = ({
     lastPointRef.current = {
       x: e.clientX,
       y: e.clientY,
-      time: now
+      time: performance.now()
     };
   }, [fabricCanvas, baseWidth, baseColor]);
 
@@ -83,6 +88,15 @@ export const useStylusInput = ({
     const canvas = fabricCanvas.upperCanvasEl;
     if (!canvas) return;
 
+    // Enable advanced touch features
+    if (canvas.style) {
+      canvas.style.touchAction = 'none';
+      canvas.style.touchCallout = 'none';
+      canvas.style.userSelect = 'none';
+      canvas.style.webkitUserSelect = 'none';
+      canvas.style.webkitTouchCallout = 'none';
+    }
+
     // Check if device supports advanced stylus features
     if (window.PointerEvent) {
       const hasAdvancedFeatures = 'tiltX' in new PointerEvent('pointerdown');
@@ -91,8 +105,8 @@ export const useStylusInput = ({
       }
     }
 
-    canvas.addEventListener('pointermove', handleStylusInput);
-    canvas.addEventListener('pointerdown', handleStylusDown);
+    canvas.addEventListener('pointermove', handleStylusInput, { passive: false });
+    canvas.addEventListener('pointerdown', handleStylusDown, { passive: false });
 
     return () => {
       canvas.removeEventListener('pointermove', handleStylusInput);
