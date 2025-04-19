@@ -27,11 +27,14 @@ import {
 } from './csrfProtection';
 
 import {
+  sanitizeHtml,
   sanitizeHTML,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeCss,
-  sanitizeUrl
+  sanitizeUrl,
+  sanitizeText,
+  sanitizeObject
 } from './htmlSanitization';
 
 import {
@@ -67,7 +70,7 @@ export const Security = {
   
   // HTML sanitization
   HTML: {
-    sanitize: sanitizeHTML,
+    sanitize: sanitizeHtml,
     sanitizeRich: sanitizeRichHtml,
     sanitizeCanvas: sanitizeCanvasHtml,
     sanitizeUrl: sanitizeUrl,
@@ -114,11 +117,14 @@ export {
   fetchWithCsrf,
   
   // HTML sanitization
+  sanitizeHtml,
   sanitizeHTML,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeUrl,
   sanitizeCss,
+  sanitizeText,
+  sanitizeObject,
   
   // File handling
   sanitizeFileName,

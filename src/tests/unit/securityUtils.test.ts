@@ -4,13 +4,13 @@
  * Tests for HTML sanitization and security features
  */
 import { describe, it, expect } from 'vitest';
-import { sanitizeHTML, sanitizeRichHtml } from '@/utils/security/htmlSanitization';
+import { sanitizeHtml, sanitizeRichHtml } from '@/utils/security/htmlSanitization';
 
 describe('HTML Sanitization', () => {
-  describe('sanitizeHTML', () => {
+  describe('sanitizeHtml', () => {
     it('should strip all HTML tags', () => {
       const input = '<p>Hello <script>alert("xss")</script> <b>world</b>!</p>';
-      const result = sanitizeHTML(input);
+      const result = sanitizeHtml(input);
       
       // Should remove all HTML tags
       expect(result).not.toContain('<script>');
@@ -22,16 +22,16 @@ describe('HTML Sanitization', () => {
     
     it('should handle null and undefined gracefully', () => {
       // @ts-ignore
-      expect(sanitizeHTML(null)).toBe('');
+      expect(sanitizeHtml(null)).toBe('');
       // @ts-ignore
-      expect(sanitizeHTML(undefined)).toBe('');
+      expect(sanitizeHtml(undefined)).toBe('');
     });
     
     it('should handle non-string inputs gracefully', () => {
       // @ts-ignore
-      expect(sanitizeHTML(123)).toBe('');
+      expect(sanitizeHtml(123)).toBe('');
       // @ts-ignore
-      expect(sanitizeHTML({})).toBe('');
+      expect(sanitizeHtml({})).toBe('');
     });
   });
   

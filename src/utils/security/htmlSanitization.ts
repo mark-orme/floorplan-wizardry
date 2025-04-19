@@ -25,6 +25,79 @@ export function sanitizeHtml(html: string): string {
 }
 
 /**
+ * Sanitize HTML string but allow certain formatting tags
+ * @param html The HTML string to sanitize
+ * @returns Sanitized HTML string with allowed formatting
+ */
+export function sanitizeRichHtml(html: string): string {
+  if (typeof DOMPurify === 'undefined') {
+    console.warn('DOMPurify is not available. Running in a non-browser environment?');
+    // Fallback: strip all HTML tags
+    return html.replace(/<[^>]*>?/gm, '');
+  }
+  
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'title'],
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+    ALLOW_DATA_ATTR: false
+  });
+}
+
+/**
+ * Sanitize HTML specifically for canvas element content
+ * @param html The HTML string to sanitize for canvas
+ * @returns Sanitized HTML string safe for canvas use
+ */
+export function sanitizeCanvasHtml(html: string): string {
+  if (typeof DOMPurify === 'undefined') {
+    return html.replace(/<[^>]*>?/gm, '');
+  }
+  
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ALLOWED_TAGS: ['span', 'div', 'p', 'br'],
+    ALLOWED_ATTR: ['class', 'title'],
+    ALLOW_DATA_ATTR: false
+  });
+}
+
+/**
+ * Sanitize CSS string to prevent style-based attacks
+ * @param css The CSS string to sanitize
+ * @returns Sanitized CSS string
+ */
+export function sanitizeCss(css: string): string {
+  // Remove potentially dangerous CSS constructs
+  return css
+    .replace(/@import/gi, '')
+    .replace(/expression\s*\(/gi, '')
+    .replace(/url\s*\(/gi, 'url(')
+    .replace(/-moz-binding/gi, '')
+    .replace(/behavior\s*:/gi, '')
+    .replace(/javascript\s*:/gi, '');
+}
+
+/**
+ * Sanitize URL to prevent injection attacks
+ * @param url URL to sanitize
+ * @returns Sanitized URL or empty string if invalid
+ */
+export function sanitizeUrl(url: string): string {
+  if (!url || typeof url !== 'string') return '';
+  
+  // Only allow http:, https: and mailto: protocols
+  if (!/^(https?|mailto):/i.test(url)) {
+    return '';
+  }
+  
+  // Remove any potentially harmful characters
+  return url.replace(/[^\w:/?=#&%~.@!$'()*+,;[\]-]/gi, '');
+}
+
+/**
  * Sanitize a plain text input
  * @param text The text to sanitize
  * @returns Sanitized text
@@ -67,3 +140,6 @@ export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
   
   return result;
 }
+
+// Alias for backward compatibility
+export const sanitizeHTML = sanitizeHtml;
