@@ -82,7 +82,7 @@ class Logger {
   /**
    * Special method for logging canvas errors with better context
    */
-  canvasError(message: string, error?: Error, context?: LogData): void {
+  canvasError(message: string, errorObj?: Error, context?: LogData): void {
     if (!isLevelEnabled(this.namespace, LogLevel.ERROR)) return;
     
     const canvasContext = {
@@ -94,15 +94,16 @@ class Logger {
     };
     
     const formattedData = {
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
+      error: errorObj instanceof Error ? {
+        message: errorObj.message,
+        stack: errorObj.stack,
+        name: errorObj.name
       } : {},
       ...canvasContext
     };
     
-    error(this.namespace + ':canvas', message, formattedData);
+    // Use the class's error method instead of trying to call the error parameter
+    this.error(this.namespace + ':canvas', formattedData);
   }
   
   /**
