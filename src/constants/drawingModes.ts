@@ -1,16 +1,20 @@
 
+/**
+ * Drawing modes for canvas operations
+ */
 export enum DrawingMode {
-  SELECT = 'select',
-  DRAW = 'draw',
-  STRAIGHT_LINE = 'straight_line',
-  WALL = 'wall',
-  ROOM = 'room',
-  HAND = 'hand',
-  ERASER = 'eraser',
-  RECTANGLE = 'rectangle',
-  CIRCLE = 'circle',
-  TEXT = 'text',
-  MEASURE = 'measure',
-  LINE = 'line',
-  PAN = 'pan'
+  SELECT = 'SELECT',
+  DRAW = 'DRAW',
+  ERASE = 'ERASE',
+  HAND = 'HAND',
+  WALL = 'WALL',
+  PENCIL = 'PENCIL', // Added PENCIL mode
+  ROOM = 'ROOM',
+  TEXT = 'TEXT',
+  SHAPE = 'SHAPE',
+  LINE = 'LINE',
+  RECTANGLE = 'RECTANGLE',
+  CIRCLE = 'CIRCLE',
+  DOOR = 'DOOR',
+  WINDOW = 'WINDOW'
 }

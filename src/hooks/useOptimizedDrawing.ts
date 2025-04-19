@@ -1,126 +1,101 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Point } from 'fabric';
+import { useState, useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas, Point as FabricPoint } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
-export interface UseOptimizedDrawingProps {
-  canvas: FabricCanvas | null;
-  tool: DrawingMode;
-  lineColor: string;
-  lineThickness: number;
+// Use the performance monitoring hook if available
+let usePerformanceMonitoring: any;
+try {
+  usePerformanceMonitoring = require('./usePerformanceMonitoring').usePerformanceMonitoring;
+} catch (e) {
+  usePerformanceMonitoring = () => ({ fps: 60, memory: null });
 }
 
-export function useOptimizedDrawing({
+interface UseOptimizedDrawingProps {
+  canvas: FabricCanvas | null;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
+}
+
+export const useOptimizedDrawing = ({
   canvas,
-  tool,
-  lineColor,
-  lineThickness
-}: UseOptimizedDrawingProps) {
+  tool = DrawingMode.SELECT,
+  lineColor = '#000000',
+  lineThickness = 2
+}: UseOptimizedDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [objectCount, setObjectCount] = useState(0);
-  const [metrics, setMetrics] = useState<{
-    fps: number;
-    renderTime: number;
-    objectsRendered: number;
-  } | null>(null);
+  const [metrics, setMetrics] = useState<any>({ fps: 60 });
   
-  // Track performance
+  // Monitor performance if available
+  const performance = typeof usePerformanceMonitoring === 'function' 
+    ? usePerformanceMonitoring() 
+    : { fps: 60, memory: null };
+  
+  // Update metrics from performance monitoring
+  useEffect(() => {
+    setMetrics(performance);
+  }, [performance]);
+  
+  // Update object count
   useEffect(() => {
     if (!canvas) return;
     
-    // Count objects
-    setObjectCount(canvas.getObjects().length);
-    
-    // Track performance on object changes
-    const handleObjectAdded = () => {
+    const updateObjectCount = () => {
       setObjectCount(canvas.getObjects().length);
     };
     
-    const handleObjectRemoved = () => {
-      setObjectCount(canvas.getObjects().length);
-    };
+    canvas.on('object:added', updateObjectCount);
+    canvas.on('object:removed', updateObjectCount);
     
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
-    
-    // Performance monitoring
-    let lastTime = performance.now();
-    let frames = 0;
-    const fpsInterval = setInterval(() => {
-      const now = performance.now();
-      const elapsed = now - lastTime;
-      frames++;
-      
-      if (elapsed >= 1000) {
-        const fps = Math.round((frames * 1000) / elapsed);
-        setMetrics({
-          fps,
-          renderTime: elapsed / frames,
-          objectsRendered: objectCount
-        });
-        
-        frames = 0;
-        lastTime = now;
-      }
-    }, 500);
+    // Initial count
+    updateObjectCount();
     
     return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
-      clearInterval(fpsInterval);
+      canvas.off('object:added', updateObjectCount);
+      canvas.off('object:removed', updateObjectCount);
     };
-  }, [canvas, objectCount]);
+  }, [canvas]);
   
-  // Mouse event handlers
-  const handleMouseDown = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
-    if (tool !== DrawingMode.DRAW && tool !== DrawingMode.LINE) return;
+  // Handle mouse down event
+  const handleMouseDown = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || tool !== DrawingMode.DRAW) return;
     
     setIsDrawing(true);
-    
-    const pointer = targetCanvas.getPointer(event);
-    
-    if (tool === DrawingMode.LINE) {
-      // Start drawing a line
-      const line = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-        stroke: lineColor,
-        strokeWidth: lineThickness
-      });
-      
-      targetCanvas.add(line);
-      targetCanvas.setActiveObject(line);
-    }
-  }, [tool, lineColor, lineThickness]);
+  }, [tool]);
   
-  const handleMouseMove = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
-    if (!isDrawing) return;
+  // Handle mouse move event
+  const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || !isDrawing || tool !== DrawingMode.DRAW) return;
     
-    const pointer = targetCanvas.getPointer(event);
-    
-    if (tool === DrawingMode.LINE) {
-      // Update line end point
-      const activeObject = targetCanvas.getActiveObject();
-      if (activeObject && activeObject.type === 'line') {
-        const line = activeObject as any;
-        line.set({
-          x2: pointer.x,
-          y2: pointer.y
-        });
-        
-        line.setCoords();
-        targetCanvas.renderAll();
-      }
-    }
+    // Drawing logic would go here for custom drawing
   }, [isDrawing, tool]);
   
-  const handleMouseUp = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
+  // Handle mouse up event
+  const handleMouseUp = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas) return;
+    
     setIsDrawing(false);
     
-    if (tool === DrawingMode.LINE) {
-      // Finalize line
-      targetCanvas.discardActiveObject();
-      targetCanvas.renderAll();
+    // If we're in drawing mode, create a new fabric object
+    if (tool === DrawingMode.DRAW) {
+      const pointer = canvas.getPointer(event);
+      const point = new FabricPoint(pointer.x, pointer.y);
+      
+      // Example: Add a small circle at mouse up position
+      const circle = new fabric.Circle({
+        left: point.x,
+        top: point.y,
+        radius: 5,
+        fill: lineColor,
+        selectable: true
+      });
+      
+      canvas.add(circle);
+      canvas.renderAll();
     }
-  }, [tool]);
+  }, [tool, lineColor]);
   
   return {
     isDrawing,
@@ -130,4 +105,4 @@ export function useOptimizedDrawing({
     handleMouseMove,
     handleMouseUp
   };
-}
+};

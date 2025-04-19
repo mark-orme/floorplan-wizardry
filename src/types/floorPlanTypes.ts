@@ -10,7 +10,7 @@ export interface FloorPlan {
   userId: string;
   createdAt: string;
   updatedAt: string;
-  // Additional properties needed in other parts of the codebase
+  // Additional properties used in various components
   label?: string;
   strokes?: Stroke[];
   walls?: Wall[];
@@ -31,7 +31,7 @@ export interface FloorPlanMetadata {
   thumbnail?: string;
   createdAt: string;
   updatedAt: string;
-  paperSize?: PaperSize;
+  paperSize?: PaperSize | string;
   level?: number;
 }
 
@@ -103,6 +103,9 @@ export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'o
 export enum PaperSize {
   A4 = 'A4',
   A3 = 'A3',
+  A5 = 'A5',
   LETTER = 'LETTER',
-  LEGAL = 'LEGAL'
+  LEGAL = 'LEGAL',
+  TABLOID = 'TABLOID',
+  CUSTOM = 'CUSTOM'
 }

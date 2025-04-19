@@ -1,70 +1,90 @@
 
-import { Canvas as FabricCanvas, Line } from 'fabric';
+/**
+ * Simple grid creation utilities for the canvas
+ */
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
 
 /**
- * Creates a simple grid on the canvas
- * @param canvas - Fabric.js canvas instance
- * @param gridSize - Size of grid cells in pixels
- * @param gridColor - Color of grid lines
- * @returns Array of grid line objects
+ * Create a simple grid on the canvas
+ * @param canvas Fabric canvas instance
+ * @param gridSize Grid cell size in pixels
+ * @param gridColor Color of the grid lines
+ * @returns Array of fabric objects representing the grid
  */
-export const createSimpleGrid = (
+export function createSimpleGrid(
   canvas: FabricCanvas,
   gridSize: number = 50,
   gridColor: string = '#e0e0e0'
-): any[] => {
-  const gridObjects: any[] = [];
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
-
+): FabricObject[] {
+  const gridObjects: FabricObject[] = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
   // Create vertical lines
-  for (let i = gridSize; i < canvasWidth; i += gridSize) {
-    const line = new Line([i, 0, i, canvasHeight], {
+  for (let i = 0; i <= width / gridSize; i++) {
+    const xPos = i * gridSize;
+    const line = new Line([xPos, 0, xPos, height], {
       stroke: gridColor,
       selectable: false,
       evented: false,
       strokeWidth: 1,
-      strokeDashArray: [5, 5],
-      originX: 'center',
-      originY: 'center'
+      strokeDashArray: [5, 5]
     });
-    gridObjects.push(line);
+    
     canvas.add(line);
+    gridObjects.push(line);
   }
-
+  
   // Create horizontal lines
-  for (let i = gridSize; i < canvasHeight; i += gridSize) {
-    const line = new Line([0, i, canvasWidth, i], {
+  for (let i = 0; i <= height / gridSize; i++) {
+    const yPos = i * gridSize;
+    const line = new Line([0, yPos, width, yPos], {
       stroke: gridColor,
       selectable: false,
       evented: false,
       strokeWidth: 1,
-      strokeDashArray: [5, 5],
-      originX: 'center',
-      originY: 'center'
+      strokeDashArray: [5, 5]
     });
-    gridObjects.push(line);
+    
     canvas.add(line);
+    gridObjects.push(line);
   }
-
-  // Send grid to back
-  canvas.requestRenderAll();
+  
+  // Render the grid
+  canvas.renderAll();
+  
   return gridObjects;
-};
+}
 
 /**
- * Ensures grid visibility
- * @param canvas - Fabric.js canvas instance
- * @param gridObjects - Array of grid line objects
- * @param visible - Whether grid should be visible
+ * Ensure grid is visible on the canvas
+ * @param canvas Fabric canvas instance
+ * @param gridObjects Array of grid objects
+ * @returns boolean indicating success
  */
-export const ensureGridVisible = (
+export function ensureGridVisible(
   canvas: FabricCanvas,
-  gridObjects: any[],
-  visible: boolean
-): void => {
-  gridObjects.forEach(obj => {
-    obj.set('visible', visible);
-  });
-  canvas.requestRenderAll();
-};
+  gridObjects: FabricObject[]
+): boolean {
+  try {
+    let modified = false;
+    
+    // Check if any grid objects are invisible
+    gridObjects.forEach(obj => {
+      if (!obj.visible) {
+        obj.set('visible', true);
+        modified = true;
+      }
+    });
+    
+    // If any objects were modified, render the canvas
+    if (modified) {
+      canvas.renderAll();
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error ensuring grid visibility:', error);
+    return false;
+  }
+}

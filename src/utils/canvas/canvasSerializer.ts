@@ -1,39 +1,61 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+/**
+ * Canvas serialization utilities
+ */
+import { Canvas as FabricCanvas } from 'fabric';
 
-export const serializeCanvasState = (canvas: FabricCanvas) => {
+/**
+ * Serialize canvas state to JSON
+ * @param canvas Fabric canvas instance
+ * @returns Serialized canvas state
+ */
+export function serializeCanvasState(canvas: FabricCanvas): any {
   try {
-    const canvasJson = canvas.toJSON(['id', 'name', 'layerId', 'selectable']);
-    const objects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
+    if (!canvas) return null;
     
-    return {
-      canvasJson,
-      objects: objects.map(obj => ({
-        id: (obj as any).id,
-        type: obj.type || 'unknown',
-        data: obj.toJSON(['id', 'name', 'layerId'])
-      }))
+    // Get canvas JSON
+    const json = canvas.toJSON(['id', 'selectable', 'evented', 'type', 'metadata']);
+    
+    // Add additional canvas properties
+    const state = {
+      ...json,
+      zoom: canvas.getZoom(),
+      viewportTransform: canvas.viewportTransform,
+      width: canvas.getWidth(),
+      height: canvas.getHeight()
     };
+    
+    return state;
   } catch (error) {
     console.error('Error serializing canvas state:', error);
-    // Return minimal valid structure to avoid type errors
-    return {
-      canvasJson: {},
-      objects: []
-    };
+    return null;
   }
-};
+}
 
-export const deserializeCanvasState = (canvas: FabricCanvas, state: any) => {
+/**
+ * Deserialize canvas state from JSON
+ * @param canvas Fabric canvas instance
+ * @param state Serialized canvas state
+ * @returns Success status
+ */
+export function deserializeCanvasState(canvas: FabricCanvas, state: any): boolean {
   try {
-    if (!state || !state.canvasJson) return false;
+    if (!canvas || !state) return false;
     
-    // Clear existing objects except grid
-    const nonGridObjects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
-    canvas.remove(...nonGridObjects);
+    // Clear the canvas
+    canvas.clear();
     
-    // Load canvas state
-    canvas.loadFromJSON(state.canvasJson, () => {
+    // Load objects from JSON
+    canvas.loadFromJSON(state, () => {
+      // Restore additional canvas properties
+      if (state.zoom) {
+        canvas.setZoom(state.zoom);
+      }
+      
+      if (state.viewportTransform) {
+        canvas.setViewportTransform(state.viewportTransform);
+      }
+      
       canvas.renderAll();
     });
     
@@ -42,4 +64,4 @@ export const deserializeCanvasState = (canvas: FabricCanvas, state: any) => {
     console.error('Error deserializing canvas state:', error);
     return false;
   }
-};
+}

@@ -5,7 +5,7 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { toast } from "sonner";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
 import { serializeCanvasState, deserializeCanvasState } from "@/utils/canvas/canvasSerializer";
 import * as Sentry from '@sentry/react';
 
@@ -69,11 +69,24 @@ export const useCanvasFloorOperations = ({
   }, [fabricCanvasRef, floorPlans, currentFloor, historyRef, setFloorPlans]);
 
   const handleAddFloor = useCallback(() => {
-    const newFloorPlan = {
+    const now = new Date().toISOString();
+    const newFloorPlan: FloorPlan = {
       id: `floor-${floorPlans.length + 1}`,
       name: `Floor ${floorPlans.length + 1}`,
+      data: {},
+      userId: '',
+      createdAt: now,
+      updatedAt: now,
+      label: `Floor ${floorPlans.length + 1}`,
       order: floorPlans.length,
-      canvasState: null
+      level: floorPlans.length,
+      gia: 0,
+      canvasState: null,
+      metadata: {
+        createdAt: now,
+        updatedAt: now,
+        paperSize: PaperSize.A4
+      }
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);

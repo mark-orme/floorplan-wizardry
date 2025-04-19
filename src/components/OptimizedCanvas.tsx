@@ -2,7 +2,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useOptimizedDrawing } from '@/hooks/useOptimizedDrawing';
 
 interface OptimizedCanvasProps {
   width: number;
@@ -11,6 +10,8 @@ interface OptimizedCanvasProps {
   lineColor?: string;
   lineThickness?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  onPointerMove?: (e: React.PointerEvent) => void;
 }
 
 export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
@@ -19,26 +20,16 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   tool = DrawingMode.DRAW,
   lineColor = '#000000',
   lineThickness = 2,
-  onCanvasReady
+  onCanvasReady,
+  fabricCanvasRef,
+  onPointerMove
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  
-  // Canvas state and handlers from custom hook
-  const {
-    isDrawing,
-    objectCount,
-    metrics,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp
-  } = useOptimizedDrawing({
-    canvas,
-    tool,
-    lineColor,
-    lineThickness
-  });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [objectCount, setObjectCount] = useState(0);
+  const [metrics, setMetrics] = useState<any>(null);
   
   // Initialize canvas
   useEffect(() => {
@@ -53,6 +44,11 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       // Set canvas
       setCanvas(fabricCanvas);
       
+      // Set ref if provided
+      if (fabricCanvasRef) {
+        fabricCanvasRef.current = fabricCanvas;
+      }
+      
       // Notify parent
       if (onCanvasReady) {
         onCanvasReady(fabricCanvas);
@@ -60,7 +56,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       
       setIsLoaded(true);
     }
-  }, [canvas, width, height, tool, onCanvasReady]);
+  }, [canvas, width, height, tool, onCanvasReady, fabricCanvasRef]);
   
   // Update canvas options when tool changes
   useEffect(() => {
@@ -74,6 +70,24 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       }
     }
   }, [canvas, tool, lineColor, lineThickness]);
+  
+  // Handle drawing events
+  const handleMouseDown = (e: MouseEvent, canvas: FabricCanvas) => {
+    setIsDrawing(true);
+  };
+
+  const handleMouseMove = (e: MouseEvent, canvas: FabricCanvas) => {
+    if (isDrawing && tool === DrawingMode.DRAW) {
+      // Handle drawing logic
+    }
+  };
+
+  const handleMouseUp = (e: MouseEvent, canvas: FabricCanvas) => {
+    setIsDrawing(false);
+    if (canvas) {
+      setObjectCount(canvas.getObjects().length);
+    }
+  };
   
   // Add event handlers
   useEffect(() => {
@@ -94,8 +108,15 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     };
   }, [canvas, handleMouseDown, handleMouseMove, handleMouseUp]);
   
+  // Handle pointer move event for parent component
+  const handlePointerMoveEvent = (e: React.PointerEvent) => {
+    if (onPointerMove) {
+      onPointerMove(e);
+    }
+  };
+  
   return (
-    <div className="relative">
+    <div className="relative" onPointerMove={handlePointerMoveEvent}>
       <canvas ref={canvasRef} />
       
       {isLoaded && (

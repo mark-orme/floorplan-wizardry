@@ -35,6 +35,9 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
     try {
+      // Set fabricCanvasRef for external use
+      fabricCanvasRef.current = canvas;
+      
       // Set up proper tool based on the current drawing mode
       canvas.isDrawingMode = tool === DrawingMode.DRAW;
       canvas.selection = tool === DrawingMode.SELECT;
@@ -115,10 +118,10 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   return (
     <div className={`relative w-full h-full ${className}`} data-testid="canvas-controller">
       <OptimizedCanvas
-        fabricCanvasRef={fabricCanvasRef}
         width={width}
         height={height}
         onCanvasReady={handleCanvasReady}
+        fabricCanvasRef={fabricCanvasRef}
       />
     </div>
   );

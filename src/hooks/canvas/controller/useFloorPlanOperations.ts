@@ -42,6 +42,7 @@ export const useFloorPlanOperations = ({
    */
   const handleAddFloor = useCallback((): void => {
     const newFloorName = `Floor ${floorPlans.length + 1}`;
+    const now = new Date().toISOString();
     
     // Create a new floor plan
     const newFloor: FloorPlan = {
@@ -56,13 +57,13 @@ export const useFloorPlanOperations = ({
       strokes: [],
       canvasData: null,
       canvasJson: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       level: floorPlans.length,
       index: floorPlans.length,
       metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
         paperSize: PaperSize.A4,
         level: floorPlans.length
       }
