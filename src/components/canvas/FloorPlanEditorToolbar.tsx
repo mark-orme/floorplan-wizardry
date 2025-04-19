@@ -97,4 +97,3 @@ export const FloorPlanEditorToolbar: React.FC<FloorPlanEditorToolbarProps> = ({
     </div>
   );
 };
-
