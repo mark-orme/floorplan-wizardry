@@ -1,8 +1,15 @@
+
 /**
  * Structured logger for application
  * Provides consistent logging with namespace support and no-op in production
  */
+import winston from 'winston';
 import { LogLevel, isLevelEnabled } from "./loggerConfig";
+
+// Interface for structured log data
+export interface LogData {
+  [key: string]: any;
+}
 
 class Logger {
   private namespace: string;
