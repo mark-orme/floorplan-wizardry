@@ -11,6 +11,10 @@ interface PredictivePoint {
   timestamp: number;
 }
 
+interface NavigatorWithMemory extends Navigator {
+  deviceMemory?: number;
+}
+
 export const usePredictiveDrawing = (fabricCanvas: FabricCanvas | null) => {
   const pointHistoryRef = useRef<PredictivePoint[]>([]);
   const predictionRef = useRef<Point | null>(null);
@@ -20,8 +24,10 @@ export const usePredictiveDrawing = (fabricCanvas: FabricCanvas | null) => {
   
   useEffect(() => {
     const checkDevicePerformance = async () => {
+      const nav = navigator as NavigatorWithMemory;
+      
       const highPerformance = (
-        (navigator.deviceMemory && navigator.deviceMemory > 4) || 
+        (nav.deviceMemory && nav.deviceMemory > 4) || 
         navigator.hardwareConcurrency > 4
       );
       

@@ -106,6 +106,7 @@ export const usePointerEvents = ({
       
       canvas.addEventListener('pointerdown', capturePointer);
       
+      // Fix: Return a proper cleanup function
       return () => {
         canvas.removeEventListener('pointerdown', capturePointer);
         canvas.removeEventListener('pointerdown', handlePointerEvent);
@@ -115,6 +116,7 @@ export const usePointerEvents = ({
       };
     }
     
+    // Fix: Return a cleanup function even when setPointerCapture isn't used
     return () => {
       canvas.removeEventListener('pointerdown', handlePointerEvent);
       canvas.removeEventListener('pointermove', handlePointerEvent);
