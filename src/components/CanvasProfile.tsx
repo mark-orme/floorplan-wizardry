@@ -1,4 +1,3 @@
-
 /**
  * Canvas profiling component
  * Displays rendering metrics for canvas operations
@@ -11,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { PerformanceMeasurement } from '@/utils/performance';
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { VirtualizedMeasurementsList } from './performance/VirtualizedMeasurementsList';
 
 /**
  * Maximum number of measurements to store in the profile history
@@ -180,24 +180,7 @@ export const CanvasProfile = () => {
           
           <TabsContent value="operations">
             <div className="overflow-auto max-h-64">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Operation</th>
-                    <th className="text-left py-2">Duration</th>
-                    <th className="text-left py-2">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {measurements.slice().reverse().map((m, i) => (
-                    <tr key={i} className="border-b">
-                      <td className="py-2">{m.name}</td>
-                      <td className="py-2">{m.duration.toFixed(2)}ms</td>
-                      <td className="py-2">{new Date(m.startTime).toLocaleTimeString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <VirtualizedMeasurementsList measurements={measurements} />
             </div>
           </TabsContent>
         </Tabs>
