@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { RootCanvasProvider } from './RootCanvasProvider';
@@ -6,7 +5,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 import { captureMessage } from '@/utils/sentry';
-import '../styles/canvas-mobile.css';
+import '@/styles/canvas-mobile.css';
 
 interface FloorPlanCanvasProps {
   width?: number;
