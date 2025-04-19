@@ -1,7 +1,7 @@
 
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import type { Attribute } from "next-themes/dist/types"
+import type { Attribute } from "next-themes/types"  // Changed from 'next-themes/dist/types'
 
 // Define ThemeProviderProps interface here with the correct attribute type
 interface ThemeProviderProps {
