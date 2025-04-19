@@ -1,82 +1,112 @@
-
-/**
- * Enhanced Logger Utility
- * Provides consistent logging with severity levels, throttling, and environment awareness
- */
-import { log, info, warn, error, debug, devLog } from './debugUtils';
-import { LogLevel, isLevelEnabled } from './logger/loggerConfig';
+import winston from 'winston';
+import { LogLevel, isLevelEnabled } from "./loggerConfig";
 
 // Interface for structured log data
 export interface LogData {
   [key: string]: any;
 }
 
-/**
- * Logger class with severity levels and structured data
- */
 class Logger {
   private namespace: string;
-  
+  private papertrailLogger: winston.Logger | null = null;
+
   constructor(namespace = 'app') {
     this.namespace = namespace;
+    this.initPapertrail();
   }
-  
-  /**
-   * Create a namespaced logger instance
-   */
-  forNamespace(namespace: string): Logger {
-    return new Logger(namespace);
+
+  private async initPapertrail() {
+    if (process.env.VITE_PAPERTRAIL_HOST && process.env.VITE_PAPERTRAIL_PORT) {
+      try {
+        const { createPapertrailTransport } = await import('./papertrailTransport');
+        
+        this.papertrailLogger = winston.createLogger({
+          transports: [
+            createPapertrailTransport({
+              host: process.env.VITE_PAPERTRAIL_HOST,
+              port: Number(process.env.VITE_PAPERTRAIL_PORT),
+              hostname: window.location.hostname,
+              program: 'canvas-app'
+            })
+          ]
+        });
+        
+        // Log successful Papertrail initialization
+        console.info(`[${this.namespace}] Papertrail logging initialized`);
+      } catch (error) {
+        console.error(`[${this.namespace}] Failed to initialize Papertrail logger:`, error);
+      }
+    }
   }
-  
+
   /**
-   * Log a debug message (only in development or when explicitly enabled)
+   * Log a debug message
+   * Only displayed in development and when debug is enabled
    */
   debug(message: string, data?: LogData | any): void {
+    if (process.env.NODE_ENV === "production") return;
     if (!isLevelEnabled(this.namespace, LogLevel.DEBUG)) return;
     
-    // Convert non-object data to LogData format
-    const formattedData = this.formatData(data);
-    debug(this.namespace, message, formattedData);
+    console.debug(`[${this.namespace}] ${message}`, data);
+    
+    if (this.papertrailLogger) {
+      this.papertrailLogger.debug(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
+    }
   }
-  
+
   /**
    * Log an info message
    */
   info(message: string, data?: LogData | any): void {
-    if (!isLevelEnabled(this.namespace, LogLevel.INFO)) return;
+    if (process.env.NODE_ENV === "production" && 
+        !isLevelEnabled(this.namespace, LogLevel.INFO)) return;
     
-    const formattedData = this.formatData(data);
-    info(this.namespace, message, formattedData);
-  }
-  
-  /**
-   * Log a dev-only message (stripped in production)
-   */
-  dev(message: string, data?: LogData | any): void {
-    if (process.env.NODE_ENV === 'production') return;
+    console.info(`[${this.namespace}] ${message}`, data);
     
-    const formattedData = this.formatData(data);
-    devLog(this.namespace, message, formattedData);
+    if (this.papertrailLogger) {
+      this.papertrailLogger.info(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
+    }
   }
-  
+
   /**
    * Log a warning message
    */
   warn(message: string, data?: LogData | any): void {
-    if (!isLevelEnabled(this.namespace, LogLevel.WARN)) return;
+    if (process.env.NODE_ENV === "production" && 
+        !isLevelEnabled(this.namespace, LogLevel.WARN)) return;
     
-    const formattedData = this.formatData(data);
-    warn(this.namespace, message, formattedData);
+    console.warn(`[${this.namespace}] ${message}`, data);
+    
+    if (this.papertrailLogger) {
+      this.papertrailLogger.warn(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
+    }
   }
-  
+
   /**
    * Log an error message
    */
   error(message: string, data?: LogData | any): void {
-    if (!isLevelEnabled(this.namespace, LogLevel.ERROR)) return;
+    // Errors are always logged, even in production
+    console.error(
+      `[${this.namespace}] ${message}`, 
+      data instanceof Error ? data : {},
+      data instanceof Error ? {} : data
+    );
     
-    const formattedData = this.formatData(data);
-    error(this.namespace, message, formattedData);
+    if (this.papertrailLogger) {
+      // Format error objects for Papertrail
+      let formattedData = data;
+      if (data instanceof Error) {
+        formattedData = { 
+          message: data.message, 
+          stack: data.stack,
+          name: data.name
+        };
+      }
+      
+      this.papertrailLogger.error(`[${this.namespace}] ${message}`, 
+        formattedData ? JSON.stringify(formattedData) : '');
+    }
   }
   
   /**
@@ -102,60 +132,38 @@ class Logger {
       ...canvasContext
     };
     
-    // Use the class's error method instead of trying to call the error parameter
-    this.error(this.namespace + ':canvas', formattedData);
+    // Use the class's error method, passing the full formatted data
+    this.error(`${this.namespace}:canvas`, formattedData);
   }
   
   /**
-   * Group related logs together
+   * Create a child logger with a more specific namespace
    */
-  group(name: string, callback: () => void): void {
-    if (process.env.NODE_ENV === 'production') return;
-    
-    const groupKey = `${this.namespace}:${name}`;
-    console.group(`[${groupKey}]`);
-    callback();
-    console.groupEnd();
+  child(childNamespace: string): Logger {
+    return new Logger(`${this.namespace}:${childNamespace}`);
   }
   
   /**
-   * Time an operation
+   * Get the logger's namespace
    */
-  time<T>(label: string, operation: () => T): T {
-    if (process.env.NODE_ENV === 'production') return operation();
-    
-    const timeLabel = `${this.namespace}:${label}`;
-    console.time(timeLabel);
-    const result = operation();
-    console.timeEnd(timeLabel);
-    return result;
-  }
-  
-  /**
-   * Format log data to ensure it's a proper LogData object
-   * @param data Data to format
-   * @returns Formatted LogData object
-   */
-  private formatData(data: any): LogData {
-    if (data === undefined || data === null) {
-      return {};
-    }
-    
-    if (typeof data === 'object' && !Array.isArray(data)) {
-      return data;
-    }
-    
-    // Convert primitive values to an object
-    return { value: data };
+  getNamespace(): string {
+    return this.namespace;
   }
 }
 
-// Create and export a singleton instance
-const logger = new Logger();
-export default logger;
+/**
+ * Create a logger for a specific namespace
+ */
+export function createLogger(namespace: string): Logger {
+  return new Logger(namespace);
+}
 
-// Export specific logger instances for common modules
-export const gridLogger = logger.forNamespace('grid');
-export const canvasLogger = logger.forNamespace('canvas');
-export const toolsLogger = logger.forNamespace('tools');
-export const lineToolLogger = logger.forNamespace('line-tool');
+// Pre-configured loggers for common areas
+export const lineToolLogger = createLogger("lineTool");
+export const gridLogger = createLogger("grid");
+export const canvasLogger = createLogger("canvas");
+export const perfLogger = createLogger("performance");
+
+// Default export for general usage
+const logger = createLogger("app");
+export default logger;
