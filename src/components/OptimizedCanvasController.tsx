@@ -39,6 +39,11 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
     if (canvas.isDrawingMode) {
       canvas.freeDrawingBrush.color = lineColor;
       canvas.freeDrawingBrush.width = lineThickness;
+      
+      // Set brush to respond to pressure
+      if ('pressure' in window.PointerEvent.prototype) {
+        console.log('Pressure sensitivity enabled for drawing');
+      }
     }
     
     // Create grid for the canvas

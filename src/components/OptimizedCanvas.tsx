@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { usePointerEvents } from '@/hooks/usePointerEvents';
 import { useWebGLContext } from '@/hooks/useWebGLContext';
@@ -19,7 +19,9 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   fabricCanvasRef: externalFabricCanvasRef
 }) => {
   const internalCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = React.useState<FabricCanvas | null>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [pressure, setPressure] = useState<number>(0);
+  const [tilt, setTilt] = useState<{x: number, y: number}>({x: 0, y: 0});
 
   // Initialize fabric canvas
   useEffect(() => {
@@ -29,7 +31,8 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
       width,
       height,
       enableRetinaScaling: true,
-      renderOnAddRemove: true
+      renderOnAddRemove: true,
+      isDrawingMode: false
     });
 
     setFabricCanvas(canvas);
@@ -48,20 +51,28 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     };
   }, [width, height, onCanvasReady, externalFabricCanvasRef]);
 
-  // Use our enhanced pointer events
+  // Use our enhanced pointer events with pressure and tilt
   usePointerEvents({
     canvasRef: internalCanvasRef,
     fabricCanvas,
-    onPressureChange: (pressure) => {
-      console.log('Pressure:', pressure);
+    onPressureChange: (newPressure) => {
+      setPressure(newPressure);
+      console.log('Pressure:', newPressure);
+    },
+    onTiltChange: (tiltX, tiltY) => {
+      setTilt({x: tiltX, y: tiltY});
+      console.log('Tilt:', {x: tiltX, y: tiltY});
     }
   });
 
   // Initialize WebGL context
-  useWebGLContext({
+  const { glContext, shaderProgram } = useWebGLContext({
     canvasRef: internalCanvasRef,
     fabricCanvas
   });
+
+  // Display pressure and tilt indicators for debug purposes
+  const showDebugInfo = false;
 
   return (
     <div className="relative">
@@ -70,6 +81,15 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
         className="border border-gray-200 rounded shadow-sm"
         style={{ touchAction: 'none' }}
       />
+      
+      {showDebugInfo && (
+        <div className="absolute bottom-2 left-2 bg-white/80 p-2 rounded text-xs">
+          <div>Pressure: {pressure.toFixed(2)}</div>
+          <div>Tilt X: {tilt.x.toFixed(2)}</div>
+          <div>Tilt Y: {tilt.y.toFixed(2)}</div>
+          <div>WebGL: {glContext ? 'Active' : 'Not active'}</div>
+        </div>
+      )}
     </div>
   );
 };
