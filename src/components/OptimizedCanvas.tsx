@@ -85,7 +85,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   });
 
   // Initialize WebGL context
-  const { glContext, shaderProgram } = useWebGLContext({
+  const { glContext, brushSystem } = useWebGLContext({
     canvasRef: internalCanvasRef,
     fabricCanvas
   });
