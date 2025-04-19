@@ -28,12 +28,12 @@ const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
     logger.info('Creating grid layer');
     
     try {
-      // Create grid
-      const gridObjects = createSimpleGrid(canvas);
+      // Create grid with proper parameters
+      const gridObjects = createSimpleGrid(canvas, gridSize, gridColor);
       gridObjectsRef.current = gridObjects;
       
       // Ensure grid is visible
-      ensureGridVisible(canvas, gridObjectsRef.current);
+      ensureGridVisible(canvas, gridObjectsRef.current, true);
       
       initialized.current = true;
       logger.info(`Grid layer created with ${gridObjects.length} objects`);
@@ -58,7 +58,7 @@ const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
     if (!canvas || gridObjectsRef.current.length === 0) return;
     
     const checkGridInterval = setInterval(() => {
-      ensureGridVisible(canvas, gridObjectsRef.current);
+      ensureGridVisible(canvas, gridObjectsRef.current, true);
     }, 5000);
     
     return () => clearInterval(checkGridInterval);

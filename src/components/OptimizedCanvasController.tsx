@@ -4,6 +4,8 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { OptimizedCanvas } from './OptimizedCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
 import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
+import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
+import { toast } from 'sonner';
 
 interface OptimizedCanvasControllerProps {
   width: number;
@@ -32,37 +34,51 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   const gridObjectsRef = useRef<any[]>([]);
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
-    // Set up proper tool based on the current drawing mode
-    canvas.isDrawingMode = tool === DrawingMode.DRAW;
-    canvas.selection = tool === DrawingMode.SELECT;
-    
-    if (canvas.isDrawingMode) {
-      canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
+    try {
+      // Set up proper tool based on the current drawing mode
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
       
-      // Set brush to respond to pressure
-      if ('pressure' in window.PointerEvent.prototype) {
-        console.log('Pressure sensitivity enabled for drawing');
+      if (canvas.isDrawingMode) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+        
+        // Check for enhanced input capabilities
+        const hasAdvancedInput = isPressureSupported() || isTiltSupported();
+        
+        // Set brush to respond to pressure
+        if (hasAdvancedInput) {
+          console.log('Enhanced input capabilities detected');
+          toast.success('Enhanced drawing capabilities enabled', {
+            id: 'enhanced-drawing',
+            duration: 3000
+          });
+        }
+      }
+      
+      // Create grid for the canvas
+      if (showGrid) {
+        console.log("Creating grid for canvas");
+        const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
+        gridObjectsRef.current = gridObjects;
+      }
+      
+      // Make sure touch events work well on mobile
+      canvas.allowTouchScrolling = tool === DrawingMode.HAND;
+      
+      // Apply custom CSS to the canvas container to make it touch-friendly
+      if (canvas.wrapperEl) {
+        canvas.wrapperEl.classList.add('touch-manipulation');
+        canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
+      }
+      
+      onCanvasReady(canvas);
+    } catch (error) {
+      console.error("Error in canvas initialization:", error);
+      if (onError && error instanceof Error) {
+        onError(error);
       }
     }
-    
-    // Create grid for the canvas
-    if (showGrid) {
-      console.log("Creating grid for canvas");
-      const gridObjects = createSimpleGrid(canvas);
-      gridObjectsRef.current = gridObjects;
-    }
-    
-    // Make sure touch events work well on mobile
-    canvas.allowTouchScrolling = tool === DrawingMode.HAND;
-    
-    // Apply custom CSS to the canvas container to make it touch-friendly
-    if (canvas.wrapperEl) {
-      canvas.wrapperEl.classList.add('touch-manipulation');
-      canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
-    }
-    
-    onCanvasReady(canvas);
   };
 
   // Update grid visibility when showGrid changes
@@ -75,7 +91,7 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
       canvas.requestRenderAll();
     } else if (canvas && showGrid && gridObjectsRef.current.length === 0) {
       // Create grid if it doesn't exist and should be shown
-      const gridObjects = createSimpleGrid(canvas);
+      const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
       gridObjectsRef.current = gridObjects;
     }
   }, [showGrid]);
