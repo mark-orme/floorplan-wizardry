@@ -1,59 +1,52 @@
 
 /**
- * Throttle utility for optimizing high-frequency events
- * Especially useful for pointer/mouse events during drawing
+ * Throttling utilities for canvas operations
  * @module utils/canvas/throttle
  */
 
 /**
- * Throttle a function to limit how often it can be called
- * Uses requestAnimationFrame for optimal performance
- * 
- * @param {Function} callback - The function to throttle
- * @returns {Function} Throttled function
+ * Throttle a function to run at most once per animation frame
+ * @param fn Function to throttle
+ * @returns Throttled function
  */
-export function throttleRAF<T extends (...args: any[]) => void>(callback: T): T {
-  let requestId: number | null = null;
-  let lastArgs: any[] | null = null;
-  
-  const throttled = (...args: any[]) => {
-    // Store the latest arguments
+export const throttleRAF = <T extends (...args: any[]) => any>(fn: T): ((...args: Parameters<T>) => void) => {
+  let rafId: number | null = null;
+  let lastArgs: Parameters<T> | null = null;
+
+  return (...args: Parameters<T>) => {
+    // Store the latest args
     lastArgs = args;
-    
-    // Only schedule a new frame if we don't already have one pending
-    if (requestId === null) {
-      requestId = requestAnimationFrame(() => {
-        if (lastArgs) {
-          callback(...lastArgs);
-        }
-        requestId = null;
-      });
-    }
+
+    // If we already have a pending frame, don't request another
+    if (rafId !== null) return;
+
+    // Schedule the function to run on the next animation frame
+    rafId = requestAnimationFrame(() => {
+      if (lastArgs) {
+        fn(...lastArgs);
+      }
+      rafId = null;
+    });
   };
-  
-  return throttled as T;
-}
+};
 
 /**
- * Debounce a function to delay execution until after a pause
- * 
- * @param {Function} callback - The function to debounce
- * @param {number} delay - Delay in milliseconds
- * @returns {Function} Debounced function
+ * Debounce a function to run after a specified delay
+ * @param fn Function to debounce
+ * @param delay Delay in milliseconds
+ * @returns Debounced function
  */
-export function debounce<T extends (...args: any[]) => void>(callback: T, delay: number): T {
-  let timeoutId: number | null = null;
-  
-  const debounced = (...args: any[]) => {
-    if (timeoutId !== null) {
-      window.clearTimeout(timeoutId);
+export const debounce = <T extends (...args: any[]) => any>(fn: T, delay: number): ((...args: Parameters<T>) => void) => {
+  let timeoutId: NodeJS.Timeout | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
-    
-    timeoutId = window.setTimeout(() => {
-      callback(...args);
+
+    timeoutId = setTimeout(() => {
+      fn(...args);
       timeoutId = null;
     }, delay);
   };
-  
-  return debounced as T;
-}
+};

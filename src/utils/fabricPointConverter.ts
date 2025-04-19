@@ -4,6 +4,7 @@
  * @module utils/fabricPointConverter
  */
 import { Point as FabricPoint } from 'fabric';
+import { Point } from '@/types/core/Geometry';
 
 /**
  * Convert a plain point object to a Fabric.js Point

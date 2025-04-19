@@ -2,6 +2,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Point } from 'fabric';
 import { toast } from 'sonner';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UseOptimizedDrawingProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -79,7 +80,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const fabricPoint = new Point(x, y);
+        // Create a fabric Point here
+        const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
           e,
           pointer: { x, y }
@@ -104,7 +106,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       // Draw interpolated points
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         points.forEach(point => {
-          const fabricPoint = new Point(point.x, point.y);
+          // Create a fabric Point for each interpolated point
+          const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
           fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
             e,
             pointer: point
@@ -129,7 +132,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const y = e.clientY - rect.top;
         
         // Create a pointer position for the end of the stroke
-        const fabricPoint = new Point(x, y);
+        const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
           e, 
           pointer: { x, y } 
