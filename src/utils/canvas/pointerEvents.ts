@@ -8,7 +8,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import logger from '../logger';
 
 // Define interface for pressure-sensitive pointer events
-export interface EnhancedPointerEvent extends PointerEvent {
+export interface EnhancedPointerEvent extends Omit<PointerEvent, 'pressure'> {
   pressure?: number;
   tiltX?: number;
   tiltY?: number;
@@ -164,7 +164,7 @@ export function attachEnhancedPointerEvents(
   
   // Define event handlers
   const pointerDownHandler = (e: PointerEvent) => {
-    const enhancedEvent = e as EnhancedPointerEvent;
+    const enhancedEvent = e as unknown as EnhancedPointerEvent;
     handleStylusDetection(enhancedEvent);
     handlePressureChange(enhancedEvent);
     handleTiltChange(enhancedEvent);
