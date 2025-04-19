@@ -79,8 +79,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const point = new Point(x, y);
-        fabricCanvas.freeDrawingBrush.onMouseDown(point, {
+        const fabricPoint = new Point(x, y);
+        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
           e,
           pointer: { x, y }
         });
@@ -129,6 +129,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const y = e.clientY - rect.top;
         
         // Create a pointer position for the end of the stroke
+        const fabricPoint = new Point(x, y);
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
           e, 
           pointer: { x, y } 
