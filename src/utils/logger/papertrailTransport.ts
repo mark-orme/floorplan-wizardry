@@ -13,7 +13,7 @@ export const createPapertrailTransport = (config: PapertrailConfig) => {
   const winstonPapertrail = new Papertrail({
     host: config.host,
     port: config.port,
-    hostname: config.hostname || 'app',
+    hostname: config.hostname || 'canvas-app',
     program: config.program || 'canvas-app',
     logFormat: (level, message) => {
       return `[${level}] ${message}`;
