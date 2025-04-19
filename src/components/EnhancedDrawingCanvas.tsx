@@ -36,14 +36,24 @@ export const EnhancedDrawingCanvas: React.FC<EnhancedDrawingCanvasProps> = ({
     baseColor
   });
 
-  const { handlePointerMove } = usePredictiveDrawing(canvasRef.current);
+  // Use predictive drawing for lower latency
+  const { handlePointerMove, predictionEnabled, togglePrediction } = usePredictiveDrawing(canvasRef.current);
 
   return (
-    <OptimizedCanvas
-      width={width}
-      height={height}
-      onCanvasReady={handleCanvasReady}
-      onPointerMove={handlePointerMove}
-    />
+    <div className="relative">
+      <OptimizedCanvas
+        width={width}
+        height={height}
+        onCanvasReady={handleCanvasReady}
+        onPointerMove={handlePointerMove}
+      />
+      {/* Optional prediction toggle */}
+      <div 
+        className="absolute top-2 right-2 bg-white/80 text-xs px-2 py-1 rounded cursor-pointer hover:bg-white"
+        onClick={() => togglePrediction()}
+      >
+        Prediction: {predictionEnabled ? 'On' : 'Off'}
+      </div>
+    </div>
   );
 };

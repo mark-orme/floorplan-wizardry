@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas, Shadow } from 'fabric';
 import { BrushEffects } from '@/utils/canvas/brushes/AdvancedBrushEffects';
@@ -49,14 +50,21 @@ export const useStylusInput = ({
       fabricCanvas.freeDrawingBrush.width = BrushEffects.calculateBrushWidth(params);
       fabricCanvas.freeDrawingBrush.color = BrushEffects.calculateBrushColor(params);
       
-      // Set opacity through shadow
+      // Set shadow with opacity (avoid using opacity directly on Shadow)
+      const shadowColor = baseColor;
       const opacity = BrushEffects.calculateBrushOpacity(params);
+      
+      // Convert opacity to rgba color for shadow
+      const r = parseInt(shadowColor.slice(1, 3), 16);
+      const g = parseInt(shadowColor.slice(3, 5), 16);
+      const b = parseInt(shadowColor.slice(5, 7), 16);
+      const rgbaColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      
       fabricCanvas.freeDrawingBrush.shadow = new Shadow({
-        color: baseColor,
+        color: rgbaColor,
         blur: 0,
         offsetX: 0,
-        offsetY: 0,
-        opacity
+        offsetY: 0
       });
     }
 
@@ -91,10 +99,14 @@ export const useStylusInput = ({
     // Enable advanced touch features
     if (canvas.style) {
       canvas.style.touchAction = 'none';
-      canvas.style.touchCallout = 'none';
+      // Use proper vendor prefixes or standard properties
       canvas.style.userSelect = 'none';
       canvas.style.webkitUserSelect = 'none';
-      canvas.style.webkitTouchCallout = 'none';
+      
+      // Set these as custom properties since they're non-standard
+      if ('webkitTouchCallout' in document.documentElement.style) {
+        (canvas.style as any).webkitTouchCallout = 'none';
+      }
     }
 
     // Check if device supports advanced stylus features

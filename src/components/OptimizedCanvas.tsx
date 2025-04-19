@@ -11,13 +11,15 @@ interface OptimizedCanvasProps {
   height?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  onPointerMove?: (e: PointerEvent) => void;
 }
 
 export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   width = 800,
   height = 600,
   onCanvasReady,
-  fabricCanvasRef: externalFabricCanvasRef
+  fabricCanvasRef: externalFabricCanvasRef,
+  onPointerMove
 }) => {
   const internalCanvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
@@ -88,7 +90,8 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     canvasRef: internalCanvasRef,
     fabricCanvas,
     onPressureChange: handlePressureChange,
-    onTiltChange: handleTiltChange
+    onTiltChange: handleTiltChange,
+    onPointerMove
   });
 
   return (
