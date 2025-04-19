@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCRDTSync } from '../useCRDTSync';
@@ -23,7 +22,7 @@ interface UseRealtimeCanvasSyncProps {
   canvas: FabricCanvas | null;
   enabled?: boolean;
   userName?: string;
-  onRemoteUpdate?: (sender: string, timestamp: number) => void;
+  onRemoteUpdate?: () => void;
 }
 
 export function useRealtimeCanvasSync({

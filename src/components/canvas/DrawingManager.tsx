@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -52,8 +51,9 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
   const { collaborators, syncCanvas } = useRealtimeCanvasSync({
     canvas: fabricCanvas,
     enabled: enableCollaboration && !!fabricCanvas,
-    onRemoteUpdate: (sender, timestamp) => {
-      console.log(`Canvas updated by ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    userName,
+    onRemoteUpdate: () => {
+      console.log(`Canvas updated by ${userName} at ${new Date().toLocaleString()}`);
     }
   });
   

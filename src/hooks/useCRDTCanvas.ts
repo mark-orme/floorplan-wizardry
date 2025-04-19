@@ -1,10 +1,10 @@
 
 import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { useRef, useEffect, useCallback } from 'react';
 import logger from '@/utils/logger';
+import { getPusher } from '@/utils/pusher';
 
 interface UseCRDTCanvasProps {
   canvas: FabricCanvas | null;
@@ -22,10 +22,10 @@ export const useCRDTCanvas = ({
   enabled = true
 }: UseCRDTCanvasProps) => {
   const docRef = useRef<Y.Doc | null>(null);
-  const providerRef = useRef<WebsocketProvider | null>(null);
+  const channelRef = useRef<any>(null);
   const canvasMapRef = useRef<Y.Map<any> | null>(null);
 
-  // Initialize CRDT document and connection
+  // Initialize CRDT document and Pusher connection
   useEffect(() => {
     if (!enabled || !canvas) return;
 
@@ -34,36 +34,32 @@ export const useCRDTCanvas = ({
       const doc = new Y.Doc();
       docRef.current = doc;
 
-      // Create WebSocket provider for sync
-      const wsProvider = new WebsocketProvider(
-        'wss://demos.yjs.dev', // Replace with your WebSocket server
-        `canvas-${roomId}`,
-        doc,
-        { connect: true }
-      );
-
-      providerRef.current = wsProvider;
+      // Get Pusher instance and subscribe to channel
+      const pusher = getPusher();
+      const channel = pusher.subscribe(`canvas-${roomId}`);
+      channelRef.current = channel;
 
       // Get shared map for canvas state
       const canvasMap = doc.getMap('canvas');
       canvasMapRef.current = canvasMap;
 
-      // Handle remote updates
-      canvasMap.observe(() => {
+      // Handle remote updates through Pusher
+      channel.bind('client-canvas-update', (data: any) => {
         applyRemoteChanges();
       });
 
-      // Handle connection status
-      wsProvider.on('status', ({ status }: { status: string }) => {
-        if (status === 'connected') {
-          toast.success('Connected to collaboration server');
-        } else if (status === 'disconnected') {
-          toast.error('Disconnected from collaboration server');
-        }
+      // Handle connection status through Pusher
+      channel.bind('pusher:subscription_succeeded', () => {
+        toast.success('Connected to collaboration server');
+      });
+
+      channel.bind('pusher:subscription_error', () => {
+        toast.error('Failed to connect to collaboration server');
       });
 
       return () => {
-        wsProvider.disconnect();
+        channel.unbind_all();
+        pusher.unsubscribe(`canvas-${roomId}`);
         doc.destroy();
       };
     } catch (error) {
@@ -92,7 +88,7 @@ export const useCRDTCanvas = ({
 
   // Sync local changes to CRDT document
   const syncLocalChanges = useCallback(() => {
-    if (!canvas || !canvasMapRef.current) return;
+    if (!canvas || !canvasMapRef.current || !channelRef.current) return;
 
     try {
       const currentState = canvas.toJSON(['id', 'type', 'objectType']);
@@ -103,6 +99,13 @@ export const useCRDTCanvas = ({
         timestamp: Date.now()
       });
 
+      // Trigger update through Pusher
+      channelRef.current.trigger('client-canvas-update', {
+        userId,
+        userName,
+        timestamp: Date.now()
+      });
+
       logger.debug('Synced local changes to CRDT');
     } catch (error) {
       logger.error('Error syncing local changes:', error);
@@ -110,7 +113,7 @@ export const useCRDTCanvas = ({
   }, [canvas, userId, userName]);
 
   return {
-    isConnected: providerRef.current?.wsconnected || false,
+    isConnected: channelRef.current?.subscribed || false,
     syncLocalChanges
   };
 };

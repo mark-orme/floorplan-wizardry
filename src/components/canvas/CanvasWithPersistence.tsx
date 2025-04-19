@@ -82,9 +82,10 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
 
   const { collaborators, syncCanvas } = useRealtimeCanvasSync({
     canvas: fabricCanvasRef.current,
-    enabled: isCanvasReady && enableCollaboration,
-    onRemoteUpdate: (sender, timestamp) => {
-      console.log(`Received canvas update from ${sender} at ${new Date(timestamp).toLocaleString()}`);
+    enabled: enableCollaboration && !!fabricCanvasRef.current,
+    userName,
+    onRemoteUpdate: () => {
+      console.log(`Canvas updated at ${new Date().toLocaleString()}`);
     }
   });
   
