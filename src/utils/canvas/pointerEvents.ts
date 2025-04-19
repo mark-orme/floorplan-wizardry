@@ -8,7 +8,7 @@
  * Enhanced pointer event interface with additional properties
  * for stylus and pressure sensitivity
  */
-export interface EnhancedPointerEvent extends Omit<PointerEvent, "pressure" | "width" | "height"> {
+export interface EnhancedPointerEvent extends Omit<PointerEvent, "pressure" | "width" | "height" | "tangentialPressure" | "tiltX" | "tiltY" | "twist"> {
   /** Pointer pressure level (0-1) */
   pressure: number;
   /** Width of the contact area */

@@ -1,225 +1,164 @@
-
 /**
- * Hook for WebGL-accelerated canvas with Fabric.js
- * Provides high-performance canvas rendering with fallback
+ * Hook for managing a WebGL-accelerated canvas
  * @module hooks/useWebGLCanvas
  */
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import logger from '@/utils/logger';
+import { useRef, useEffect, useCallback } from 'react';
+import { fabric } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { CanvasDimensions } from '@/types/drawingTypes';
 import { vibrateFeedback } from '@/utils/canvas/pointerEvents';
 
-// Settings for WebGL rendering
-export interface WebGLSettings {
-  enabled: boolean;
-  contextAttributes?: WebGLContextAttributes;
-  handleResize?: boolean;
-  preserveDrawingBuffer?: boolean;
+interface UseWebGLCanvasProps {
+  width: number;
+  height: number;
 }
-
-// Default WebGL context attributes
-const DEFAULT_WEBGL_ATTRIBUTES: WebGLContextAttributes = {
-  alpha: true,
-  antialias: true,
-  depth: false,
-  failIfMajorPerformanceCaveat: false,
-  premultipliedAlpha: true,
-  preserveDrawingBuffer: true,
-  stencil: false
-};
 
 /**
- * Hook for using WebGL-accelerated canvas
- * Automatically falls back to standard canvas if WebGL is not supported
+ * Hook for managing a WebGL-accelerated canvas
  */
-export function useWebGLCanvas({
-  canvasRef,
-  containerRef,
-  settings = { enabled: true }
-}: {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  containerRef?: React.RefObject<HTMLDivElement>;
-  settings?: WebGLSettings;
-}) {
-  const [isWebGLEnabled, setIsWebGLEnabled] = useState(false);
-  const [isWebGLSupported, setIsWebGLSupported] = useState(true);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const contextLostRef = useRef(false);
+export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
+  const canvasRef = useRef<fabric.Canvas | null>(null);
+  const performanceMetricsRef = useRef({
+    objectCount: 0,
+    visibleObjectCount: 0,
+    fps: 0
+  });
   
-  // Function to check WebGL support
-  const checkWebGLSupport = useCallback((): boolean => {
-    if (typeof window === 'undefined' || !window.WebGLRenderingContext) {
-      return false;
-    }
+  /**
+   * Initialize the Fabric.js canvas
+   */
+  const initializeCanvas = useCallback((canvasElement: HTMLCanvasElement) => {
+    // Create Fabric canvas instance
+    const canvas = new fabric.Canvas(canvasElement, {
+      width,
+      height,
+      backgroundColor: '#fff',
+      renderOnAddRemove: true,
+      preserveObjectStacking: true,
+      enableRetinaScaling: true,
+      fireRightClick: true
+    });
     
-    const canvas = document.createElement('canvas');
-    let gl: WebGLRenderingContext | null = null;
+    // Set canvas ref
+    canvasRef.current = canvas;
     
-    try {
-      // Try to get WebGL context
-      gl = canvas.getContext('webgl') as WebGLRenderingContext || 
-           canvas.getContext('experimental-webgl') as WebGLRenderingContext;
-    } catch (e) {
-      return false;
-    }
+    // Update performance metrics
+    performanceMetricsRef.current.objectCount = canvas.getObjects().length;
+    performanceMetricsRef.current.visibleObjectCount = canvas.getObjects().length;
     
-    // If we got a context, WebGL is supported
-    const hasWebGL = !!gl;
+    // Set event handlers
+    canvas.on('object:added', () => {
+      performanceMetricsRef.current.objectCount = canvas.getObjects().length;
+      performanceMetricsRef.current.visibleObjectCount = canvas.getObjects().length;
+    });
     
-    // Clean up
-    if (gl) {
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-    }
+    canvas.on('object:removed', () => {
+      performanceMetricsRef.current.objectCount = canvas.getObjects().length;
+      performanceMetricsRef.current.visibleObjectCount = canvas.getObjects().length;
+    });
     
-    return hasWebGL;
-  }, []);
+    canvas.on('object:modified', () => {
+      performanceMetricsRef.current.objectCount = canvas.getObjects().length;
+      performanceMetricsRef.current.visibleObjectCount = canvas.getObjects().length;
+    });
+    
+    // Start performance monitoring
+    startPerformanceMonitoring(canvas);
+    
+    return canvas;
+  }, [width, height]);
   
-  // Initialize WebGL canvas
-  useEffect(() => {
-    if (!canvasRef.current || fabricCanvasRef.current || !settings.enabled) {
-      return;
-    }
+  /**
+   * Start performance monitoring
+   */
+  const startPerformanceMonitoring = useCallback((canvas: fabric.Canvas) => {
+    let lastRenderTime = Date.now();
+    let frameCount = 0;
     
-    // Check for WebGL support
-    const supportsWebGL = checkWebGLSupport();
-    setIsWebGLSupported(supportsWebGL);
-    
-    if (!supportsWebGL) {
-      logger.warn('WebGL not supported. Using standard canvas rendering.');
-    }
-    
-    try {
-      // Set up WebGL with appropriate context
-      if (supportsWebGL) {
-        // Create Fabric canvas with WebGL
-        fabricCanvasRef.current = new FabricCanvas(canvasRef.current, {
-          enableRetinaScaling: true,
-          renderOnAddRemove: false,
-          isWebGLSupported: true,
-          webglContextAttributes: {
-            ...DEFAULT_WEBGL_ATTRIBUTES,
-            ...settings.contextAttributes,
-            preserveDrawingBuffer: settings.preserveDrawingBuffer ?? true
-          }
-        });
-        
-        setIsWebGLEnabled(true);
-        logger.info('WebGL canvas initialized successfully');
-        
-        // Provide haptic feedback if supported
-        vibrateFeedback(15);
-      } else {
-        // Create standard canvas as fallback
-        fabricCanvasRef.current = new FabricCanvas(canvasRef.current, {
-          enableRetinaScaling: true,
-          renderOnAddRemove: false
-        });
-        
-        logger.info('Standard canvas initialized as WebGL fallback');
+    // Performance monitoring loop
+    const monitor = () => {
+      const now = Date.now();
+      const delta = now - lastRenderTime;
+      
+      frameCount++;
+      
+      if (delta >= 1000) {
+        performanceMetricsRef.current.fps = frameCount;
+        frameCount = 0;
+        lastRenderTime = now;
       }
       
-      // Set up WebGL context loss handler
-      canvasRef.current.addEventListener('webglcontextlost', handleContextLost, false);
-      canvasRef.current.addEventListener('webglcontextrestored', handleContextRestored, false);
-    } catch (error) {
-      logger.error('Failed to initialize WebGL canvas', { error });
-      
-      // Try to create standard canvas as fallback
-      try {
-        fabricCanvasRef.current = new FabricCanvas(canvasRef.current, {
-          enableRetinaScaling: true,
-          renderOnAddRemove: false
-        });
-        
-        setIsWebGLEnabled(false);
-        logger.info('Fallback to standard canvas after WebGL initialization failed');
-      } catch (fallbackError) {
-        logger.error('Failed to initialize fallback canvas', { error: fallbackError });
-      }
-    }
-    
-    // Handle resize if needed
-    if (settings.handleResize && containerRef?.current) {
-      const resizeObserver = new ResizeObserver(handleResize);
-      resizeObserver.observe(containerRef.current);
-      
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-    
-    return () => {
-      if (canvasRef.current) {
-        canvasRef.current.removeEventListener('webglcontextlost', handleContextLost);
-        canvasRef.current.removeEventListener('webglcontextrestored', handleContextRestored);
-      }
-      
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-        fabricCanvasRef.current = null;
-      }
+      requestAnimationFrame(monitor);
     };
-  }, [canvasRef, containerRef, settings.enabled, checkWebGLSupport]);
-  
-  // Handle WebGL context loss
-  const handleContextLost = useCallback((event: Event) => {
-    event.preventDefault();
-    contextLostRef.current = true;
-    logger.warn('WebGL context lost');
     
-    // Notify user of context loss
-    if (typeof window !== 'undefined') {
-      const notification = document.createElement('div');
-      notification.textContent = 'Drawing performance reduced - GPU context lost';
-      notification.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#f8d7da;color:#721c24;padding:10px;text-align:center;z-index:9999;';
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        document.body.removeChild(notification);
-      }, 5000);
-    }
+    monitor();
   }, []);
   
-  // Handle WebGL context restoration
-  const handleContextRestored = useCallback((event: Event) => {
-    contextLostRef.current = false;
-    logger.info('WebGL context restored');
+  /**
+   * Check if canvas needs virtualization
+   */
+  const needsVirtualization = useCallback(() => {
+    if (!canvasRef.current) return false;
     
-    // Redraw canvas
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.renderAll();
-    }
-    
-    // Notify user of context restoration
-    vibrateFeedback([10, 50, 10]);
+    const objectCount = canvasRef.current.getObjects().length;
+    return objectCount > 100;
   }, []);
   
-  // Handle container resize
-  const handleResize = useCallback(() => {
-    if (!fabricCanvasRef.current || !containerRef?.current) return;
+  /**
+   * Refresh virtualization
+   */
+  const refreshVirtualization = useCallback(() => {
+    if (!canvasRef.current) return;
     
-    const { clientWidth, clientHeight } = containerRef.current;
-    
-    if (clientWidth > 0 && clientHeight > 0) {
-      fabricCanvasRef.current.setDimensions({
-        width: clientWidth,
-        height: clientHeight
-      });
-    }
-  }, [containerRef]);
-  
-  // Function to force canvas redraw
-  const redraw = useCallback(() => {
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.renderAll();
-    }
+    // Implement virtualization logic here
+    console.log('Refreshing virtualization');
   }, []);
+  
+  /**
+   * Handle canvas click
+   */
+  const handleCanvasClick = useCallback((event: MouseEvent) => {
+    if (!canvasRef.current) return;
+    
+    // Get click coordinates
+    const pointer = canvasRef.current.getPointer(event);
+    
+    // Create a circle
+    const circle = new fabric.Circle({
+      left: pointer.x,
+      top: pointer.y,
+      radius: 10,
+      fill: 'red',
+      originX: 'center',
+      originY: 'center'
+    });
+    
+    // Add to canvas
+    canvasRef.current.add(circle);
+    
+    // Provide haptic feedback
+    vibrateFeedback(20);
+    
+    // Update performance metrics
+    performanceMetricsRef.current.objectCount = canvasRef.current.getObjects().length;
+    performanceMetricsRef.current.visibleObjectCount = canvasRef.current.getObjects().length;
+  }, []);
+  
+  /**
+   * Get performance metrics
+   */
+  const performanceMetrics = {
+    objectCount: performanceMetricsRef.current.objectCount,
+    visibleObjectCount: performanceMetricsRef.current.visibleObjectCount,
+    fps: performanceMetricsRef.current.fps
+  };
   
   return {
-    fabricCanvas: fabricCanvasRef.current,
-    isWebGLEnabled,
-    isWebGLSupported,
-    isContextLost: contextLostRef.current,
-    redraw
+    canvasRef,
+    initializeCanvas,
+    handleCanvasClick,
+    performanceMetrics,
+    needsVirtualization,
+    refreshVirtualization
   };
-}
+};

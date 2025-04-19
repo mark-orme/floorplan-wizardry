@@ -13,9 +13,10 @@ import {
   SMALL_GRID,
   LARGE_GRID
 } from "@/constants/numerics";
+import { DrawingTool } from '@/types/core/DrawingTool';
 
 // Re-export these types for backward compatibility
-export type { FloorPlan, Point, Stroke, PaperSize };
+export type { FloorPlan, Point, Stroke, PaperSize, DrawingTool };
 
 // Re-export constants for backward compatibility
 export { GRID_SPACING, PIXELS_PER_METER, SMALL_GRID, LARGE_GRID };
@@ -178,7 +179,11 @@ export enum GestureType {
   PAN = 'pan',
   PINCH = 'pinch',
   ROTATE = 'rotate',
-  NONE = 'none'
+  NONE = 'none',
+  TAP = 'tap',
+  TWOFINGERTAP = 'twofingertap',
+  THREEFINGERTAP = 'threefingertap',
+  FOURFINGERTAP = 'fourfingertap'
 }
 
 /**
@@ -197,6 +202,8 @@ export interface GestureState {
   rotation: number;
   /** Translation offset for pan gestures */
   translation: Point;
+  /** Center point of the gesture */
+  center?: Point;
 }
 
 /**
@@ -224,7 +231,6 @@ export const createDefaultDrawingState = (): DrawingState => ({
   endY: 0,
   pathStartPoint: null,
   selectionActive: false,
-  zoomLevel: 1,
   toolType: 'line',
   width: 2,
   color: '#000000'

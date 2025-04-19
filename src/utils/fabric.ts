@@ -4,6 +4,7 @@
  * @module utils/fabric
  */
 import { Canvas as FabricCanvas } from 'fabric';
+import logger from '@/utils/logger';
 
 /**
  * Set canvas dimensions with proper scaling
@@ -16,7 +17,7 @@ export const setCanvasDimensions = (canvas: FabricCanvas, width: number, height:
   
   // The API has changed in latest Fabric.js - let's fix it for compatibility
   try {
-    // Try the newer version API first (two parameters)
+    // Try the newer version API first (with dimensions object)
     canvas.setDimensions({ width, height });
   } catch (e) {
     console.error('Error setting canvas dimensions:', e);
@@ -49,6 +50,45 @@ export const clearCanvas = (canvas: FabricCanvas, preserveGrid: boolean = false)
     // Remove all objects
     canvas.clear();
   }
+  
+  canvas.requestRenderAll();
+};
+
+/**
+ * Enable selection mode on canvas
+ * @param canvas - Fabric canvas instance
+ */
+export const enableSelection = (canvas: FabricCanvas) => {
+  if (!canvas) return;
+  
+  canvas.selection = true;
+  canvas.defaultCursor = 'default';
+  canvas.hoverCursor = 'move';
+  
+  canvas.getObjects().forEach(obj => {
+    if (!(obj as any).gridObject) {
+      obj.selectable = true;
+      (obj as any).evented = true;
+    }
+  });
+  
+  canvas.requestRenderAll();
+};
+
+/**
+ * Disable selection mode on canvas
+ * @param canvas - Fabric canvas instance
+ */
+export const disableSelection = (canvas: FabricCanvas) => {
+  if (!canvas) return;
+  
+  canvas.selection = false;
+  canvas.defaultCursor = 'crosshair';
+  
+  canvas.getObjects().forEach(obj => {
+    obj.selectable = false;
+    (obj as any).evented = false;
+  });
   
   canvas.requestRenderAll();
 };
