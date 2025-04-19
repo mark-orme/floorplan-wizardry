@@ -173,7 +173,9 @@ export function useVirtualizedCanvas(
     };
     
     canvas.on('zoom:changed', handleViewportChange);
-    canvas.on('pan:moved', handleViewportChange);
+    
+    // Use custom event instead of 'pan:moved' which might not be in the type definitions
+    canvas.on('viewport:translate', handleViewportChange);
     
     return () => {
       clearInterval(refreshInterval);
@@ -184,7 +186,7 @@ export function useVirtualizedCanvas(
       
       // Remove event listeners
       canvas.off('zoom:changed', handleViewportChange);
-      canvas.off('pan:moved', handleViewportChange);
+      canvas.off('viewport:translate', handleViewportChange);
       
       // Restore original renderAll
       if (canvas.renderAll !== originalRenderAll) {

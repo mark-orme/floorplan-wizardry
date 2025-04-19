@@ -20,7 +20,7 @@ export const implementationStatus = {
   // WASM Modules
   wasm: {
     implemented: false,
-    details: "Planned for implementation. Will use WebAssembly for geometry calculations and PDF export."
+    details: "Planned for implementation. Will use WebAssembly for geometry calculations and PDF export. Priority features include: polygon operations, path simplification, and vector-to-PDF conversion."
   },
   
   // Native-Style Gestures & Haptics

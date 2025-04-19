@@ -81,3 +81,25 @@ export const getDistance = (p1: Point, p2: Point): number => {
 export const formatDisplayDistance = (pixels: number): string => {
   return formatDistance(pixels);
 };
+
+/**
+ * JavaScript implementation of area calculation
+ * Will be replaced by WASM implementation in the future
+ * 
+ * @param points Array of points defining the polygon
+ * @returns Area of the polygon
+ */
+export const calculateAreaJs = (points: { x: number, y: number }[]): number => {
+  if (points.length < 3) return 0;
+  
+  let area = 0;
+  const n = points.length;
+  
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
+  
+  return Math.abs(area) / 2;
+};
