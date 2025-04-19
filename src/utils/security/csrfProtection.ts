@@ -20,11 +20,6 @@ export function generateCSRFToken(): string {
 }
 
 /**
- * Alias for generateCSRFToken for compatibility
- */
-export const generateCsrfToken = generateCSRFToken;
-
-/**
  * Get the current CSRF token
  * @returns Current CSRF token
  */
@@ -56,9 +51,7 @@ export function verifyCSRFToken(token: string): boolean {
   return token === storedToken;
 }
 
-/**
- * Alias for verifyCSRFToken for compatibility
- */
+// Add the alias for backward compatibility
 export const validateCsrfToken = verifyCSRFToken;
 
 /**
@@ -71,9 +64,7 @@ export function addCSRFToFormData(formData: FormData): FormData {
   return formData;
 }
 
-/**
- * Alias for addCSRFToFormData for compatibility
- */
+// Add the alias for backward compatibility
 export const addCsrfTokenToForm = addCSRFToFormData;
 
 /**
@@ -88,9 +79,7 @@ export function addCSRFToHeaders(headers: Record<string, string>): Record<string
   };
 }
 
-/**
- * Alias for addCSRFToHeaders for compatibility
- */
+// Add the alias for backward compatibility
 export const createCsrfHeaders = addCSRFToHeaders;
 
 /**
@@ -111,9 +100,7 @@ export function fetchWithCSRF(url: string, options: RequestInit = {}): Promise<R
   });
 }
 
-/**
- * Alias for fetchWithCSRF for compatibility
- */
+// Add the alias for backward compatibility
 export const fetchWithCsrf = fetchWithCSRF;
 
 /**

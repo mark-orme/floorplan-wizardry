@@ -3,8 +3,7 @@
  * HTTP Security Utilities
  * Functions for securing HTTP requests and responses
  */
-import { sanitizeURL } from './urlSanitization';
-import { generateCSRFToken, getCsrfToken } from './csrfProtection';
+import { getCsrfToken, generateCSRFToken } from './csrfProtection';
 
 /**
  * Secure fetch wrapper that adds security headers

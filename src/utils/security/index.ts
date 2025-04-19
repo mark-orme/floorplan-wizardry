@@ -16,15 +16,18 @@ import {
 import {
   generateCSRFToken,
   getCsrfToken,
-  verifyCSRFToken as validateCsrfToken,
-  addCSRFToFormData as addCsrfTokenToForm,
-  addCSRFToHeaders as createCsrfHeaders,
-  fetchWithCSRF as fetchWithCsrf
+  verifyCSRFToken,
+  validateCsrfToken,
+  addCSRFToFormData,
+  addCsrfTokenToForm,
+  addCSRFToHeaders,
+  createCsrfHeaders,
+  fetchWithCSRF,
+  fetchWithCsrf
 } from './csrfProtection';
 
 import {
   sanitizeHTML,
-  sanitizeHtml,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeCss,
@@ -56,10 +59,10 @@ export const Security = {
   CSRF: {
     generate: generateCSRFToken,
     get: getCsrfToken,
-    validate: validateCsrfToken,
-    addToForm: addCsrfTokenToForm,
-    createHeaders: createCsrfHeaders,
-    fetchWithProtection: fetchWithCsrf
+    validate: verifyCSRFToken,
+    addToForm: addCSRFToFormData,
+    createHeaders: addCSRFToHeaders,
+    fetchWithProtection: fetchWithCSRF
   },
   
   // HTML sanitization
@@ -101,14 +104,17 @@ export {
   // CSRF protection
   generateCSRFToken,
   getCsrfToken,
+  verifyCSRFToken,
   validateCsrfToken,
+  addCSRFToFormData,
   addCsrfTokenToForm,
+  addCSRFToHeaders,
   createCsrfHeaders,
+  fetchWithCSRF,
   fetchWithCsrf,
   
   // HTML sanitization
   sanitizeHTML,
-  sanitizeHtml,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeUrl,
