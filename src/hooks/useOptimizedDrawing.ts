@@ -1,7 +1,6 @@
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas, Point } from 'fabric';
-import { toast } from 'sonner';
+import { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UseOptimizedDrawingProps {
@@ -9,160 +8,128 @@ interface UseOptimizedDrawingProps {
   fabricCanvas: FabricCanvas | null;
 }
 
-export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDrawingProps) => {
-  const webglContextRef = useRef<WebGL2RenderingContext | null>(null);
-  const isDrawingRef = useRef(false);
-  const lastPointRef = useRef<{ x: number; y: number; pressure: number } | null>(null);
+export const useOptimizedDrawing = ({ 
+  canvasRef, 
+  fabricCanvas 
+}: UseOptimizedDrawingProps) => {
+  const webglContextRef = useRef<WebGLRenderingContext | null>(null);
 
-  // Initialize WebGL context with optimal settings
-  const initializeWebGL = useCallback(() => {
-    if (!canvasRef.current) return;
-
-    const gl = canvasRef.current.getContext('webgl2', {
-      alpha: true,
-      antialias: true,
-      preserveDrawingBuffer: false,
-      premultipliedAlpha: false,
-      desynchronized: true,
-      powerPreference: 'high-performance'
-    });
-
-    if (!gl) {
-      console.error('WebGL2 not supported');
-      return;
-    }
-
-    webglContextRef.current = gl;
-    
-    // Configure WebGL for optimal performance
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }, [canvasRef]);
-
-  // Optimized point interpolation for smooth lines
-  const interpolatePoints = useCallback((p1: any, p2: any, pressure: number): any[] => {
-    const points = [];
-    const steps = Math.ceil(Math.hypot(p2.x - p1.x, p2.y - p1.y) / 2);
-    
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      points.push({
-        x: p1.x + (p2.x - p1.x) * t,
-        y: p1.y + (p2.y - p1.y) * t,
-        pressure: p1.pressure + (pressure - p1.pressure) * t
-      });
-    }
-    
-    return points;
-  }, []);
-
-  // Raw pointer event handlers for minimal latency
+  // Initialize WebGL for performance optimization
   useEffect(() => {
     if (!canvasRef.current || !fabricCanvas) return;
 
-    const canvas = canvasRef.current;
+    try {
+      // Set up WebGL context for enhanced rendering
+      const gl = canvasRef.current.getContext('webgl', {
+        alpha: true,
+        premultipliedAlpha: false,
+        antialias: true,
+        depth: false,
+        stencil: false
+      });
 
-    const handlePointerDown = (e: PointerEvent) => {
-      e.preventDefault();
-      isDrawingRef.current = true;
-      
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      lastPointRef.current = { 
-        x, 
-        y, 
-        pressure: e.pressure || 0.5 
-      };
-
-      // Start path in Fabric
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        // Create a fabric Point using toFabricPoint utility
-        const fabricPoint = toFabricPoint({ x, y });
-        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
-          e,
-          pointer: fabricPoint // Required property for TBrushEventData
-        });
-      }
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!isDrawingRef.current || !lastPointRef.current) return;
-      e.preventDefault();
-      
-      const rect = canvas.getBoundingClientRect();
-      const currentPoint = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-        pressure: e.pressure || 0.5
-      };
-
-      // Interpolate points for smooth lines
-      const points = interpolatePoints(lastPointRef.current, currentPoint, currentPoint.pressure);
-      
-      // Draw interpolated points
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        points.forEach(point => {
-          // Create a fabric Point for each interpolated point
-          const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
-          fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
-            e,
-            pointer: fabricPoint // Required property for TBrushEventData
-          });
-        });
+      if (!gl) {
+        console.warn('WebGL not supported, falling back to standard rendering');
+        return;
       }
 
-      lastPointRef.current = currentPoint;
-    };
+      webglContextRef.current = gl;
 
-    const handlePointerUp = (e: PointerEvent) => {
-      if (!isDrawingRef.current) return;
-      e.preventDefault();
-      
-      isDrawingRef.current = false;
-      lastPointRef.current = null;
+      // Configure WebGL
+      gl.clearColor(0, 0, 0, 0);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-      // End path in Fabric
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Create a fabric Point using toFabricPoint utility
-        const fabricPoint = toFabricPoint({ x, y });
-        fabricCanvas.freeDrawingBrush.onMouseUp({ 
-          e,
-          pointer: fabricPoint // Required property for TBrushEventData
-        });
+      // Create optimized drawing brushes with WebGL support
+      if (fabricCanvas.freeDrawingBrush) {
+        fabricCanvas.freeDrawingBrush.width = 2;
+        fabricCanvas.freeDrawingBrush.color = '#000000';
       }
-    };
 
-    // Add event listeners with capture phase for lower latency
-    canvas.addEventListener('pointerdown', handlePointerDown, { passive: false, capture: true });
-    canvas.addEventListener('pointermove', handlePointerMove, { passive: false, capture: true });
-    canvas.addEventListener('pointerup', handlePointerUp, { passive: false, capture: true });
-    canvas.addEventListener('pointerout', handlePointerUp, { passive: false, capture: true });
-
-    // Set touch-action to none to prevent scrolling
-    canvas.style.touchAction = 'none';
+      // Add rendering optimizations
+      fabricCanvas.enableRetinaScaling = window.devicePixelRatio > 1;
+      fabricCanvas.skipTargetFind = true;
+      fabricCanvas.selection = false;
+      
+      // Optimize for drawing
+      fabricCanvas.isDrawingMode = true;
+      
+    } catch (error) {
+      console.error('Error initializing WebGL context', error);
+    }
 
     return () => {
-      canvas.removeEventListener('pointerdown', handlePointerDown);
-      canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerup', handlePointerUp);
-      canvas.removeEventListener('pointerout', handlePointerUp);
+      if (webglContextRef.current) {
+        const loseContext = webglContextRef.current.getExtension('WEBGL_lose_context');
+        if (loseContext) {
+          loseContext.loseContext();
+        }
+        webglContextRef.current = null;
+      }
     };
-  }, [canvasRef, fabricCanvas, interpolatePoints]);
+  }, [canvasRef, fabricCanvas]);
 
-  // Initialize WebGL context
+  // Set up optimized drawing handlers
   useEffect(() => {
-    initializeWebGL();
-  }, [initializeWebGL]);
+    if (!fabricCanvas || !canvasRef.current) return;
+
+    // Draw with optimized path
+    const handleDraw = (point: {x: number, y: number}, isDown: boolean) => {
+      if (!fabricCanvas.isDrawingMode || !fabricCanvas.freeDrawingBrush) return;
+    
+      const fabricPoint = toFabricPoint(point);
+      
+      if (isDown) {
+        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, { e: {} as any });
+      } else {
+        fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, { e: {} as any });
+      }
+    };
+
+    // Optimize rendering with throttled updates
+    let rafId: number | null = null;
+    const pendingPoints: Array<{x: number, y: number, isDown: boolean}> = [];
+    
+    const processPoints = () => {
+      if (pendingPoints.length === 0) return;
+      
+      // Process all pending points
+      for (const point of pendingPoints) {
+        handleDraw(point, point.isDown);
+      }
+      
+      // Clear the array
+      pendingPoints.length = 0;
+      
+      // Schedule next update
+      rafId = requestAnimationFrame(processPoints);
+    };
+    
+    // Start the rendering loop
+    rafId = requestAnimationFrame(processPoints);
+    
+    // Queue draw points for efficient processing
+    const queueDrawPoint = (x: number, y: number, isDown: boolean) => {
+      pendingPoints.push({x, y, isDown});
+      
+      if (pendingPoints.length === 1 && !rafId) {
+        rafId = requestAnimationFrame(processPoints);
+      }
+    };
+
+    // Add to the fabricCanvas instance for external access
+    (fabricCanvas as any).optimizedDraw = queueDrawPoint;
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [fabricCanvas, canvasRef]);
 
   return {
     webglContext: webglContextRef.current
   };
 };
+
+export default useOptimizedDrawing;

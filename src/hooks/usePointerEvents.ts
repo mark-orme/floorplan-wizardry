@@ -7,12 +7,18 @@ interface UsePointerEventsProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   fabricCanvas: FabricCanvas | null;
   enabled?: boolean;
+  onPressureChange?: (pressure: number) => void;
+  onTiltChange?: (tiltX: number, tiltY: number) => void;
+  onPointerMove?: (e: PointerEvent) => void;
 }
 
 export const usePointerEvents = ({ 
   canvasRef, 
   fabricCanvas, 
-  enabled = true 
+  enabled = true,
+  onPressureChange,
+  onTiltChange,
+  onPointerMove
 }: UsePointerEventsProps) => {
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number, y: number } | null>(null);
@@ -35,12 +41,21 @@ export const usePointerEvents = ({
       
       lastPointRef.current = { x, y };
 
+      // Handle pressure if available
+      if (onPressureChange && e.pressure) {
+        onPressureChange(e.pressure);
+      }
+      
+      // Handle tilt if available
+      if (onTiltChange && (e.tiltX || e.tiltY)) {
+        onTiltChange(e.tiltX, e.tiltY);
+      }
+
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
-          e,
-          pointer: fabricPoint
+          e
         });
       }
     };
@@ -55,12 +70,26 @@ export const usePointerEvents = ({
         y: e.clientY - rect.top
       };
 
+      // Handle pressure if available
+      if (onPressureChange && e.pressure) {
+        onPressureChange(e.pressure);
+      }
+      
+      // Handle tilt if available
+      if (onTiltChange && (e.tiltX || e.tiltY)) {
+        onTiltChange(e.tiltX, e.tiltY);
+      }
+      
+      // Call the onPointerMove callback if provided
+      if (onPointerMove) {
+        onPointerMove(e);
+      }
+
       // Draw point in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         const fabricPoint = toFabricPoint(currentPoint);
         fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
-          e,
-          pointer: fabricPoint
+          e
         });
       }
 
@@ -83,8 +112,7 @@ export const usePointerEvents = ({
         
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({
-          e,
-          pointer: fabricPoint
+          e
         });
       }
     };
@@ -103,7 +131,7 @@ export const usePointerEvents = ({
     canvas.style.touchAction = 'none';
 
     return () => {
-      // FIXED: Only remove event listeners if canvas exists
+      // Only remove event listeners if canvas exists
       if (canvas) {
         canvas.removeEventListener('pointerdown', handlePointerDown);
         canvas.removeEventListener('pointermove', handlePointerMove);
@@ -111,7 +139,7 @@ export const usePointerEvents = ({
         canvas.removeEventListener('pointerout', handlePointerOut);
       }
     };
-  }, [canvasRef, fabricCanvas, enabled]);
+  }, [canvasRef, fabricCanvas, enabled, onPressureChange, onTiltChange, onPointerMove]);
 
   return {
     isPointerDown

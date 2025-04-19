@@ -27,8 +27,10 @@ export function initializeDOMPurify(): void {
   DOMPurify.addHook('beforeSanitizeElements', (node) => {
     if (node.nodeName && node.nodeName.toLowerCase() === 'a') {
       // Force all links to open in a new tab and add noopener/noreferrer
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noopener noreferrer');
+      if ('setAttribute' in node) {
+        (node as Element).setAttribute('target', '_blank');
+        (node as Element).setAttribute('rel', 'noopener noreferrer');
+      }
     }
     return node;
   });
@@ -50,6 +52,34 @@ export function sanitizeHtml(html: string): string {
     return html.replace(/<\/?[^>]+(>|$)/g, '');
   } catch (error) {
     logger.error('Error sanitizing HTML', { error });
+    return '';
+  }
+}
+
+/**
+ * Sanitize CSS content to prevent CSS-based attacks
+ * @param css CSS string to sanitize
+ * @returns Sanitized CSS string
+ */
+export function sanitizeCss(css: string): string {
+  if (!css || typeof css !== 'string') return '';
+  
+  try {
+    // Remove potentially dangerous CSS constructs
+    return css
+      // Remove JavaScript URLs
+      .replace(/url\s*\(\s*javascript:/gi, 'url(data:text/plain,blocked-javascript:')
+      // Remove behavior property
+      .replace(/behavior\s*:/gi, 'no-behavior:')
+      // Remove expression, eval, and other JavaScript functions
+      .replace(/(expression|eval|function|alert|document)\s*\(/gi, 'no-js(')
+      // Replace @import with a comment
+      .replace(/@import/gi, '/* @import blocked */')
+      // Block any HTML comment tags (which could hide malicious code)
+      .replace(/<!--/g, '/* ')
+      .replace(/-->/g, ' */');
+  } catch (error) {
+    logger.error('Error sanitizing CSS', { error });
     return '';
   }
 }

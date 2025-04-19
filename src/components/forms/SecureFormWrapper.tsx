@@ -5,6 +5,7 @@
  */
 import React, { useEffect, useRef } from 'react';
 import { Security, secureForm } from '@/utils/security';
+import { sanitizeHtml } from '@/utils/security/InputSanitizationUtils';
 
 interface SecureFormWrapperProps {
   children: React.ReactNode;
@@ -43,7 +44,7 @@ export const SecureFormWrapper: React.FC<SecureFormWrapperProps> = ({
     formData.forEach((value, key) => {
       if (typeof value === 'string') {
         // Sanitize string inputs
-        data[key] = Security.Input.sanitizeHtml(value);
+        data[key] = sanitizeHtml(value);
         
         // Perform basic validation
         if (formRef.current) {

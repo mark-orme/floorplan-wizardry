@@ -82,6 +82,28 @@ export const addCsrfTokenToForm = (form: HTMLFormElement): void => {
 };
 
 /**
+ * Add CSRF token to headers
+ * @param headers Headers object or plain object to add the token to
+ * @returns Headers with CSRF token added
+ */
+export const addCSRFToHeaders = (headers: HeadersInit = {}): Headers | Record<string, string> => {
+  const token = getCsrfToken();
+  
+  if (headers instanceof Headers) {
+    const newHeaders = new Headers(headers);
+    newHeaders.append('X-CSRF-Token', token);
+    return newHeaders;
+  } else if (typeof headers === 'object') {
+    return {
+      ...headers,
+      'X-CSRF-Token': token
+    };
+  }
+  
+  return { 'X-CSRF-Token': token };
+};
+
+/**
  * Create headers with CSRF token
  * @param headers Optional existing headers
  * @returns Headers with CSRF token added
