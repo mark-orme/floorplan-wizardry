@@ -1,250 +1,100 @@
 
-/**
- * Security Utilities Index
- * Enhanced version with comprehensive security features
- */
+import { generateCSRFToken, getCSRFToken, verifyCSRFToken, addCSRFToFormData, addCSRFToHeaders, fetchWithCSRF, createFormProtection, CSRFProtection } from './enhancedCsrfProtection';
+import { rotateApiKeys, checkKeyAge } from './secretRotation';
+import { initializeSecurity } from './securityInit';
+import { scanForVulnerabilities } from './vulnerabilityScanner';
+import { secureLocalStorage } from './secureStorage';
+import { auditAccessAttempt } from './accessAuditing';
+import { enableOfflineEncryption } from './offlineEncryption';
+import { fetchSecurityEvents } from './securityAudit';
 
-// Import token management utils
-import { 
-  storeAuthToken, 
-  getAuthToken, 
-  isTokenExpired, 
-  clearAuthToken, 
-  refreshAuthToken 
-} from './secureTokenStorage';
-
-// Import HTML sanitization utils
-import {
-  sanitizeHtml,
-  sanitizeRichHtml,
-  sanitizeCanvasHtml,
-  sanitizeCss,
-  sanitizeUrl,
-  sanitizeText,
-  sanitizeObject,
-  sanitizeHTML
-} from './htmlSanitization';
-
-// Import file security utils
-import {
-  sanitizeFileName,
-  createSecureFileUploadHandler
-} from './FileSecurityUtils';
-
-// Import general security utils
-import {
-  secureForm,
-  initializeSecurity
-} from './SecurityUtils';
-
-// Import enhanced CSRF protection
-import {
-  generateCSRFToken,
-  getCSRFToken,
-  verifyCSRFToken,
-  addCSRFToFormData,
-  addCSRFToHeaders,
-  fetchWithCSRF,
-  createProtectedFormSubmitHandler,
-  useCSRFProtection
-} from './enhancedCsrfProtection';
-
-// Import enhanced rate limiting
-import {
-  isRateLimited,
-  getRateLimitStatus,
-  resetRateLimit,
-  createRateLimitedFunction,
-  rateLimitOptions
-} from './enhancedRateLimiting';
-
-// Import encryption utils
-import {
-  generateEncryptionKey,
-  encryptData,
-  decryptData
-} from './dataEncryption';
-
-// Import encrypted storage
-import {
-  saveEncrypted,
-  loadEncrypted,
-  deleteEncrypted,
-  listEncryptedKeys
-} from '../storage/encryptedIdbStore';
-
-// Import secret management
-import {
-  getSecret,
-  storeSecret,
-  deleteSecret,
-  listSecrets,
-  rotateSecret,
-  getSecretsToRotate
-} from './secretManager';
-
-// Import dependency manager
-import {
-  checkDependencyVulnerabilities,
-  generateVulnerabilityReport,
-  hasCriticalVulnerabilities
-} from './dependencyManager';
-
-// Create a unified Security namespace with enhanced features
-export const Security = {
-  // Token management
-  Token: {
-    store: storeAuthToken,
-    get: getAuthToken,
-    isExpired: isTokenExpired,
-    clear: clearAuthToken,
-    refresh: refreshAuthToken
-  },
-  
-  // CSRF protection 
-  CSRF: {
-    generate: generateCSRFToken,
-    get: getCSRFToken,
-    validate: verifyCSRFToken,
-    addToForm: addCSRFToFormData,
-    createHeaders: addCSRFToHeaders,
-    fetchWithProtection: fetchWithCSRF,
-    protectForm: createProtectedFormSubmitHandler,
-    useCSRFProtection
-  },
-  
-  // HTML sanitization
-  HTML: {
-    sanitize: sanitizeHtml,
-    sanitizeRich: sanitizeRichHtml,
-    sanitizeCanvas: sanitizeCanvasHtml,
-    sanitizeUrl: sanitizeUrl,
-    initializeSanitizer: () => console.log('DOMPurify initialized')
-  },
-  
-  // File handling
-  Files: {
-    sanitizeFileName,
-    createSecureFileUploadHandler
-  },
-  
-  // Form security
-  Forms: {
-    secure: secureForm
-  },
-  
-  // Rate limiting
-  RateLimiting: {
-    isLimited: isRateLimited,
-    getStatus: getRateLimitStatus,
-    reset: resetRateLimit,
-    createLimitedFunction: createRateLimitedFunction,
-    options: rateLimitOptions
-  },
-  
-  // Encryption
-  Encryption: {
-    generateKey: generateEncryptionKey,
-    encrypt: encryptData,
-    decrypt: decryptData
-  },
-  
-  // Secure storage
-  Storage: {
-    saveEncrypted,
-    loadEncrypted,
-    deleteEncrypted,
-    listKeys: listEncryptedKeys
-  },
-  
-  // Secret management
-  Secrets: {
-    get: getSecret,
-    store: storeSecret,
-    delete: deleteSecret,
-    list: listSecrets,
-    rotate: rotateSecret,
-    getToRotate: getSecretsToRotate
-  },
-  
-  // Dependency security
-  Dependencies: {
-    checkVulnerabilities: checkDependencyVulnerabilities,
-    generateReport: generateVulnerabilityReport,
-    hasCriticalVulnerabilities
-  },
-  
-  // General security
-  initialize: initializeSecurity
-};
-
-// Export everything individually
+// Re-export all security functions
 export {
-  // Token management exports
-  storeAuthToken,
-  getAuthToken,
-  isTokenExpired,
-  clearAuthToken,
-  refreshAuthToken,
-  
-  // CSRF protection exports
+  // CSRF Protection
   generateCSRFToken,
   getCSRFToken,
   verifyCSRFToken,
   addCSRFToFormData,
   addCSRFToHeaders,
   fetchWithCSRF,
-  createProtectedFormSubmitHandler,
-  useCSRFProtection,
+  createFormProtection,
+  CSRFProtection,
   
-  // HTML sanitization exports
-  sanitizeHtml,
-  sanitizeHTML,
-  sanitizeRichHtml,
-  sanitizeCanvasHtml,
-  sanitizeCss,
-  sanitizeUrl,
-  sanitizeText,
-  sanitizeObject,
+  // Secret Rotation
+  rotateApiKeys,
+  checkKeyAge,
   
-  // File handling exports
-  sanitizeFileName,
-  createSecureFileUploadHandler,
+  // Security Initialization
+  initializeSecurity,
   
-  // Form security exports
-  secureForm,
+  // Vulnerability Scanning
+  scanForVulnerabilities,
   
-  // Rate limiting exports
-  isRateLimited,
-  getRateLimitStatus,
-  resetRateLimit,
-  createRateLimitedFunction,
-  rateLimitOptions,
+  // Secure Storage
+  secureLocalStorage,
   
-  // Encryption exports
-  generateEncryptionKey,
-  encryptData,
-  decryptData,
+  // Access Auditing
+  auditAccessAttempt,
   
-  // Secure storage exports
-  saveEncrypted,
-  loadEncrypted,
-  deleteEncrypted,
-  listEncryptedKeys,
+  // Offline Encryption
+  enableOfflineEncryption,
   
-  // Secret management exports
-  getSecret,
-  storeSecret,
-  deleteSecret,
-  listSecrets,
-  rotateSecret,
-  getSecretsToRotate,
-  
-  // Dependency security exports
-  checkDependencyVulnerabilities,
-  generateVulnerabilityReport,
-  hasCriticalVulnerabilities,
-  
-  // General security
-  initializeSecurity
+  // Security Events
+  fetchSecurityEvents
 };
+
+/**
+ * Apply rate limiting to a function
+ * @param fn Function to rate limit
+ * @param limitMs Time window in milliseconds
+ * @param maxCalls Maximum number of calls allowed in time window
+ */
+export function rateLimit<T extends (...args: any[]) => any>(
+  fn: T,
+  limitMs: number = 1000,
+  maxCalls: number = 5
+): (...args: Parameters<T>) => ReturnType<T> | null {
+  const calls: number[] = [];
+  
+  return (...args: Parameters<T>): ReturnType<T> | null => {
+    const now = Date.now();
+    
+    // Remove calls outside of time window
+    while (calls.length > 0 && calls[0] < now - limitMs) {
+      calls.shift();
+    }
+    
+    // Check if we've exceeded the rate limit
+    if (calls.length >= maxCalls) {
+      console.warn('Rate limit exceeded');
+      return null;
+    }
+    
+    // Add this call to the record
+    calls.push(now);
+    
+    return fn(...args);
+  };
+}
+
+/**
+ * Initialize security features
+ */
+export function initializeSecurityFeatures(): void {
+  // Generate initial CSRF token
+  generateCSRFToken();
+  
+  // Initialize offline encryption
+  enableOfflineEncryption();
+  
+  // Set up form protection
+  if (typeof document !== 'undefined') {
+    createFormProtection();
+  }
+  
+  // Check API key age
+  checkKeyAge();
+  
+  // Log security initialization
+  console.info('Security features initialized');
+}

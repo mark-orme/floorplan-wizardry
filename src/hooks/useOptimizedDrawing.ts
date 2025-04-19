@@ -1,144 +1,152 @@
 
-/**
- * Hook for optimized drawing with feedback
- */
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 import { usePerformanceMonitoring } from './usePerformanceMonitoring';
-import logger from '@/utils/logger';
 
-interface UseOptimizedDrawingProps {
+// Add DrawingMode.PENCIL if it doesn't exist in the enum
+// This is a temporary fix until the DrawingMode enum is updated
+const ExtendedDrawingMode = {
+  ...DrawingMode,
+  PENCIL: 'PENCIL' as DrawingMode
+};
+
+export interface UseOptimizedDrawingProps {
   canvas: FabricCanvas | null;
-  currentTool: string;
-  lineThickness: number;
-  lineColor: string;
-  enableOptimizations?: boolean;
+  currentTool: DrawingMode;
+  lineThickness?: number;
+  lineColor?: string;
+  canvasRef?: React.MutableRefObject<FabricCanvas | null>;
 }
 
 export function useOptimizedDrawing({
   canvas,
   currentTool,
-  lineThickness,
-  lineColor,
-  enableOptimizations = true
+  lineThickness = 2,
+  lineColor = '#000000',
+  canvasRef
 }: UseOptimizedDrawingProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [objectCount, setObjectCount] = useState(0);
-  const lastPositionRef = useRef({ x: 0, y: 0 });
-  const throttleTimerRef = useRef<number | null>(null);
+  const drawingRef = useRef<{
+    path?: FabricObject;
+    points: { x: number; y: number }[];
+  }>({ points: [] });
   
-  // Use performance monitoring
-  const { startMonitoring, stopMonitoring, metrics } = usePerformanceMonitoring();
+  const { metrics, startMonitoring, stopMonitoring } = usePerformanceMonitoring();
   
-  // Initialize drawing settings
+  // Set drawing mode based on current tool
   useEffect(() => {
     if (!canvas) return;
     
-    // Set up canvas for drawing
-    canvas.isDrawingMode = currentTool === 'DRAW';
-    if (canvas.freeDrawingBrush) {
+    // Enable drawing mode for free drawing tools
+    canvas.isDrawingMode = currentTool === DrawingMode.DRAW || 
+                           currentTool === ExtendedDrawingMode.PENCIL;
+    
+    if (canvas.isDrawingMode) {
       canvas.freeDrawingBrush.width = lineThickness;
       canvas.freeDrawingBrush.color = lineColor;
     }
     
-    // Update object count
-    setObjectCount(canvas.getObjects().length);
-    
-    // Start performance monitoring
-    if (enableOptimizations) {
-      startMonitoring(canvas);
-    }
+    // Start monitoring performance
+    startMonitoring(canvas);
     
     return () => {
-      if (enableOptimizations) {
-        stopMonitoring();
-      }
+      stopMonitoring();
     };
-  }, [canvas, currentTool, lineThickness, lineColor, enableOptimizations, startMonitoring, stopMonitoring]);
+  }, [canvas, currentTool, lineThickness, lineColor, startMonitoring, stopMonitoring]);
   
-  // Event handler for mouse down
+  // Track object count
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const updateObjectCount = () => {
+      setObjectCount(canvas.getObjects().length);
+    };
+    
+    canvas.on('object:added', updateObjectCount);
+    canvas.on('object:removed', updateObjectCount);
+    canvas.on('canvas:cleared', updateObjectCount);
+    
+    updateObjectCount();
+    
+    return () => {
+      canvas.off('object:added', updateObjectCount);
+      canvas.off('object:removed', updateObjectCount);
+      canvas.off('canvas:cleared', updateObjectCount);
+    };
+  }, [canvas]);
+  
+  // Handle mouse down event
   const handleMouseDown = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || currentTool !== 'DRAW') return;
+    if (!canvas || currentTool !== ExtendedDrawingMode.PENCIL) return;
     
     setIsDrawing(true);
+    drawingRef.current.points = [];
+    
     const pointer = canvas.getPointer(event);
-    lastPositionRef.current = { x: pointer.x, y: pointer.y };
+    drawingRef.current.points.push({ x: pointer.x, y: pointer.y });
     
-    // Start monitoring performance during drawing
-    if (enableOptimizations) {
-      startMonitoring(canvas);
-    }
-  }, [currentTool, enableOptimizations, startMonitoring]);
-  
-  // Event handler for mouse move
-  const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || !isDrawing || currentTool !== 'DRAW') return;
-    
-    // Throttle drawing for better performance
-    if (throttleTimerRef.current !== null) return;
-    
-    throttleTimerRef.current = window.setTimeout(() => {
-      throttleTimerRef.current = null;
-      
-      const pointer = canvas.getPointer(event);
-      const currentPosition = { x: pointer.x, y: pointer.y };
-      
-      // Draw line
-      const line = new Line(
-        [lastPositionRef.current.x, lastPositionRef.current.y, currentPosition.x, currentPosition.y],
-        {
+    // Create a new path
+    try {
+      // Safely create a fabric.Path without direct reference
+      // Using fabric namespace would cause an error, so we use canvas._objects as a workaround
+      const fabricLib = (canvas as any).constructor;
+      if (fabricLib && fabricLib.Path) {
+        const path = new fabricLib.Path(`M ${pointer.x} ${pointer.y}`, {
           stroke: lineColor,
           strokeWidth: lineThickness,
-          selectable: false,
-          evented: false
-        }
-      );
-      
-      canvas.add(line);
-      canvas.renderAll();
-      
-      // Update last position
-      lastPositionRef.current = currentPosition;
-      
-      // Update object count occasionally
-      if (Math.random() < 0.1) {
-        setObjectCount(canvas.getObjects().length);
+          fill: '',
+          strokeLineCap: 'round',
+          strokeLineJoin: 'round'
+        });
+        
+        drawingRef.current.path = path;
+        canvas.add(path);
       }
-    }, 10);
-  }, [isDrawing, currentTool, lineColor, lineThickness]);
+    } catch (error) {
+      console.error('Error creating path:', error);
+    }
+  }, [currentTool, lineColor, lineThickness]);
   
-  // Event handler for mouse up
+  // Handle mouse move event
+  const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || !isDrawing || currentTool !== ExtendedDrawingMode.PENCIL) return;
+    
+    const pointer = canvas.getPointer(event);
+    drawingRef.current.points.push({ x: pointer.x, y: pointer.y });
+    
+    if (drawingRef.current.path) {
+      const path = drawingRef.current.path as any;
+      const points = drawingRef.current.points;
+      
+      // Build the path string
+      let pathString = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        pathString += ` L ${points[i].x} ${points[i].y}`;
+      }
+      
+      if (path.setPath) {
+        path.setPath(pathString);
+        canvas.requestRenderAll();
+      }
+    }
+  }, [isDrawing, currentTool]);
+  
+  // Handle mouse up event
   const handleMouseUp = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || currentTool !== 'DRAW') return;
+    if (!canvas || !isDrawing || currentTool !== ExtendedDrawingMode.PENCIL) return;
     
     setIsDrawing(false);
     
-    // Stop performance monitoring
-    if (enableOptimizations) {
-      stopMonitoring();
+    // Finalize the path
+    if (drawingRef.current.path) {
+      canvas.fire('object:modified', { target: drawingRef.current.path });
+      drawingRef.current.path = undefined;
     }
     
-    // Clear throttle timer
-    if (throttleTimerRef.current !== null) {
-      clearTimeout(throttleTimerRef.current);
-      throttleTimerRef.current = null;
-    }
-    
-    // Update object count
-    setObjectCount(canvas.getObjects().length);
-    
-    // Log drawing completion for debugging
-    logger.debug(`Drawing complete with ${canvas.getObjects().length} objects`);
-  }, [currentTool, enableOptimizations, stopMonitoring]);
-  
-  // Clean up throttle timer on unmount
-  useEffect(() => {
-    return () => {
-      if (throttleTimerRef.current !== null) {
-        clearTimeout(throttleTimerRef.current);
-      }
-    };
-  }, []);
+    drawingRef.current.points = [];
+  }, [isDrawing, currentTool]);
   
   return {
     isDrawing,

@@ -1,36 +1,23 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-interface UseSupabaseFloorPlansReturn {
-  isLoading: boolean;
-  error: string;
-  floorPlans: FloorPlan[];
-  currentFloorPlan: FloorPlan | null;
-  listFloorPlans: () => Promise<FloorPlan[]>;
-  getFloorPlan: (id: string) => Promise<FloorPlan | null>;
-  createFloorPlan: (floorPlan: Partial<FloorPlan>) => Promise<FloorPlan | null>;
-  updateFloorPlan: (id: string, floorPlan: Partial<FloorPlan>) => Promise<boolean>;
-  deleteFloorPlan: (id: string) => Promise<boolean>;
-}
-
-export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+export const useSupabaseFloorPlans = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [currentFloorPlan, setCurrentFloorPlan] = useState<FloorPlan | null>(null);
-  const { user } = useAuth();
+  const [currentFloorPlan, setCurrentFloorPlan] = useState<FloorPlan>({
+    id: '',
+    name: '',
+    data: {},
+    userId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
 
-  // List floor plans
   const listFloorPlans = useCallback(async (): Promise<FloorPlan[]> => {
-    if (!user) {
-      setError('User not authenticated');
-      return [];
-    }
-    
     setIsLoading(true);
     setError('');
     
@@ -38,41 +25,34 @@ export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
       const { data, error } = await supabase
         .from('floor_plans')
         .select('*')
-        .eq('user_id', user.id);
+        .order('updated_at', { ascending: false });
       
       if (error) {
         throw error;
       }
       
-      // Transform the data to match our FloorPlan interface
-      const transformedData: FloorPlan[] = data.map(item => ({
-        id: item.id,
-        name: item.name,
-        data: item.data,
-        userId: item.user_id,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at
+      const typedFloorPlans = data.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        data: plan.data,
+        userId: plan.user_id,
+        createdAt: plan.created_at || new Date().toISOString(),
+        updatedAt: plan.updated_at || new Date().toISOString(),
       }));
       
-      setFloorPlans(transformedData);
-      return transformedData;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error fetching floor plans';
-      setError(errorMessage);
-      console.error('Error fetching floor plans:', err);
+      setFloorPlans(typedFloorPlans);
+      return typedFloorPlans;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load floor plans';
+      setError(message);
+      toast.error(message);
       return [];
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
   
-  // Get a single floor plan by ID
   const getFloorPlan = useCallback(async (id: string): Promise<FloorPlan | null> => {
-    if (!user) {
-      setError('User not authenticated');
-      return null;
-    }
-    
     setIsLoading(true);
     setError('');
     
@@ -81,19 +61,12 @@ export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
         .from('floor_plans')
         .select('*')
         .eq('id', id)
-        .eq('user_id', user.id)
         .single();
       
       if (error) {
         throw error;
       }
       
-      if (!data) {
-        setError('Floor plan not found');
-        return null;
-      }
-      
-      // Transform to match our interface
       const floorPlan: FloorPlan = {
         id: data.id,
         name: data.name,
@@ -105,111 +78,118 @@ export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
       
       setCurrentFloorPlan(floorPlan);
       return floorPlan;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error fetching floor plan';
-      setError(errorMessage);
-      console.error('Error fetching floor plan:', err);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load floor plan';
+      setError(message);
+      toast.error(message);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
   
-  // Create a new floor plan
   const createFloorPlan = useCallback(async (floorPlan: Partial<FloorPlan>): Promise<FloorPlan | null> => {
-    if (!user) {
-      setError('User not authenticated');
-      return null;
-    }
-    
     setIsLoading(true);
     setError('');
     
     try {
+      // Get user ID
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData?.user) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data, error } = await supabase
         .from('floor_plans')
-        .insert({
-          name: floorPlan.name || 'Untitled Floor Plan',
-          data: floorPlan.data || {},
-          user_id: user.id
-        });
+        .insert([
+          {
+            name: floorPlan.name || 'Untitled Floor Plan',
+            data: floorPlan.data || {},
+            user_id: userData.user.id
+          }
+        ])
+        .select()
+        .single();
       
       if (error) {
         throw error;
       }
       
-      // Fetch the created floor plan to get all fields
-      if (data && data.length > 0) {
-        const newFloorPlan = await getFloorPlan(data[0].id);
-        if (newFloorPlan) {
-          toast.success('Floor plan created successfully');
-          return newFloorPlan;
-        }
-      }
+      const newFloorPlan: FloorPlan = {
+        id: data.id,
+        name: data.name,
+        data: data.data,
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
       
-      setError('Error creating floor plan');
-      return null;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error creating floor plan';
-      setError(errorMessage);
-      console.error('Error creating floor plan:', err);
-      toast.error(errorMessage);
+      setFloorPlans(prev => [newFloorPlan, ...prev]);
+      setCurrentFloorPlan(newFloorPlan);
+      
+      toast.success('Floor plan created');
+      return newFloorPlan;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create floor plan';
+      setError(message);
+      toast.error(message);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user, getFloorPlan]);
+  }, []);
   
-  // Update an existing floor plan
-  const updateFloorPlan = useCallback(async (id: string, floorPlan: Partial<FloorPlan>): Promise<boolean> => {
-    if (!user) {
-      setError('User not authenticated');
-      return false;
-    }
-    
+  const updateFloorPlan = useCallback(async (id: string, floorPlan: Partial<FloorPlan>): Promise<FloorPlan | null> => {
     setIsLoading(true);
     setError('');
     
     try {
-      const { error } = await supabase
+      const updates: any = {};
+      if (floorPlan.name !== undefined) updates.name = floorPlan.name;
+      if (floorPlan.data !== undefined) updates.data = floorPlan.data;
+      
+      const { data, error } = await supabase
         .from('floor_plans')
-        .update({
-          name: floorPlan.name,
-          data: floorPlan.data,
-          updated_at: new Date().toISOString()
-        })
+        .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .select()
+        .single();
       
       if (error) {
         throw error;
       }
       
-      // Refresh current floor plan if it's the one being updated
-      if (currentFloorPlan && currentFloorPlan.id === id) {
-        getFloorPlan(id);
+      const updatedFloorPlan: FloorPlan = {
+        id: data.id,
+        name: data.name,
+        data: data.data,
+        userId: data.user_id,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      setFloorPlans(prev => 
+        prev.map(p => p.id === id ? updatedFloorPlan : p)
+      );
+      
+      if (currentFloorPlan.id === id) {
+        setCurrentFloorPlan(updatedFloorPlan);
       }
       
-      toast.success('Floor plan updated successfully');
-      return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error updating floor plan';
-      setError(errorMessage);
-      console.error('Error updating floor plan:', err);
-      toast.error(errorMessage);
-      return false;
+      toast.success('Floor plan updated');
+      return updatedFloorPlan;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update floor plan';
+      setError(message);
+      toast.error(message);
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentFloorPlan, getFloorPlan]);
+  }, [currentFloorPlan.id]);
   
-  // Delete a floor plan
   const deleteFloorPlan = useCallback(async (id: string): Promise<boolean> => {
-    if (!user) {
-      setError('User not authenticated');
-      return false;
-    }
-    
     setIsLoading(true);
     setError('');
     
@@ -217,42 +197,41 @@ export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
       const { error } = await supabase
         .from('floor_plans')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
       
       if (error) {
         throw error;
       }
       
-      // Update local state
-      setFloorPlans(prevFloorPlans => prevFloorPlans.filter(fp => fp.id !== id));
+      setFloorPlans(prev => prev.filter(p => p.id !== id));
       
-      // Clear current floor plan if it's the one being deleted
-      if (currentFloorPlan && currentFloorPlan.id === id) {
-        setCurrentFloorPlan(null);
+      if (currentFloorPlan.id === id) {
+        setCurrentFloorPlan({
+          id: '',
+          name: '',
+          data: {},
+          userId: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
       }
       
+      toast.success('Floor plan deleted');
       return true;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error deleting floor plan';
-      setError(errorMessage);
-      console.error('Error deleting floor plan:', err);
-      toast.error(errorMessage);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete floor plan';
+      setError(message);
+      toast.error(message);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentFloorPlan]);
+  }, [currentFloorPlan.id]);
   
-  // Fetch floor plans on component mount or when user changes
+  // Load floor plans on init
   useEffect(() => {
-    if (user) {
-      listFloorPlans();
-    } else {
-      setFloorPlans([]);
-      setCurrentFloorPlan(null);
-    }
-  }, [user, listFloorPlans]);
+    listFloorPlans();
+  }, [listFloorPlans]);
   
   return {
     isLoading,
@@ -265,4 +244,4 @@ export function useSupabaseFloorPlans(): UseSupabaseFloorPlansReturn {
     updateFloorPlan,
     deleteFloorPlan
   };
-}
+};

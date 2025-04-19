@@ -1,79 +1,84 @@
 
-/**
- * Updated FloorPlans page component
- * Uses the enhanced canvas with improved grid and drawing integration
- */
-import React, { useEffect, useState } from "react";
-import { CanvasApp } from "@/components/canvas/CanvasApp";
-import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { resetGridProgress } from "@/utils/gridManager";
-import { toast } from "sonner";
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingProvider } from "@/contexts/DrawingContext";
-import { CanvasProvider } from "@/contexts/CanvasContext";
-import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
-import { DrawingMode } from "@/constants/drawingModes";
+import React, { useState, useEffect } from 'react';
+import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
+import { FloorPlanList } from '@/components/FloorPlanList';
+import { Button } from '@/components/ui/button';
+import { Plus, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { toast } from 'sonner';
 
-/**
- * FloorPlans page component
- * Provides the floor plan editor with proper context providers
- * @returns {JSX.Element} Rendered component
- */
-const FloorPlans = () => {
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-  const [enableSync, setEnableSync] = useState<boolean>(true);
+export default function FloorPlans() {
+  const { floorPlans, isLoading, error, listFloorPlans, createFloorPlan } = useSupabaseFloorPlans();
+  const [isCreating, setIsCreating] = useState(false);
+  const navigate = useNavigate();
 
-  // Reset canvas initialization state when the page loads
   useEffect(() => {
-    resetInitializationState();
-    resetGridProgress();
+    // Refresh floor plans on mount
+    listFloorPlans();
+  }, [listFloorPlans]);
+
+  const handleSelectFloorPlan = (floorPlan: FloorPlan) => {
+    navigate(`/floorplans/${floorPlan.id}`);
+  };
+
+  const handleCreateFloorPlan = async () => {
+    setIsCreating(true);
     
-    // Log a welcome message
-    toast.success("Floor Plan Editor loaded with enhanced drawing tools", {
-      duration: 3000,
-      id: "floor-plan-welcome"
-    });
-    
-    // Enable realtime sync by default
-    if (!enableSync) {
-      setEnableSync(true);
+    try {
+      const newFloorPlan = await createFloorPlan({
+        name: `Floor Plan ${floorPlans.length + 1}`,
+        data: {}
+      });
+      
+      if (newFloorPlan) {
+        navigate(`/floorplans/${newFloorPlan.id}`);
+      }
+    } catch (err) {
+      toast.error('Failed to create floor plan');
+    } finally {
+      setIsCreating(false);
     }
-  }, [enableSync]);
-  
+  };
+
   return (
-    <main className="flex flex-col w-full min-h-screen bg-background">
-      <div className="flex items-center justify-between p-2 bg-muted/30 border-b">
-        <h1 className="text-xl font-bold">Floor Plan Editor</h1>
-        
-        {/* Realtime collaboration toggle */}
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">
-            Realtime Collaboration
-          </span>
-          <button 
-            className={`px-3 py-1 rounded-md text-sm ${enableSync ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-            onClick={() => setEnableSync(!enableSync)}
-          >
-            {enableSync ? 'Enabled' : 'Disabled'}
-          </button>
-        </div>
+    <div className="container py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Floor Plans</h1>
+        <Button 
+          onClick={handleCreateFloorPlan} 
+          disabled={isCreating}
+        >
+          {isCreating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2 h-4 w-4" />
+              New Floor Plan
+            </>
+          )}
+        </Button>
       </div>
       
-      <div className="flex-1 overflow-hidden">
-        <DrawingProvider>
-          <CanvasProvider>
-            <CanvasControllerProvider>
-              <CanvasApp 
-                setCanvas={setCanvas}
-                tool={DrawingMode.SELECT}
-                enableSync={enableSync}
-              />
-            </CanvasControllerProvider>
-          </CanvasProvider>
-        </DrawingProvider>
-      </div>
-    </main>
+      {error && (
+        <div className="mb-4 p-4 text-red-500 bg-red-50 rounded-md">
+          {error}
+        </div>
+      )}
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <FloorPlanList 
+          floorPlans={floorPlans} 
+          onSelect={handleSelectFloorPlan}
+        />
+      )}
+    </div>
   );
-};
-
-export default FloorPlans;
+}

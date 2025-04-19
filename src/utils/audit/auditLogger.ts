@@ -1,172 +1,134 @@
 
-/**
- * Audit Logger
- * 
- * This module provides functions for logging audit events
- * and retrieving audit logs.
- */
 import { supabase } from '@/lib/supabase';
-import { AuditLogEntry } from '@/types/security-types';
-import logger from '@/utils/logger';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Audit Event Types
- * Enum for categorizing audit events
- */
 export enum AuditEventType {
-  USER_AUTH = 'user_authentication',
-  USER_ACTION = 'user_action',
-  DATA_ACCESS = 'data_access',
-  ADMIN_ACTION = 'admin_action',
-  SYSTEM_EVENT = 'system_event',
-  SECURITY_WARNING = 'security_warning',
-  SECURITY_VIOLATION = 'security_violation'
+  USER_LOGIN = 'user_login',
+  USER_LOGOUT = 'user_logout',
+  USER_REGISTER = 'user_register',
+  FLOOR_PLAN_CREATE = 'floor_plan_create',
+  FLOOR_PLAN_UPDATE = 'floor_plan_update',
+  FLOOR_PLAN_DELETE = 'floor_plan_delete',
+  FLOOR_PLAN_EXPORT = 'floor_plan_export',
+  SECURITY_VIOLATION = 'security_violation',
+  SECURITY_CHECK = 'security_check',
+  API_ACCESS = 'api_access',
+  PERMISSION_CHANGE = 'permission_change',
+  SECRET_ROTATION = 'secret_rotation',
+  CONFIG_CHANGE = 'config_change'
 }
 
-/**
- * Log a security event
- * 
- * @param eventType Type of security event
- * @param details Event details
- * @returns Boolean indicating if logging was successful
- */
-export const logSecurityEvent = async (
-  eventType: AuditEventType, 
-  details: Record<string, unknown>
-): Promise<boolean> => {
+export enum AuditEventSeverity {
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  CRITICAL = 'critical'
+}
+
+export interface AuditEventData {
+  type: AuditEventType;
+  userId?: string;
+  resourceId?: string;
+  description: string;
+  metadata?: Record<string, any>;
+  severity?: AuditEventSeverity;
+  sourceIp?: string;
+  userAgent?: string;
+}
+
+export async function logAuditEvent(eventData: AuditEventData): Promise<boolean> {
   try {
-    logger.info(`Security event: ${eventType}`, details);
+    const { 
+      type, 
+      userId = null, 
+      resourceId = null, 
+      description, 
+      metadata = {}, 
+      severity = AuditEventSeverity.INFO,
+      sourceIp = null,
+      userAgent = null
+    } = eventData;
     
-    // Attempt to log to Supabase if available
-    try {
-      const { error } = await supabase
-        .from('security_logs')
-        .insert({
-          event_type: eventType,
-          details,
-          timestamp: new Date()
-        });
-        
-      if (error) {
-        logger.warn('Failed to log security event to Supabase', { error });
-      }
-    } catch (err) {
-      // Silent fallback - log locally only
-      logger.debug('Supabase logging failed, using local logging only');
+    // Get current user if userId not provided
+    let effectiveUserId = userId;
+    if (!effectiveUserId) {
+      const { data } = await supabase.auth.getUser();
+      effectiveUserId = data?.user?.id || null;
     }
     
-    return true;
-  } catch (err) {
-    logger.error('Error logging security event:', err);
-    return false;
-  }
-};
-
-/**
- * Log an audit event
- * 
- * @param userId User ID
- * @param action Action performed
- * @param resource Resource affected
- * @param status Success or failure
- * @param details Additional details
- * @param ipAddress IP address of the request
- * @returns Boolean indicating if logging was successful
- */
-export async function logAuditEvent(
-  userId: string,
-  action: string,
-  resource: string,
-  status: 'success' | 'failure',
-  details: Record<string, unknown> = {},
-  ipAddress: string = '0.0.0.0'
-): Promise<boolean> {
-  try {
-    const auditLogEntry: AuditLogEntry = {
-      timestamp: new Date(),
-      userId,
-      action,
-      resource,
-      status,
-      details,
-      ipAddress
-    };
+    // Get client IP if not provided
+    const clientIp = sourceIp || 'unknown';
+    
+    // Get user agent if not provided
+    const clientUserAgent = userAgent || navigator.userAgent || 'unknown';
     
     const { error } = await supabase
       .from('audit_logs')
-      .insert(auditLogEntry);
+      .insert({
+        id: uuidv4(),
+        event_type: type,
+        user_id: effectiveUserId,
+        resource_id: resourceId,
+        description,
+        metadata,
+        severity,
+        source_ip: clientIp,
+        user_agent: clientUserAgent,
+        created_at: new Date().toISOString()
+      });
     
     if (error) {
-      logger.error('Failed to log audit event:', error);
+      console.error('Error logging audit event:', error);
       return false;
     }
     
     return true;
-  } catch (err) {
-    logger.error('Error in audit logging:', err);
+  } catch (error) {
+    console.error('Unexpected error logging audit event:', error);
     return false;
   }
 }
 
-/**
- * Get audit logs for a user
- * 
- * @param userId User ID
- * @param limit Maximum number of logs to return
- * @returns Array of audit log entries
- */
-export async function getUserAuditLogs(
-  userId: string,
-  limit: number = 50
-): Promise<AuditLogEntry[]> {
+export async function getAuditLogs(
+  limit: number = 50, 
+  userId?: string,
+  eventType?: AuditEventType, 
+  fromDate?: Date,
+  toDate?: Date
+): Promise<any[]> {
   try {
-    // Using correct Supabase API pattern
-    const { data, error } = await supabase
+    let query = supabase
       .from('audit_logs')
       .select('*')
-      .eq('userId', userId)
-      .order('timestamp', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(limit);
     
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    
+    if (eventType) {
+      query = query.eq('event_type', eventType);
+    }
+    
+    if (fromDate) {
+      query = query.gte('created_at', fromDate.toISOString());
+    }
+    
+    if (toDate) {
+      query = query.lte('created_at', toDate.toISOString());
+    }
+    
+    const { data, error } = await query;
+    
     if (error) {
-      logger.error('Failed to retrieve audit logs:', error);
+      console.error('Error fetching audit logs:', error);
       return [];
     }
     
-    return data as AuditLogEntry[];
-  } catch (err) {
-    logger.error('Error retrieving audit logs:', err);
-    return [];
-  }
-}
-
-/**
- * Get audit logs for a resource
- * 
- * @param resource Resource name
- * @param limit Maximum number of logs to return
- * @returns Array of audit log entries
- */
-export async function getResourceAuditLogs(
-  resource: string,
-  limit: number = 50
-): Promise<AuditLogEntry[]> {
-  try {
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select('*')
-      .eq('resource', resource)
-      .order('timestamp', { ascending: false })
-      .limit(limit);
-    
-    if (error) {
-      logger.error('Failed to retrieve audit logs:', error);
-      return [];
-    }
-    
-    return data as AuditLogEntry[];
-  } catch (err) {
-    logger.error('Error retrieving audit logs:', err);
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error fetching audit logs:', error);
     return [];
   }
 }

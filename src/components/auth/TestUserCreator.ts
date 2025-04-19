@@ -1,137 +1,107 @@
 
-/**
- * TestUserCreator
- * Utility for creating test users during development
- */
 import { supabase } from '@/lib/supabase';
-import { UserRole } from '@/lib/supabase';
 import { toast } from 'sonner';
-import logger from '@/utils/logger';
 
-export const testUsers = [
-  {
-    email: 'photographer@example.com',
-    password: 'test1234',
-    role: UserRole.PHOTOGRAPHER,
-    label: 'Photographer'
-  },
-  {
-    email: 'processor@example.com',
-    password: 'test1234',
-    role: UserRole.PROCESSING_MANAGER,
-    label: 'Processor'
-  },
-  {
-    email: 'manager@example.com',
-    password: 'test1234',
-    role: UserRole.MANAGER,
-    label: 'Manager'
-  }
-];
+interface TestUserCredentials {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+}
 
-/**
- * Create test users for development purposes
- */
-export const createTestUsers = async (): Promise<void> => {
-  if (process.env.NODE_ENV !== 'development') {
-    logger.warn('Test users are only created in development environment');
-    return;
-  }
-
+export async function createTestUser(credentials: TestUserCredentials): Promise<boolean> {
   try {
-    // Check if users already exist
-    for (const testUser of testUsers) {
-      const { data: existingUsers, error: fetchError } = await supabase
-        .from('users')
-        .select()
-        .eq('email', testUser.email)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        logger.error(`Error checking for existing user ${testUser.email}:`, fetchError);
-        continue;
+    // First check if user exists
+    const { data: existingUsers, error: fetchError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', credentials.email);
+    
+    if (fetchError) {
+      console.error('Error checking for existing user:', fetchError);
+      toast.error('Failed to check for existing user');
+      return false;
+    }
+    
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('User already exists');
+      toast.info('Test user already exists');
+      return true;
+    }
+    
+    // Create user with Supabase auth
+    // Note: We're using the proper Supabase auth method here
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: credentials.email,
+      password: credentials.password,
+      options: {
+        data: {
+          first_name: credentials.firstName,
+          last_name: credentials.lastName,
+          role: credentials.role || 'user'
+        }
       }
-
-      // Skip if user already exists
-      if (existingUsers) {
-        logger.info(`Test user ${testUser.email} already exists`);
-        continue;
-      }
-
-      // Create auth user with proper parameters - Fix by using signUp instead of signInWithPassword
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: testUser.email,
-        password: testUser.password
-      });
-
-      if (signUpError) {
-        logger.error(`Error creating auth user ${testUser.email}:`, signUpError);
-        continue;
-      }
-
-      // Get user ID from the newly created user
-      const { data: userData } = await supabase.auth.getUser();
+    });
+    
+    if (authError) {
+      console.error('Error creating test user auth:', authError);
+      toast.error(`Failed to create test user: ${authError.message}`);
+      return false;
+    }
+    
+    // Create user profile
+    if (authData.user) {
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert([
+          {
+            user_id: authData.user.id,
+            role: credentials.role || 'user'
+          }
+        ]);
       
-      const userId = userData?.user?.id;
-      if (!userId) {
-        logger.error(`No user ID returned for ${testUser.email}`);
-        continue;
+      if (profileError) {
+        console.error('Error creating user profile:', profileError);
+        toast.error('Failed to create user profile');
+        return false;
       }
-
-      // Create user profile
-      const { error } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          email: testUser.email,
-          role: testUser.role,
-          name: testUser.email.split('@')[0],
-          created_at: new Date().toISOString()
-        });
-        
-      if (error) {
-        logger.error(`Error creating profile for ${testUser.email}:`, error);
-      } else {
-        logger.info(`Created test user: ${testUser.email} (${testUser.role})`);
-      }
+      
+      toast.success('Test user created successfully');
+      return true;
     }
-
-    logger.info('Test user creation completed');
+    
+    return false;
   } catch (error) {
-    logger.error('Error creating test users:', error);
-    toast.error('Failed to create test users');
+    console.error('Unexpected error creating test user:', error);
+    toast.error('Unexpected error creating test user');
+    return false;
   }
-};
+}
 
-/**
- * Verify if test users exist and are accessible
- */
-export const verifyTestUsers = async (): Promise<boolean[]> => {
-  const results: boolean[] = [];
-
-  for (const testUser of testUsers) {
-    try {
-      // Try to sign in with each test user with proper parameters
-      const { error } = await supabase.auth.signInWithPassword({
-        email: testUser.email,
-        password: testUser.password
-      });
-
-      if (error) {
-        logger.error(`Test user ${testUser.email} verification failed:`, error);
-        results.push(false);
-      } else {
-        logger.info(`Test user ${testUser.email} verified successfully`);
-        results.push(true);
-
-        // Sign out immediately
-        await supabase.auth.signOut();
-      }
-    } catch (error) {
-      logger.error(`Error verifying test user ${testUser.email}:`, error);
-      results.push(false);
+export async function loginAsTestUser(email: string, password: string): Promise<boolean> {
+  try {
+    // Sign in with Supabase auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      console.error('Error logging in as test user:', error);
+      toast.error(`Failed to log in: ${error.message}`);
+      return false;
     }
+    
+    if (data.user) {
+      toast.success(`Logged in as ${email}`);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Unexpected error logging in:', error);
+    toast.error('Unexpected error logging in');
+    return false;
   }
-
-  return results;
-};
+}

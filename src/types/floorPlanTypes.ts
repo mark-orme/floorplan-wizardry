@@ -10,14 +10,28 @@ export interface FloorPlan {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  // Added properties needed in other parts of the codebase
+  label?: string;
+  strokes?: Stroke[];
+  walls?: Wall[];
+  rooms?: Room[];
+  level?: number;
+  gia?: number;
+  canvasData?: string | null;
+  canvasJson?: string | null;
+  canvasState?: any;
+  metadata?: FloorPlanMetadata;
+  index?: number;
 }
 
 export interface FloorPlanMetadata {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   thumbnail?: string;
   createdAt: string;
   updatedAt: string;
+  paperSize?: PaperSize;
+  level?: number;
 }
 
 export interface FloorPlanDimensions {
@@ -40,4 +54,54 @@ export enum FloorPlanStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   ARCHIVED = 'archived'
+}
+
+// Add missing types that are referenced in the codebase
+export interface Stroke {
+  id: string;
+  points: Point[];
+  type: StrokeTypeLiteral;
+  color: string;
+  thickness: number;
+  width: number;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Wall {
+  id: string;
+  points: Point[];
+  startPoint?: Point;
+  endPoint?: Point;
+  start?: Point;
+  end?: Point;
+  thickness: number;
+  height?: number;
+  color: string;
+  roomIds: string[];
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  type: RoomTypeLiteral;
+  points: Point[];
+  color: string;
+  area: number;
+  level: number;
+  walls: string[];
+}
+
+export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
+export type StrokeType = StrokeTypeLiteral;
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+
+export enum PaperSize {
+  A4 = 'A4',
+  A3 = 'A3',
+  LETTER = 'LETTER',
+  LEGAL = 'LEGAL'
 }
