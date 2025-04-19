@@ -106,26 +106,30 @@ export const usePointerEvents = ({
       
       canvas.addEventListener('pointerdown', capturePointer);
       
-      // Fix: Return a proper cleanup function
+      // Store the reference to the canvas element to avoid TypeScript type issues
+      const canvasElement = canvas;
+      
+      // Return a proper cleanup function
       return () => {
-        if (canvas) {
-          canvas.removeEventListener('pointerdown', capturePointer);
-          canvas.removeEventListener('pointerdown', handlePointerEvent);
-          canvas.removeEventListener('pointermove', handlePointerEvent);
-          canvas.removeEventListener('pointerup', handlePointerEvent);
-          canvas.removeEventListener('pointercancel', handlePointerEvent);
-        }
+        // Using the stored reference which TypeScript knows is an HTMLCanvasElement
+        canvasElement.removeEventListener('pointerdown', capturePointer);
+        canvasElement.removeEventListener('pointerdown', handlePointerEvent);
+        canvasElement.removeEventListener('pointermove', handlePointerEvent);
+        canvasElement.removeEventListener('pointerup', handlePointerEvent);
+        canvasElement.removeEventListener('pointercancel', handlePointerEvent);
       };
     }
     
-    // Fix: Return a cleanup function even when setPointerCapture isn't used
+    // Store the reference to the canvas element to avoid TypeScript type issues
+    const canvasElement = canvas;
+    
+    // Return a cleanup function even when setPointerCapture isn't used
     return () => {
-      if (canvas) {
-        canvas.removeEventListener('pointerdown', handlePointerEvent);
-        canvas.removeEventListener('pointermove', handlePointerEvent);
-        canvas.removeEventListener('pointerup', handlePointerEvent);
-        canvas.removeEventListener('pointercancel', handlePointerEvent);
-      }
+      // Using the stored reference which TypeScript knows is an HTMLCanvasElement
+      canvasElement.removeEventListener('pointerdown', handlePointerEvent);
+      canvasElement.removeEventListener('pointermove', handlePointerEvent);
+      canvasElement.removeEventListener('pointerup', handlePointerEvent);
+      canvasElement.removeEventListener('pointercancel', handlePointerEvent);
     };
   }, [canvasRef, handlePointerEvent]);
 
