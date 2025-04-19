@@ -83,49 +83,48 @@ export const usePointerEvents = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    // Store canvas as HTMLCanvasElement to ensure correct typing
+    const canvasElement: HTMLCanvasElement = canvas;
+    
     // Add all necessary pointer events
-    canvas.addEventListener('pointerdown', handlePointerEvent, { passive: false });
-    canvas.addEventListener('pointermove', handlePointerEvent, { passive: false });
-    canvas.addEventListener('pointerup', handlePointerEvent, { passive: false });
-    canvas.addEventListener('pointercancel', handlePointerEvent, { passive: false });
+    canvasElement.addEventListener('pointerdown', handlePointerEvent, { passive: false });
+    canvasElement.addEventListener('pointermove', handlePointerEvent, { passive: false });
+    canvasElement.addEventListener('pointerup', handlePointerEvent, { passive: false });
+    canvasElement.addEventListener('pointercancel', handlePointerEvent, { passive: false });
     
     // Configure the canvas for optimal stylus input
-    canvas.style.touchAction = 'none';
+    canvasElement.style.touchAction = 'none';
     
     // Enable stylus-specific options
-    if ('setPointerCapture' in canvas) {
+    if ('setPointerCapture' in canvasElement) {
       const capturePointer = (e: PointerEvent) => {
         if (e.pointerType === 'pen') {
           try {
-            canvas.setPointerCapture(e.pointerId);
+            canvasElement.setPointerCapture(e.pointerId);
           } catch (err) {
             console.warn('Could not capture pointer:', err);
           }
         }
       };
       
-      canvas.addEventListener('pointerdown', capturePointer);
+      canvasElement.addEventListener('pointerdown', capturePointer);
       
       // Create a proper cleanup function with explicit element type
       return () => {
-        if (canvas) {
-          canvas.removeEventListener('pointerdown', capturePointer);
-          canvas.removeEventListener('pointerdown', handlePointerEvent);
-          canvas.removeEventListener('pointermove', handlePointerEvent);
-          canvas.removeEventListener('pointerup', handlePointerEvent);
-          canvas.removeEventListener('pointercancel', handlePointerEvent);
-        }
+        canvasElement.removeEventListener('pointerdown', capturePointer);
+        canvasElement.removeEventListener('pointerdown', handlePointerEvent);
+        canvasElement.removeEventListener('pointermove', handlePointerEvent);
+        canvasElement.removeEventListener('pointerup', handlePointerEvent);
+        canvasElement.removeEventListener('pointercancel', handlePointerEvent);
       };
     }
     
     // Create a proper cleanup function for the case where setPointerCapture isn't used
     return () => {
-      if (canvas) {
-        canvas.removeEventListener('pointerdown', handlePointerEvent);
-        canvas.removeEventListener('pointermove', handlePointerEvent);
-        canvas.removeEventListener('pointerup', handlePointerEvent);
-        canvas.removeEventListener('pointercancel', handlePointerEvent);
-      }
+      canvasElement.removeEventListener('pointerdown', handlePointerEvent);
+      canvasElement.removeEventListener('pointermove', handlePointerEvent);
+      canvasElement.removeEventListener('pointerup', handlePointerEvent);
+      canvasElement.removeEventListener('pointercancel', handlePointerEvent);
     };
   }, [canvasRef, handlePointerEvent]);
 
