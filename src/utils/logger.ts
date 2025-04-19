@@ -80,6 +80,32 @@ class Logger {
   }
   
   /**
+   * Special method for logging canvas errors with better context
+   */
+  canvasError(message: string, error?: Error, context?: LogData): void {
+    if (!isLevelEnabled(this.namespace, LogLevel.ERROR)) return;
+    
+    const canvasContext = {
+      ...context,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    };
+    
+    const formattedData = {
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : {},
+      ...canvasContext
+    };
+    
+    error(this.namespace + ':canvas', message, formattedData);
+  }
+  
+  /**
    * Group related logs together
    */
   group(name: string, callback: () => void): void {
