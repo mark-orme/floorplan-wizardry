@@ -10,7 +10,7 @@ export interface FloorPlan {
   userId: string;
   createdAt: string;
   updatedAt: string;
-  // Added properties needed in other parts of the codebase
+  // Additional properties needed in other parts of the codebase
   label?: string;
   strokes?: Stroke[];
   walls?: Wall[];
@@ -22,6 +22,7 @@ export interface FloorPlan {
   canvasState?: any;
   metadata?: FloorPlanMetadata;
   index?: number;
+  order?: number; // Used in some components
 }
 
 export interface FloorPlanMetadata {
@@ -56,7 +57,7 @@ export enum FloorPlanStatus {
   ARCHIVED = 'archived'
 }
 
-// Add missing types that are referenced in the codebase
+// Types that are referenced in the codebase
 export interface Stroke {
   id: string;
   points: Point[];
@@ -95,7 +96,7 @@ export interface Room {
   walls: string[];
 }
 
-export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand';
+export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand' | 'door' | 'window' | 'furniture' | 'annotation' | 'other';
 export type StrokeType = StrokeTypeLiteral;
 export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
 

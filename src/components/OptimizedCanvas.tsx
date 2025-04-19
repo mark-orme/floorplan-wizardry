@@ -1,107 +1,112 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 import { useOptimizedDrawing } from '@/hooks/useOptimizedDrawing';
-import { usePointerEvents } from '@/hooks/usePointerEvents';
-import { toast } from 'sonner';
 
 interface OptimizedCanvasProps {
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  onPointerMove?: (e: PointerEvent) => void;
 }
 
 export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
-  width = 800,
-  height = 600,
-  onCanvasReady,
-  fabricCanvasRef: externalFabricCanvasRef,
-  onPointerMove
+  width,
+  height,
+  tool = DrawingMode.DRAW,
+  lineColor = '#000000',
+  lineThickness = 2,
+  onCanvasReady
 }) => {
-  const internalCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const [pressure, setPressure] = useState<number>(0.5);
-  const [tilt, setTilt] = useState<{x: number, y: number}>({x: 0, y: 0});
-
-  // Initialize fabric canvas with performance optimizations
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Canvas state and handlers from custom hook
+  const {
+    isDrawing,
+    objectCount,
+    metrics,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
+  } = useOptimizedDrawing({
+    canvas,
+    tool,
+    lineColor,
+    lineThickness
+  });
+  
+  // Initialize canvas
   useEffect(() => {
-    if (!internalCanvasRef.current) return;
-
-    try {
-      const canvas = new FabricCanvas(internalCanvasRef.current, {
+    if (canvasRef.current && !canvas) {
+      const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
-        enableRetinaScaling: true,
-        renderOnAddRemove: false,
-        isDrawingMode: true,
-        fireMiddleClick: false,
-        fireRightClick: false,
-        stopContextMenu: true
+        selection: tool === DrawingMode.SELECT,
+        isDrawingMode: tool === DrawingMode.DRAW
       });
-
-      // Initialize the canvas
-      setFabricCanvas(canvas);
       
-      // Update both internal state and external ref if provided
-      if (externalFabricCanvasRef) {
-        externalFabricCanvasRef.current = canvas;
-      }
+      // Set canvas
+      setCanvas(fabricCanvas);
       
+      // Notify parent
       if (onCanvasReady) {
-        onCanvasReady(canvas);
+        onCanvasReady(fabricCanvas);
       }
-
-      return () => {
-        canvas.dispose();
-      };
-    } catch (error) {
-      console.error('Error initializing canvas:', error);
-      toast.error('Failed to initialize canvas. Please refresh the page.');
+      
+      setIsLoaded(true);
     }
-  }, [width, height, onCanvasReady, externalFabricCanvasRef]);
-
-  // Handle pressure changes
-  const handlePressureChange = (newPressure: number) => {
-    setPressure(newPressure);
-  };
-
-  // Handle tilt changes
-  const handleTiltChange = (tiltX: number, tiltY: number) => {
-    setTilt({x: tiltX, y: tiltY});
-  };
-
-  // Use our optimized drawing hook with proper parameters
-  const { isDrawing, objectCount, metrics } = useOptimizedDrawing({
-    canvas: fabricCanvas,
-    currentTool: 'DRAW',
-    lineThickness: 2,
-    lineColor: '#000000'
-  });
-
-  // Use enhanced pointer events with proper props
-  usePointerEvents({
-    onPointerDown: (e) => {},
-    onPointerMove: (e) => {},
-    onPointerUp: (e) => {},
-    enabled: true
-  });
-
+  }, [canvas, width, height, tool, onCanvasReady]);
+  
+  // Update canvas options when tool changes
+  useEffect(() => {
+    if (canvas) {
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
+      
+      if (canvas.isDrawingMode) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+      }
+    }
+  }, [canvas, tool, lineColor, lineThickness]);
+  
+  // Add event handlers
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handleCanvasMouseDown = (e: MouseEvent) => handleMouseDown(e, canvas);
+    const handleCanvasMouseMove = (e: MouseEvent) => handleMouseMove(e, canvas);
+    const handleCanvasMouseUp = (e: MouseEvent) => handleMouseUp(e, canvas);
+    
+    canvas.wrapperEl.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.wrapperEl.addEventListener('mousemove', handleCanvasMouseMove);
+    canvas.wrapperEl.addEventListener('mouseup', handleCanvasMouseUp);
+    
+    return () => {
+      canvas.wrapperEl.removeEventListener('mousedown', handleCanvasMouseDown);
+      canvas.wrapperEl.removeEventListener('mousemove', handleCanvasMouseMove);
+      canvas.wrapperEl.removeEventListener('mouseup', handleCanvasMouseUp);
+    };
+  }, [canvas, handleMouseDown, handleMouseMove, handleMouseUp]);
+  
   return (
     <div className="relative">
-      <canvas
-        ref={internalCanvasRef}
-        className="border border-gray-200 rounded shadow-sm"
-        style={{ touchAction: 'none' }}
-      />
-      {/* Optional: Add pressure and tilt indicators for debugging */}
-      {process.env.NODE_ENV !== 'production' && (
-        <div className="absolute bottom-2 right-2 bg-white/80 text-xs text-gray-700 px-2 py-1 rounded">
-          <div>Pressure: {pressure.toFixed(2)}</div>
-          <div>Tilt: [{tilt.x.toFixed(1)}, {tilt.y.toFixed(1)}]</div>
+      <canvas ref={canvasRef} />
+      
+      {isLoaded && (
+        <div className="absolute bottom-2 right-2 bg-white bg-opacity-70 text-xs p-1 rounded">
+          {isDrawing && <span className="mr-2">Drawing...</span>}
+          <span>Objects: {objectCount}</span>
+          {metrics && <span className="ml-2">FPS: {metrics.fps}</span>}
         </div>
       )}
     </div>
   );
 };
+
+export default OptimizedCanvas;

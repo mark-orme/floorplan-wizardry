@@ -4,7 +4,7 @@
  * Handles floor-related operations
  */
 import { useCallback } from "react";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
 import { toast } from "sonner";
 
 /**
@@ -48,6 +48,8 @@ export const useFloorPlanOperations = ({
       id: `floor-${Date.now()}`,
       name: newFloorName,
       label: newFloorName,
+      data: {},
+      userId: '',
       gia: 0,
       walls: [],
       rooms: [],
@@ -61,7 +63,7 @@ export const useFloorPlanOperations = ({
       metadata: {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        paperSize: 'A4',
+        paperSize: PaperSize.A4,
         level: floorPlans.length
       }
     };

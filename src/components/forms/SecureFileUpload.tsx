@@ -5,8 +5,8 @@
  */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Security } from '@/utils/security';
 import { toast } from 'sonner';
+import { createSecureFileUploadHandler, sanitizeFileName } from '@/utils/security/FileSecurityUtils';
 
 interface SecureFileUploadProps {
   onValidFile: (file: File, sanitizedFileName: string) => void;
@@ -40,7 +40,7 @@ export const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
     toast.error(error);
   };
   
-  const handleChange = Security.Files.createSecureFileUploadHandler(
+  const handleChange = createSecureFileUploadHandler(
     (file, sanitizedFileName) => {
       setSelectedFiles(prev => [...prev, file]);
       onValidFile(file, sanitizedFileName);
@@ -95,7 +95,7 @@ export const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
             <ul className="text-sm text-gray-500 mt-1">
               {selectedFiles.map((file, index) => (
                 <li key={index} className="flex items-center gap-2">
-                  <span>{Security.Files.sanitizeFileName(file.name)}</span>
+                  <span>{sanitizeFileName(file.name)}</span>
                   <span>({formatFileSize(file.size)})</span>
                 </li>
               ))}

@@ -31,7 +31,6 @@ export async function createTestUser(credentials: TestUserCredentials): Promise<
     }
     
     // Create user with Supabase auth
-    // Note: We're using the proper Supabase auth method here
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: credentials.email,
       password: credentials.password,

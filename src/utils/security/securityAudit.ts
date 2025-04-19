@@ -1,132 +1,104 @@
 
-import { supabase } from '@/lib/supabase';
-import { logAuditEvent, AuditEventType, AuditEventSeverity } from '@/utils/audit/auditLogger';
-
-// Simulated security events for demonstration purposes
-const DEMO_SECURITY_EVENTS = [
-  {
-    id: '1',
-    type: 'csrf_attempt',
-    severity: 'high' as const,
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    description: 'CSRF token validation failed on form submission',
-    sourceIp: '192.168.1.101',
-    status: 'open' as const
-  },
-  {
-    id: '2',
-    type: 'rate_limit_exceeded',
-    severity: 'medium' as const,
-    timestamp: new Date(Date.now() - 7200000).toISOString(),
-    description: 'API rate limit exceeded for floor plan endpoints',
-    sourceIp: '192.168.1.105',
-    status: 'resolved' as const
-  },
-  {
-    id: '3',
-    type: 'suspicious_login',
-    severity: 'high' as const,
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    description: 'Login attempt from unusual location',
-    sourceIp: '203.0.113.45',
-    userId: 'user-789',
-    status: 'dismissed' as const
-  },
-  {
-    id: '4',
-    type: 'permission_escalation',
-    severity: 'critical' as const,
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    description: 'Attempt to access admin resources from non-admin account',
-    sourceIp: '192.168.1.110',
-    userId: 'user-456',
-    status: 'open' as const
-  },
-  {
-    id: '5',
-    type: 'outdated_dependency',
-    severity: 'medium' as const,
-    timestamp: new Date(Date.now() - 259200000).toISOString(),
-    description: 'Security vulnerability found in npm dependency',
-    status: 'open' as const
-  }
-];
+/**
+ * Security Audit Utilities
+ * Functions for fetching and analyzing security data
+ */
 
 /**
- * Fetch security events from the backend
- * For demonstration, returns simulated events
+ * Fetch security events for analysis
+ * @returns Array of security events
  */
 export async function fetchSecurityEvents(): Promise<any[]> {
-  try {
-    // In a real implementation, we would fetch from Supabase or another source
-    // const { data, error } = await supabase.from('security_events').select('*');
-    
-    // For demonstration, log the request and return demo data
-    await logAuditEvent({
-      type: AuditEventType.SECURITY_CHECK,
-      description: 'Security events fetched',
-      severity: AuditEventSeverity.INFO
-    });
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    return DEMO_SECURITY_EVENTS;
-  } catch (error) {
-    console.error('Error fetching security events:', error);
-    return [];
-  }
+  // In a real implementation, this would fetch from a database or API
+  // For now, we'll return mock data
+  await new Promise(resolve => setTimeout(resolve, 800)); // Simulate fetch time
+  
+  return [
+    {
+      id: '1',
+      type: 'login_failure',
+      severity: 'medium',
+      timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      source: 'authentication',
+      details: 'Multiple failed login attempts from IP 192.168.1.100'
+    },
+    {
+      id: '2',
+      type: 'permission_escalation',
+      severity: 'high',
+      timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      source: 'authorization',
+      details: 'Attempt to access admin resources from user account'
+    },
+    {
+      id: '3',
+      type: 'api_key_exposed',
+      severity: 'critical',
+      timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      source: 'key_management',
+      details: 'API key potentially exposed in client-side code'
+    },
+    {
+      id: '4',
+      type: 'rate_limit_exceeded',
+      severity: 'medium',
+      timestamp: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+      source: 'api_gateway',
+      details: 'Rate limit exceeded for search endpoint'
+    },
+    {
+      id: '5',
+      type: 'suspicious_request',
+      severity: 'high',
+      timestamp: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
+      source: 'web_application',
+      details: 'Potential SQL injection attempt detected'
+    }
+  ];
 }
 
 /**
- * Run a security scan and report findings
+ * Analyze security events for trends
+ * @param events Security events to analyze
+ * @returns Analysis results
  */
-export async function runSecurityScan(): Promise<{
-  vulnerabilitiesFound: number;
-  criticalCount: number;
-  highCount: number;
-  reportUrl: string;
-}> {
-  try {
-    // Simulate a security scan
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Simulate scan results
-    const results = {
-      vulnerabilitiesFound: 3,
-      criticalCount: 0,
-      highCount: 1,
-      reportUrl: '/security/report'
-    };
-    
-    // Log the scan
-    await logAuditEvent({
-      type: AuditEventType.SECURITY_CHECK,
-      description: `Security scan completed: ${results.vulnerabilitiesFound} vulnerabilities found`,
-      severity: results.criticalCount > 0 
-        ? AuditEventSeverity.CRITICAL 
-        : results.highCount > 0 
-          ? AuditEventSeverity.ERROR 
-          : AuditEventSeverity.INFO,
-      metadata: results
-    });
-    
-    return results;
-  } catch (error) {
-    console.error('Error running security scan:', error);
-    
-    await logAuditEvent({
-      type: AuditEventType.SECURITY_CHECK,
-      description: 'Security scan failed',
-      severity: AuditEventSeverity.ERROR,
-      metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
-    });
-    
-    return {
-      vulnerabilitiesFound: 0,
-      criticalCount: 0,
-      highCount: 0,
-      reportUrl: ''
-    };
-  }
+export function analyzeSecurityEvents(events: any[]): any {
+  // In a real implementation, this would perform trend analysis
+  
+  // Count events by severity
+  const severityCounts = events.reduce((counts: Record<string, number>, event) => {
+    counts[event.severity] = (counts[event.severity] || 0) + 1;
+    return counts;
+  }, {});
+  
+  // Count events by type
+  const typeCounts = events.reduce((counts: Record<string, number>, event) => {
+    counts[event.type] = (counts[event.type] || 0) + 1;
+    return counts;
+  }, {});
+  
+  // Find most frequent source
+  const sourceCounts = events.reduce((counts: Record<string, number>, event) => {
+    counts[event.source] = (counts[event.source] || 0) + 1;
+    return counts;
+  }, {});
+  
+  const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
+  
+  return {
+    totalEvents: events.length,
+    bySeverity: severityCounts,
+    byType: typeCounts,
+    topSource,
+    timeSpan: {
+      start: events.reduce((oldest, event) => 
+        (new Date(event.timestamp) < oldest) ? new Date(event.timestamp) : oldest, 
+        new Date()
+      ),
+      end: events.reduce((newest, event) => 
+        (new Date(event.timestamp) > newest) ? new Date(event.timestamp) : newest, 
+        new Date(0)
+      )
+    }
+  };
 }

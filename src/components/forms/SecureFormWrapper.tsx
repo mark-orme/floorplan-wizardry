@@ -4,8 +4,8 @@
  * Wraps forms with security features like CSRF protection and input sanitization
  */
 import React, { useEffect, useRef } from 'react';
-import { Security, secureForm } from '@/utils/security';
 import { sanitizeHtml } from '@/utils/security/InputSanitizationUtils';
+import { secureForm } from '@/utils/security/SecurityUtils';
 
 interface SecureFormWrapperProps {
   children: React.ReactNode;

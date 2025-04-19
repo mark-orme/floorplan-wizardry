@@ -9,7 +9,7 @@ import Login from '@/pages/Login';
 import Auth from '@/pages/Auth';
 import Properties from '@/pages/Properties';
 import PropertyForm from '@/components/PropertyForm';
-import FloorPlans from '@/pages/FloorPlans'; // Fixed casing here
+import FloorPlans from '@/pages/FloorPlans'; // Using consistent casing
 import FloorplanDetails from '@/pages/FloorplanDetails';
 import Register from '@/pages/Register';
 import RoleGuard from '@/components/RoleGuard';
@@ -39,7 +39,7 @@ function App() {
               <EditPropertyForm />
             </RoleGuard>
           } />
-          <Route path="/floorplans" element={<Floorplans />} />
+          <Route path="/floorplans" element={<FloorPlans />} />
           <Route path="/floorplans/:id" element={<FloorplanDetails />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={

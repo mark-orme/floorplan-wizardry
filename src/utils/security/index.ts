@@ -7,6 +7,38 @@ import { secureLocalStorage } from './secureStorage';
 import { auditAccessAttempt } from './accessAuditing';
 import { enableOfflineEncryption } from './offlineEncryption';
 import { fetchSecurityEvents } from './securityAudit';
+import { sanitizeHtml, stripJavaScriptEvents, sanitizeUrl, sanitizeObject } from './InputSanitizationUtils';
+import { secureForm } from './SecurityUtils';
+import { createSecureFileUploadHandler, sanitizeFileName } from './FileSecurityUtils';
+
+// Create a Security namespace for consistent access
+export const Security = {
+  CSRF: {
+    generateToken: generateCSRFToken,
+    getToken: getCSRFToken,
+    verifyToken: verifyCSRFToken,
+    addToFormData: addCSRFToFormData,
+    addToHeaders: addCSRFToHeaders,
+    fetchWithCSRF
+  },
+  Files: {
+    createSecureFileUploadHandler,
+    sanitizeFileName
+  },
+  Input: {
+    sanitizeHtml,
+    stripJavaScriptEvents,
+    sanitizeUrl,
+    sanitizeObject
+  },
+  Storage: {
+    secureLocalStorage,
+    enableOfflineEncryption
+  },
+  Form: {
+    secureForm
+  }
+};
 
 // Re-export all security functions
 export {
@@ -40,7 +72,10 @@ export {
   enableOfflineEncryption,
   
   // Security Events
-  fetchSecurityEvents
+  fetchSecurityEvents,
+  
+  // Security Utils
+  secureForm
 };
 
 /**

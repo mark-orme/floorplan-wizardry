@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Security } from '@/utils/security';
+import { sanitizeHtml, stripJavaScriptEvents } from '@/utils/security/InputSanitizationUtils';
 
 interface SecureInputProps {
   value: string;
@@ -41,11 +41,9 @@ export const SecureInput: React.FC<SecureInputProps> = ({
     if (sanitizationStrategy === 'strict') {
       sanitizedValue = inputValue.replace(/[<>]/g, ''); // Remove < and > characters
     } else if (sanitizationStrategy === 'basic') {
-      sanitizedValue = inputValue.replace(/<\/?[^>]+(>|$)/g, ''); // Remove HTML tags
-    }
-    // 'allowHtml' strategy doesn't sanitize but we still shouldn't allow script tags
-    if (sanitizationStrategy === 'allowHtml') {
-      sanitizedValue = inputValue.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      sanitizedValue = sanitizeHtml(inputValue); // Remove HTML tags
+    } else if (sanitizationStrategy === 'allowHtml') {
+      sanitizedValue = stripJavaScriptEvents(inputValue); // Remove script tags and events
     }
     
     onChange(sanitizedValue);

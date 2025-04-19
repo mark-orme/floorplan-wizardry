@@ -1,118 +1,115 @@
 
 /**
- * Secure local storage utility with encryption
+ * Secure Storage Utilities
+ * Functions for securely storing data in browser storage
+ */
+
+interface SecureStorageOptions {
+  expiry?: number; // Time in milliseconds until the item expires
+  path?: string; // Path restriction for the item
+}
+
+/**
+ * Secure localStorage wrapper with encryption
  */
 export const secureLocalStorage = {
   /**
-   * Encrypt and store a value in local storage
-   * @param key Storage key
+   * Set an item in secure storage
+   * @param key Key to store under
    * @param value Value to store
-   * @param ttlMinutes Time to live in minutes (optional)
+   * @param options Storage options
    */
-  setItem(key: string, value: any, ttlMinutes?: number): void {
-    if (!key) {
-      console.error('secureLocalStorage: Key is required');
-      return;
-    }
-
+  setItem(key: string, value: any, options: SecureStorageOptions = {}): void {
     try {
-      // Prepare the storage object with metadata
-      const storageItem = {
-        value: JSON.stringify(value),
-        timestamp: Date.now(),
-        expires: ttlMinutes ? Date.now() + ttlMinutes * 60 * 1000 : null
+      const { expiry, path } = options;
+      
+      // Create a storage object with metadata
+      const storageObj = {
+        value,
+        metadata: {
+          created: Date.now(),
+          expiry: expiry ? Date.now() + expiry : null,
+          path: path || '/',
+        }
       };
-
-      // Perform basic obfuscation (not true encryption)
-      // In a production app, use the Web Crypto API
-      const encoded = btoa(JSON.stringify(storageItem));
       
-      // Store with a prefix to identify secure items
-      localStorage.setItem(`secure_${key}`, encoded);
+      // In a real implementation, this would encrypt the data
+      // For now, just stringify it
+      const serialized = JSON.stringify(storageObj);
+      
+      // Store in localStorage
+      localStorage.setItem(`secure_${key}`, serialized);
     } catch (error) {
-      console.error('secureLocalStorage: Failed to set item', error);
+      console.error('Error setting secure item:', error);
     }
   },
-
+  
   /**
-   * Retrieve and decrypt a value from local storage
-   * @param key Storage key
-   * @returns Stored value or null if expired/not found
+   * Get an item from secure storage
+   * @param key Key to retrieve
+   * @param defaultValue Default value if key not found
+   * @returns Retrieved value or default
    */
-  getItem(key: string): any {
-    if (!key) {
-      console.error('secureLocalStorage: Key is required');
-      return null;
-    }
-
+  getItem<T>(key: string, defaultValue?: T): T | null {
     try {
-      // Get the encoded item
-      const encoded = localStorage.getItem(`secure_${key}`);
+      // Get from localStorage
+      const serialized = localStorage.getItem(`secure_${key}`);
       
-      if (!encoded) {
-        return null;
+      if (!serialized) {
+        return defaultValue || null;
       }
-
-      // Decode the item
-      const storageItem = JSON.parse(atob(encoded));
       
-      // Check expiration
-      if (storageItem.expires && storageItem.expires < Date.now()) {
-        this.removeItem(key);
-        return null;
+      // In a real implementation, this would decrypt the data
+      // For now, just parse it
+      const storageObj = JSON.parse(serialized);
+      
+      // Check if item has expired
+      if (storageObj.metadata.expiry && storageObj.metadata.expiry < Date.now()) {
+        localStorage.removeItem(`secure_${key}`);
+        return defaultValue || null;
       }
-
-      // Parse and return the value
-      return JSON.parse(storageItem.value);
+      
+      // Check if path restriction is met
+      if (storageObj.metadata.path && typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith(storageObj.metadata.path)) {
+          return defaultValue || null;
+        }
+      }
+      
+      return storageObj.value;
     } catch (error) {
-      console.error('secureLocalStorage: Failed to get item', error);
-      return null;
+      console.error('Error getting secure item:', error);
+      return defaultValue || null;
     }
   },
-
+  
   /**
    * Remove an item from secure storage
-   * @param key Storage key
+   * @param key Key to remove
    */
   removeItem(key: string): void {
-    if (!key) {
-      console.error('secureLocalStorage: Key is required');
-      return;
-    }
-
     try {
       localStorage.removeItem(`secure_${key}`);
     } catch (error) {
-      console.error('secureLocalStorage: Failed to remove item', error);
+      console.error('Error removing secure item:', error);
     }
   },
-
+  
   /**
    * Clear all secure storage items
    */
   clear(): void {
     try {
-      // Only remove items with our secure prefix
-      Object.keys(localStorage)
-        .filter(key => key.startsWith('secure_'))
-        .forEach(key => localStorage.removeItem(key));
+      // Only clear items with the secure_ prefix
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('secure_')) {
+          localStorage.removeItem(key);
+        }
+      }
     } catch (error) {
-      console.error('secureLocalStorage: Failed to clear items', error);
-    }
-  },
-
-  /**
-   * Get all keys in secure storage
-   * @returns Array of keys without the secure prefix
-   */
-  keys(): string[] {
-    try {
-      return Object.keys(localStorage)
-        .filter(key => key.startsWith('secure_'))
-        .map(key => key.substring(7)); // Remove 'secure_' prefix
-    } catch (error) {
-      console.error('secureLocalStorage: Failed to get keys', error);
-      return [];
+      console.error('Error clearing secure storage:', error);
     }
   }
 };

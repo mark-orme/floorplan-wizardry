@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { initializeSecurity } from '@/utils/security';
+import { initializeSecurity } from '@/utils/security/SecurityUtils';
 
 /**
  * Component to initialize security features on application startup

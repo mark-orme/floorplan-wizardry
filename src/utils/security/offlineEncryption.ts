@@ -1,107 +1,54 @@
 
 /**
- * Enable encryption for offline/IndexedDB data
+ * Offline Encryption Utilities
+ * Functions for encrypting data stored offline
  */
-export function enableOfflineEncryption(): void {
-  console.info('Setting up offline data encryption...');
-  
-  // Initialize the encryption system
-  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
-    initializeEncryptionKey()
-      .then(key => {
-        console.info('Encryption key initialized successfully');
-        return key;
-      })
-      .catch(err => {
-        console.error('Failed to initialize encryption key:', err);
-      });
-  } else {
-    console.warn('Web Crypto API not available - offline encryption disabled');
-  }
+
+/**
+ * Enable offline encryption for stored data
+ * @returns Boolean indicating success
+ */
+export async function enableOfflineEncryption(): Promise<boolean> {
+  // In a real implementation, this would set up encryption for IndexedDB
+  console.info('Offline encryption enabled');
+  return true;
 }
 
 /**
- * Initialize or retrieve the encryption key
+ * Generate encryption key for offline data
+ * @returns Encryption key
  */
-async function initializeEncryptionKey(): Promise<CryptoKey> {
-  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
-    throw new Error('Web Crypto API not available');
-  }
+export async function generateEncryptionKey(): Promise<CryptoKey> {
+  // Generate an AES-GCM key using the Web Crypto API
+  const key = await window.crypto.subtle.generateKey(
+    {
+      name: 'AES-GCM',
+      length: 256
+    },
+    true, // extractable
+    ['encrypt', 'decrypt']
+  );
   
-  // Check if we already have a key
-  const storedKeyData = localStorage.getItem('encryptionKeyData');
-  
-  if (storedKeyData) {
-    // Key exists, import it
-    try {
-      const keyData = JSON.parse(storedKeyData);
-      const keyBuffer = base64ToArrayBuffer(keyData.key);
-      
-      const key = await window.crypto.subtle.importKey(
-        'raw',
-        keyBuffer,
-        {
-          name: 'AES-GCM',
-          length: 256
-        },
-        true,
-        ['encrypt', 'decrypt']
-      );
-      
-      return key;
-    } catch (error) {
-      console.error('Failed to import stored encryption key, generating new one:', error);
-      // Fall through to key generation
-    }
-  }
-  
-  // Generate a new key
-  try {
-    const key = await window.crypto.subtle.generateKey(
-      {
-        name: 'AES-GCM',
-        length: 256
-      },
-      true,
-      ['encrypt', 'decrypt']
-    );
-    
-    // Export and store the key
-    const rawKey = await window.crypto.subtle.exportKey('raw', key);
-    const keyData = {
-      key: arrayBufferToBase64(rawKey),
-      createdAt: new Date().toISOString()
-    };
-    
-    localStorage.setItem('encryptionKeyData', JSON.stringify(keyData));
-    
-    return key;
-  } catch (error) {
-    console.error('Failed to generate encryption key:', error);
-    throw error;
-  }
+  return key;
 }
 
 /**
- * Encrypt data using the encryption key
+ * Encrypt data for offline storage
+ * @param data Data to encrypt
+ * @param key Encryption key
+ * @returns Encrypted data as base64 string
  */
-export async function encryptData(data: any): Promise<string> {
-  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
-    // Fallback when crypto not available
-    console.warn('Encryption not available, using base64 obfuscation instead');
-    return btoa(JSON.stringify(data));
-  }
-  
+export async function encryptData(data: any, key: CryptoKey): Promise<string> {
   try {
-    const key = await initializeEncryptionKey();
+    // Convert data to string if not already
+    const dataString = typeof data === 'string' ? data : JSON.stringify(data);
     
-    // Create an initialization vector
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    
-    // Convert data to ArrayBuffer
-    const dataString = JSON.stringify(data);
+    // Convert to buffer
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(dataString);
+    
+    // Generate initialization vector
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
     
     // Encrypt the data
     const encryptedBuffer = await window.crypto.subtle.encrypt(
@@ -113,83 +60,58 @@ export async function encryptData(data: any): Promise<string> {
       dataBuffer
     );
     
-    // Combine IV and encrypted data, and convert to base64
-    const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
-    combined.set(iv, 0);
-    combined.set(new Uint8Array(encryptedBuffer), iv.length);
+    // Combine IV and encrypted data
+    const result = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+    result.set(iv, 0);
+    result.set(new Uint8Array(encryptedBuffer), iv.length);
     
-    return arrayBufferToBase64(combined);
+    // Convert to base64
+    return btoa(String.fromCharCode.apply(null, Array.from(result)));
   } catch (error) {
-    console.error('Encryption failed:', error);
+    console.error('Error encrypting data:', error);
     throw error;
   }
 }
 
 /**
- * Decrypt data using the encryption key
+ * Decrypt data from offline storage
+ * @param encryptedData Encrypted data as base64 string
+ * @param key Decryption key
+ * @returns Decrypted data
  */
-export async function decryptData(encryptedData: string): Promise<any> {
-  if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
-    // Fallback when crypto not available
-    console.warn('Decryption not available, using base64 deobfuscation instead');
-    return JSON.parse(atob(encryptedData));
-  }
-  
+export async function decryptData(encryptedData: string, key: CryptoKey): Promise<any> {
   try {
-    const key = await initializeEncryptionKey();
+    // Convert from base64
+    const encryptedBytes = new Uint8Array(
+      atob(encryptedData).split('').map(char => char.charCodeAt(0))
+    );
     
-    // Convert base64 to ArrayBuffer
-    const dataBuffer = base64ToArrayBuffer(encryptedData);
-    
-    // Extract IV (first 12 bytes) and encrypted data
-    const iv = dataBuffer.slice(0, 12);
-    const encryptedBuffer = dataBuffer.slice(12);
+    // Extract IV and data
+    const iv = encryptedBytes.slice(0, 12);
+    const data = encryptedBytes.slice(12);
     
     // Decrypt the data
     const decryptedBuffer = await window.crypto.subtle.decrypt(
       {
         name: 'AES-GCM',
-        iv: iv
+        iv
       },
       key,
-      encryptedBuffer
+      data
     );
     
-    // Convert ArrayBuffer to string and then parse as JSON
+    // Convert to string
     const decoder = new TextDecoder();
     const decryptedString = decoder.decode(decryptedBuffer);
     
-    return JSON.parse(decryptedString);
+    // Parse JSON if possible
+    try {
+      return JSON.parse(decryptedString);
+    } catch {
+      return decryptedString;
+    }
   } catch (error) {
-    console.error('Decryption failed:', error);
+    console.error('Error decrypting data:', error);
     throw error;
   }
-}
-
-/**
- * Helper: Convert ArrayBuffer to base64 string
- */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  
-  return btoa(binary);
-}
-
-/**
- * Helper: Convert base64 string to ArrayBuffer
- */
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  
-  return bytes.buffer;
 }

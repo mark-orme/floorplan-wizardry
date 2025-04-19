@@ -1,152 +1,126 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Point } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { usePerformanceMonitoring } from './usePerformanceMonitoring';
-
-// Add DrawingMode.PENCIL if it doesn't exist in the enum
-// This is a temporary fix until the DrawingMode enum is updated
-const ExtendedDrawingMode = {
-  ...DrawingMode,
-  PENCIL: 'PENCIL' as DrawingMode
-};
 
 export interface UseOptimizedDrawingProps {
   canvas: FabricCanvas | null;
-  currentTool: DrawingMode;
-  lineThickness?: number;
-  lineColor?: string;
-  canvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  tool: DrawingMode;
+  lineColor: string;
+  lineThickness: number;
 }
 
 export function useOptimizedDrawing({
   canvas,
-  currentTool,
-  lineThickness = 2,
-  lineColor = '#000000',
-  canvasRef
+  tool,
+  lineColor,
+  lineThickness
 }: UseOptimizedDrawingProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [objectCount, setObjectCount] = useState(0);
-  const drawingRef = useRef<{
-    path?: FabricObject;
-    points: { x: number; y: number }[];
-  }>({ points: [] });
+  const [metrics, setMetrics] = useState<{
+    fps: number;
+    renderTime: number;
+    objectsRendered: number;
+  } | null>(null);
   
-  const { metrics, startMonitoring, stopMonitoring } = usePerformanceMonitoring();
-  
-  // Set drawing mode based on current tool
+  // Track performance
   useEffect(() => {
     if (!canvas) return;
     
-    // Enable drawing mode for free drawing tools
-    canvas.isDrawingMode = currentTool === DrawingMode.DRAW || 
-                           currentTool === ExtendedDrawingMode.PENCIL;
+    // Count objects
+    setObjectCount(canvas.getObjects().length);
     
-    if (canvas.isDrawingMode) {
-      canvas.freeDrawingBrush.width = lineThickness;
-      canvas.freeDrawingBrush.color = lineColor;
-    }
-    
-    // Start monitoring performance
-    startMonitoring(canvas);
-    
-    return () => {
-      stopMonitoring();
-    };
-  }, [canvas, currentTool, lineThickness, lineColor, startMonitoring, stopMonitoring]);
-  
-  // Track object count
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const updateObjectCount = () => {
+    // Track performance on object changes
+    const handleObjectAdded = () => {
       setObjectCount(canvas.getObjects().length);
     };
     
-    canvas.on('object:added', updateObjectCount);
-    canvas.on('object:removed', updateObjectCount);
-    canvas.on('canvas:cleared', updateObjectCount);
-    
-    updateObjectCount();
-    
-    return () => {
-      canvas.off('object:added', updateObjectCount);
-      canvas.off('object:removed', updateObjectCount);
-      canvas.off('canvas:cleared', updateObjectCount);
+    const handleObjectRemoved = () => {
+      setObjectCount(canvas.getObjects().length);
     };
-  }, [canvas]);
-  
-  // Handle mouse down event
-  const handleMouseDown = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || currentTool !== ExtendedDrawingMode.PENCIL) return;
     
-    setIsDrawing(true);
-    drawingRef.current.points = [];
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
     
-    const pointer = canvas.getPointer(event);
-    drawingRef.current.points.push({ x: pointer.x, y: pointer.y });
-    
-    // Create a new path
-    try {
-      // Safely create a fabric.Path without direct reference
-      // Using fabric namespace would cause an error, so we use canvas._objects as a workaround
-      const fabricLib = (canvas as any).constructor;
-      if (fabricLib && fabricLib.Path) {
-        const path = new fabricLib.Path(`M ${pointer.x} ${pointer.y}`, {
-          stroke: lineColor,
-          strokeWidth: lineThickness,
-          fill: '',
-          strokeLineCap: 'round',
-          strokeLineJoin: 'round'
+    // Performance monitoring
+    let lastTime = performance.now();
+    let frames = 0;
+    const fpsInterval = setInterval(() => {
+      const now = performance.now();
+      const elapsed = now - lastTime;
+      frames++;
+      
+      if (elapsed >= 1000) {
+        const fps = Math.round((frames * 1000) / elapsed);
+        setMetrics({
+          fps,
+          renderTime: elapsed / frames,
+          objectsRendered: objectCount
         });
         
-        drawingRef.current.path = path;
-        canvas.add(path);
+        frames = 0;
+        lastTime = now;
       }
-    } catch (error) {
-      console.error('Error creating path:', error);
-    }
-  }, [currentTool, lineColor, lineThickness]);
+    }, 500);
+    
+    return () => {
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
+      clearInterval(fpsInterval);
+    };
+  }, [canvas, objectCount]);
   
-  // Handle mouse move event
-  const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || !isDrawing || currentTool !== ExtendedDrawingMode.PENCIL) return;
+  // Mouse event handlers
+  const handleMouseDown = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
+    if (tool !== DrawingMode.DRAW && tool !== DrawingMode.LINE) return;
     
-    const pointer = canvas.getPointer(event);
-    drawingRef.current.points.push({ x: pointer.x, y: pointer.y });
+    setIsDrawing(true);
     
-    if (drawingRef.current.path) {
-      const path = drawingRef.current.path as any;
-      const points = drawingRef.current.points;
+    const pointer = targetCanvas.getPointer(event);
+    
+    if (tool === DrawingMode.LINE) {
+      // Start drawing a line
+      const line = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        stroke: lineColor,
+        strokeWidth: lineThickness
+      });
       
-      // Build the path string
-      let pathString = `M ${points[0].x} ${points[0].y}`;
-      for (let i = 1; i < points.length; i++) {
-        pathString += ` L ${points[i].x} ${points[i].y}`;
-      }
-      
-      if (path.setPath) {
-        path.setPath(pathString);
-        canvas.requestRenderAll();
+      targetCanvas.add(line);
+      targetCanvas.setActiveObject(line);
+    }
+  }, [tool, lineColor, lineThickness]);
+  
+  const handleMouseMove = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
+    if (!isDrawing) return;
+    
+    const pointer = targetCanvas.getPointer(event);
+    
+    if (tool === DrawingMode.LINE) {
+      // Update line end point
+      const activeObject = targetCanvas.getActiveObject();
+      if (activeObject && activeObject.type === 'line') {
+        const line = activeObject as any;
+        line.set({
+          x2: pointer.x,
+          y2: pointer.y
+        });
+        
+        line.setCoords();
+        targetCanvas.renderAll();
       }
     }
-  }, [isDrawing, currentTool]);
+  }, [isDrawing, tool]);
   
-  // Handle mouse up event
-  const handleMouseUp = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || !isDrawing || currentTool !== ExtendedDrawingMode.PENCIL) return;
-    
+  const handleMouseUp = useCallback((event: MouseEvent, targetCanvas: FabricCanvas) => {
     setIsDrawing(false);
     
-    // Finalize the path
-    if (drawingRef.current.path) {
-      canvas.fire('object:modified', { target: drawingRef.current.path });
-      drawingRef.current.path = undefined;
+    if (tool === DrawingMode.LINE) {
+      // Finalize line
+      targetCanvas.discardActiveObject();
+      targetCanvas.renderAll();
     }
-    
-    drawingRef.current.points = [];
-  }, [isDrawing, currentTool]);
+  }, [tool]);
   
   return {
     isDrawing,

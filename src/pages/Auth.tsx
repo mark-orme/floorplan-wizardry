@@ -9,7 +9,14 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { AuthHeader } from '@/components/auth/AuthHeader';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignupForm } from '@/components/auth/SignupForm';
-import { createTestUsers, testUsers } from '@/components/auth/TestUserCreator';
+import { createTestUser } from '@/components/auth/TestUserCreator';
+
+// Define test users here instead of importing
+const testUsers = [
+  { email: 'admin@example.com', password: 'password123', role: UserRole.ADMIN },
+  { email: 'manager@example.com', password: 'password123', role: UserRole.MANAGER },
+  { email: 'photographer@example.com', password: 'password123', role: UserRole.PHOTOGRAPHER }
+];
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -34,7 +41,16 @@ const Auth = () => {
     const setupTestUsers = async () => {
       try {
         setIsCreatingTestUsers(true);
-        await createTestUsers();
+        // Create test users one by one
+        for (const testUser of testUsers) {
+          await createTestUser({
+            email: testUser.email,
+            password: testUser.password,
+            firstName: testUser.role,
+            lastName: 'User',
+            role: testUser.role
+          });
+        }
       } finally {
         setIsCreatingTestUsers(false);
       }

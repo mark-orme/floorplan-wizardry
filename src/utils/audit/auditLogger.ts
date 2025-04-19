@@ -100,8 +100,7 @@ export async function getAuditLogs(
     let query = supabase
       .from('audit_logs')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
     
     if (userId) {
       query = query.eq('user_id', userId);
@@ -118,6 +117,9 @@ export async function getAuditLogs(
     if (toDate) {
       query = query.lte('created_at', toDate.toISOString());
     }
+    
+    // Now apply the limit
+    query = query.limit(limit);
     
     const { data, error } = await query;
     

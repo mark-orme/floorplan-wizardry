@@ -9,7 +9,7 @@
  * @param form Form element to secure
  */
 export function secureForm(form: HTMLFormElement): void {
-  // Add CSRF token from the Security namespace
+  // Add CSRF token
   const csrfToken = getCsrfToken();
   
   // Store token in a hidden field
@@ -50,7 +50,13 @@ export function secureForm(form: HTMLFormElement): void {
  * For use in the SecurityUtils module
  */
 function getCsrfToken(): string {
-  return `csrf-${Math.random().toString(36).substring(2, 15)}`;
+  // Generate a random token if none exists in storage
+  let token = sessionStorage.getItem('csrf_token');
+  if (!token) {
+    token = `csrf-${Math.random().toString(36).substring(2, 15)}`;
+    sessionStorage.setItem('csrf_token', token);
+  }
+  return token;
 }
 
 /**
