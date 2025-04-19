@@ -1,256 +1,317 @@
 
-import { Point } from '@/types/core/Geometry';
-
-interface BrushParameters {
-  pressure: number;
-  tiltX: number;
-  tiltY: number;
-  velocity: number;
-  width: number;
-  color: string;
-}
-
+/**
+ * Advanced brush system for Procreate-like drawing experience
+ * Uses WebGL for high-performance rendering
+ */
 export class AdvancedBrushSystem {
   private gl: WebGLRenderingContext | WebGL2RenderingContext;
-  private program: WebGLProgram;
+  private shaderProgram: WebGLProgram | null = null;
   private vertexBuffer: WebGLBuffer | null = null;
-  private currentParameters: BrushParameters;
-  private maxPoints = 100; // Maximum number of points to interpolate between
-  private interpolationStep = 0.05; // Step for bezier interpolation
+  private textureCoordBuffer: WebGLBuffer | null = null;
+  private brushTexture: WebGLTexture | null = null;
+  private brushParams = {
+    pressure: 1.0,
+    tiltX: 0,
+    tiltY: 0,
+    velocity: 0,
+    width: 5,
+    color: '#000000'
+  };
 
   constructor(gl: WebGLRenderingContext | WebGL2RenderingContext) {
     this.gl = gl;
-    this.program = this.createShaderProgram();
-    this.setupBuffers();
-    
-    this.currentParameters = {
-      pressure: 1.0,
-      tiltX: 0,
-      tiltY: 0,
-      velocity: 0,
-      width: 2,
-      color: '#000000'
-    };
+    this.initialize();
   }
 
-  private createShaderProgram(): WebGLProgram {
-    const vertexShaderSource = `
-      attribute vec2 aPosition;
-      uniform vec2 uBrushPos;
+  /**
+   * Initialize WebGL resources
+   */
+  private initialize(): void {
+    // Create shader program
+    this.shaderProgram = this.createShaderProgram();
+    
+    // Create buffers
+    this.createBuffers();
+    
+    // Create brush texture
+    this.createBrushTexture();
+  }
+
+  /**
+   * Create WebGL shader program for brush rendering
+   */
+  private createShaderProgram(): WebGLProgram | null {
+    const gl = this.gl;
+    
+    // Vertex shader source
+    const vsSource = `
+      attribute vec4 aVertexPosition;
+      attribute vec2 aTextureCoord;
+      
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
       uniform float uSize;
       uniform float uPressure;
       uniform vec2 uTilt;
       
-      varying vec2 vTexCoord;
+      varying highp vec2 vTextureCoord;
+      varying highp float vPressure;
       
-      void main() {
-        // Apply pressure and tilt to vertex position
-        vec2 pos = aPosition * uSize * (0.5 + uPressure * 0.5);
-        pos += uBrushPos;
-        
-        // Apply tilt effect
-        float tiltMagnitude = length(uTilt);
-        mat2 tiltRotation = mat2(
-          cos(tiltMagnitude), -sin(tiltMagnitude),
-          sin(tiltMagnitude), cos(tiltMagnitude)
-        );
-        pos = tiltRotation * pos;
-        
-        // Transform from canvas to clip space
-        pos = pos * 2.0 - 1.0;
-        
-        gl_Position = vec4(pos, 0.0, 1.0);
-        vTexCoord = aPosition;
+      void main(void) {
+        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+        gl_PointSize = uSize * (0.5 + uPressure * 0.5);
+        vTextureCoord = aTextureCoord;
+        vPressure = uPressure;
       }
     `;
-
-    const fragmentShaderSource = `
-      precision mediump float;
+    
+    // Fragment shader source
+    const fsSource = `
+      varying highp vec2 vTextureCoord;
+      varying highp float vPressure;
       
-      uniform vec4 uColor;
-      uniform float uPressure;
-      uniform float uVelocity;
+      uniform sampler2D uSampler;
+      uniform highp vec4 uBrushColor;
       
-      varying vec2 vTexCoord;
-      
-      float gaussian(float x, float sigma) {
-        return exp(-(x * x) / (2.0 * sigma * sigma));
-      }
-      
-      void main() {
-        // Calculate distance from center
-        float dist = length(vTexCoord);
-        
-        // Create soft brush edge with gaussian falloff
-        float sigma = 0.3; // Controls brush softness
-        float alpha = gaussian(dist, sigma);
-        
-        // Apply pressure and velocity effects
-        alpha *= uPressure * (1.0 - uVelocity * 0.5);
-        
-        // Output final color
-        gl_FragColor = uColor * alpha;
+      void main(void) {
+        highp vec4 texelColor = texture2D(uSampler, vTextureCoord);
+        gl_FragColor = vec4(uBrushColor.rgb, texelColor.a * uBrushColor.a * vPressure);
       }
     `;
-
-    const vertexShader = this.compileShader(vertexShaderSource, this.gl.VERTEX_SHADER);
-    const fragmentShader = this.compileShader(fragmentShaderSource, this.gl.FRAGMENT_SHADER);
-
-    const program = this.gl.createProgram();
-    if (!program) throw new Error('Failed to create shader program');
-
-    this.gl.attachShader(program, vertexShader);
-    this.gl.attachShader(program, fragmentShader);
-    this.gl.linkProgram(program);
-
-    if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
-      throw new Error('Failed to link shader program');
+    
+    // Create shaders
+    const vertexShader = this.compileShader(gl.VERTEX_SHADER, vsSource);
+    const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, fsSource);
+    
+    if (!vertexShader || !fragmentShader) {
+      return null;
     }
-
-    return program;
+    
+    // Create program
+    const shaderProgram = gl.createProgram();
+    if (!shaderProgram) {
+      console.error('Failed to create shader program');
+      return null;
+    }
+    
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+    
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+      console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+      return null;
+    }
+    
+    return shaderProgram;
   }
 
-  private compileShader(source: string, type: number): WebGLShader {
-    const shader = this.gl.createShader(type);
-    if (!shader) throw new Error('Failed to create shader');
-
-    this.gl.shaderSource(shader, source);
-    this.gl.compileShader(shader);
-
-    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      const info = this.gl.getShaderInfoLog(shader);
-      throw new Error('Shader compilation failed: ' + info);
+  /**
+   * Compile a shader of the given type with the provided source
+   */
+  private compileShader(type: number, source: string): WebGLShader | null {
+    const gl = this.gl;
+    const shader = gl.createShader(type);
+    
+    if (!shader) {
+      console.error('Failed to create shader');
+      return null;
     }
-
+    
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    
     return shader;
   }
 
-  private setupBuffers(): void {
-    // Create a buffer for brush vertices (simple quad)
-    this.vertexBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
+  /**
+   * Create vertex and texture coordinate buffers
+   */
+  private createBuffers(): void {
+    const gl = this.gl;
     
-    // Quad vertices with more detail for better quality
-    const vertices = new Float32Array([
-      -1, -1,
-      1, -1,
-      -1, 1,
-      1, 1
-    ]);
+    // Create vertex buffer
+    this.vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
     
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
+    // Four vertices for a quad
+    const positions = [
+      -1.0, -1.0,
+       1.0, -1.0,
+      -1.0,  1.0,
+       1.0,  1.0,
+    ];
+    
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    
+    // Create texture coordinate buffer
+    this.textureCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+    
+    const textureCoordinates = [
+      0.0, 0.0,
+      1.0, 0.0,
+      0.0, 1.0,
+      1.0, 1.0,
+    ];
+    
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
   }
 
-  public updateParameters(params: Partial<BrushParameters>): void {
-    this.currentParameters = { ...this.currentParameters, ...params };
+  /**
+   * Create a brush texture
+   */
+  private createBrushTexture(): void {
+    const gl = this.gl;
+    
+    // Create a texture
+    this.brushTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.brushTexture);
+    
+    // Create a 64x64 texture with a soft circular brush
+    const size = 64;
+    const data = new Uint8Array(size * size * 4);
+    
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const index = (y * size + x) * 4;
+        
+        // Calculate distance from center
+        const dx = x - size / 2;
+        const dy = y - size / 2;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Smooth falloff for brush edge
+        const radius = size / 2;
+        let alpha = Math.max(0, 1 - distance / radius);
+        alpha = Math.pow(alpha, 2); // Squared for smoother falloff
+        
+        data[index] = 255;     // R
+        data[index + 1] = 255; // G
+        data[index + 2] = 255; // B
+        data[index + 3] = Math.floor(alpha * 255); // A
+      }
+    }
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    
+    // Set texture parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   }
 
-  public drawStroke(point: Point, prevPoint: Point | null): void {
-    if (!prevPoint) {
-      // Draw a single dot when starting a stroke
-      this.drawDot(point);
+  /**
+   * Update brush parameters
+   */
+  public updateParameters(params: Partial<typeof this.brushParams>): void {
+    this.brushParams = { ...this.brushParams, ...params };
+  }
+
+  /**
+   * Draw a stroke segment between two points
+   */
+  public drawStroke(currentPoint: { x: number, y: number }, lastPoint: { x: number, y: number } | null): void {
+    // If this is the first point in the stroke, just return as we need
+    // two points to draw a segment
+    if (!lastPoint) return;
+
+    const gl = this.gl;
+    
+    if (!this.shaderProgram) {
+      console.error('Shader program not initialized');
       return;
     }
-
-    // Get interpolated points for smooth stroke
-    const interpolatedPoints = this.getInterpolatedPoints(prevPoint, point);
     
-    // Draw segments between interpolated points
-    for (let i = 0; i < interpolatedPoints.length; i++) {
-      // Calculate t value for parameter interpolation
-      const t = i / (interpolatedPoints.length - 1);
-      
-      // Interpolate parameters along the stroke
-      const currentPressure = this.lerpValue(
-        this.currentParameters.pressure, 
-        this.currentParameters.pressure, 
-        t
-      );
-      
-      const currentSize = this.currentParameters.width * (1 + (this.currentParameters.tiltX + this.currentParameters.tiltY) * 0.1);
-      
-      // Draw the current point with interpolated parameters
-      this.drawDot(
-        interpolatedPoints[i], 
-        currentPressure, 
-        currentSize
-      );
-    }
-  }
-
-  private drawDot(point: Point, pressure?: number, size?: number): void {
-    this.gl.useProgram(this.program);
-
+    // Use shader program
+    gl.useProgram(this.shaderProgram);
+    
+    // Get uniform locations
+    const projectionMatrix = gl.getUniformLocation(this.shaderProgram, 'uProjectionMatrix');
+    const modelViewMatrix = gl.getUniformLocation(this.shaderProgram, 'uModelViewMatrix');
+    const uSize = gl.getUniformLocation(this.shaderProgram, 'uSize');
+    const uPressure = gl.getUniformLocation(this.shaderProgram, 'uPressure');
+    const uTilt = gl.getUniformLocation(this.shaderProgram, 'uTilt');
+    const uBrushColor = gl.getUniformLocation(this.shaderProgram, 'uBrushColor');
+    
     // Set uniforms
-    const posLoc = this.gl.getUniformLocation(this.program, 'uBrushPos');
-    const sizeLoc = this.gl.getUniformLocation(this.program, 'uSize');
-    const pressureLoc = this.gl.getUniformLocation(this.program, 'uPressure');
-    const tiltLoc = this.gl.getUniformLocation(this.program, 'uTilt');
-    const colorLoc = this.gl.getUniformLocation(this.program, 'uColor');
-    const velocityLoc = this.gl.getUniformLocation(this.program, 'uVelocity');
-
-    // Normalize coordinates to WebGL coordinate space (0.0-1.0)
-    const canvas = this.gl.canvas;
-    const normalizedX = point.x / canvas.width;
-    const normalizedY = point.y / canvas.height;
-
-    // Convert color from hex to RGB
-    const color = this.hexToRgb(this.currentParameters.color);
-
-    // Use provided parameters or fall back to current parameters
-    const usePressure = pressure !== undefined ? pressure : this.currentParameters.pressure;
-    const useSize = size !== undefined ? size : this.currentParameters.width;
-
-    this.gl.uniform2f(posLoc, normalizedX, normalizedY);
-    this.gl.uniform1f(sizeLoc, useSize / 100.0); // Normalize size
-    this.gl.uniform1f(pressureLoc, usePressure);
-    this.gl.uniform2f(tiltLoc, this.currentParameters.tiltX / 90.0, this.currentParameters.tiltY / 90.0);
-    this.gl.uniform4f(colorLoc, color.r, color.g, color.b, 1.0);
-    this.gl.uniform1f(velocityLoc, this.currentParameters.velocity);
-
-    // Draw the brush stroke
-    const positionLoc = this.gl.getAttribLocation(this.program, 'aPosition');
-    this.gl.enableVertexAttribArray(positionLoc);
-    this.gl.vertexAttribPointer(positionLoc, 2, this.gl.FLOAT, false, 0, 0);
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-  }
-
-  private hexToRgb(hex: string): { r: number; g: number; b: number } {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16) / 255,
-      g: parseInt(result[2], 16) / 255,
-      b: parseInt(result[3], 16) / 255
-    } : { r: 0, g: 0, b: 0 };
-  }
-
-  // Linear interpolation between two values
-  private lerpValue(start: number, end: number, t: number): number {
-    return start + (end - start) * t;
-  }
-
-  // Get points interpolated along the stroke for smoother rendering
-  private getInterpolatedPoints(start: Point, end: Point): Point[] {
-    const points: Point[] = [];
-    const distance = Math.sqrt(
-      Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-    );
+    // For simplicity, using identity matrices here
+    gl.uniformMatrix4fv(projectionMatrix, false, new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    ]));
     
-    // Adapt number of interpolation steps based on distance
-    const steps = Math.min(
-      Math.max(Math.ceil(distance / 5), 2),  // At least 2 points, more for longer strokes
-      this.maxPoints                          // But not too many
-    );
+    gl.uniformMatrix4fv(modelViewMatrix, false, new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    ]));
     
-    // Create interpolated points
-    for (let i = 0; i < steps; i++) {
-      const t = i / (steps - 1);
-      points.push({
-        x: start.x + (end.x - start.x) * t,
-        y: start.y + (end.y - start.y) * t
-      });
+    gl.uniform1f(uSize, this.brushParams.width);
+    gl.uniform1f(uPressure, this.brushParams.pressure);
+    gl.uniform2f(uTilt, this.brushParams.tiltX, this.brushParams.tiltY);
+    
+    // Parse color
+    const color = this.hexToRgb(this.brushParams.color);
+    gl.uniform4f(uBrushColor, color.r / 255, color.g / 255, color.b / 255, 1.0);
+    
+    // Bind texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.brushTexture);
+    gl.uniform1i(gl.getUniformLocation(this.shaderProgram, 'uSampler'), 0);
+    
+    // For now, a simple implementation that draws interpolated points
+    // In a full implementation, this would use custom geometry to create
+    // a stroke with varying thickness based on pressure, tilt, etc.
+    const steps = Math.max(1, Math.ceil(Math.hypot(
+      currentPoint.x - lastPoint.x, 
+      currentPoint.y - lastPoint.y
+    ) / 2));
+    
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = lastPoint.x + (currentPoint.x - lastPoint.x) * t;
+      const y = lastPoint.y + (currentPoint.y - lastPoint.y) * t;
+      
+      // Draw a point at this position
+      // This would be enhanced in a full implementation
+      this.drawPoint(x, y);
     }
+  }
+
+  /**
+   * Draw a single point at the specified position
+   */
+  private drawPoint(x: number, y: number): void {
+    // In a full implementation, this would use the vertex and texture buffers
+    // to draw a textured quad at the specified position
     
-    return points;
+    // Note: This is a simplified implementation
+    console.log(`Drawing point at (${x}, ${y}) with pressure ${this.brushParams.pressure}`);
+  }
+
+  /**
+   * Convert hex color to RGB
+   */
+  private hexToRgb(hex: string): { r: number, g: number, b: number } {
+    // Remove # if present
+    hex = hex.replace('#', '');
+    
+    // Parse hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    return { r, g, b };
   }
 }

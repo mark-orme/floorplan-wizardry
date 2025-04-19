@@ -1,7 +1,9 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useOptimizedDrawing } from '@/hooks/useOptimizedDrawing';
 import { useWebGLContext } from '@/hooks/useWebGLContext';
+import { usePointerEvents } from '@/hooks/usePointerEvents';
 import { toast } from 'sonner';
 
 interface OptimizedCanvasProps {
@@ -19,6 +21,8 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
 }) => {
   const internalCanvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [pressure, setPressure] = useState<number>(0.5);
+  const [tilt, setTilt] = useState<{x: number, y: number}>({x: 0, y: 0});
 
   // Initialize fabric canvas with performance optimizations
   useEffect(() => {
@@ -30,7 +34,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
         height,
         enableRetinaScaling: true,
         renderOnAddRemove: false,
-        isDrawingMode: false,
+        isDrawingMode: true,
         fireMiddleClick: false,
         fireRightClick: false,
         stopContextMenu: true
@@ -57,6 +61,16 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     }
   }, [width, height, onCanvasReady, externalFabricCanvasRef]);
 
+  // Handle pressure changes
+  const handlePressureChange = (newPressure: number) => {
+    setPressure(newPressure);
+  };
+
+  // Handle tilt changes
+  const handleTiltChange = (tiltX: number, tiltY: number) => {
+    setTilt({x: tiltX, y: tiltY});
+  };
+
   // Use our optimized drawing hook
   const { webglContext } = useOptimizedDrawing({
     canvasRef: internalCanvasRef,
@@ -69,6 +83,14 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     fabricCanvas
   });
 
+  // Use enhanced pointer events for pressure sensitivity
+  usePointerEvents({
+    canvasRef: internalCanvasRef,
+    fabricCanvas,
+    onPressureChange: handlePressureChange,
+    onTiltChange: handleTiltChange
+  });
+
   return (
     <div className="relative">
       <canvas
@@ -76,6 +98,13 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
         className="border border-gray-200 rounded shadow-sm"
         style={{ touchAction: 'none' }}
       />
+      {/* Optional: Add pressure and tilt indicators for debugging */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="absolute bottom-2 right-2 bg-white/80 text-xs text-gray-700 px-2 py-1 rounded">
+          <div>Pressure: {pressure.toFixed(2)}</div>
+          <div>Tilt: [{tilt.x.toFixed(1)}, {tilt.y.toFixed(1)}]</div>
+        </div>
+      )}
     </div>
   );
 };

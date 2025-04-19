@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Point } from 'fabric';
 import { toast } from 'sonner';
 
 interface UseOptimizedDrawingProps {
@@ -79,7 +79,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.onMouseDown(new fabric.Point(x, y), {
+        const point = new Point(x, y);
+        fabricCanvas.freeDrawingBrush.onMouseDown(point, {
           e,
           pointer: { x, y }
         });
@@ -103,7 +104,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       // Draw interpolated points
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         points.forEach(point => {
-          fabricCanvas.freeDrawingBrush.onMouseMove(new fabric.Point(point.x, point.y), {
+          const fabricPoint = new Point(point.x, point.y);
+          fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
             e,
             pointer: point
           });
@@ -122,7 +124,15 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // End path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.onMouseUp({ e });
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Create a pointer position for the end of the stroke
+        fabricCanvas.freeDrawingBrush.onMouseUp({ 
+          e, 
+          pointer: { x, y } 
+        });
       }
     };
 
