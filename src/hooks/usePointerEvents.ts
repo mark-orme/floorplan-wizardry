@@ -1,135 +1,121 @@
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas, Point } from 'fabric';
+import { toFabricPoint } from '@/utils/fabricPointConverter';
 
 interface UsePointerEventsProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   fabricCanvas: FabricCanvas | null;
-  onPressureChange?: (pressure: number) => void;
-  onTiltChange?: (tiltX: number, tiltY: number) => void;
-  onPointerMove?: (e: PointerEvent) => void;
+  enabled?: boolean;
 }
 
-export const usePointerEvents = ({
-  canvasRef,
-  fabricCanvas,
-  onPressureChange,
-  onTiltChange,
-  onPointerMove
+export const usePointerEvents = ({ 
+  canvasRef, 
+  fabricCanvas, 
+  enabled = true 
 }: UsePointerEventsProps) => {
-  const lastPressure = useRef<number>(0.5);
-  const lastTilt = useRef<{x: number, y: number}>({x: 0, y: 0});
-  const pointerIdRef = useRef<number | null>(null);
-  
-  // Handle pointer events with pressure and tilt
-  const handlePointerEvent = useCallback((e: PointerEvent) => {
-    // Only process events from the primary pointer or the pointer we're tracking
-    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) {
-      return;
-    }
-    
-    // Track pointer ID on pointerdown
-    if (e.type === 'pointerdown' && pointerIdRef.current === null) {
-      pointerIdRef.current = e.pointerId;
-    }
-    
-    // Release tracking on pointerup
-    if (e.type === 'pointerup' || e.type === 'pointercancel') {
-      pointerIdRef.current = null;
-    }
-    
-    // Palm rejection - ignore touches that are likely palm contacts
-    if (e.width > 20 || e.height > 20) {
-      return; // Likely a palm touch
-    }
-    
-    // Get pressure (normalize between 0 and 1)
-    const pressure = e.pressure || 0.5;
-    if (Math.abs(pressure - lastPressure.current) > 0.05) {
-      lastPressure.current = pressure;
-      if (onPressureChange) {
-        onPressureChange(pressure);
-      }
-    }
-    
-    // Get tilt data
-    const tiltX = e.tiltX || 0;
-    const tiltY = e.tiltY || 0;
-    if (Math.abs(tiltX - lastTilt.current.x) > 2 || Math.abs(tiltY - lastTilt.current.y) > 2) {
-      lastTilt.current = {x: tiltX, y: tiltY};
-      if (onTiltChange) {
-        onTiltChange(tiltX, tiltY);
-      }
-    }
-    
-    // Forward the event to the onPointerMove callback if provided
-    if (e.type === 'pointermove' && onPointerMove) {
-      onPointerMove(e);
-    }
-    
-    // Try to provide tactile feedback on iOS devices for Apple Pencil
-    if (e.type === 'pointerdown' && 'vibrate' in navigator) {
-      try {
-        // Use very short, subtle vibration
-        navigator.vibrate(1);
-      } catch (err) {
-        // Ignore errors - not all devices support vibration
-      }
-    }
-  }, [onPressureChange, onTiltChange, onPointerMove]);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef<{ x: number, y: number } | null>(null);
+  const [isPointerDown, setIsPointerDown] = useState(false);
 
-  // Set up event listeners
+  // Set up pointer event handlers
   useEffect(() => {
+    if (!enabled || !fabricCanvas || !canvasRef.current) return;
+
     const canvas = canvasRef.current;
-    if (!canvas) return;
     
-    // Store canvas as HTMLCanvasElement to ensure correct typing
-    const canvasElement: HTMLCanvasElement = canvas;
-    
-    // Add all necessary pointer events
-    canvasElement.addEventListener('pointerdown', handlePointerEvent, { passive: false });
-    canvasElement.addEventListener('pointermove', handlePointerEvent, { passive: false });
-    canvasElement.addEventListener('pointerup', handlePointerEvent, { passive: false });
-    canvasElement.addEventListener('pointercancel', handlePointerEvent, { passive: false });
-    
-    // Configure the canvas for optimal stylus input
-    canvasElement.style.touchAction = 'none';
-    
-    // Enable stylus-specific options
-    if ('setPointerCapture' in canvasElement) {
-      const capturePointer = (e: PointerEvent) => {
-        if (e.pointerType === 'pen') {
-          try {
-            canvasElement.setPointerCapture(e.pointerId);
-          } catch (err) {
-            console.warn('Could not capture pointer:', err);
-          }
-        }
-      };
+    const handlePointerDown = (e: PointerEvent) => {
+      e.preventDefault();
+      isDrawingRef.current = true;
+      setIsPointerDown(true);
       
-      canvasElement.addEventListener('pointerdown', capturePointer);
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       
-      // Create a proper cleanup function with explicit element type
-      return () => {
-        canvasElement.removeEventListener('pointerdown', capturePointer);
-        canvasElement.removeEventListener('pointerdown', handlePointerEvent);
-        canvasElement.removeEventListener('pointermove', handlePointerEvent);
-        canvasElement.removeEventListener('pointerup', handlePointerEvent);
-        canvasElement.removeEventListener('pointercancel', handlePointerEvent);
-      };
-    }
-    
-    // Create a proper cleanup function for the case where setPointerCapture isn't used
-    return () => {
-      canvasElement.removeEventListener('pointerdown', handlePointerEvent);
-      canvasElement.removeEventListener('pointermove', handlePointerEvent);
-      canvasElement.removeEventListener('pointerup', handlePointerEvent);
-      canvasElement.removeEventListener('pointercancel', handlePointerEvent);
+      lastPointRef.current = { x, y };
+
+      // Start path in Fabric
+      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
+        const fabricPoint = toFabricPoint({ x, y });
+        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
+          e,
+          pointer: fabricPoint
+        });
+      }
     };
-  }, [canvasRef, handlePointerEvent]);
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isDrawingRef.current || !lastPointRef.current) return;
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const currentPoint = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+
+      // Draw point in Fabric
+      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
+        const fabricPoint = toFabricPoint(currentPoint);
+        fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
+          e,
+          pointer: fabricPoint
+        });
+      }
+
+      lastPointRef.current = currentPoint;
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (!isDrawingRef.current) return;
+      e.preventDefault();
+      
+      isDrawingRef.current = false;
+      setIsPointerDown(false);
+      lastPointRef.current = null;
+
+      // End path in Fabric
+      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const fabricPoint = toFabricPoint({ x, y });
+        fabricCanvas.freeDrawingBrush.onMouseUp({
+          e,
+          pointer: fabricPoint
+        });
+      }
+    };
+
+    const handlePointerOut = (e: PointerEvent) => {
+      handlePointerUp(e);
+    };
+
+    // Add event listeners
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointerout', handlePointerOut);
+
+    // Set touch-action to none to prevent scrolling
+    canvas.style.touchAction = 'none';
+
+    return () => {
+      // FIXED: Only remove event listeners if canvas exists
+      if (canvas) {
+        canvas.removeEventListener('pointerdown', handlePointerDown);
+        canvas.removeEventListener('pointermove', handlePointerMove);
+        canvas.removeEventListener('pointerup', handlePointerUp);
+        canvas.removeEventListener('pointerout', handlePointerOut);
+      }
+    };
+  }, [canvasRef, fabricCanvas, enabled]);
 
   return {
-    lastPressure: lastPressure.current,
-    lastTilt: lastTilt.current
+    isPointerDown
   };
 };
+
+export default usePointerEvents;

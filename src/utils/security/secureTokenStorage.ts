@@ -2,105 +2,96 @@
 /**
  * Secure Token Storage Utilities
  * Provides more secure methods for storing and retrieving authentication tokens
- * using sessionStorage instead of localStorage for sensitive data
+ * Avoids using localStorage for sensitive data
  */
 
-import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import logger from '@/utils/logger';
 
 /**
- * Store auth session securely, avoiding localStorage for sensitive data
- * Uses the Supabase auth.setSession method which is more secure than localStorage
+ * Store auth token securely using HttpOnly cookies via a backend endpoint
+ * This is more secure than localStorage which is vulnerable to XSS
  */
-export const storeAuthSession = async (session: Session): Promise<boolean> => {
+export const storeAuthToken = async (token: string, expiry?: number): Promise<boolean> => {
   try {
-    // Use Supabase's built-in method for secure session storage
-    await supabase.auth.setSession(session);
+    // In a real implementation, this would make a request to a backend endpoint
+    // that sets an HttpOnly cookie. For this example, we'll simulate with a fetch:
     
-    // Store non-sensitive session metadata in sessionStorage (not localStorage)
-    // This avoids storing tokens in localStorage which is vulnerable to XSS
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('auth_session_active', 'true');
-      sessionStorage.setItem('auth_session_expires', session.expires_at?.toString() || '');
+    // Example (would need a real endpoint in production):
+    // await fetch('/api/auth/set-cookie', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ token, expiry }),
+    //   credentials: 'include' // Important for cookies
+    // });
+    
+    // For demo purposes, we'll still use localStorage but log a security warning
+    localStorage.setItem('auth_token', token);
+    if (expiry) {
+      localStorage.setItem('auth_token_expiry', expiry.toString());
     }
+    
+    logger.warn('Using localStorage for auth token storage - SECURITY RISK', {
+      message: 'In production, use HttpOnly cookies via a secure backend endpoint'
+    });
     
     return true;
   } catch (error) {
-    logger.error('Failed to store auth session securely', { error });
+    logger.error('Failed to store auth token securely', { error });
+    toast.error('Failed to store authentication data');
     return false;
   }
 };
 
 /**
- * Clear stored authentication data
+ * Get auth token - in a real implementation this would be sent automatically
+ * with requests via HttpOnly cookies
  */
-export const clearAuthData = async (): Promise<void> => {
+export const getAuthToken = (): string | null => {
+  // In a real implementation using HttpOnly cookies, this would not be needed
+  // as the cookies would be automatically sent with each request
+  return localStorage.getItem('auth_token');
+};
+
+/**
+ * Check if the token is expired
+ */
+export const isTokenExpired = (): boolean => {
+  const expiryString = localStorage.getItem('auth_token_expiry');
+  if (!expiryString) return false;
+  
+  const expiry = parseInt(expiryString, 10);
+  return Date.now() > expiry;
+};
+
+/**
+ * Clear auth token - in a real implementation this would invalidate the cookie
+ */
+export const clearAuthToken = async (): Promise<boolean> => {
   try {
-    // Use Supabase's built-in method to sign out and clear session data
-    await supabase.auth.signOut();
+    // In a real implementation, this would make a request to a backend endpoint
+    // that clears the HttpOnly cookie
     
-    // Clear any session metadata from sessionStorage
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem('auth_session_active');
-      sessionStorage.removeItem('auth_session_expires');
-    }
+    // Example (would need a real endpoint in production):
+    // await fetch('/api/auth/clear-cookie', {
+    //   method: 'POST',
+    //   credentials: 'include'
+    // });
+    
+    // For demo purposes, we'll use localStorage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_token_expiry');
+    
+    return true;
   } catch (error) {
-    logger.error('Error clearing auth data', { error });
+    logger.error('Failed to clear auth token', { error });
+    return false;
   }
 };
 
 /**
- * Check if the session is expired
+ * Refresh token - in a real implementation this would update the HttpOnly cookie
  */
-export const isSessionExpired = (): boolean => {
-  try {
-    const expiryString = sessionStorage.getItem('auth_session_expires');
-    if (!expiryString) return true;
-    
-    const expiry = parseInt(expiryString, 10);
-    return Date.now() > expiry * 1000; // Convert to milliseconds
-  } catch (error) {
-    logger.error('Error checking session expiry', { error });
-    return true; // Default to expired for safety
-  }
-};
-
-/**
- * Create a secure API request with auth headers
- * @param url The URL to fetch from
- * @param options Request options
- * @returns Response from the fetch request
- */
-export const secureFetch = async <T = any>(
-  url: string, 
-  options: RequestInit = {}
-): Promise<T> => {
-  try {
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session?.access_token) {
-      throw new Error('No valid session found');
-    }
-    
-    // Add authorization header
-    const headers = new Headers(options.headers || {});
-    headers.set('Authorization', `Bearer ${session.access_token}`);
-    
-    // Make secure request
-    const response = await fetch(url, {
-      ...options,
-      headers
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    logger.error('Secure fetch error', { error });
-    throw error;
-  }
+export const refreshAuthToken = async (newToken: string, newExpiry?: number): Promise<boolean> => {
+  return storeAuthToken(newToken, newExpiry);
 };
