@@ -80,7 +80,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        // Create a fabric Point here
+        // Create a fabric Point here using the conversion utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
           e,
@@ -106,7 +106,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       // Draw interpolated points
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         points.forEach(point => {
-          // Create a fabric Point for each interpolated point
+          // Create a fabric Point for each interpolated point using the conversion utility
           const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
           fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
             e,
@@ -131,7 +131,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Create a pointer position for the end of the stroke
+        // Create a fabric Point for the pointer position using the conversion utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
           e, 
