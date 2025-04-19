@@ -35,6 +35,49 @@ export function isWasmSupported(): boolean {
 }
 
 /**
+ * Check if WebAssembly threads are supported
+ * @returns True if WebAssembly threads are supported
+ */
+export function supportsWasmThreads(): boolean {
+  try {
+    // Check for SharedArrayBuffer support (required for threads)
+    if (typeof SharedArrayBuffer !== 'function') {
+      return false;
+    }
+    
+    // Check for Atomics support
+    if (typeof Atomics !== 'object') {
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Check if WebAssembly SIMD is supported
+ * @returns True if WebAssembly SIMD is supported
+ */
+export function supportsWasmSIMD(): boolean {
+  // SIMD detection requires actually trying to instantiate a SIMD module
+  // We'll return a conservative estimate based on browser support
+  const ua = navigator.userAgent;
+  
+  // Chrome 91+, Edge 91+, Firefox 89+, Safari 16.4+
+  if (
+    (/Chrome\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) >= 91) ||
+    (/Firefox\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) >= 89) ||
+    (/Safari\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) >= 16)
+  ) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Get details about WebAssembly support
  * @returns Object with support status and capabilities
  */
@@ -50,8 +93,8 @@ export function getWasmSupportDetails(): {
   return {
     supported,
     streaming: supported && typeof WebAssembly.instantiateStreaming === 'function',
-    threads: supported && typeof SharedArrayBuffer === 'function',
-    simd: false, // Cannot be detected easily in JS, would require feature detection
-    exceptions: false, // Cannot be detected easily in JS, would require feature detection
+    threads: supported && supportsWasmThreads(),
+    simd: supported && supportsWasmSIMD(),
+    exceptions: false, // Currently not widely supported
   };
 }
