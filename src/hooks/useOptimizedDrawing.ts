@@ -3,14 +3,13 @@
  * Hook for optimized drawing with feedback
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { usePerformanceMonitoring } from './usePerformanceMonitoring';
 import logger from '@/utils/logger';
 
 interface UseOptimizedDrawingProps {
   canvas: FabricCanvas | null;
-  currentTool: DrawingMode;
+  currentTool: string;
   lineThickness: number;
   lineColor: string;
   enableOptimizations?: boolean;
@@ -36,7 +35,7 @@ export function useOptimizedDrawing({
     if (!canvas) return;
     
     // Set up canvas for drawing
-    canvas.isDrawingMode = currentTool === DrawingMode.PENCIL;
+    canvas.isDrawingMode = currentTool === 'DRAW';
     if (canvas.freeDrawingBrush) {
       canvas.freeDrawingBrush.width = lineThickness;
       canvas.freeDrawingBrush.color = lineColor;
@@ -59,7 +58,7 @@ export function useOptimizedDrawing({
   
   // Event handler for mouse down
   const handleMouseDown = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || currentTool !== DrawingMode.PENCIL) return;
+    if (!canvas || currentTool !== 'DRAW') return;
     
     setIsDrawing(true);
     const pointer = canvas.getPointer(event);
@@ -73,7 +72,7 @@ export function useOptimizedDrawing({
   
   // Event handler for mouse move
   const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || !isDrawing || currentTool !== DrawingMode.PENCIL) return;
+    if (!canvas || !isDrawing || currentTool !== 'DRAW') return;
     
     // Throttle drawing for better performance
     if (throttleTimerRef.current !== null) return;
@@ -85,7 +84,7 @@ export function useOptimizedDrawing({
       const currentPosition = { x: pointer.x, y: pointer.y };
       
       // Draw line
-      const line = new fabric.Line(
+      const line = new Line(
         [lastPositionRef.current.x, lastPositionRef.current.y, currentPosition.x, currentPosition.y],
         {
           stroke: lineColor,
@@ -110,7 +109,7 @@ export function useOptimizedDrawing({
   
   // Event handler for mouse up
   const handleMouseUp = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
-    if (!canvas || currentTool !== DrawingMode.PENCIL) return;
+    if (!canvas || currentTool !== 'DRAW') return;
     
     setIsDrawing(false);
     

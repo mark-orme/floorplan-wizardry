@@ -1,249 +1,220 @@
 
 import React, { useState, useEffect } from 'react';
-import { SecurityCheck, SecurityCheckStatus } from '@/types/securityTypes';
-import { AuditEventType, logSecurityEvent } from '@/utils/audit/auditLogger';
-import { checkDependencyVulnerabilities } from '@/utils/security/dependencyManager';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { hasCriticalVulnerabilities } from '@/utils/security/dependencyManager';
+import { generateCSRFToken, verifyCSRFToken } from '@/utils/security/enhancedCsrfProtection';
+import { Loader2, Shield, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 
-interface SecurityCheckListProps {
-  onCheckComplete?: (passedChecks: number, totalChecks: number) => void;
+type SecurityCheckStatus = 'pending' | 'running' | 'passed' | 'failed' | 'warning';
+
+interface SecurityCheck {
+  id: string;
+  name: string;
+  description: string;
+  status: SecurityCheckStatus;
+  runCheck: () => Promise<SecurityCheckStatus>;
 }
 
-/**
- * Component to display and run security checks
- */
-export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ onCheckComplete }) => {
-  const [checks, setChecks] = useState<SecurityCheck[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRunning, setIsRunning] = useState(false);
+interface SecurityCheckListProps {
+  onCheckComplete?: (passed: number, total: number) => void;
+}
 
-  // Initialize checks
+export function SecurityCheckList({ onCheckComplete }: SecurityCheckListProps) {
+  const [securityChecks, setSecurityChecks] = useState<SecurityCheck[]>([]);
+  const [isRunningAll, setIsRunningAll] = useState(false);
+  
+  // Initialize security checks
   useEffect(() => {
     const initialChecks: SecurityCheck[] = [
       {
-        id: 'auth-check',
-        name: 'Authentication Security',
-        description: 'Checks for proper authentication implementation',
-        status: 'pending'
+        id: 'dependencies',
+        name: 'Dependency Vulnerabilities',
+        description: 'Check for known vulnerabilities in dependencies',
+        status: 'pending',
+        runCheck: async () => {
+          // This is just a mock, in a real app it would check dependencies
+          const hasCritical = await hasCriticalVulnerabilities();
+          return hasCritical ? 'failed' : 'passed';
+        }
       },
       {
-        id: 'csrf-check',
+        id: 'csrf',
         name: 'CSRF Protection',
-        description: 'Checks for Cross-Site Request Forgery protections',
-        status: 'pending'
+        description: 'Verify CSRF token generation and validation',
+        status: 'pending',
+        runCheck: async () => {
+          try {
+            const token = generateCSRFToken();
+            const isValid = verifyCSRFToken(token);
+            return isValid ? 'passed' : 'failed';
+          } catch (error) {
+            console.error('CSRF check failed:', error);
+            return 'failed';
+          }
+        }
       },
       {
-        id: 'input-validation-check',
-        name: 'Input Validation',
-        description: 'Checks for proper input validation',
-        status: 'pending'
+        id: 'storage',
+        name: 'Secure Storage',
+        description: 'Check for secure storage usage',
+        status: 'pending',
+        runCheck: async () => {
+          // Check if localStorage is used for sensitive data
+          const hasLocalStorage = Object.keys(localStorage).length > 0;
+          return hasLocalStorage ? 'warning' : 'passed';
+        }
       },
       {
-        id: 'dep-check',
-        name: 'Dependency Security',
-        description: 'Checks for vulnerable dependencies',
-        status: 'pending'
-      },
-      {
-        id: 'data-exposure-check',
-        name: 'Sensitive Data Exposure',
-        description: 'Checks for sensitive data exposure',
-        status: 'pending'
-      },
-      {
-        id: 'offline-encryption-check',
-        name: 'Offline Data Encryption',
-        description: 'Checks if offline data is properly encrypted',
-        status: 'pending'
-      },
-      {
-        id: 'rate-limiting-check',
-        name: 'Rate Limiting',
-        description: 'Checks if rate limiting is implemented',
-        status: 'pending'
+        id: 'headers',
+        name: 'Security Headers',
+        description: 'Check for secure HTTP headers',
+        status: 'pending',
+        runCheck: async () => {
+          // In a real app, this would check actual headers
+          // For demo, always return warning
+          return 'warning';
+        }
       }
     ];
     
-    setChecks(initialChecks);
-    setIsLoading(false);
-    
-    // Log security check initialization
-    logSecurityEvent(
-      AuditEventType.SECURITY_WARNING,
-      { action: 'security-check-init', checkCount: initialChecks.length }
-    );
+    setSecurityChecks(initialChecks);
   }, []);
-
-  // Run security checks
-  const runSecurityChecks = async () => {
-    setIsRunning(true);
-    
-    // Update auth check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'auth-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Authentication implemented correctly' }
+  
+  const runCheck = async (checkId: string) => {
+    setSecurityChecks(prev => 
+      prev.map(check => 
+        check.id === checkId 
+          ? { ...check, status: 'running' } 
           : check
       )
     );
     
-    // Update CSRF check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'csrf-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Enhanced CSRF protection in place with double submit pattern' }
+    const checkIndex = securityChecks.findIndex(check => check.id === checkId);
+    if (checkIndex === -1) return;
+    
+    const result = await securityChecks[checkIndex].runCheck();
+    
+    setSecurityChecks(prev => 
+      prev.map(check => 
+        check.id === checkId 
+          ? { ...check, status: result } 
           : check
       )
     );
+  };
+  
+  const runAllChecks = async () => {
+    setIsRunningAll(true);
     
-    // Check for vulnerable dependencies
-    try {
-      const vulnerableDeps = await checkDependencyVulnerabilities();
+    // Set all checks to running
+    setSecurityChecks(prev => 
+      prev.map(check => ({ ...check, status: 'running' }))
+    );
+    
+    // Run each check in sequence
+    const results = [];
+    for (const check of securityChecks) {
+      const result = await check.runCheck();
+      results.push(result);
       
-      if (vulnerableDeps.length > 0) {
-        const updatedChecks = [...checks];
-        const depCheck = updatedChecks.find(c => c.id === 'dep-check');
-        
-        if (depCheck) {
-          depCheck.status = 'failed' as SecurityCheckStatus;
-          depCheck.details = `Found ${vulnerableDeps.length} vulnerable dependencies`;
-          
-          setChecks(updatedChecks);
-          
-          // Log security issue
-          logSecurityEvent(
-            AuditEventType.SECURITY_WARNING,
-            { 
-              action: 'vulnerable-dependencies', 
-              count: vulnerableDeps.length,
-              dependencies: vulnerableDeps.map(d => d.name).join(', ')
-            }
-          );
-        }
-      } else {
-        setChecks(prevChecks => 
-          prevChecks.map(check => 
-            check.id === 'dep-check' 
-              ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'No vulnerable dependencies found' }
-              : check
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error checking dependencies:', error);
-      setChecks(prevChecks => 
-        prevChecks.map(check => 
-          check.id === 'dep-check' 
-            ? { ...check, status: 'warning' as SecurityCheckStatus, details: 'Error checking dependencies' }
-            : check
+      // Update status as each check completes
+      setSecurityChecks(prev => 
+        prev.map(c => 
+          c.id === check.id 
+            ? { ...c, status: result } 
+            : c
         )
       );
     }
     
-    // Update input validation check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'input-validation-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Input validation is implemented across the application' }
-          : check
-      )
-    );
-    
-    // Update data exposure check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'data-exposure-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Sensitive data is properly handled with encryption' }
-          : check
-      )
-    );
-    
-    // Update offline encryption check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'offline-encryption-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Offline data is encrypted using Web Crypto API' }
-          : check
-      )
-    );
-    
-    // Update rate limiting check
-    setChecks(prevChecks => 
-      prevChecks.map(check => 
-        check.id === 'rate-limiting-check' 
-          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Rate limiting implemented for API requests and form submissions' }
-          : check
-      )
-    );
+    setIsRunningAll(false);
     
     // Calculate results
-    setTimeout(() => {
-      const passedChecks = checks.filter(check => check.status === 'passed').length;
-      
-      if (onCheckComplete) {
-        onCheckComplete(passedChecks, checks.length);
-      }
-      
-      // Log security check completion
-      logSecurityEvent(
-        AuditEventType.SECURITY_WARNING,
-        { 
-          action: 'security-check-complete', 
-          passed: passedChecks,
-          total: checks.length 
-        }
-      );
-      
-      toast.success(`Completed ${checks.length} security checks`);
-      setIsRunning(false);
-    }, 1000);
+    const passed = results.filter(r => r === 'passed').length;
+    const total = results.length;
+    
+    if (onCheckComplete) {
+      onCheckComplete(passed, total);
+    }
   };
-
-  if (isLoading) {
-    return <div>Loading security checks...</div>;
-  }
-
+  
+  // Status icon component
+  const StatusIcon = ({ status }: { status: SecurityCheckStatus }) => {
+    switch (status) {
+      case 'pending':
+        return <Shield className="h-5 w-5 text-gray-400" />;
+      case 'running':
+        return <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />;
+      case 'passed':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'failed':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'warning':
+        return <ShieldAlert className="h-5 w-5 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Security Checks</h2>
-        <button
-          onClick={runSecurityChecks}
-          disabled={isRunning}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded disabled:bg-gray-400"
+        <h3 className="text-xl font-semibold">Security Checks</h3>
+        <Button 
+          onClick={runAllChecks} 
+          disabled={isRunningAll}
+          className="flex items-center"
         >
-          {isRunning ? 'Running...' : 'Run Checks'}
-        </button>
+          {isRunningAll && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Run All Checks
+        </Button>
       </div>
       
-      <div className="space-y-2">
-        {checks.map(check => (
-          <div 
-            key={check.id}
-            className="p-3 border rounded shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{check.name}</h3>
-              <span 
-                className={`px-2 py-1 text-xs rounded ${
-                  check.status === 'passed' ? 'bg-green-100 text-green-800' : 
-                  check.status === 'failed' ? 'bg-red-100 text-red-800' : 
-                  check.status === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`}
+      <div className="space-y-3">
+        {securityChecks.map(check => (
+          <div key={check.id} className="p-4 border rounded-lg bg-white">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="flex items-center">
+                  <StatusIcon status={check.status} />
+                  <h4 className="ml-2 font-medium">{check.name}</h4>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{check.description}</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => runCheck(check.id)}
+                disabled={check.status === 'running' || isRunningAll}
               >
-                {check.status.toUpperCase()}
-              </span>
+                {check.status === 'running' ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Running...
+                  </>
+                ) : 'Run Check'}
+              </Button>
             </div>
-            <p className="text-sm text-gray-600 mt-1">{check.description}</p>
-            {check.details && (
-              <p className="text-xs mt-2 p-2 bg-gray-50 rounded">{check.details}</p>
+            
+            {/* Status message */}
+            {check.status !== 'pending' && (
+              <div className={`mt-2 text-sm px-3 py-1 rounded-full inline-block ${
+                check.status === 'passed' ? 'bg-green-100 text-green-800' :
+                check.status === 'failed' ? 'bg-red-100 text-red-800' :
+                check.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {check.status === 'passed' ? 'Passed' :
+                 check.status === 'failed' ? 'Failed' :
+                 check.status === 'warning' ? 'Warning' :
+                 check.status === 'running' ? 'Running...' : ''}
+              </div>
             )}
           </div>
         ))}
       </div>
     </div>
   );
-};
-
-export default SecurityCheckList;
+}

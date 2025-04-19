@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Tab, Tabs, TabList, TabPanel } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SecurityCheckList } from '@/components/security/SecurityCheckList';
 import { SecuritySecretRotation } from '@/components/security/SecuritySecretRotation';
 import { hasCriticalVulnerabilities } from '@/utils/security/dependencyManager';
@@ -63,21 +63,21 @@ export default function SecurityDashboard() {
       </div>
       
       <Tabs defaultValue="checks">
-        <TabList className="mb-4 border-b">
-          <Tab value="checks" className="px-4 py-2 font-medium">Security Checks</Tab>
-          <Tab value="secrets" className="px-4 py-2 font-medium">Secret Management</Tab>
-          <Tab value="reports" className="px-4 py-2 font-medium">Reports</Tab>
-        </TabList>
+        <TabsList className="mb-4 border-b">
+          <TabsTrigger value="checks" className="px-4 py-2 font-medium">Security Checks</TabsTrigger>
+          <TabsTrigger value="secrets" className="px-4 py-2 font-medium">Secret Management</TabsTrigger>
+          <TabsTrigger value="reports" className="px-4 py-2 font-medium">Reports</TabsTrigger>
+        </TabsList>
         
-        <TabPanel value="checks" className="p-4 bg-white rounded-lg shadow-sm">
+        <TabsContent value="checks" className="p-4 bg-white rounded-lg shadow-sm">
           <SecurityCheckList onCheckComplete={handleCheckComplete} />
-        </TabPanel>
+        </TabsContent>
         
-        <TabPanel value="secrets" className="p-4 bg-white rounded-lg shadow-sm">
+        <TabsContent value="secrets" className="p-4 bg-white rounded-lg shadow-sm">
           <SecuritySecretRotation />
-        </TabPanel>
+        </TabsContent>
         
-        <TabPanel value="reports" className="p-4 bg-white rounded-lg shadow-sm">
+        <TabsContent value="reports" className="p-4 bg-white rounded-lg shadow-sm">
           <div className="space-y-6">
             <div>
               <h3 className="text-xl font-semibold mb-2">Security Reports</h3>
@@ -124,7 +124,7 @@ export default function SecurityDashboard() {
               </div>
             </div>
           </div>
-        </TabPanel>
+        </TabsContent>
       </Tabs>
       
       <div className="mt-8 p-4 bg-blue-50 rounded-lg">

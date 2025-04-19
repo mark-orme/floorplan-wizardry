@@ -92,10 +92,9 @@ export async function logAuditEvent(
       ipAddress
     };
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('audit_logs')
-      .insert(auditLogEntry)
-      .select();
+      .insert(auditLogEntry);
     
     if (error) {
       logger.error('Failed to log audit event:', error);
@@ -124,9 +123,10 @@ export async function getUserAuditLogs(
     // Using correct Supabase API pattern
     const { data, error } = await supabase
       .from('audit_logs')
-      .select()
+      .select('*')
       .eq('userId', userId)
-      .order('timestamp', { ascending: false });
+      .order('timestamp', { ascending: false })
+      .limit(limit);
     
     if (error) {
       logger.error('Failed to retrieve audit logs:', error);
@@ -154,9 +154,10 @@ export async function getResourceAuditLogs(
   try {
     const { data, error } = await supabase
       .from('audit_logs')
-      .select()
+      .select('*')
       .eq('resource', resource)
-      .order('timestamp', { ascending: false });
+      .order('timestamp', { ascending: false })
+      .limit(limit);
     
     if (error) {
       logger.error('Failed to retrieve audit logs:', error);

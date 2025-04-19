@@ -2,7 +2,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useOptimizedDrawing } from '@/hooks/useOptimizedDrawing';
-import { useWebGLContext } from '@/hooks/useWebGLContext';
 import { usePointerEvents } from '@/hooks/usePointerEvents';
 import { toast } from 'sonner';
 
@@ -73,16 +72,12 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     setTilt({x: tiltX, y: tiltY});
   };
 
-  // Use our optimized drawing hook
-  const { webglContext } = useOptimizedDrawing({
-    canvasRef: internalCanvasRef,
-    fabricCanvas
-  });
-
-  // Initialize WebGL context for advanced rendering
-  const { glContext, brushSystem } = useWebGLContext({
-    canvasRef: internalCanvasRef,
-    fabricCanvas
+  // Use our optimized drawing hook with proper parameters
+  const { isDrawing, objectCount, metrics } = useOptimizedDrawing({
+    canvas: fabricCanvas,
+    currentTool: 'DRAW',
+    lineThickness: 2,
+    lineColor: '#000000'
   });
 
   // Use enhanced pointer events with proper props

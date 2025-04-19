@@ -6,6 +6,7 @@
 
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
+import React from 'react';
 
 /**
  * Generate a cryptographically secure CSRF token
@@ -119,16 +120,16 @@ export function createProtectedFormSubmitHandler(
     e.preventDefault();
     
     // Add CSRF token input if it doesn't exist
-    let csrfInput = formElement.querySelector('input[name="csrf_token"]');
+    let csrfInput = formElement.querySelector('input[name="csrf_token"]') as HTMLInputElement;
     if (!csrfInput) {
-      csrfInput = document.createElement('input');
+      csrfInput = document.createElement('input') as HTMLInputElement;
       csrfInput.type = 'hidden';
       csrfInput.name = 'csrf_token';
       formElement.appendChild(csrfInput);
     }
     
     // Set token value
-    (csrfInput as HTMLInputElement).value = getCSRFToken();
+    csrfInput.value = getCSRFToken();
     
     // Call the original handler
     submitHandler(e);
@@ -187,15 +188,15 @@ export function useCSRFProtection(formRef: React.RefObject<HTMLFormElement>): vo
   React.useEffect(() => {
     if (formRef.current) {
       // Add CSRF token input if it doesn't exist
-      let csrfInput = formRef.current.querySelector('input[name="csrf_token"]');
+      let csrfInput = formRef.current.querySelector('input[name="csrf_token"]') as HTMLInputElement;
       if (!csrfInput) {
-        csrfInput = document.createElement('input');
+        csrfInput = document.createElement('input') as HTMLInputElement;
         csrfInput.type = 'hidden';
         csrfInput.name = 'csrf_token';
         csrfInput.value = getCSRFToken();
         formRef.current.appendChild(csrfInput);
       } else {
-        (csrfInput as HTMLInputElement).value = getCSRFToken();
+        csrfInput.value = getCSRFToken();
       }
     }
   }, [formRef]);

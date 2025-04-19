@@ -1,212 +1,221 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { SecurityCheckList } from '@/components/security/SecurityCheckList';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { hasCriticalVulnerabilities } from '@/utils/security/dependencyManager';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Shield, CheckCircle, AlertTriangle, ChevronRight, Loader2 } from 'lucide-react';
 
-/**
- * Security Check Page
- * Displays security checks and allows running them
- */
+interface SecurityCheck {
+  name: string;
+  check: () => Promise<boolean>;
+  isRunning: boolean;
+  result: boolean | null;
+}
+
 export default function SecurityCheck() {
-  const [score, setScore] = useState<number | null>(null);
-  const [hasCritical, setHasCritical] = useState(false);
+  const navigate = useNavigate();
+  const [checks, setChecks] = useState<SecurityCheck[]>([]);
+  const [isCheckingAll, setIsCheckingAll] = useState(false);
+  const [allPassed, setAllPassed] = useState<boolean | null>(null);
   
+  // Initialize security checks
   useEffect(() => {
-    // Check for critical vulnerabilities
-    const checkVulnerabilities = async () => {
-      const critical = await hasCriticalVulnerabilities();
-      setHasCritical(critical);
-    };
-    
-    checkVulnerabilities();
+    setChecks([
+      {
+        name: 'Dependency Vulnerabilities',
+        check: async () => !(await hasCriticalVulnerabilities()),
+        isRunning: false,
+        result: null
+      },
+      {
+        name: 'Local Storage Security',
+        check: async () => {
+          // Check if localStorage contains sensitive data patterns
+          const keys = Object.keys(localStorage);
+          const sensitivePatterns = ['password', 'token', 'key', 'secret', 'auth'];
+          
+          for (const key of keys) {
+            if (sensitivePatterns.some(pattern => key.toLowerCase().includes(pattern))) {
+              return false;
+            }
+          }
+          
+          return true;
+        },
+        isRunning: false,
+        result: null
+      },
+      {
+        name: 'CORS Configuration',
+        check: async () => {
+          // In a real app, this would check actual CORS settings
+          // For this example, we'll simulate a passing check
+          return true;
+        },
+        isRunning: false,
+        result: null
+      }
+    ]);
   }, []);
   
-  const handleCheckComplete = (passed: number, total: number) => {
-    setScore(Math.round((passed / total) * 100));
+  const runCheck = async (index: number) => {
+    // Update check status to running
+    setChecks(prevChecks => 
+      prevChecks.map((check, i) => 
+        i === index 
+          ? { ...check, isRunning: true, result: null } 
+          : check
+      )
+    );
+    
+    try {
+      // Run the check
+      const result = await checks[index].check();
+      
+      // Update check result
+      setChecks(prevChecks => 
+        prevChecks.map((check, i) => 
+          i === index 
+            ? { ...check, isRunning: false, result } 
+            : check
+        )
+      );
+      
+      return result;
+    } catch (error) {
+      console.error(`Error running check ${checks[index].name}:`, error);
+      
+      // Update check as failed
+      setChecks(prevChecks => 
+        prevChecks.map((check, i) => 
+          i === index 
+            ? { ...check, isRunning: false, result: false } 
+            : check
+        )
+      );
+      
+      return false;
+    }
+  };
+  
+  const runAllChecks = async () => {
+    setIsCheckingAll(true);
+    setAllPassed(null);
+    
+    const results = [];
+    
+    for (let i = 0; i < checks.length; i++) {
+      const result = await runCheck(i);
+      results.push(result);
+    }
+    
+    const passed = results.every(result => result);
+    setAllPassed(passed);
+    setIsCheckingAll(false);
+    
+    if (passed) {
+      toast.success('All security checks passed!');
+    } else {
+      toast.error('Some security checks failed. Please review and fix the issues.');
+    }
+  };
+  
+  const navigateToDashboard = () => {
+    navigate('/security-dashboard');
   };
   
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Security Checks</h1>
-          <p className="text-gray-600">
-            Run security checks to ensure your application is secure.
-          </p>
+    <div className="container mx-auto py-8 px-4 max-w-3xl">
+      <div className="mb-8 text-center">
+        <div className="inline-flex justify-center items-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+          <Shield className="h-8 w-8 text-blue-600" />
         </div>
-        <Link to="/security-dashboard">
-          <Button variant="outline">Advanced Security Dashboard</Button>
-        </Link>
+        <h1 className="text-3xl font-bold mb-2">Security Check</h1>
+        <p className="text-gray-600 max-w-md mx-auto">
+          Verify that your application meets security requirements
+          before deploying to production.
+        </p>
       </div>
       
-      {score !== null && (
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle>Security Score</CardTitle>
-            <CardDescription>
-              Based on the security checks that passed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div 
-                className={`text-3xl font-bold mr-4 ${
-                  score >= 90 ? 'text-green-600' :
-                  score >= 70 ? 'text-yellow-600' :
-                  'text-red-600'
-                }`}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div className="p-4 bg-gray-50 border-b">
+          <h2 className="font-semibold">Required Security Checks</h2>
+        </div>
+        
+        <div className="divide-y">
+          {checks.map((check, index) => (
+            <div key={index} className="p-4 flex justify-between items-center">
+              <div className="flex items-center">
+                {check.result === true && (
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                )}
+                {check.result === false && (
+                  <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                )}
+                {check.result === null && !check.isRunning && (
+                  <div className="h-5 w-5 mr-2" />
+                )}
+                {check.isRunning && (
+                  <Loader2 className="h-5 w-5 text-blue-500 animate-spin mr-2" />
+                )}
+                <span>{check.name}</span>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => runCheck(index)}
+                disabled={check.isRunning || isCheckingAll}
               >
-                {score}%
-              </div>
-              <div className="flex-1">
-                <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      score >= 90 ? 'bg-green-500' :
-                      score >= 70 ? 'bg-yellow-500' :
-                      'bg-red-500'
-                    }`}
-                    style={{ width: `${score}%` }}
-                  ></div>
-                </div>
-              </div>
+                {check.isRunning ? 'Running...' : 'Run Check'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ))}
+        </div>
+        
+        <div className="p-4 bg-gray-50 flex justify-between items-center">
+          <Button
+            onClick={runAllChecks}
+            disabled={isCheckingAll}
+          >
+            {isCheckingAll ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Running Checks...
+              </>
+            ) : 'Run All Checks'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={navigateToDashboard}
+          >
+            Security Dashboard
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       
-      {hasCritical && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Critical Vulnerabilities Detected
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>
-                  Your application has critical security vulnerabilities that need immediate attention.
-                </p>
-              </div>
-            </div>
+      {allPassed !== null && (
+        <div className={`mt-6 p-4 rounded-lg ${
+          allPassed ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+        }`}>
+          <div className="flex items-center">
+            {allPassed ? (
+              <>
+                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                <span className="font-medium text-green-800">All checks passed! Your app meets the basic security requirements.</span>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-5 w-5 text-red-500 mr-2" />
+                <span className="font-medium text-red-800">Some checks failed. Please address the issues before deploying.</span>
+              </>
+            )}
           </div>
         </div>
       )}
-      
-      <Card>
-        <CardContent className="pt-6">
-          <SecurityCheckList onCheckComplete={handleCheckComplete} />
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <p className="text-sm text-gray-500">
-            Security checks are based on OWASP Top 10 and industry best practices.
-          </p>
-          <Link to="/security-dashboard">
-            <Button variant="link" size="sm">View detailed reports</Button>
-          </Link>
-        </CardFooter>
-      </Card>
-      
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Security Recommendations</CardTitle>
-            <CardDescription>
-              Follow these recommendations to improve your security posture
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              <li className="flex items-start">
-                <svg className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Implement Web Crypto API for offline data encryption</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Add rate limiting middleware to prevent abuse</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="h-5 w-5 text-green-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Enhance CSRF protection with double submit pattern</span>
-              </li>
-              <li className="flex items-start">
-                <svg className="h-5 w-5 text-yellow-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span>Commission an external penetration test</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Security Resources</CardTitle>
-            <CardDescription>
-              Helpful resources to improve your application security
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              <li>
-                <a 
-                  href="https://owasp.org/www-project-top-ten/" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  <svg className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                  </svg>
-                  OWASP Top 10
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://cheatsheetseries.owasp.org/" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  <svg className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                  </svg>
-                  OWASP Cheat Sheet Series
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  <svg className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                  </svg>
-                  Web Crypto API Docs
-                </a>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

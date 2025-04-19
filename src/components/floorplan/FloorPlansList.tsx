@@ -88,7 +88,7 @@ export function FloorPlansList({
               <span className="text-gray-500">Floor Plan Preview</span>
             </div>
             <div className="mt-2 text-sm text-gray-500">
-              Last updated: {formatDate(floorPlan.updated_at)}
+              Last updated: {formatDate(floorPlan.updatedAt)}
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">

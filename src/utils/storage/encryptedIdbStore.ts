@@ -1,166 +1,213 @@
 
 /**
- * Encrypted IndexedDB Storage
- * Provides encrypted storage for sensitive data in IndexedDB
+ * Encrypted IndexedDB Store
+ * 
+ * Provides encrypted storage for sensitive data using the Web Crypto API
  */
-
-import { openDB } from 'idb';
-import { generateEncryptionKey, encryptData, decryptData } from '@/utils/security/dataEncryption';
+import { encryptData, decryptData, generateEncryptionKey } from '../security/dataEncryption';
 import logger from '@/utils/logger';
 
-// Store name constants
-const DB_NAME = 'encrypted-floorplan-db';
-const STORE_NAME = 'encrypted-canvas-snapshots';
-const META_STORE_NAME = 'metadata';
+// Database name and store name
+const DB_NAME = 'secure_floor_app';
+const STORE_NAME = 'encrypted_data';
 
-// Cache for encryption key to avoid repeated derivation
-let encryptionKeyCache: CryptoKey | null = null;
+let encryptionKey: CryptoKey | null = null;
 
 /**
- * Get encryption key, generating if needed
- * @param appSecret Application secret or user-specific identifier
- * @returns Promise resolving to encryption key
+ * Initialize the database and create object stores
+ * @returns Promise resolving to the database instance
  */
-async function getEncryptionKey(appSecret: string): Promise<CryptoKey> {
-  if (!encryptionKeyCache) {
-    encryptionKeyCache = await generateEncryptionKey(appSecret);
-  }
-  return encryptionKeyCache;
+async function getDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onerror = (event) => {
+      logger.error('Error opening database:', event);
+      reject(new Error('Failed to open database'));
+    };
+    
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      resolve(db);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      
+      // Create object store if it doesn't exist
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        logger.info('Created encrypted data store');
+      }
+    };
+  });
 }
 
 /**
- * Initialize the encrypted database
- * @returns Promise resolving to IDBPDatabase
+ * Get or generate the encryption key
+ * @returns Promise resolving to the encryption key
  */
-export const getEncryptedDB = () =>
-  openDB(DB_NAME, 1, {
-    upgrade(db) {
-      // Create stores if they don't exist
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
-      }
-      if (!db.objectStoreNames.contains(META_STORE_NAME)) {
-        db.createObjectStore(META_STORE_NAME);
-      }
-    },
-  });
+async function getEncryptionKey(): Promise<CryptoKey> {
+  if (encryptionKey) {
+    return encryptionKey;
+  }
+  
+  try {
+    // Use a static passphrase for now
+    // In a real app, this would be a secure user-specific key
+    const passphrase = 'secure-floor-plan-app';
+    
+    encryptionKey = await generateEncryptionKey(passphrase);
+    return encryptionKey;
+  } catch (error) {
+    logger.error('Error generating encryption key:', error);
+    throw new Error('Failed to generate encryption key');
+  }
+}
 
 /**
- * Save data to encrypted IndexedDB
- * @param key Unique identifier for the data
- * @param data Data object to encrypt and store
- * @param appSecret Application secret or user-specific identifier
+ * Save encrypted data to IndexedDB
+ * @param key Storage key
+ * @param data Data to store
+ * @returns Promise resolving to boolean indicating success
  */
-export async function saveEncrypted(key: string, data: any, appSecret: string): Promise<void> {
+export async function saveEncrypted(key: string, data: any): Promise<boolean> {
   try {
-    const db = await getEncryptedDB();
-    const encryptionKey = await getEncryptionKey(appSecret);
+    const db = await getDatabase();
+    const cryptoKey = await getEncryptionKey();
     
     // Encrypt the data
-    const encrypted = await encryptData(data, encryptionKey);
+    const encryptedData = await encryptData(data, cryptoKey);
     
-    // Store encrypted data
-    await db.put(STORE_NAME, encrypted, key);
-    
-    // Store metadata (creation time, last access)
-    await db.put(META_STORE_NAME, {
-      lastModified: new Date().toISOString(),
-      size: JSON.stringify(data).length,
-      encrypted: true
-    }, `meta_${key}`);
-    
-    logger.info(`Encrypted data saved with key: ${key}`);
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      
+      const request = store.put({
+        key,
+        data: encryptedData,
+        timestamp: new Date().toISOString()
+      });
+      
+      request.onsuccess = () => {
+        logger.debug(`Saved encrypted data with key: ${key}`);
+        resolve(true);
+      };
+      
+      request.onerror = (event) => {
+        logger.error('Error saving encrypted data:', event);
+        reject(new Error('Failed to save encrypted data'));
+      };
+    });
   } catch (error) {
-    logger.error('Error saving encrypted data:', error);
-    throw new Error('Failed to save encrypted data');
+    logger.error('Error in saveEncrypted:', error);
+    return false;
   }
 }
 
 /**
- * Load and decrypt data from IndexedDB
- * @param key Unique identifier for the data
- * @param appSecret Application secret or user-specific identifier
- * @returns Promise resolving to decrypted data or null if not found
+ * Load encrypted data from IndexedDB
+ * @param key Storage key
+ * @returns Promise resolving to the decrypted data or null if not found
  */
-export async function loadEncrypted(key: string, appSecret: string): Promise<any> {
+export async function loadEncrypted(key: string): Promise<any> {
   try {
-    const db = await getEncryptedDB();
-    const encrypted = await db.get(STORE_NAME, key);
+    const db = await getDatabase();
+    const cryptoKey = await getEncryptionKey();
     
-    if (!encrypted) {
-      logger.warn(`No encrypted data found for key: ${key}`);
-      return null;
-    }
-    
-    // Update metadata
-    await db.put(META_STORE_NAME, {
-      lastAccessed: new Date().toISOString(),
-      lastModified: (await db.get(META_STORE_NAME, `meta_${key}`))?.lastModified,
-      encrypted: true
-    }, `meta_${key}`);
-    
-    // Decrypt the data
-    const encryptionKey = await getEncryptionKey(appSecret);
-    return decryptData(encrypted, encryptionKey);
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      
+      const request = store.get(key);
+      
+      request.onsuccess = async (event) => {
+        const result = (event.target as IDBRequest).result;
+        
+        if (!result) {
+          logger.debug(`No data found for key: ${key}`);
+          resolve(null);
+          return;
+        }
+        
+        try {
+          // Decrypt the data
+          const decryptedData = await decryptData(result.data, cryptoKey);
+          resolve(decryptedData);
+        } catch (error) {
+          logger.error('Error decrypting data:', error);
+          reject(new Error('Failed to decrypt data'));
+        }
+      };
+      
+      request.onerror = (event) => {
+        logger.error('Error loading encrypted data:', event);
+        reject(new Error('Failed to load encrypted data'));
+      };
+    });
   } catch (error) {
-    logger.error('Error loading encrypted data:', error);
-    throw new Error('Failed to load encrypted data');
+    logger.error('Error in loadEncrypted:', error);
+    return null;
   }
 }
 
 /**
  * Delete encrypted data from IndexedDB
- * @param key Unique identifier for the data to delete
+ * @param key Storage key
+ * @returns Promise resolving to boolean indicating success
  */
-export async function deleteEncrypted(key: string): Promise<void> {
+export async function deleteEncrypted(key: string): Promise<boolean> {
   try {
-    const db = await getEncryptedDB();
+    const db = await getDatabase();
     
-    // Delete the data and its metadata
-    await db.delete(STORE_NAME, key);
-    await db.delete(META_STORE_NAME, `meta_${key}`);
-    
-    logger.info(`Encrypted data deleted with key: ${key}`);
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      
+      const request = store.delete(key);
+      
+      request.onsuccess = () => {
+        logger.debug(`Deleted encrypted data with key: ${key}`);
+        resolve(true);
+      };
+      
+      request.onerror = (event) => {
+        logger.error('Error deleting encrypted data:', event);
+        reject(new Error('Failed to delete encrypted data'));
+      };
+    });
   } catch (error) {
-    logger.error('Error deleting encrypted data:', error);
-    throw new Error('Failed to delete encrypted data');
+    logger.error('Error in deleteEncrypted:', error);
+    return false;
   }
 }
 
 /**
- * List all encrypted data keys
+ * List all encrypted keys
  * @returns Promise resolving to array of keys
  */
 export async function listEncryptedKeys(): Promise<string[]> {
   try {
-    const db = await getEncryptedDB();
-    return db.getAllKeys(STORE_NAME) as Promise<string[]>;
+    const db = await getDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      
+      const request = store.getAllKeys();
+      
+      request.onsuccess = (event) => {
+        const keys = (event.target as IDBRequest).result as string[];
+        resolve(keys);
+      };
+      
+      request.onerror = (event) => {
+        logger.error('Error listing encrypted keys:', event);
+        reject(new Error('Failed to list encrypted keys'));
+      };
+    });
   } catch (error) {
-    logger.error('Error listing encrypted keys:', error);
+    logger.error('Error in listEncryptedKeys:', error);
     return [];
-  }
-}
-
-/**
- * Get metadata for all stored encrypted items
- * @returns Promise resolving to metadata object
- */
-export async function getEncryptedMetadata(): Promise<Record<string, any>> {
-  try {
-    const db = await getEncryptedDB();
-    const keys = await db.getAllKeys(META_STORE_NAME);
-    
-    const metadata: Record<string, any> = {};
-    for (const key of keys) {
-      const meta = await db.get(META_STORE_NAME, key);
-      if (key.toString().startsWith('meta_')) {
-        metadata[key.toString().substring(5)] = meta;
-      }
-    }
-    
-    return metadata;
-  } catch (error) {
-    logger.error('Error getting encrypted metadata:', error);
-    return {};
   }
 }

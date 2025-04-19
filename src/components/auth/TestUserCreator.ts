@@ -58,8 +58,8 @@ export const createTestUsers = async (): Promise<void> => {
         continue;
       }
 
-      // Create auth user with proper parameters - Fix by using signInWithPassword instead of signUp
-      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword({
+      // Create auth user with proper parameters - Fix by using signUp instead of signInWithPassword
+      const { error: signUpError } = await supabase.auth.signUp({
         email: testUser.email,
         password: testUser.password
       });
@@ -69,7 +69,10 @@ export const createTestUsers = async (): Promise<void> => {
         continue;
       }
 
-      const userId = authData?.user?.id;
+      // Get user ID from the newly created user
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const userId = userData?.user?.id;
       if (!userId) {
         logger.error(`No user ID returned for ${testUser.email}`);
         continue;

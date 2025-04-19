@@ -1,21 +1,25 @@
 
 /**
  * Secret Manager
- * Utilities for handling API keys and secrets securely
+ * Utilities for managing and rotating secrets
  */
 import logger from '@/utils/logger';
-import { Security } from '@/utils/security';
 
 interface Secret {
   name: string;
   value: string;
-  createdAt: string;
-  lastUsed?: string;
-  expiresAt?: string;
+  createdAt: Date;
+  expiresAt: Date;
+  rotated: number; // Number of times the secret has been rotated
+  lastRotatedAt: Date;
 }
 
-// In-memory secret cache
-const secretCache: Record<string, Secret> = {};
+// In-memory store for secrets
+// In a real app, this would use a secure storage mechanism
+const secretStore: Record<string, Secret> = {};
+
+// Default expiration time (90 days)
+const DEFAULT_EXPIRATION_DAYS = 90;
 
 /**
  * Get a secret by name
@@ -23,87 +27,53 @@ const secretCache: Record<string, Secret> = {};
  * @returns Secret value or null if not found
  */
 export function getSecret(name: string): string | null {
-  try {
-    // Check if secret is in cache
-    if (secretCache[name]) {
-      // Update last used
-      secretCache[name].lastUsed = new Date().toISOString();
-      return secretCache[name].value;
-    }
-    
-    // Try to get from sessionStorage (for current session only)
-    // Note: In a production app, sensitive data should not be stored in localStorage
-    const sessionSecret = sessionStorage.getItem(`secret_${name}`);
-    if (sessionSecret) {
-      try {
-        const parsed = JSON.parse(sessionSecret);
-        
-        // Check if expired
-        if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
-          sessionStorage.removeItem(`secret_${name}`);
-          return null;
-        }
-        
-        // Cache and return
-        secretCache[name] = {
-          ...parsed,
-          lastUsed: new Date().toISOString()
-        };
-        
-        return parsed.value;
-      } catch (e) {
-        logger.error(`Error parsing secret ${name}:`, e);
-        return null;
-      }
-    }
-    
-    // Not found
-    return null;
-  } catch (error) {
-    logger.error(`Error getting secret ${name}:`, error);
+  const secret = secretStore[name];
+  
+  if (!secret) {
+    logger.debug(`Secret ${name} not found`);
     return null;
   }
+  
+  // Check if expired
+  if (new Date() > secret.expiresAt) {
+    logger.warn(`Secret ${name} has expired`);
+  }
+  
+  return secret.value;
 }
 
 /**
- * Store a secret securely
+ * Store a secret
  * @param name Secret name
  * @param value Secret value
- * @param options Secret options
- * @returns Whether the operation was successful
+ * @param expirationDays Days until expiration
+ * @returns Boolean indicating success
  */
 export function storeSecret(
   name: string,
   value: string,
-  options: {
-    expiresInMinutes?: number;
-    sessionOnly?: boolean;
-  } = {}
+  expirationDays: number = DEFAULT_EXPIRATION_DAYS
 ): boolean {
   try {
-    // Generate expiration date if provided
-    const expiresAt = options.expiresInMinutes
-      ? new Date(Date.now() + options.expiresInMinutes * 60 * 1000).toISOString()
-      : undefined;
+    const now = new Date();
+    const expiresAt = new Date();
+    expiresAt.setDate(now.getDate() + expirationDays);
     
-    // Create secret object
-    const secret: Secret = {
+    const existingSecret = secretStore[name];
+    
+    secretStore[name] = {
       name,
       value,
-      createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString(),
-      expiresAt
+      createdAt: now,
+      expiresAt,
+      rotated: existingSecret ? existingSecret.rotated + 1 : 0,
+      lastRotatedAt: now
     };
     
-    // Store in cache
-    secretCache[name] = secret;
-    
-    // Store in sessionStorage (for current session only)
-    sessionStorage.setItem(`secret_${name}`, JSON.stringify(secret));
-    
+    logger.info(`Secret ${name} stored with expiration ${expiresAt.toISOString()}`);
     return true;
   } catch (error) {
-    logger.error(`Error storing secret ${name}:`, error);
+    logger.error('Error storing secret:', error);
     return false;
   }
 }
@@ -111,121 +81,86 @@ export function storeSecret(
 /**
  * Delete a secret
  * @param name Secret name
- * @returns Whether the operation was successful
+ * @returns Boolean indicating success
  */
 export function deleteSecret(name: string): boolean {
-  try {
-    // Remove from cache
-    delete secretCache[name];
-    
-    // Remove from sessionStorage
-    sessionStorage.removeItem(`secret_${name}`);
-    
+  if (secretStore[name]) {
+    delete secretStore[name];
+    logger.info(`Secret ${name} deleted`);
     return true;
-  } catch (error) {
-    logger.error(`Error deleting secret ${name}:`, error);
-    return false;
   }
+  
+  logger.warn(`Secret ${name} not found for deletion`);
+  return false;
 }
 
 /**
- * List all secret names (without values)
+ * List all secrets (without values)
+ * @returns Array of secret metadata
+ */
+export function listSecrets(): Array<Omit<Secret, 'value'>> {
+  return Object.values(secretStore).map(({ value, ...metadata }) => metadata);
+}
+
+/**
+ * Rotate a secret
+ * @param name Secret name
+ * @param newValue New secret value
+ * @param expirationDays Days until expiration
+ * @returns Boolean indicating success
+ */
+export function rotateSecret(
+  name: string,
+  newValue: string,
+  expirationDays: number = DEFAULT_EXPIRATION_DAYS
+): boolean {
+  const existingSecret = secretStore[name];
+  
+  if (!existingSecret) {
+    logger.warn(`Secret ${name} not found for rotation`);
+    return false;
+  }
+  
+  return storeSecret(name, newValue, expirationDays);
+}
+
+/**
+ * Get secrets that need rotation
+ * @param daysBeforeExpiration Days before expiration to consider for rotation
  * @returns Array of secret names
  */
-export function listSecrets(): string[] {
-  try {
-    const secrets = new Set<string>();
-    
-    // Add from cache
-    Object.keys(secretCache).forEach(name => {
-      secrets.add(name);
-    });
-    
-    // Add from sessionStorage
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key && key.startsWith('secret_')) {
-        secrets.add(key.substring(7));
-      }
-    }
-    
-    return Array.from(secrets);
-  } catch (error) {
-    logger.error('Error listing secrets:', error);
-    return [];
-  }
+export function getSecretsToRotate(daysBeforeExpiration: number = 14): string[] {
+  const warningDate = new Date();
+  warningDate.setDate(warningDate.getDate() + daysBeforeExpiration);
+  
+  return Object.values(secretStore)
+    .filter(secret => secret.expiresAt <= warningDate)
+    .map(secret => secret.name);
 }
 
 /**
- * Rotate a secret (generate and store new value)
+ * Get expiration status for a secret
  * @param name Secret name
- * @param generator Function to generate new secret value
- * @param options Secret options
- * @returns Whether the operation was successful
+ * @returns Object with expiration info or null if not found
  */
-export async function rotateSecret(
-  name: string,
-  generator: () => Promise<string>,
-  options: {
-    expiresInMinutes?: number;
-    sessionOnly?: boolean;
-  } = {}
-): Promise<boolean> {
-  try {
-    // Generate new value
-    const newValue = await generator();
-    
-    // Store new value
-    return storeSecret(name, newValue, options);
-  } catch (error) {
-    logger.error(`Error rotating secret ${name}:`, error);
-    return false;
+export function getSecretExpirationStatus(name: string): {
+  isExpired: boolean;
+  daysUntilExpiration: number;
+  expiresAt: Date;
+} | null {
+  const secret = secretStore[name];
+  
+  if (!secret) {
+    return null;
   }
-}
-
-/**
- * Check if secrets should be rotated
- * @param rotationDays Days after which to rotate secrets
- * @returns Array of secrets that should be rotated
- */
-export function getSecretsToRotate(rotationDays: number = 30): string[] {
-  try {
-    const toRotate: string[] = [];
-    const rotationMs = rotationDays * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    
-    // Check each secret
-    listSecrets().forEach(name => {
-      const secret = secretCache[name];
-      
-      if (secret) {
-        const createdAt = new Date(secret.createdAt).getTime();
-        
-        if (now - createdAt > rotationMs) {
-          toRotate.push(name);
-        }
-      } else {
-        // Try to get from sessionStorage
-        const sessionSecret = sessionStorage.getItem(`secret_${name}`);
-        
-        if (sessionSecret) {
-          try {
-            const parsed = JSON.parse(sessionSecret);
-            const createdAt = new Date(parsed.createdAt).getTime();
-            
-            if (now - createdAt > rotationMs) {
-              toRotate.push(name);
-            }
-          } catch {
-            // Ignore parse errors
-          }
-        }
-      }
-    });
-    
-    return toRotate;
-  } catch (error) {
-    logger.error('Error checking secrets to rotate:', error);
-    return [];
-  }
+  
+  const now = new Date();
+  const diffTime = secret.expiresAt.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return {
+    isExpired: now > secret.expiresAt,
+    daysUntilExpiration: diffDays,
+    expiresAt: secret.expiresAt
+  };
 }

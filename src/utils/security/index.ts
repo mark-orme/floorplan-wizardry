@@ -4,7 +4,7 @@
  * Enhanced version with comprehensive security features
  */
 
-// Import original security utilities
+// Import token management utils
 import { 
   storeAuthToken, 
   getAuthToken, 
@@ -13,19 +13,7 @@ import {
   refreshAuthToken 
 } from './secureTokenStorage';
 
-import {
-  generateCSRFToken,
-  getCsrfToken,
-  verifyCSRFToken,
-  validateCsrfToken,
-  addCSRFToFormData,
-  addCsrfTokenToForm,
-  addCSRFToHeaders,
-  createCsrfHeaders,
-  fetchWithCSRF,
-  fetchWithCsrf
-} from './csrfProtection';
-
+// Import HTML sanitization utils
 import {
   sanitizeHtml,
   sanitizeRichHtml,
@@ -37,17 +25,31 @@ import {
   sanitizeHTML
 } from './htmlSanitization';
 
+// Import file security utils
 import {
   sanitizeFileName,
   createSecureFileUploadHandler
 } from './FileSecurityUtils';
 
+// Import general security utils
 import {
   secureForm,
   initializeSecurity
 } from './SecurityUtils';
 
-// Import enhanced security utilities
+// Import enhanced CSRF protection
+import {
+  generateCSRFToken,
+  getCSRFToken,
+  verifyCSRFToken,
+  addCSRFToFormData,
+  addCSRFToHeaders,
+  fetchWithCSRF,
+  createProtectedFormSubmitHandler,
+  useCSRFProtection
+} from './enhancedCsrfProtection';
+
+// Import enhanced rate limiting
 import {
   isRateLimited,
   getRateLimitStatus,
@@ -56,12 +58,14 @@ import {
   rateLimitOptions
 } from './enhancedRateLimiting';
 
+// Import encryption utils
 import {
   generateEncryptionKey,
   encryptData,
   decryptData
 } from './dataEncryption';
 
+// Import encrypted storage
 import {
   saveEncrypted,
   loadEncrypted,
@@ -69,15 +73,7 @@ import {
   listEncryptedKeys
 } from '../storage/encryptedIdbStore';
 
-import {
-  getCSRFToken,
-  verifyCSRFToken,
-  addCSRFToFormData,
-  addCSRFToHeaders,
-  fetchWithCSRF,
-  createProtectedFormSubmitHandler
-} from './enhancedCsrfProtection';
-
+// Import secret management
 import {
   getSecret,
   storeSecret,
@@ -87,6 +83,7 @@ import {
   getSecretsToRotate
 } from './secretManager';
 
+// Import dependency manager
 import {
   checkDependencyVulnerabilities,
   generateVulnerabilityReport,
@@ -104,7 +101,7 @@ export const Security = {
     refresh: refreshAuthToken
   },
   
-  // CSRF protection (enhanced)
+  // CSRF protection 
   CSRF: {
     generate: generateCSRFToken,
     get: getCSRFToken,
@@ -112,7 +109,8 @@ export const Security = {
     addToForm: addCSRFToFormData,
     createHeaders: addCSRFToHeaders,
     fetchWithProtection: fetchWithCSRF,
-    protectForm: createProtectedFormSubmitHandler
+    protectForm: createProtectedFormSubmitHandler,
+    useCSRFProtection
   },
   
   // HTML sanitization
@@ -135,7 +133,7 @@ export const Security = {
     secure: secureForm
   },
   
-  // Rate limiting (new)
+  // Rate limiting
   RateLimiting: {
     isLimited: isRateLimited,
     getStatus: getRateLimitStatus,
@@ -144,14 +142,14 @@ export const Security = {
     options: rateLimitOptions
   },
   
-  // Encryption (new)
+  // Encryption
   Encryption: {
     generateKey: generateEncryptionKey,
     encrypt: encryptData,
     decrypt: decryptData
   },
   
-  // Secure storage (new)
+  // Secure storage
   Storage: {
     saveEncrypted,
     loadEncrypted,
@@ -159,7 +157,7 @@ export const Security = {
     listKeys: listEncryptedKeys
   },
   
-  // Secret management (new)
+  // Secret management
   Secrets: {
     get: getSecret,
     store: storeSecret,
@@ -169,7 +167,7 @@ export const Security = {
     getToRotate: getSecretsToRotate
   },
   
-  // Dependency security (new)
+  // Dependency security
   Dependencies: {
     checkVulnerabilities: checkDependencyVulnerabilities,
     generateReport: generateVulnerabilityReport,
@@ -177,34 +175,29 @@ export const Security = {
   },
   
   // General security
-  initialize: () => {
-    initializeSecurity();
-    console.log('Enhanced security features initialized');
-  }
+  initialize: initializeSecurity
 };
 
-// Direct exports for individual imports
+// Export everything individually
 export {
-  // Token management
+  // Token management exports
   storeAuthToken,
   getAuthToken,
   isTokenExpired,
   clearAuthToken,
   refreshAuthToken,
   
-  // CSRF protection
+  // CSRF protection exports
   generateCSRFToken,
-  getCsrfToken,
+  getCSRFToken,
   verifyCSRFToken,
-  validateCsrfToken,
   addCSRFToFormData,
-  addCsrfTokenToForm,
   addCSRFToHeaders,
-  createCsrfHeaders,
   fetchWithCSRF,
-  fetchWithCsrf,
+  createProtectedFormSubmitHandler,
+  useCSRFProtection,
   
-  // HTML sanitization
+  // HTML sanitization exports
   sanitizeHtml,
   sanitizeHTML,
   sanitizeRichHtml,
@@ -214,32 +207,32 @@ export {
   sanitizeText,
   sanitizeObject,
   
-  // File handling
+  // File handling exports
   sanitizeFileName,
   createSecureFileUploadHandler,
   
-  // Form security
+  // Form security exports
   secureForm,
   
-  // Rate limiting
+  // Rate limiting exports
   isRateLimited,
   getRateLimitStatus,
   resetRateLimit,
   createRateLimitedFunction,
   rateLimitOptions,
   
-  // Encryption
+  // Encryption exports
   generateEncryptionKey,
   encryptData,
   decryptData,
   
-  // Secure storage
+  // Secure storage exports
   saveEncrypted,
   loadEncrypted,
   deleteEncrypted,
   listEncryptedKeys,
   
-  // Secret management
+  // Secret management exports
   getSecret,
   storeSecret,
   deleteSecret,
@@ -247,7 +240,7 @@ export {
   rotateSecret,
   getSecretsToRotate,
   
-  // Dependency security
+  // Dependency security exports
   checkDependencyVulnerabilities,
   generateVulnerabilityReport,
   hasCriticalVulnerabilities,
