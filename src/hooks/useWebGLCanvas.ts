@@ -4,7 +4,7 @@
  * @module hooks/useWebGLCanvas
  */
 import { useRef, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Circle as FabricCircle } from 'fabric';
 import { Point } from '@/types/core/Geometry';
 import { CanvasDimensions } from '@/types/core/Geometry';
 import { vibrateFeedback } from '@/utils/canvas/pointerEvents';
@@ -72,7 +72,7 @@ export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
   /**
    * Start performance monitoring
    */
-  const startPerformanceMonitoring = useCallback((canvas: fabric.Canvas) => {
+  const startPerformanceMonitoring = useCallback((canvas: FabricCanvas) => {
     let lastRenderTime = Date.now();
     let frameCount = 0;
     
@@ -125,7 +125,7 @@ export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
     const pointer = canvasRef.current.getPointer(event);
     
     // Create a circle
-    const circle = new (FabricCanvas.Circle as any)({
+    const circle = new FabricCircle({
       left: pointer.x,
       top: pointer.y,
       radius: 10,
