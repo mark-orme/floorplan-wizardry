@@ -22,7 +22,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       antialias: true,
       preserveDrawingBuffer: false,
       premultipliedAlpha: false,
-      desynchronized: true, // Enable low-latency rendering
+      desynchronized: true,
       powerPreference: 'high-performance'
     });
 
@@ -79,10 +79,10 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.onMouseDown(
-          { e, pointer: { x, y } } as any,
-          { isClick: true }
-        );
+        fabricCanvas.freeDrawingBrush.onMouseDown(new fabric.Point(x, y), {
+          e,
+          pointer: { x, y }
+        });
       }
     };
 
@@ -103,10 +103,10 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       // Draw interpolated points
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         points.forEach(point => {
-          fabricCanvas.freeDrawingBrush.onMouseMove(
-            { e, pointer: point } as any,
-            { isClick: false }
-          );
+          fabricCanvas.freeDrawingBrush.onMouseMove(new fabric.Point(point.x, point.y), {
+            e,
+            pointer: point
+          });
         });
       }
 
@@ -122,7 +122,7 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // End path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.onMouseUp({ e } as any);
+        fabricCanvas.freeDrawingBrush.onMouseUp({ e });
       }
     };
 
