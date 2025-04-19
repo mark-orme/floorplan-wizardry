@@ -108,20 +108,24 @@ export const usePointerEvents = ({
       
       // Fix: Return a proper cleanup function
       return () => {
-        canvas.removeEventListener('pointerdown', capturePointer);
-        canvas.removeEventListener('pointerdown', handlePointerEvent);
-        canvas.removeEventListener('pointermove', handlePointerEvent);
-        canvas.removeEventListener('pointerup', handlePointerEvent);
-        canvas.removeEventListener('pointercancel', handlePointerEvent);
+        if (canvas) {
+          canvas.removeEventListener('pointerdown', capturePointer);
+          canvas.removeEventListener('pointerdown', handlePointerEvent);
+          canvas.removeEventListener('pointermove', handlePointerEvent);
+          canvas.removeEventListener('pointerup', handlePointerEvent);
+          canvas.removeEventListener('pointercancel', handlePointerEvent);
+        }
       };
     }
     
     // Fix: Return a cleanup function even when setPointerCapture isn't used
     return () => {
-      canvas.removeEventListener('pointerdown', handlePointerEvent);
-      canvas.removeEventListener('pointermove', handlePointerEvent);
-      canvas.removeEventListener('pointerup', handlePointerEvent);
-      canvas.removeEventListener('pointercancel', handlePointerEvent);
+      if (canvas) {
+        canvas.removeEventListener('pointerdown', handlePointerEvent);
+        canvas.removeEventListener('pointermove', handlePointerEvent);
+        canvas.removeEventListener('pointerup', handlePointerEvent);
+        canvas.removeEventListener('pointercancel', handlePointerEvent);
+      }
     };
   }, [canvasRef, handlePointerEvent]);
 
