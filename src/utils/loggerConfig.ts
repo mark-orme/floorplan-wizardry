@@ -23,7 +23,7 @@ type NamespaceConfig = {
 const namespaceConfig: Record<string, NamespaceConfig> = {};
 
 // Default log level - can be overridden by environment
-let defaultLevel = process.env.NODE_ENV === 'production' 
+let defaultLevel = import.meta.env.PROD 
   ? LogLevel.ERROR 
   : LogLevel.DEBUG;
 
@@ -70,7 +70,7 @@ export function isLevelEnabled(namespace: string, level: LogLevel): boolean {
   }
   
   // If in development, check local storage for debug flags
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.DEV) {
     try {
       // Check for global debug flag
       const debugAll = localStorage.getItem('debug-all') === 'true';
@@ -134,7 +134,7 @@ function initializeDefaultNamespaces(): void {
 initializeDefaultNamespaces();
 
 // Add debug helper functions to window in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).__logger = {
     enable: (ns: string) => enableNamespace(ns),
     disable: (ns: string) => disableNamespace(ns),
