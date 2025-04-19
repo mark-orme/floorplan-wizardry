@@ -14,7 +14,8 @@ function initializeDOMPurify() {
     // Configure DOMPurify hooks
     DOMPurify.addHook('beforeSanitizeElements', (node) => {
       // Log potentially dangerous content
-      if (node.nodeType === 1 && (node.tagName === 'SCRIPT' || node.hasAttribute('on'))) {
+      if (node.nodeType === 1 && 
+         ((node as Element).tagName === 'SCRIPT' || (node as Element).hasAttribute('on'))) {
         logger.warn('Potential XSS attempt detected and prevented');
       }
       return node;
@@ -63,7 +64,7 @@ export function sanitizeRichHtml(html: string): string {
       ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span', 'div'],
       ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
       FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-      FORBID_ATTR: [/^on.*/i, /javascript:/i],
+      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'javascript:'],
       ADD_ATTR: ['target="_blank"', 'rel="noopener noreferrer"']
     });
   }

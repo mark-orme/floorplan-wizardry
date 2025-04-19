@@ -59,7 +59,7 @@ export const createTestUsers = async (): Promise<void> => {
       }
 
       // Create auth user with proper parameters
-      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: testUser.email,
         password: testUser.password
       });

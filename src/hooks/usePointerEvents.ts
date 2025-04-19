@@ -1,7 +1,7 @@
 
-// Implement fixes for the errors related to pointer events
 import { useEffect, useRef } from 'react';
 import { FabricPointerEvent } from '@/types/fabricEvents';
+import { Canvas as FabricCanvas } from 'fabric';
 
 export interface UsePointerEventsProps {
   onPointerDown?: (e: FabricPointerEvent) => void;
@@ -22,7 +22,7 @@ export function usePointerEvents({
   onDragEnd,
   enabled = true
 }: UsePointerEventsProps) {
-  const canvasRef = useRef<fabric.Canvas | null>(null);
+  const canvasRef = useRef<FabricCanvas | null>(null);
   const isDraggingRef = useRef(false);
   const lastPositionRef = useRef({ x: 0, y: 0 });
   

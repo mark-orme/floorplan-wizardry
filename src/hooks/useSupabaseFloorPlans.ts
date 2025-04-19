@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import logger from "@/utils/logger";
+import { verifyResourceOwnership } from "@/utils/security/resourceOwnership";
+import { logResourceEvent, AuditEventType } from "@/utils/audit/auditLogger";
 
 /**
  * Hook for managing floor plans with Supabase storage
@@ -19,23 +21,6 @@ export const useSupabaseFloorPlans = () => {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const isConfigured = isSupabaseConfigured();
-
-  /**
-   * Verify user ownership of a floor plan resource
-   * @param resourceOwnerId The user ID that owns the resource
-   * @returns Boolean indicating if the current user owns the resource
-   */
-  const verifyResourceOwnership = useCallback((resourceOwnerId: string): boolean => {
-    if (!user) return false;
-    if (user.id !== resourceOwnerId) {
-      logger.warn('Unauthorized access attempt to floor plan resource', {
-        userId: user.id,
-        attemptedResourceOwnerId: resourceOwnerId
-      });
-      return false;
-    }
-    return true;
-  }, [user]);
 
   /**
    * Save floor plans to Supabase
@@ -70,9 +55,18 @@ export const useSupabaseFloorPlans = () => {
       }
 
       // Authorization check for update operations
-      if (existingPlans && !verifyResourceOwnership(existingPlans.user_id)) {
-        toast.error('Unauthorized: You cannot modify this floor plan');
-        return false;
+      if (existingPlans) {
+        const isAuthorized = await verifyResourceOwnership(
+          user.id, 
+          'floor_plans', 
+          existingPlans.id
+        );
+        
+        if (!isAuthorized) {
+          logger.warn(`Unauthorized floor plan modification attempt by user ${user.id}`);
+          toast.error('Unauthorized: You cannot modify this floor plan');
+          return false;
+        }
       }
 
       const saveData = {
@@ -92,11 +86,39 @@ export const useSupabaseFloorPlans = () => {
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id);
+          
+        // Log the update event
+        await logResourceEvent(
+          AuditEventType.RESOURCE_UPDATE,
+          user.id,
+          'floor_plans',
+          existingPlans.id,
+          'update',
+          { planCount: floorPlans.length }
+        );
       } else {
         // Insert new floor plans
         result = await supabase
           .from('floor_plans')
           .insert(saveData);
+          
+        // Log the create event
+        const { data } = await supabase
+          .from('floor_plans')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (data) {
+          await logResourceEvent(
+            AuditEventType.RESOURCE_CREATE,
+            user.id,
+            'floor_plans',
+            data.id,
+            'create',
+            { planCount: floorPlans.length }
+          );
+        }
       }
 
       if (result.error) {
@@ -111,7 +133,7 @@ export const useSupabaseFloorPlans = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [user, isConfigured, verifyResourceOwnership]);
+  }, [user, isConfigured]);
 
   /**
    * Load floor plans from Supabase
@@ -147,11 +169,27 @@ export const useSupabaseFloorPlans = () => {
         throw error;
       }
 
-      // Authorization check
-      if (data && !verifyResourceOwnership(data.user_id)) {
+      // Authorization check - verify the user owns this data
+      const isAuthorized = await verifyResourceOwnership(
+        user.id, 
+        'floor_plans', 
+        data.id
+      );
+      
+      if (!isAuthorized) {
+        logger.warn(`Unauthorized floor plan access attempt by user ${user.id}`);
         toast.error('Unauthorized: You cannot access this floor plan');
         return null;
       }
+
+      // Log the access event
+      await logResourceEvent(
+        AuditEventType.RESOURCE_READ,
+        user.id,
+        'floor_plans',
+        data.id,
+        'read'
+      );
 
       if (data && Array.isArray(data.data)) {
         logger.info('Floor plans loaded from Supabase successfully');
@@ -164,7 +202,7 @@ export const useSupabaseFloorPlans = () => {
       toast.error('Failed to load floor plans from cloud');
       return null;
     }
-  }, [user, isConfigured, verifyResourceOwnership]);
+  }, [user, isConfigured]);
 
   return {
     saveToSupabase,

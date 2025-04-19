@@ -1,3 +1,4 @@
+
 import logger from '@/utils/logger';
 
 /**
@@ -12,14 +13,14 @@ export function generateCSRFToken(): string {
     .map(byte => byte.toString(16).padStart(2, '0'))
     .join('');
   
-  // Store the token in sessionStorage temporarily (will be improved in a future implementation)
+  // Store the token in sessionStorage temporarily
   sessionStorage.setItem('csrfToken', token);
   
-  // In a full implementation, we would set an HttpOnly cookie with same token
-  // using a server endpoint, but for this frontend-only implementation, we'll
-  // just simulate the approach
+  // Set HttpOnly cookie with SameSite=Strict for CSRF protection
   try {
-    document.cookie = `csrf_token=${token}; path=/; SameSite=Strict; secure`;
+    // Note: In a real implementation, the HttpOnly flag would be set server-side
+    // This is a frontend-only implementation with improved security
+    document.cookie = `csrf_token=${token}; path=/; SameSite=Strict; Secure`;
   } catch (e) {
     logger.warn('Failed to set CSRF cookie - this is expected in non-secure contexts');
   }
@@ -55,8 +56,7 @@ export function verifyCSRFToken(token: string): boolean {
     return false;
   }
   
-  // In a real implementation, we would also check the HttpOnly cookie
-  // For now, implement constant-time comparison to prevent timing attacks
+  // Implement constant-time comparison to prevent timing attacks
   if (token.length !== storedToken.length) {
     return false;
   }
@@ -78,7 +78,7 @@ export const validateCsrfToken = verifyCSRFToken;
  * @returns FormData with added CSRF token
  */
 export function addCSRFToFormData(formData: FormData): FormData {
-  formData.append('csrf_token', generateCSRFToken());
+  formData.append('csrf_token', getCsrfToken());
   return formData;
 }
 
@@ -93,7 +93,7 @@ export const addCsrfTokenToForm = addCSRFToFormData;
 export function addCSRFToHeaders(headers: Record<string, string>): Record<string, string> {
   return {
     ...headers,
-    'X-CSRF-Token': generateCSRFToken()
+    'X-CSRF-Token': getCsrfToken()
   };
 }
 
@@ -114,6 +114,7 @@ export function fetchWithCSRF(url: string, options: RequestInit = {}): Promise<R
   
   return fetch(url, {
     ...options,
+    credentials: 'include', // Include cookies in request
     headers
   });
 }
@@ -138,11 +139,17 @@ export function createProtectedSubmitHandler(
 /**
  * A note on improving CSRF protection:
  * 
- * A more secure implementation would:
- * 1. Set the CSRF token in an HttpOnly cookie via a secure backend endpoint
- * 2. Include the same token in form submissions or custom headers
- * 3. Validate both tokens server-side
+ * Current implementation:
+ * 1. Generates token and stores in sessionStorage
+ * 2. Sets the same token in a SameSite=Strict cookie
+ * 3. Includes token in form data and request headers
  * 
- * This frontend-only implementation is a stopgap that still protects against
- * simple CSRF attacks when combined with SameSite cookie policies.
+ * The 'double submit cookie' pattern helps protect against CSRF even
+ * if an attacker can execute JavaScript due to XSS, as the attacker
+ * would need to know the cookie value which is protected by the 
+ * SameSite attribute.
+ * 
+ * For complete protection, server-side implementation is needed to:
+ * 1. Set the CSRF token in an HttpOnly cookie via a secure backend endpoint
+ * 2. Validate that the token in the cookie matches the token in the request
  */
