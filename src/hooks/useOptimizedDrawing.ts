@@ -83,7 +83,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         // Create a fabric Point using toFabricPoint utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
-          e
+          e,
+          pointer: fabricPoint // Required property for TBrushEventData
         });
       }
     };
@@ -108,7 +109,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
           // Create a fabric Point for each interpolated point
           const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
           fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
-            e
+            e,
+            pointer: fabricPoint // Required property for TBrushEventData
           });
         });
       }
@@ -132,7 +134,8 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         // Create a fabric Point using toFabricPoint utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
-          e
+          e,
+          pointer: fabricPoint // Required property for TBrushEventData
         });
       }
     };
