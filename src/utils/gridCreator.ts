@@ -60,7 +60,13 @@ export const createGrid = (
       line.set('gridType', 'horizontal');
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use moveToBack instead of sendToBack (Fabric.js v6 compatible)
+      if (canvas.moveToBack) {
+        canvas.moveToBack(line);
+      } else {
+        // Fallback for older versions
+        canvas.sendObjectToBack && canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     
@@ -80,7 +86,13 @@ export const createGrid = (
       line.set('gridType', 'vertical');
       
       canvas.add(line);
-      canvas.sendToBack(line);
+      // Use moveToBack instead of sendToBack (Fabric.js v6 compatible)
+      if (canvas.moveToBack) {
+        canvas.moveToBack(line);
+      } else {
+        // Fallback for older versions
+        canvas.sendObjectToBack && canvas.sendObjectToBack(line);
+      }
       gridObjects.push(line);
     }
     
