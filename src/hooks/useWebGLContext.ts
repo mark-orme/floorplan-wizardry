@@ -1,6 +1,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { AdvancedBrushSystem } from '@/utils/canvas/brushes/AdvancedBrushSystem';
 
 interface UseWebGLContextProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -12,7 +13,7 @@ export const useWebGLContext = ({
   fabricCanvas 
 }: UseWebGLContextProps) => {
   const glContextRef = useRef<WebGLRenderingContext | WebGL2RenderingContext | null>(null);
-  const shaderProgramRef = useRef<WebGLProgram | null>(null);
+  const brushSystemRef = useRef<AdvancedBrushSystem | null>(null);
   const initializationAttempted = useRef(false);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export const useWebGLContext = ({
 
     initializationAttempted.current = true;
     try {
-      // Try to get WebGL2 context first, then fallback to WebGL
+      // Initialize WebGL context
       const gl = (canvas.getContext('webgl2', { 
         alpha: true, 
         antialias: true,
@@ -44,174 +45,69 @@ export const useWebGLContext = ({
       glContextRef.current = gl;
 
       // Initialize WebGL configuration
-      gl.clearColor(0.0, 0.0, 0.0, 0.0);  // Set clear color (transparent)
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.viewport(0, 0, canvas.width, canvas.height);
+
+      // Initialize advanced brush system
+      brushSystemRef.current = new AdvancedBrushSystem(gl);
       
-      // Create shaders for custom brushes
-      createShaderProgram(gl);
-      
-      console.log('WebGL context initialized successfully');
-      
-      // Create a buffer for vertices
-      const vertexBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-        -1, -1,
-        1, -1,
-        -1, 1,
-        1, 1
-      ]), gl.STATIC_DRAW);
-      
-      const uniforms = {
-        pressure: 0.5,
-        tiltX: 0.0,
-        tiltY: 0.0,
-        brushColor: [0.0, 0.0, 0.0, 1.0]
+      // Custom drawing handler
+      const customMouseDownHandler = (opt: any) => {
+        if (fabricCanvas.isDrawingMode && glContextRef.current && brushSystemRef.current) {
+          const pointer = fabricCanvas.getPointer(opt.e);
+          const pressure = opt.e.pressure || 1.0;
+          const tiltX = opt.e.tiltX || 0;
+          const tiltY = opt.e.tiltY || 0;
+
+          brushSystemRef.current.updateParameters({
+            pressure,
+            tiltX,
+            tiltY,
+            width: fabricCanvas.freeDrawingBrush.width,
+            color: fabricCanvas.freeDrawingBrush.color
+          });
+
+          brushSystemRef.current.drawStroke(
+            { x: pointer.x, y: pointer.y },
+            null
+          );
+        }
       };
-      
-      // Override fabric's render method for specific objects if needed
-      if (shaderProgramRef.current && fabricCanvas) {
-        // Instead of accessing private __eventListeners, use the public API
-        // Store the original mouse:down handler by creating our own wrapper
-        const customMouseDownHandler = (opt: any) => {
-          // Only proceed if drawing mode is active and WebGL context is available
-          if (fabricCanvas.isDrawingMode && glContextRef.current && shaderProgramRef.current) {
-            // Add WebGL-accelerated brushstrokes logic here if needed
-            // This is where we would implement custom WebGL rendering for brush strokes
-          }
-        };
-        
-        // Add our custom handler
-        fabricCanvas.on('mouse:down', customMouseDownHandler);
-        
-        // Make sure to clean this up in the return function below
-      }
+
+      // Add custom handler for drawing
+      fabricCanvas.on('mouse:down', customMouseDownHandler);
+
+      console.log('WebGL context and brush system initialized successfully');
+
     } catch (error) {
       console.error('Failed to initialize WebGL context:', error);
     }
 
     return () => {
       if (fabricCanvas) {
-        // Clean up event listeners
         fabricCanvas.off('mouse:down');
       }
       
       if (glContextRef.current) {
-        // Clean up WebGL resources
-        if (shaderProgramRef.current) {
-          glContextRef.current.deleteProgram(shaderProgramRef.current);
-          shaderProgramRef.current = null;
+        if (brushSystemRef.current) {
+          // Clean up brush system resources if needed
         }
         
-        // Use WEBGL_lose_context extension to properly release context
         const ext = glContextRef.current.getExtension('WEBGL_lose_context');
         if (ext) ext.loseContext();
         
         glContextRef.current = null;
+        brushSystemRef.current = null;
         initializationAttempted.current = false;
       }
     };
   }, [canvasRef, fabricCanvas]);
 
-  // Create shader program for custom brush effects
-  const createShaderProgram = (gl: WebGLRenderingContext | WebGL2RenderingContext) => {
-    // Vertex shader source
-    const vsSource = `
-      attribute vec4 aVertexPosition;
-      attribute vec2 aTextureCoord;
-      
-      uniform mat4 uModelViewMatrix;
-      uniform mat4 uProjectionMatrix;
-      
-      varying vec2 vTextureCoord;
-      
-      void main() {
-        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-        vTextureCoord = aTextureCoord;
-      }
-    `;
-
-    // Fragment shader source for brush with pressure sensitivity
-    const fsSource = `
-      precision mediump float;
-      
-      varying vec2 vTextureCoord;
-      
-      uniform sampler2D uSampler;
-      uniform vec4 uBrushColor;
-      uniform float uPressure;
-      uniform vec2 uTilt;
-      
-      void main() {
-        // Calculate distance from center
-        vec2 center = vec2(0.5, 0.5);
-        float dist = distance(vTextureCoord, center);
-        
-        // Apply pressure and tilt to brush shape
-        float alpha = smoothstep(0.5, 0.0, dist) * uPressure;
-        
-        // Apply tilt effect (shift the brush shape based on tilt)
-        vec2 tiltOffset = uTilt * 0.1 * dist;
-        vec2 adjustedCoord = vTextureCoord - tiltOffset;
-        
-        // Final brush color with alpha
-        gl_FragColor = uBrushColor;
-        gl_FragColor.a *= alpha;
-      }
-    `;
-
-    // Create shader program
-    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
-
-    if (!vertexShader || !fragmentShader) return;
-
-    const shaderProgram = gl.createProgram();
-    if (!shaderProgram) return;
-
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
-
-    // Check if program was linked successfully
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-      console.error('Failed to link shader program:', gl.getProgramInfoLog(shaderProgram));
-      return;
-    }
-
-    shaderProgramRef.current = shaderProgram;
-    
-    // Clean up individual shaders as they're no longer needed
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
-  };
-
-  // Helper function to compile a shader
-  const compileShader = (
-    gl: WebGLRenderingContext | WebGL2RenderingContext, 
-    type: number, 
-    source: string
-  ): WebGLShader | null => {
-    const shader = gl.createShader(type);
-    if (!shader) return null;
-
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('Failed to compile shader:', gl.getShaderInfoLog(shader));
-      gl.deleteShader(shader);
-      return null;
-    }
-
-    return shader;
-  };
-
   return {
     glContext: glContextRef.current,
-    shaderProgram: shaderProgramRef.current
+    brushSystem: brushSystemRef.current
   };
 };
