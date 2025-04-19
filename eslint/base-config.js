@@ -6,14 +6,40 @@
 export const baseConfig = {
   files: ["**/*.{js,ts,jsx,tsx}"],
   rules: {
-    // Catching problematic patterns
-    "no-console": ["warn", { allow: ["info", "warn", "error", "debug"] }],
-    "no-alert": "error",
-    "no-debugger": "warn",
-    "no-var": "error",
-    "prefer-const": "error", // Strengthened from warn to error
-    "eqeqeq": ["error", "smart"],
-    "curly": ["error", "all"],
+    // Security rules
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "security/detect-object-injection": "error",
+    "security/detect-non-literal-regexp": "error",
+    "security/detect-unsafe-regex": "error",
+    "security/detect-buffer-noassert": "error",
+    "security/detect-child-process": "error",
+    "security/detect-disable-mustache-escape": "error",
+    "security/detect-eval-with-expression": "error",
+    "security/detect-no-csrf-before-method-override": "error",
+    "security/detect-possible-timing-attacks": "error",
+    "security/detect-pseudoRandomBytes": "error",
+    "security/detect-new-buffer": "error",
+    
+    // Data validation rules
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+    
+    // HTML security rules
+    "react/no-danger": "error",
+    "react/no-unsafe": "error",
+    
+    // Best practices for security
+    "import/no-webpack-loader-syntax": "error",
+    "no-secrets/no-secrets": ["error", { 
+      "ignoreContent": ["test", "example"]
+    }],
     
     // Import rules to prevent runtime errors
     "import/no-unresolved": "error", // Added per request

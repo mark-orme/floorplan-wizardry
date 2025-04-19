@@ -1,5 +1,46 @@
-
 # Development Guidelines for Floor Plan Designer
+
+## 🔒 Security First Development
+
+### Input Validation & Sanitization
+- Validate ALL user input using TypeScript strict types
+- Use DOMPurify for HTML sanitization
+- Implement proper escaping for SQL, HTML, and JavaScript
+- Validate file uploads for type and size
+
+### Authentication & Authorization
+- Always use Supabase auth hooks for user management
+- Implement proper role-based access control
+- Check resource ownership before operations
+- Use HTTP-only cookies for session management
+
+### Data Protection
+- Never store sensitive data in localStorage/sessionStorage 
+- Use environment variables for secrets (via Supabase)
+- Implement proper CSRF protection
+- Follow the principle of least privilege
+
+### Security Headers
+- Implement proper CSP headers
+- Enable HSTS when deployed
+- Set proper CORS policies
+- Use X-Content-Type-Options: nosniff
+
+### Secure Communication
+- Always use HTTPS for API calls
+- Implement proper SSL/TLS configuration
+- Use secure WebSocket connections
+- Validate all API responses
+
+### Code Security
+- Keep dependencies updated
+- Run security audits regularly
+- Use TypeScript strict mode
+- Implement proper error handling
+- Use ESLint security plugins
+- Regular security testing
+- Implement rate limiting
+- Add audit logging for sensitive operations
 
 ## 🏗 Architecture Principles
 
@@ -86,18 +127,24 @@ function useCustomHook<T>(initialValue: T) {
 - Verify responsive design
 - Implement visual regression tests
 
-## 🔒 Security Considerations
+## 🛡️ Security Testing Checklist
 
-- Validate and sanitize all inputs
-- Use proper TypeScript type guards
-- Implement content security policies
-- Sanitize user-generated content
-- Use secure default configurations
+### Before Deployment
+- Run npm audit
+- Check for exposed secrets
+- Verify CSP implementation
+- Test CSRF protection
+- Validate input sanitization
+- Check authorization rules
+- Review error handling
+- Test rate limiting
+- Verify secure headers
+- Run penetration tests
 
-## 📦 Package Management
-
-- Keep dependencies minimal
-- Regularly update dependencies
-- Use `npm audit` for security checks
-- Prefer official and well-maintained packages
-- Consider bundle size impact
+### Regular Maintenance
+- Update dependencies weekly
+- Review security logs
+- Check for vulnerabilities
+- Monitor for unusual activity
+- Update security policies
+- Review access controls
