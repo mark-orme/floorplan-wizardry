@@ -6,7 +6,12 @@
  */
 
 // Export supabase client and types
-export { supabase, UserRole } from './supabase';
+export { 
+  supabase, 
+  UserRole, 
+  isSecureConnection,
+  isSupabaseConfigured
+} from './supabase';
 
 // Export utility functions
 export { cn, formatDate } from './utils';

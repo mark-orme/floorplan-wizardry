@@ -42,4 +42,19 @@ const logger: Logger = {
   }
 };
 
+// Specialized loggers for different components
+export const gridLogger = {
+  debug: (message: string, meta?: Record<string, any>) => logger.debug(`[GRID] ${message}`, meta),
+  info: (message: string, meta?: Record<string, any>) => logger.info(`[GRID] ${message}`, meta),
+  warn: (message: string, meta?: Record<string, any>) => logger.warn(`[GRID] ${message}`, meta),
+  error: (message: string, meta?: Record<string, any>) => logger.error(`[GRID] ${message}`, meta)
+};
+
+export const lineToolLogger = {
+  debug: (message: string, meta?: Record<string, any>) => logger.debug(`[LINE] ${message}`, meta),
+  info: (message: string, meta?: Record<string, any>) => logger.info(`[LINE] ${message}`, meta),
+  warn: (message: string, meta?: Record<string, any>) => logger.warn(`[LINE] ${message}`, meta),
+  error: (message: string, meta?: Record<string, any>) => logger.error(`[LINE] ${message}`, meta)
+};
+
 export default logger;

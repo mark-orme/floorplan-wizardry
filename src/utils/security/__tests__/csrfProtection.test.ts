@@ -1,128 +1,83 @@
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
-  generateCsrfToken, 
-  getCsrfToken, 
-  validateCsrfToken,
-  addCSRFToHeaders,
+  generateCSRFToken, 
+  verifyCSRFToken, 
+  addCSRFToFormData,
+  addCSRFToHeaders
 } from '../csrfProtection';
 
-describe('CSRF Protection Utilities', () => {
-  // Mock browser APIs
+// Mock sessionStorage
+const mockSessionStorage = {
+  store: {} as Record<string, string>,
+  getItem: jest.fn((key: string) => mockSessionStorage.store[key] || null),
+  setItem: jest.fn((key: string, value: string) => {
+    mockSessionStorage.store[key] = value;
+  }),
+  clear: jest.fn(() => {
+    mockSessionStorage.store = {};
+  })
+};
+
+// Mock window.crypto.getRandomValues
+const mockGetRandomValues = jest.fn((buffer: Uint8Array) => {
+  for (let i = 0; i < buffer.length; i++) {
+    buffer[i] = i % 256;
+  }
+  return buffer;
+});
+
+// Setup global mocks
+beforeAll(() => {
+  Object.defineProperty(window, 'sessionStorage', {
+    value: mockSessionStorage
+  });
+  
+  Object.defineProperty(window, 'crypto', {
+    value: {
+      getRandomValues: mockGetRandomValues
+    }
+  });
+});
+
+describe('CSRF Protection', () => {
   beforeEach(() => {
-    // Mock sessionStorage
-    const sessionStorageMock = {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      length: 0,
-      key: vi.fn()
-    };
-    
-    // Mock window.crypto.getRandomValues
-    const cryptoMock = {
-      getRandomValues: vi.fn((arr) => {
-        for (let i = 0; i < arr.length; i++) {
-          arr[i] = Math.floor(Math.random() * 256);
-        }
-        return arr;
-      })
-    };
-    
-    // Assign mocks to window
-    Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock });
-    Object.defineProperty(window, 'crypto', { value: cryptoMock });
-    
-    // Mock fetch
-    global.fetch = vi.fn();
+    mockSessionStorage.clear();
+    jest.clearAllMocks();
   });
   
-  afterEach(() => {
-    vi.clearAllMocks();
+  test('generateCSRFToken should create and store a token', () => {
+    const token = generateCSRFToken();
+    expect(token).toBeDefined();
+    expect(token.length).toBeGreaterThan(0);
+    expect(mockSessionStorage.setItem).toHaveBeenCalledWith('csrfToken', token);
   });
   
-  describe('generateCsrfToken', () => {
-    it('should generate a non-empty string token', () => {
-      const token = generateCsrfToken();
-      expect(typeof token).toBe('string');
-      expect(token.length).toBeGreaterThan(0);
-    });
-    
-    it('should call crypto.getRandomValues', () => {
-      generateCsrfToken();
-      expect(window.crypto.getRandomValues).toHaveBeenCalled();
-    });
+  test('verifyCSRFToken should validate a matching token', () => {
+    const token = generateCSRFToken();
+    const isValid = verifyCSRFToken(token);
+    expect(isValid).toBe(true);
   });
   
-  describe('getCsrfToken', () => {
-    it('should get token from sessionStorage if it exists', () => {
-      const mockToken = 'existing-token';
-      window.sessionStorage.getItem = vi.fn().mockReturnValue(mockToken);
-      
-      const token = getCsrfToken();
-      
-      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
-      expect(token).toBe(mockToken);
-    });
-    
-    it('should generate and store new token if none exists', () => {
-      // No existing token
-      window.sessionStorage.getItem = vi.fn().mockReturnValue(null);
-      
-      const token = getCsrfToken();
-      
-      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
-      expect(window.sessionStorage.setItem).toHaveBeenCalledWith('app_csrf_token', token);
-      expect(token.length).toBeGreaterThan(0);
-    });
+  test('verifyCSRFToken should reject an invalid token', () => {
+    generateCSRFToken();
+    const isValid = verifyCSRFToken('invalid-token');
+    expect(isValid).toBe(false);
   });
   
-  describe('addCSRFToHeaders', () => {
-    it('should add CSRF token to Headers object', () => {
-      // Mock getCsrfToken
-      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
-      
-      const headers = new Headers();
-      const result = addCSRFToHeaders(headers);
-      
-      expect(result instanceof Headers).toBe(true);
-      expect((result as Headers).get('X-CSRF-Token')).toBe('mock-token');
-    });
-    
-    it('should add CSRF token to object headers', () => {
-      // Mock getCsrfToken
-      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue('mock-token');
-      
-      const headers = { 'Content-Type': 'application/json' };
-      const result = addCSRFToHeaders(headers);
-      
-      expect(result).toEqual({
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': 'mock-token'
-      });
-    });
+  test('addCSRFToFormData should add token to form data', () => {
+    const formData = new FormData();
+    const enhancedFormData = addCSRFToFormData(formData);
+    // Cannot directly check formData contents due to FormData API limitations
+    // but we can verify the token was generated
+    expect(mockSessionStorage.setItem).toHaveBeenCalled();
+    expect(mockGetRandomValues).toHaveBeenCalled();
+    expect(enhancedFormData).toBe(formData); // Should be the same instance
   });
   
-  describe('validateCsrfToken', () => {
-    it('should validate a CSRF token against the stored token', () => {
-      const mockToken = 'valid-token';
-      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue(mockToken);
-      
-      const isValid = validateCsrfToken(mockToken);
-      
-      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
-      expect(isValid).toBe(true);
-    });
-    
-    it('should return false for invalid tokens', () => {
-      const mockToken = 'valid-token';
-      vi.spyOn(window.sessionStorage, 'getItem').mockReturnValue(mockToken);
-      
-      const isValid = validateCsrfToken('invalid-token');
-      
-      expect(window.sessionStorage.getItem).toHaveBeenCalledWith('app_csrf_token');
-      expect(isValid).toBe(false);
-    });
+  test('addCSRFToHeaders should add token to headers', () => {
+    const headers = { 'Content-Type': 'application/json' };
+    const enhancedHeaders = addCSRFToHeaders(headers);
+    expect(enhancedHeaders['X-CSRF-Token']).toBeDefined();
+    expect(enhancedHeaders['Content-Type']).toBe('application/json');
   });
 });

@@ -54,9 +54,8 @@ export const usePointerEvents = ({
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         const fabricPoint = toFabricPoint({ x, y });
-        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
-          e
-        });
+        // Correct the FabricJS v6 format
+        fabricCanvas.freeDrawingBrush.onMouseDown({ pointer: fabricPoint });
       }
     };
 
@@ -88,9 +87,8 @@ export const usePointerEvents = ({
       // Draw point in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         const fabricPoint = toFabricPoint(currentPoint);
-        fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
-          e
-        });
+        // Correct the FabricJS v6 format
+        fabricCanvas.freeDrawingBrush.onMouseMove({ pointer: fabricPoint });
       }
 
       lastPointRef.current = currentPoint;
@@ -111,9 +109,8 @@ export const usePointerEvents = ({
         const y = e.clientY - rect.top;
         
         const fabricPoint = toFabricPoint({ x, y });
-        fabricCanvas.freeDrawingBrush.onMouseUp({
-          e
-        });
+        // Correct the FabricJS v6 format
+        fabricCanvas.freeDrawingBrush.onMouseUp({ pointer: fabricPoint });
       }
     };
 

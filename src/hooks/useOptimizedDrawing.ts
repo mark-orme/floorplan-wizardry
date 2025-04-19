@@ -80,9 +80,11 @@ export const useOptimizedDrawing = ({
       const fabricPoint = toFabricPoint(point);
       
       if (isDown) {
-        fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, { e: {} as any });
+        // Correct the FabricJS v6 format
+        fabricCanvas.freeDrawingBrush.onMouseDown({ pointer: fabricPoint });
       } else {
-        fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, { e: {} as any });
+        // Correct the FabricJS v6 format
+        fabricCanvas.freeDrawingBrush.onMouseMove({ pointer: fabricPoint });
       }
     };
 

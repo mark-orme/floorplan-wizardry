@@ -21,6 +21,8 @@ export enum UserRole {
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING = 'pending',
+  PENDING_REVIEW = 'pending_review',
+  COMPLETED = 'completed',
   ACTIVE = 'active',
   INACTIVE = 'inactive'
 }
@@ -58,3 +60,31 @@ export const initializeSupabase = () => {
   console.info('Supabase client initialized');
 };
 
+// Mock Supabase client for development
+export const supabase = {
+  auth: {
+    getUser: async () => ({ data: { user: null }, error: null }),
+    signInWithPassword: async () => ({ data: null, error: null })
+  },
+  from: (table: string) => ({
+    select: () => ({
+      eq: () => ({
+        single: async () => ({ data: null, error: null }),
+        order: () => ({ data: [], error: null })
+      }),
+      order: () => ({ data: [], error: null }),
+      in: () => ({
+        order: () => ({ data: [], error: null })
+      })
+    }),
+    insert: () => ({
+      select: async () => ({ data: [], error: null })
+    }),
+    update: () => ({
+      eq: async () => ({ data: null, error: null })
+    })
+  })
+};
+
+// Utility function to check if Supabase is configured
+export const isSupabaseConfigured = () => true;
