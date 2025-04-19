@@ -11,7 +11,7 @@ const throttledLogs: Record<string, { lastTime: number; count: number }> = {};
 const LOG_THROTTLE_TIME = 1000; // 1 second
 
 // Environment detection
-const isProduction = () => process.env.NODE_ENV === 'production';
+const isProduction = () => import.meta.env.PROD;
 const isDebugEnabled = () => {
   // Check for debug flags in localStorage or environment variables
   if (typeof window !== 'undefined') {

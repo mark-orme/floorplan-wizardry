@@ -1,154 +1,78 @@
 
 /**
  * Logger configuration
- * Provides log level settings and utilities
+ * Controls log levels and namespace filtering
  */
 
-// Log levels with numeric values for comparison
+// Define log levels
 export enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
+  NONE = 0,
+  ERROR = 1,
   WARN = 2,
-  ERROR = 3,
-  NONE = 4
+  INFO = 3,
+  DEBUG = 4
 }
 
-// Default namespace configuration
-type NamespaceConfig = {
-  level: LogLevel;
-  enabled: boolean;
+// In-memory log level settings per namespace
+const logLevels: Record<string, LogLevel> = {
+  app: LogLevel.INFO,
+  grid: LogLevel.INFO,
+  canvas: LogLevel.INFO,
+  lineTool: LogLevel.INFO,
+  performance: LogLevel.INFO
 };
 
-// Store namespace configurations
-const namespaceConfig: Record<string, NamespaceConfig> = {};
-
-// Default log level - can be overridden by environment
-let defaultLevel = process.env.NODE_ENV === 'production' 
-  ? LogLevel.ERROR 
-  : LogLevel.DEBUG;
-
-/**
- * Set the default log level
- * @param level Log level to set as default
- */
-export function setDefaultLogLevel(level: LogLevel): void {
-  defaultLevel = level;
-}
-
-/**
- * Configure logging for a specific namespace
- * @param namespace Namespace to configure
- * @param level Log level for the namespace
- * @param enabled Whether the namespace is enabled
- */
-export function configureNamespace(
-  namespace: string, 
-  level: LogLevel = defaultLevel,
-  enabled: boolean = true
-): void {
-  namespaceConfig[namespace] = { level, enabled };
-}
+// Global debug mode override
+let globalDebugMode = false;
 
 /**
  * Check if a log level is enabled for a namespace
- * @param namespace Namespace to check
- * @param level Log level to check
- * @returns Whether the log level is enabled
+ * @param namespace - Logger namespace
+ * @param level - Log level to check
+ * @returns Whether logging at this level is enabled
  */
 export function isLevelEnabled(namespace: string, level: LogLevel): boolean {
-  // If namespace is not configured, use default settings
-  if (!namespaceConfig[namespace]) {
-    // Auto-configure with default settings
-    configureNamespace(namespace);
+  // In development or when global debug is on, show everything
+  if (globalDebugMode || import.meta.env.DEV) {
+    return true;
   }
   
-  const config = namespaceConfig[namespace];
-  
-  // If namespace is disabled, no logs
-  if (!config.enabled) {
-    return false;
-  }
-  
-  // If in development, check local storage for debug flags
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      // Check for global debug flag
-      const debugAll = localStorage.getItem('debug-all') === 'true';
-      if (debugAll) {
-        return true;
-      }
-      
-      // Check for namespace-specific debug flag
-      const debugNamespace = localStorage.getItem(`debug-${namespace}`);
-      if (debugNamespace) {
-        const debugLevel = parseInt(debugNamespace, 10);
-        if (!isNaN(debugLevel)) {
-          return level >= debugLevel;
-        }
-        return debugNamespace === 'true';
-      }
-    } catch (e) {
-      // Ignore localStorage errors (e.g., in SSR or when disabled)
-    }
-  }
-  
-  // Check level against namespace configuration
-  return level >= config.level;
+  // In production, only show logs that are at or below the configured level
+  const configuredLevel = namespace in logLevels ? logLevels[namespace] : LogLevel.INFO;
+  return level <= configuredLevel;
 }
 
 /**
- * Enable all logging for a namespace
- * @param namespace Namespace to enable
+ * Set the log level for a namespace
+ * @param namespace - Logger namespace
+ * @param level - Log level to set
  */
-export function enableNamespace(namespace: string): void {
-  if (namespaceConfig[namespace]) {
-    namespaceConfig[namespace].enabled = true;
-  } else {
-    configureNamespace(namespace, defaultLevel, true);
-  }
+export function setLogLevel(namespace: string, level: LogLevel): void {
+  logLevels[namespace] = level;
 }
 
 /**
- * Disable all logging for a namespace
- * @param namespace Namespace to disable
+ * Enable or disable all logging for a namespace
+ * @param namespace - Logger namespace
+ * @param enabled - Whether to enable logging
  */
-export function disableNamespace(namespace: string): void {
-  if (namespaceConfig[namespace]) {
-    namespaceConfig[namespace].enabled = false;
-  } else {
-    configureNamespace(namespace, defaultLevel, false);
-  }
+export function enableNamespace(namespace: string, enabled: boolean): void {
+  logLevels[namespace] = enabled ? LogLevel.DEBUG : LogLevel.NONE;
 }
 
-// Initialize common namespaces
-function initializeDefaultNamespaces(): void {
-  const namespaces = [
-    'app', 'canvas', 'drawing', 'grid', 'ui', 'storage',
-    'performance', 'network', 'auth', 'i18n'
-  ];
-  
-  namespaces.forEach(ns => configureNamespace(ns));
+/**
+ * Set global debug mode (enable all logs)
+ * @param enabled - Whether to enable debug mode
+ */
+export function setGlobalDebug(enabled: boolean): void {
+  globalDebugMode = enabled;
 }
 
-// Initialize on load
-initializeDefaultNamespaces();
-
-// Add debug helper functions to window in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+// Make controls available globally in development for debugging
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).__logger = {
-    enable: (ns: string) => enableNamespace(ns),
-    disable: (ns: string) => disableNamespace(ns),
-    setLevel: (ns: string, level: LogLevel) => {
-      configureNamespace(ns, level);
-    },
-    listConfig: () => ({ ...namespaceConfig }),
-    enableAll: () => {
-      localStorage.setItem('debug-all', 'true');
-      console.log('Enabled all logging');
-    },
-    disableAll: () => {
-      localStorage.removeItem('debug-all');
-      console.log('Disabled all logging');
-    }
+    setLevel: setLogLevel,
+    enable: enableNamespace,
+    setGlobalDebug
   };
 }
