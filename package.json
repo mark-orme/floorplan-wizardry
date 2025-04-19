@@ -117,6 +117,7 @@
     "uuid": "^9.0.1",
     "vaul": "^0.9.3",
     "vitest": "^3.0.9",
+    "y-websocket": "^3.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
