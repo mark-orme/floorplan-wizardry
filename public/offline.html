@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Offline - Floor Plan Designer</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f5f5f7;
+      color: #333;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 600px;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+    
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .button {
+      display: inline-block;
+      background-color: #0070f3;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    
+    .button:hover {
+      background-color: #0060df;
+    }
+    
+    .local-projects {
+      margin-top: 2rem;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid #eee;
+      padding-top: 1rem;
+    }
+    
+    .project-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+    }
+    
+    .project-item:hover {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>You're currently offline</h1>
+    <p>You can continue working on your floor plans that were previously loaded. Any changes will be synchronized when you reconnect.</p>
+    
+    <a class="button" href="/" id="reload-btn">Try again</a>
+    
+    <div class="local-projects" id="local-projects">
+      <h2>Your saved projects</h2>
+      <div id="projects-list">
+        <!-- Projects will be populated here via JavaScript -->
+        <p>Loading saved projects...</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Check if we can access IndexedDB to show saved projects
+    document.addEventListener('DOMContentLoaded', () => {
+      const projectsList = document.getElementById('projects-list');
+      
+      // Try to load projects from IndexedDB
+      if ('indexedDB' in window) {
+        const request = indexedDB.open('floor-plans-db', 1);
+        
+        request.onerror = () => {
+          projectsList.innerHTML = '<p>Unable to access saved projects</p>';
+        };
+        
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          const transaction = db.transaction(['projects'], 'readonly');
+          const store = transaction.objectStore('projects');
+          const getAllRequest = store.getAll();
+          
+          getAllRequest.onsuccess = () => {
+            const projects = getAllRequest.result;
+            
+            if (projects && projects.length > 0) {
+              projectsList.innerHTML = '';
+              projects.forEach(project => {
+                const projectItem = document.createElement('div');
+                projectItem.className = 'project-item';
+                projectItem.textContent = project.name || 'Untitled Project';
+                projectItem.dataset.id = project.id;
+                projectItem.addEventListener('click', () => {
+                  window.location.href = `/?project=${project.id}`;
+                });
+                projectsList.appendChild(projectItem);
+              });
+            } else {
+              projectsList.innerHTML = '<p>No saved projects found</p>';
+            }
+          };
+          
+          getAllRequest.onerror = () => {
+            projectsList.innerHTML = '<p>Error loading saved projects</p>';
+          };
+        };
+      } else {
+        projectsList.innerHTML = '<p>Your browser does not support offline storage</p>';
+      }
+      
+      // Handle reload button
+      document.getElementById('reload-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.reload();
+      });
+      
+      // Check connection status periodically
+      const checkConnection = () => {
+        if (navigator.onLine) {
+          document.getElementById('reload-btn').textContent = 'You\'re back online! Continue';
+        }
+      };
+      
+      window.addEventListener('online', checkConnection);
+      setInterval(checkConnection, 5000);
+    });
+  </script>
+</body>
+</html>

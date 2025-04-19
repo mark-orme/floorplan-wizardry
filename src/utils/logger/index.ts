@@ -1,12 +1,12 @@
 
 /**
  * Structured logger for application
- * Provides consistent logging with namespace support and no-op in production
+ * Provides consistent logging with namespace support
  */
 import { createLogger } from './browserLogger';
-import type { LogData } from './browserLogger';
+import type { LogData, Logger, LogLevel } from './browserLogger';
 
-export type { LogData };
+export type { LogData, Logger, LogLevel };
 export { createLogger };
 
 // Pre-configured loggers for common areas

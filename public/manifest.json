@@ -1,8 +1,8 @@
 
 {
-  "name": "Floor Plan Designer",
+  "name": "Floor Plan Designer Pro",
   "short_name": "Floor Plans",
-  "description": "Create and edit floor plans with offline support",
+  "description": "Professional floor plan design tool with pressure sensitivity and offline support",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -12,10 +12,75 @@
       "src": "/favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
   "orientation": "any",
   "categories": ["productivity", "design", "utilities"],
   "lang": "en-US",
-  "dir": "ltr"
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/assets/screenshot1.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/assets/screenshot2.png",
+      "type": "image/png",
+      "sizes": "720x1280",
+      "form_factor": "narrow"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "application/json": [".floorplan", ".fplan"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "floorplan",
+          "accept": ["application/json", ".floorplan", ".fplan"]
+        }
+      ]
+    }
+  },
+  "shortcuts": [
+    {
+      "name": "New Floor Plan",
+      "short_name": "New",
+      "description": "Create a new floor plan",
+      "url": "/new",
+      "icons": [{ "src": "/assets/new-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Recent Plans",
+      "short_name": "Recent",
+      "description": "View recently edited floor plans",
+      "url": "/recent",
+      "icons": [{ "src": "/assets/recent-icon.png", "sizes": "96x96" }]
+    }
+  ]
 }
