@@ -53,8 +53,8 @@ export function useRealtimeCanvasSync({
     }
   }, [isConnected]);
   
-  // Manually trigger sync - now accepts an optional parameter for backward compatibility
-  const syncCanvas = useCallback(() => {
+  // Manually trigger sync - accepts an optional parameter for backward compatibility
+  const syncCanvas = useCallback((_userName?: string) => {
     if (enabled) {
       syncLocalChanges();
     }
