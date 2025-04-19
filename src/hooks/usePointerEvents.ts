@@ -29,11 +29,12 @@ export const usePointerEvents = ({
         fabricCanvas.freeDrawingBrush.width = width;
       }
       onPressureChange?.(event.pressure);
+      console.log('Pressure detected:', event.pressure);
     }
 
     // Apply tilt if available
     if (event.tiltX !== undefined && event.tiltY !== undefined) {
-      console.log('Tilt:', { x: event.tiltX, y: event.tiltY });
+      console.log('Tilt detected:', { x: event.tiltX, y: event.tiltY });
       
       // Adjust brush based on tilt angle
       if (fabricCanvas.freeDrawingBrush && Math.abs(event.tiltX) + Math.abs(event.tiltY) > 0) {

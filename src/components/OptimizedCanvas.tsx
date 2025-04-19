@@ -72,7 +72,7 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
   });
 
   // Display pressure and tilt indicators for debug purposes
-  const showDebugInfo = false;
+  const showDebugInfo = true;
 
   return (
     <div className="relative">
