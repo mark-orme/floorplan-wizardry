@@ -1,7 +1,8 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { ReliableGridLayer } from './ReliableGridLayer';
-import { SimpleGridLayer } from './SimpleGridLayer';
+import SimpleGridLayer from './SimpleGridLayer'; // Fixed import statement
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { toast } from 'sonner';
 import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';

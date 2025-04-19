@@ -1,4 +1,3 @@
-
 /**
  * Sentry Utilities
  * Provides enhanced error tracking with Sentry
@@ -26,8 +25,8 @@ export function captureError(
   const mergedOptions = { ...defaultOptions, ...options };
   
   // Get current app and canvas state
-  const appState = typeof window !== 'undefined' ? window.__app_state : {};
-  const canvasState = typeof window !== 'undefined' ? window.__canvas_state : {};
+  const appState = typeof window !== 'undefined' && window.__app_state ? window.__app_state : {};
+  const canvasState = typeof window !== 'undefined' && window.__canvas_state ? window.__canvas_state : {};
   
   // Get current drawing session
   const drawingSessionId = getDrawingSessionId();
@@ -85,8 +84,8 @@ export function captureMessage(
   const mergedOptions = { ...defaultOptions, ...options };
   
   // Get current app and canvas state
-  const appState = typeof window !== 'undefined' ? window.__app_state : {};
-  const canvasState = typeof window !== 'undefined' ? window.__canvas_state : {};
+  const appState = typeof window !== 'undefined' && window.__app_state ? window.__app_state : {};
+  const canvasState = typeof window !== 'undefined' && window.__canvas_state ? window.__canvas_state : {};
   
   // Get current drawing session
   const drawingSessionId = getDrawingSessionId();

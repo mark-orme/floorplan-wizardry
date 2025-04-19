@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import logger from '@/utils/logger';
@@ -39,7 +38,9 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
       // Optimize touch settings
       if (canvas.upperCanvasEl) {
         canvas.upperCanvasEl.style.touchAction = 'none';
-        canvas.upperCanvasEl.style.webkitTapHighlightColor = 'transparent';
+        // Fix TypeScript issue by using setAttribute instead of direct property assignment
+        canvas.upperCanvasEl.setAttribute('style', 
+          `${canvas.upperCanvasEl.getAttribute('style') || ''}; -webkit-tap-highlight-color: transparent;`);
       }
       
       // Adjust brush size for touch

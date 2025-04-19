@@ -65,10 +65,10 @@ export function registerToolChange(tool: DrawingMode): void {
   
   // Update window app state for debugging and error reporting
   if (typeof window !== 'undefined' && window.__app_state) {
-    window.__app_state.drawing = {
-      ...window.__app_state.drawing,
-      currentTool: tool
-    };
+    if (!window.__app_state.drawing) {
+      window.__app_state.drawing = {};
+    }
+    window.__app_state.drawing.currentTool = tool;
   }
 }
 

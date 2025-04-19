@@ -12,6 +12,13 @@ declare global {
       gridVisible?: boolean;
       lastOperation?: string;
     };
+    __app_state?: {
+      drawing?: {
+        currentTool?: string;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    };
   }
 }
 
