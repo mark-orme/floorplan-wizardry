@@ -4,11 +4,12 @@ import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import SecurityInitializer from '@/components/security/SecurityInitializer';
 import SecurityCheck from '@/pages/SecurityCheck';
+import SecurityDashboard from '@/pages/SecurityDashboard';
 import Login from '@/pages/Login';
 import Auth from '@/pages/Auth';
 import Properties from '@/pages/Properties';
 import PropertyForm from '@/components/PropertyForm';
-import FloorPlans from '@/pages/Floorplans'; // Fixed casing here
+import Floorplans from '@/pages/Floorplans'; // Consistent casing
 import FloorplanDetails from '@/pages/FloorplanDetails';
 import Register from '@/pages/Register';
 import RoleGuard from '@/components/RoleGuard';
@@ -38,7 +39,7 @@ function App() {
               <EditPropertyForm />
             </RoleGuard>
           } />
-          <Route path="/floorplans" element={<FloorPlans />} />
+          <Route path="/floorplans" element={<Floorplans />} />
           <Route path="/floorplans/:id" element={<FloorplanDetails />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={
@@ -47,6 +48,11 @@ function App() {
             </RoleGuard>
           } />
           <Route path="/security" element={<SecurityCheck />} />
+          <Route path="/security-dashboard" element={
+            <RoleGuard allowedRoles={[UserRole.ADMIN]}>
+              <SecurityDashboard />
+            </RoleGuard>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} />
         </Routes>

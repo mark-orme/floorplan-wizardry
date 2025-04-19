@@ -1,10 +1,10 @@
 
 /**
  * Security Utilities Index
- * Centralized exports for all security-related functionality
+ * Enhanced version with comprehensive security features
  */
 
-// Import utilities
+// Import original security utilities
 import { 
   storeAuthToken, 
   getAuthToken, 
@@ -47,7 +47,53 @@ import {
   initializeSecurity
 } from './SecurityUtils';
 
-// Create a unified Security namespace
+// Import enhanced security utilities
+import {
+  isRateLimited,
+  getRateLimitStatus,
+  resetRateLimit,
+  createRateLimitedFunction,
+  rateLimitOptions
+} from './enhancedRateLimiting';
+
+import {
+  generateEncryptionKey,
+  encryptData,
+  decryptData
+} from './dataEncryption';
+
+import {
+  saveEncrypted,
+  loadEncrypted,
+  deleteEncrypted,
+  listEncryptedKeys
+} from '../storage/encryptedIdbStore';
+
+import {
+  getCSRFToken,
+  verifyCSRFToken,
+  addCSRFToFormData,
+  addCSRFToHeaders,
+  fetchWithCSRF,
+  createProtectedFormSubmitHandler
+} from './enhancedCsrfProtection';
+
+import {
+  getSecret,
+  storeSecret,
+  deleteSecret,
+  listSecrets,
+  rotateSecret,
+  getSecretsToRotate
+} from './secretManager';
+
+import {
+  checkDependencyVulnerabilities,
+  generateVulnerabilityReport,
+  hasCriticalVulnerabilities
+} from './dependencyManager';
+
+// Create a unified Security namespace with enhanced features
 export const Security = {
   // Token management
   Token: {
@@ -58,14 +104,15 @@ export const Security = {
     refresh: refreshAuthToken
   },
   
-  // CSRF protection
+  // CSRF protection (enhanced)
   CSRF: {
     generate: generateCSRFToken,
-    get: getCsrfToken,
+    get: getCSRFToken,
     validate: verifyCSRFToken,
     addToForm: addCSRFToFormData,
     createHeaders: addCSRFToHeaders,
-    fetchWithProtection: fetchWithCSRF
+    fetchWithProtection: fetchWithCSRF,
+    protectForm: createProtectedFormSubmitHandler
   },
   
   // HTML sanitization
@@ -88,10 +135,51 @@ export const Security = {
     secure: secureForm
   },
   
+  // Rate limiting (new)
+  RateLimiting: {
+    isLimited: isRateLimited,
+    getStatus: getRateLimitStatus,
+    reset: resetRateLimit,
+    createLimitedFunction: createRateLimitedFunction,
+    options: rateLimitOptions
+  },
+  
+  // Encryption (new)
+  Encryption: {
+    generateKey: generateEncryptionKey,
+    encrypt: encryptData,
+    decrypt: decryptData
+  },
+  
+  // Secure storage (new)
+  Storage: {
+    saveEncrypted,
+    loadEncrypted,
+    deleteEncrypted,
+    listKeys: listEncryptedKeys
+  },
+  
+  // Secret management (new)
+  Secrets: {
+    get: getSecret,
+    store: storeSecret,
+    delete: deleteSecret,
+    list: listSecrets,
+    rotate: rotateSecret,
+    getToRotate: getSecretsToRotate
+  },
+  
+  // Dependency security (new)
+  Dependencies: {
+    checkVulnerabilities: checkDependencyVulnerabilities,
+    generateReport: generateVulnerabilityReport,
+    hasCriticalVulnerabilities
+  },
+  
   // General security
   initialize: () => {
     initializeSecurity();
-    console.log('DOMPurify initialized');
+    console.log('Enhanced security features initialized');
   }
 };
 
@@ -132,6 +220,37 @@ export {
   
   // Form security
   secureForm,
+  
+  // Rate limiting
+  isRateLimited,
+  getRateLimitStatus,
+  resetRateLimit,
+  createRateLimitedFunction,
+  rateLimitOptions,
+  
+  // Encryption
+  generateEncryptionKey,
+  encryptData,
+  decryptData,
+  
+  // Secure storage
+  saveEncrypted,
+  loadEncrypted,
+  deleteEncrypted,
+  listEncryptedKeys,
+  
+  // Secret management
+  getSecret,
+  storeSecret,
+  deleteSecret,
+  listSecrets,
+  rotateSecret,
+  getSecretsToRotate,
+  
+  // Dependency security
+  checkDependencyVulnerabilities,
+  generateVulnerabilityReport,
+  hasCriticalVulnerabilities,
   
   // General security
   initializeSecurity

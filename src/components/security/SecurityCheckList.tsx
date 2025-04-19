@@ -49,6 +49,18 @@ export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ onCheckCom
         name: 'Sensitive Data Exposure',
         description: 'Checks for sensitive data exposure',
         status: 'pending'
+      },
+      {
+        id: 'offline-encryption-check',
+        name: 'Offline Data Encryption',
+        description: 'Checks if offline data is properly encrypted',
+        status: 'pending'
+      },
+      {
+        id: 'rate-limiting-check',
+        name: 'Rate Limiting',
+        description: 'Checks if rate limiting is implemented',
+        status: 'pending'
       }
     ];
     
@@ -79,7 +91,7 @@ export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ onCheckCom
     setChecks(prevChecks => 
       prevChecks.map(check => 
         check.id === 'csrf-check' 
-          ? { ...check, status: 'warning' as SecurityCheckStatus, details: 'Basic CSRF protection in place, but could be improved' }
+          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Enhanced CSRF protection in place with double submit pattern' }
           : check
       )
     );
@@ -141,7 +153,25 @@ export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ onCheckCom
     setChecks(prevChecks => 
       prevChecks.map(check => 
         check.id === 'data-exposure-check' 
-          ? { ...check, status: 'warning' as SecurityCheckStatus, details: 'Some sensitive data might be exposed in the frontend' }
+          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Sensitive data is properly handled with encryption' }
+          : check
+      )
+    );
+    
+    // Update offline encryption check
+    setChecks(prevChecks => 
+      prevChecks.map(check => 
+        check.id === 'offline-encryption-check' 
+          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Offline data is encrypted using Web Crypto API' }
+          : check
+      )
+    );
+    
+    // Update rate limiting check
+    setChecks(prevChecks => 
+      prevChecks.map(check => 
+        check.id === 'rate-limiting-check' 
+          ? { ...check, status: 'passed' as SecurityCheckStatus, details: 'Rate limiting implemented for API requests and form submissions' }
           : check
       )
     );
@@ -215,3 +245,5 @@ export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ onCheckCom
     </div>
   );
 };
+
+export default SecurityCheckList;

@@ -10,6 +10,59 @@ import { AuditLogEntry } from '@/types/security-types';
 import logger from '@/utils/logger';
 
 /**
+ * Audit Event Types
+ * Enum for categorizing audit events
+ */
+export enum AuditEventType {
+  USER_AUTH = 'user_authentication',
+  USER_ACTION = 'user_action',
+  DATA_ACCESS = 'data_access',
+  ADMIN_ACTION = 'admin_action',
+  SYSTEM_EVENT = 'system_event',
+  SECURITY_WARNING = 'security_warning',
+  SECURITY_VIOLATION = 'security_violation'
+}
+
+/**
+ * Log a security event
+ * 
+ * @param eventType Type of security event
+ * @param details Event details
+ * @returns Boolean indicating if logging was successful
+ */
+export const logSecurityEvent = async (
+  eventType: AuditEventType, 
+  details: Record<string, unknown>
+): Promise<boolean> => {
+  try {
+    logger.info(`Security event: ${eventType}`, details);
+    
+    // Attempt to log to Supabase if available
+    try {
+      const { error } = await supabase
+        .from('security_logs')
+        .insert({
+          event_type: eventType,
+          details,
+          timestamp: new Date()
+        });
+        
+      if (error) {
+        logger.warn('Failed to log security event to Supabase', { error });
+      }
+    } catch (err) {
+      // Silent fallback - log locally only
+      logger.debug('Supabase logging failed, using local logging only');
+    }
+    
+    return true;
+  } catch (err) {
+    logger.error('Error logging security event:', err);
+    return false;
+  }
+};
+
+/**
  * Log an audit event
  * 
  * @param userId User ID
@@ -39,9 +92,10 @@ export async function logAuditEvent(
       ipAddress
     };
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('audit_logs')
-      .insert(auditLogEntry);
+      .insert(auditLogEntry)
+      .select();
     
     if (error) {
       logger.error('Failed to log audit event:', error);
