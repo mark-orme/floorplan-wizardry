@@ -38,6 +38,18 @@ export interface UserProfile {
 }
 
 /**
+ * Check if the current connection is secure (HTTPS or localhost)
+ * @returns Boolean indicating if the connection is secure
+ */
+export function isSecureConnection(): boolean {
+  if (typeof window === 'undefined') return true;
+  
+  return window.location.protocol === 'https:' || 
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1';
+}
+
+/**
  * Initialize Supabase client
  * This would normally connect to your Supabase instance
  */
@@ -45,3 +57,4 @@ export const initializeSupabase = () => {
   // In a real implementation, this would initialize the Supabase client
   console.info('Supabase client initialized');
 };
+
