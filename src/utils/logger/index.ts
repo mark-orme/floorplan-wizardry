@@ -22,18 +22,25 @@ class Logger {
 
   private async initPapertrail() {
     if (process.env.VITE_PAPERTRAIL_HOST && process.env.VITE_PAPERTRAIL_PORT) {
-      const { createPapertrailTransport } = await import('./papertrailTransport');
-      
-      this.papertrailLogger = winston.createLogger({
-        transports: [
-          createPapertrailTransport({
-            host: process.env.VITE_PAPERTRAIL_HOST,
-            port: Number(process.env.VITE_PAPERTRAIL_PORT),
-            hostname: window.location.hostname,
-            program: 'canvas-app'
-          })
-        ]
-      });
+      try {
+        const { createPapertrailTransport } = await import('./papertrailTransport');
+        
+        this.papertrailLogger = winston.createLogger({
+          transports: [
+            createPapertrailTransport({
+              host: process.env.VITE_PAPERTRAIL_HOST,
+              port: Number(process.env.VITE_PAPERTRAIL_PORT),
+              hostname: window.location.hostname,
+              program: 'canvas-app'
+            })
+          ]
+        });
+        
+        // Log successful Papertrail initialization
+        console.info(`[${this.namespace}] Papertrail logging initialized`);
+      } catch (error) {
+        console.error(`[${this.namespace}] Failed to initialize Papertrail logger:`, error);
+      }
     }
   }
 
@@ -48,7 +55,7 @@ class Logger {
     console.debug(`[${this.namespace}] ${message}`, data);
     
     if (this.papertrailLogger) {
-      this.papertrailLogger.debug(`[${this.namespace}] ${message}`, data);
+      this.papertrailLogger.debug(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
     }
   }
 
@@ -62,7 +69,7 @@ class Logger {
     console.info(`[${this.namespace}] ${message}`, data);
     
     if (this.papertrailLogger) {
-      this.papertrailLogger.info(`[${this.namespace}] ${message}`, data);
+      this.papertrailLogger.info(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
     }
   }
 
@@ -76,7 +83,7 @@ class Logger {
     console.warn(`[${this.namespace}] ${message}`, data);
     
     if (this.papertrailLogger) {
-      this.papertrailLogger.warn(`[${this.namespace}] ${message}`, data);
+      this.papertrailLogger.warn(`[${this.namespace}] ${message}`, data ? JSON.stringify(data) : '');
     }
   }
 
@@ -92,7 +99,53 @@ class Logger {
     );
     
     if (this.papertrailLogger) {
-      this.papertrailLogger.error(`[${this.namespace}] ${message}`, data);
+      // Format error objects for Papertrail
+      let formattedData = data;
+      if (data instanceof Error) {
+        formattedData = { 
+          message: data.message, 
+          stack: data.stack,
+          name: data.name
+        };
+      }
+      
+      this.papertrailLogger.error(`[${this.namespace}] ${message}`, 
+        formattedData ? JSON.stringify(formattedData) : '');
+    }
+  }
+  
+  /**
+   * Special method for logging canvas errors with better context
+   */
+  canvasError(message: string, error?: Error, context?: LogData): void {
+    const canvasContext = {
+      ...context,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      screenSize: `${window.innerWidth}x${window.innerHeight}`,
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    };
+    
+    console.error(
+      `[${this.namespace}:canvas] ${message}`,
+      error || {},
+      canvasContext
+    );
+    
+    if (this.papertrailLogger) {
+      // Format error details for Papertrail
+      const errorDetails = error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : {};
+      
+      const fullContext = { ...errorDetails, ...canvasContext };
+      
+      this.papertrailLogger.error(
+        `[${this.namespace}:canvas] ${message}`, 
+        JSON.stringify(fullContext)
+      );
     }
   }
   

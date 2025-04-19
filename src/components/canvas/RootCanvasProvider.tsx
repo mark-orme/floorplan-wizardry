@@ -1,146 +1,135 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import SimpleGridLayer from './SimpleGridLayer';
-import { MobileCanvasEnhancer } from './MobileCanvasEnhancer';
-import { CanvasDrawingEnhancer } from './CanvasDrawingEnhancer';
 import { DrawingMode } from '@/constants/drawingModes';
+import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
 import logger from '@/utils/logger';
-import { toast } from 'sonner';
-import { captureMessage } from '@/utils/sentry';
+import { logCanvasInitialization } from '@/utils/canvas/canvasErrorDiagnostics';
 
 interface RootCanvasProviderProps {
   canvas: FabricCanvas | null;
-  setCanvas?: (canvas: FabricCanvas | null) => void;
+  setCanvas: (canvas: FabricCanvas | null) => void;
   tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
-  children?: React.ReactNode;
   onCanvasReady?: (canvas: FabricCanvas) => void;
 }
 
-/**
- * Root provider that coordinates all canvas enhancements
- * Ensures reliability through multiple layers of redundancy
- */
 export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
   canvas,
   setCanvas,
   tool = DrawingMode.SELECT,
-  lineColor = "#000000",
+  lineColor = '#000000',
   lineThickness = 2,
-  children,
   onCanvasReady
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const initAttemptsRef = useRef(0);
+  const [initializationAttempts, setInitializationAttempts] = useState(0);
   
-  // Initialize monitoring state
+  // Initialize canvas when it becomes available
   useEffect(() => {
-    if (!canvas) return;
-    
-    logger.info("RootCanvasProvider: Initializing");
-    
-    // Set up global canvas state for monitoring
-    if (typeof window !== 'undefined') {
-      window.__canvas_state = window.__canvas_state || {};
-      if (window.__canvas_state) {
-        window.__canvas_state.canvasInitialized = true;
-        window.__canvas_state.initTime = Date.now();
-      }
+    if (!canvas) {
+      return;
     }
     
-    // Initialize the canvas systems
+    // Avoid re-initializing if already done
+    if (isInitialized) {
+      return;
+    }
+    
     const initializeCanvas = () => {
       try {
-        logger.info("Starting canvas subsystems initialization");
+        // Log initialization attempt
+        logger.info(`Initializing canvas (attempt ${initializationAttempts + 1})`);
+        setInitializationAttempts(prev => prev + 1);
         
-        // Ensure canvas is ready
-        if (!canvas.wrapperEl || !canvas.upperCanvasEl) {
-          initAttemptsRef.current += 1;
-          
-          if (initAttemptsRef.current < 5) {
-            logger.warn(`Canvas not fully initialized, retry ${initAttemptsRef.current}/5`);
-            setTimeout(initializeCanvas, 300);
-            return;
-          } else {
-            logger.error("Canvas failed to initialize properly");
-            captureMessage('Canvas failed to initialize properly', 'canvas-init', {
-              level: 'error',
-              tags: { 
-                component: 'RootCanvasProvider',
-                attempts: String(initAttemptsRef.current)
-              }
-            });
-            toast.error("Canvas initialization failed. Please refresh the page.");
-            return;
-          }
+        // Check if drawing brush is available
+        if (!canvas.freeDrawingBrush) {
+          logger.canvasError('Drawing brush not available', 
+            new Error('Canvas free drawing brush is undefined'),
+            { tool, initAttempt: initializationAttempts + 1 }
+          );
+          return false;
         }
         
-        // Configure base canvas settings
-        canvas.selection = tool === DrawingMode.SELECT;
+        // Apply tool settings
         canvas.isDrawingMode = tool === DrawingMode.DRAW;
-        canvas.preserveObjectStacking = true;
+        canvas.selection = tool === DrawingMode.SELECT;
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+        
+        // Run validation and diagnostics
+        logCanvasInitialization(
+          canvas.getElement() as HTMLCanvasElement, 
+          canvas,
+          { tool, lineColor, lineThickness, initAttempt: initializationAttempts + 1 }
+        );
+        
+        // Set initialized state
+        setIsInitialized(true);
         
         // Call onCanvasReady callback
-        if (onCanvasReady && !isInitialized) {
+        if (onCanvasReady) {
           onCanvasReady(canvas);
         }
         
-        setIsInitialized(true);
-        logger.info("Canvas initialized successfully");
-        
-        // Update canvas reference if setCanvas is provided
-        if (setCanvas) {
-          setCanvas(canvas);
-        }
+        return true;
       } catch (error) {
-        logger.error("Error during canvas initialization:", error);
-        captureMessage('Error during canvas initialization', 'canvas-init', {
-          level: 'error',
-          tags: { component: 'RootCanvasProvider' },
-          extra: { error: String(error) }
-        });
+        logger.canvasError('Canvas failed to initialize properly', 
+          error instanceof Error ? error : new Error('Unknown error'),
+          { tool, initAttempt: initializationAttempts + 1 }
+        );
+        return false;
       }
     };
     
-    // Start initialization
-    initializeCanvas();
+    // Try to initialize
+    const initSuccess = initializeCanvas();
     
-    return () => {
-      // Cleanup when component unmounts
-      if (typeof window !== 'undefined' && window.__canvas_state) {
-        window.__canvas_state.canvasInitialized = false;
+    // If failed, retry after a delay (only up to 3 attempts)
+    if (!initSuccess && initializationAttempts < 3) {
+      const retryDelay = Math.pow(2, initializationAttempts) * 500; // Exponential backoff
+      logger.info(`Scheduling canvas initialization retry in ${retryDelay}ms`);
+      
+      const timerId = setTimeout(() => {
+        if (canvas) {
+          initializeCanvas();
+        }
+      }, retryDelay);
+      
+      return () => clearTimeout(timerId);
+    }
+    
+  }, [canvas, isInitialized, tool, lineColor, lineThickness, onCanvasReady, initializationAttempts]);
+  
+  // Handle tool changes when canvas is already initialized
+  useEffect(() => {
+    if (!canvas || !isInitialized) return;
+    
+    try {
+      // Apply tool settings
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
+      
+      if (canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+      } else {
+        logger.warn('Drawing brush not available on tool change', { tool });
       }
       
-      logger.info("RootCanvasProvider: Cleaning up");
-    };
-  }, [canvas, onCanvasReady, isInitialized, setCanvas, tool]);
+      // Force render to apply changes
+      canvas.renderAll();
+    } catch (error) {
+      logger.canvasError('Error changing canvas tool', 
+        error instanceof Error ? error : new Error('Unknown error'),
+        { prevTool: canvas.isDrawingMode ? 'DRAW' : 'SELECT', newTool: tool }
+      );
+    }
+  }, [canvas, isInitialized, tool, lineColor, lineThickness]);
   
-  if (!canvas) {
-    return <>{children}</>;
-  }
-  
-  return (
-    <>
-      {/* Grid Layer - ensures grid visibility */}
-      <SimpleGridLayer canvas={canvas} />
-      
-      {/* Mobile Enhancements - specifically for mobile devices */}
-      <MobileCanvasEnhancer canvas={canvas} />
-      
-      {/* Drawing Enhancements - ensures drawing tools work */}
-      <CanvasDrawingEnhancer 
-        canvas={canvas}
-        tool={tool}
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-      />
-      
-      {/* Render children */}
-      {children}
-    </>
-  );
+  // Apply mobile-specific optimizations
+  return canvas && isInitialized ? (
+    <MobileCanvasOptimizer canvas={canvas} />
+  ) : null;
 };
-
-export default RootCanvasProvider;
