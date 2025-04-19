@@ -1,146 +1,111 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, RefObject } from 'react';
 import { Canvas as FabricCanvas, Point } from 'fabric';
-import { toFabricPoint } from '@/utils/fabricPointConverter';
 
-interface UsePointerEventsProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+export interface UsePointerEventsProps {
+  canvasRef: RefObject<HTMLCanvasElement>;
   fabricCanvas: FabricCanvas | null;
-  enabled?: boolean;
-  onPressureChange?: (pressure: number) => void;
-  onTiltChange?: (tiltX: number, tiltY: number) => void;
   onPointerMove?: (e: PointerEvent) => void;
+}
+
+interface PointerData {
+  pressure: number;
+  tiltX: number;
+  tiltY: number;
 }
 
 export const usePointerEvents = ({ 
   canvasRef, 
-  fabricCanvas, 
-  enabled = true,
-  onPressureChange,
-  onTiltChange,
+  fabricCanvas,
   onPointerMove
 }: UsePointerEventsProps) => {
-  const isDrawingRef = useRef(false);
-  const lastPointRef = useRef<{ x: number, y: number } | null>(null);
-  const [isPointerDown, setIsPointerDown] = useState(false);
+  const [pointerData, setPointerData] = useState<PointerData>({
+    pressure: 0.5,
+    tiltX: 0,
+    tiltY: 0
+  });
 
-  // Set up pointer event handlers
   useEffect(() => {
-    if (!enabled || !fabricCanvas || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    
-    const handlePointerDown = (e: PointerEvent) => {
-      e.preventDefault();
-      isDrawingRef.current = true;
-      setIsPointerDown(true);
-      
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      lastPointRef.current = { x, y };
-
-      // Handle pressure if available
-      if (onPressureChange && e.pressure) {
-        onPressureChange(e.pressure);
-      }
-      
-      // Handle tilt if available
-      if (onTiltChange && (e.tiltX || e.tiltY)) {
-        onTiltChange(e.tiltX, e.tiltY);
-      }
-
-      // Start path in Fabric
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const fabricPoint = toFabricPoint({ x, y });
-        // Correct the FabricJS v6 format
-        fabricCanvas.freeDrawingBrush.onMouseDown({ pointer: fabricPoint });
-      }
-    };
+    if (!canvasRef.current || !fabricCanvas) return;
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isDrawingRef.current || !lastPointRef.current) return;
-      e.preventDefault();
+      if (!canvasRef.current) return;
       
-      const rect = canvas.getBoundingClientRect();
-      const currentPoint = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
-
-      // Handle pressure if available
-      if (onPressureChange && e.pressure) {
-        onPressureChange(e.pressure);
-      }
+      // Update pointer data
+      setPointerData({
+        pressure: e.pressure > 0 ? e.pressure : 0.5,
+        tiltX: e.tiltX,
+        tiltY: e.tiltY
+      });
       
-      // Handle tilt if available
-      if (onTiltChange && (e.tiltX || e.tiltY)) {
-        onTiltChange(e.tiltX, e.tiltY);
-      }
+      // Create a point from the event coordinates
+      const rect = canvasRef.current.getBoundingClientRect();
+      const point = new Point(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
       
-      // Call the onPointerMove callback if provided
+      // Fire the canvas event
+      fabricCanvas.fire('pointer:move', {
+        e,
+        pointer: point
+      });
+      
+      // Call the provided callback if it exists
       if (onPointerMove) {
         onPointerMove(e);
       }
+    };
 
-      // Draw point in Fabric
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const fabricPoint = toFabricPoint(currentPoint);
-        // Correct the FabricJS v6 format
-        fabricCanvas.freeDrawingBrush.onMouseMove({ pointer: fabricPoint });
-      }
-
-      lastPointRef.current = currentPoint;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!canvasRef.current) return;
+      
+      // Create a point from the event coordinates
+      const rect = canvasRef.current.getBoundingClientRect();
+      const point = new Point(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
+      
+      // Fire the canvas event
+      fabricCanvas.fire('pointer:down', {
+        e,
+        pointer: point
+      });
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-      if (!isDrawingRef.current) return;
-      e.preventDefault();
+      if (!canvasRef.current) return;
       
-      isDrawingRef.current = false;
-      setIsPointerDown(false);
-      lastPointRef.current = null;
-
-      // End path in Fabric
-      if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        const fabricPoint = toFabricPoint({ x, y });
-        // Correct the FabricJS v6 format
-        fabricCanvas.freeDrawingBrush.onMouseUp({ pointer: fabricPoint });
-      }
-    };
-
-    const handlePointerOut = (e: PointerEvent) => {
-      handlePointerUp(e);
+      // Create a point from the event coordinates
+      const rect = canvasRef.current.getBoundingClientRect();
+      const point = new Point(
+        e.clientX - rect.left,
+        e.clientY - rect.top
+      );
+      
+      // Fire the canvas event  
+      fabricCanvas.fire('pointer:up', {
+        e,
+        pointer: point
+      });
     };
 
     // Add event listeners
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerup', handlePointerUp);
-    canvas.addEventListener('pointerout', handlePointerOut);
-
-    // Set touch-action to none to prevent scrolling
-    canvas.style.touchAction = 'none';
+    const element = canvasRef.current;
+    element.addEventListener('pointermove', handlePointerMove);
+    element.addEventListener('pointerdown', handlePointerDown);
+    element.addEventListener('pointerup', handlePointerUp);
 
     return () => {
-      // Only remove event listeners if canvas exists
-      if (canvas) {
-        canvas.removeEventListener('pointerdown', handlePointerDown);
-        canvas.removeEventListener('pointermove', handlePointerMove);
-        canvas.removeEventListener('pointerup', handlePointerUp);
-        canvas.removeEventListener('pointerout', handlePointerOut);
-      }
+      // Remove event listeners
+      element.removeEventListener('pointermove', handlePointerMove);
+      element.removeEventListener('pointerdown', handlePointerDown);
+      element.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [canvasRef, fabricCanvas, enabled, onPressureChange, onTiltChange, onPointerMove]);
+  }, [canvasRef, fabricCanvas, onPointerMove]);
 
   return {
-    isPointerDown
+    pointerData
   };
 };
-
-export default usePointerEvents;

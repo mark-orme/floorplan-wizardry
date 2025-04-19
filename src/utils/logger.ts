@@ -5,7 +5,14 @@
  */
 
 // Define log levels
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+// Define logger metadata structure
+export interface LogData {
+  timestamp: string;
+  context?: string;
+  details?: Record<string, any>;
+}
 
 // Define logger interface
 interface Logger {
@@ -13,6 +20,7 @@ interface Logger {
   info(message: string, meta?: Record<string, any>): void;
   warn(message: string, meta?: Record<string, any>): void;
   error(message: string, meta?: Record<string, any>): void;
+  canvasError?(message: string, meta?: Record<string, any>): void;
 }
 
 // Create the logger
@@ -39,6 +47,10 @@ const logger: Logger = {
       // Example: Send to error monitoring service
       // errorMonitoringService.captureException(message, meta);
     }
+  },
+  
+  canvasError(message: string, meta?: Record<string, any>): void {
+    console.error(`[CANVAS ERROR] ${message}`, meta);
   }
 };
 

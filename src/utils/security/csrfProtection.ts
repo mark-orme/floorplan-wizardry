@@ -20,6 +20,26 @@ export function generateCSRFToken(): string {
 }
 
 /**
+ * Alias for generateCSRFToken for compatibility
+ */
+export const generateCsrfToken = generateCSRFToken;
+
+/**
+ * Get the current CSRF token
+ * @returns Current CSRF token
+ */
+export function getCsrfToken(): string {
+  let token = sessionStorage.getItem('csrfToken');
+  
+  // Generate a new token if none exists
+  if (!token) {
+    token = generateCSRFToken();
+  }
+  
+  return token;
+}
+
+/**
  * Verify a CSRF token against the stored token
  * @param token Token to verify
  * @returns Boolean indicating if the token is valid
@@ -37,6 +57,11 @@ export function verifyCSRFToken(token: string): boolean {
 }
 
 /**
+ * Alias for verifyCSRFToken for compatibility
+ */
+export const validateCsrfToken = verifyCSRFToken;
+
+/**
  * Add CSRF token to form data
  * @param formData FormData instance to add token to
  * @returns FormData with added CSRF token
@@ -45,6 +70,11 @@ export function addCSRFToFormData(formData: FormData): FormData {
   formData.append('csrf_token', generateCSRFToken());
   return formData;
 }
+
+/**
+ * Alias for addCSRFToFormData for compatibility
+ */
+export const addCsrfTokenToForm = addCSRFToFormData;
 
 /**
  * Add CSRF token to request headers
@@ -57,6 +87,34 @@ export function addCSRFToHeaders(headers: Record<string, string>): Record<string
     'X-CSRF-Token': generateCSRFToken()
   };
 }
+
+/**
+ * Alias for addCSRFToHeaders for compatibility
+ */
+export const createCsrfHeaders = addCSRFToHeaders;
+
+/**
+ * Fetch with CSRF protection
+ * @param url URL to fetch
+ * @param options Fetch options
+ * @returns Fetch promise
+ */
+export function fetchWithCSRF(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...options.headers,
+    'X-CSRF-Token': getCsrfToken()
+  };
+  
+  return fetch(url, {
+    ...options,
+    headers
+  });
+}
+
+/**
+ * Alias for fetchWithCSRF for compatibility
+ */
+export const fetchWithCsrf = fetchWithCSRF;
 
 /**
  * Create a CSRF-protected form submission handler

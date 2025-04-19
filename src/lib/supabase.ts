@@ -64,24 +64,30 @@ export const initializeSupabase = () => {
 export const supabase = {
   auth: {
     getUser: async () => ({ data: { user: null }, error: null }),
-    signInWithPassword: async () => ({ data: null, error: null })
+    signInWithPassword: async () => ({ data: null, error: null }),
+    getSession: async () => ({ data: { session: null }, error: null }),
+    signOut: async () => ({ error: null })
   },
   from: (table: string) => ({
     select: () => ({
-      eq: () => ({
+      eq: (column: string, value: any) => ({
         single: async () => ({ data: null, error: null }),
-        order: () => ({ data: [], error: null })
+        order: (column: string, { ascending = true } = {}) => ({ data: [], error: null })
       }),
-      order: () => ({ data: [], error: null }),
-      in: () => ({
-        order: () => ({ data: [], error: null })
+      order: (column: string, { ascending = true } = {}) => ({ data: [], error: null }),
+      in: (column: string, values: any[]) => ({
+        order: (column: string, { ascending = true } = {}) => ({ data: [], error: null })
       })
     }),
-    insert: () => ({
+    insert: (data: any) => ({
       select: async () => ({ data: [], error: null })
     }),
-    update: () => ({
-      eq: async () => ({ data: null, error: null })
+    update: (data: any) => ({
+      eq: async (column: string, value: any) => ({ data: null, error: null }),
+      match: async (criteria: Record<string, any>) => ({ data: null, error: null })
+    }),
+    delete: () => ({
+      eq: async (column: string, value: any) => ({ data: null, error: null })
     })
   })
 };

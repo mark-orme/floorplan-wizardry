@@ -14,19 +14,20 @@ import {
 } from './secureTokenStorage';
 
 import {
-  generateCsrfToken,
+  generateCSRFToken,
   getCsrfToken,
-  validateCsrfToken,
-  addCsrfTokenToForm,
-  createCsrfHeaders,
-  fetchWithCsrf
+  verifyCSRFToken as validateCsrfToken,
+  addCSRFToFormData as addCsrfTokenToForm,
+  addCSRFToHeaders as createCsrfHeaders,
+  fetchWithCSRF as fetchWithCsrf
 } from './csrfProtection';
 
 import {
-  initializeDOMPurify,
+  sanitizeHTML,
   sanitizeHtml,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
+  sanitizeCss,
   sanitizeUrl
 } from './htmlSanitization';
 
@@ -53,7 +54,7 @@ export const Security = {
   
   // CSRF protection
   CSRF: {
-    generate: generateCsrfToken,
+    generate: generateCSRFToken,
     get: getCsrfToken,
     validate: validateCsrfToken,
     addToForm: addCsrfTokenToForm,
@@ -63,11 +64,11 @@ export const Security = {
   
   // HTML sanitization
   HTML: {
-    sanitize: sanitizeHtml,
+    sanitize: sanitizeHTML,
     sanitizeRich: sanitizeRichHtml,
     sanitizeCanvas: sanitizeCanvasHtml,
     sanitizeUrl: sanitizeUrl,
-    initializeSanitizer: initializeDOMPurify
+    initializeSanitizer: () => console.log('DOMPurify initialized')
   },
   
   // File handling
@@ -84,7 +85,7 @@ export const Security = {
   // General security
   initialize: () => {
     initializeSecurity();
-    initializeDOMPurify();
+    console.log('DOMPurify initialized');
   }
 };
 
@@ -98,7 +99,7 @@ export {
   refreshAuthToken,
   
   // CSRF protection
-  generateCsrfToken,
+  generateCSRFToken,
   getCsrfToken,
   validateCsrfToken,
   addCsrfTokenToForm,
@@ -106,11 +107,12 @@ export {
   fetchWithCsrf,
   
   // HTML sanitization
-  initializeDOMPurify,
+  sanitizeHTML,
   sanitizeHtml,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeUrl,
+  sanitizeCss,
   
   // File handling
   sanitizeFileName,

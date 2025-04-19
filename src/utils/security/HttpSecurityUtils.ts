@@ -1,113 +1,106 @@
 
 /**
  * HTTP Security Utilities
- * Functions for securing HTTP connections and fetching
+ * Functions for securing HTTP requests and responses
  */
-import { getCsrfToken } from './csrfProtection';
-import logger from '@/utils/logger';
+import { sanitizeURL } from './urlSanitization';
+import { generateCSRFToken, getCsrfToken } from './csrfProtection';
 
 /**
- * Check if the current connection is secure (HTTPS or localhost)
- */
-export function isConnectionSecure(): boolean {
-  if (typeof window === 'undefined') return true;
-  
-  return window.location.protocol === 'https:' || 
-    window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1';
-}
-
-/**
- * Add security headers to fetch options
- * @param options Original fetch options
- * @returns Fetch options with security headers
- */
-export function addSecurityHeaders(options: RequestInit = {}): RequestInit {
-  const secureOptions = { ...options };
-  secureOptions.headers = secureOptions.headers || {};
-  
-  // Convert different header formats to a Headers object
-  let headers: Headers;
-  if (secureOptions.headers instanceof Headers) {
-    headers = secureOptions.headers;
-  } else if (Array.isArray(secureOptions.headers)) {
-    headers = new Headers();
-    secureOptions.headers.forEach(([key, value]) => {
-      headers.append(key, value);
-    });
-  } else {
-    headers = new Headers(secureOptions.headers);
-  }
-  
-  // Add security headers
-  headers.append('X-Content-Type-Options', 'nosniff');
-  
-  // Add CSRF token if available
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers.append('X-CSRF-Token', csrfToken);
-  }
-  
-  secureOptions.headers = headers;
-  return secureOptions;
-}
-
-/**
- * Secure fetch wrapper with additional security headers
+ * Secure fetch wrapper that adds security headers
  * @param url URL to fetch
  * @param options Fetch options
- * @returns Fetch promise
+ * @returns Promise with fetch response
  */
-export function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  // Check if URL is secure
-  if (url.startsWith('http:') && isConnectionSecure()) {
-    logger.warn('Secure application attempting to load insecure resource:', { url });
+export async function secureFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  // Sanitize URL
+  const sanitizedUrl = sanitizeURL(url);
+  if (!sanitizedUrl) {
+    throw new Error('Invalid URL');
   }
   
   // Add security headers
-  const secureOptions = addSecurityHeaders(options);
-  
-  // Perform fetch with enhanced security
-  return fetch(url, secureOptions);
-}
-
-/**
- * Apply security meta tags to document head
- * Note: X-Frame-Options cannot be set via meta tags, it must be sent as an HTTP header
- */
-export function applySecurityMetaTags(): void {
-  if (typeof window === 'undefined') return;
-  
-  // Remove any existing security meta tags
-  const existingTags = document.querySelectorAll(
-    'meta[http-equiv="Content-Security-Policy"], meta[http-equiv="X-Content-Type-Options"]'
-  );
-  existingTags.forEach(tag => tag.remove());
-  
-  // Add Content-Security-Policy meta tag
-  const cspTag = document.createElement('meta');
-  cspTag.httpEquiv = 'Content-Security-Policy';
-  cspTag.content = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.pusher.com https://*.pusher.com; worker-src 'self' blob:;";
-  document.head.appendChild(cspTag);
-  
-  // Add X-Content-Type-Options meta tag
-  const xctoTag = document.createElement('meta');
-  xctoTag.httpEquiv = 'X-Content-Type-Options';
-  xctoTag.content = 'nosniff';
-  document.head.appendChild(xctoTag);
-  
-  // X-Frame-Options cannot be set via meta tags, this must be done server-side
-  logger.info('Security meta tags applied, X-Frame-Options must be set via HTTP headers');
-}
-
-/**
- * Get CSP headers for server-side implementation
- */
-export function getCSPHeaders(): Record<string, string> {
-  return {
-    'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.lovable.dev https://*.lovable.dev https://*.sentry.io https://sentry.io https://api.sentry.io https://ingest.sentry.io wss://*.pusher.com https://*.pusher.com https://*.lovable.app ws: http://localhost:* http://*:* ws://*:*; frame-src 'self' https://*.lovable.dev https://*.lovable.app; object-src 'none'; base-uri 'self'; worker-src 'self' blob: 'unsafe-inline'; child-src 'self' blob:;",
-    'X-Frame-Options': 'SAMEORIGIN',
+  const securityHeaders = {
     'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin'
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'X-CSRF-Token': getCsrfToken()
   };
+  
+  const mergedHeaders = {
+    ...securityHeaders,
+    ...(options.headers || {})
+  };
+  
+  // Perform fetch with security headers
+  return fetch(sanitizedUrl, {
+    ...options,
+    headers: mergedHeaders
+  });
+}
+
+/**
+ * Simple URL sanitization
+ * @param url URL to sanitize
+ * @returns Sanitized URL or null if invalid
+ */
+function sanitizeURL(url: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+  
+  // Check for basic protocols
+  if (!/^(https?|ftp|file):\/\//i.test(url)) {
+    return null;
+  }
+  
+  // Try to parse URL
+  try {
+    new URL(url);
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Adds security headers to a request object
+ * @param headers Existing headers
+ * @returns Headers with security additions
+ */
+export function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...headers,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'X-CSRF-Token': generateCSRFToken()
+  };
+}
+
+/**
+ * Creates a safe redirect URL
+ * @param url URL to redirect to
+ * @param defaultUrl Default URL if the provided one is unsafe
+ * @returns Safe URL to redirect to
+ */
+export function createSafeRedirect(url: string, defaultUrl: string = '/'): string {
+  if (!url || typeof url !== 'string') return defaultUrl;
+  
+  // Only allow relative URLs or URLs to the same domain
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    return url;
+  }
+  
+  try {
+    const urlObj = new URL(url);
+    const currentDomain = window.location.hostname;
+    
+    // Check if URL is for the same domain
+    if (urlObj.hostname === currentDomain) {
+      return url;
+    }
+  } catch {
+    // Invalid URL, return default
+  }
+  
+  return defaultUrl;
 }
