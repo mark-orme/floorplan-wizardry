@@ -80,11 +80,10 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
 
       // Start path in Fabric
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
-        // Create a fabric Point here using the conversion utility
+        // Create a fabric Point using toFabricPoint utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseDown(fabricPoint, {
-          e,
-          pointer: fabricPoint // Use fabricPoint here instead of plain object
+          e
         });
       }
     };
@@ -106,11 +105,10 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
       // Draw interpolated points
       if (fabricCanvas.isDrawingMode && fabricCanvas.freeDrawingBrush) {
         points.forEach(point => {
-          // Create a fabric Point for each interpolated point using the conversion utility
+          // Create a fabric Point for each interpolated point
           const fabricPoint = toFabricPoint({ x: point.x, y: point.y });
           fabricCanvas.freeDrawingBrush.onMouseMove(fabricPoint, {
-            e,
-            pointer: fabricPoint // Use fabricPoint here instead of plain object
+            e
           });
         });
       }
@@ -131,11 +129,10 @@ export const useOptimizedDrawing = ({ canvasRef, fabricCanvas }: UseOptimizedDra
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Create a fabric Point for the pointer position using the conversion utility
+        // Create a fabric Point using toFabricPoint utility
         const fabricPoint = toFabricPoint({ x, y });
         fabricCanvas.freeDrawingBrush.onMouseUp({ 
-          e, 
-          pointer: fabricPoint // Use fabricPoint here instead of plain object
+          e
         });
       }
     };
