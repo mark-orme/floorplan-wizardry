@@ -75,9 +75,9 @@ export const getPerformanceStats = (): PerformanceStats => {
   
   return {
     fps,
-    frameTime: Math.round(avgFrameTime * 100) / 100,
-    maxFrameTime: Math.round(maxFrameTime * 100) / 100,
-    longFrames
+    renderTime: Math.round(avgFrameTime * 100) / 100,
+    objectCount: 0,
+    lastUpdate: Date.now()
   };
 };
 

@@ -12,6 +12,8 @@ import { DrawingTool } from "@/types/core/DrawingTool";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
 import { CanvasReferences } from "@/types/fabric";
+import { adaptCoreToDrawingDebugInfo, adaptDrawingToCoreDebugInfo } from "@/utils/debugInfoAdapter";
+import { DebugInfoState as DrawingDebugInfoState } from "@/types/drawingTypes";
 
 /**
  * Canvas controller setup properties
@@ -27,7 +29,7 @@ interface UseCanvasControllerSetupProps {
   /** Function to set zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   /** Function to set debug info */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DrawingDebugInfoState>>;
   /** Function to set error state */
   setHasError: (value: boolean) => void;
   /** Function to set error message */
@@ -50,18 +52,30 @@ export const useCanvasControllerSetup = ({
   setHasError,
   setErrorMessage
 }: UseCanvasControllerSetupProps): CanvasReferences => {
+  // Create a wrapped setDebugInfo function that adapts between types
+  const setCompatibleDebugInfo = (debugInfo: any) => {
+    if (typeof debugInfo === 'function') {
+      setDebugInfo((prev: DrawingDebugInfoState) => {
+        const compatiblePrev = adaptDrawingToCoreDebugInfo(prev);
+        const nextCoreState = debugInfo(compatiblePrev);
+        return adaptCoreToDrawingDebugInfo(nextCoreState);
+      });
+    } else {
+      setDebugInfo(adaptCoreToDrawingDebugInfo(debugInfo));
+    }
+  };
+
   // Initialize canvas and grid with improved error handling
-  // useCanvasInitialization handles the core setup of the canvas and its components
   const { 
-    canvasRef,         // Reference to the HTML canvas element
-    fabricCanvasRef,   // Reference to the Fabric.js canvas instance
-    historyRef         // Reference to the history state for undo/redo
+    canvasRef, 
+    fabricCanvasRef, 
+    historyRef 
   } = useCanvasInitialization({
     canvasDimensions,
     tool,
     currentFloor,
     setZoomLevel,
-    setDebugInfo,
+    setDebugInfo: setCompatibleDebugInfo,
     setHasError,
     setErrorMessage
   });
@@ -100,7 +114,7 @@ export const useCanvasControllerSetup = ({
         // If Fabric canvas is also initialized, we're fully ready
         if (fabricCanvasRef.current) {
           logger.info("Canvas setup complete with dimensions:", canvasDimensions);
-          console.log("🎨 fabricCanvasRef:", fabricCanvasRef.current);
+          console.log("���� fabricCanvasRef:", fabricCanvasRef.current);
           console.log("🧮 Objects on canvas:", fabricCanvasRef.current.getObjects()?.length);
           
           // Check if the canvas has valid dimensions

@@ -61,7 +61,6 @@ export const adaptDrawingToCoreDebugInfo = (drawingDebugInfo: DrawingDebugInfoSt
     brushInitialized: drawingDebugInfo.brushInitialized || false,
     canvasReady: drawingDebugInfo.canvasReady || false,
     canvasCreated: drawingDebugInfo.canvasCreated || false,
-    gridObjectCount: drawingDebugInfo.gridObjectCount || 0,
     objectCount: drawingDebugInfo.objectCount || 0,
     canvasDimensions: {
       width: drawingDebugInfo.canvasWidth || 0,

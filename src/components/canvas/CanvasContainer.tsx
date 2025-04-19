@@ -93,7 +93,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   };
 
   // Safely check if canvasReady exists in debug info
-  const isCanvasReady = localDebugInfo?.canvasReady || false;
+  const isCanvasReady = localDebugInfo?.canvasReady !== undefined ? localDebugInfo.canvasReady : false;
 
   return (
     <div 
