@@ -11,6 +11,8 @@ import DOMPurify from 'dompurify';
  * @returns Sanitized HTML string
  */
 export function sanitizeHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  
   if (typeof DOMPurify === 'undefined') {
     console.warn('DOMPurify is not available. Running in a non-browser environment?');
     // Fallback: strip all HTML tags
@@ -30,6 +32,8 @@ export function sanitizeHtml(html: string): string {
  * @returns Sanitized HTML string with allowed formatting
  */
 export function sanitizeRichHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  
   if (typeof DOMPurify === 'undefined') {
     console.warn('DOMPurify is not available. Running in a non-browser environment?');
     // Fallback: strip all HTML tags
@@ -52,6 +56,8 @@ export function sanitizeRichHtml(html: string): string {
  * @returns Sanitized HTML string safe for canvas use
  */
 export function sanitizeCanvasHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  
   if (typeof DOMPurify === 'undefined') {
     return html.replace(/<[^>]*>?/gm, '');
   }

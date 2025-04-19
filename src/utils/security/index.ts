@@ -28,13 +28,13 @@ import {
 
 import {
   sanitizeHtml,
-  sanitizeHTML,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
   sanitizeCss,
   sanitizeUrl,
   sanitizeText,
-  sanitizeObject
+  sanitizeObject,
+  sanitizeHTML
 } from './htmlSanitization';
 
 import {
@@ -121,8 +121,8 @@ export {
   sanitizeHTML,
   sanitizeRichHtml,
   sanitizeCanvasHtml,
-  sanitizeUrl,
   sanitizeCss,
+  sanitizeUrl,
   sanitizeText,
   sanitizeObject,
   
