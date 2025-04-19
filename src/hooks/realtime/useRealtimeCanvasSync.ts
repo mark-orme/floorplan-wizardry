@@ -10,7 +10,6 @@ const COLLABORATOR_COLORS = [
   '#33FFF0', '#F0FF33', '#FF8033', '#8033FF', '#33FF80'
 ];
 
-// Collaborator information
 export interface Collaborator {
   id: string;
   name: string;
@@ -35,30 +34,35 @@ export function useRealtimeCanvasSync({
 }: UseRealtimeCanvasSyncProps) {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const userIdRef = useRef<string>(`user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
-  
-  // Initialize CRDT sync
+
   const { isConnected, syncLocalChanges } = useCRDTSync({
     canvas,
     userId: userIdRef.current,
     userName,
     enabled
   });
-  
-  // Handle connection status changes
+
   useEffect(() => {
-    if (isConnected) {
-      logger.info('Connected to CRDT collaboration server');
-    } else {
-      logger.warn('Disconnected from CRDT collaboration server');
-    }
-  }, [isConnected]);
-  
-  // Manually trigger sync - accepts an optional parameter for backward compatibility
-  const syncCanvas = useCallback((_userName?: string) => {
-    if (enabled) {
+    if (!canvas || !enabled) return;
+
+    const handleObjectModified = () => {
       syncLocalChanges();
-    }
-  }, [enabled, syncLocalChanges]);
-  
-  return { collaborators, syncCanvas };
+    };
+
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('object:added', handleObjectModified);
+    canvas.on('object:removed', handleObjectModified);
+
+    return () => {
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('object:added', handleObjectModified);
+      canvas.off('object:removed', handleObjectModified);
+    };
+  }, [canvas, enabled, syncLocalChanges]);
+
+  return {
+    collaborators,
+    syncCanvas: syncLocalChanges,
+    isConnected
+  };
 }
