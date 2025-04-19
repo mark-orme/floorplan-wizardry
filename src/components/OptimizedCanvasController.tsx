@@ -32,8 +32,6 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
   const gridObjectsRef = useRef<any[]>([]);
   
   const handleCanvasReady = (canvas: FabricCanvas) => {
-    fabricCanvasRef.current = canvas;
-    
     // Set up proper tool based on the current drawing mode
     canvas.isDrawingMode = tool === DrawingMode.DRAW;
     canvas.selection = tool === DrawingMode.SELECT;
@@ -100,11 +98,6 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
         width={width}
         height={height}
         onCanvasReady={handleCanvasReady}
-        onError={onError}
-        tool={tool}
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-        showGrid={showGrid}
       />
     </div>
   );
