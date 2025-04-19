@@ -6,6 +6,7 @@
 import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/lib/supabase';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 export const testUsers = [
   {
@@ -33,7 +34,7 @@ export const testUsers = [
  */
 export const createTestUsers = async (): Promise<void> => {
   if (process.env.NODE_ENV !== 'development') {
-    console.log('Test users are only created in development environment');
+    logger.warn('Test users are only created in development environment');
     return;
   }
 
@@ -47,27 +48,30 @@ export const createTestUsers = async (): Promise<void> => {
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error(`Error checking for existing user ${testUser.email}:`, fetchError);
+        logger.error(`Error checking for existing user ${testUser.email}:`, fetchError);
         continue;
       }
 
       // Skip if user already exists
       if (existingUsers) {
-        console.log(`Test user ${testUser.email} already exists`);
+        logger.info(`Test user ${testUser.email} already exists`);
         continue;
       }
 
-      // Create auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword();
+      // Create auth user with proper parameters
+      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword({
+        email: testUser.email,
+        password: testUser.password
+      });
 
       if (signUpError) {
-        console.error(`Error creating auth user ${testUser.email}:`, signUpError);
+        logger.error(`Error creating auth user ${testUser.email}:`, signUpError);
         continue;
       }
 
       const userId = authData?.user?.id;
       if (!userId) {
-        console.error(`No user ID returned for ${testUser.email}`);
+        logger.error(`No user ID returned for ${testUser.email}`);
         continue;
       }
 
@@ -83,15 +87,15 @@ export const createTestUsers = async (): Promise<void> => {
         });
 
       if (profileError) {
-        console.error(`Error creating profile for ${testUser.email}:`, profileError);
+        logger.error(`Error creating profile for ${testUser.email}:`, profileError);
       } else {
-        console.log(`Created test user: ${testUser.email} (${testUser.role})`);
+        logger.info(`Created test user: ${testUser.email} (${testUser.role})`);
       }
     }
 
-    console.log('Test user creation completed');
+    logger.info('Test user creation completed');
   } catch (error) {
-    console.error('Error creating test users:', error);
+    logger.error('Error creating test users:', error);
     toast.error('Failed to create test users');
   }
 };
@@ -104,21 +108,24 @@ export const verifyTestUsers = async (): Promise<boolean[]> => {
 
   for (const testUser of testUsers) {
     try {
-      // Try to sign in with each test user
-      const { error } = await supabase.auth.signInWithPassword();
+      // Try to sign in with each test user with proper parameters
+      const { error } = await supabase.auth.signInWithPassword({
+        email: testUser.email,
+        password: testUser.password
+      });
 
       if (error) {
-        console.error(`Test user ${testUser.email} verification failed:`, error);
+        logger.error(`Test user ${testUser.email} verification failed:`, error);
         results.push(false);
       } else {
-        console.log(`Test user ${testUser.email} verified successfully`);
+        logger.info(`Test user ${testUser.email} verified successfully`);
         results.push(true);
 
         // Sign out immediately
         await supabase.auth.signOut();
       }
     } catch (error) {
-      console.error(`Error verifying test user ${testUser.email}:`, error);
+      logger.error(`Error verifying test user ${testUser.email}:`, error);
       results.push(false);
     }
   }

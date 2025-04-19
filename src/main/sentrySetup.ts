@@ -30,8 +30,8 @@ export function setupSentry(
     environment,
     release,
     beforeSend(event) {
-      // Don't send events in development
-      if (environment !== 'production') {
+      // Don't send events in development unless explicitly enabled
+      if (environment !== 'production' && process.env.VITE_ENABLE_SENTRY_DEV !== 'true') {
         return null;
       }
       return event;

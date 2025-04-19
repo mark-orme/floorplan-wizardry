@@ -1,4 +1,3 @@
-
 import logger from '@/utils/logger';
 
 /**
@@ -13,8 +12,17 @@ export function generateCSRFToken(): string {
     .map(byte => byte.toString(16).padStart(2, '0'))
     .join('');
   
-  // Store the token in sessionStorage
+  // Store the token in sessionStorage temporarily (will be improved in a future implementation)
   sessionStorage.setItem('csrfToken', token);
+  
+  // In a full implementation, we would set an HttpOnly cookie with same token
+  // using a server endpoint, but for this frontend-only implementation, we'll
+  // just simulate the approach
+  try {
+    document.cookie = `csrf_token=${token}; path=/; SameSite=Strict; secure`;
+  } catch (e) {
+    logger.warn('Failed to set CSRF cookie - this is expected in non-secure contexts');
+  }
   
   return token;
 }
@@ -47,8 +55,18 @@ export function verifyCSRFToken(token: string): boolean {
     return false;
   }
   
-  // Use constant-time comparison to prevent timing attacks
-  return token === storedToken;
+  // In a real implementation, we would also check the HttpOnly cookie
+  // For now, implement constant-time comparison to prevent timing attacks
+  if (token.length !== storedToken.length) {
+    return false;
+  }
+  
+  let result = 0;
+  for (let i = 0; i < token.length; i++) {
+    result |= token.charCodeAt(i) ^ storedToken.charCodeAt(i);
+  }
+  
+  return result === 0;
 }
 
 // Add the alias for backward compatibility
@@ -116,3 +134,15 @@ export function createProtectedSubmitHandler(
     return submitFn(protectedData);
   };
 }
+
+/**
+ * A note on improving CSRF protection:
+ * 
+ * A more secure implementation would:
+ * 1. Set the CSRF token in an HttpOnly cookie via a secure backend endpoint
+ * 2. Include the same token in form submissions or custom headers
+ * 3. Validate both tokens server-side
+ * 
+ * This frontend-only implementation is a stopgap that still protects against
+ * simple CSRF attacks when combined with SameSite cookie policies.
+ */

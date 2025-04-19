@@ -3,6 +3,29 @@
  * HTML Sanitization Utilities
  * Functions for sanitizing HTML content to prevent XSS
  */
+import DOMPurify from 'dompurify';
+import logger from '@/utils/logger';
+
+/**
+ * Initialize DOMPurify configuration
+ */
+function initializeDOMPurify() {
+  if (typeof window !== 'undefined' && typeof DOMPurify !== 'undefined') {
+    // Configure DOMPurify hooks
+    DOMPurify.addHook('beforeSanitizeElements', (node) => {
+      // Log potentially dangerous content
+      if (node.nodeType === 1 && (node.tagName === 'SCRIPT' || node.hasAttribute('on'))) {
+        logger.warn('Potential XSS attempt detected and prevented');
+      }
+      return node;
+    });
+    
+    logger.info('DOMPurify initialized with security hooks');
+  }
+}
+
+// Initialize on module load
+initializeDOMPurify();
 
 /**
  * Sanitize HTML string by removing all tags
@@ -12,7 +35,15 @@
 export function sanitizeHTML(html: string): string {
   if (!html || typeof html !== 'string') return '';
   
-  // Simple HTML tag removal using regex
+  if (typeof window !== 'undefined') {
+    // Use DOMPurify for comprehensive HTML sanitization
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [], // Remove all HTML tags
+      ALLOWED_ATTR: []  // Remove all attributes
+    });
+  }
+  
+  // Fallback if DOMPurify is not available (server-side)
   return html.replace(/<[^>]*>/g, '');
 }
 
@@ -27,17 +58,24 @@ export const sanitizeHtml = sanitizeHTML;
 export function sanitizeRichHtml(html: string): string {
   if (!html || typeof html !== 'string') return '';
   
-  // This is a simplified implementation - in a real app, use DOMPurify
-  // Remove script, iframe, object, embed, and other dangerous tags
-  const safeHtml = html
+  if (typeof window !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: [/^on.*/i, /javascript:/i],
+      ADD_ATTR: ['target="_blank"', 'rel="noopener noreferrer"']
+    });
+  }
+  
+  // Fallback implementation
+  return html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
     .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
     .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
     .replace(/javascript:/gi, '')
     .replace(/on\w+=/gi, '');
-    
-  return safeHtml;
 }
 
 /**
@@ -46,7 +84,15 @@ export function sanitizeRichHtml(html: string): string {
  * @returns Sanitized HTML suitable for canvas presentation
  */
 export function sanitizeCanvasHtml(html: string): string {
-  // For canvas html, we're even more strict, only allowing basic formatting
+  if (typeof window !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'span', 'br', 'p'],
+      ALLOWED_ATTR: ['class'],
+      USE_PROFILES: { html: true }
+    });
+  }
+  
+  // For canvas html, we're even more strict
   return sanitizeRichHtml(html);
 }
 
@@ -74,10 +120,23 @@ export function sanitizeCss(css: string): string {
 export function sanitizeUrl(url: string): string {
   if (!url || typeof url !== 'string') return '';
   
+  if (typeof window !== 'undefined') {
+    // Use DOMPurify for URL sanitization
+    const sanitized = DOMPurify.sanitize(url, {
+      ALLOWED_TAGS: ['a'],
+      ALLOWED_ATTR: ['href']
+    });
+    
+    const div = document.createElement('div');
+    div.innerHTML = sanitized;
+    const anchor = div.querySelector('a');
+    return anchor ? anchor.href : '';
+  }
+  
   // Check for javascript: protocol
   if (/^javascript:/i.test(url)) return '';
   
-  // Check for valid URL format
+  // Basic URL validation
   try {
     new URL(url);
     return url;
