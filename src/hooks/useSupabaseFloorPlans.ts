@@ -1,221 +1,198 @@
 
 /**
- * Custom hook for Supabase floor plan storage
- * Handles saving and loading floor plans from Supabase
- * @module useSupabaseFloorPlans
+ * Hook for managing floor plans with Supabase
+ * Provides functions for creating, updating, and retrieving floor plans
  */
-import { useCallback, useState } from "react";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import logger from "@/utils/logger";
-import { verifyResourceOwnership } from "@/utils/security/resourceOwnership";
-import { logResourceEvent, AuditEventType } from "@/utils/audit/auditLogger";
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import logger from '@/utils/logger';
 
-/**
- * Hook for managing floor plans with Supabase storage
- * @returns Supabase floor plan operations
- */
-export const useSupabaseFloorPlans = () => {
-  const { user } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
-  const isConfigured = isSupabaseConfigured();
-
+export function useSupabaseFloorPlans() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [currentFloorPlan, setCurrentFloorPlan] = useState<FloorPlan | null>(null);
+  
   /**
-   * Save floor plans to Supabase
-   * @param floorPlans The floor plans to save
-   * @returns Promise resolving to success status
+   * List all floor plans
+   * 
+   * @returns {Promise<FloorPlan[]>} List of floor plans
    */
-  const saveToSupabase = useCallback(async (floorPlans: FloorPlan[]): Promise<boolean> => {
-    // Security checks
-    if (!isConfigured) {
-      logger.info('Not saving to Supabase: Missing configuration');
-      return false;
-    }
-    
-    if (!user) {
-      logger.info('Not saving to Supabase: User not logged in');
-      return false;
-    }
-
+  const listFloorPlans = async (): Promise<FloorPlan[]> => {
     try {
-      setIsSaving(true);
-      logger.info('Saving floor plans to Supabase');
-
-      // Check for existing floor plans in Supabase
-      const queryResult = await supabase
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
         .from('floor_plans')
         .select()
-        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (error) {
+        throw new Error(`Error fetching floor plans: ${error.message}`);
+      }
+      
+      const floorPlans = data as FloorPlan[];
+      setFloorPlans(floorPlans);
+      return floorPlans;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      logger.error('Error listing floor plans:', err);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  /**
+   * Get a floor plan by ID
+   * 
+   * @param {string} id Floor plan ID
+   * @returns {Promise<FloorPlan | null>} Floor plan or null if not found
+   */
+  const getFloorPlan = async (id: string): Promise<FloorPlan | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('floor_plans')
+        .select()
+        .eq('id', id)
         .single();
-        
-      const existingPlans = queryResult.data;
-      const queryError = queryResult.error;
-        
-      if (queryError && queryError.code !== 'PGRST116') {
-        throw queryError;
+      
+      if (error) {
+        throw new Error(`Error fetching floor plan: ${error.message}`);
       }
-
-      // Authorization check for update operations
-      if (existingPlans) {
-        const isAuthorized = await verifyResourceOwnership(
-          user.id, 
-          'floor_plans', 
-          existingPlans.id
-        );
-        
-        if (!isAuthorized) {
-          logger.warn(`Unauthorized floor plan modification attempt by user ${user.id}`);
-          toast.error('Unauthorized: You cannot modify this floor plan');
-          return false;
-        }
+      
+      const floorPlan = data as FloorPlan;
+      setCurrentFloorPlan(floorPlan);
+      return floorPlan;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      logger.error(`Error getting floor plan ${id}:`, err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  /**
+   * Create a new floor plan
+   * 
+   * @param {Partial<FloorPlan>} floorPlan Floor plan data
+   * @returns {Promise<FloorPlan | null>} Created floor plan or null if failed
+   */
+  const createFloorPlan = async (floorPlan: Partial<FloorPlan>): Promise<FloorPlan | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('floor_plans')
+        .insert(floorPlan)
+        .select();
+      
+      if (error) {
+        throw new Error(`Error creating floor plan: ${error.message}`);
       }
-
-      const saveData = {
-        user_id: user.id,
-        name: 'My Floor Plan',
-        data: floorPlans
-      };
-
-      let result;
-
-      if (existingPlans) {
-        // Update existing floor plans
-        result = await supabase
-          .from('floor_plans')
-          .update({
-            data: floorPlans,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-          
-        // Log the update event
-        await logResourceEvent(
-          AuditEventType.RESOURCE_UPDATE,
-          user.id,
-          'floor_plans',
-          existingPlans.id,
-          'update',
-          { planCount: floorPlans.length }
-        );
-      } else {
-        // Insert new floor plans
-        result = await supabase
-          .from('floor_plans')
-          .insert(saveData);
-          
-        // Log the create event
-        const selectResult = await supabase
-          .from('floor_plans')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-          
-        const data = selectResult.data;
-          
-        if (data) {
-          await logResourceEvent(
-            AuditEventType.RESOURCE_CREATE,
-            user.id,
-            'floor_plans',
-            data.id,
-            'create',
-            { planCount: floorPlans.length }
-          );
-        }
+      
+      // Refresh the list of floor plans
+      await listFloorPlans();
+      
+      return data[0] as FloorPlan;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      logger.error('Error creating floor plan:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  /**
+   * Update an existing floor plan
+   * 
+   * @param {string} id Floor plan ID
+   * @param {Partial<FloorPlan>} floorPlan Floor plan data to update
+   * @returns {Promise<FloorPlan | null>} Updated floor plan or null if failed
+   */
+  const updateFloorPlan = async (id: string, floorPlan: Partial<FloorPlan>): Promise<FloorPlan | null> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('floor_plans')
+        .update(floorPlan)
+        .eq('id', id)
+        .select();
+      
+      if (error) {
+        throw new Error(`Error updating floor plan: ${error.message}`);
       }
-
-      if (result.error) {
-        throw result.error;
+      
+      // Refresh the list of floor plans
+      await listFloorPlans();
+      
+      return data[0] as FloorPlan;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      logger.error(`Error updating floor plan ${id}:`, err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  /**
+   * Delete a floor plan
+   * 
+   * @param {string} id Floor plan ID
+   * @returns {Promise<boolean>} Success or failure
+   */
+  const deleteFloorPlan = async (id: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const { error } = await supabase
+        .from('floor_plans')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        throw new Error(`Error deleting floor plan: ${error.message}`);
       }
-
-      logger.info('Floor plans saved to Supabase successfully');
+      
+      // Refresh the list of floor plans
+      await listFloorPlans();
+      
       return true;
-    } catch (error) {
-      logger.error('Error saving floor plans to Supabase:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      logger.error(`Error deleting floor plan ${id}:`, err);
       return false;
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
-  }, [user, isConfigured]);
-
-  /**
-   * Load floor plans from Supabase
-   * @returns Promise resolving to loaded floor plans or null if not found
-   */
-  const loadFromSupabase = useCallback(async (): Promise<FloorPlan[] | null> => {
-    // Security checks
-    if (!isConfigured) {
-      logger.info('Not loading from Supabase: Missing configuration');
-      return null;
-    }
-    
-    if (!user) {
-      logger.info('Not loading from Supabase: User not logged in');
-      return null;
-    }
-
-    try {
-      logger.info('Loading floor plans from Supabase');
-      
-      const result = await supabase
-        .from('floor_plans')
-        .select()
-        .eq('user_id', user.id)
-        .single();
-
-      const data = result.data;
-      const error = result.error;
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No records found
-          logger.info('No floor plans found in Supabase for user');
-          return null;
-        }
-        throw error;
-      }
-
-      // Authorization check - verify the user owns this data
-      const isAuthorized = await verifyResourceOwnership(
-        user.id, 
-        'floor_plans', 
-        data.id
-      );
-      
-      if (!isAuthorized) {
-        logger.warn(`Unauthorized floor plan access attempt by user ${user.id}`);
-        toast.error('Unauthorized: You cannot access this floor plan');
-        return null;
-      }
-
-      // Log the access event
-      await logResourceEvent(
-        AuditEventType.RESOURCE_READ,
-        user.id,
-        'floor_plans',
-        data.id,
-        'read'
-      );
-
-      if (data && Array.isArray(data.data)) {
-        logger.info('Floor plans loaded from Supabase successfully');
-        return data.data as FloorPlan[];
-      }
-      
-      return null;
-    } catch (error) {
-      logger.error('Error loading floor plans from Supabase:', error);
-      toast.error('Failed to load floor plans from cloud');
-      return null;
-    }
-  }, [user, isConfigured]);
-
-  return {
-    saveToSupabase,
-    loadFromSupabase,
-    isSaving,
-    isLoggedIn: !!user && isConfigured
   };
-};
+  
+  return {
+    isLoading,
+    error,
+    floorPlans,
+    currentFloorPlan,
+    listFloorPlans,
+    getFloorPlan,
+    createFloorPlan,
+    updateFloorPlan,
+    deleteFloorPlan
+  };
+}

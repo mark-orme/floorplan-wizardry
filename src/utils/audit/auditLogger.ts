@@ -1,159 +1,117 @@
 
 /**
- * Audit Logging System
+ * Audit Logger
  * 
- * Provides secure, tamper-evident logging for security-relevant events
+ * This module provides functions for logging audit events
+ * and retrieving audit logs.
  */
-import logger from '@/utils/logger';
-import { sanitizeObject } from '@/utils/security/htmlSanitization';
 import { supabase } from '@/lib/supabase';
-
-export enum AuditEventType {
-  AUTH_LOGIN = 'auth.login',
-  AUTH_LOGOUT = 'auth.logout',
-  AUTH_REGISTER = 'auth.register',
-  AUTH_PASSWORD_RESET = 'auth.password_reset',
-  AUTH_PASSWORD_CHANGE = 'auth.password_change',
-  AUTH_MFA_ENABLED = 'auth.mfa_enabled',
-  AUTH_MFA_DISABLED = 'auth.mfa_disabled',
-  
-  RESOURCE_CREATE = 'resource.create',
-  RESOURCE_READ = 'resource.read',
-  RESOURCE_UPDATE = 'resource.update',
-  RESOURCE_DELETE = 'resource.delete',
-  RESOURCE_SHARE = 'resource.share',
-  
-  ADMIN_ACTION = 'admin.action',
-  ADMIN_SETTINGS_CHANGE = 'admin.settings_change',
-  
-  SECURITY_VIOLATION = 'security.violation',
-  SECURITY_WARNING = 'security.warning'
-}
-
-export interface AuditEventData {
-  eventType: AuditEventType;
-  userId?: string;
-  resourceId?: string;
-  resourceType?: string;
-  action?: string;
-  metadata?: Record<string, any>;
-  status?: 'success' | 'failure';
-  ip?: string;
-  userAgent?: string;
-}
+import { AuditLogEntry } from '@/types/security-types';
+import logger from '@/utils/logger';
 
 /**
  * Log an audit event
- * @param eventData Audit event data
- * @returns Promise<boolean> indicating success
+ * 
+ * @param userId User ID
+ * @param action Action performed
+ * @param resource Resource affected
+ * @param status Success or failure
+ * @param details Additional details
+ * @param ipAddress IP address of the request
+ * @returns Boolean indicating if logging was successful
  */
-export async function logAuditEvent(eventData: AuditEventData): Promise<boolean> {
+export async function logAuditEvent(
+  userId: string,
+  action: string,
+  resource: string,
+  status: 'success' | 'failure',
+  details: Record<string, unknown> = {},
+  ipAddress: string = '0.0.0.0'
+): Promise<boolean> {
   try {
-    const timestamp = new Date().toISOString();
-    const { eventType, userId, resourceId, resourceType, action, metadata, status } = eventData;
-    
-    // Sanitize any user-provided data
-    const sanitizedMetadata = metadata ? sanitizeObject(metadata) : undefined;
-    
-    // Get IP and user agent if available
-    const ip = eventData.ip || (typeof window !== 'undefined' ? 'client' : 'server');
-    const userAgent = eventData.userAgent || 
-      (typeof window !== 'undefined' ? navigator.userAgent : 'server');
-    
-    // Create audit log entry with standardized format
-    const auditLog = {
-      timestamp,
-      event_type: eventType,
-      user_id: userId || 'anonymous',
-      resource_id: resourceId,
-      resource_type: resourceType,
+    const auditLogEntry: AuditLogEntry = {
+      timestamp: new Date(),
+      userId,
       action,
-      metadata: sanitizedMetadata,
-      status: status || 'success',
-      ip,
-      user_agent: userAgent,
-      // Add a hash for tamper detection (would be expanded in a real implementation)
-      // integrity_hash: createIntegrityHash(timestamp, eventType, userId)
+      resource,
+      status,
+      details,
+      ipAddress
     };
     
-    // Log locally
-    logger.info(`[AUDIT] ${eventType}`, auditLog);
+    const { error } = await supabase
+      .from('audit_logs')
+      .insert(auditLogEntry);
     
-    // Store in Supabase if available
-    if (supabase) {
-      try {
-        const { error } = await supabase
-          .from('audit_logs')
-          .insert([auditLog]);
-        
-        if (error) {
-          logger.error('Error storing audit log in database:', error);
-        }
-      } catch (dbError) {
-        // If table doesn't exist yet, log but don't fail
-        logger.warn('Could not store audit log in database, table may not exist yet:', dbError);
-      }
+    if (error) {
+      logger.error('Failed to log audit event:', error);
+      return false;
     }
     
     return true;
-  } catch (error) {
-    logger.error('Error creating audit log:', error);
+  } catch (err) {
+    logger.error('Error in audit logging:', err);
     return false;
   }
 }
 
 /**
- * Create a tamper-evident hash for audit log integrity verification
- * Note: In a real implementation, this would use HMAC with a server secret
+ * Get audit logs for a user
+ * 
+ * @param userId User ID
+ * @param limit Maximum number of logs to return
+ * @returns Array of audit log entries
  */
-function createIntegrityHash(...values: (string | undefined)[]): string {
-  return values.filter(Boolean).join('|');
+export async function getUserAuditLogs(
+  userId: string,
+  limit: number = 50
+): Promise<AuditLogEntry[]> {
+  try {
+    // Using correct Supabase API pattern
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select()
+      .eq('userId', userId)
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      logger.error('Failed to retrieve audit logs:', error);
+      return [];
+    }
+    
+    return data as AuditLogEntry[];
+  } catch (err) {
+    logger.error('Error retrieving audit logs:', err);
+    return [];
+  }
 }
 
 /**
- * Logs an authentication event
+ * Get audit logs for a resource
+ * 
+ * @param resource Resource name
+ * @param limit Maximum number of logs to return
+ * @returns Array of audit log entries
  */
-export function logAuthEvent(eventType: AuditEventType, userId: string, status: 'success' | 'failure', metadata?: Record<string, any>): Promise<boolean> {
-  return logAuditEvent({
-    eventType,
-    userId,
-    status,
-    metadata
-  });
-}
-
-/**
- * Logs a resource access or modification event
- */
-export function logResourceEvent(
-  eventType: AuditEventType, 
-  userId: string, 
-  resourceType: string,
-  resourceId: string,
-  action: string,
-  metadata?: Record<string, any>
-): Promise<boolean> {
-  return logAuditEvent({
-    eventType,
-    userId,
-    resourceType,
-    resourceId,
-    action,
-    metadata
-  });
-}
-
-/**
- * Logs a security violation or warning
- */
-export function logSecurityEvent(
-  eventType: AuditEventType.SECURITY_VIOLATION | AuditEventType.SECURITY_WARNING,
-  details: Record<string, any>,
-  userId?: string
-): Promise<boolean> {
-  return logAuditEvent({
-    eventType,
-    userId,
-    metadata: details
-  });
+export async function getResourceAuditLogs(
+  resource: string,
+  limit: number = 50
+): Promise<AuditLogEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select()
+      .eq('resource', resource)
+      .order('timestamp', { ascending: false });
+    
+    if (error) {
+      logger.error('Failed to retrieve audit logs:', error);
+      return [];
+    }
+    
+    return data as AuditLogEntry[];
+  } catch (err) {
+    logger.error('Error retrieving audit logs:', err);
+    return [];
+  }
 }

@@ -1,141 +1,152 @@
 
-import { useEffect, useRef } from 'react';
+/**
+ * Hook for optimized drawing with feedback
+ */
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { toFabricPoint } from '@/utils/fabricPointConverter';
+import { DrawingMode } from '@/constants/drawingModes';
+import { usePerformanceMonitoring } from './usePerformanceMonitoring';
+import logger from '@/utils/logger';
 
 interface UseOptimizedDrawingProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  fabricCanvas: FabricCanvas | null;
+  canvas: FabricCanvas | null;
+  currentTool: DrawingMode;
+  lineThickness: number;
+  lineColor: string;
+  enableOptimizations?: boolean;
 }
 
-export const useOptimizedDrawing = ({ 
-  canvasRef, 
-  fabricCanvas 
-}: UseOptimizedDrawingProps) => {
-  const webglContextRef = useRef<WebGLRenderingContext | null>(null);
-
-  // Initialize WebGL for performance optimization
+export function useOptimizedDrawing({
+  canvas,
+  currentTool,
+  lineThickness,
+  lineColor,
+  enableOptimizations = true
+}: UseOptimizedDrawingProps) {
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [objectCount, setObjectCount] = useState(0);
+  const lastPositionRef = useRef({ x: 0, y: 0 });
+  const throttleTimerRef = useRef<number | null>(null);
+  
+  // Use performance monitoring
+  const { startMonitoring, stopMonitoring, metrics } = usePerformanceMonitoring();
+  
+  // Initialize drawing settings
   useEffect(() => {
-    if (!canvasRef.current || !fabricCanvas) return;
-
-    try {
-      // Set up WebGL context for enhanced rendering
-      const gl = canvasRef.current.getContext('webgl', {
-        alpha: true,
-        premultipliedAlpha: false,
-        antialias: true,
-        depth: false,
-        stencil: false
-      });
-
-      if (!gl) {
-        console.warn('WebGL not supported, falling back to standard rendering');
-        return;
-      }
-
-      webglContextRef.current = gl;
-
-      // Configure WebGL
-      gl.clearColor(0, 0, 0, 0);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-      // Create optimized drawing brushes with WebGL support
-      if (fabricCanvas.freeDrawingBrush) {
-        fabricCanvas.freeDrawingBrush.width = 2;
-        fabricCanvas.freeDrawingBrush.color = '#000000';
-      }
-
-      // Add rendering optimizations
-      fabricCanvas.enableRetinaScaling = window.devicePixelRatio > 1;
-      fabricCanvas.skipTargetFind = true;
-      fabricCanvas.selection = false;
-      
-      // Optimize for drawing
-      fabricCanvas.isDrawingMode = true;
-      
-    } catch (error) {
-      console.error('Error initializing WebGL context', error);
+    if (!canvas) return;
+    
+    // Set up canvas for drawing
+    canvas.isDrawingMode = currentTool === DrawingMode.PENCIL;
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = lineThickness;
+      canvas.freeDrawingBrush.color = lineColor;
     }
-
+    
+    // Update object count
+    setObjectCount(canvas.getObjects().length);
+    
+    // Start performance monitoring
+    if (enableOptimizations) {
+      startMonitoring(canvas);
+    }
+    
     return () => {
-      if (webglContextRef.current) {
-        const loseContext = webglContextRef.current.getExtension('WEBGL_lose_context');
-        if (loseContext) {
-          loseContext.loseContext();
+      if (enableOptimizations) {
+        stopMonitoring();
+      }
+    };
+  }, [canvas, currentTool, lineThickness, lineColor, enableOptimizations, startMonitoring, stopMonitoring]);
+  
+  // Event handler for mouse down
+  const handleMouseDown = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || currentTool !== DrawingMode.PENCIL) return;
+    
+    setIsDrawing(true);
+    const pointer = canvas.getPointer(event);
+    lastPositionRef.current = { x: pointer.x, y: pointer.y };
+    
+    // Start monitoring performance during drawing
+    if (enableOptimizations) {
+      startMonitoring(canvas);
+    }
+  }, [currentTool, enableOptimizations, startMonitoring]);
+  
+  // Event handler for mouse move
+  const handleMouseMove = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || !isDrawing || currentTool !== DrawingMode.PENCIL) return;
+    
+    // Throttle drawing for better performance
+    if (throttleTimerRef.current !== null) return;
+    
+    throttleTimerRef.current = window.setTimeout(() => {
+      throttleTimerRef.current = null;
+      
+      const pointer = canvas.getPointer(event);
+      const currentPosition = { x: pointer.x, y: pointer.y };
+      
+      // Draw line
+      const line = new fabric.Line(
+        [lastPositionRef.current.x, lastPositionRef.current.y, currentPosition.x, currentPosition.y],
+        {
+          stroke: lineColor,
+          strokeWidth: lineThickness,
+          selectable: false,
+          evented: false
         }
-        webglContextRef.current = null;
+      );
+      
+      canvas.add(line);
+      canvas.renderAll();
+      
+      // Update last position
+      lastPositionRef.current = currentPosition;
+      
+      // Update object count occasionally
+      if (Math.random() < 0.1) {
+        setObjectCount(canvas.getObjects().length);
       }
-    };
-  }, [canvasRef, fabricCanvas]);
-
-  // Set up optimized drawing handlers
+    }, 10);
+  }, [isDrawing, currentTool, lineColor, lineThickness]);
+  
+  // Event handler for mouse up
+  const handleMouseUp = useCallback((event: MouseEvent, canvas: FabricCanvas) => {
+    if (!canvas || currentTool !== DrawingMode.PENCIL) return;
+    
+    setIsDrawing(false);
+    
+    // Stop performance monitoring
+    if (enableOptimizations) {
+      stopMonitoring();
+    }
+    
+    // Clear throttle timer
+    if (throttleTimerRef.current !== null) {
+      clearTimeout(throttleTimerRef.current);
+      throttleTimerRef.current = null;
+    }
+    
+    // Update object count
+    setObjectCount(canvas.getObjects().length);
+    
+    // Log drawing completion for debugging
+    logger.debug(`Drawing complete with ${canvas.getObjects().length} objects`);
+  }, [currentTool, enableOptimizations, stopMonitoring]);
+  
+  // Clean up throttle timer on unmount
   useEffect(() => {
-    if (!fabricCanvas || !canvasRef.current) return;
-
-    // Draw with optimized path
-    const handleDraw = (point: {x: number, y: number}, isDown: boolean) => {
-      if (!fabricCanvas.isDrawingMode || !fabricCanvas.freeDrawingBrush) return;
-    
-      const fabricPoint = toFabricPoint(point);
-      
-      if (isDown) {
-        // Create dummy event
-        const dummyEvent = new Event('mousedown');
-        // Fixed: use proper object structure for fabric v6
-        fabricCanvas.freeDrawingBrush.onMouseDown({ e: dummyEvent, pointer: fabricPoint });
-      } else {
-        // Create dummy event
-        const dummyEvent = new Event('mousemove');
-        // Fixed: use proper object structure for fabric v6
-        fabricCanvas.freeDrawingBrush.onMouseMove({ e: dummyEvent, pointer: fabricPoint });
-      }
-    };
-
-    // Optimize rendering with throttled updates
-    let rafId: number | null = null;
-    const pendingPoints: Array<{x: number, y: number, isDown: boolean}> = [];
-    
-    const processPoints = () => {
-      if (pendingPoints.length === 0) return;
-      
-      // Process all pending points
-      for (const point of pendingPoints) {
-        handleDraw(point, point.isDown);
-      }
-      
-      // Clear the array
-      pendingPoints.length = 0;
-      
-      // Schedule next update
-      rafId = requestAnimationFrame(processPoints);
-    };
-    
-    // Start the rendering loop
-    rafId = requestAnimationFrame(processPoints);
-    
-    // Queue draw points for efficient processing
-    const queueDrawPoint = (x: number, y: number, isDown: boolean) => {
-      pendingPoints.push({x, y, isDown});
-      
-      if (pendingPoints.length === 1 && !rafId) {
-        rafId = requestAnimationFrame(processPoints);
-      }
-    };
-
-    // Add to the fabricCanvas instance for external access
-    (fabricCanvas as any).optimizedDraw = queueDrawPoint;
-
     return () => {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
+      if (throttleTimerRef.current !== null) {
+        clearTimeout(throttleTimerRef.current);
       }
     };
-  }, [fabricCanvas, canvasRef]);
-
+  }, []);
+  
   return {
-    webglContext: webglContextRef.current
+    isDrawing,
+    objectCount,
+    metrics,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
   };
-};
-
-export default useOptimizedDrawing;
+}

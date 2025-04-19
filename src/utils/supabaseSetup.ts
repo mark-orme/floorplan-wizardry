@@ -14,24 +14,21 @@ export async function checkSupabaseTables() {
     // Check if users table exists
     const userTableResult = await supabase
       .from('users')
-      .select('id')
-      .limit(1);
+      .select();
       
     const userTableExists = !userTableResult.error;
     
     // Check if floor_plans table exists
     const floorPlansTableResult = await supabase
       .from('floor_plans')
-      .select('id')
-      .limit(1);
+      .select();
       
     const floorPlansTableExists = !floorPlansTableResult.error;
     
     // Check if properties table exists
     const propertiesTableResult = await supabase
       .from('properties')
-      .select('id')
-      .limit(1);
+      .select();
       
     const propertiesTableExists = !propertiesTableResult.error;
     
@@ -67,26 +64,26 @@ export async function initializeSupabaseSchema() {
     logger.info('Initializing Supabase schema');
     
     // Create missing tables - this would be replaced by proper SQL migrations
-    // in a production environment
+    // in a production environment - Modified to use direct queries instead of RPC
     
     // Create users table if it doesn't exist
-    const usersTableResult = await supabase.rpc('create_users_table_if_not_exists');
+    const usersTableResult = await supabase.from('users').insert({}).select();
     
-    if (usersTableResult.error) {
+    if (usersTableResult.error && usersTableResult.error.code !== '23505') {
       logger.error('Error creating users table:', usersTableResult.error);
     }
     
     // Create floor_plans table if it doesn't exist
-    const floorPlansTableResult = await supabase.rpc('create_floor_plans_table_if_not_exists');
+    const floorPlansTableResult = await supabase.from('floor_plans').insert({}).select();
     
-    if (floorPlansTableResult.error) {
+    if (floorPlansTableResult.error && floorPlansTableResult.error.code !== '23505') {
       logger.error('Error creating floor_plans table:', floorPlansTableResult.error);
     }
     
     // Create properties table if it doesn't exist
-    const propertiesTableResult = await supabase.rpc('create_properties_table_if_not_exists');
+    const propertiesTableResult = await supabase.from('properties').insert({}).select();
     
-    if (propertiesTableResult.error) {
+    if (propertiesTableResult.error && propertiesTableResult.error.code !== '23505') {
       logger.error('Error creating properties table:', propertiesTableResult.error);
     }
     
@@ -122,5 +119,48 @@ export async function verifyRLSPolicies() {
       propertiesPolicies: false,
       allPoliciesExist: false
     };
+  }
+}
+
+/**
+ * Insert test data for development purposes
+ */
+export async function insertTestData() {
+  try {
+    const properties = [
+      {
+        address: '123 Main St, Springfield, IL',
+        client_name: 'John Smith',
+        status: 'pending',
+        notes: 'Test property 1'
+      },
+      {
+        address: '456 Oak Ave, Shelbyville, IL',
+        client_name: 'Jane Doe',
+        status: 'completed',
+        notes: 'Test property 2'
+      },
+      {
+        address: '789 Pine Rd, Capital City, IL',
+        client_name: 'Bob Johnson',
+        status: 'draft',
+        notes: 'Test property 3'
+      }
+    ];
+
+    for (const property of properties) {
+      const result = await supabase.from('properties').insert(property).select();
+      
+      if (result.error) {
+        logger.error('Error creating test property:', result.error);
+      } else {
+        logger.info(`Created test property: ${property.address}`);
+      }
+    }
+
+    return true;
+  } catch (error) {
+    logger.error('Error inserting test data:', error);
+    throw error;
   }
 }

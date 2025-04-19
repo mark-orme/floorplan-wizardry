@@ -1,30 +1,104 @@
 
-import React from 'react';
-import { EnhancedDrawingCanvas } from '@/components/EnhancedDrawingCanvas';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 /**
- * Floorplans page component
+ * Floor Plans Page
+ * Lists all floor plans and provides access to the floor plan editor
  */
-const Floorplans = () => {
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { Plus, Grid, RefreshCcw } from 'lucide-react';
+import { FloorPlanEditor } from '@/components/canvas/FloorPlanEditor';
+import { FloorPlansList } from '@/components/floorplan/FloorPlansList';
+import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
+
+export default function FloorPlans() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showEditor, setShowEditor] = useState(false);
+  
+  const {
+    isLoading,
+    error,
+    floorPlans,
+    listFloorPlans,
+    createFloorPlan,
+    deleteFloorPlan
+  } = useSupabaseFloorPlans();
+  
+  // Load floor plans on mount
+  useEffect(() => {
+    listFloorPlans().catch(err => {
+      console.error('Error loading floor plans:', err);
+      toast.error('Failed to load floor plans');
+    });
+  }, [listFloorPlans]);
+  
+  const handleCreateNew = () => {
+    if (!user) {
+      toast.error('Please sign in to create a floor plan');
+      navigate('/auth', { state: { returnTo: '/floorplans' } });
+      return;
+    }
+    
+    setShowEditor(true);
+  };
+  
+  const handleRefresh = async () => {
+    await listFloorPlans();
+    toast.success('Floor plans refreshed');
+  };
+  
+  const handleFloorPlanClick = (id: string) => {
+    navigate(`/floorplans/${id}`);
+  };
+  
+  const handleEditorClose = () => {
+    setShowEditor(false);
+    listFloorPlans();
+  };
+  
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Floor Plans</h1>
-        <Button>Create New</Button>
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Floor Plans</h1>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={handleCreateNew} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create New
+          </Button>
+        </div>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Floor Plan Editor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EnhancedDrawingCanvas width={800} height={600} />
-        </CardContent>
-      </Card>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+      
+      {showEditor ? (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden h-[800px]">
+          <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Floor Plan Editor</h2>
+            <Button variant="outline" onClick={handleEditorClose}>
+              Close Editor
+            </Button>
+          </div>
+          <FloorPlanEditor />
+        </div>
+      ) : (
+        <FloorPlansList
+          floorPlans={floorPlans}
+          isLoading={isLoading}
+          onFloorPlanClick={handleFloorPlanClick}
+          onDeleteFloorPlan={deleteFloorPlan}
+        />
+      )}
     </div>
   );
-};
-
-export default Floorplans;
+}

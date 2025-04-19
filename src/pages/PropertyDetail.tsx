@@ -1,94 +1,50 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePropertyManagement } from '@/hooks/usePropertyManagement';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/lib/supabase';
-import { PropertyStatus, canEditProperty } from '@/types/propertyTypes';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Grid } from 'lucide-react';
-import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
-import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
-import { toast } from 'sonner';
-import { PropertyHeader } from '@/components/property/PropertyHeader';
-import { PropertyDetailsTab } from '@/components/property/PropertyDetailsTab';
-import { PropertyFloorPlanTab } from '@/components/property/PropertyFloorPlanTab';
+import { PropertyStatus } from '@/types/propertyTypes';
 import { Button } from '@/components/ui/button';
-import { Home } from 'lucide-react';
+import { toast } from 'sonner';
+import { PropertyDetailContent } from '@/components/property/PropertyDetailContent';
+import { usePropertyUpdate } from '@/hooks/property/usePropertyUpdate';
 
-const PropertyDetail = () => {
+/**
+ * Property Detail Page
+ * Shows detailed information about a property
+ */
+export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentProperty, getProperty, updatePropertyStatus, isLoading } = usePropertyManagement();
   const { user, userRole } = useAuth();
-  // This hook now returns floorPlans, setFloorPlans, and loadData
-  const { floorPlans, setFloorPlans, loadData } = useSyncedFloorPlans();
-  const [activeTab, setActiveTab] = useState('details');
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
+  // Use property update hook
+  const { updatePropertyStatus } = usePropertyUpdate();
+  
+  // Redirect if no ID
   useEffect(() => {
-    const fetchProperty = async () => {
-      if (id) {
-        try {
-          console.log("Fetching property with ID:", id);
-          const property = await getProperty(id);
-          if (!property) {
-            setHasError(true);
-            setErrorMessage('Property not found');
-            toast.error('Property not found');
-          }
-        } catch (error) {
-          console.error('Error fetching property:', error);
-          setHasError(true);
-          setErrorMessage('Failed to load property details');
-          toast.error('Failed to load property details');
-        }
-      }
-    };
-    
-    fetchProperty();
-  }, [id, getProperty]);
-
-  useEffect(() => {
-    if (currentProperty?.floorPlans && typeof currentProperty.floorPlans === 'string' && currentProperty.floorPlans.length > 0) {
-      try {
-        const parsedFloorPlans = JSON.parse(currentProperty.floorPlans);
-        setFloorPlans(parsedFloorPlans);
-      } catch (e) {
-        console.error("Error parsing floor plans:", e);
-        loadData();
-      }
-    } else {
-      loadData();
+    if (!id) {
+      toast.error('Property ID is required');
+      navigate('/properties');
     }
-  }, [currentProperty, setFloorPlans, loadData]);
-
-  const handleRetry = () => {
-    setHasError(false);
-    setErrorMessage('');
-    if (id) {
-      getProperty(id);
+  }, [id, navigate]);
+  
+  /**
+   * Handle property status change
+   * @param newStatus New property status
+   */
+  const handleStatusChange = async (newStatus: PropertyStatus): Promise<void> => {
+    if (!id) {
+      toast.error('Property ID is required');
+      return;
     }
-  };
-
-  const navigateToProperties = () => {
-    navigate('/properties');
-  };
-
-  const navigateToFloorplans = () => {
-    navigate('/floorplans');
-  };
-
-  const handleStatusChange = async (newStatus: PropertyStatus) => {
-    if (!id) return;
     
     setIsSubmitting(true);
+    
     try {
-      await updatePropertyStatus(id, newStatus);
-      toast.success(`Property status updated to ${newStatus}`);
-      await getProperty(id);
+      // Use the correct parameter
+      await updatePropertyStatus(newStatus);
+      toast.success('Property status updated successfully');
     } catch (error) {
       console.error('Error updating property status:', error);
       toast.error('Failed to update property status');
@@ -96,100 +52,17 @@ const PropertyDetail = () => {
       setIsSubmitting(false);
     }
   };
-
-  const renderPropertyContent = () => {
-    if (!currentProperty || !user) {
-      return (
-        <div className="container mx-auto py-12 text-center">
-          <p>Property not found or you don't have access to view it</p>
-          <div className="flex justify-center gap-3 mt-4">
-            <Button onClick={navigateToProperties}>
-              <Home className="mr-2 h-4 w-4" />
-              Back to Properties
-            </Button>
-            <Button variant="outline" onClick={navigateToFloorplans}>
-              <Grid className="mr-2 h-4 w-4" />
-              Go to Floor Plan Editor
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    const canEdit = userRole ? canEditProperty(currentProperty, userRole, user.id) : false;
-    
-    // Property header expects these specific props
-    const headerProps = {
-      order_id: currentProperty.order_id || currentProperty.id,
-      status: currentProperty.status,
-      address: currentProperty.address
-    };
-    
-    // Property details tab expects these specific props
-    const detailsProps = {
-      order_id: currentProperty.order_id || currentProperty.id,
-      client_name: currentProperty.client_name || 'Unknown',
-      address: currentProperty.address,
-      branch_name: currentProperty.branch_name || undefined,
-      created_at: currentProperty.created_at || currentProperty.createdAt,
-      updated_at: currentProperty.updated_at || currentProperty.updatedAt,
-      notes: currentProperty.notes,
-      status: currentProperty.status
-    };
-    
-    return (
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={navigateToProperties}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Properties
-          </Button>
-          <Button variant="outline" size="sm" onClick={navigateToFloorplans}>
-            <Grid className="mr-2 h-4 w-4" />
-            Floor Plan Editor
-          </Button>
-          <PropertyHeader property={headerProps} />
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="floorplan">Floor Plan</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details" className="space-y-4">
-            <PropertyDetailsTab 
-              property={detailsProps}
-              userRole={userRole || UserRole.PHOTOGRAPHER}
-              propertyId={id}
-              onStatusChange={handleStatusChange}
-            />
-          </TabsContent>
-
-          <TabsContent value="floorplan" className="space-y-4">
-            <PropertyFloorPlanTab 
-              canEdit={canEdit}
-              userRole={userRole || UserRole.PHOTOGRAPHER}
-              property={currentProperty}
-              isSubmitting={isSubmitting}
-              onStatusChange={handleStatusChange}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-    );
-  };
-
+  
   return (
-    <LoadingErrorWrapper
-      isLoading={isLoading}
-      hasError={hasError}
-      errorMessage={errorMessage}
-      onRetry={handleRetry}
-    >
-      {renderPropertyContent()}
-    </LoadingErrorWrapper>
+    <div data-testid="property-detail-page">
+      {id && (
+        <PropertyDetailContent
+          id={id}
+          user={user}
+          userRole={userRole}
+          onStatusChange={handleStatusChange}
+        />
+      )}
+    </div>
   );
-};
-
-export default PropertyDetail;
+}

@@ -76,7 +76,7 @@ export const createTestUsers = async (): Promise<void> => {
       }
 
       // Create user profile
-      const result = await supabase
+      const { error } = await supabase
         .from('users')
         .insert({
           id: userId,
@@ -86,8 +86,8 @@ export const createTestUsers = async (): Promise<void> => {
           created_at: new Date().toISOString()
         });
         
-      if (result.error) {
-        logger.error(`Error creating profile for ${testUser.email}:`, result.error);
+      if (error) {
+        logger.error(`Error creating profile for ${testUser.email}:`, error);
       } else {
         logger.info(`Created test user: ${testUser.email} (${testUser.role})`);
       }

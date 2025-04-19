@@ -1,5 +1,5 @@
 
-import { fabric } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 /**
  * Fabric Pointer Event interface
@@ -7,7 +7,7 @@ import { fabric } from 'fabric';
  */
 export interface FabricPointerEvent {
   e?: Event;
-  target?: fabric.Object;
+  target?: FabricObject;
   pointer?: {
     x: number;
     y: number;
@@ -18,10 +18,10 @@ export interface FabricPointerEvent {
   };
   button?: number;
   isClick?: boolean;
-  subTargets?: fabric.Object[];
+  subTargets?: FabricObject[];
   transform?: {
     corner: string;
-    original: fabric.Object;
+    original: FabricObject;
     originX: string;
     originY: string;
     width: number;

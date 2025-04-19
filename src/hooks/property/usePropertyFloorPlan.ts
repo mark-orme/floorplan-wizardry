@@ -1,48 +1,62 @@
 
-import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+/**
+ * Property Floor Plan Hook
+ * Handles operations related to floor plans for properties
+ * @module property/usePropertyFloorPlan
+ */
+import { useState } from 'react';
 import { FloorPlan } from '@/types/floorPlanTypes';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { usePropertyBase } from './usePropertyBase';
+import logger from '@/utils/logger';
 
 /**
- * Hook for floor plan operations
+ * Hook for managing property floor plans
+ * 
+ * @returns {Object} Property floor plan state and handlers
  */
 export const usePropertyFloorPlan = () => {
-  const { checkAuthentication } = usePropertyBase();
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  
   /**
    * Save floor plans for a property
+   * 
+   * @param {string} propertyId Property ID
+   * @param {FloorPlan[]} floorPlans Floor plans to save
+   * @returns {Promise<boolean>} Success or failure
    */
-  const saveFloorPlans = useCallback(async (
-    propertyId: string,
-    floorPlans: FloorPlan[]
-  ): Promise<boolean> => {
-    if (!checkAuthentication()) return false;
-
+  const saveFloorPlans = async (propertyId: string, floorPlans: FloorPlan[]): Promise<boolean> => {
+    setIsLoading(true);
+    setError('');
+    
     try {
-      const updateData = {
-        floor_plans: floorPlans,
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('properties')
-        .update(updateData)
-        .eq('id', propertyId);
-
-      if (error) throw error;
+      // Associate floor plans with property
+      for (const floorPlan of floorPlans) {
+        const { error: updateError } = await supabase
+          .from('floor_plans')
+          .update({ property_id: propertyId })
+          .eq('id', floorPlan.id);
+        
+        if (updateError) {
+          logger.error(`Error associating floor plan ${floorPlan.id} with property:`, updateError);
+        }
+      }
       
-      toast.success('Floor plans saved successfully');
       return true;
-    } catch (error: any) {
-      toast.error(error.message || 'Error saving floor plans');
-      console.error('Error saving floor plans:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save floor plans';
+      setError(errorMessage);
+      logger.error('Error saving floor plans:', err);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [checkAuthentication]);
-
+  };
+  
   return {
+    isLoading,
+    error,
     saveFloorPlans
   };
 };
