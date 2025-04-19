@@ -27,7 +27,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({ canvas }) => {
         
         if (existingGrid.length > 0) {
           console.log(`Grid already exists with ${existingGrid.length} objects, ensuring visibility`);
-          ensureGridVisible(canvas, existingGrid);
+          ensureGridVisible(canvas);
           setGridCreated(true);
         } else {
           // Create new grid

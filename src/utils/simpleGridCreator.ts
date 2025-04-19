@@ -61,8 +61,6 @@ export const createSimpleGrid = (canvas: FabricCanvas, gridSize = 20) => {
     gridObjects.forEach(obj => {
       if (canvas.sendToBack) {
         canvas.sendToBack(obj);
-      } else if (canvas.moveToBack) {
-        canvas.moveToBack(obj);
       } else if (canvas.sendObjectToBack) {
         canvas.sendObjectToBack(obj);
       }
@@ -107,4 +105,72 @@ export const ensureGridVisible = (canvas: FabricCanvas): boolean => {
   }
   
   return true;
+};
+
+/**
+ * Creates basic emergency grid as a fallback
+ * @param canvas Fabric canvas instance
+ * @returns Array of created grid objects
+ */
+export const createEmergencyGrid = (canvas: FabricCanvas) => {
+  if (!canvas) return [];
+  
+  try {
+    const width = canvas.width || 800;
+    const height = canvas.height || 600;
+    
+    // Use a larger grid size for emergency mode (better performance)
+    const gridSize = 40;
+    const gridColor = 'rgba(200, 200, 200, 0.8)'; // More visible
+    
+    console.log(`Creating emergency grid: ${width}x${height}, gridSize: ${gridSize}px`);
+    
+    const gridObjects: any[] = [];
+    
+    // Create only major grid lines for better performance
+    // Horizontal lines
+    for (let i = 0; i <= height; i += gridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: gridColor,
+        strokeWidth: 1.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Vertical lines
+    for (let i = 0; i <= width; i += gridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: gridColor,
+        strokeWidth: 1.5,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Make sure grid is at the back
+    gridObjects.forEach(obj => {
+      if (canvas.sendToBack) {
+        canvas.sendToBack(obj);
+      } else if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(obj);
+      }
+    });
+    
+    canvas.renderAll();
+    return gridObjects;
+  } catch (error) {
+    console.error('Error creating emergency grid:', error);
+    return [];
+  }
 };
