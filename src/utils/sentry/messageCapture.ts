@@ -21,8 +21,8 @@ export function captureMessage(
   options: CaptureMessageOptions = {}
 ): void {
   // Get the current environment
-  const isProd = process.env.NODE_ENV === 'production';
-  const isTest = process.env.NODE_ENV === 'test';
+  const isProd = import.meta.env.PROD;
+  const isTest = import.meta.env.MODE === 'test';
   
   // Add message ID to the message
   const fullMessage = `[${messageId}] ${message}`;

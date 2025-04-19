@@ -1,11 +1,12 @@
 
 /**
  * Browser-compatible logger implementation
- * Provides the same API as Winston but works in browser environments
+ * Provides consistent logging without Node.js dependencies
  */
 
 import { LogLevel, isLevelEnabled } from "./loggerConfig";
 
+// Export type for log data
 export interface LogData {
   [key: string]: any;
 }
@@ -103,12 +104,6 @@ class BrowserLogger {
 export function createLogger(namespace: string): BrowserLogger {
   return new BrowserLogger(namespace);
 }
-
-// Pre-configured loggers for common areas
-export const lineToolLogger = createLogger("lineTool");
-export const gridLogger = createLogger("grid");
-export const canvasLogger = createLogger("canvas");
-export const perfLogger = createLogger("performance");
 
 // Default export for general usage
 const logger = createLogger("app");

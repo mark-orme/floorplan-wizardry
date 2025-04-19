@@ -3,7 +3,11 @@
  * Re-export from the modular logger structure
  * @module utils/logger
  */
-import logger, { LogData, createLogger, lineToolLogger, gridLogger, canvasLogger, perfLogger } from './logger/index';
+import logger from './logger/index';
+import type { LogData } from './logger/browserLogger';
+import { createLogger } from './logger/browserLogger';
+import { lineToolLogger, gridLogger, canvasLogger, perfLogger } from './logger/index';
 
-export { LogData, createLogger, lineToolLogger, gridLogger, canvasLogger, perfLogger };
+export type { LogData };
+export { createLogger, lineToolLogger, gridLogger, canvasLogger, perfLogger };
 export default logger;

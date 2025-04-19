@@ -3,9 +3,11 @@
  * Structured logger for application
  * Provides consistent logging with namespace support and no-op in production
  */
-import { LogData, createLogger } from './browserLogger';
+import { createLogger } from './browserLogger';
+import type { LogData } from './browserLogger';
 
-export { LogData };
+export type { LogData };
+export { createLogger };
 
 // Pre-configured loggers for common areas
 export const lineToolLogger = createLogger("lineTool");
