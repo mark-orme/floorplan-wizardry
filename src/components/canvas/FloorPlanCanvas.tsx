@@ -6,6 +6,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 import '@/styles/canvas-mobile.css';
+import { setCanvasDimensions } from '@/utils/fabric';
 
 interface FloorPlanCanvasProps {
   width?: number;

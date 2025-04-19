@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
 import logger from '@/utils/logger';
+import { setCanvasDimensions } from '@/utils/fabric';
 
 interface RootCanvasProviderProps {
   canvas: FabricCanvas | null;
@@ -104,7 +105,7 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
       }
       
       // Force render to apply changes
-      canvas.renderAll();
+      canvas.requestRenderAll();
     } catch (error) {
       logger.error('Error changing canvas tool', 
         error instanceof Error ? error : new Error('Unknown error'),

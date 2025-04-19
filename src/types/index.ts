@@ -45,7 +45,7 @@ export type { ZoomOptions } from './canvas-events/ZoomTypes';
 export type { 
   ZoomDirection, 
   PerformanceStats,
-  DistanceToolState
+  DistanceToolState,
 } from './drawingTypes';
 
 // Re-export fabric types for easier access

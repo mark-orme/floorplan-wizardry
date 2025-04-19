@@ -1,11 +1,12 @@
+
 /**
  * Hook for managing drawing state
  * @module useDrawingState
  */
 import { useState, useCallback } from 'react';
 import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
-import type { Point } from '@/types/drawingTypes';
-import type { DrawingTool } from '@/types/drawing/DrawingToolTypes';
+import type { Point } from '@/types/core/Geometry';
+import type { DrawingTool } from '@/types/core/DrawingTool';
 
 /**
  * Hook for managing drawing state
@@ -26,7 +27,8 @@ export const useDrawingState = () => {
       ...prev,
       isDrawing: true,
       startPoint: { x, y },
-      pathStartPoint: { x, y }
+      pathStartPoint: { x, y },
+      points: [{ x, y }]
     }));
   }, []);
   
@@ -38,7 +40,9 @@ export const useDrawingState = () => {
   const updateDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => {
       return {
-        ...prev
+        ...prev,
+        currentPoint: { x, y },
+        points: [...prev.points, { x, y }]
       };
     });
   }, []);
@@ -50,9 +54,15 @@ export const useDrawingState = () => {
    */
   const endDrawing = useCallback((x?: number, y?: number) => {
     setDrawingState(prev => {
+      const points = [...prev.points];
+      if (x !== undefined && y !== undefined) {
+        points.push({ x, y });
+      }
+      
       return {
         ...prev,
-        isDrawing: false
+        isDrawing: false,
+        points
       };
     });
   }, []);
@@ -70,7 +80,8 @@ export const useDrawingState = () => {
    */
   const updateDistance = useCallback((distance: number) => {
     setDrawingState(prev => ({
-      ...prev
+      ...prev,
+      distance
     }));
   }, []);
   
@@ -80,7 +91,8 @@ export const useDrawingState = () => {
    */
   const updateCursorPosition = useCallback((point: Point) => {
     setDrawingState(prev => ({
-      ...prev
+      ...prev,
+      cursorPosition: point
     }));
   }, []);
   

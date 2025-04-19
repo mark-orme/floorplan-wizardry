@@ -24,6 +24,11 @@ export const adaptCoreToDrawingDebugInfo = (coreDebugInfo: Partial<CoreDebugInfo
     zoomLevel: 1,
     gridVisible: true,
     objectsSelectedCount: 0,
+    lastInitTime: 0,
+    lastGridCreationTime: 0,
+    canvasEventsRegistered: false,
+    gridRendered: false,
+    toolsInitialized: false,
     ...coreDebugInfo // Include all core properties
   };
 };

@@ -1,57 +1,54 @@
+
 /**
- * Fabric.js utilities
- * Central export for all fabric-related utility functions
+ * Fabric.js utility functions
  * @module utils/fabric
  */
+import { Canvas as FabricCanvas } from 'fabric';
 
-// Export canvas validation utilities
-export {
-  isValidObjectId,
-  doesObjectExist,
-  getObjectById,
-  safeGetObjectById,
-  isCanvasValid,
-  safeCanvasContains,
-  isCanvasEmpty,
-  verifyCanvasConfiguration,
-  safelyGetCanvasElement,
-  isCanvasDisposed
-} from './fabric/canvasValidation';
+/**
+ * Set canvas dimensions with proper scaling
+ * @param canvas - Fabric canvas instance
+ * @param width - New width
+ * @param height - New height
+ */
+export const setCanvasDimensions = (canvas: FabricCanvas, width: number, height: number) => {
+  if (!canvas) return;
+  
+  // The API has changed in latest Fabric.js - let's fix it for compatibility
+  try {
+    // Try the newer version API first (two parameters)
+    canvas.setDimensions({ width, height });
+  } catch (e) {
+    console.error('Error setting canvas dimensions:', e);
+    try {
+      // Fallback to older API if needed
+      (canvas as any).setDimensions(width, height);
+    } catch (e2) {
+      console.error('Failed to set canvas dimensions with fallback method:', e2);
+    }
+  }
 
-// Export object utilities
-export * from './fabric/objects';
+  canvas.requestRenderAll();
+};
 
-// Export cleanup utilities
-export {
-  clearCanvas,
-  disposeCanvas,
-  removeObjectsFromCanvas,
-  resetCanvasTransform,
-  isCanvasElementInitialized,
-  markCanvasAsInitialized,
-  isCanvasElementInDOM
-} from './fabric/canvasCleanup';
-
-// Export dimension utilities
-export {
-  setCanvasDimensions,
-  resizeCanvasToContainer,
-  zoomCanvas,
-  getCanvasDimensions
-} from './fabric/canvasDimensions';
-
-// Export selection utilities
-export {
-  enableSelection,
-  disableSelection
-} from './fabric/selection';
-
-// Re-export any additional fabric utilities
-export * from './fabric/canvasObjectUtils';
-export * from './fabric/canvasSerializationUtils';
-
-// Re-export point converter utilities with explicit renaming to avoid conflicts
-export { 
-  toFabricPoint as convertToFabricPoint, 
-  fromFabricPoint as convertFromFabricPoint 
-} from './fabricPointConverter';
+/**
+ * Clear all objects from canvas
+ * @param canvas - Fabric canvas instance
+ * @param preserveGrid - Whether to preserve grid objects
+ */
+export const clearCanvas = (canvas: FabricCanvas, preserveGrid: boolean = false) => {
+  if (!canvas) return;
+  
+  if (preserveGrid) {
+    // Remove all objects except those with gridObject property
+    const objects = canvas.getObjects().filter(obj => !(obj as any).gridObject);
+    if (objects.length > 0) {
+      canvas.remove(...objects);
+    }
+  } else {
+    // Remove all objects
+    canvas.clear();
+  }
+  
+  canvas.requestRenderAll();
+};
