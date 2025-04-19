@@ -24,8 +24,8 @@ export const adaptCoreToDrawingDebugInfo = (coreDebugInfo: Partial<CoreDebugInfo
     zoomLevel: 1,
     gridVisible: true,
     objectsSelectedCount: 0,
-    lastInitTime: 0,
-    lastGridCreationTime: 0,
+    lastInitTime: Date.now(), // Provide default value
+    lastGridCreationTime: Date.now(), // Provide default value
     canvasEventsRegistered: false,
     gridRendered: false,
     toolsInitialized: false,
@@ -46,6 +46,11 @@ export const adaptDrawingToCoreDebugInfo = (drawingDebugInfo: Partial<DrawingDeb
     hasError: false,
     errorMessage: '',
     gridObjectCount: 0,
+    lastInitTime: drawingDebugInfo.lastInitTime ?? Date.now(),
+    lastGridCreationTime: drawingDebugInfo.lastGridCreationTime ?? Date.now(),
+    canvasEventsRegistered: drawingDebugInfo.canvasEventsRegistered ?? false,
+    gridRendered: drawingDebugInfo.gridRendered ?? false,
+    toolsInitialized: drawingDebugInfo.toolsInitialized ?? false,
     ...drawingDebugInfo // Include all drawing properties
   };
 };

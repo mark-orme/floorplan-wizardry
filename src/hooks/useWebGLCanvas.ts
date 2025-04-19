@@ -1,11 +1,12 @@
+
 /**
  * Hook for managing a WebGL-accelerated canvas
  * @module hooks/useWebGLCanvas
  */
 import { useRef, useEffect, useCallback } from 'react';
-import { fabric } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { CanvasDimensions } from '@/types/drawingTypes';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Geometry';
+import { CanvasDimensions } from '@/types/core/Geometry';
 import { vibrateFeedback } from '@/utils/canvas/pointerEvents';
 
 interface UseWebGLCanvasProps {
@@ -17,7 +18,7 @@ interface UseWebGLCanvasProps {
  * Hook for managing a WebGL-accelerated canvas
  */
 export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
-  const canvasRef = useRef<fabric.Canvas | null>(null);
+  const canvasRef = useRef<FabricCanvas | null>(null);
   const performanceMetricsRef = useRef({
     objectCount: 0,
     visibleObjectCount: 0,
@@ -29,7 +30,7 @@ export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
    */
   const initializeCanvas = useCallback((canvasElement: HTMLCanvasElement) => {
     // Create Fabric canvas instance
-    const canvas = new fabric.Canvas(canvasElement, {
+    const canvas = new FabricCanvas(canvasElement, {
       width,
       height,
       backgroundColor: '#fff',
@@ -124,7 +125,7 @@ export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
     const pointer = canvasRef.current.getPointer(event);
     
     // Create a circle
-    const circle = new fabric.Circle({
+    const circle = new (FabricCanvas.Circle as any)({
       left: pointer.x,
       top: pointer.y,
       radius: 10,
@@ -157,7 +158,11 @@ export const useWebGLCanvas = ({ width, height }: UseWebGLCanvasProps) => {
     canvasRef,
     initializeCanvas,
     handleCanvasClick,
-    performanceMetrics,
+    performanceMetrics: {
+      objectCount: performanceMetricsRef.current.objectCount,
+      visibleObjectCount: performanceMetricsRef.current.visibleObjectCount,
+      fps: performanceMetricsRef.current.fps
+    },
     needsVirtualization,
     refreshVirtualization
   };

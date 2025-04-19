@@ -17,13 +17,13 @@ export const setCanvasDimensions = (canvas: FabricCanvas, width: number, height:
   
   // The API has changed in latest Fabric.js - let's fix it for compatibility
   try {
-    // Try the newer version API first (with dimensions object)
+    // Fabric.js v6+ expects an object with dimensions
     canvas.setDimensions({ width, height });
   } catch (e) {
     console.error('Error setting canvas dimensions:', e);
     try {
-      // Fallback to older API if needed
-      (canvas as any).setDimensions(width, height);
+      // Handle any fallback cases if needed
+      logger.error('Failed to set canvas dimensions', e instanceof Error ? e : new Error('Unknown error'));
     } catch (e2) {
       console.error('Failed to set canvas dimensions with fallback method:', e2);
     }

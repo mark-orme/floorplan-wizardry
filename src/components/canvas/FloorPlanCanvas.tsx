@@ -1,4 +1,8 @@
 
+/**
+ * Floor Plan Canvas component
+ * Handles canvas rendering and initialization
+ */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { RootCanvasProvider } from './RootCanvasProvider';
