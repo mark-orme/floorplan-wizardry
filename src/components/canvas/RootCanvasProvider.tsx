@@ -44,8 +44,10 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
     // Set up global canvas state for monitoring
     if (typeof window !== 'undefined') {
       window.__canvas_state = window.__canvas_state || {};
-      window.__canvas_state.canvasInitialized = true;
-      window.__canvas_state.initTime = Date.now();
+      if (window.__canvas_state) {
+        window.__canvas_state.canvasInitialized = true;
+        window.__canvas_state.initTime = Date.now();
+      }
     }
     
     // Initialize the canvas systems
@@ -113,7 +115,7 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
       
       logger.info("RootCanvasProvider: Cleaning up");
     };
-  }, [canvas, onCanvasReady, isInitialized, setCanvas]);
+  }, [canvas, onCanvasReady, isInitialized, setCanvas, tool]);
   
   if (!canvas) {
     return <>{children}</>;

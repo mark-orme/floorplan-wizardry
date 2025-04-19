@@ -1,166 +1,90 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 import logger from '@/utils/logger';
-import { captureMessage } from '@/utils/sentry';
 
 interface MobileCanvasEnhancerProps {
-  canvas: FabricCanvas | null;
+  canvas: FabricCanvas;
 }
 
 /**
- * Component that enhances canvas functionality on mobile devices
- * Handles touch interactions and ensures grid visibility
+ * Component to enhance canvas for mobile devices
+ * Adds mobile-specific optimizations and event handling
  */
 export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canvas }) => {
-  const isMobile = useIsMobile();
-  const enhancementAppliedRef = useRef(false);
-  const attemptRef = useRef(0);
-  
   useEffect(() => {
-    if (!canvas || !isMobile) return;
+    if (!canvas || !canvas.wrapperEl) return;
     
-    logger.info("MobileCanvasEnhancer: Setting up mobile optimizations");
+    // Detect if running on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
     
-    // Apply mobile-specific optimizations
-    const applyMobileOptimizations = () => {
-      if (!canvas || enhancementAppliedRef.current) return;
+    if (!isMobile) {
+      logger.info('Mobile enhancements skipped - not a mobile device');
+      return;
+    }
+    
+    logger.info('Applying mobile canvas enhancements');
+    
+    try {
+      // Apply mobile-specific classes
+      canvas.wrapperEl.classList.add('mobile-canvas-wrapper');
+      canvas.wrapperEl.classList.add('touch-optimized-canvas');
       
-      try {
-        // Check if wrapper element is ready
-        if (!canvas.wrapperEl) {
-          attemptRef.current += 1;
-          if (attemptRef.current < 5) {
-            logger.info("Canvas wrapper element not ready yet, will retry");
-            setTimeout(applyMobileOptimizations, 300); // Retry
-          } else {
-            logger.error("Canvas wrapper still not ready after multiple attempts");
-            captureMessage('Canvas wrapper not ready after multiple attempts', 'mobile-optimization', {
-              level: 'error',
-              tags: { component: 'MobileCanvasEnhancer' }
-            });
-          }
-          return;
-        }
-        
-        logger.info("Applying mobile canvas optimizations");
-        
-        // Add mobile-specific classes
-        canvas.wrapperEl.classList.add('mobile-canvas-wrapper');
-        canvas.wrapperEl.style.touchAction = 'pan-x pan-y'; // Better touch handling
-        
-        // Optimize for touch
-        if (canvas.upperCanvasEl) {
-          canvas.upperCanvasEl.style.touchAction = 'none';
-        }
-        
-        // Enable brush with better settings for mobile
-        canvas.freeDrawingBrush.width = 3; // Thicker lines for touch
-        canvas.freeDrawingBrush.color = '#000000';
-        
-        // Set up canvas for better mobile performance
-        canvas.stopContextMenu = true; // Prevent context menu on long press
-        canvas.enableRetinaScaling = false; // Better performance
-        
-        // Fix grid visibility
-        ensureMobileGridVisibility(canvas);
-        
-        // Force render
-        canvas.requestRenderAll();
-        
-        enhancementAppliedRef.current = true;
-        logger.info("Mobile optimizations applied successfully");
-        
-        // Set up touch start event listener to ensure drawing mode works
-        const touchStartHandler = () => {
-          if (!canvas.isDrawingMode) return;
-          
-          // Make sure grid is visible and at back
-          ensureMobileGridVisibility(canvas);
-        };
-        
-        canvas.upperCanvasEl.addEventListener('touchstart', touchStartHandler);
+      // Detect iOS specifically
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        canvas.wrapperEl.classList.add('ios-canvas');
+      }
+      
+      // Optimize touch settings
+      if (canvas.upperCanvasEl) {
+        canvas.upperCanvasEl.style.touchAction = 'none';
+        canvas.upperCanvasEl.style.webkitTapHighlightColor = 'transparent';
+      }
+      
+      // Adjust brush size for touch
+      if (canvas.freeDrawingBrush) {
+        const originalWidth = canvas.freeDrawingBrush.width;
+        canvas.freeDrawingBrush.width = originalWidth * 1.5; // Slightly thicker for touch
+      }
+      
+      // Add passive event listeners for better scroll performance
+      const addPassiveListener = (element: HTMLElement, event: string, handler: (e: any) => void) => {
+        element.addEventListener(event, handler, { passive: false });
         
         return () => {
-          canvas.upperCanvasEl.removeEventListener('touchstart', touchStartHandler);
+          element.removeEventListener(event, handler);
         };
-      } catch (error) {
-        logger.error("Error applying mobile optimizations:", error);
-        captureMessage('Error during mobile canvas optimizations', 'mobile-optimization', {
-          level: 'error',
-          tags: { component: 'MobileCanvasEnhancer' },
-          extra: { error: String(error) }
-        });
-      }
-    };
-    
-    const ensureMobileGridVisibility = (canvas: FabricCanvas) => {
-      // Check if grid exists
-      const gridObjects = canvas.getObjects().filter(obj => 
-        (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-      );
+      };
       
-      logger.info(`Grid check: found ${gridObjects.length} grid objects after canvas ready`);
+      // Prevent page scrolling when interacting with canvas
+      const preventScroll = (e: TouchEvent) => {
+        if (e.target === canvas.upperCanvasEl) {
+          e.preventDefault();
+        }
+      };
       
-      if (gridObjects.length === 0) {
-        logger.warn("No grid found on mobile, attempting to recreate");
-        
-        try {
-          // Create grid with slightly larger spacing for mobile
-          const mobileGridSize = 30; // Larger grid for mobile
-          const newGridObjects = createSimpleGrid(canvas, mobileGridSize);
-          
-          logger.info(`Emergency grid creation added ${newGridObjects.length} objects`);
-          canvas.requestRenderAll();
-        } catch (gridError) {
-          logger.error("Error creating mobile grid:", gridError);
-        }
-      } else {
-        // Ensure all grid objects are visible and at the back
-        let visibilityFixed = false;
-        
-        gridObjects.forEach(obj => {
-          if (!obj.visible) {
-            obj.set('visible', true);
-            visibilityFixed = true;
-          }
-          
-          // Ensure at back
-          if (canvas.sendToBack) {
-            canvas.sendToBack(obj);
-          } else if (canvas.sendObjectToBack) {
-            canvas.sendObjectToBack(obj);
-          }
-        });
-        
-        if (visibilityFixed) {
-          logger.info("Fixed grid visibility on mobile");
-          canvas.requestRenderAll();
-        }
+      // Apply passive listeners
+      const removeListeners: Array<() => void> = [];
+      
+      if (canvas.wrapperEl) {
+        removeListeners.push(
+          addPassiveListener(canvas.wrapperEl, 'touchstart', preventScroll),
+          addPassiveListener(canvas.wrapperEl, 'touchmove', preventScroll)
+        );
       }
-    };
-    
-    // Start the optimization process
-    applyMobileOptimizations();
-    
-    // Set up regular checks to ensure grid visibility
-    const checkInterval = setInterval(() => {
-      if (canvas) {
-        ensureMobileGridVisibility(canvas);
-      }
-    }, 5000);
-    
-    return () => {
-      clearInterval(checkInterval);
-      if (canvas && canvas.wrapperEl) {
-        canvas.wrapperEl.classList.remove('mobile-canvas-wrapper');
-      }
-    };
-  }, [canvas, isMobile]);
+      
+      logger.info('Mobile canvas enhancements applied successfully');
+      
+      // Cleanup function
+      return () => {
+        removeListeners.forEach(remove => remove());
+        logger.info('Mobile canvas enhancements cleaned up');
+      };
+    } catch (error) {
+      logger.error('Error applying mobile canvas enhancements:', error);
+    }
+  }, [canvas]);
   
   return null; // Non-visual component
 };
-
-export default MobileCanvasEnhancer;

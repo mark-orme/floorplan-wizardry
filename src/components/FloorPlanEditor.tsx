@@ -126,7 +126,11 @@ export const FloorPlanEditor: React.FC = () => {
 
       <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
         <MeasurementGuideButton onClick={openMeasurementGuide} />
-        <FloorPlanCanvas onCanvasReady={handleCanvasReady} />
+        <FloorPlanCanvas 
+          width={800} 
+          height={600} 
+          onCanvasReady={handleCanvasReady} 
+        />
       </div>
 
       <MeasurementGuideModal
@@ -145,4 +149,3 @@ export const FloorPlanEditor: React.FC = () => {
     </div>
   );
 };
-

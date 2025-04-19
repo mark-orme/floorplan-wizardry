@@ -9,8 +9,8 @@ import { captureMessage } from '@/utils/sentry';
 import '../styles/canvas-mobile.css';
 
 interface FloorPlanCanvasProps {
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
   tool?: DrawingMode;
@@ -24,8 +24,8 @@ interface FloorPlanCanvasProps {
  * Provides a robust canvas interface with grid and drawing tools
  */
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
-  width,
-  height,
+  width = 800,
+  height = 600,
   onCanvasReady,
   onError,
   tool = DrawingMode.SELECT,

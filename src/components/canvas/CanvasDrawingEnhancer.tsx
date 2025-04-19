@@ -94,7 +94,7 @@ export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({
         canvas.requestRenderAll();
         
         // Add to application state for Sentry context
-        if (window.__canvas_state) {
+        if (typeof window !== 'undefined' && window.__canvas_state) {
           window.__canvas_state.currentTool = tool;
         }
         

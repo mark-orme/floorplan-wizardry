@@ -1,162 +1,70 @@
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { createSimpleGrid, ensureGridVisible, createEmergencyGrid } from '@/utils/simpleGridCreator';
-import { captureMessage } from '@/utils/sentry';
+import React, { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 import logger from '@/utils/logger';
 
 interface SimpleGridLayerProps {
-  canvas: FabricCanvas | null;
+  canvas: FabricCanvas;
+  gridSize?: number;
+  majorGridSize?: number;
+  gridColor?: string;
+  majorGridColor?: string;
 }
 
-export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({ canvas }) => {
-  const [gridCreated, setGridCreated] = useState(false);
-  const attemptsRef = useRef(0);
-  const gridObjectsRef = useRef<any[]>([]);
+const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
+  canvas,
+  gridSize = 20,
+  majorGridSize = 100,
+  gridColor = 'rgba(200, 200, 200, 0.4)',
+  majorGridColor = 'rgba(150, 150, 150, 0.6)'
+}) => {
+  const gridObjectsRef = useRef<FabricObject[]>([]);
+  const initialized = useRef(false);
   
-  // Function to create grid with retry logic
-  const createGridWithRetry = (retryCount = 0) => {
-    if (!canvas) return;
+  useEffect(() => {
+    if (!canvas || initialized.current) return;
+    
+    logger.info('Creating grid layer');
     
     try {
-      logger.info("SimpleGridLayer: Attempting grid creation");
-      
-      // Check if grid already exists
-      const existingGrid = canvas.getObjects().filter(obj => 
-        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-      );
-      
-      if (existingGrid.length > 0) {
-        logger.info(`Grid already exists with ${existingGrid.length} objects, ensuring visibility`);
-        ensureGridVisible(canvas);
-        gridObjectsRef.current = existingGrid;
-        setGridCreated(true);
-        return;
-      }
-      
-      // Create new grid
-      logger.info("No grid found, creating new grid");
+      // Create grid
       const gridObjects = createSimpleGrid(canvas);
+      gridObjectsRef.current = gridObjects;
       
-      if (gridObjects.length === 0 && retryCount < 3) {
-        // Try emergency grid as fallback
-        logger.warn("Primary grid creation failed, trying emergency grid");
-        const emergencyGrid = createEmergencyGrid(canvas);
-        gridObjectsRef.current = emergencyGrid;
-        setGridCreated(emergencyGrid.length > 0);
-        
-        // Report to monitoring
-        if (emergencyGrid.length === 0) {
-          captureMessage('Emergency grid creation failed', 'grid-creation-error', {
-            level: 'error',
-            tags: { component: 'SimpleGridLayer', attempt: String(retryCount) }
-          });
-          
-          // Schedule another retry with timeout
-          setTimeout(() => createGridWithRetry(retryCount + 1), 500);
-        }
-      } else {
-        gridObjectsRef.current = gridObjects;
-        setGridCreated(gridObjects.length > 0);
-        
-        // Report success or failure
-        if (gridObjects.length > 0) {
-          logger.info(`Grid created successfully with ${gridObjects.length} objects`);
-        } else {
-          captureMessage('All grid creation attempts failed', 'grid-creation-error', {
-            level: 'error',
-            tags: { component: 'SimpleGridLayer', finalAttempt: 'true' }
-          });
-        }
-      }
+      // Ensure grid is visible
+      ensureGridVisible(canvas, gridObjectsRef.current);
+      
+      initialized.current = true;
+      logger.info(`Grid layer created with ${gridObjects.length} objects`);
     } catch (error) {
-      logger.error("Error in SimpleGridLayer:", error);
-      
-      // Report error to monitoring
-      captureMessage(`Grid creation error: ${error instanceof Error ? error.message : 'Unknown error'}`, 
-        'grid-creation-error', {
-          level: 'error',
-          tags: { component: 'SimpleGridLayer' },
-          extra: { error: String(error) }
-        }
-      );
-      
-      // Try emergency grid on error if not too many attempts
-      if (retryCount < 3) {
-        logger.info("Attempting emergency grid after error");
-        try {
-          if (canvas) {
-            const emergencyGrid = createEmergencyGrid(canvas);
-            gridObjectsRef.current = emergencyGrid;
-            setGridCreated(emergencyGrid.length > 0);
-          }
-        } catch (emergencyError) {
-          logger.error("Emergency grid creation also failed:", emergencyError);
-        }
-      }
+      logger.error('Error creating grid layer:', error);
     }
-  };
-  
-  // Set up mutation observer to detect canvas changes
-  useEffect(() => {
-    if (!canvas || !canvas.wrapperEl) return;
     
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach(() => {
-        if (gridObjectsRef.current.length === 0 || 
-            !gridObjectsRef.current.some(obj => obj.canvas === canvas)) {
-          attemptsRef.current += 1;
-          if (attemptsRef.current <= 5) {
-            logger.info(`Canvas mutation detected, recreating grid (attempt ${attemptsRef.current})`);
-            createGridWithRetry();
-          }
-        }
-      });
-    });
-    
-    observer.observe(canvas.wrapperEl, { 
-      attributes: true, 
-      childList: true, 
-      subtree: true 
-    });
-    
-    return () => observer.disconnect();
-  }, [canvas]);
-  
-  // Initial grid creation
-  useEffect(() => {
-    if (!canvas) return;
-    
-    logger.info("SimpleGridLayer: Initializing grid");
-    
-    // Create grid with a short delay to ensure canvas is ready
-    const timer = setTimeout(() => {
-      createGridWithRetry();
-    }, 500);
-    
+    // Cleanup function
     return () => {
-      clearTimeout(timer);
-    };
-  }, [canvas]);
-  
-  // Health check for grid at intervals
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const healthCheck = setInterval(() => {
-      if (!gridCreated || gridObjectsRef.current.length === 0) {
-        logger.warn("Grid health check failed, attempting recreation");
-        createGridWithRetry();
-      } else {
-        // Ensure grid is visible
-        ensureGridVisible(canvas);
+      if (gridObjectsRef.current.length > 0) {
+        logger.info('Removing grid layer');
+        gridObjectsRef.current.forEach(obj => {
+          canvas.remove(obj);
+        });
+        canvas.requestRenderAll();
       }
+    };
+  }, [canvas, gridSize, majorGridSize, gridColor, majorGridColor]);
+  
+  // Periodically check grid visibility
+  useEffect(() => {
+    if (!canvas || gridObjectsRef.current.length === 0) return;
+    
+    const checkGridInterval = setInterval(() => {
+      ensureGridVisible(canvas, gridObjectsRef.current);
     }, 5000);
     
-    return () => clearInterval(healthCheck);
-  }, [canvas, gridCreated]);
+    return () => clearInterval(checkGridInterval);
+  }, [canvas]);
   
-  return null; // This is a non-visual component
+  return null; // Non-visual component
 };
 
 export default SimpleGridLayer;

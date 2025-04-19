@@ -1,34 +1,18 @@
 
-/**
- * Global type definitions
- */
-
-// Extend Window interface with app-specific globals
-interface Window {
-  // Global app state for Sentry and debugging
-  __app_state?: {
-    drawing?: {
+declare global {
+  interface Window {
+    __canvas_state: {
+      canvasInitialized?: boolean;
+      initTime?: number;
       currentTool?: string;
-      lineColor?: string;
-      lineThickness?: number;
-      snapEnabled?: boolean;
+      width?: number;
+      height?: number;
+      zoom?: number;
+      objectCount?: number;
+      gridVisible?: boolean;
+      lastOperation?: string;
     };
-    user?: {
-      id?: string;
-      role?: string;
-    };
-  };
-  
-  // Canvas state for debugging and error reporting
-  __canvas_state?: {
-    width?: number;
-    height?: number;
-    zoom?: number;
-    objectCount?: number;
-    gridVisible?: boolean;
-    lastOperation?: string;
-  };
-
-  // For debugging purposes - temporary reference to canvas instance
-  fabricCanvas?: any;
+  }
 }
+
+export {};

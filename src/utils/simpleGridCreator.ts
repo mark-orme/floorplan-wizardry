@@ -1,176 +1,173 @@
 
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
+import logger from '@/utils/logger';
 
 /**
- * Creates a simple grid on the canvas with better compatibility
- * @param canvas The fabric canvas instance
- * @param gridSize Size of grid squares (optional, defaults to 20px)
- * @returns Array of created grid objects
+ * Create a simple grid on the canvas
+ * @param canvas - The Fabric.js canvas
+ * @param options - Grid options
+ * @returns Array of grid objects
  */
-export const createSimpleGrid = (canvas: FabricCanvas, gridSize = 20) => {
-  if (!canvas) return [];
+export const createSimpleGrid = (
+  canvas: FabricCanvas,
+  options: {
+    gridSize?: number;
+    majorGridSize?: number;
+    gridColor?: string;
+    majorGridColor?: string;
+    addToCanvas?: boolean;
+  } = {}
+): FabricObject[] => {
+  const {
+    gridSize = 20,
+    majorGridSize = 100,
+    gridColor = 'rgba(200, 200, 200, 0.4)',
+    majorGridColor = 'rgba(150, 150, 150, 0.6)',
+    addToCanvas = true
+  } = options;
+  
+  if (!canvas || !canvas.width || !canvas.height) {
+    logger.warn('Invalid canvas for grid creation');
+    return [];
+  }
+  
+  const gridObjects: FabricObject[] = [];
   
   try {
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const gridColor = isMobile ? 'rgba(180, 180, 180, 0.8)' : 'rgba(200, 200, 200, 0.5)';
-    const strokeWidth = isMobile ? 1.5 : 1;
-    
-    console.log(`Creating simple grid: ${width}x${height}, gridSize: ${gridSize}px`);
-    
-    // Remove any existing grid
-    const existingGrid = canvas.getObjects().filter(obj => 
-      (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-    );
-    existingGrid.forEach(obj => canvas.remove(obj));
-    
-    const gridObjects: any[] = [];
-    
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: gridColor,
-        strokeWidth,
+    // Create vertical grid lines
+    for (let i = 0; i <= canvas.width; i += gridSize) {
+      const isMajor = i % majorGridSize === 0;
+      const line = new Line([i, 0, i, canvas.height], {
+        stroke: isMajor ? majorGridColor : gridColor,
         selectable: false,
         evented: false,
-        objectType: 'grid',
-        isGrid: true
+        strokeWidth: isMajor ? 1 : 0.5,
+        objectCaching: false,
+        excludeFromExport: true,
+        metadata: { type: 'grid', gridType: isMajor ? 'major' : 'minor' }
       });
       
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new Line([i, 0, i, height], {
-        stroke: gridColor,
-        strokeWidth,
-        selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true
-      });
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Make sure grid is at the back
-    gridObjects.forEach(obj => {
-      if (canvas.sendToBack) {
-        canvas.sendToBack(obj);
-      } else if (canvas.sendObjectToBack) {
-        canvas.sendObjectToBack(obj);
+      if (addToCanvas) {
+        canvas.add(line);
       }
-    });
+      
+      gridObjects.push(line);
+    }
     
-    canvas.renderAll();
+    // Create horizontal grid lines
+    for (let i = 0; i <= canvas.height; i += gridSize) {
+      const isMajor = i % majorGridSize === 0;
+      const line = new Line([0, i, canvas.width, i], {
+        stroke: isMajor ? majorGridColor : gridColor,
+        selectable: false,
+        evented: false,
+        strokeWidth: isMajor ? 1 : 0.5,
+        objectCaching: false,
+        excludeFromExport: true,
+        metadata: { type: 'grid', gridType: isMajor ? 'major' : 'minor' }
+      });
+      
+      if (addToCanvas) {
+        canvas.add(line);
+      }
+      
+      gridObjects.push(line);
+    }
+    
+    // Send grid to back
+    if (addToCanvas) {
+      gridObjects.forEach(obj => {
+        canvas.sendObjectToBack(obj);
+      });
+      
+      canvas.requestRenderAll();
+    }
+    
+    logger.info(`Created grid with ${gridObjects.length} lines`);
+    
     return gridObjects;
   } catch (error) {
-    console.error('Error creating simple grid:', error);
+    logger.error('Error creating grid:', error);
     return [];
   }
 };
 
 /**
- * Ensures grid is visible after canvas operations
- * @param canvas Fabric canvas instance
- * @returns True if grid was found and made visible
+ * Emergency grid creation function for recovery
+ * @param canvas - The Fabric.js canvas
+ * @returns Array of grid objects
  */
-export const ensureGridVisible = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
+export const createEmergencyGrid = (canvas: FabricCanvas): FabricObject[] => {
+  logger.warn('Using emergency grid creation');
   
-  const gridObjects = canvas.getObjects().filter(obj => 
-    (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-  );
+  try {
+    // Create a simpler grid with fewer lines for emergency recovery
+    return createSimpleGrid(canvas, {
+      gridSize: 40,    // Use larger grid size for fewer lines
+      majorGridSize: 200,
+      gridColor: 'rgba(200, 200, 200, 0.7)', // More visible
+      majorGridColor: 'rgba(100, 100, 100, 0.8)', // More visible
+      addToCanvas: true
+    });
+  } catch (error) {
+    logger.error('Emergency grid creation failed:', error);
+    return [];
+  }
+};
+
+/**
+ * Ensure grid is visible and correctly ordered in the canvas
+ * @param canvas - The Fabric.js canvas
+ * @param gridObjects - Array of grid objects
+ * @returns Whether the operation was successful
+ */
+export const ensureGridVisible = (
+  canvas: FabricCanvas,
+  gridObjects: FabricObject[]
+): boolean => {
+  if (!canvas || !gridObjects.length) {
+    return false;
+  }
   
-  if (gridObjects.length === 0) {
-    console.log('No grid found, creating new grid');
-    createSimpleGrid(canvas);
+  try {
+    // Add any missing grid objects
+    let addedCount = 0;
+    gridObjects.forEach(obj => {
+      if (!canvas.contains(obj)) {
+        canvas.add(obj);
+        addedCount++;
+      }
+    });
+    
+    if (addedCount > 0) {
+      logger.info(`Added ${addedCount} missing grid objects`);
+    }
+    
+    // Send all grid objects to back
+    gridObjects.forEach(obj => {
+      canvas.sendObjectToBack(obj);
+    });
+    
+    canvas.requestRenderAll();
     return true;
+  } catch (error) {
+    logger.error('Error ensuring grid visibility:', error);
+    return false;
   }
-  
-  let visibilityFixed = false;
-  gridObjects.forEach(obj => {
-    if (!obj.visible) {
-      obj.set('visible', true);
-      visibilityFixed = true;
-    }
-  });
-  
-  if (visibilityFixed) {
-    canvas.renderAll();
-  }
-  
-  return true;
 };
 
 /**
- * Creates basic emergency grid as a fallback
- * @param canvas Fabric canvas instance
- * @returns Array of created grid objects
+ * Create a mobile-optimized grid
+ * @param canvas - The Fabric.js canvas
+ * @returns Array of grid objects
  */
-export const createEmergencyGrid = (canvas: FabricCanvas) => {
-  if (!canvas) return [];
-  
-  try {
-    const width = canvas.width || 800;
-    const height = canvas.height || 600;
-    
-    // Use a larger grid size for emergency mode (better performance)
-    const gridSize = 40;
-    const gridColor = 'rgba(200, 200, 200, 0.8)'; // More visible
-    
-    console.log(`Creating emergency grid: ${width}x${height}, gridSize: ${gridSize}px`);
-    
-    const gridObjects: any[] = [];
-    
-    // Create only major grid lines for better performance
-    // Horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new Line([0, i, width, i], {
-        stroke: gridColor,
-        strokeWidth: 1.5,
-        selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true
-      });
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new Line([i, 0, i, height], {
-        stroke: gridColor,
-        strokeWidth: 1.5,
-        selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true
-      });
-      
-      canvas.add(line);
-      gridObjects.push(line);
-    }
-    
-    // Make sure grid is at the back
-    gridObjects.forEach(obj => {
-      if (canvas.sendToBack) {
-        canvas.sendToBack(obj);
-      } else if (canvas.sendObjectToBack) {
-        canvas.sendObjectToBack(obj);
-      }
-    });
-    
-    canvas.renderAll();
-    return gridObjects;
-  } catch (error) {
-    console.error('Error creating emergency grid:', error);
-    return [];
-  }
+export const createMobileGrid = (canvas: FabricCanvas): FabricObject[] => {
+  // For mobile, create a grid with more contrast and fewer lines
+  return createSimpleGrid(canvas, {
+    gridSize: 40,
+    majorGridSize: 200,
+    gridColor: 'rgba(200, 200, 200, 0.6)',
+    majorGridColor: 'rgba(120, 120, 120, 0.8)',
+    addToCanvas: true
+  });
 };
