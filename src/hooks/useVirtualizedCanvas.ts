@@ -1,206 +1,207 @@
 
 /**
- * Hook for virtualizing canvas rendering
- * Provides performance optimization for complex canvas operations
- * @module hooks/useVirtualizedCanvas
+ * Hook for virtualized canvas rendering optimization
  */
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { perfLogger } from '@/utils/logger';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
-interface UseVirtualizedCanvasProps {
-  enabled?: boolean;
-  visibleMargin?: number;
-  updateInterval?: number;
-}
-
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
   fps: number;
-  renderTime: number;
   objectCount: number;
   visibleObjectCount: number;
-  lastUpdate: number;
+  renderTime: number;
 }
 
-const INITIAL_METRICS: PerformanceMetrics = {
-  fps: 60,
-  renderTime: 0,
-  objectCount: 0,
-  visibleObjectCount: 0,
-  lastUpdate: 0
-};
+interface UseVirtualizedCanvasOptions {
+  enabled?: boolean;
+  viewportPadding?: number;
+  maxFps?: number;
+}
 
 /**
  * Hook for optimizing canvas performance through virtualization
- * Only renders objects that are visible within the viewport
+ * Only renders objects visible in the viewport
  */
-export function useVirtualizedCanvas(
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  {
+export const useVirtualizedCanvas = (
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  options: UseVirtualizedCanvasOptions = {}
+) => {
+  const {
     enabled = true,
-    visibleMargin = 100,
-    updateInterval = 100
-  }: UseVirtualizedCanvasProps = {}
-) {
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>(INITIAL_METRICS);
-  const [needsVirtualization, setNeedsVirtualization] = useState(false);
-  const frameCountRef = useRef(0);
-  const lastFrameTimeRef = useRef(0);
-  const updateTimeoutRef = useRef<number | null>(null);
-  const isInitializedRef = useRef(false);
-
-  // Function to refresh virtualization calculations
+    viewportPadding = 100,
+    maxFps = 60
+  } = options;
+  
+  // State for performance metrics
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
+    fps: 0,
+    objectCount: 0,
+    visibleObjectCount: 0,
+    renderTime: 0
+  });
+  
+  // Reference for tracking virtualization state
+  const virtualizationRef = useRef({
+    enabled,
+    lastRefreshTime: 0,
+    objectCount: 0,
+    visibleCount: 0,
+    throttleTimeout: null as NodeJS.Timeout | null,
+    needsVirtualization: false
+  });
+  
+  // Update options when they change
+  useEffect(() => {
+    virtualizationRef.current.enabled = enabled;
+  }, [enabled]);
+  
+  // Calculate which objects are in the viewport
   const refreshVirtualization = useCallback(() => {
-    if (!enabled || !fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const objects = canvas.getObjects();
-    const viewportRect = {
-      left: -visibleMargin,
-      top: -visibleMargin,
-      right: (canvas.width || 0) / canvas.getZoom() + visibleMargin,
-      bottom: (canvas.height || 0) / canvas.getZoom() + visibleMargin
-    };
-    
-    let visibleCount = 0;
-    
-    // Update object visibility based on whether they're in viewport
-    objects.forEach(obj => {
-      if (!obj) return;
-      
-      // Skip grid objects (they should always be visible)
-      if (obj.data?.isGrid) return;
-      
-      // Get object bounds
-      const objBounds = obj.getBoundingRect();
-      
-      // Check if object is in viewport
-      const isVisible = !(
-        objBounds.left > viewportRect.right ||
-        objBounds.top > viewportRect.bottom ||
-        objBounds.left + objBounds.width < viewportRect.left ||
-        objBounds.top + objBounds.height < viewportRect.top
-      );
-      
-      // Set object to visible or not (skipping render)
-      if (isVisible) {
-        if (!obj.visible) {
-          obj.visible = true;
-          obj.setCoords();
-        }
-        visibleCount++;
-      } else if (obj.visible) {
-        obj.visible = false;
-      }
-    });
-    
-    // Update performance metrics
-    const now = performance.now();
-    const elapsed = now - performanceMetrics.lastUpdate;
-    
-    if (elapsed > 500) {
-      const fps = frameCountRef.current / (elapsed / 1000);
-      
-      setPerformanceMetrics({
-        fps: Math.round(fps),
-        renderTime: (now - lastFrameTimeRef.current) || 0,
-        objectCount: objects.length,
-        visibleObjectCount: visibleCount,
-        lastUpdate: now
-      });
-      
-      frameCountRef.current = 0;
-      
-      // Log performance if significant changes
-      if (Math.abs(fps - performanceMetrics.fps) > 10 || objects.length > 100) {
-        perfLogger.info('Canvas performance update', {
-          fps: Math.round(fps),
-          objects: objects.length,
-          visible: visibleCount,
-          renderTime: (now - lastFrameTimeRef.current).toFixed(2) + 'ms'
-        });
-      }
+    const canvas = canvasRef.current;
+    if (!canvas || !virtualizationRef.current.enabled) {
+      return {
+        objectCount: 0,
+        visibleCount: 0
+      };
     }
     
-    // Request canvas re-render if needed
-    canvas.requestRenderAll();
-    
-    return {
-      objectCount: objects.length,
-      visibleCount
-    };
-  }, [enabled, fabricCanvasRef, visibleMargin, performanceMetrics.lastUpdate]);
-  
-  // Set up virtualization
-  useEffect(() => {
-    if (!enabled || !fabricCanvasRef.current || isInitializedRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    
-    // Set up rendering optimization
-    canvas.renderOnAddRemove = false;
-    canvas.skipOffscreen = true;
-    
-    // Setup frame counting for FPS calculation
-    const originalRenderAll = canvas.renderAll.bind(canvas);
-    
-    canvas.renderAll = function() {
+    try {
       const startTime = performance.now();
-      frameCountRef.current++;
-      const result = originalRenderAll();
-      lastFrameTimeRef.current = performance.now() - startTime;
-      return result;
+      
+      // Rate limiting - don't refresh more often than maxFps
+      const now = Date.now();
+      const timeSinceLastRefresh = now - virtualizationRef.current.lastRefreshTime;
+      const minRefreshInterval = 1000 / maxFps;
+      
+      if (timeSinceLastRefresh < minRefreshInterval) {
+        if (virtualizationRef.current.throttleTimeout) {
+          clearTimeout(virtualizationRef.current.throttleTimeout);
+        }
+        
+        virtualizationRef.current.throttleTimeout = setTimeout(() => {
+          refreshVirtualization();
+        }, minRefreshInterval - timeSinceLastRefresh);
+        
+        return {
+          objectCount: virtualizationRef.current.objectCount,
+          visibleCount: virtualizationRef.current.visibleCount
+        };
+      }
+      
+      virtualizationRef.current.lastRefreshTime = now;
+      
+      // Get all objects and viewport boundaries
+      const allObjects = canvas.getObjects();
+      const vpt = canvas.viewportTransform;
+      
+      if (!vpt) {
+        return {
+          objectCount: allObjects.length,
+          visibleCount: allObjects.length
+        };
+      }
+      
+      const zoom = canvas.getZoom();
+      const width = canvas.width || 0;
+      const height = canvas.height || 0;
+      
+      // Calculate viewport boundaries with padding
+      const viewportBounds = {
+        left: -vpt[4] / zoom - viewportPadding,
+        top: -vpt[5] / zoom - viewportPadding,
+        right: (-vpt[4] + width) / zoom + viewportPadding,
+        bottom: (-vpt[5] + height) / zoom + viewportPadding
+      };
+      
+      // Count visible objects and update visibility
+      let visibleCount = 0;
+      
+      allObjects.forEach(obj => {
+        if (!obj.getBoundingRect) return;
+        
+        const rect = obj.getBoundingRect();
+        const isVisible = (
+          rect.left < viewportBounds.right &&
+          rect.left + rect.width > viewportBounds.left &&
+          rect.top < viewportBounds.bottom &&
+          rect.top + rect.height > viewportBounds.top
+        );
+        
+        // Set object visibility based on viewport
+        if (obj.visible !== isVisible) {
+          obj.visible = isVisible;
+          obj.setCoords();
+        }
+        
+        if (isVisible) {
+          visibleCount++;
+        }
+      });
+      
+      const renderTime = performance.now() - startTime;
+      
+      // Update reference values
+      virtualizationRef.current.objectCount = allObjects.length;
+      virtualizationRef.current.visibleCount = visibleCount;
+      
+      // Update performance metrics
+      setPerformanceMetrics({
+        fps: Math.round(1000 / Math.max(1, timeSinceLastRefresh)),
+        objectCount: allObjects.length,
+        visibleObjectCount: visibleCount,
+        renderTime
+      });
+      
+      return {
+        objectCount: allObjects.length,
+        visibleCount
+      };
+    } catch (error) {
+      console.error('Error in virtualization:', error);
+      return {
+        objectCount: 0,
+        visibleCount: 0
+      };
+    }
+  }, [canvasRef, maxFps, viewportPadding]);
+  
+  // Set up event listeners for canvas changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !virtualizationRef.current.enabled) return;
+    
+    // Define event handler safely
+    const handleCanvasChange = () => {
+      refreshVirtualization();
     };
+    
+    // Add event listeners for canvas changes
+    canvas.on('object:added', handleCanvasChange);
+    canvas.on('object:removed', handleCanvasChange);
+    canvas.on('object:modified', handleCanvasChange);
+    canvas.on('zoom:changed', handleCanvasChange);
+    
+    // Support viewport translation - use string literal that works with fabric.js
+    canvas.on('viewport:translate' as any, handleCanvasChange);
     
     // Initial refresh
     refreshVirtualization();
-    isInitializedRef.current = true;
     
-    // Set up interval for periodic refresh
-    const refreshInterval = setInterval(() => {
-      refreshVirtualization();
-    }, updateInterval);
-    
-    // Set up event listeners for canvas changes that require virtualization refresh
-    const handleViewportChange = () => {
-      if (updateTimeoutRef.current) {
-        window.clearTimeout(updateTimeoutRef.current);
-      }
-      
-      updateTimeoutRef.current = window.setTimeout(() => {
-        refreshVirtualization();
-        updateTimeoutRef.current = null;
-      }, 50);
-    };
-    
-    canvas.on('zoom:changed', handleViewportChange);
-    
-    // Use standard mouse events instead of custom viewport:translate event
-    canvas.on('mouse:move', handleViewportChange);
-    canvas.on('mouse:up', handleViewportChange);
-    
+    // Clean up event listeners
     return () => {
-      clearInterval(refreshInterval);
+      if (!canvas) return;
       
-      if (updateTimeoutRef.current) {
-        window.clearTimeout(updateTimeoutRef.current);
-      }
-      
-      // Remove event listeners
-      canvas.off('zoom:changed', handleViewportChange);
-      canvas.off('mouse:move', handleViewportChange);
-      canvas.off('mouse:up', handleViewportChange);
-      
-      // Restore original renderAll
-      if (canvas.renderAll !== originalRenderAll) {
-        canvas.renderAll = originalRenderAll;
-      }
+      canvas.off('object:added', handleCanvasChange);
+      canvas.off('object:removed', handleCanvasChange);
+      canvas.off('object:modified', handleCanvasChange);
+      canvas.off('zoom:changed', handleCanvasChange);
+      canvas.off('viewport:translate' as any, handleCanvasChange);
     };
-  }, [enabled, fabricCanvasRef, refreshVirtualization, updateInterval]);
+  }, [canvasRef, refreshVirtualization]);
   
   return {
     performanceMetrics,
-    needsVirtualization,
-    refreshVirtualization
+    refreshVirtualization,
+    needsVirtualization: virtualizationRef.current.needsVirtualization
   };
-}
+};

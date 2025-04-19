@@ -1,8 +1,26 @@
 /**
- * Utility for tracking canvas performance
+ * Canvas performance tracking utilities
  * @module utils/canvas/performanceTracker
  */
-import { PerformanceStats } from "@/types/drawingTypes";
+import { Canvas as FabricCanvas } from 'fabric';
+
+/**
+ * Performance statistics object
+ */
+export interface PerformanceStats {
+  /** Frames per second */
+  fps: number;
+  /** Average render time in milliseconds */
+  averageRenderTime: number;
+  /** Number of visible objects */
+  visibleObjects: number;
+  /** Total number of objects */
+  totalObjects: number;
+  /** Memory usage in MB */
+  memoryUsage: number;
+  /** Number of dropped frames */
+  droppedFrames: number;
+}
 
 let frameCount = 0;
 let lastFpsUpdateTime = 0;
@@ -75,9 +93,11 @@ export const getPerformanceStats = (): PerformanceStats => {
   
   return {
     fps,
-    renderTime: Math.round(avgFrameTime * 100) / 100,
-    objectCount: 0,
-    lastUpdate: Date.now()
+    averageRenderTime: Math.round(avgFrameTime * 100) / 100,
+    visibleObjects: 0,
+    totalObjects: 0,
+    memoryUsage: 0,
+    droppedFrames
   };
 };
 

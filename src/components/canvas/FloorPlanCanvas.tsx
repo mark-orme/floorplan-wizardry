@@ -1,12 +1,10 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { RootCanvasProvider } from './RootCanvasProvider';
 import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
-import { captureMessage } from '@/utils/sentry';
-import { logCanvasInitialization } from '@/utils/canvas/canvasErrorDiagnostics';
 import '@/styles/canvas-mobile.css';
 
 interface FloorPlanCanvasProps {
@@ -36,138 +34,93 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
-  const initAttemptsRef = useRef(0);
+  const [initAttempts, setInitAttempts] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
+  const maxAttempts = 3;
   
   // Create Fabric.js canvas
-  useEffect(() => {
+  const createCanvas = useCallback(() => {
     if (!canvasRef.current || fabricCanvas) return;
     
-    logger.info(`Initializing FloorPlanCanvas: ${width}x${height}`);
-    
-    const createCanvas = () => {
-      try {
-        // Log initialization attempt
-        const attemptNum = initAttemptsRef.current + 1;
-        logger.info(`Creating canvas (attempt ${attemptNum})`, { 
-          dimensions: `${width}x${height}`, 
-          element: canvasRef.current ? 'exists' : 'missing' 
-        });
-        
-        initAttemptsRef.current = attemptNum;
-        
-        if (!canvasRef.current) {
-          throw new Error('Canvas reference is null');
-        }
-        
-        // Create Fabric canvas instance
-        const canvas = new FabricCanvas(canvasRef.current, {
-          width,
-          height,
-          backgroundColor: '#ffffff',
-          preserveObjectStacking: true,
-          renderOnAddRemove: true,
-          selection: true,
-          fireRightClick: false
-        });
-        
-        // Run validation
-        logCanvasInitialization(
-          canvasRef.current,
-          canvas,
-          { initAttempt: attemptNum, componentName: 'FloorPlanCanvas' }
-        );
-        
-        setFabricCanvas(canvas);
-        setCanvasReady(true);
-        logger.info("Fabric canvas created successfully");
-        
-        // Set canvas data attributes for easy testing/debugging
-        if (canvasRef.current.parentElement) {
-          canvasRef.current.parentElement.setAttribute('data-canvas-ready', 'true');
-          canvasRef.current.parentElement.setAttribute('data-testid', 'floor-plan-wrapper');
-        }
-        
-        // Set global canvas state for debugging
-        if (window.__canvas_state) {
-          window.__canvas_state.canvasInitialized = true;
-          window.__canvas_state.initTime = Date.now();
-          window.__canvas_state.width = width;
-          window.__canvas_state.height = height;
-        }
-        
-        return () => {
-          logger.info("Disposing canvas on unmount");
-          canvas.dispose();
-          setFabricCanvas(null);
-          setCanvasReady(false);
-        };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.canvasError("Error creating canvas:", 
-          error instanceof Error ? error : new Error(errorMessage),
-          { width, height, attempt: initAttemptsRef.current }
-        );
-        
-        // Report to Sentry
-        captureMessage('Error creating Fabric canvas', 'canvas-creation-error', {
-          level: 'error',
-          extra: { error: errorMessage, dimensions: `${width}x${height}` }
-        });
-        
-        // Call onError if provided
-        if (onError && error instanceof Error) {
-          onError(error);
-        }
-        
-        // Show user-facing error
-        toast.error("Failed to initialize canvas. Please refresh the page.");
-        
-        // Retry canvas creation with exponential backoff
-        initAttemptsRef.current += 1;
-        if (initAttemptsRef.current <= 3) {
-          const delay = Math.pow(2, initAttemptsRef.current - 1) * 500;
-          logger.info(`Retrying canvas creation in ${delay}ms (attempt ${initAttemptsRef.current}/3)`);
-          setTimeout(createCanvas, delay);
-        }
-        
-        return () => {}; // No cleanup needed on error
+    try {
+      // Create Fabric canvas instance with safety checks
+      if (!canvasRef.current.getContext) {
+        throw new Error('Canvas context not available');
       }
-    };
-    
-    return createCanvas();
-  }, [width, height, onError, fabricCanvas]);
+      
+      // Create Fabric canvas instance
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        preserveObjectStacking: true,
+        renderOnAddRemove: true,
+        selection: true,
+        fireRightClick: false
+      });
+      
+      // Check if canvas was properly initialized
+      if (!canvas.getContext) {
+        throw new Error('Canvas initialization failed - context not available');
+      }
+      
+      setFabricCanvas(canvas);
+      setCanvasReady(true);
+      logger.info("Fabric canvas created successfully");
+      
+      return canvas;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error("Error creating canvas:", 
+        error instanceof Error ? error : new Error(errorMessage),
+        { width, height, attempt: initAttempts }
+      );
+      
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+      
+      if (initAttempts >= maxAttempts) {
+        toast.error("Failed to initialize canvas after multiple attempts");
+      }
+      
+      return null;
+    }
+  }, [canvasRef, fabricCanvas, width, height, initAttempts, onError, maxAttempts]);
   
-  // Resize handler
+  // Initialize canvas effect
   useEffect(() => {
-    if (!fabricCanvas) return;
+    if (fabricCanvas || !canvasRef.current || initAttempts >= maxAttempts) return;
     
-    const handleResize = () => {
-      // Only update dimensions if they've actually changed
-      if (fabricCanvas.width !== width || fabricCanvas.height !== height) {
-        logger.info(`Resizing canvas to ${width}x${height}`);
-        fabricCanvas.setDimensions({ width, height });
-      }
-    };
+    logger.info(`Initializing FloorPlanCanvas (attempt ${initAttempts + 1}/${maxAttempts})`);
+    const canvas = createCanvas();
     
-    // Apply initial dimensions
-    handleResize();
-    
-    // Set up resize event listener
-    window.addEventListener('resize', handleResize);
+    if (!canvas && initAttempts < maxAttempts) {
+      // Schedule retry with exponential backoff
+      const retryDelay = Math.min(1000 * Math.pow(1.5, initAttempts), 5000);
+      const timerId = setTimeout(() => {
+        setInitAttempts(prev => prev + 1);
+      }, retryDelay);
+      
+      return () => clearTimeout(timerId);
+    }
     
     return () => {
-      window.removeEventListener('resize', handleResize);
+      if (fabricCanvas) {
+        logger.info("Disposing canvas on unmount");
+        fabricCanvas.dispose();
+      }
     };
-  }, [fabricCanvas, width, height]);
+  }, [createCanvas, fabricCanvas, initAttempts, maxAttempts]);
   
   // Handle canvas ready callback
-  const handleCanvasReady = (canvas: FabricCanvas) => {
+  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
+    setCanvasReady(true);
     logger.info("Canvas ready callback triggered");
     if (onCanvasReady) {
       onCanvasReady(canvas);
     }
-  };
+  }, [onCanvasReady]);
   
   return (
     <div className={`relative w-full h-full ${className}`}>
@@ -175,28 +128,44 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
         ref={canvasRef} 
         className="border border-gray-200 rounded shadow-sm"
         data-testid="floorplan-canvas"
+        width={width}
+        height={height}
       />
       
-      <RootCanvasProvider
-        canvas={fabricCanvas}
-        setCanvas={setFabricCanvas}
-        tool={tool}
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-        onCanvasReady={handleCanvasReady}
-      />
+      {fabricCanvas && (
+        <RootCanvasProvider
+          canvas={fabricCanvas}
+          setCanvas={setFabricCanvas}
+          tool={tool}
+          lineColor={lineColor}
+          lineThickness={lineThickness}
+          onCanvasReady={handleCanvasReady}
+        />
+      )}
       
-      {initAttemptsRef.current > 0 && !canvasReady && (
+      {initAttempts > 0 && !canvasReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/80">
           <div className="text-center p-4 bg-white shadow-md rounded-md">
             <p className="text-orange-600 font-medium">Canvas is initializing...</p>
-            <p className="text-sm text-gray-600">Attempt {initAttemptsRef.current} of 3</p>
+            <p className="text-sm text-gray-600">Attempt {initAttempts} of {maxAttempts}</p>
             <div className="mt-2 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-blue-500 transition-all duration-300" 
-                style={{ width: `${Math.min(100, initAttemptsRef.current * 33.3)}%` }}
+                style={{ width: `${Math.min(100, (initAttempts / maxAttempts) * 100)}%` }}
               ></div>
             </div>
+            {initAttempts >= maxAttempts && (
+              <button
+                className="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={() => {
+                  setInitAttempts(0);
+                  setFabricCanvas(null);
+                  setCanvasReady(false);
+                }}
+              >
+                Retry
+              </button>
+            )}
           </div>
         </div>
       )}

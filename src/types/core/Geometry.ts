@@ -25,6 +25,16 @@ export interface Size {
 }
 
 /**
+ * Canvas dimensions interface
+ */
+export interface CanvasDimensions {
+  /** Width */
+  width: number;
+  /** Height */
+  height: number;
+}
+
+/**
  * Rectangle interface representing a rectangle
  */
 export interface Rectangle {

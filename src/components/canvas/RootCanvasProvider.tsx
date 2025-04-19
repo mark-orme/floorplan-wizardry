@@ -4,7 +4,6 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { MobileCanvasOptimizer } from './MobileCanvasOptimizer';
 import logger from '@/utils/logger';
-import { logCanvasInitialization } from '@/utils/canvas/canvasErrorDiagnostics';
 
 interface RootCanvasProviderProps {
   canvas: FabricCanvas | null;
@@ -43,27 +42,15 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
         logger.info(`Initializing canvas (attempt ${initializationAttempts + 1})`);
         setInitializationAttempts(prev => prev + 1);
         
-        // Check if drawing brush is available
-        if (!canvas.freeDrawingBrush) {
-          logger.canvasError('Drawing brush not available', 
-            new Error('Canvas free drawing brush is undefined'),
-            { tool, initAttempt: initializationAttempts + 1 }
-          );
-          return false;
-        }
-        
-        // Apply tool settings
+        // Apply tool settings safely - check for drawing brush first
         canvas.isDrawingMode = tool === DrawingMode.DRAW;
         canvas.selection = tool === DrawingMode.SELECT;
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.freeDrawingBrush.width = lineThickness;
         
-        // Run validation and diagnostics
-        logCanvasInitialization(
-          canvas.getElement() as HTMLCanvasElement, 
-          canvas,
-          { tool, lineColor, lineThickness, initAttempt: initializationAttempts + 1 }
-        );
+        // Only set brush properties if drawing brush exists and we're in drawing mode
+        if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = lineColor;
+          canvas.freeDrawingBrush.width = lineThickness;
+        }
         
         // Set initialized state
         setIsInitialized(true);
@@ -75,7 +62,7 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
         
         return true;
       } catch (error) {
-        logger.canvasError('Canvas failed to initialize properly', 
+        logger.error('Canvas failed to initialize properly', 
           error instanceof Error ? error : new Error('Unknown error'),
           { tool, initAttempt: initializationAttempts + 1 }
         );
@@ -111,17 +98,15 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
       canvas.isDrawingMode = tool === DrawingMode.DRAW;
       canvas.selection = tool === DrawingMode.SELECT;
       
-      if (canvas.freeDrawingBrush) {
+      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
         canvas.freeDrawingBrush.color = lineColor;
         canvas.freeDrawingBrush.width = lineThickness;
-      } else {
-        logger.warn('Drawing brush not available on tool change', { tool });
       }
       
       // Force render to apply changes
       canvas.renderAll();
     } catch (error) {
-      logger.canvasError('Error changing canvas tool', 
+      logger.error('Error changing canvas tool', 
         error instanceof Error ? error : new Error('Unknown error'),
         { prevTool: canvas.isDrawingMode ? 'DRAW' : 'SELECT', newTool: tool }
       );
