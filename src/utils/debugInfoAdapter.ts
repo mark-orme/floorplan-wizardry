@@ -24,8 +24,8 @@ export const adaptCoreToDrawingDebugInfo = (coreDebugInfo: Partial<CoreDebugInfo
     zoomLevel: 1,
     gridVisible: true,
     objectsSelectedCount: 0,
-    lastInitTime: Date.now(), // Provide default value
-    lastGridCreationTime: Date.now(), // Provide default value
+    lastInitTime: coreDebugInfo.lastInitTime ?? Date.now(), // Use the value from core or default
+    lastGridCreationTime: coreDebugInfo.lastGridCreationTime ?? Date.now(), // Use the value from core or default
     canvasEventsRegistered: false,
     gridRendered: false,
     toolsInitialized: false,

@@ -63,10 +63,11 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
         
         return true;
       } catch (error) {
-        logger.error('Canvas failed to initialize properly', 
-          error instanceof Error ? error : new Error('Unknown error'),
-          { tool, initAttempt: initializationAttempts + 1 }
-        );
+        logger.error('Canvas failed to initialize properly', { 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          tool, 
+          initAttempt: initializationAttempts + 1 
+        });
         return false;
       }
     };
@@ -107,10 +108,11 @@ export const RootCanvasProvider: React.FC<RootCanvasProviderProps> = ({
       // Force render to apply changes
       canvas.requestRenderAll();
     } catch (error) {
-      logger.error('Error changing canvas tool', 
-        error instanceof Error ? error : new Error('Unknown error'),
-        { prevTool: canvas.isDrawingMode ? 'DRAW' : 'SELECT', newTool: tool }
-      );
+      logger.error('Error changing canvas tool', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        prevTool: canvas.isDrawingMode ? 'DRAW' : 'SELECT', 
+        newTool: tool 
+      });
     }
   }, [canvas, isInitialized, tool, lineColor, lineThickness]);
   

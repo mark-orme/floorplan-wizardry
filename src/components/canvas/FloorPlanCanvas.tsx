@@ -76,10 +76,11 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       return canvas;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error("Error creating canvas:", 
-        error instanceof Error ? error : new Error(errorMessage),
-        { width, height, attempt: initAttempts }
-      );
+      logger.error("Error creating canvas: " + errorMessage, { 
+        width, 
+        height, 
+        attempt: initAttempts 
+      });
       
       if (onError && error instanceof Error) {
         onError(error);
