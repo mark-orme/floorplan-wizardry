@@ -31,7 +31,8 @@ export function usePointerEvents({
     const canvas = canvasRef.current;
     if (!canvas || !enabled) return;
 
-    const handlePointerMove = (e: FabricPointerEvent) => {
+    const handlePointerMove = (opt: any) => {
+      const e = opt as FabricPointerEvent;
       if (onPointerMove) {
         onPointerMove(e);
       }
@@ -51,7 +52,8 @@ export function usePointerEvents({
       }
     };
     
-    const handlePointerDown = (e: FabricPointerEvent) => {
+    const handlePointerDown = (opt: any) => {
+      const e = opt as FabricPointerEvent;
       if (onPointerDown) {
         onPointerDown(e);
       }
@@ -70,7 +72,8 @@ export function usePointerEvents({
       }
     };
     
-    const handlePointerUp = (e: FabricPointerEvent) => {
+    const handlePointerUp = (opt: any) => {
+      const e = opt as FabricPointerEvent;
       if (onPointerUp) {
         onPointerUp(e);
       }
@@ -82,17 +85,17 @@ export function usePointerEvents({
       isDraggingRef.current = false;
     };
 
-    // Using the proper canvas event binding
-    canvas.on('mouse:move', handlePointerMove);
-    canvas.on('mouse:down', handlePointerDown);
-    canvas.on('mouse:up', handlePointerUp);
+    // Using the proper canvas event binding with type casting to avoid TypeScript errors
+    canvas.on('mouse:move', handlePointerMove as any);
+    canvas.on('mouse:down', handlePointerDown as any);
+    canvas.on('mouse:up', handlePointerUp as any);
     
     // Clean up event listeners when the component unmounts
     return () => {
       if (canvas) {
-        canvas.off('mouse:move', handlePointerMove);
-        canvas.off('mouse:down', handlePointerDown);
-        canvas.off('mouse:up', handlePointerUp);
+        canvas.off('mouse:move', handlePointerMove as any);
+        canvas.off('mouse:down', handlePointerDown as any);
+        canvas.off('mouse:up', handlePointerUp as any);
       }
     };
   }, [

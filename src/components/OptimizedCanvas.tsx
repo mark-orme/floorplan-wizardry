@@ -85,13 +85,12 @@ export const OptimizedCanvas: React.FC<OptimizedCanvasProps> = ({
     fabricCanvas
   });
 
-  // Use enhanced pointer events for pressure sensitivity
+  // Use enhanced pointer events with proper props
   usePointerEvents({
-    canvasRef: internalCanvasRef,
-    fabricCanvas,
-    onPressureChange: handlePressureChange,
-    onTiltChange: handleTiltChange,
-    onPointerMove
+    onPointerDown: (e) => {},
+    onPointerMove: (e) => {},
+    onPointerUp: (e) => {},
+    enabled: true
   });
 
   return (

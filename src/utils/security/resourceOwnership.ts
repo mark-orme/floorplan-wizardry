@@ -1,144 +1,122 @@
 
 /**
- * Resource Ownership Verification Utilities
- * 
- * Provides functions to verify ownership of resources
- * to prevent unauthorized access.
+ * Resource Ownership Verification
+ * Provides functions to verify user ownership of resources
  */
 import { supabase } from '@/lib/supabase';
 import logger from '@/utils/logger';
+import { toast } from 'sonner';
 import { logSecurityEvent, AuditEventType } from '@/utils/audit/auditLogger';
 
 /**
- * Verify ownership of a resource
- * 
- * @param userId User ID to check
- * @param resourceType Type of resource (table name)
- * @param resourceId Resource ID
- * @returns Promise<boolean> indicating whether the user owns the resource
+ * Verify that a user owns a specific resource
+ * @param userId The ID of the user
+ * @param resourceTable The table where the resource is stored
+ * @param resourceId The ID of the resource
+ * @returns True if the user owns the resource, false otherwise
  */
 export async function verifyResourceOwnership(
   userId: string,
-  resourceType: string,
+  resourceTable: string,
   resourceId: string
 ): Promise<boolean> {
   try {
-    if (!userId) {
-      logger.warn('Ownership check attempted with no user ID');
+    if (!userId || !resourceTable || !resourceId) {
+      logger.warn('Missing required parameters for resource ownership verification');
       return false;
     }
-
-    // Generic verification that works across tables
-    const { data, error } = await supabase
-      .from(resourceType)
-      .select('user_id')
-      .eq('id', resourceId)
-      .single();
-
-    if (error) {
-      logger.error(`Error verifying ownership of ${resourceType}/${resourceId}:`, error);
-      return false;
-    }
-
-    const isOwner = data && data.user_id === userId;
     
-    // Log unauthorized access attempts
+    logger.info(`Verifying ownership of ${resourceTable}/${resourceId} for user ${userId}`);
+    
+    // Get the resource and check if user_id matches
+    const result = await supabase
+      .from(resourceTable)
+      .select()
+      .match({ id: resourceId });
+      
+    // Fixed: properly handle the response
+    if (result.error) {
+      logger.error(`Error fetching resource for ownership verification: ${result.error.message}`);
+      return false;
+    }
+    
+    if (!result.data || result.data.length === 0) {
+      logger.warn(`Resource ${resourceTable}/${resourceId} not found`);
+      return false;
+    }
+    
+    const resource = result.data[0];
+    
+    // Check if the resource has a user_id field
+    if (!resource.user_id) {
+      logger.warn(`Resource ${resourceTable}/${resourceId} does not have a user_id field`);
+      return false;
+    }
+    
+    const isOwner = resource.user_id === userId;
+    
     if (!isOwner) {
-      logSecurityEvent(
-        AuditEventType.SECURITY_VIOLATION,
+      // Log unauthorized access attempt
+      await logSecurityEvent(
+        AuditEventType.SECURITY_VIOLATION, 
         {
-          message: `Unauthorized resource access attempt`,
-          resourceType,
+          action: 'unauthorized-resource-access',
+          userId,
+          resourceTable,
           resourceId,
-          attemptedBy: userId
-        },
-        userId
+          ownerUserId: resource.user_id
+        }
       );
       
-      logger.warn(`Unauthorized access attempt: User ${userId} attempted to access ${resourceType}/${resourceId}`);
+      logger.warn(`User ${userId} attempted to access resource ${resourceTable}/${resourceId} owned by ${resource.user_id}`);
     }
-
+    
     return isOwner;
   } catch (error) {
-    logger.error('Error in ownership verification:', error);
+    logger.error('Error verifying resource ownership:', error);
     return false;
   }
 }
 
 /**
- * Check if a user has authorized access to a resource
- * Allows for more complex authorization rules beyond simple ownership
- * 
- * @param userId User ID to check
- * @param resourceType Type of resource
- * @param resourceId Resource ID
- * @param accessType Type of access (read, write, admin)
- * @returns Promise<boolean> indicating whether the user has the specified access
+ * Enforce resource ownership for an operation
+ * @param userId The ID of the user
+ * @param resourceTable The table where the resource is stored
+ * @param resourceId The ID of the resource
+ * @param operation The operation being performed
+ * @returns Whether the operation should proceed
  */
-export async function hasResourceAccess(
+export async function enforceResourceOwnership(
   userId: string,
-  resourceType: string,
+  resourceTable: string,
   resourceId: string,
-  accessType: 'read' | 'write' | 'admin'
+  operation: 'read' | 'update' | 'delete'
 ): Promise<boolean> {
   try {
-    // First check for direct ownership
-    const isOwner = await verifyResourceOwnership(userId, resourceType, resourceId);
+    const isOwner = await verifyResourceOwnership(userId, resourceTable, resourceId);
     
-    if (isOwner) {
-      return true; // Owner has all access rights
-    }
-    
-    // For non-owners, check shared access (in a real app, you'd have a permissions table)
-    // This is a simplified example - implement your specific access rules here
-    const { data, error } = await supabase
-      .from(`${resourceType}_permissions`)
-      .select('access_level')
-      .eq('resource_id', resourceId)
-      .eq('user_id', userId)
-      .maybeSingle();
+    if (!isOwner) {
+      // Show toast message
+      toast.error(`Unauthorized: You cannot ${operation} this resource`);
       
-    if (error) {
-      // If the table doesn't exist or there's an error, fail safe
-      logger.debug(`No ${resourceType}_permissions table or error checking permissions:`, error);
+      // Log security violation
+      await logSecurityEvent(
+        AuditEventType.SECURITY_VIOLATION,
+        {
+          action: `unauthorized-${operation}`,
+          userId,
+          resourceTable,
+          resourceId
+        }
+      );
+      
       return false;
     }
     
-    // Check if user has required access level
-    if (!data) {
-      return false; // No permissions record found
-    }
-    
-    // Simple access checking logic - customize as needed
-    const accessLevel = data.access_level;
-    
-    if (accessType === 'read') {
-      return ['read', 'write', 'admin'].includes(accessLevel);
-    } else if (accessType === 'write') {
-      return ['write', 'admin'].includes(accessLevel);
-    } else if (accessType === 'admin') {
-      return accessLevel === 'admin';
-    }
-    
-    return false;
+    return true;
   } catch (error) {
-    logger.error('Error checking resource access:', error);
+    logger.error(`Error enforcing resource ownership for ${operation}:`, error);
+    toast.error(`Error checking permissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
-}
-
-/**
- * Create a middleware-style function to verify resource access
- * 
- * @param resourceType Type of resource to check
- * @param accessType Type of access required
- * @returns Function that takes resourceId and returns a promise resolving to boolean
- */
-export function createResourceGuard(
-  resourceType: string,
-  accessType: 'read' | 'write' | 'admin' = 'read'
-) {
-  return async (resourceId: string, userId: string): Promise<boolean> => {
-    return hasResourceAccess(userId, resourceType, resourceId, accessType);
-  };
 }

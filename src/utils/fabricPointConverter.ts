@@ -1,20 +1,42 @@
 
-import { Point } from 'fabric';
+import { Point as FabricPoint } from 'fabric';
 
 /**
- * Convert a simple {x, y} object to a Fabric.js Point
- * @param point Simple point object with x and y coordinates
- * @returns Fabric.js Point instance
+ * Interface for a simple point object
  */
-export function toFabricPoint(point: {x: number, y: number}): Point {
-  return new Point(point.x, point.y);
+export interface Point {
+  x: number;
+  y: number;
 }
 
 /**
- * Convert a Fabric.js Point to a simple {x, y} object
- * @param point Fabric.js Point instance
- * @returns Simple object with x and y properties
+ * Convert a simple point object to a Fabric.js Point
+ * @param point The simple point object
+ * @returns A Fabric.js Point
  */
-export function fromFabricPoint(point: Point): {x: number, y: number} {
-  return {x: point.x, y: point.y};
+export function toFabricPoint(point: Point): FabricPoint {
+  return new FabricPoint(point.x, point.y);
+}
+
+/**
+ * Convert a Fabric.js Point to a simple point object
+ * @param fabricPoint The Fabric.js Point
+ * @returns A simple point object
+ */
+export function fromFabricPoint(fabricPoint: FabricPoint): Point {
+  return { x: fabricPoint.x, y: fabricPoint.y };
+}
+
+/**
+ * Determine if an object is a valid point
+ * @param point The object to check
+ * @returns Whether the object is a valid point
+ */
+export function isValidPoint(point: any): point is Point {
+  return (
+    point !== null &&
+    typeof point === 'object' &&
+    typeof point.x === 'number' &&
+    typeof point.y === 'number'
+  );
 }

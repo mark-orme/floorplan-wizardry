@@ -44,11 +44,14 @@ export const useSupabaseFloorPlans = () => {
       logger.info('Saving floor plans to Supabase');
 
       // Check for existing floor plans in Supabase
-      const { data: existingPlans, error: queryError } = await supabase
+      const queryResult = await supabase
         .from('floor_plans')
         .select()
         .eq('user_id', user.id)
         .single();
+        
+      const existingPlans = queryResult.data;
+      const queryError = queryResult.error;
         
       if (queryError && queryError.code !== 'PGRST116') {
         throw queryError;
@@ -103,11 +106,13 @@ export const useSupabaseFloorPlans = () => {
           .insert(saveData);
           
         // Log the create event
-        const { data } = await supabase
+        const selectResult = await supabase
           .from('floor_plans')
           .select('id')
           .eq('user_id', user.id)
           .single();
+          
+        const data = selectResult.data;
           
         if (data) {
           await logResourceEvent(
@@ -154,11 +159,14 @@ export const useSupabaseFloorPlans = () => {
     try {
       logger.info('Loading floor plans from Supabase');
       
-      const { data, error } = await supabase
+      const result = await supabase
         .from('floor_plans')
         .select()
         .eq('user_id', user.id)
         .single();
+
+      const data = result.data;
+      const error = result.error;
 
       if (error) {
         if (error.code === 'PGRST116') {

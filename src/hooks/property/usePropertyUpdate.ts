@@ -1,86 +1,74 @@
 
-import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Property, PropertyStatus } from '@/types/propertyTypes';
-import { toast } from 'sonner';
-import { usePropertyBase } from './usePropertyBase';
-
 /**
- * Hook for property update operations
+ * Custom hook for updating property data
  */
-export const usePropertyUpdate = () => {
-  const { user, isLoading, setIsLoading, checkAuthentication } = usePropertyBase();
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import logger from '@/utils/logger';
+import { PropertyStatus } from '@/lib/supabase';
+import { verifyResourceOwnership } from '@/utils/security/resourceOwnership';
 
-  /**
-   * Update a property
-   */
-  const updateProperty = useCallback(async (
-    id: string,
-    updates: Partial<Property>
-  ): Promise<Property | null> => {
-    if (!checkAuthentication()) return null;
+interface UsePropertyUpdateProps {
+  propertyId: string;
+  onSuccess?: () => void;
+}
 
-    setIsLoading(true);
+export function usePropertyUpdate({ propertyId, onSuccess }: UsePropertyUpdateProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  const updatePropertyStatus = async (newStatus: PropertyStatus) => {
+    if (!user) {
+      toast.error('You must be logged in to update a property');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      const updateData = {
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
+      // First check if user has permission to update this property
+      const isAuthorized = await verifyResourceOwnership(user.id, 'properties', propertyId);
       
-      const { data, error } = await supabase
+      if (!isAuthorized) {
+        throw new Error('You do not have permission to update this property');
+      }
+
+      // Now update the property status
+      const updateResult = await supabase
         .from('properties')
-        .update(updateData)
-        .eq('id', id)
-        .select();
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', propertyId);
 
-      if (error) throw error;
+      if (updateResult.error) {
+        throw new Error(updateResult.error.message);
+      }
 
-      toast.success('Property updated successfully');
-      return data?.[0] as Property;
-    } catch (error: any) {
-      toast.error(error.message || 'Error updating property');
-      console.error('Error updating property:', error);
-      return null;
+      logger.info(`Updated property ${propertyId} status to ${newStatus}`);
+      toast.success(`Property status updated to ${newStatus}`);
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      logger.error(`Error updating property status: ${errorMessage}`);
+      toast.error(`Failed to update property: ${errorMessage}`);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
-  }, [user, setIsLoading, checkAuthentication]);
-
-  /**
-   * Update property status
-   */
-  const updatePropertyStatus = useCallback(async (
-    id: string,
-    status: PropertyStatus
-  ): Promise<boolean> => {
-    if (!checkAuthentication()) return false;
-
-    try {
-      const updateData = {
-        status,
-        updated_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabase
-        .from('properties')
-        .update(updateData)
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success(`Property marked as ${status}`);
-      return true;
-    } catch (error: any) {
-      toast.error(error.message || 'Error updating property status');
-      console.error('Error updating property status:', error);
-      return false;
-    }
-  }, [checkAuthentication]);
+  };
 
   return {
-    isLoading,
-    updateProperty,
-    updatePropertyStatus
+    updatePropertyStatus,
+    isSubmitting,
+    error
   };
-};
+}

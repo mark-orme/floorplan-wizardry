@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toFabricPoint } from '@/utils/fabricPointConverter';
@@ -79,11 +80,15 @@ export const useOptimizedDrawing = ({
       const fabricPoint = toFabricPoint(point);
       
       if (isDown) {
-        // Correct the FabricJS v6 format
-        fabricCanvas.freeDrawingBrush.onMouseDown({ e: new Event('mousedown'), pointer: fabricPoint });
+        // Create dummy event
+        const dummyEvent = new Event('mousedown');
+        // Fixed: use proper object structure for fabric v6
+        fabricCanvas.freeDrawingBrush.onMouseDown({ e: dummyEvent, pointer: fabricPoint });
       } else {
-        // Correct the FabricJS v6 format
-        fabricCanvas.freeDrawingBrush.onMouseMove({ e: new Event('mousemove'), pointer: fabricPoint });
+        // Create dummy event
+        const dummyEvent = new Event('mousemove');
+        // Fixed: use proper object structure for fabric v6
+        fabricCanvas.freeDrawingBrush.onMouseMove({ e: dummyEvent, pointer: fabricPoint });
       }
     };
 

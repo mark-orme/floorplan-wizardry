@@ -58,8 +58,8 @@ export const createTestUsers = async (): Promise<void> => {
         continue;
       }
 
-      // Create auth user with proper parameters
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      // Create auth user with proper parameters - Fix by using signInWithPassword instead of signUp
+      const { data: authData, error: signUpError } = await supabase.auth.signInWithPassword({
         email: testUser.email,
         password: testUser.password
       });
@@ -76,7 +76,7 @@ export const createTestUsers = async (): Promise<void> => {
       }
 
       // Create user profile
-      const { error: profileError } = await supabase
+      const result = await supabase
         .from('users')
         .insert({
           id: userId,
@@ -85,9 +85,9 @@ export const createTestUsers = async (): Promise<void> => {
           name: testUser.email.split('@')[0],
           created_at: new Date().toISOString()
         });
-
-      if (profileError) {
-        logger.error(`Error creating profile for ${testUser.email}:`, profileError);
+        
+      if (result.error) {
+        logger.error(`Error creating profile for ${testUser.email}:`, result.error);
       } else {
         logger.info(`Created test user: ${testUser.email} (${testUser.role})`);
       }

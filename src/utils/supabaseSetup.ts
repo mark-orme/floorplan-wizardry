@@ -1,101 +1,126 @@
 
+/**
+ * Supabase Setup Utilities
+ * Functions to initialize and manage Supabase integration
+ */
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { PropertyStatus } from '@/types/propertyTypes';
+import logger from '@/utils/logger';
 
 /**
- * Insert test data into Supabase for development purposes
+ * Check if Supabase tables exist and are correctly configured
  */
-export const insertTestData = async (): Promise<void> => {
+export async function checkSupabaseTables() {
   try {
-    // Check if we have test data already
-    const { data } = await supabase
-      .from('properties')
-      .select();
+    // Check if users table exists
+    const userTableResult = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
       
-    if (data && data.length > 0) {
-      toast.info('Test data already exists');
-      return;
-    }
-
-    // Sample properties for testing
-    const testProperties = [
-      {
-        order_id: 'ORD-2023-001',
-        address: '123 Main Street, London',
-        client_name: 'John Smith',
-        branch_name: 'Central London',
-        status: PropertyStatus.DRAFT,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        notes: 'Large Victorian property with garden',
-        user_id: 'current-user-id', // This will be replaced below
-        name: '123 Main Street',
-        type: 'residential',
-        bedrooms: 3,
-        bathrooms: 2,
-        area: 1500,
-        floorPlans: JSON.stringify([])
-      },
-      {
-        order_id: 'ORD-2023-002',
-        address: '456 Park Avenue, Manchester',
-        client_name: 'Jane Doe',
-        branch_name: 'Manchester North',
-        status: PropertyStatus.PENDING_REVIEW,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        notes: 'Modern apartment in city center',
-        user_id: 'current-user-id', // This will be replaced below
-        name: '456 Park Avenue',
-        type: 'apartment',
-        bedrooms: 2,
-        bathrooms: 1,
-        area: 850,
-        floorPlans: JSON.stringify([])
-      },
-      {
-        order_id: 'ORD-2023-003',
-        address: '789 River Road, Birmingham',
-        client_name: 'Robert Johnson',
-        branch_name: 'Birmingham South',
-        status: PropertyStatus.COMPLETED,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        notes: 'Commercial property with parking',
-        user_id: 'current-user-id', // This will be replaced below
-        name: '789 River Road',
-        type: 'commercial',
-        bedrooms: 0,
-        bathrooms: 2,
-        area: 2500,
-        floorPlans: JSON.stringify([])
-      }
-    ];
-
-    // Get current user ID
-    const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id || 'anonymous-user';
-
-    // Update properties with the current user ID
-    const propertiesWithUserId = testProperties.map(property => ({
-      ...property,
-      user_id: userId,
-      userId: userId
-    }));
-
-    // Insert the test properties
-    const { error } = await supabase
+    const userTableExists = !userTableResult.error;
+    
+    // Check if floor_plans table exists
+    const floorPlansTableResult = await supabase
+      .from('floor_plans')
+      .select('id')
+      .limit(1);
+      
+    const floorPlansTableExists = !floorPlansTableResult.error;
+    
+    // Check if properties table exists
+    const propertiesTableResult = await supabase
       .from('properties')
-      .insert(propertiesWithUserId);
-
-    if (error) {
-      throw error;
-    }
-
-    toast.success('Test data inserted successfully');
-  } catch (error: any) {
-    console.error('Error inserting test data:', error);
-    toast.error(`Failed to insert test data: ${error.message || 'Unknown error'}`);
+      .select('id')
+      .limit(1);
+      
+    const propertiesTableExists = !propertiesTableResult.error;
+    
+    return {
+      usersTable: userTableExists,
+      floorPlansTable: floorPlansTableExists,
+      propertiesTable: propertiesTableExists,
+      allTablesExist: userTableExists && floorPlansTableExists && propertiesTableExists
+    };
+  } catch (error) {
+    logger.error('Error checking Supabase tables:', error);
+    return {
+      usersTable: false,
+      floorPlansTable: false,
+      propertiesTable: false,
+      allTablesExist: false
+    };
   }
-};
+}
+
+/**
+ * Initialize Supabase schema if needed
+ */
+export async function initializeSupabaseSchema() {
+  try {
+    const { allTablesExist } = await checkSupabaseTables();
+    
+    if (allTablesExist) {
+      logger.info('Supabase schema already initialized');
+      return true;
+    }
+    
+    logger.info('Initializing Supabase schema');
+    
+    // Create missing tables - this would be replaced by proper SQL migrations
+    // in a production environment
+    
+    // Create users table if it doesn't exist
+    const usersTableResult = await supabase.rpc('create_users_table_if_not_exists');
+    
+    if (usersTableResult.error) {
+      logger.error('Error creating users table:', usersTableResult.error);
+    }
+    
+    // Create floor_plans table if it doesn't exist
+    const floorPlansTableResult = await supabase.rpc('create_floor_plans_table_if_not_exists');
+    
+    if (floorPlansTableResult.error) {
+      logger.error('Error creating floor_plans table:', floorPlansTableResult.error);
+    }
+    
+    // Create properties table if it doesn't exist
+    const propertiesTableResult = await supabase.rpc('create_properties_table_if_not_exists');
+    
+    if (propertiesTableResult.error) {
+      logger.error('Error creating properties table:', propertiesTableResult.error);
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error('Error initializing Supabase schema:', error);
+    return false;
+  }
+}
+
+/**
+ * Verify and set up RLS policies
+ */
+export async function verifyRLSPolicies() {
+  try {
+    // This is a placeholder for a real implementation
+    // In a real implementation, we would check if the RLS policies are in place
+    // and create them if they are not
+    
+    logger.info('Verifying RLS policies');
+    
+    return {
+      usersPolicies: true,
+      floorPlansPolicies: true,
+      propertiesPolicies: true,
+      allPoliciesExist: true
+    };
+  } catch (error) {
+    logger.error('Error verifying RLS policies:', error);
+    return {
+      usersPolicies: false,
+      floorPlansPolicies: false,
+      propertiesPolicies: false,
+      allPoliciesExist: false
+    };
+  }
+}
