@@ -1,140 +1,86 @@
 
 /**
- * Canvas mock utilities
- * Provides typed mock objects for testing canvas components
+ * Canvas mock utilities for testing
  * @module utils/canvasMockUtils
  */
 import { vi } from 'vitest';
-import type { Canvas as FabricCanvas } from 'fabric';
-
-/**
- * Interface for typed canvas mock
- */
-export interface TypedCanvasMock {
-  add: jest.Mock | ViJestMock;
-  remove: jest.Mock | ViJestMock;
-  renderAll: jest.Mock | ViJestMock;
-  isDrawingMode: boolean;
-  freeDrawingBrush: {
-    color: string;
-    width: number;
-  };
-  getObjects: jest.Mock | ViJestMock;
-  clear: jest.Mock | ViJestMock;
-  setWidth: jest.Mock | ViJestMock;
-  setHeight: jest.Mock | ViJestMock;
-  setZoom: jest.Mock | ViJestMock;
-  getZoom: jest.Mock | ViJestMock;
-  viewportTransform: number[];
-  selection: boolean;
-  on: jest.Mock | ViJestMock;
-  off: jest.Mock | ViJestMock;
-  toJSON: jest.Mock | ViJestMock;
-  loadFromJSON: jest.Mock | ViJestMock;
-  requestRenderAll: jest.Mock | ViJestMock;
-  getHandlers?: (eventName: string) => Function[];
-  triggerEvent?: (eventName: string, eventData: any) => void;
-  withImplementation?: jest.Mock | ViJestMock;
-  [key: string]: any;
-}
-
-type ViJestMock = ReturnType<typeof vi.fn>;
 
 /**
  * Create a typed mock canvas for testing
- * @returns A canvas mock with all required methods
+ * @returns Mock canvas object
  */
-export const createTypedMockCanvas = (): TypedCanvasMock => {
-  const eventHandlers: Record<string, Function[]> = {};
-  
-  const mockCanvas = {
+export const createTypedMockCanvas = () => {
+  return {
     add: vi.fn(),
     remove: vi.fn(),
-    renderAll: vi.fn(),
-    isDrawingMode: false,
-    freeDrawingBrush: {
-      color: '#000000',
-      width: 2
-    },
-    getObjects: vi.fn().mockReturnValue([]),
     clear: vi.fn(),
+    renderAll: vi.fn(),
     setWidth: vi.fn(),
     setHeight: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    getContext: vi.fn(),
+    getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
+    setBackgroundColor: vi.fn(),
     setZoom: vi.fn(),
     getZoom: vi.fn().mockReturnValue(1),
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    selection: true,
-    on: vi.fn().mockImplementation((eventName: string, handler: Function) => {
-      if (!eventHandlers[eventName]) {
-        eventHandlers[eventName] = [];
-      }
-      eventHandlers[eventName].push(handler);
-      return mockCanvas;
-    }),
+    on: vi.fn(),
     off: vi.fn(),
-    toJSON: vi.fn().mockReturnValue({}),
-    loadFromJSON: vi.fn().mockImplementation((json, callback) => {
-      if (callback) callback();
-      return mockCanvas;
-    }),
-    requestRenderAll: vi.fn(),
-    // Helper methods for tests
-    getHandlers: (eventName: string) => eventHandlers[eventName] || [],
-    triggerEvent: (eventName: string, eventData: any) => {
-      if (eventHandlers[eventName]) {
-        eventHandlers[eventName].forEach(handler => handler(eventData));
-      }
+    fire: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    dispose: vi.fn(),
+    isDrawingMode: false,
+    freeDrawingBrush: {
+      color: '#000',
+      width: 1
     },
-    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-      if (callback && typeof callback === 'function') {
-        try {
-          const result = callback();
-          if (result instanceof Promise) {
-            return result.then(() => Promise.resolve());
-          }
-        } catch (error) {
-          console.error('Error in mock withImplementation:', error);
-        }
-      }
-      return Promise.resolve();
+    viewportTransform: [1, 0, 0, 1, 0, 0],
+    selection: true
+  };
+};
+
+/**
+ * Create a mock canvas with 'withImplementation' method
+ * @returns Mock canvas with withImplementation
+ */
+export const createWithImplementationMock = () => {
+  const mock = createTypedMockCanvas();
+  
+  return {
+    ...mock,
+    withImplementation: vi.fn().mockImplementation((callback) => {
+      callback(mock);
+      return Promise.resolve(mock);
     })
   };
-  
-  return mockCanvas;
 };
 
 /**
- * Create a mock with withImplementation method
- * @returns A canvas mock with withImplementation method
+ * Setup a Fabric mock for use in testing
+ * @returns Mock fabric object
  */
-export const createWithImplementationMock = (): TypedCanvasMock => {
-  const canvas = createTypedMockCanvas();
-  
-  // Add a strongly typed withImplementation method
-  canvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-    if (callback && typeof callback === 'function') {
-      try {
-        const result = callback();
-        if (result instanceof Promise) {
-          return result.then(() => Promise.resolve());
-        }
-      } catch (error) {
-        console.error('Error in mock withImplementation:', error);
-      }
-    }
-    return Promise.resolve();
-  });
-  
-  return canvas;
+export const setupFabricMock = () => {
+  return {
+    Canvas: vi.fn().mockImplementation(() => createTypedMockCanvas()),
+    IText: vi.fn().mockImplementation(() => ({})),
+    Line: vi.fn().mockImplementation(() => ({})),
+    Object: vi.fn().mockImplementation(() => ({})),
+    Point: vi.fn().mockImplementation((x, y) => ({ x, y }))
+  };
 };
 
 /**
- * Assert that a value is a mock canvas
- * @param value The value to check
- * @returns The value as a mock canvas, casting only if it matches the interface
+ * Create a mock grid layer reference
+ * @returns Mock grid layer reference
  */
-export const asMockCanvas = (value: any): FabricCanvas => {
-  // This function only performs a type assertion, not actual runtime validation
-  // In real code, you would add validation here
-  return value as unknown as FabricCanvas;
+export const createMockGridLayerRef = () => {
+  return { current: [] };
+};
+
+/**
+ * Create a mock fabric canvas reference
+ * @returns Mock fabric canvas reference
+ */
+export const createMockFabricCanvasRef = () => {
+  return { current: createTypedMockCanvas() };
 };

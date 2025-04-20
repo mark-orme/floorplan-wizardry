@@ -53,9 +53,16 @@ export interface DebugInfoState {
   eventHandlersSet?: boolean;
   gridRendered?: boolean;
   toolsInitialized?: boolean;
+  brushInitialized?: boolean; // Added for DebugInfo component
   fps?: number;
   lastRefresh?: number;
   canvasCreated?: boolean;
+  canvasWidth?: number; // Added for DebugInfo component
+  canvasHeight?: number; // Added for DebugInfo component
+  devicePixelRatio?: number; // Added for DebugInfo component
+  showDebugInfo?: boolean; // Added for CanvasDebugWrapper
+  lastError?: string; // Added for DebugInfo component
+  lastErrorTime?: number; // Added for DebugInfo component
   
   // Performance metrics
   performanceStats?: {
@@ -103,9 +110,16 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   eventHandlersSet: false,
   gridRendered: false,
   toolsInitialized: false,
+  brushInitialized: false,
   fps: 0,
   lastRefresh: Date.now(),
   canvasCreated: false,
+  canvasWidth: 0,
+  canvasHeight: 0,
+  devicePixelRatio: window.devicePixelRatio || 1,
+  showDebugInfo: false,
+  lastError: '',
+  lastErrorTime: 0,
   // Performance metrics
   performanceStats: {
     renderTime: 0,

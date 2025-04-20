@@ -4,7 +4,7 @@
  * Provides mock canvas objects for test use
  * @module tests/utils/canvasMocks
  */
-import { createTypedMockCanvas, createWithImplementationMock } from '@/utils/canvasMockUtils';
+import { createTypedMockCanvas, createWithImplementationMock, setupFabricMock, createMockGridLayerRef, createMockFabricCanvasRef } from '@/utils/canvasMockUtils';
 import { vi } from 'vitest';
 
 /**
@@ -60,3 +60,6 @@ export const createMockPointerEvent = (x = 0, y = 0) => {
     pressure: 1.0
   };
 };
+
+// Export additional mock utilities
+export { setupFabricMock, createMockGridLayerRef, createMockFabricCanvasRef };

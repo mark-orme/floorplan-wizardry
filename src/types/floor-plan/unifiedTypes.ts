@@ -4,7 +4,15 @@
  * @module types/floor-plan/unifiedTypes
  */
 import { v4 as uuidv4 } from 'uuid';
-import { PaperSize } from './basicTypes';
+
+// Paper size enum (exported to fix import errors)
+export enum PaperSize {
+  A4 = 'A4',
+  A3 = 'A3',
+  Letter = 'Letter',
+  Legal = 'Legal',
+  Custom = 'Custom'
+}
 
 // Point structure
 export interface Point {
@@ -13,21 +21,21 @@ export interface Point {
 }
 
 // Stroke type literals
-export type StrokeTypeLiteral = 'freehand' | 'line' | 'wall' | 'room' | 'door' | 'window' | 'furniture' | 'annotation';
+export type StrokeTypeLiteral = 'freehand' | 'line' | 'wall' | 'room' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline';
 
 // Room type literals
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other' | 'dining' | 'hallway';
 
 // Type guards for stroke and room types
 export const asStrokeType = (type: string): StrokeTypeLiteral => {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room', 'door', 'window', 'furniture', 'annotation'];
+  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room', 'door', 'window', 'furniture', 'annotation', 'polyline'];
   return validTypes.includes(type as StrokeTypeLiteral) 
     ? type as StrokeTypeLiteral 
     : 'line';
 };
 
 export const asRoomType = (type: string): RoomTypeLiteral => {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other', 'dining', 'hallway'];
   return validTypes.includes(type as RoomTypeLiteral) 
     ? type as RoomTypeLiteral 
     : 'other';
@@ -161,6 +169,22 @@ export const createTestRoom = (overrides: Partial<Room> = {}): Room => {
   };
 };
 
+export const createCompleteMetadata = (overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata => {
+  const now = new Date().toISOString();
+  
+  return {
+    version: overrides.version || "1.0",
+    author: overrides.author || "Test User",
+    dateCreated: overrides.dateCreated || now,
+    lastModified: overrides.lastModified || now,
+    notes: overrides.notes || "",
+    createdAt: overrides.createdAt || now,
+    updatedAt: overrides.updatedAt || now,
+    paperSize: overrides.paperSize || PaperSize.A4,
+    level: overrides.level || 0
+  };
+};
+
 export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
   const now = new Date().toISOString();
   
@@ -178,17 +202,9 @@ export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPl
     gia: overrides.gia || 0,
     level: overrides.level || 0,
     index: overrides.index || 0,
-    metadata: overrides.metadata || {
-      version: "1.0",
-      author: "Test User",
-      dateCreated: now,
-      lastModified: now,
-      notes: "",
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0
-    },
+    metadata: overrides.metadata || createCompleteMetadata({
+      level: overrides.level || 0
+    }),
     data: overrides.data || {},
     userId: overrides.userId || 'test-user'
   };
