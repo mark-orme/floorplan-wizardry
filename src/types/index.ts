@@ -5,7 +5,7 @@
  */
 
 // Export Point type
-export type { Point } from './core/Point';
+export type { Point } from './floor-plan/unifiedTypes';
 
 // Export debug info types
 export type { DebugInfoState } from './core/DebugInfo';

@@ -11,7 +11,9 @@ import {
   Room, 
   FloorPlan,
   StrokeTypeLiteral,
-  RoomTypeLiteral
+  RoomTypeLiteral,
+  asStrokeType,
+  asRoomType
 } from '@/types/floor-plan/unifiedTypes';
 
 /**
@@ -114,9 +116,9 @@ export function validateRoom(room: any): boolean {
   
   // Use our type guard to check if the type is valid
   if (room.type && typeof room.type === 'string') {
-    const validTypes = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+    const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
     
-    if (!validTypes.includes(room.type)) {
+    if (!validTypes.includes(room.type as RoomTypeLiteral)) {
       issues.push(`Invalid type: "${room.type}". Valid types are: ${validTypes.join(', ')}`);
     }
   }
