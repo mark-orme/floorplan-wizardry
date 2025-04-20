@@ -69,28 +69,6 @@ export interface DebugInfoState {
     maxFrameTime?: number;
     longFrames?: number;
   };
-  
-  // Canvas properties
-  canvasWidth?: number;
-  canvasHeight?: number;
-  devicePixelRatio?: number;
-  
-  // Error tracking
-  lastError?: string;
-  lastErrorTime?: number;
-  
-  // UI flags
-  showDebugInfo?: boolean;
-  
-  // Brush state
-  brushInitialized?: boolean;
-  
-  // Performance summary
-  performance?: {
-    fps: number;
-    memory: number;
-    renderTime: number;
-  };
 }
 
 /**
@@ -128,7 +106,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   fps: 0,
   lastRefresh: Date.now(),
   canvasCreated: false,
-  // Add newly required fields for compatibility
+  // Performance metrics
   performanceStats: {
     renderTime: 0,
     eventHandlingTime: 0,
@@ -139,17 +117,5 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
     frameTime: 0,
     maxFrameTime: 0,
     longFrames: 0
-  },
-  canvasWidth: 0,
-  canvasHeight: 0,
-  devicePixelRatio: window.devicePixelRatio || 1,
-  lastError: '',
-  lastErrorTime: 0,
-  showDebugInfo: false,
-  brushInitialized: false,
-  performance: {
-    fps: 0,
-    memory: 0,
-    renderTime: 0
   }
 };

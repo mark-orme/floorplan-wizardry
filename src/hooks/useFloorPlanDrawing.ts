@@ -83,10 +83,10 @@ export const useFloorPlanDrawing = ({
   const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
     if (!canvas) return;
     
-    // Calculate length if not provided
+    // Calculate length for the wall
     const completeWall: Wall = {
       ...wall,
-      length: wall.length || calculateWallLength(wall.start, wall.end)
+      length: calculateWallLength(wall.start, wall.end)
     };
     
     // Add the wall to the canvas

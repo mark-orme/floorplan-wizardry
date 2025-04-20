@@ -26,6 +26,33 @@ export const createDebugInfoState = (): DebugInfoState => {
       gridEnabled: true,
       snapToGridEnabled: false,
       debugLoggingEnabled: false
+    },
+    // Additional properties for compatibility
+    canvasInitialized: false,
+    dimensionsSet: false,
+    gridCreated: false,
+    canvasEventsRegistered: false,
+    canvasReady: false,
+    gridObjectCount: 0,
+    visibleObjectCount: 0,
+    zoomLevel: 1,
+    gridVisible: true,
+    objectsSelectedCount: 0,
+    eventHandlersSet: false,
+    gridRendered: false,
+    toolsInitialized: false,
+    fps: 0,
+    lastRefresh: Date.now(),
+    performanceStats: {
+      renderTime: 0,
+      eventHandlingTime: 0,
+      objectCreationTime: 0,
+      lastFrameTime: 0,
+      fps: 0,
+      droppedFrames: 0,
+      frameTime: 0,
+      maxFrameTime: 0,
+      longFrames: 0
     }
   };
 };
@@ -72,6 +99,10 @@ export const updateDebugInfo = (
     canvasDimensions: {
       ...prevState.canvasDimensions,
       ...(updates.canvasDimensions || {})
+    },
+    performanceStats: {
+      ...prevState.performanceStats,
+      ...(updates.performanceStats || {})
     }
   };
 };

@@ -34,6 +34,7 @@ export interface TypedCanvasMock {
   requestRenderAll: jest.Mock | ViJestMock;
   getHandlers?: (eventName: string) => Function[];
   triggerEvent?: (eventName: string, eventData: any) => void;
+  withImplementation?: jest.Mock | ViJestMock;
   [key: string]: any;
 }
 
@@ -83,10 +84,48 @@ export const createTypedMockCanvas = (): TypedCanvasMock => {
       if (eventHandlers[eventName]) {
         eventHandlers[eventName].forEach(handler => handler(eventData));
       }
-    }
+    },
+    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+      if (callback && typeof callback === 'function') {
+        try {
+          const result = callback();
+          if (result instanceof Promise) {
+            return result.then(() => Promise.resolve());
+          }
+        } catch (error) {
+          console.error('Error in mock withImplementation:', error);
+        }
+      }
+      return Promise.resolve();
+    })
   };
   
   return mockCanvas;
+};
+
+/**
+ * Create a mock with withImplementation method
+ * @returns A canvas mock with withImplementation method
+ */
+export const createWithImplementationMock = (): TypedCanvasMock => {
+  const canvas = createTypedMockCanvas();
+  
+  // Add a strongly typed withImplementation method
+  canvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+    if (callback && typeof callback === 'function') {
+      try {
+        const result = callback();
+        if (result instanceof Promise) {
+          return result.then(() => Promise.resolve());
+        }
+      } catch (error) {
+        console.error('Error in mock withImplementation:', error);
+      }
+    }
+    return Promise.resolve();
+  });
+  
+  return canvas;
 };
 
 /**

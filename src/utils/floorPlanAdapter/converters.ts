@@ -1,152 +1,91 @@
 
 /**
- * Floor plan conversion utilities
- * Handles converting between different floor plan formats
+ * Floor plan converters
+ * Converts between different floor plan formats
  * @module utils/floorPlanAdapter/converters
  */
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
+import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  FloorPlan, 
-  Wall, 
-  Room, 
-  Stroke, 
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
-  Point
-} from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Calculate the length of a wall from start and end points
- * @param start Start point
- * @param end End point
- * @returns Length of the wall
+ * Adapt a partial floor plan to a complete floor plan
+ * @param partial Partial floor plan
+ * @returns Complete floor plan
  */
-export function calculateWallLength(start: Point, end: Point): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-/**
- * Convert wall data to a valid Wall object
- * @param wallData Wall data to convert
- * @returns Converted Wall object
- */
-export function convertToWall(wallData: any): Wall {
-  // Calculate length if it's not provided
-  const length = wallData.length !== undefined 
-    ? wallData.length 
-    : calculateWallLength(wallData.start, wallData.end);
-  
-  // Ensure roomIds is an array
-  const roomIds = Array.isArray(wallData.roomIds) ? wallData.roomIds : [];
-  
-  // Set default color if not provided
-  const color = wallData.color || '#000000';
-  
-  return {
-    id: wallData.id || uuidv4(),
-    start: wallData.start,
-    end: wallData.end,
-    thickness: wallData.thickness || 2,
-    length,
-    color,
-    roomIds,
-    height: wallData.height,
-    points: wallData.points
-  };
-}
-
-/**
- * Convert room data to a valid Room object
- * @param roomData Room data to convert
- * @returns Converted Room object
- */
-export function convertToRoom(roomData: any): Room {
-  // Ensure type is valid
-  const type = (roomData.type && typeof roomData.type === 'string')
-    ? roomData.type as RoomTypeLiteral
-    : 'other';
-  
-  return {
-    id: roomData.id || uuidv4(),
-    name: roomData.name || 'Unnamed Room',
-    type,
-    points: roomData.points || [],
-    color: roomData.color || '#ffffff',
-    area: roomData.area,
-    perimeter: roomData.perimeter,
-    center: roomData.center,
-    labelPosition: roomData.labelPosition
-  };
-}
-
-/**
- * Convert stroke data to a valid Stroke object
- * @param strokeData Stroke data to convert
- * @returns Converted Stroke object
- */
-export function convertToStroke(strokeData: any): Stroke {
-  // Ensure type is valid
-  const type = (strokeData.type && typeof strokeData.type === 'string')
-    ? strokeData.type as StrokeTypeLiteral
-    : 'line';
-  
-  return {
-    id: strokeData.id || uuidv4(),
-    points: strokeData.points || [],
-    type,
-    color: strokeData.color || '#000000',
-    thickness: strokeData.thickness || 2,
-    width: strokeData.width || strokeData.thickness || 2
-  };
-}
-
-/**
- * Convert floor plan data to a valid FloorPlan object
- * @param floorPlanData Floor plan data to convert
- * @returns Converted FloorPlan object
- */
-export function convertToFloorPlan(floorPlanData: any): FloorPlan {
+export const adaptFloorPlan = (partial: Partial<AppFloorPlan>): AppFloorPlan => {
   const now = new Date().toISOString();
   
-  // Ensure required properties exist
-  const metadata = floorPlanData.metadata || {};
-  const defaultMetadata = {
-    createdAt: now,
-    updatedAt: now,
-    paperSize: 'A4',
-    level: 0,
-    version: '1.0',
-    author: '',
-    dateCreated: now,
-    lastModified: now,
-    notes: ''
-  };
-  
-  // Combine with defaults
-  const fullMetadata = {
-    ...defaultMetadata,
-    ...metadata
-  };
-  
   return {
-    id: floorPlanData.id || uuidv4(),
-    name: floorPlanData.name || 'Untitled Floor Plan',
-    label: floorPlanData.label || floorPlanData.name || 'Untitled Floor Plan',
-    walls: (floorPlanData.walls || []).map(convertToWall),
-    rooms: (floorPlanData.rooms || []).map(convertToRoom),
-    strokes: (floorPlanData.strokes || []).map(convertToStroke),
-    canvasData: floorPlanData.canvasData || null,
-    canvasJson: floorPlanData.canvasJson || null,
-    createdAt: floorPlanData.createdAt || now,
-    updatedAt: floorPlanData.updatedAt || now,
-    gia: floorPlanData.gia || 0,
-    level: floorPlanData.level || 0,
-    index: floorPlanData.index !== undefined ? floorPlanData.index : floorPlanData.level || 0,
-    metadata: fullMetadata,
-    // Required properties
-    data: floorPlanData.data || {},
-    userId: floorPlanData.userId || 'default-user'
+    id: partial.id || uuidv4(),
+    name: partial.name || 'Untitled Floor Plan',
+    label: partial.label || partial.name || 'Untitled Floor Plan',
+    walls: partial.walls || [],
+    rooms: partial.rooms || [],
+    strokes: partial.strokes || [],
+    canvasData: partial.canvasData || null,
+    canvasJson: partial.canvasJson || null,
+    createdAt: partial.createdAt || now,
+    updatedAt: partial.updatedAt || now,
+    gia: partial.gia || 0,
+    level: partial.level || 0,
+    index: partial.index || partial.level || 0,
+    metadata: partial.metadata || createCompleteMetadata({
+      level: partial.level || 0
+    }),
+    data: partial.data || {},
+    userId: partial.userId || 'unknown'
   };
-}
+};
+
+/**
+ * Convert app floor plan to core floor plan
+ * @param appFloorPlan App floor plan
+ * @returns Core floor plan
+ */
+export const appToCoreFloorPlan = (appFloorPlan: AppFloorPlan): CoreFloorPlan => {
+  // In a real implementation, this would convert between types
+  // For now, we're just type-casting
+  return appFloorPlan as unknown as CoreFloorPlan;
+};
+
+/**
+ * Convert multiple app floor plans to core floor plans
+ * @param appFloorPlans Array of app floor plans
+ * @returns Array of core floor plans
+ */
+export const appToCoreFloorPlans = (appFloorPlans: AppFloorPlan[]): CoreFloorPlan[] => {
+  return appFloorPlans.map(appToCoreFloorPlan);
+};
+
+/**
+ * Convert core floor plan to app floor plan
+ * @param coreFloorPlan Core floor plan
+ * @returns App floor plan
+ */
+export const coreToAppFloorPlan = (coreFloorPlan: CoreFloorPlan): AppFloorPlan => {
+  // In a real implementation, this would convert between types
+  // For now, we're just type-casting and adding required fields
+  const appFloorPlan = coreFloorPlan as unknown as AppFloorPlan;
+  
+  // Ensure required fields are present
+  if (!appFloorPlan.data) {
+    appFloorPlan.data = {};
+  }
+  
+  if (!appFloorPlan.userId) {
+    appFloorPlan.userId = 'unknown';
+  }
+  
+  return appFloorPlan;
+};
+
+/**
+ * Convert multiple core floor plans to app floor plans
+ * @param coreFloorPlans Array of core floor plans
+ * @returns Array of app floor plans
+ */
+export const coreToAppFloorPlans = (coreFloorPlans: CoreFloorPlan[]): AppFloorPlan[] => {
+  return coreFloorPlans.map(coreToAppFloorPlan);
+};

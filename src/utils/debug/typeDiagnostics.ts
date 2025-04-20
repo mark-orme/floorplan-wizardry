@@ -11,7 +11,8 @@ import {
   Room, 
   StrokeTypeLiteral, 
   RoomTypeLiteral,
-  FloorPlanMetadata
+  FloorPlanMetadata,
+  Point
 } from '@/types/floor-plan/unifiedTypes';
 
 /**
@@ -20,7 +21,7 @@ import {
  * @returns Whether the value is a valid StrokeTypeLiteral
  */
 export const isValidStrokeType = (type: unknown): type is StrokeTypeLiteral => {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room'];
+  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room', 'door', 'window', 'furniture', 'annotation'];
   return typeof type === 'string' && validTypes.includes(type as StrokeTypeLiteral);
 };
 
@@ -46,7 +47,9 @@ export const isValidFloorPlan = (obj: unknown): obj is FloorPlan => {
     'strokes' in obj && 
     'walls' in obj && 
     'rooms' in obj && 
-    'metadata' in obj;
+    'metadata' in obj &&
+    'data' in obj &&
+    'userId' in obj;
 };
 
 /**
@@ -61,7 +64,9 @@ export const isValidWall = (obj: unknown): obj is Wall => {
     'start' in obj && 
     'end' in obj && 
     'thickness' in obj && 
-    'length' in obj;
+    'length' in obj &&
+    'color' in obj &&
+    'roomIds' in obj;
 };
 
 /**
@@ -120,6 +125,55 @@ export const logTypeInfo = (obj: unknown, label?: string): void => {
     isStroke: isValidStroke(obj),
     value: obj
   });
+};
+
+/**
+ * Validate and report issues with a floor plan
+ * @param floorPlan The floor plan to validate
+ * @returns A report of validation issues
+ */
+export const validateFloorPlanWithReporting = (floorPlan: unknown): { valid: boolean; issues: string[] } => {
+  const issues: string[] = [];
+  
+  if (!isValidFloorPlan(floorPlan)) {
+    issues.push('Not a valid floor plan object');
+    return { valid: false, issues };
+  }
+  
+  // Check required properties
+  if (!floorPlan.id) issues.push('Missing id');
+  if (!Array.isArray(floorPlan.walls)) issues.push('Walls is not an array');
+  if (!Array.isArray(floorPlan.rooms)) issues.push('Rooms is not an array');
+  if (!Array.isArray(floorPlan.strokes)) issues.push('Strokes is not an array');
+  if (!floorPlan.metadata) issues.push('Missing metadata');
+  if (!floorPlan.data) issues.push('Missing data property');
+  if (!floorPlan.userId) issues.push('Missing userId property');
+  
+  // Validate walls
+  floorPlan.walls.forEach((wall: unknown, index: number) => {
+    if (!isValidWall(wall)) {
+      issues.push(`Wall at index ${index} is invalid`);
+    }
+  });
+  
+  // Validate rooms
+  floorPlan.rooms.forEach((room: unknown, index: number) => {
+    if (!isValidRoom(room)) {
+      issues.push(`Room at index ${index} is invalid`);
+    }
+  });
+  
+  // Validate strokes
+  floorPlan.strokes.forEach((stroke: unknown, index: number) => {
+    if (!isValidStroke(stroke)) {
+      issues.push(`Stroke at index ${index} is invalid`);
+    }
+  });
+  
+  return {
+    valid: issues.length === 0,
+    issues
+  };
 };
 
 /**
