@@ -1,4 +1,3 @@
-
 /**
  * Simplified Canvas interface for testing
  * Contains only the methods needed for testing, reducing type errors
@@ -50,6 +49,14 @@ export interface ICanvasMock {
   
   // CRITICAL FIX: Ensure withImplementation explicitly returns Promise<void>
   withImplementation?: (impl: Function) => Promise<void>;
+
+  // Add proper typing for performance monitoring
+  __lastRenderTime?: number;
+  
+  // Add proper typing for Supabase query methods
+  eq?: (field: string, value: any) => any;
+  single?: () => Promise<{ data: any; error: any }>;
+  order?: (column: string, options?: { ascending?: boolean }) => any;
 }
 
 /**
@@ -86,6 +93,10 @@ export function createMinimalCanvasMock(): ICanvasMock {
     getZoom: jest.fn<number, []>().mockReturnValue(1),
     viewportTransform: [1, 0, 0, 1, 0, 0],
     // CRITICAL FIX: Ensure implementation returns Promise<void>
-    withImplementation: jest.fn().mockImplementation((impl) => Promise.resolve())
+    withImplementation: jest.fn().mockImplementation(() => Promise.resolve()),
+    __lastRenderTime: Date.now(),
+    eq: jest.fn(),
+    single: jest.fn(),
+    order: jest.fn()
   };
 }
