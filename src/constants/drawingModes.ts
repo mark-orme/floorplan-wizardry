@@ -8,7 +8,7 @@ export enum DrawingMode {
   ERASE = 'ERASE',
   HAND = 'HAND',
   WALL = 'WALL',
-  PENCIL = 'PENCIL', // Added PENCIL mode
+  PENCIL = 'PENCIL',
   ROOM = 'ROOM',
   TEXT = 'TEXT',
   SHAPE = 'SHAPE',
@@ -16,5 +16,11 @@ export enum DrawingMode {
   RECTANGLE = 'RECTANGLE',
   CIRCLE = 'CIRCLE',
   DOOR = 'DOOR',
-  WINDOW = 'WINDOW'
+  WINDOW = 'WINDOW',
+  
+  // Add missing modes referenced in errors
+  STRAIGHT_LINE = 'STRAIGHT_LINE',
+  PAN = 'PAN',
+  ERASER = 'ERASER',
+  MEASURE = 'MEASURE'
 }

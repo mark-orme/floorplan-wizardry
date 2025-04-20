@@ -5,13 +5,12 @@
  * Provides encrypted storage for sensitive data using the Web Crypto API
  */
 import { encryptData, decryptData, generateEncryptionKey } from '../security/dataEncryption';
+import { getEncryptionKey } from '../security/securityInit';
 import logger from '@/utils/logger';
 
 // Database name and store name
 const DB_NAME = 'secure_floor_app';
 const STORE_NAME = 'encrypted_data';
-
-let encryptionKey: CryptoKey | null = null;
 
 /**
  * Initialize the database and create object stores
@@ -47,9 +46,11 @@ async function getDatabase(): Promise<IDBDatabase> {
  * Get or generate the encryption key
  * @returns Promise resolving to the encryption key
  */
-async function getEncryptionKey(): Promise<CryptoKey> {
-  if (encryptionKey) {
-    return encryptionKey;
+async function getOrCreateEncryptionKey(): Promise<CryptoKey> {
+  // First try to get the global key from security init
+  const globalKey = getEncryptionKey();
+  if (globalKey) {
+    return globalKey;
   }
   
   try {
@@ -57,8 +58,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
     // In a real app, this would be a secure user-specific key
     const passphrase = 'secure-floor-plan-app';
     
-    encryptionKey = await generateEncryptionKey(passphrase);
-    return encryptionKey;
+    return await generateEncryptionKey(passphrase);
   } catch (error) {
     logger.error('Error generating encryption key:', error);
     throw new Error('Failed to generate encryption key');
@@ -74,7 +74,7 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 export async function saveEncrypted(key: string, data: any): Promise<boolean> {
   try {
     const db = await getDatabase();
-    const cryptoKey = await getEncryptionKey();
+    const cryptoKey = await getOrCreateEncryptionKey();
     
     // Encrypt the data
     const encryptedData = await encryptData(data, cryptoKey);
@@ -113,7 +113,7 @@ export async function saveEncrypted(key: string, data: any): Promise<boolean> {
 export async function loadEncrypted(key: string): Promise<any> {
   try {
     const db = await getDatabase();
-    const cryptoKey = await getEncryptionKey();
+    const cryptoKey = await getOrCreateEncryptionKey();
     
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], 'readonly');

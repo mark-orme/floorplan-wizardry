@@ -5,7 +5,10 @@
  */
 
 import { generateCSRFToken } from './enhancedCsrfProtection';
-import { enableOfflineEncryption } from './offlineEncryption';
+import { isEncryptionSupported, generateEncryptionKey } from './dataEncryption';
+
+// Global encryption key
+let globalEncryptionKey: CryptoKey | null = null;
 
 /**
  * Initialize all security features
@@ -23,6 +26,34 @@ export function initializeSecurity(): void {
   addSecurityHeaders();
   
   console.info('Security features initialized');
+}
+
+/**
+ * Initialize encryption for offline data
+ */
+export async function enableOfflineEncryption(): Promise<void> {
+  try {
+    if (!isEncryptionSupported()) {
+      console.warn('Web Crypto API not supported. Encrypted storage unavailable.');
+      return;
+    }
+    
+    // Initialize encryption key (in a real app, this would be derived from user credentials)
+    const passphrase = 'secure-floor-plan-application';
+    globalEncryptionKey = await generateEncryptionKey(passphrase);
+    
+    console.info('Offline encryption initialized');
+  } catch (error) {
+    console.error('Failed to initialize offline encryption:', error);
+  }
+}
+
+/**
+ * Get the global encryption key
+ * @returns The encryption key or null if not initialized
+ */
+export function getEncryptionKey(): CryptoKey | null {
+  return globalEncryptionKey;
 }
 
 /**

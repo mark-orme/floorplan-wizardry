@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -9,7 +8,7 @@ import Login from '@/pages/Login';
 import Auth from '@/pages/Auth';
 import Properties from '@/pages/Properties';
 import PropertyForm from '@/components/PropertyForm';
-import FloorPlans from '@/pages/FloorPlans'; // Fixed the casing to be consistent
+import FloorPlans from '@/pages/FloorPlans';
 import FloorplanDetails from '@/pages/FloorplanDetails';
 import Register from '@/pages/Register';
 import RoleGuard from '@/components/RoleGuard';
@@ -34,7 +33,7 @@ function App() {
             </RoleGuard>
           } />
           <Route path="/properties/:id" element={<PropertyDetails />} />
-           <Route path="/properties/:id/edit" element={
+          <Route path="/properties/:id/edit" element={
             <RoleGuard allowedRoles={[UserRole.MANAGER, UserRole.PHOTOGRAPHER, UserRole.PROCESSING_MANAGER]}>
               <EditPropertyForm />
             </RoleGuard>
