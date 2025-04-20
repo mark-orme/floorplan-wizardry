@@ -32,6 +32,9 @@ export const createMockParams = <T extends object>(params: T): T => {
   return params;
 };
 
+// Alias for backward compatibility
+export const createMockFunctionParams = createMockParams;
+
 /**
  * Type guard for checking if an error is an Error instance
  * @param error Unknown error object
@@ -80,6 +83,11 @@ export const createMockStroke = (overrides: Partial<Stroke> = {}): Stroke => {
     ...overrides
   };
 };
+
+/**
+ * Create a test point
+ */
+export const createTestPoint = (x = 0, y = 0): { x: number, y: number } => ({ x, y });
 
 /**
  * Create a mock room with valid type

@@ -98,7 +98,7 @@ export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
   return {
     id: `stroke-${Date.now()}`,
     points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: asStrokeType(overrides.type || 'line'),
+    type: asStrokeType(overrides.type as string || 'line'),
     color: overrides.color || '#000000',
     thickness: overrides.thickness || 2,
     width: overrides.width || 2,
@@ -115,7 +115,7 @@ export function createTestRoom(overrides: Partial<any> = {}): any {
   return {
     id: `room-${Date.now()}`,
     name: overrides.name || 'Test Room',
-    type: asRoomType(overrides.type || 'other'),
+    type: asRoomType(overrides.type as string || 'other'),
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
     color: overrides.color || '#ffffff',
     area: overrides.area || 10000,
@@ -123,6 +123,13 @@ export function createTestRoom(overrides: Partial<any> = {}): any {
     walls: overrides.walls || [],
     ...overrides
   };
+}
+
+/**
+ * Create a test point
+ */
+export function createTestPoint(x = 0, y = 0): Point {
+  return { x, y };
 }
 
 /**

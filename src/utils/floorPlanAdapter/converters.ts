@@ -83,6 +83,13 @@ export function coreToAppFloorPlans(coreFloorPlans: CoreFloorPlan[]): AppFloorPl
   return coreFloorPlans.map(floorPlan => adaptFloorPlan(floorPlan as unknown as Partial<CoreFloorPlan>));
 }
 
+// Alias functions for backward compatibility with tests
+export const appToCoreFloorPlan = (appFloorPlan: AppFloorPlan): CoreFloorPlan => 
+  appToCoreFloorPlans([appFloorPlan])[0];
+
+export const coreToAppFloorPlan = (coreFloorPlan: CoreFloorPlan): AppFloorPlan => 
+  coreToAppFloorPlans([coreFloorPlan])[0];
+
 /**
  * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
  * @param type Type to validate

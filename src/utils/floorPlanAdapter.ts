@@ -6,7 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { 
   adaptFloorPlan, 
   appToCoreFloorPlans, 
+  appToCoreFloorPlan,
   coreToAppFloorPlans,
+  coreToAppFloorPlan,
   validateStrokeType,
   validateRoomType,
   validatePoint,
@@ -18,7 +20,9 @@ import {
 export { 
   adaptFloorPlan, 
   appToCoreFloorPlans, 
+  appToCoreFloorPlan,
   coreToAppFloorPlans,
+  coreToAppFloorPlan,
   validateStrokeType,
   validateRoomType,
   validatePoint,

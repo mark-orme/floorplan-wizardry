@@ -85,6 +85,6 @@ export function createMinimalCanvasMock(): ICanvasMock {
     setZoom: jest.fn<ICanvasMock, [number]>().mockReturnThis(),
     getZoom: jest.fn<number, []>().mockReturnValue(1),
     viewportTransform: [1, 0, 0, 1, 0, 0],
-    withImplementation: jest.fn<any, [Function]>().mockResolvedValue(undefined)
+    withImplementation: jest.fn<Promise<void>, [Function]>().mockResolvedValue(undefined)
   };
 }
