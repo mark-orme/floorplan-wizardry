@@ -28,6 +28,10 @@ export interface ICanvasMock {
   on?(eventName: string, handler: Function): ICanvasMock;
   off?(eventName: string, handler?: Function): ICanvasMock;
   
+  // For type compatibility with useDrawingHistory
+  getPointerCoords?: () => { x: number, y: number };
+  getClass?: any;
+  
   // For type compatibility
   [key: string]: any;
 }
@@ -50,6 +54,8 @@ export function createMinimalCanvasMock(): ICanvasMock {
     },
     selection: true,
     on: jest.fn().mockReturnThis(),
-    off: jest.fn().mockReturnThis()
+    off: jest.fn().mockReturnThis(),
+    getPointerCoords: jest.fn().mockReturnValue({ x: 0, y: 0 }),
+    getClass: jest.fn()
   };
 }

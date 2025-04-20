@@ -1,3 +1,4 @@
+
 /**
  * Hook for setting up the canvas controller
  * Initializes canvas, grid, and history
@@ -11,7 +12,7 @@ import { useGrid } from "@/hooks/useGrid";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useFloorPlanState } from "@/hooks/useFloorPlanState";
 import { useSyncedFloorPlans } from "@/hooks/useSyncedFloorPlans";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floor-plan/typesBarrel";
 
 interface CanvasReferences {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -69,15 +70,20 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   // Create references
   const fabricCanvasRef = useRef<FabricCanvas>(null as any);
   const gridLayerRef = useRef<FabricObject[]>([]);
-  const historyRef = useRef<{ past: any[][], future: any[][] }>({ past: [], future: [] });
   
   // Initialize drawing history hook
   const {
-    history,
-    saveCurrentState,
     undo,
-    redo
-  } = useDrawingHistory({ fabricCanvasRef, historyRef });
+    redo,
+    saveState,
+    canUndo,
+    canRedo,
+    handleUndo,
+    handleRedo,
+    saveCurrentState
+  } = useDrawingHistory({ 
+    fabricCanvasRef
+  });
   
   // Initialize floor plan state hook
   const {
@@ -94,7 +100,10 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     createGrid,
     toggleGridVisibility,
     snapToGrid
-  } = useGrid({ fabricCanvasRef, gridLayerRef });
+  } = useGrid({ 
+    fabricCanvasRef, 
+    gridLayerRef 
+  });
   
   // Initialize canvas interaction hook
   const {
@@ -107,7 +116,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   } = useCanvasInteraction({
     fabricCanvasRef,
     tool,
-    saveCurrentState
+    saveCurrentState: saveState // Use the renamed function
   });
   
   /**
@@ -131,8 +140,8 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     gridLayerRef.current = gridObjects;
     
     // Save initial canvas state
-    saveCurrentState();
-  }, [createGrid, saveCurrentState, setupSelectionMode]);
+    saveState(); // Use the renamed function
+  }, [createGrid, saveState, setupSelectionMode]);
   
   /**
    * Function to handle canvas init error
@@ -182,10 +191,15 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     deleteSelectedObjects,
     enablePointSelection,
     setupSelectionMode,
-    history,
-    saveCurrentState,
+    canUndo,
+    canRedo,
     undo,
     redo,
+    saveState,
+    // For backwards compatibility
+    handleUndo,
+    handleRedo,
+    saveCurrentState,
     handleCanvasReady,
     handleCanvasInitError,
     handleCanvasRetry,
@@ -194,6 +208,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     gia,
     setGia,
     currentFloor,
-    setCurrentFloor
+    setCurrentFloor,
+    gridLayerRef
   };
 };

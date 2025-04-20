@@ -5,7 +5,7 @@
  * @module __tests__/utils/typeHelpers
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Point } from '@/types/floorPlanTypes';
+import { FloorPlan, Stroke, Point, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
 
 /**
@@ -30,6 +30,16 @@ export function ensureFloorPlan(floorPlan: any): FloorPlan {
   if (!floorPlan.id || !floorPlan.updatedAt) {
     throw new Error('Invalid floor plan object');
   }
+  
+  // Ensure data and userId properties exist (add if missing)
+  if (!floorPlan.data) {
+    floorPlan.data = {};
+  }
+  
+  if (!floorPlan.userId) {
+    floorPlan.userId = 'test-user';
+  }
+  
   return floorPlan as FloorPlan;
 }
 
@@ -41,4 +51,30 @@ export function ensureFloorPlan(floorPlan: any): FloorPlan {
  */
 export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICanvasMock> {
   return { current: canvas };
+}
+
+/**
+ * Safely cast a string to StrokeTypeLiteral
+ * @param type String to cast
+ * @returns Properly typed StrokeTypeLiteral
+ */
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'straight', 'other'];
+  if (validTypes.includes(type as StrokeTypeLiteral)) {
+    return type as StrokeTypeLiteral;
+  }
+  return 'other';
+}
+
+/**
+ * Safely cast a string to RoomTypeLiteral
+ * @param type String to cast
+ * @returns Properly typed RoomTypeLiteral
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  if (validTypes.includes(type as RoomTypeLiteral)) {
+    return type as RoomTypeLiteral;
+  }
+  return 'other';
 }

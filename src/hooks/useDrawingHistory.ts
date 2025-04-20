@@ -1,189 +1,169 @@
-import { useCallback, useState, useRef } from 'react';
+
+/**
+ * Hook for managing drawing history (undo/redo functionality)
+ * @module hooks/useDrawingHistory
+ */
+import { useRef, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { ICanvasMock } from '@/types/testing/ICanvasMock';
+
+type CanvasType = FabricCanvas | ICanvasMock;
 
 export interface UseDrawingHistoryProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  maxHistorySize?: number;
+  fabricCanvasRef: React.MutableRefObject<CanvasType | null>;
+  clearDrawings?: () => void;
+  recalculateGIA?: () => void;
 }
 
 export interface UseDrawingHistoryResult {
   canUndo: boolean;
   canRedo: boolean;
-  saveState: () => void;
   undo: () => void;
   redo: () => void;
-  clearHistory: () => void;
-  history: {
-    past: FabricObject[][];
-    future: FabricObject[][];
-  };
+  saveState: () => void;
+  
+  // Backwards compatibility with existing code
+  handleUndo: () => void;
+  handleRedo: () => void;
+  saveCurrentState: () => void;
 }
 
 /**
- * Hook for managing canvas drawing history (undo/redo)
+ * Hook for managing drawing history (undo/redo functionality)
+ * @param props Hook properties
+ * @returns History state and functions
  */
 export const useDrawingHistory = ({
   fabricCanvasRef,
-  maxHistorySize = 50
+  clearDrawings,
+  recalculateGIA
 }: UseDrawingHistoryProps): UseDrawingHistoryResult => {
-  // Keep past and future states
+  // Create a reference to store the history states
   const historyRef = useRef<{
     past: FabricObject[][];
     future: FabricObject[][];
-  }>({
-    past: [],
-    future: []
-  });
+  }>({ past: [], future: [] });
   
-  // State to trigger re-renders
+  // State to track if undo/redo is possible
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  
-  // Save current canvas state to history
+
+  // Function to save current canvas state
   const saveState = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const currentObjects = canvas.getObjects();
+    // Get all objects on the canvas
+    const objects = canvas.getObjects();
     
-    // Create a deep copy of objects
-    const objectsCopy = currentObjects.map(obj => {
-      return canvas.getPointerCoords 
-        ? obj.clone() // fabric v6+
-        : obj.toObject(); // older fabric
-    });
+    // Create a clone of the objects
+    const clonedObjects = [...objects];
     
-    // Add to history
-    historyRef.current.past.push(objectsCopy as any);
+    // Add to past states and clear future
+    historyRef.current.past.push(clonedObjects);
     historyRef.current.future = [];
     
-    // Limit history size
-    if (historyRef.current.past.length > maxHistorySize) {
-      historyRef.current.past.shift();
-    }
-    
-    // Update UI state
-    setCanUndo(historyRef.current.past.length > 0);
+    // Update state
+    setCanUndo(true);
     setCanRedo(false);
-  }, [fabricCanvasRef, maxHistorySize]);
-  
-  // Undo last action
+  }, [fabricCanvasRef]);
+
+  // Function to handle undo operation
   const undo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || historyRef.current.past.length === 0) return;
+    const { past, future } = historyRef.current;
     
-    // Save current state to future for redo
+    if (!canvas || past.length === 0) return;
+    
+    // Get current state and add to future
     const currentObjects = canvas.getObjects();
-    const objectsCopy = currentObjects.map(obj => {
-      return canvas.getPointerCoords 
-        ? obj.clone() // fabric v6+
-        : obj.toObject(); // older fabric
-    });
-    
-    historyRef.current.future.push(objectsCopy as any);
+    future.unshift([...currentObjects]);
     
     // Get previous state
-    const previousState = historyRef.current.past.pop();
+    const previousState = past.pop();
     
     // Clear canvas
-    canvas.clear();
-    
-    // Restore objects from previous state
-    if (previousState) {
-      previousState.forEach(objData => {
-        // For cloned objects (fabric v6+)
-        if (objData instanceof FabricObject) {
-          canvas.add(objData);
-        } 
-        // For serialized objects
-        else {
-          try {
-            const klass = FabricCanvas.getClass(objData.type);
-            if (klass) {
-              const obj = klass.fromObject(objData);
-              canvas.add(obj);
-            }
-          } catch (error) {
-            console.error('Error restoring object:', error);
-          }
-        }
-      });
+    if (clearDrawings) {
+      clearDrawings();
+    } else {
+      // Remove all objects from canvas
+      const objectsToRemove = [...canvas.getObjects()];
+      objectsToRemove.forEach((obj) => canvas.remove(obj));
     }
     
+    // Add previous state objects
+    if (previousState) {
+      previousState.forEach((obj) => canvas.add(obj));
+    }
+    
+    // Update canvas
     canvas.requestRenderAll();
     
-    // Update UI state
-    setCanUndo(historyRef.current.past.length > 0);
-    setCanRedo(historyRef.current.future.length > 0);
-  }, [fabricCanvasRef]);
-  
-  // Redo last undone action
+    // Recalculate GIA if needed
+    if (recalculateGIA) {
+      recalculateGIA();
+    }
+    
+    // Update state
+    setCanUndo(past.length > 0);
+    setCanRedo(true);
+  }, [fabricCanvasRef, clearDrawings, recalculateGIA]);
+
+  // Function to handle redo operation
   const redo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || historyRef.current.future.length === 0) return;
+    const { past, future } = historyRef.current;
     
-    // Save current state to past for undo
+    if (!canvas || future.length === 0) return;
+    
+    // Get current state and add to past
     const currentObjects = canvas.getObjects();
-    const objectsCopy = currentObjects.map(obj => {
-      return canvas.getPointerCoords 
-        ? obj.clone() // fabric v6+
-        : obj.toObject(); // older fabric
-    });
-    
-    historyRef.current.past.push(objectsCopy as any);
+    past.push([...currentObjects]);
     
     // Get next state
-    const nextState = historyRef.current.future.pop();
+    const nextState = future.shift();
     
     // Clear canvas
-    canvas.clear();
-    
-    // Restore objects from next state
-    if (nextState) {
-      nextState.forEach(objData => {
-        // For cloned objects (fabric v6+)
-        if (objData instanceof FabricObject) {
-          canvas.add(objData);
-        } 
-        // For serialized objects
-        else {
-          try {
-            const klass = FabricCanvas.getClass(objData.type);
-            if (klass) {
-              const obj = klass.fromObject(objData);
-              canvas.add(obj);
-            }
-          } catch (error) {
-            console.error('Error restoring object:', error);
-          }
-        }
-      });
+    if (clearDrawings) {
+      clearDrawings();
+    } else {
+      // Remove all objects from canvas
+      const objectsToRemove = [...canvas.getObjects()];
+      objectsToRemove.forEach((obj) => canvas.remove(obj));
     }
     
+    // Add next state objects
+    if (nextState) {
+      nextState.forEach((obj) => canvas.add(obj));
+    }
+    
+    // Update canvas
     canvas.requestRenderAll();
     
-    // Update UI state
-    setCanUndo(historyRef.current.past.length > 0);
-    setCanRedo(historyRef.current.future.length > 0);
-  }, [fabricCanvasRef]);
-  
-  // Clear all history
-  const clearHistory = useCallback(() => {
-    historyRef.current = {
-      past: [],
-      future: []
-    };
-    setCanUndo(false);
-    setCanRedo(false);
-  }, []);
-  
+    // Recalculate GIA if needed
+    if (recalculateGIA) {
+      recalculateGIA();
+    }
+    
+    // Update state
+    setCanUndo(true);
+    setCanRedo(future.length > 0);
+  }, [fabricCanvasRef, clearDrawings, recalculateGIA]);
+
+  // For backwards compatibility
+  const handleUndo = undo;
+  const handleRedo = redo;
+  const saveCurrentState = saveState;
+
   return {
     canUndo,
     canRedo,
-    saveState,
     undo,
     redo,
-    clearHistory,
-    history: historyRef.current
+    saveState,
+    // For backwards compatibility
+    handleUndo,
+    handleRedo,
+    saveCurrentState
   };
 };

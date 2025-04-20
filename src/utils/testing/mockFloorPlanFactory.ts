@@ -11,9 +11,11 @@ import {
   Wall, 
   Room, 
   Point,
+  StrokeTypeLiteral,
+  RoomTypeLiteral,
   FloorPlanMetadata,
   PaperSize
-} from '@/types/floorPlanTypes';
+} from '@/types/floor-plan/typesBarrel';
 
 /**
  * Create a mock point
@@ -35,7 +37,7 @@ export function createMockPoint(x: number = 0, y: number = 0): Point {
  */
 export function createMockStroke({
   points = [createMockPoint(0, 0), createMockPoint(100, 100)],
-  type = 'line',
+  type = 'line' as StrokeTypeLiteral,
   color = '#000000',
   thickness = 2
 }: Partial<Stroke> = {}): Stroke {
@@ -94,7 +96,7 @@ export function createMockRoom({
     createMockPoint(0, 100)
   ],
   name = 'Room',
-  type = 'living',
+  type = 'living' as RoomTypeLiteral,
   color = '#cccccc',
   level = 0,
   area = 100

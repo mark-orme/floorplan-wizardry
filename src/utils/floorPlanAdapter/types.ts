@@ -1,4 +1,4 @@
 
-// Re-export from the main floor plan types
+// Re-export from the floor plan barrel types
 // This maintains the adapter pattern while centralizing type definitions
-export * from '@/types/FloorPlan';
+export * from '@/types/floor-plan/typesBarrel';

@@ -7,7 +7,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
-import { createMockCanvas } from '@/tests/utils/canvasTestUtils';
+import { createMinimalCanvasMock } from '@/types/testing/ICanvasMock';
 
 // Mock the useDrawingHistory hook
 vi.mock('@/hooks/useDrawingHistory', () => ({
@@ -17,17 +17,13 @@ vi.mock('@/hooks/useDrawingHistory', () => ({
 // Test component that uses the hook
 const TestComponent: React.FC = () => {
   const {
-    handleUndo,
-    handleRedo,
+    undo: handleUndo,
+    redo: handleRedo,
     canUndo,
     canRedo,
-    saveCurrentState
+    saveState: saveCurrentState
   } = useDrawingHistory({
-    fabricCanvasRef: { current: createMockCanvas() },
-    gridLayerRef: { current: [] },
-    historyRef: { current: { past: [], future: [] } },
-    clearDrawings: vi.fn(),
-    recalculateGIA: vi.fn()
+    fabricCanvasRef: { current: createMinimalCanvasMock() }
   });
 
   return (
@@ -52,10 +48,14 @@ describe('Drawing History Edge Cases', () => {
 
   it('should disable Undo button when canUndo is false', () => {
     const mockHistoryHook = {
-      handleUndo: vi.fn(),
-      handleRedo: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
       canUndo: false,
       canRedo: true,
+      saveState: vi.fn(),
+      // For backwards compatibility
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
       saveCurrentState: vi.fn()
     };
     
@@ -68,15 +68,19 @@ describe('Drawing History Edge Cases', () => {
     
     // Click should not trigger the handler when disabled
     fireEvent.click(undoBtn);
-    expect(mockHistoryHook.handleUndo).not.toHaveBeenCalled();
+    expect(mockHistoryHook.undo).not.toHaveBeenCalled();
   });
   
   it('should disable Redo button when canRedo is false', () => {
     const mockHistoryHook = {
-      handleUndo: vi.fn(),
-      handleRedo: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
       canUndo: true,
       canRedo: false,
+      saveState: vi.fn(),
+      // For backwards compatibility
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
       saveCurrentState: vi.fn()
     };
     
@@ -89,15 +93,19 @@ describe('Drawing History Edge Cases', () => {
     
     // Click should not trigger the handler when disabled
     fireEvent.click(redoBtn);
-    expect(mockHistoryHook.handleRedo).not.toHaveBeenCalled();
+    expect(mockHistoryHook.redo).not.toHaveBeenCalled();
   });
   
-  it('should call saveCurrentState when save button is clicked', () => {
+  it('should call saveState when save button is clicked', () => {
     const mockHistoryHook = {
-      handleUndo: vi.fn(),
-      handleRedo: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
       canUndo: true,
       canRedo: true,
+      saveState: vi.fn(),
+      // For backwards compatibility
+      handleUndo: vi.fn(),
+      handleRedo: vi.fn(),
       saveCurrentState: vi.fn()
     };
     
@@ -107,6 +115,6 @@ describe('Drawing History Edge Cases', () => {
     
     const saveBtn = screen.getByTestId('save-state-btn');
     fireEvent.click(saveBtn);
-    expect(mockHistoryHook.saveCurrentState).toHaveBeenCalled();
+    expect(mockHistoryHook.saveState).toHaveBeenCalled();
   });
 });
