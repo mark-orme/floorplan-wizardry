@@ -1,4 +1,3 @@
-
 /**
  * Floor Plan Adapter Utilities
  * 
@@ -115,3 +114,67 @@ export function validateFloorPlan(floorPlan: any): boolean {
   
   return requiredProps.every(prop => prop in floorPlan);
 }
+
+// Added validation functions
+export const validatePoint = (point: any): boolean => {
+  return point && typeof point.x === 'number' && typeof point.y === 'number';
+};
+
+export const validateColor = (color: any): boolean => {
+  return typeof color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(color);
+};
+
+export const validateTimestamp = (timestamp: any): boolean => {
+  return typeof timestamp === 'string' && !isNaN(Date.parse(timestamp));
+};
+
+export const validateStrokeType = (type: any): boolean => {
+  return typeof type === 'string' && ['pencil', 'line', 'rectangle', 'circle'].includes(type);
+};
+
+export const mapRoomType = (type: string): string => {
+  const validTypes = ['bedroom', 'bathroom', 'kitchen', 'living', 'dining', 'office', 'other'];
+  return validTypes.includes(type) ? type : 'other';
+};
+
+// Added adapter functions
+export const appToCoreFloorPlan = (floorPlan: any): any => {
+  // Convert app-specific floor plan to core format
+  return {
+    id: floorPlan.id,
+    name: floorPlan.name,
+    data: floorPlan.canvasJson || {},
+    userId: floorPlan.userId || 'anonymous',
+    createdAt: floorPlan.createdAt,
+    updatedAt: floorPlan.updatedAt
+  };
+};
+
+export const coreToAppFloorPlan = (corePlan: any): any => {
+  // Convert core floor plan to app-specific format
+  return {
+    id: corePlan.id,
+    name: corePlan.name,
+    label: corePlan.name,
+    canvasJson: corePlan.data,
+    canvasData: null,
+    userId: corePlan.userId,
+    index: 0,
+    level: 1,
+    gia: 0,
+    strokes: [],
+    walls: [],
+    rooms: [],
+    createdAt: corePlan.createdAt,
+    updatedAt: corePlan.updatedAt,
+    metadata: {
+      version: '1.0',
+      scale: 1,
+      unit: 'meters'
+    }
+  };
+};
+
+export const appToCoreFloorPlans = (floorPlans: any[]): any[] => {
+  return floorPlans.map(appToCoreFloorPlan);
+};

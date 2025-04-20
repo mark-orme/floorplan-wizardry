@@ -4,7 +4,7 @@
  * 
  * Provides client-side rate limiting to prevent API abuse
  */
-import logger from '@/utils/logger';
+import { toast } from 'sonner';
 
 interface RateLimitOptions {
   maxRequests: number;  // Maximum number of requests allowed
@@ -80,7 +80,8 @@ export function isRateLimited(
   
   // Check if rate limit exceeded
   if (entry.requests > opts.maxRequests) {
-    logger.warn(`Rate limit exceeded for ${resourceKey}. Blocking for ${opts.blockDuration}ms`);
+    console.warn(`Rate limit exceeded for ${resourceKey}. Blocking for ${opts.blockDuration}ms`);
+    toast.error(`Too many requests. Please try again in ${Math.ceil(opts.blockDuration / 1000)} seconds.`);
     entry.blocked = true;
     entry.blockUntil = now + opts.blockDuration;
     return true;
@@ -142,7 +143,7 @@ export function createRateLimitedFunction<T extends (...args: any[]) => any>(
       const status = getRateLimitStatus(resourceKey);
       const blockTimeRemaining = status?.blockRemaining || 0;
       
-      logger.warn(`Rate limit in effect for ${resourceKey}. Try again in ${Math.ceil(blockTimeRemaining / 1000)} seconds.`);
+      console.warn(`Rate limit in effect for ${resourceKey}. Try again in ${Math.ceil(blockTimeRemaining / 1000)} seconds.`);
       
       return Promise.reject(
         new Error(`Rate limit exceeded. Try again in ${Math.ceil(blockTimeRemaining / 1000)} seconds.`)

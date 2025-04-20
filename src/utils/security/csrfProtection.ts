@@ -34,7 +34,19 @@ export const getCsrfToken = (): string => {
   return token;
 };
 
-// Add CSRF token to fetch options
+// Verify that a token matches the stored token
+export const verifyCSRFToken = (token: string): boolean => {
+  const storedToken = localStorage.getItem('csrf_token');
+  return token === storedToken;
+};
+
+// Add CSRF token to form data
+export const addCSRFToFormData = (formData: FormData): FormData => {
+  formData.append('csrf_token', getCsrfToken());
+  return formData;
+};
+
+// Add CSRF token to fetch headers
 export const addCSRFToken = (options: RequestInit = {}): RequestInit => {
   const token = getCsrfToken();
   
@@ -45,6 +57,13 @@ export const addCSRFToken = (options: RequestInit = {}): RequestInit => {
       'X-CSRF-Token': token
     }
   };
+};
+
+// Add CSRF token to request headers
+export const addCSRFToHeaders = (headers: HeadersInit = {}): Headers => {
+  const newHeaders = new Headers(headers);
+  newHeaders.append('X-CSRF-Token', getCsrfToken());
+  return newHeaders;
 };
 
 // Wrapper for fetch that adds CSRF token
