@@ -1,110 +1,77 @@
-
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/lib/supabase';
 
 export interface TestUser {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
   role: UserRole;
   label: string;
 }
 
-export async function createTestUser(credentials: TestUser): Promise<boolean> {
+export const createTestUser = async (user: TestUser) => {
   try {
-    // First check if user exists
-    const { data: existingUsers, error: fetchError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('email', credentials.email)
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select()
+      .eq('email', user.email)
       .single();
-    
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      // PGRST116 means "no rows returned" which is expected if user doesn't exist
-      console.error('Error checking for existing user:', fetchError);
-      toast.error('Failed to check for existing user');
-      return false;
+
+    if (existingUser) {
+      console.log('User already exists:', user.email);
+      return existingUser;
     }
-    
-    if (existingUsers) {
-      console.log('User already exists');
-      toast.info('Test user already exists');
-      return true;
-    }
-    
-    // Create user with Supabase auth
-    const authResponse = await supabase.auth.signUp({
-      email: credentials.email,
-      password: credentials.password,
+
+    const { data, error } = await supabase.auth.signUp({
+      email: user.email,
+      password: user.password,
       options: {
         data: {
-          first_name: credentials.firstName,
-          last_name: credentials.lastName,
-          role: credentials.role || 'user'
+          role: user.role
         }
       }
     });
-    
-    if (authResponse.error) {
-      console.error('Error creating test user auth:', authResponse.error);
-      toast.error(`Failed to create test user: ${authResponse.error.message}`);
-      return false;
-    }
-    
-    // Create user profile
-    if (authResponse.data?.user) {
-      const profileResponse = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            user_id: authResponse.data.user.id,
-            role: credentials.role || 'user'
-          }
-        ]);
-      
-      if (profileResponse.error) {
-        console.error('Error creating user profile:', profileResponse.error);
-        toast.error('Failed to create user profile');
-        return false;
-      }
-      
-      toast.success('Test user created successfully');
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    console.error('Unexpected error creating test user:', error);
-    toast.error('Unexpected error creating test user');
-    return false;
-  }
-}
 
-export async function loginAsTestUser(email: string, password: string): Promise<boolean> {
-  try {
-    // Sign in with Supabase auth
-    const authResponse = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (authResponse.error) {
-      console.error('Error logging in as test user:', authResponse.error);
-      toast.error(`Failed to log in: ${authResponse.error.message}`);
-      return false;
-    }
-    
-    if (authResponse.data?.user) {
-      toast.success(`Logged in as ${email}`);
-      return true;
-    }
-    
-    return false;
+    if (error) throw error;
+    return data;
+
   } catch (error) {
-    console.error('Unexpected error logging in:', error);
-    toast.error('Unexpected error logging in');
-    return false;
+    console.error('Error creating test user:', error);
+    throw error;
   }
-}
+};
+
+export const deleteTestUser = async (email: string) => {
+  try {
+    const { data: userToDelete, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user to delete:', userError);
+      throw userError;
+    }
+
+    if (!userToDelete) {
+      console.log('User not found:', email);
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userToDelete.id);
+
+    if (deleteError) {
+      console.error('Error deleting user:', deleteError);
+      throw deleteError;
+    }
+
+    console.log('User deleted successfully:', email);
+
+  } catch (error) {
+    console.error('Error deleting test user:', error);
+    throw error;
+  }
+};
