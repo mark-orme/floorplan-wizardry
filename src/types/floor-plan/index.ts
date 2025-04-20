@@ -5,10 +5,8 @@
  * @module types/floor-plan
  */
 
-// Re-export all types from their respective files
-export * from './basicTypes';
-export * from './wallTypes';
-export * from './strokeTypes';
-export * from './roomTypes'; 
-export * from './metadataTypes';
-export * from './floorPlanTypes';
+// Re-export everything from the unified types file
+export * from './unifiedTypes';
+
+// Console log for debugging imports
+console.log('Loading floor-plan/index.ts - using unified type definitions');

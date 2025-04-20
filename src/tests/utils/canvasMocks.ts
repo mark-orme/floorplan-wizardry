@@ -18,7 +18,7 @@ export function setupFabricMock() {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // Standardized implementation that correctly returns Promise<void>
+    // Fix: Use the standardized implementation that returns Promise<void>
     withImplementation: createWithImplementationMock()
   }));
 
@@ -44,5 +44,20 @@ export function setupFabricMock() {
 
 // Re-export other functions
 export { createMockGridLayerRef } from './canvasMocks/gridLayerRef';
-export { createMockHistoryRef } from './canvasMocks/historyRef';
 export { createCanvasTestUtils } from './canvasMocks/testUtils';
+
+/**
+ * Create mock history reference for testing
+ * @param pastStates Past states for history
+ * @param futureStates Future states for history
+ * @returns Mock history reference
+ */
+export const createMockHistoryRef = (
+  pastStates = [],
+  futureStates = []
+) => ({
+  current: {
+    past: pastStates,
+    future: futureStates
+  }
+});

@@ -1,4 +1,8 @@
 
+/**
+ * Canvas mock utilities
+ * Provides consistent mocks for Canvas objects in tests
+ */
 import { vi } from 'vitest';
 import { Canvas as FabricCanvas } from 'fabric';
 
@@ -7,12 +11,13 @@ import { Canvas as FabricCanvas } from 'fabric';
  * that always returns Promise<void> to satisfy TypeScript
  */
 export const createWithImplementationMock = () => {
+  // This must return a function that returns a Promise<void>
   return vi.fn().mockImplementation((callback?: Function) => {
-    // Ensure we always return Promise<void> regardless of what callback does
+    // Invoke the callback if provided 
     if (callback && typeof callback === 'function') {
       try {
         const result = callback();
-        // If callback returns a promise, chain it but always return Promise<void>
+        // If callback returns a promise, chain it
         if (result instanceof Promise) {
           return result.then(() => Promise.resolve());
         }
@@ -20,14 +25,14 @@ export const createWithImplementationMock = () => {
         console.error('Error in withImplementation mock:', error);
       }
     }
-    // Always return a resolved Promise<void>
+    // Always return a Promise<void>
     return Promise.resolve();
   });
 };
 
 /**
  * Creates a consistent mock Canvas implementation
- * that can be used across test files to avoid type inconsistencies
+ * that can be used across test files
  */
 export const createMockCanvas = (): Partial<FabricCanvas> => {
   return {
@@ -41,7 +46,7 @@ export const createMockCanvas = (): Partial<FabricCanvas> => {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // Ensure withImplementation always returns Promise<void>
+    // This is the key fix - ensure withImplementation returns Promise<void>
     withImplementation: createWithImplementationMock()
   };
 };

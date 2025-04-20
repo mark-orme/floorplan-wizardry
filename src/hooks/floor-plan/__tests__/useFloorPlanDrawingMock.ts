@@ -4,11 +4,9 @@
  * Provides consistent behavior for tests
  * @module hooks/floor-plan/__tests__/useFloorPlanDrawingMock
  */
-import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
-import { Point } from '@/types/core/Geometry';
+import { FloorPlan, Stroke, Point, createTestFloorPlan, createTestStroke } from '@/types/floor-plan/unifiedTypes';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
-import { createTestFloorPlan, createTestStroke } from '@/tests/utils/testObjectCreator';
 
 /**
  * Mock props for useFloorPlanDrawing tests
@@ -54,6 +52,8 @@ export interface MockFloorPlanDrawingResult {
 export function createMockFloorPlanDrawingResult(
   props: MockFloorPlanDrawingProps
 ): MockFloorPlanDrawingResult {
+  console.log('Creating mock floor plan drawing result');
+  
   return {
     isDrawing: false,
     drawingPoints: [],
@@ -73,26 +73,25 @@ export function createMockFloorPlanDrawingResult(
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
         props.setFloorPlan((prevFloorPlan) => {
-          // Ensure the floor plan has all required properties
-          const validFloorPlan = createTestFloorPlan(prevFloorPlan);
-          
-          // Check if strokes property exists, create it if it doesn't
-          return {
-            ...validFloorPlan,
-            strokes: [...(validFloorPlan.strokes || [])]
+          // Create a fully valid floor plan object
+          const validFloorPlan = {
+            ...createTestFloorPlan({}),  // Start with a complete valid floor plan
+            ...prevFloorPlan,            // Apply previous properties
+            strokes: [...(prevFloorPlan.strokes || [])]
           };
+          
+          return validFloorPlan;
         });
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
         props.setFloorPlans((prevFloorPlans) => {
           const updatedFloorPlans = [...prevFloorPlans];
           if (updatedFloorPlans[props.currentFloor!]) {
-            // Ensure the floor plan has all required properties
-            updatedFloorPlans[props.currentFloor!] = createTestFloorPlan(updatedFloorPlans[props.currentFloor!]);
-            
-            // Create strokes array if it doesn't exist
-            if (!updatedFloorPlans[props.currentFloor!].strokes) {
-              updatedFloorPlans[props.currentFloor!].strokes = [];
-            }
+            // Create a fully valid floor plan object
+            updatedFloorPlans[props.currentFloor!] = {
+              ...createTestFloorPlan({}),  // Start with a complete valid floor plan
+              ...updatedFloorPlans[props.currentFloor!],
+              strokes: [...(updatedFloorPlans[props.currentFloor!].strokes || [])]
+            };
           }
           return updatedFloorPlans;
         });
@@ -112,23 +111,26 @@ export function createMockFloorPlanDrawingResult(
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
         props.setFloorPlan((prevFloorPlan) => {
-          // Ensure the floor plan has all required properties
-          const validFloorPlan = createTestFloorPlan(prevFloorPlan);
-          
-          return {
-            ...validFloorPlan,
-            strokes: [...(validFloorPlan.strokes || []), validStroke]
+          // Create a fully valid floor plan object
+          const validFloorPlan = {
+            ...createTestFloorPlan({}),  // Start with a complete valid floor plan
+            ...prevFloorPlan,            // Apply previous properties
+            strokes: [...(prevFloorPlan.strokes || []), validStroke]
           };
+          
+          return validFloorPlan;
         });
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
         props.setFloorPlans((prevFloorPlans) => {
           const updatedFloorPlans = [...prevFloorPlans];
           if (props.currentFloor !== undefined && updatedFloorPlans[props.currentFloor]) {
-            // Ensure the floor plan has all required properties
-            const currentFloorPlan = createTestFloorPlan(updatedFloorPlans[props.currentFloor!]);
+            // Create a fully valid floor plan object
+            const currentFloorPlan = {
+              ...createTestFloorPlan({}),  // Start with a complete valid floor plan
+              ...updatedFloorPlans[props.currentFloor!],
+              strokes: [...(updatedFloorPlans[props.currentFloor!].strokes || []), validStroke]
+            };
             
-            // Create strokes array if it doesn't exist
-            currentFloorPlan.strokes = [...(currentFloorPlan.strokes || []), validStroke];
             updatedFloorPlans[props.currentFloor!] = currentFloorPlan;
           }
           return updatedFloorPlans;
