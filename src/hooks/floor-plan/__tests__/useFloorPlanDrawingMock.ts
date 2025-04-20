@@ -8,6 +8,7 @@ import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Geometry';
 import { DrawingTool } from '@/types/core/DrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
+import { createTestFloorPlan, createTestStroke } from '@/tests/utils/testObjectCreator';
 
 /**
  * Mock props for useFloorPlanDrawing tests
@@ -72,21 +73,29 @@ export function createMockFloorPlanDrawingResult(
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
         props.setFloorPlan((prevFloorPlan) => {
+          // Ensure the floor plan has all required properties
+          const validFloorPlan = createTestFloorPlan(prevFloorPlan);
+          
           // Check if strokes property exists, create it if it doesn't
           return {
-            ...prevFloorPlan,
-            strokes: [...(prevFloorPlan.strokes || [])]
+            ...validFloorPlan,
+            strokes: [...(validFloorPlan.strokes || [])]
           };
         });
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
-        const updatedFloorPlans = [...props.floorPlans];
-        if (updatedFloorPlans[props.currentFloor]) {
-          // Create strokes array if it doesn't exist
-          if (!updatedFloorPlans[props.currentFloor].strokes) {
-            updatedFloorPlans[props.currentFloor].strokes = [];
+        props.setFloorPlans((prevFloorPlans) => {
+          const updatedFloorPlans = [...prevFloorPlans];
+          if (updatedFloorPlans[props.currentFloor!]) {
+            // Ensure the floor plan has all required properties
+            updatedFloorPlans[props.currentFloor!] = createTestFloorPlan(updatedFloorPlans[props.currentFloor!]);
+            
+            // Create strokes array if it doesn't exist
+            if (!updatedFloorPlans[props.currentFloor!].strokes) {
+              updatedFloorPlans[props.currentFloor!].strokes = [];
+            }
           }
-        }
-        props.setFloorPlans(updatedFloorPlans);
+          return updatedFloorPlans;
+        });
       }
     },
     
@@ -97,23 +106,33 @@ export function createMockFloorPlanDrawingResult(
     addStroke: (stroke: Stroke) => {
       console.log('Mock addStroke called with stroke:', stroke);
       
+      // Ensure the stroke has all required properties
+      const validStroke = createTestStroke(stroke);
+      
       // Call the appropriate setter based on provided props
       if (props.floorPlan && props.setFloorPlan) {
-        props.setFloorPlan((prevFloorPlan) => ({
-          ...prevFloorPlan,
-          strokes: [...(prevFloorPlan.strokes || []), stroke]
-        }));
+        props.setFloorPlan((prevFloorPlan) => {
+          // Ensure the floor plan has all required properties
+          const validFloorPlan = createTestFloorPlan(prevFloorPlan);
+          
+          return {
+            ...validFloorPlan,
+            strokes: [...(validFloorPlan.strokes || []), validStroke]
+          };
+        });
       } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
-        const updatedFloorPlans = [...props.floorPlans];
-        const currentFloorPlan = updatedFloorPlans[props.currentFloor];
-        if (currentFloorPlan) {
-          // Create strokes array if it doesn't exist
-          if (!currentFloorPlan.strokes) {
-            currentFloorPlan.strokes = [];
+        props.setFloorPlans((prevFloorPlans) => {
+          const updatedFloorPlans = [...prevFloorPlans];
+          if (props.currentFloor !== undefined && updatedFloorPlans[props.currentFloor]) {
+            // Ensure the floor plan has all required properties
+            const currentFloorPlan = createTestFloorPlan(updatedFloorPlans[props.currentFloor!]);
+            
+            // Create strokes array if it doesn't exist
+            currentFloorPlan.strokes = [...(currentFloorPlan.strokes || []), validStroke];
+            updatedFloorPlans[props.currentFloor!] = currentFloorPlan;
           }
-          currentFloorPlan.strokes = [...currentFloorPlan.strokes, stroke];
-          props.setFloorPlans(updatedFloorPlans);
-        }
+          return updatedFloorPlans;
+        });
       }
     },
     

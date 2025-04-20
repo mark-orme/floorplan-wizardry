@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
 import { Point } from '@/types/floorPlanTypes';
+import { trackTypeError } from '@/utils/sentry/typeMonitoring';
 
 export interface UseFloorPlanDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -64,6 +65,12 @@ export const useFloorPlanDrawing = ({
     setCurrentPoint(null);
     setIsDrawing(false);
     
+    // Validate that floorPlan has the required properties
+    if (!floorPlan.strokes) {
+      trackTypeError('FloorPlan missing strokes property', { floorPlanId: floorPlan.id });
+      floorPlan.strokes = [];
+    }
+    
     // Create new stroke based on tool type
     const newStroke: Stroke = {
       id: uuidv4(),
@@ -75,17 +82,24 @@ export const useFloorPlanDrawing = ({
     };
     
     // Update floor plan with new stroke
-    setFloorPlan(prev => ({
-      ...prev,
-      strokes: [...(prev.strokes || []), newStroke],
-      updatedAt: new Date().toISOString()
-    }));
+    setFloorPlan(prev => {
+      if (!prev.strokes) {
+        trackTypeError('Previous FloorPlan missing strokes property', { floorPlanId: prev.id });
+        prev.strokes = [];
+      }
+      
+      return {
+        ...prev,
+        strokes: [...(prev.strokes || []), newStroke],
+        updatedAt: new Date().toISOString()
+      };
+    });
     
     // Call the onDrawComplete callback if it exists
     if (onDrawComplete) {
       onDrawComplete();
     }
-  }, [isDrawing, drawingPoints, tool, setFloorPlan, onDrawComplete]);
+  }, [isDrawing, drawingPoints, tool, setFloorPlan, onDrawComplete, floorPlan]);
 
   const cancelDrawing = useCallback(() => {
     setIsDrawing(false);
@@ -94,11 +108,24 @@ export const useFloorPlanDrawing = ({
   }, []);
 
   const addStroke = useCallback((stroke: Stroke) => {
-    setFloorPlan(prev => ({
-      ...prev,
-      strokes: [...(prev.strokes || []), stroke],
-      updatedAt: new Date().toISOString()
-    }));
+    // Validate that the provided stroke has all required properties
+    if (!stroke.type) {
+      trackTypeError('Stroke missing type property', { strokeId: stroke.id });
+      stroke.type = 'line';
+    }
+    
+    setFloorPlan(prev => {
+      if (!prev.strokes) {
+        trackTypeError('Previous FloorPlan missing strokes property', { floorPlanId: prev.id });
+        prev.strokes = [];
+      }
+      
+      return {
+        ...prev,
+        strokes: [...(prev.strokes || []), stroke],
+        updatedAt: new Date().toISOString()
+      };
+    });
     
     // Call the onDrawComplete callback if it exists
     if (onDrawComplete) {
@@ -108,7 +135,10 @@ export const useFloorPlanDrawing = ({
 
   const calculateAreas = useCallback(() => {
     // Calculate the areas of all rooms in the floor plan
-    if (!floorPlan || !floorPlan.rooms) return [0];
+    if (!floorPlan || !floorPlan.rooms) {
+      trackTypeError('FloorPlan missing rooms property', { floorPlanId: floorPlan?.id });
+      return [0];
+    }
     
     return floorPlan.rooms.map(room => room.area);
   }, [floorPlan]);
@@ -122,6 +152,22 @@ export const useFloorPlanDrawing = ({
     // Clear existing objects except grid
     const nonGridObjects = canvas.getObjects().filter(obj => (obj as any).objectType !== 'grid');
     nonGridObjects.forEach(obj => canvas.remove(obj));
+    
+    // Validate that the floor plan has all required properties
+    if (!plan.strokes) {
+      trackTypeError('FloorPlan missing strokes property', { floorPlanId: plan.id });
+      plan.strokes = [];
+    }
+    
+    if (!plan.walls) {
+      trackTypeError('FloorPlan missing walls property', { floorPlanId: plan.id });
+      plan.walls = [];
+    }
+    
+    if (!plan.rooms) {
+      trackTypeError('FloorPlan missing rooms property', { floorPlanId: plan.id });
+      plan.rooms = [];
+    }
     
     // Draw strokes
     plan.strokes?.forEach(stroke => {

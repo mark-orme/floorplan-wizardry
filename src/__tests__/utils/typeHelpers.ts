@@ -5,8 +5,13 @@
  * @module __tests__/utils/typeHelpers
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Point, StrokeTypeLiteral, RoomTypeLiteral, asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
+import { 
+  FloorPlan, Stroke, Point, Wall, Room,
+  StrokeTypeLiteral, RoomTypeLiteral
+} from '@/types/floorPlanTypes';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
+import { validateFloorPlan, validateRoom, validateStroke, validateWall } from '@/utils/sentry/typeMonitoring';
+import { createTestFloorPlan, createTestRoom, createTestStroke, createTestWall } from '@/tests/utils/testObjectCreator';
 
 /**
  * Safely type a canvas mock as a minimal interface
@@ -21,60 +26,16 @@ export function asCanvasMock(mockCanvas: any): ICanvasMock {
 
 /**
  * Ensure a floor plan object conforms to the FloorPlan interface
+ * Uses our test creator function for type safety
  * 
  * @param floorPlan Floor plan object to check
  * @returns Typed floor plan
  */
 export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
-  // Ensure required properties exist
-  if (!floorPlan.id) {
-    floorPlan.id = `test-fp-${Date.now()}`;
+  // Validate the floor plan to ensure it has all required properties
+  if (!validateFloorPlan(floorPlan)) {
+    return createTestFloorPlan(floorPlan);
   }
-  
-  if (!floorPlan.updatedAt) {
-    floorPlan.updatedAt = new Date().toISOString();
-  }
-  
-  if (!floorPlan.createdAt) {
-    floorPlan.createdAt = floorPlan.updatedAt;
-  }
-  
-  // Ensure data and userId properties exist (add if missing)
-  if (!floorPlan.data) {
-    floorPlan.data = {};
-  }
-  
-  if (!floorPlan.userId) {
-    floorPlan.userId = 'test-user';
-  }
-  
-  // Add metadata if missing
-  if (!floorPlan.metadata) {
-    floorPlan.metadata = {
-      createdAt: floorPlan.createdAt,
-      updatedAt: floorPlan.updatedAt,
-      paperSize: 'A4',
-      level: 0,
-      version: "1.0",
-      author: "Test User",
-      dateCreated: floorPlan.createdAt,
-      lastModified: floorPlan.updatedAt,
-      notes: ""
-    };
-  }
-  
-  // Add empty arrays for collections if missing
-  if (!floorPlan.strokes) floorPlan.strokes = [];
-  if (!floorPlan.walls) floorPlan.walls = [];
-  if (!floorPlan.rooms) floorPlan.rooms = [];
-  
-  // Set defaults for other required fields
-  if (floorPlan.label === undefined) floorPlan.label = floorPlan.name || 'Test Floor Plan';
-  if (floorPlan.gia === undefined) floorPlan.gia = 0;
-  if (floorPlan.level === undefined) floorPlan.level = 0;
-  if (floorPlan.index === undefined) floorPlan.index = 0;
-  if (floorPlan.canvasData === undefined) floorPlan.canvasData = null;
-  if (floorPlan.canvasJson === undefined) floorPlan.canvasJson = null;
   
   return floorPlan as FloorPlan;
 }
@@ -91,50 +52,24 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
 
 /**
  * Create a correct stroke with properly typed properties
+ * Uses our test creator function for type safety
+ * 
  * @param overrides Properties to override default values
  * @returns A properly typed Stroke object
  */
-export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
-  // Ensure type is properly cast to StrokeTypeLiteral
-  const typeValue = overrides.type || 'line';
-  const validType: StrokeTypeLiteral = typeof typeValue === 'string' 
-    ? asStrokeType(typeValue) 
-    : typeValue;
-  
-  return {
-    id: `stroke-${Date.now()}`,
-    points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: validType,
-    color: overrides.color || '#000000',
-    thickness: overrides.thickness || 2,
-    width: overrides.width || 2,
-    ...overrides
-  };
+export function createTestTypeStroke(overrides: Partial<Stroke> = {}): Stroke {
+  return createTestStroke(overrides);
 }
 
 /**
  * Create a correct room with properly typed properties
+ * Uses our test creator function for type safety
+ * 
  * @param overrides Properties to override default values
  * @returns A properly typed Room object
  */
-export function createTestRoom(overrides: Partial<any> = {}): any {
-  // Ensure type is properly cast to RoomTypeLiteral
-  const typeValue = overrides.type || 'other';
-  const validType: RoomTypeLiteral = typeof typeValue === 'string' 
-    ? asRoomType(typeValue) 
-    : typeValue;
-  
-  return {
-    id: `room-${Date.now()}`,
-    name: overrides.name || 'Test Room',
-    type: validType,
-    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
-    color: overrides.color || '#ffffff',
-    area: overrides.area || 10000,
-    level: overrides.level || 0,
-    walls: overrides.walls || [],
-    ...overrides
-  };
+export function createTestTypeRoom(overrides: Partial<Room> = {}): Room {
+  return createTestRoom(overrides);
 }
 
 /**
@@ -146,25 +81,11 @@ export function createTestPoint(x = 0, y = 0): Point {
 
 /**
  * Create a correct wall with properly typed properties
+ * Uses our test creator function for type safety
+ * 
  * @param overrides Properties to override default values
  * @returns A properly typed Wall object
  */
-export function createTestWall(overrides: Partial<any> = {}): any {
-  const start = overrides.start || { x: 0, y: 0 };
-  const end = overrides.end || { x: 100, y: 0 };
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  
-  return {
-    id: `wall-${Date.now()}`,
-    start,
-    end,
-    points: [start, end],
-    thickness: overrides.thickness || 5,
-    color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [], // Ensure roomIds property is present
-    length: overrides.length || length,
-    ...overrides
-  };
+export function createTestTypeWall(overrides: Partial<Wall> = {}): Wall {
+  return createTestWall(overrides);
 }

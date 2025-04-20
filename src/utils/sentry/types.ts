@@ -55,4 +55,8 @@ export interface InputValidationResult {
   message?: string;
   /** Validation errors */
   errors?: Record<string, string>;
+  /** Sanitized data if validation passed */
+  sanitizedData?: any;
+  /** Validation errors by field */
+  fields?: Record<string, string[]>;
 }
