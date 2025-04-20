@@ -2,9 +2,10 @@
 import React, { useRef, useEffect } from 'react';
 import { useCanvasEngine } from '@/contexts/CanvasEngineContext';
 import { FabricCanvasEngine } from '@/implementations/canvas-engine/FabricCanvasEngine';
+import { useWebGLCanvas } from '@/hooks/useWebGLCanvas';
 import { toast } from 'sonner';
 
-interface FloorPlanCanvasProps {
+export interface FloorPlanCanvasProps {
   width?: number;
   height?: number;
   onCanvasReady?: (engine: any) => void;
@@ -19,6 +20,13 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { setEngine } = useCanvasEngine();
+  const [fabricCanvas, setFabricCanvas] = React.useState<FabricCanvas | null>(null);
+
+  // Initialize WebGL canvas
+  const { webglRenderer } = useWebGLCanvas({
+    canvasRef,
+    fabricCanvas
+  });
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -26,6 +34,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     try {
       const engine = new FabricCanvasEngine(canvasRef.current);
       setEngine(engine);
+      setFabricCanvas(engine.canvas);
       
       if (onCanvasReady) {
         onCanvasReady(engine);

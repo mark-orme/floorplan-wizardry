@@ -1,6 +1,6 @@
 
 import { test, expect } from '@playwright/test';
-import { runAccessibilityAudit, AccessibilityViolation } from '@/utils/testing/accessibility';
+import { runAccessibilityAudit, generateA11yReport } from '@/utils/testing/accessibility';
 
 test.describe('Canvas Accessibility', () => {
   test.beforeEach(async ({ page }) => {
@@ -9,14 +9,18 @@ test.describe('Canvas Accessibility', () => {
   });
 
   test('canvas interface should be accessible', async ({ page }) => {
-    // Test the canvas interface excluding the actual canvas element
     const violations = await runAccessibilityAudit(page, {
-      excludeSelectors: ['.fabric-canvas']
+      excludeSelectors: ['.fabric-canvas'],
+      rules: {
+        'color-contrast': { enabled: true, level: 'error' },
+        'aria-roles': { enabled: true, level: 'error' },
+        'keyboard-navigable': { enabled: true, level: 'error' }
+      }
     });
 
-    // Log violations for reporting
     if (violations.length > 0) {
-      console.log('Accessibility violations:', JSON.stringify(violations, null, 2));
+      const report = generateA11yReport(violations);
+      console.log('Accessibility violations:', JSON.stringify(report, null, 2));
     }
 
     expect(violations).toEqual([]);
