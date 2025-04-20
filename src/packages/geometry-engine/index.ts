@@ -78,12 +78,12 @@ const calculateIntersectionPoint = (line1: Line, line2: Line): Point | null => {
   }
 };
 
-// Fix the return type to not be a Promise
+// Fix: Return Point | null directly, not a Promise
 export const calculateIntersection = (line1: Line, line2: Line): Point | null => {
   return calculateIntersectionPoint(line1, line2);
 };
 
-// Fix the return type to be a boolean, not a Promise
+// Fix: Return boolean directly, not a Promise
 export const areLinesIntersecting = (line1: Line, line2: Line): boolean => {
   return doIntersect(line1.start, line1.end, line2.start, line2.end);
 };

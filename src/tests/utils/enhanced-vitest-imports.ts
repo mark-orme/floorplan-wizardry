@@ -44,7 +44,11 @@ const createCanvasMock = (): Canvas => {
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
     clear: vi.fn(),
-    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
+    // Fix: Ensure withImplementation returns Promise<void>
+    withImplementation: vi.fn().mockImplementation((callback) => {
+      // Properly implement to always return Promise<void>
+      return Promise.resolve();
+    })
   } as unknown as Canvas;
 };
 

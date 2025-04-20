@@ -17,7 +17,7 @@ export function setupFabricMock() {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // Fix the withImplementation method to correctly return Promise<void>
+    // Fix: Proper implementation that returns Promise<void>
     withImplementation: vi.fn().mockImplementation((callback) => Promise.resolve())
   }));
 

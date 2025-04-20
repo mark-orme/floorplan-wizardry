@@ -60,8 +60,8 @@ export const createMockCanvas = (): Canvas => {
       color: '#000000',
       width: 2
     },
-    // Fix the withImplementation method to correctly return Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback) => Promise.resolve())
+    // Fix: Correctly typed withImplementation that returns Promise<void>
+    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
   } as unknown as Canvas;
   
   return canvas;

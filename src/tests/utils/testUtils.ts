@@ -9,8 +9,8 @@ export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPl
     id: overrides.id || 'test-floor-plan',
     name: overrides.name || 'Test Floor Plan',
     label: overrides.label || 'Test Label',
-    data: overrides.data || {},
-    userId: overrides.userId || 'test-user',
+    data: overrides.data || {}, // Required property
+    userId: overrides.userId || 'test-user', // Required property
     strokes: overrides.strokes || [],
     walls: overrides.walls || [],
     rooms: overrides.rooms || [],
@@ -42,7 +42,7 @@ export const createTestRoom = (overrides: Partial<Room> = {}): Room => {
     type: validType,
     points: overrides.points || [],
     walls: overrides.walls || [],
-    color: overrides.color || '#ffffff',
+    color: overrides.color || '#ffffff', // Required property
     area: overrides.area !== undefined ? overrides.area : 0,
     level: overrides.level !== undefined ? overrides.level : 0,
     ...overrides
@@ -77,7 +77,7 @@ export const createTestWall = (overrides: Partial<Wall> = {}): Wall => {
     thickness: overrides.thickness || 10,
     color: overrides.color || '#000000',
     length: overrides.length || 141.42,
-    roomIds: overrides.roomIds || [],
+    roomIds: overrides.roomIds || [], // Ensuring roomIds is always provided
     ...overrides
   };
 };
