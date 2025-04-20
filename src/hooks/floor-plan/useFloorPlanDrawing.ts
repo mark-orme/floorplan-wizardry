@@ -94,9 +94,11 @@ export const useFloorPlanDrawing = ({
   }, [setFloorPlan, onDrawComplete]);
 
   const calculateAreas = useCallback(() => {
-    // Mock implementation
-    return [100];
-  }, []);
+    // Calculate the areas of all rooms in the floor plan
+    if (!floorPlan || !floorPlan.rooms) return [0];
+    
+    return floorPlan.rooms.map(room => room.area);
+  }, [floorPlan]);
 
   // Add a drawFloorPlan method for compatibility with useFloorPlans hook
   const drawFloorPlan = useCallback((canvas: FabricCanvas, plan: FloorPlan) => {

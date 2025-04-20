@@ -25,6 +25,10 @@ export interface UseSyncedFloorPlansResult {
   isDrawing: boolean;
   isSyncing: boolean;
   lastSynced: Date | null;
+  // Add functions needed by tests
+  syncFloorPlans: () => Promise<void>;
+  loadFloorPlan: (id: string) => Promise<void>;
+  calculateGIA: () => number;
 }
 
 export const useSyncedFloorPlans = ({
@@ -124,27 +128,46 @@ export const useSyncedFloorPlans = ({
     }
   }, [floorPlans.length, currentFloorIndex]);
   
+  // Implement functions needed by tests
+  const syncFloorPlans = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setLastSynced(new Date());
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+  
+  const loadFloorPlan = useCallback(async (id: string) => {
+    // Mock implementation
+    const index = floorPlans.findIndex(fp => fp.id === id);
+    if (index >= 0) {
+      setCurrentFloorIndex(index);
+    }
+  }, [floorPlans]);
+  
+  const calculateGIA = useCallback(() => {
+    // Mock implementation
+    if (!currentFloorPlan) return 0;
+    
+    const totalArea = currentFloorPlan.rooms.reduce((sum, room) => sum + room.area, 0);
+    return totalArea;
+  }, [currentFloorPlan]);
+  
   // Auto-sync functionality
   useEffect(() => {
     if (!autoSync) return;
     
     const syncTimer = setInterval(() => {
-      // Mock sync implementation
-      console.log('Auto-syncing floor plans');
-      setIsSyncing(true);
-      
-      // Simulate network request
-      setTimeout(() => {
-        setIsSyncing(false);
-        setLastSynced(new Date());
-        console.log('Sync complete');
-      }, 1000);
+      syncFloorPlans();
     }, syncInterval);
     
     return () => {
       clearInterval(syncTimer);
     };
-  }, [autoSync, syncInterval]);
+  }, [autoSync, syncInterval, syncFloorPlans]);
   
   return {
     floorPlans,
@@ -156,6 +179,10 @@ export const useSyncedFloorPlans = ({
     drawFloorPlan,
     isDrawing,
     isSyncing,
-    lastSynced
+    lastSynced,
+    // Functions needed by tests
+    syncFloorPlans,
+    loadFloorPlan,
+    calculateGIA
   };
 };

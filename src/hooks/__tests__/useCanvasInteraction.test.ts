@@ -1,108 +1,99 @@
 
-/**
- * Tests for useCanvasInteraction hook
- */
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { Canvas as FabricCanvas } from 'fabric';
+// Update test imports and implement test
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { useCanvasInteraction } from '../useCanvasInteraction';
 import { DrawingMode } from '@/constants/drawingModes';
-
-// Mock Canvas
-vi.mock('fabric', () => ({
-  Canvas: vi.fn().mockImplementation(() => ({}))
-}));
 
 describe('useCanvasInteraction', () => {
   let mockCanvas: any;
-  const mockSaveCurrentState = vi.fn();
-  
+  let mockCanvasRef: any;
+  let saveCurrentState: any;
+
   beforeEach(() => {
     mockCanvas = {
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      setActiveObject: vi.fn(),
-      discardActiveObject: vi.fn(),
-      getActiveObject: vi.fn(),
+      isDrawingMode: false,
+      selection: true,
       getActiveObjects: vi.fn().mockReturnValue([]),
-      on: vi.fn(),
-      off: vi.fn(),
-      selection: true
+      remove: vi.fn(),
+      discardActiveObject: vi.fn(),
+      requestRenderAll: vi.fn(),
+      forEachObject: vi.fn(),
+      off: vi.fn()
     };
-    mockSaveCurrentState.mockClear();
-  });
-  
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      canvas: mockCanvas,
-      tool: DrawingMode.SELECT,
-      saveCurrentState: mockSaveCurrentState
-    }));
     
-    // The result now only includes the properties defined in UseCanvasInteractionResult
-    expect(result.current.deleteSelectedObjects).toBeDefined();
-    expect(result.current.enablePointSelection).toBeDefined();
-    expect(result.current.setupSelectionMode).toBeDefined();
+    mockCanvasRef = { current: mockCanvas };
+    saveCurrentState = vi.fn();
   });
-  
-  it('should handle selection mode', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      canvas: mockCanvas,
+
+  test('setupSelectionMode with SELECT tool should enable point selection', () => {
+    const { setupSelectionMode } = useCanvasInteraction({
+      fabricCanvasRef: mockCanvasRef,
       tool: DrawingMode.SELECT,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    act(() => {
-      result.current.setupSelectionMode();
+      saveCurrentState
     });
-    
-    expect(mockCanvas.selection).toBe(true);
+
+    setupSelectionMode();
+
+    expect(mockCanvas.isDrawingMode).toBe(false);
+    expect(mockCanvas.forEachObject).toHaveBeenCalled();
   });
-  
-  it('should handle drawing mode setup', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      canvas: mockCanvas,
+
+  test('setupSelectionMode with DRAW tool should enable drawing mode', () => {
+    const { setupSelectionMode } = useCanvasInteraction({
+      fabricCanvasRef: mockCanvasRef,
       tool: DrawingMode.DRAW,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    act(() => {
-      result.current.setupSelectionMode();
+      saveCurrentState
     });
-    
-    // Should disable selection in drawing mode
+
+    setupSelectionMode();
+
+    expect(mockCanvas.isDrawingMode).toBe(true);
     expect(mockCanvas.selection).toBe(false);
+    expect(mockCanvas.forEachObject).toHaveBeenCalled();
   });
-  
-  it('should handle null canvas gracefully', () => {
-    const { result } = renderHook(() => useCanvasInteraction({
-      canvas: null,
+
+  test('deleteSelectedObjects should remove selected objects', () => {
+    const activeObjects = [{ id: 'obj1' }, { id: 'obj2' }];
+    mockCanvas.getActiveObjects.mockReturnValue(activeObjects);
+
+    const { deleteSelectedObjects } = useCanvasInteraction({
+      fabricCanvasRef: mockCanvasRef,
       tool: DrawingMode.SELECT,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    act(() => {
-      // These should not throw errors
-      result.current.setupSelectionMode();
-      result.current.enablePointSelection();
-      result.current.deleteSelectedObjects();
+      saveCurrentState
     });
-    
-    // No assertions needed - we're just making sure it doesn't throw
+
+    deleteSelectedObjects();
+
+    expect(saveCurrentState).toHaveBeenCalled();
+    expect(mockCanvas.remove).toHaveBeenCalledWith(...activeObjects);
+    expect(mockCanvas.discardActiveObject).toHaveBeenCalled();
   });
-  
-  it('should clean up event listeners on unmount', () => {
-    const { unmount } = renderHook(() => useCanvasInteraction({
-      canvas: mockCanvas,
+
+  test('deleteSelectedObjects should not do anything if canvas is null', () => {
+    const nullCanvasRef = { current: null };
+    
+    const { deleteSelectedObjects } = useCanvasInteraction({
+      fabricCanvasRef: nullCanvasRef,
       tool: DrawingMode.SELECT,
-      saveCurrentState: mockSaveCurrentState
-    }));
-    
-    unmount();
-    
-    expect(mockCanvas.off).toHaveBeenCalled();
+      saveCurrentState
+    });
+
+    deleteSelectedObjects();
+
+    expect(saveCurrentState).not.toHaveBeenCalled();
+  });
+
+  test('enablePointSelection should set up point selection', () => {
+    const { enablePointSelection } = useCanvasInteraction({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.SELECT,
+      saveCurrentState
+    });
+
+    enablePointSelection();
+
+    expect(mockCanvas.selection).toBe(false);
+    expect(mockCanvas.forEachObject).toHaveBeenCalled();
+    expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
   });
 });

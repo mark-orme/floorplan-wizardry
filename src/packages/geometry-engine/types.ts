@@ -1,48 +1,25 @@
 
 /**
- * Type definitions for the geometry engine
+ * Type definitions for geometry engine
  * @module geometry-engine/types
  */
 
-/**
- * Point interface
- */
 export interface Point {
   x: number;
   y: number;
 }
 
-/**
- * Line segment between two points
- */
 export interface LineSegment {
   start: Point;
   end: Point;
 }
 
-/**
- * Line definition (can be infinite)
- */
-export interface Line {
-  point: Point;
-  angle: number; // In radians
+export interface Polygon {
+  points: Point[];
 }
 
-/**
- * Worker message data interface
- */
-export interface WorkerMessageData {
-  id: string;
-  operation: 'simplifyPolyline' | 'calculateIntersections' | 'other';
-  data: any;
+export interface GeometryOperationOptions {
+  tolerance?: number;
+  maxIterations?: number;
 }
 
-/**
- * Worker response data interface
- */
-export interface WorkerResponseData {
-  id: string;
-  status: 'success' | 'error';
-  result?: any;
-  error?: string;
-}

@@ -31,4 +31,8 @@ export interface Room {
   
   /** Floor level this room belongs to */
   level: number;
+  
+  /** Wall IDs associated with this room (required for compatibility) */
+  walls: string[];
 }
+

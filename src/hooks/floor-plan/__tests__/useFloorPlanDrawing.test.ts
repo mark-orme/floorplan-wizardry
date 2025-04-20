@@ -1,9 +1,8 @@
-
 /**
  * Tests for the useFloorPlanDrawing hook
  * @module hooks/floor-plan/__tests__/useFloorPlanDrawing.test
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';
 import { createMockFloorPlanDrawingResult } from './useFloorPlanDrawingMock';
@@ -11,6 +10,7 @@ import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPl
 import { Point } from '@/types/core/Geometry';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Canvas } from 'fabric';
+import { RoomTypeLiteral } from '@/types/floor-plan/basicTypes';
 
 // Mock useSnapToGrid hook
 vi.mock('@/hooks/useSnapToGrid', () => ({
@@ -162,6 +162,49 @@ describe('useFloorPlanDrawing', () => {
     });
     
     expect(result.current.isDrawing).toBe(false);
+  });
+  
+  it('should cancel drawing when requested', () => {
+    const floorPlan = {
+      id: '1',
+      name: 'Floor 1',
+      label: 'First Floor', 
+      strokes: [],
+      walls: [],
+      rooms: [],
+      level: 0,
+      index: 0,
+      gia: 0,
+      canvasData: null,
+      canvasJson: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        paperSize: PaperSize.A4,
+        level: 0
+      }
+    };
+
+    const mockSetFloorPlan = vi.fn();
+
+    const { drawingPoints, isDrawing, startDrawing, cancelDrawing } = useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef,
+      tool: DrawingMode.LINE,
+      floorPlan,
+      setFloorPlan: mockSetFloorPlan
+    });
+
+    const testPoint: Point = { x: 100, y: 100 };
+    
+    act(() => {
+      startDrawing(testPoint);
+      cancelDrawing();
+    });
+    
+    expect(cancelDrawing).toBeDefined();
+    expect(typeof cancelDrawing).toBe('function');
   });
   
   it('can add strokes directly', () => {

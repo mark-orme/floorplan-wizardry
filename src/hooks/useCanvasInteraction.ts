@@ -31,15 +31,20 @@ export const useCanvasInteraction = ({
 }: CanvasInteractionOptions): UseCanvasInteractionResult => {
   // Create a mutable reference if canvas is provided directly
   const canvasRef = useCallback(() => {
-    if (fabricCanvasRef) return fabricCanvasRef;
+    if (fabricCanvasRef?.current) return fabricCanvasRef;
     
-    // If canvas is a direct FabricCanvas instance or null
-    if (canvas === null || canvas instanceof FabricCanvas) {
+    // If canvas is a direct FabricCanvas instance
+    if (canvas instanceof FabricCanvas) {
       return { current: canvas };
     }
     
     // If canvas is a ref
-    return canvas;
+    if (canvas && 'current' in canvas) {
+      return canvas;
+    }
+    
+    // Default empty ref
+    return { current: null };
   }, [fabricCanvasRef, canvas])();
 
   const [isInteracting, setIsInteracting] = useState(false);
