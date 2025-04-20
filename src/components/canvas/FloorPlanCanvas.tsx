@@ -2,17 +2,20 @@
 import React, { useRef, useEffect } from 'react';
 import { useCanvasEngine } from '@/contexts/CanvasEngineContext';
 import { FabricCanvasEngine } from '@/implementations/canvas-engine/FabricCanvasEngine';
+import { toast } from 'sonner';
 
 interface FloorPlanCanvasProps {
   width?: number;
   height?: number;
   onCanvasReady?: (engine: any) => void;
+  onError?: (error: Error) => void;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   width = 800,
   height = 600,
-  onCanvasReady
+  onCanvasReady,
+  onError
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { setEngine } = useCanvasEngine();
@@ -20,17 +23,26 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const engine = new FabricCanvasEngine(canvasRef.current);
-    setEngine(engine);
-    
-    if (onCanvasReady) {
-      onCanvasReady(engine);
-    }
+    try {
+      const engine = new FabricCanvasEngine(canvasRef.current);
+      setEngine(engine);
+      
+      if (onCanvasReady) {
+        onCanvasReady(engine);
+      }
 
-    return () => {
-      engine.dispose();
-    };
-  }, [setEngine, onCanvasReady]);
+      return () => {
+        engine.dispose();
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      if (onError && error instanceof Error) {
+        onError(error);
+      } else if (error instanceof Error) {
+        toast.error(`Canvas error: ${error.message}`);
+      }
+    }
+  }, [setEngine, onCanvasReady, onError]);
 
   return (
     <canvas
