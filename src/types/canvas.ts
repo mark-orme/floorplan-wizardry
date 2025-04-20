@@ -13,6 +13,8 @@ export interface DrawOptions {
 export interface CanvasObject {
   id: string;
   type: string;
+  properties?: Record<string, any>;
+  points?: Point[];
 }
 
 export interface StrokeStyle {
@@ -29,4 +31,7 @@ export interface CanvasEvents {
   'selection:updated': (e: { target: CanvasObject[] }) => void;
   'selection:cleared': () => void;
   'path:created': (e: { path: CanvasObject }) => void;
+  'mouse:down': (e: any) => void;
+  'mouse:move': (e: any) => void;
+  'mouse:up': (e: any) => void;
 }

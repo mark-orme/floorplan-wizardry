@@ -109,3 +109,7 @@ export enum PaperSize {
   TABLOID = 'TABLOID',
   CUSTOM = 'CUSTOM'
 }
+
+// Defer to centralized DrawingMode from constants
+import { DrawingMode } from '@/constants/drawingModes';
+export { DrawingMode };

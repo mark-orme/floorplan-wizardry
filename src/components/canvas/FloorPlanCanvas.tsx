@@ -1,8 +1,10 @@
 
 import React, { useRef, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvasEngine } from '@/contexts/CanvasEngineContext';
 import { FabricCanvasEngine } from '@/implementations/canvas-engine/FabricCanvasEngine';
 import { useWebGLCanvas } from '@/hooks/useWebGLCanvas';
+import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
 export interface FloorPlanCanvasProps {
@@ -10,13 +12,17 @@ export interface FloorPlanCanvasProps {
   height?: number;
   onCanvasReady?: (engine: any) => void;
   onError?: (error: Error) => void;
+  tool?: DrawingMode;
+  className?: string;
 }
 
 export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   width = 800,
   height = 600,
   onCanvasReady,
-  onError
+  onError,
+  tool = DrawingMode.SELECT,
+  className = ''
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { setEngine } = useCanvasEngine();
@@ -34,7 +40,9 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
     try {
       const engine = new FabricCanvasEngine(canvasRef.current);
       setEngine(engine);
-      setFabricCanvas(engine.canvas);
+      // Access the canvas property through a getter or public method
+      const canvas = engine.getCanvas();
+      setFabricCanvas(canvas);
       
       if (onCanvasReady) {
         onCanvasReady(engine);
@@ -58,8 +66,10 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
       ref={canvasRef}
       width={width}
       height={height}
-      className="border border-gray-200 rounded shadow-sm"
+      className={`border border-gray-200 rounded shadow-sm ${className}`}
       data-testid="floor-plan-canvas"
     />
   );
 };
+
+export default FloorPlanCanvas;

@@ -1,55 +1,56 @@
 
-/**
- * Geometry Engine
- * Core mathematical utilities for geometric operations
- * 
- * This package provides a unified API for all geometry-related operations,
- * making it reusable across projects and easier to maintain.
- * 
- * @module geometry-engine
- */
+// Core geometry functions
+import { calculateDistance, calculateArea, calculateIntersection } from './calculations';
+import { rotatePoint, scalePoint, translatePoint } from './transformations';
+import { snapToGrid, snapToAngle, snapToGuideline } from './snapping';
+import { 
+  isPointInPolygon, 
+  isLineIntersecting, 
+  isRectangleOverlapping 
+} from './collision';
 
-// Re-export all core types and functions
-export * from './types';
-export * from './core';
-export * from './transformations';
-export * from './calculations';
-export * from './validation';
-export * from './worker';
+// De-duplicate exports to avoid conflicts
+import { 
+  calculateCentroid as calculatePolygonCentroid, 
+  optimizePoints as optimizePolyline 
+} from './transformations';
 
-// Export version information
-export const VERSION = '1.0.0';
+// Utilities
+import { createGrid, createGuidelines } from './grid';
+import { polygonize, simplify } from './simplification';
 
-/**
- * Initialize the geometry engine with optional configuration
- * @param config Configuration options
- */
-export function initGeometryEngine(config?: {
-  useWorker?: boolean;
-  precision?: number;
-  logPerformance?: boolean;
-}) {
-  // Set default configuration
-  const finalConfig = {
-    useWorker: true,
-    precision: 2,
-    logPerformance: false,
-    ...config
-  };
+// Export everything with clear naming to avoid conflicts
+export {
+  // Calculations
+  calculateDistance,
+  calculateArea,
+  calculateIntersection,
   
-  // Initialize worker if enabled
-  if (finalConfig.useWorker) {
-    // Import worker initialization lazily
-    import('./worker').then(({ initGeometryWorker }) => {
-      initGeometryWorker();
-      console.log('Geometry engine worker initialized');
-    }).catch(error => {
-      console.error('Failed to initialize geometry worker:', error);
-    });
-  }
+  // Transformations
+  rotatePoint,
+  scalePoint,
+  translatePoint,
+  calculatePolygonCentroid, // Renamed
+  optimizePolyline, // Renamed
   
-  return {
-    version: VERSION,
-    config: finalConfig
-  };
-}
+  // Snapping
+  snapToGrid,
+  snapToAngle,
+  snapToGuideline,
+  
+  // Collision detection
+  isPointInPolygon,
+  isLineIntersecting,
+  isRectangleOverlapping,
+  
+  // Grid utilities
+  createGrid,
+  createGuidelines,
+  
+  // Simplification utilities
+  polygonize,
+  simplify
+};
+
+// Export types
+export type { Point, LineSegment, Polygon, Rectangle } from './types';
