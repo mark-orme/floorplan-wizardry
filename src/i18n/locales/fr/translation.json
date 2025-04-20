@@ -1,0 +1,92 @@
+
+{
+  "app": {
+    "title": "Outil de Dessin de Plan d'Étage",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue"
+  },
+  "canvas": {
+    "toolbar": {
+      "select": "Sélectionner",
+      "draw": "Mur à Main Levée",
+      "straightLine": "Ligne Droite",
+      "wall": "Mur",
+      "eraser": "Gomme",
+      "undo": "Annuler",
+      "redo": "Rétablir",
+      "delete": "Supprimer la Sélection",
+      "save": "Enregistrer",
+      "thickness": "Épaisseur",
+      "color": "Couleur"
+    },
+    "messages": {
+      "lineThicknessUpdated": "Épaisseur de ligne définie à",
+      "colorUpdated": "Couleur de ligne mise à jour",
+      "canvasError": "Erreur lors de l'initialisation du canevas",
+      "stateSaved": "État du dessin enregistré",
+      "undoSuccess": "Annulation réussie",
+      "redoSuccess": "Rétablissement réussi"
+    },
+    "tooltips": {
+      "select": "Cliquez pour sélectionner des objets. Faites glisser pour déplacer.",
+      "draw": "Cliquez et faites glisser pour dessiner librement.",
+      "straightLine": "Cliquez pour commencer la ligne, cliquez à nouveau pour terminer. Maintenez Maj pour des angles de 45°.",
+      "wall": "Cliquez pour commencer le mur, cliquez à nouveau pour terminer. Les murs s'alignent sur la grille.",
+      "eraser": "Cliquez sur les objets pour les effacer."
+    },
+    "measurement": {
+      "meters": "m",
+      "feet": "pi",
+      "sqMeters": "m²",
+      "sqFeet": "pi²"
+    }
+  },
+  "toolVisualizer": {
+    "defaultHint": "Sélectionnez un outil pour commencer."
+  },
+  "common": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "remove": "Retirer",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "theme": "Thème",
+    "units": "Unités de Mesure",
+    "grid": "Afficher la Grille",
+    "collaboration": "Collaboration en Temps Réel"
+  },
+  "tutorial": {
+    "welcome": {
+      "title": "Bienvenue dans Floor Plan Creator !",
+      "description": "Découvrons les principales fonctionnalités de l'application."
+    },
+    "tools": {
+      "title": "Outils de Dessin",
+      "description": "Utilisez ces outils pour créer des murs, tracer des lignes et modifier votre plan d'étage."
+    },
+    "shortcuts": {
+      "title": "Raccourcis Clavier",
+      "description": "Appuyez sur \"Ctrl + Z\" pour annuler, \"Ctrl + Y\" pour rétablir et \"Suppr\" pour supprimer les éléments sélectionnés."
+    },
+    "collaboration": {
+      "title": "Collaboration en Temps Réel",
+      "description": "Plusieurs utilisateurs peuvent travailler sur le même plan simultanément. Les changements se synchronisent automatiquement."
+    },
+    "drawing": {
+      "title": "Dessin des Murs",
+      "description": "Sélectionnez l'outil mur et cliquez pour commencer à dessiner. Cliquez à nouveau pour terminer."
+    },
+    "measurements": {
+      "title": "Mesures",
+      "description": "Pendant que vous dessinez, les mesures apparaissent pour vous aider à créer des plans précis."
+    }
+  }
+}

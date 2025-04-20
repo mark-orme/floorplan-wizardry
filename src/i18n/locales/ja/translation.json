@@ -1,0 +1,92 @@
+
+{
+  "app": {
+    "title": "間取り図作成ツール",
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました"
+  },
+  "canvas": {
+    "toolbar": {
+      "select": "選択",
+      "draw": "フリーハンド壁",
+      "straightLine": "直線",
+      "wall": "壁",
+      "eraser": "消しゴム",
+      "undo": "元に戻す",
+      "redo": "やり直し",
+      "delete": "選択を削除",
+      "save": "保存",
+      "thickness": "太さ",
+      "color": "色"
+    },
+    "messages": {
+      "lineThicknessUpdated": "線の太さを設定：",
+      "colorUpdated": "線の色を更新しました",
+      "canvasError": "キャンバスの初期化エラー",
+      "stateSaved": "図面の状態を保存しました",
+      "undoSuccess": "元に戻しました",
+      "redoSuccess": "やり直しました"
+    },
+    "tooltips": {
+      "select": "オブジェクトを選択するにはクリック。ドラッグで移動。",
+      "draw": "クリック＆ドラッグで自由に描画。",
+      "straightLine": "クリックで線を開始、再度クリックで終了。Shiftキーで45度角に。",
+      "wall": "クリックで壁を開始、再度クリックで終了。壁はグリッドにスナップします。",
+      "eraser": "オブジェクトをクリックして削除。"
+    },
+    "measurement": {
+      "meters": "m",
+      "feet": "ft",
+      "sqMeters": "m²",
+      "sqFeet": "ft²"
+    }
+  },
+  "toolVisualizer": {
+    "defaultHint": "ツールを選択して開始"
+  },
+  "common": {
+    "confirm": "確認",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "add": "追加",
+    "remove": "削除",
+    "yes": "はい",
+    "no": "いいえ"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "theme": "テーマ",
+    "units": "測定単位",
+    "grid": "グリッド表示",
+    "collaboration": "リアルタイム共同作業"
+  },
+  "tutorial": {
+    "welcome": {
+      "title": "Floor Plan Creatorへようこそ！",
+      "description": "アプリケーションの主な機能を見ていきましょう。"
+    },
+    "tools": {
+      "title": "描画ツール",
+      "description": "これらのツールを使用して、壁を作成し、線を引き、間取り図を修正します。"
+    },
+    "shortcuts": {
+      "title": "キーボードショートカット",
+      "description": "「Ctrl + Z」で元に戻す、「Ctrl + Y」でやり直し、「Delete」で選択要素を削除。"
+    },
+    "collaboration": {
+      "title": "リアルタイム共同作業",
+      "description": "複数のユーザーが同じ間取り図で同時に作業できます。変更は自動的に同期されます。"
+    },
+    "drawing": {
+      "title": "壁の描画",
+      "description": "壁ツールを選択し、クリックして描画を開始。再度クリックで終了。"
+    },
+    "measurements": {
+      "title": "測定",
+      "description": "描画中に測定値が表示され、正確な間取り図の作成をサポートします。"
+    }
+  }
+}
