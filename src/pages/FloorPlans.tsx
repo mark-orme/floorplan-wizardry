@@ -20,34 +20,20 @@ export default function FloorPlans() {
   
   const {
     loading,
-    floorPlans = [], // Provide default empty array
-    error = null,
-    getFloorPlan,
+    isLoading, // Use the alias provided by the hook
+    error,
+    floorPlans = [], // Use the floorPlans returned by the hook with default empty array
+    listFloorPlans,
     createFloorPlan,
-    updateFloorPlan,
     deleteFloorPlan
   } = useSupabaseFloorPlans();
   
-  // For compatibility with components expecting these prop names
-  const isLoading = loading;
-  
-  // Load floor plans on mount
+  // Load floor plans on mount (hook already does this in useEffect)
   useEffect(() => {
-    const fetchFloorPlans = async () => {
-      try {
-        // Implementation depends on actual hook structure
-        // For now, just handle errors
-        if (error) {
-          console.error('Error loading floor plans:', error);
-          toast.error('Failed to load floor plans');
-        }
-      } catch (err) {
-        console.error('Error in floor plan fetching:', err);
-        toast.error('Failed to load floor plans');
-      }
-    };
-    
-    fetchFloorPlans();
+    // Check for errors from the hook
+    if (error) {
+      console.error('Error from hook:', error);
+    }
   }, [error]);
   
   const handleCreateNew = () => {
@@ -61,7 +47,7 @@ export default function FloorPlans() {
   };
   
   const handleRefresh = async () => {
-    // Implementation depends on hook structure
+    await listFloorPlans();
     toast.success('Floor plans refreshed');
   };
   
@@ -71,15 +57,22 @@ export default function FloorPlans() {
   
   const handleEditorClose = () => {
     setShowEditor(false);
+    listFloorPlans();
   };
   
-  const handleDeleteFloorPlan = async (id: string) => {
+  // Wrapper function to match expected return type in FloorPlansList
+  const handleDeleteFloorPlan = async (id: string): Promise<boolean> => {
     try {
-      await deleteFloorPlan(id);
+      const { error } = await deleteFloorPlan(id);
+      if (error) {
+        return false;
+      }
       toast.success('Floor plan deleted');
+      return true;
     } catch (err) {
       console.error('Error deleting floor plan:', err);
       toast.error('Failed to delete floor plan');
+      return false;
     }
   };
   

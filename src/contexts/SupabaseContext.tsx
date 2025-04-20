@@ -17,7 +17,7 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      // Try to get Supabase URL and key from environment variables
+      // Get Supabase URL and key from environment variables
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,9 +29,16 @@ export default function FloorplanDetails() {
       
       try {
         setIsLoading(true);
-        const data = await getFloorPlan(id);
+        const { data, error } = await getFloorPlan(id);
+        if (error) {
+          toast.error('Error loading floor plan');
+          navigate('/floorplans');
+          return;
+        }
+        
         if (data) {
-          setFloorPlan(data);
+          // Correctly set the FloorPlan data
+          setFloorPlan(data as FloorPlan);
         } else {
           toast.error('Floor plan not found');
           navigate('/floorplans');
