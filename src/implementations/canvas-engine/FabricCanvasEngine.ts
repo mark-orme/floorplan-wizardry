@@ -1,166 +1,108 @@
 
-import { Canvas as FabricCanvas, Point as FabricPoint, Object as FabricObject } from 'fabric';
-import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
-import { Point, DrawOptions, CanvasObject, StrokeStyle, CanvasEvents } from '@/types/canvas';
+import { Canvas, Object as FabricObject, IEvent } from 'fabric';
+import { CanvasObject, Point, DrawOptions } from '@/types/canvas';
 
-export class FabricCanvasEngine implements ICanvasEngine {
-  private canvas: FabricCanvas;
+export class FabricCanvasEngine {
+  private canvas: Canvas | null = null;
   private eventHandlers: Record<string, Function[]> = {};
 
   constructor(canvasElement: HTMLCanvasElement) {
-    this.canvas = new FabricCanvas(canvasElement);
-    this.canvas.selection = false; // Disable selection by default
-  }
-
-  // Get the internal Fabric.js canvas instance
-  getCanvas(): FabricCanvas {
-    return this.canvas;
-  }
-
-  // Drawing operations
-  drawLine(points: Point[], options: DrawOptions): void {
-    if (points.length < 2) return;
-    
-    const line = new fabric.Line([
-      points[0].x, 
-      points[0].y, 
-      points[1].x, 
-      points[1].y
-    ], {
-      stroke: options.color,
-      strokeWidth: options.width,
-      opacity: options.opacity || 1,
-      selectable: true
+    this.canvas = new Canvas(canvasElement, {
+      width: canvasElement.width,
+      height: canvasElement.height,
+      selection: true,
+      backgroundColor: '#ffffff'
     });
-    
+  }
+
+  public dispose(): void {
+    if (this.canvas) {
+      this.canvas.dispose();
+      this.canvas = null;
+    }
+    this.eventHandlers = {};
+  }
+
+  public drawLine(start: Point, end: Point, options: DrawOptions): string {
+    if (!this.canvas) return '';
+
+    const line = new FabricObject.Line(
+      [start.x, start.y, end.x, end.y],
+      {
+        stroke: options.color,
+        strokeWidth: options.width,
+        opacity: options.opacity || 1,
+        selectable: true,
+        evented: true
+      }
+    );
+
     this.canvas.add(line);
     this.canvas.renderAll();
-    
-    this.triggerEvent('object:added', { target: this.convertToCanvasObject(line) });
+
+    return line.id?.toString() || '';
   }
 
-  drawShape(points: Point[], options: DrawOptions): void {
-    if (points.length < 3) return;
-    
-    const fabricPoints = points.map(p => new fabric.Point(p.x, p.y));
-    const polygon = new fabric.Polygon(fabricPoints, {
+  public drawRect(left: number, top: number, width: number, height: number, options: DrawOptions): string {
+    if (!this.canvas) return '';
+
+    const rect = new FabricObject.Rect({
+      left,
+      top,
+      width,
+      height,
       fill: 'transparent',
       stroke: options.color,
       strokeWidth: options.width,
       opacity: options.opacity || 1,
-      selectable: true
+      selectable: true,
+      evented: true
     });
-    
-    this.canvas.add(polygon);
+
+    this.canvas.add(rect);
     this.canvas.renderAll();
+
+    return rect.id?.toString() || '';
+  }
+
+  public removeObject(id: string): void {
+    if (!this.canvas) return;
+
+    const objects = this.canvas.getObjects();
+    const object = objects.find(obj => obj.id === id);
     
-    this.triggerEvent('object:added', { target: this.convertToCanvasObject(polygon) });
-  }
-
-  // Canvas state management
-  clear(): void {
-    this.canvas.clear();
-    this.triggerEvent('canvas:cleared', {});
-  }
-
-  undo(): void {
-    // Undo implementation would go here
-    console.log('Undo operation');
-  }
-
-  redo(): void {
-    // Redo implementation would go here
-    console.log('Redo operation');
-  }
-
-  // Object manipulation
-  addObject(object: CanvasObject): void {
-    // Implementation for adding objects
-    console.log('Add object operation', object);
-  }
-
-  removeObject(object: CanvasObject): void {
-    // Implementation for removing objects
-    console.log('Remove object operation', object);
-  }
-
-  updateObject(object: CanvasObject): void {
-    // Implementation for updating objects
-    console.log('Update object operation', object);
-  }
-
-  // Canvas state
-  getObjects(): CanvasObject[] {
-    return this.canvas.getObjects().map(this.convertToCanvasObject);
-  }
-
-  getCanvasState(): any {
-    return this.canvas.toJSON(['id', 'objectType']);
-  }
-
-  setCanvasState(state: any): void {
-    this.canvas.loadFromJSON(state, () => {
+    if (object) {
+      this.canvas.remove(object);
       this.canvas.renderAll();
+    }
+  }
+
+  public addEventListener(eventType: string, callback: Function): void {
+    if (!this.canvas) return;
+
+    if (!this.eventHandlers[eventType]) {
+      this.eventHandlers[eventType] = [];
+    }
+
+    this.eventHandlers[eventType].push(callback);
+
+    this.canvas.on(eventType as any, (e: IEvent) => {
+      const handlers = this.eventHandlers[eventType] || [];
+      handlers.forEach(handler => handler(e));
     });
   }
 
-  // Style management
-  setStrokeStyle(style: StrokeStyle): void {
-    // Implementation for setting stroke style
-    console.log('Set stroke style operation', style);
-  }
+  public removeEventListener(eventType: string, callback: Function): void {
+    if (!this.canvas) return;
 
-  // Zoom and pan
-  setZoom(level: number): void {
-    this.canvas.setZoom(level);
-    this.canvas.renderAll();
-  }
-
-  setPan(x: number, y: number): void {
-    this.canvas.absolutePan(new fabric.Point(x, y));
-    this.canvas.renderAll();
-  }
-
-  // Event handlers
-  on(event: string, callback: Function): void {
-    if (!this.eventHandlers[event]) {
-      this.eventHandlers[event] = [];
-    }
-    this.eventHandlers[event].push(callback);
-  }
-
-  off(event: string, callback: Function): void {
-    if (!this.eventHandlers[event]) return;
-    
-    this.eventHandlers[event] = this.eventHandlers[event].filter(
-      handler => handler !== callback
-    );
-  }
-
-  // Cleanup
-  dispose(): void {
-    this.canvas.dispose();
-    this.eventHandlers = {};
-  }
-
-  // Helper to trigger events
-  private triggerEvent(event: string, data: any): void {
-    if (!this.eventHandlers[event]) return;
-    
-    for (const handler of this.eventHandlers[event]) {
-      handler(data);
-    }
-  }
-
-  // Helper to convert Fabric objects to CanvasObject
-  private convertToCanvasObject(fabricObject: FabricObject): CanvasObject {
-    return {
-      id: fabricObject.data?.id || `obj-${Date.now()}`,
-      type: fabricObject.data?.type || 'unknown',
-      properties: { 
-        ...fabricObject.toObject(['left', 'top', 'width', 'height']),
-        objectType: fabricObject.data?.objectType
+    if (this.eventHandlers[eventType]) {
+      this.eventHandlers[eventType] = this.eventHandlers[eventType].filter(
+        handler => handler !== callback
+      );
+      
+      if (this.eventHandlers[eventType].length === 0) {
+        this.canvas.off(eventType as any);
       }
-    };
+    }
   }
 }

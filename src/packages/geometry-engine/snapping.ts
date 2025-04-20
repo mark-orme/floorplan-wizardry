@@ -1,9 +1,11 @@
 
-import { Point } from '@/types/canvas';
-import { calculateDistance } from './calculations';
+import { Point } from './types';
 
 /**
- * Snap a point to the nearest grid intersection
+ * Snap a point to the nearest grid point
+ * @param point Point to snap
+ * @param gridSize Size of grid cells
+ * @returns Snapped point
  */
 export const snapToGrid = (point: Point, gridSize: number): Point => {
   return {
@@ -13,59 +15,51 @@ export const snapToGrid = (point: Point, gridSize: number): Point => {
 };
 
 /**
- * Snap a point to the nearest point in an array of points if it's within a threshold
+ * Snap a point to the nearest point in a set of points
+ * @param point Point to snap
+ * @param points Set of points to snap to
+ * @param threshold Maximum distance for snapping
+ * @returns Snapped point or original if no points are within threshold
  */
-export const snapToPoint = (point: Point, points: Point[], threshold: number): Point => {
-  let closestPoint = point;
-  let minDistance = threshold;
+export const snapToPoints = (point: Point, points: Point[], threshold: number): Point => {
+  let minDist = threshold;
+  let closest = point;
   
   for (const p of points) {
-    const distance = calculateDistance(point, p);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestPoint = p;
+    const dx = p.x - point.x;
+    const dy = p.y - point.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < minDist) {
+      minDist = dist;
+      closest = p;
     }
   }
   
-  return closestPoint;
+  return closest;
 };
 
 /**
- * Snap to nearest line if within threshold
+ * Check if a point is within snapping distance of any points
+ * @param point Point to check
+ * @param points Array of points to check against
+ * @param threshold Snapping threshold distance
+ * @returns True if point is within threshold of any points
  */
-export const snapToLine = (
+export const isWithinSnappingDistance = (
   point: Point, 
-  lineStart: Point, 
-  lineEnd: Point, 
+  points: Point[], 
   threshold: number
-): Point => {
-  // Calculate projection of point onto line
-  const lineLength = calculateDistance(lineStart, lineEnd);
-  
-  if (lineLength === 0) return point;
-  
-  // Calculate normalized direction vector of line
-  const dirX = (lineEnd.x - lineStart.x) / lineLength;
-  const dirY = (lineEnd.y - lineStart.y) / lineLength;
-  
-  // Calculate vector from line start to point
-  const vecX = point.x - lineStart.x;
-  const vecY = point.y - lineStart.y;
-  
-  // Calculate dot product to find projection length
-  const projLength = vecX * dirX + vecY * dirY;
-  
-  // Calculate projection point
-  const projX = lineStart.x + dirX * Math.max(0, Math.min(projLength, lineLength));
-  const projY = lineStart.y + dirY * Math.max(0, Math.min(projLength, lineLength));
-  
-  // Calculate distance to projection
-  const distance = calculateDistance(point, { x: projX, y: projY });
-  
-  // Snap if within threshold
-  if (distance <= threshold) {
-    return { x: projX, y: projY };
+): boolean => {
+  for (const p of points) {
+    const dx = p.x - point.x;
+    const dy = p.y - point.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < threshold) {
+      return true;
+    }
   }
   
-  return point;
+  return false;
 };

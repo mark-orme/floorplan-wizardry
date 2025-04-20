@@ -1,130 +1,113 @@
 
-import { FloorPlan, PaperSize } from '@/types/FloorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
-import { CanvasObject } from '@/types/canvas';
+import { FloorPlan, Point, Stroke, Wall, Room } from '@/types/FloorPlan';
 
 /**
- * Convert a string to a DrawingMode
- * @param mode String representation of drawing mode
- * @returns Normalized DrawingMode enum value
+ * Normalizes a drawing mode value to ensure it's a valid DrawingMode
+ * @param mode The drawing mode to normalize
+ * @returns A valid DrawingMode enum value
  */
-export const normalizeDrawingMode = (mode: string): DrawingMode => {
-  // Convert string to uppercase and check against enum
-  const normalizedMode = mode.toUpperCase().replace(/\s+/g, '_');
-  
-  // Check if it's a valid DrawingMode
-  if (Object.values(DrawingMode).includes(normalizedMode as any)) {
-    return normalizedMode as DrawingMode;
+export const normalizeDrawingMode = (mode: string | DrawingMode): DrawingMode => {
+  // If it's already a valid DrawingMode, return it
+  if (Object.values(DrawingMode).includes(mode as DrawingMode)) {
+    return mode as DrawingMode;
   }
   
-  // Map common alternative names
+  // Try to map from string representation
   const modeMap: Record<string, DrawingMode> = {
-    'SELECT_TOOL': DrawingMode.SELECT,
-    'DRAW_TOOL': DrawingMode.DRAW,
-    'LINE_TOOL': DrawingMode.LINE,
-    'RECTANGLE_TOOL': DrawingMode.RECTANGLE,
-    'CIRCLE_TOOL': DrawingMode.CIRCLE,
-    'TEXT_TOOL': DrawingMode.TEXT,
-    'WALL_TOOL': DrawingMode.WALL,
-    'ERASER_TOOL': DrawingMode.ERASER,
-    'PAN_TOOL': DrawingMode.PAN,
-    'HAND_TOOL': DrawingMode.HAND,
+    'select': DrawingMode.SELECT,
+    'draw': DrawingMode.DRAW,
+    'line': DrawingMode.LINE,
+    'straightLine': DrawingMode.STRAIGHT_LINE,
+    'straight_line': DrawingMode.STRAIGHT_LINE,
+    'rectangle': DrawingMode.RECTANGLE,
+    'circle': DrawingMode.CIRCLE,
+    'text': DrawingMode.TEXT,
+    'pan': DrawingMode.PAN,
+    'hand': DrawingMode.HAND,
+    'zoom': DrawingMode.ZOOM,
+    'erase': DrawingMode.ERASE,
+    'eraser': DrawingMode.ERASER,
+    'measure': DrawingMode.MEASURE,
+    'wall': DrawingMode.WALL,
+    'door': DrawingMode.DOOR,
+    'window': DrawingMode.WINDOW,
+    'room': DrawingMode.ROOM,
+    'roomLabel': DrawingMode.ROOM_LABEL,
+    'room_label': DrawingMode.ROOM_LABEL
   };
   
-  return modeMap[normalizedMode] || DrawingMode.SELECT;
+  return modeMap[mode.toLowerCase()] || DrawingMode.SELECT;
 };
 
 /**
- * Convert Canvas objects to floor plan strokes
- * @param objects Canvas objects
- * @returns Floor plan strokes array
+ * Adapts a floor plan object to match the FloorPlan interface
+ * Fills in missing properties with default values
+ * @param floorPlan The floor plan object to adapt
+ * @returns A valid FloorPlan object
  */
-export const canvasObjectsToStrokes = (objects: CanvasObject[]) => {
-  return objects
-    .filter(obj => ['line', 'path', 'polyline'].includes(obj.type))
-    .map(obj => ({
-      id: obj.id,
-      type: obj.type,
-      points: obj.points || [],
-      color: obj.properties?.color || '#000000',
-      thickness: obj.properties?.width || 1,
-      width: obj.properties?.width || 1,
-    }));
-};
-
-/**
- * Convert Canvas objects to floor plan walls
- * @param objects Canvas objects
- * @returns Floor plan walls array
- */
-export const canvasObjectsToWalls = (objects: CanvasObject[]) => {
-  return objects
-    .filter(obj => obj.type === 'wall')
-    .map(obj => ({
-      id: obj.id,
-      points: obj.points || [],
-      thickness: obj.properties?.thickness || 10,
-      color: obj.properties?.color || '#333333',
-      roomIds: obj.properties?.roomIds || [],
-    }));
-};
-
-/**
- * Convert Canvas objects to floor plan rooms
- * @param objects Canvas objects
- * @returns Floor plan rooms array
- */
-export const canvasObjectsToRooms = (objects: CanvasObject[]) => {
-  return objects
-    .filter(obj => obj.type === 'room')
-    .map(obj => ({
-      id: obj.id,
-      name: obj.properties?.name || 'Untitled Room',
-      type: obj.properties?.type || 'other',
-      points: obj.points || [],
-      color: obj.properties?.color || '#f0f0f0',
-      area: obj.properties?.area || 0,
-      level: obj.properties?.level || 0,
-      walls: obj.properties?.walls || [],
-    }));
-};
-
-/**
- * Create a FloorPlan object from Canvas objects
- * @param name Floor plan name
- * @param canvasObjects Canvas objects
- * @param canvasJson Serialized canvas JSON
- * @returns FloorPlan object
- */
-export const createFloorPlanFromCanvas = (
-  name: string,
-  canvasObjects: CanvasObject[],
-  canvasJson: string | null
-): FloorPlan => {
+export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
   const now = new Date().toISOString();
   
   return {
-    id: `fp-${Date.now()}`,
-    name,
-    label: name,
-    data: {},
-    userId: 'current-user', // This should be replaced with actual user ID
-    walls: canvasObjectsToWalls(canvasObjects),
-    rooms: canvasObjectsToRooms(canvasObjects),
-    strokes: canvasObjectsToStrokes(canvasObjects),
-    canvasJson,
-    canvasData: null,
+    id: floorPlan.id || `floor-${Date.now()}`,
+    name: floorPlan.name || 'Untitled Floor Plan',
+    label: floorPlan.label || 'Untitled',
+    index: floorPlan.index || 0,
+    strokes: floorPlan.strokes || [],
+    walls: floorPlan.walls || [],
+    rooms: floorPlan.rooms || [],
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    canvasData: floorPlan.canvasData || null,
+    canvasJson: floorPlan.canvasJson || null,
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    metadata: floorPlan.metadata || {
+      version: '1.0',
+      author: 'System',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
+    },
+    data: floorPlan.data || {},
+    userId: floorPlan.userId || 'anonymous'
+  };
+};
+
+/**
+ * Converts core floor plans to application floor plans
+ * @param corePlans Core floor plan data
+ * @returns Application-compatible floor plans
+ */
+export const appToCoreFloorPlans = (appPlans: FloorPlan[]): any[] => {
+  return appPlans.map(plan => ({
+    id: plan.id,
+    name: plan.name,
+    label: plan.label,
+    index: plan.index,
+    data: plan.data,
+    userId: plan.userId,
+    metadata: {
+      ...plan.metadata,
+      level: plan.level,
+    }
+  }));
+};
+
+/**
+ * Creates an empty floor plan
+ * @param index Index for the new floor plan
+ * @returns An empty floor plan
+ */
+export const createEmptyFloorPlan = (index: number = 0): FloorPlan => {
+  const now = new Date().toISOString();
+  return adaptFloorPlan({
+    name: `Floor ${index + 1}`,
+    label: `Floor ${index + 1}`,
+    index,
+    level: index,
     createdAt: now,
     updatedAt: now,
-    gia: 0, // Gross Internal Area - should be calculated properly
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0,
-      version: 1
-    }
-  };
+  });
 };

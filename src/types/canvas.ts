@@ -45,4 +45,6 @@ export interface PerformanceMetrics {
   objectCount: number;
   memoryUsage?: number;
   timestamp: number;
+  fps?: number;
+  visibleObjectCount?: number;
 }

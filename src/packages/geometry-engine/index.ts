@@ -1,29 +1,20 @@
 
-// Re-export all functionality
 import { calculateDistance, calculateArea, calculateIntersection } from './calculations';
-import { rotatePoint, scalePoint, translatePoint } from './transformations';
-import { snapToGrid, snapToPoint, snapToLine } from './snapping';
+import { rotatePoint, scalePoint, translatePoint, optimizePoints, snapPointsToGrid } from './transformations';
+import { snapToGrid, snapToPoints, isWithinSnappingDistance } from './snapping';
 import { 
-  linesIntersect, 
   isPointInPolygon, 
-  polygonsIntersect 
+  doLinesIntersect, 
+  rectangleContainsPoint 
 } from './collision';
-import { 
-  generateGridPoints, 
-  generateGridLines 
+import {
+  generateGridPoints,
+  getNearestGridPoint,
+  getGridCell
 } from './grid';
-import { 
-  simplifyPolyline 
-} from './simplification';
-import { 
-  LineSegment, 
-  Polygon, 
-  Rectangle, 
-  Circle, 
-  GeometryType 
-} from './types';
+import { simplifyPolyline, perpendicularDistance } from './simplification';
 
-// Export all functions and types
+// Re-export all functions
 export {
   // Calculations
   calculateDistance,
@@ -34,28 +25,28 @@ export {
   rotatePoint,
   scalePoint,
   translatePoint,
+  optimizePoints,
+  snapPointsToGrid,
   
   // Snapping
   snapToGrid,
-  snapToPoint,
-  snapToLine,
+  snapToPoints,
+  isWithinSnappingDistance,
   
-  // Collision detection
-  linesIntersect,
+  // Collision
   isPointInPolygon,
-  polygonsIntersect,
+  doLinesIntersect,
+  rectangleContainsPoint,
   
   // Grid
   generateGridPoints,
-  generateGridLines,
+  getNearestGridPoint,
+  getGridCell,
   
   // Simplification
   simplifyPolyline,
-  
-  // Types
-  LineSegment,
-  Polygon,
-  Rectangle,
-  Circle,
-  GeometryType
+  perpendicularDistance
 };
+
+// Re-export types using export type
+export type { Point, Line, LineSegment, WorkerMessageData } from './types';

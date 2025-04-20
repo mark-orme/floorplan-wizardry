@@ -16,5 +16,10 @@ export enum DrawingMode {
   DOOR = 'DOOR',
   WINDOW = 'WINDOW',
   ROOM = 'ROOM',
-  ROOM_LABEL = 'ROOM_LABEL'
+  ROOM_LABEL = 'ROOM_LABEL',
+  HAND = 'HAND',
+  PENCIL = 'PENCIL',
+  DIMENSION = 'DIMENSION',
+  STAIR = 'STAIR',
+  COLUMN = 'COLUMN'
 }

@@ -1,19 +1,22 @@
 
-import { Point } from '@/types/canvas';
+import { Point } from './types';
 
 /**
  * Generate grid points
+ * @param width Grid width
+ * @param height Grid height
+ * @param spacing Grid spacing
+ * @returns Array of grid points
  */
 export const generateGridPoints = (
-  width: number, 
-  height: number, 
-  gridSize: number
+  width: number,
+  height: number,
+  spacing: number
 ): Point[] => {
   const points: Point[] = [];
   
-  // Generate grid points
-  for (let x = 0; x <= width; x += gridSize) {
-    for (let y = 0; y <= height; y += gridSize) {
+  for (let x = 0; x <= width; x += spacing) {
+    for (let y = 0; y <= height; y += spacing) {
       points.push({ x, y });
     }
   }
@@ -22,30 +25,27 @@ export const generateGridPoints = (
 };
 
 /**
- * Generate grid lines
+ * Get the nearest grid point
+ * @param point Input point
+ * @param gridSize Grid size
+ * @returns Nearest grid point
  */
-export const generateGridLines = (
-  width: number, 
-  height: number, 
-  gridSize: number
-): { start: Point; end: Point }[] => {
-  const lines: { start: Point; end: Point }[] = [];
-  
-  // Generate horizontal lines
-  for (let y = 0; y <= height; y += gridSize) {
-    lines.push({
-      start: { x: 0, y },
-      end: { x: width, y }
-    });
-  }
-  
-  // Generate vertical lines
-  for (let x = 0; x <= width; x += gridSize) {
-    lines.push({
-      start: { x, y: 0 },
-      end: { x, y: height }
-    });
-  }
-  
-  return lines;
+export const getNearestGridPoint = (point: Point, gridSize: number): Point => {
+  return {
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  };
+};
+
+/**
+ * Calculate grid cell indices for a point
+ * @param point Input point
+ * @param gridSize Grid size
+ * @returns Grid cell indices
+ */
+export const getGridCell = (point: Point, gridSize: number): { row: number; col: number } => {
+  return {
+    row: Math.floor(point.y / gridSize),
+    col: Math.floor(point.x / gridSize)
+  };
 };

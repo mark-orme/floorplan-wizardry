@@ -1,46 +1,20 @@
 
-import { Point } from '@/types/canvas';
+export interface Point {
+  x: number;
+  y: number;
+}
 
-/**
- * Line segment representation
- */
-export interface LineSegment {
+export interface Line {
   start: Point;
   end: Point;
 }
 
-/**
- * Polygon representation
- */
-export interface Polygon {
-  points: Point[];
+export interface LineSegment {
+  p1: Point;
+  p2: Point;
 }
 
-/**
- * Rectangle representation
- */
-export interface Rectangle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Circle representation
- */
-export interface Circle {
-  center: Point;
-  radius: number;
-}
-
-/**
- * Types of geometric objects
- */
-export enum GeometryType {
-  POINT = 'point',
-  LINE = 'line',
-  POLYGON = 'polygon',
-  RECTANGLE = 'rectangle',
-  CIRCLE = 'circle'
+export interface WorkerMessageData {
+  type: string;
+  payload: any;
 }
