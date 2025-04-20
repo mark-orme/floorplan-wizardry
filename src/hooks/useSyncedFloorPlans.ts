@@ -17,6 +17,7 @@ export interface UseSyncedFloorPlansResult {
   removeFloorPlan: (index: number) => void;
   updateFloorPlan: (floorPlan: FloorPlan) => void;
   saveFloorPlan: () => Promise<string | null>;
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
 }
 
 export const useSyncedFloorPlans = ({
@@ -115,6 +116,7 @@ export const useSyncedFloorPlans = ({
     addFloorPlan,
     removeFloorPlan,
     updateFloorPlan,
-    saveFloorPlan
+    saveFloorPlan,
+    setFloorPlans
   };
 };

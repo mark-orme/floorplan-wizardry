@@ -63,9 +63,15 @@ export const useGrid = ({
       gridObjects.push(line);
     }
 
-    // Send grid to the back
+    // Send grid to the back - using setZIndex instead of moveTo for fabric.js v6 compatibility
     gridObjects.forEach(obj => {
-      obj.moveTo(0); // Use moveTo(0) instead of sendToBack()
+      // Use setZIndex if it exists, otherwise try to set zIndex directly
+      if (typeof obj.setZIndex === 'function') {
+        obj.setZIndex(0);
+      } else if ('zIndex' in obj) {
+        (obj as any).zIndex = 0;
+      }
+      // If neither method is available, we'll have to live with the default z-order
     });
     
     // Update the ref

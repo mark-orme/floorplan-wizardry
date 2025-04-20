@@ -1,173 +1,243 @@
 
-/**
- * Tests for useSyncedFloorPlans hook
- * Verifies floor plan synchronization and persistence
- * 
- * @module hooks/__tests__/useSyncedFloorPlans
- */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
-import { Canvas } from 'fabric';
-import { FloorPlan, createEmptyFloorPlan } from '@/types/FloorPlan';
-import { toast } from 'sonner';
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock dependencies
-vi.mock('sonner', () => ({
-  toast: {
-    error: vi.fn(),
-    success: vi.fn()
-  }
-}));
+// Mock canvas
+const mockCanvas = {
+  toJSON: vi.fn().mockReturnValue({ objects: [] }),
+  requestRenderAll: vi.fn()
+};
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value.toString();
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    })
-  };
-})();
+// Mock ref
+const mockCanvasRef = {
+  current: mockCanvas
+};
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-});
-
-// Create a mock floor plan using the createEmptyFloorPlan utility
-const mockFloorPlan = createEmptyFloorPlan({
-  id: 'floor-1',
-  name: 'Floor 1',
-  label: 'First Floor',
-});
-
-describe('useSyncedFloorPlans Hook', () => {
+describe('useSyncedFloorPlans', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorageMock.clear();
-  });
-
-  afterEach(() => {
-    vi.resetAllMocks();
   });
 
   it('should initialize with empty floor plans', () => {
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      fabricCanvasRef: mockCanvasRef
+    }));
+
     expect(result.current.floorPlans).toEqual([]);
+    expect(result.current.currentFloorIndex).toBe(0);
   });
 
-  it('should load floor plans from localStorage on init', () => {
-    // Setup: Add floor plans to localStorage
-    const testFloorPlans = [mockFloorPlan];
-    localStorageMock.setItem('floorPlans', JSON.stringify(testFloorPlans));
-    
-    // Execute: Render the hook
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Verify: Floor plans are loaded from localStorage
-    expect(localStorageMock.getItem).toHaveBeenCalledWith('floorPlans');
-    expect(result.current.floorPlans).toEqual(testFloorPlans);
-  });
-
-  it('should save floor plans to localStorage when using setFloorPlans', async () => {
-    // Setup: Render hook
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Execute: Set floor plans using the setter
-    act(() => {
-      result.current.setFloorPlans([mockFloorPlan]);
-    });
-    
-    // Allow any async operations to complete
-    await vi.runAllTimersAsync();
-    
-    // Verify: Floor plans are saved to localStorage
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('floorPlans', JSON.stringify([mockFloorPlan]));
-    expect(result.current.floorPlans).toEqual([mockFloorPlan]);
-  });
-
-  it('should handle localStorage errors when loading data', async () => {
-    // Setup: Mock localStorage to throw error
-    localStorageMock.getItem.mockImplementationOnce(() => {
-      throw new Error('Test error');
-    });
-    
-    // Execute: Render hook
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Verify: Error is handled and toast is shown
-    expect(toast.error).toHaveBeenCalledWith('Failed to load floor plans');
-    expect(result.current.floorPlans).toEqual([]);
-  });
-
-  it('should handle localStorage errors when saving data', async () => {
-    // Setup: Mock localStorage to throw error
-    localStorageMock.setItem.mockImplementationOnce(() => {
-      throw new Error('Test error');
-    });
-    
-    // Execute: Render hook and attempt to save
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    await act(async () => {
-      // Trigger save via setFloorPlans which internally saves to localStorage
-      result.current.setFloorPlans([mockFloorPlan]);
-      
-      // Verify: Error handling occurred
-      expect(toast.error).toHaveBeenCalledWith('Failed to save floor plans');
-    });
-  });
-
-  it('should sync floor plans with canvas', () => {
-    // Setup: Create mock canvas
-    const mockCanvas = new Canvas(null);
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Execute: Sync floor plans with canvas
-    act(() => {
-      result.current.syncFloorPlans(mockCanvas, [mockFloorPlan]);
-    });
-    
-    // Note: This test is just checking the function executes without errors
-    // In a real implementation, we would verify canvas changes
-  });
-
-  it('should load a floor plan to canvas', () => {
-    // Setup: Create mock canvas
-    const mockCanvas = new Canvas(null);
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Execute: Load floor plan to canvas
-    act(() => {
-      result.current.loadFloorPlan(mockCanvas, mockFloorPlan);
-    });
-    
-    // Note: This test is just checking the function executes without errors
-    // In a real implementation, we would verify canvas changes
-  });
-
-  it('should calculate Gross Internal Area (GIA)', () => {
-    // Setup: Create floor plans with different GIA values
-    const floorPlansWithGIA = [
-      { ...mockFloorPlan, gia: 100 },
-      { ...mockFloorPlan, id: 'test-floor-2', gia: 200 }
+  it('should initialize with provided floor plans', () => {
+    const initialFloorPlans = [
+      {
+        id: 'test-1',
+        name: 'Floor 1',
+        label: 'Floor 1',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
+        createdAt: '2023-01-01',
+        updatedAt: '2023-01-01',
+        metadata: {
+          createdAt: '2023-01-01',
+          updatedAt: '2023-01-01',
+          paperSize: 'A4',
+          level: 0
+        },
+        data: {},
+        userId: 'test-user'
+      }
     ];
-    
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Execute: Calculate GIA
-    const gia = result.current.calculateGIA(floorPlansWithGIA as FloorPlan[]);
-    
-    // Verify: GIA should be the sum of all floor plans
-    expect(gia).toBe(300);
+
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      initialFloorPlans,
+      fabricCanvasRef: mockCanvasRef
+    }));
+
+    expect(result.current.floorPlans).toEqual(initialFloorPlans);
+    expect(result.current.currentFloorIndex).toBe(0);
+  });
+
+  it('should add a new floor plan', () => {
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      fabricCanvasRef: mockCanvasRef
+    }));
+
+    act(() => {
+      result.current.addFloorPlan();
+    });
+
+    expect(result.current.floorPlans.length).toBe(1);
+    expect(result.current.floorPlans[0].name).toBe('Floor 1');
+    expect(result.current.currentFloorIndex).toBe(0);
+  });
+
+  it('should remove a floor plan', () => {
+    const initialFloorPlans = [
+      {
+        id: 'test-1',
+        name: 'Floor 1',
+        label: 'Floor 1',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
+        createdAt: '2023-01-01',
+        updatedAt: '2023-01-01',
+        metadata: {
+          createdAt: '2023-01-01',
+          updatedAt: '2023-01-01',
+          paperSize: 'A4',
+          level: 0
+        },
+        data: {},
+        userId: 'test-user'
+      },
+      {
+        id: 'test-2',
+        name: 'Floor 2',
+        label: 'Floor 2',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        gia: 0,
+        level: 1,
+        index: 1,
+        canvasData: null,
+        canvasJson: null,
+        createdAt: '2023-01-01',
+        updatedAt: '2023-01-01',
+        metadata: {
+          createdAt: '2023-01-01',
+          updatedAt: '2023-01-01',
+          paperSize: 'A4',
+          level: 1
+        },
+        data: {},
+        userId: 'test-user'
+      }
+    ];
+
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      initialFloorPlans,
+      fabricCanvasRef: mockCanvasRef
+    }));
+
+    // Set current floor to second floor
+    act(() => {
+      result.current.setCurrentFloorIndex(1);
+    });
+
+    expect(result.current.currentFloorIndex).toBe(1);
+
+    // Remove the second floor
+    act(() => {
+      result.current.removeFloorPlan(1);
+    });
+
+    expect(result.current.floorPlans.length).toBe(1);
+    expect(result.current.floorPlans[0].id).toBe('test-1');
+    expect(result.current.currentFloorIndex).toBe(0);
+  });
+
+  it('should update a floor plan', () => {
+    const initialFloorPlans = [
+      {
+        id: 'test-1',
+        name: 'Floor 1',
+        label: 'Floor 1',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
+        createdAt: '2023-01-01',
+        updatedAt: '2023-01-01',
+        metadata: {
+          createdAt: '2023-01-01',
+          updatedAt: '2023-01-01',
+          paperSize: 'A4',
+          level: 0
+        },
+        data: {},
+        userId: 'test-user'
+      }
+    ];
+
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      initialFloorPlans,
+      fabricCanvasRef: mockCanvasRef
+    }));
+
+    const updatedFloorPlan = {
+      ...initialFloorPlans[0],
+      name: 'Updated Floor',
+      label: 'Updated Floor'
+    };
+
+    act(() => {
+      result.current.updateFloorPlan(updatedFloorPlan);
+    });
+
+    expect(result.current.floorPlans[0].name).toBe('Updated Floor');
+    expect(result.current.floorPlans[0].label).toBe('Updated Floor');
+  });
+
+  it('should save floor plan with canvas state', async () => {
+    mockCanvas.toJSON.mockReturnValue({ objects: [{ id: 'obj-1' }] });
+
+    const initialFloorPlans = [
+      {
+        id: 'test-1',
+        name: 'Floor 1',
+        label: 'Floor 1',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        gia: 0,
+        level: 0,
+        index: 0,
+        canvasData: null,
+        canvasJson: null,
+        createdAt: '2023-01-01',
+        updatedAt: '2023-01-01',
+        metadata: {
+          createdAt: '2023-01-01',
+          updatedAt: '2023-01-01',
+          paperSize: 'A4',
+          level: 0
+        },
+        data: {},
+        userId: 'test-user'
+      }
+    ];
+
+    const { result } = renderHook(() => useSyncedFloorPlans({
+      initialFloorPlans,
+      fabricCanvasRef: mockCanvasRef
+    }));
+
+    let savedId: string | null = null;
+
+    await act(async () => {
+      savedId = await result.current.saveFloorPlan();
+    });
+
+    expect(savedId).toBe('test-1');
+    expect(result.current.floorPlans[0].canvasJson).toBeTruthy();
+    expect(JSON.parse(result.current.floorPlans[0].canvasJson!).objects).toEqual([{ id: 'obj-1' }]);
   });
 });

@@ -63,4 +63,4 @@ export interface FloorPlan {
 }
 
 // Export FloorPlanMetadata for use in other modules
-export { FloorPlanMetadata };
+export type { FloorPlanMetadata };

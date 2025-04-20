@@ -1,59 +1,124 @@
 
 /**
- * Geometry Engine Worker
- * Performs heavy computations off the main thread
+ * Geometry Engine Web Worker
+ * Handles geometry calculations in a separate thread
  */
-import { 
-  simplifyPolyline 
-} from './simplification';
 import {
-  Point,
   LineSegment,
+  Polygon,
+  Point,
   WorkerMessageData,
-  WorkerResponseData
+  WorkerResponse,
+  GeometryOperationOptions
 } from './types';
 
-// Handle messages from the main thread
-self.onmessage = (e: MessageEvent<WorkerMessageData>) => {
+// Set up worker message handler
+self.onmessage = (event: MessageEvent<WorkerMessageData>) => {
+  const { operation, payload, id } = event.data;
+  let result: any = null;
+  let error: string | undefined = undefined;
+
   try {
-    const { operation, data, id } = e.data;
-    let result;
-    
+    // Process operation based on the operation type
     switch (operation) {
-      case 'simplifyPolyline':
-        result = simplifyPolyline(
-          data.points as Point[], 
-          data.tolerance as number
-        );
+      case 'calculateIntersection':
+        result = calculateIntersection(payload.line1, payload.line2, payload.options);
         break;
-        
-      // Add other operations as needed
-        
+      case 'calculatePolygonArea':
+        result = calculatePolygonArea(payload.polygon, payload.options);
+        break;
+      case 'isPointInPolygon':
+        result = isPointInPolygon(payload.point, payload.polygon, payload.options);
+        break;
+      case 'calculateDistance':
+        result = calculateDistance(payload.point1, payload.point2);
+        break;
       default:
-        throw new Error(`Unknown operation: ${operation}`);
+        error = `Unknown operation: ${operation}`;
     }
-    
-    // Send results back to main thread
-    const response: WorkerResponseData = {
-      id,
-      status: 'success',
-      result
-    };
-    
-    self.postMessage(response);
-  } catch (error) {
-    // Send error back to main thread
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    const response: WorkerResponseData = {
-      id: e.data.id,
-      status: 'error',
-      error: errorMessage
-    };
-    
-    self.postMessage(response);
+  } catch (err) {
+    error = err instanceof Error ? err.message : String(err);
   }
+
+  // Send response back to main thread
+  const response: WorkerResponse = {
+    result,
+    id,
+    error
+  };
+
+  self.postMessage(response);
 };
 
-// Export nothing - this is a worker script
-export {};
+/**
+ * Calculate the intersection point of two line segments
+ */
+function calculateIntersection(
+  line1: LineSegment,
+  line2: LineSegment,
+  options?: GeometryOperationOptions
+): Point | null {
+  // Implement intersection calculation
+  // For now, returning null
+  return null;
+}
+
+/**
+ * Calculate the area of a polygon
+ */
+function calculatePolygonArea(
+  polygon: Polygon,
+  options?: GeometryOperationOptions
+): number {
+  const { points } = polygon;
+  if (points.length < 3) {
+    return 0;
+  }
+
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
+
+  return Math.abs(area) / 2;
+}
+
+/**
+ * Check if a point is inside a polygon
+ */
+function isPointInPolygon(
+  point: Point,
+  polygon: Polygon,
+  options?: GeometryOperationOptions
+): boolean {
+  const { points } = polygon;
+  if (points.length < 3) {
+    return false;
+  }
+
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const { x: xi, y: yi } = points[i];
+    const { x: xj, y: yj } = points[j];
+    
+    const intersect = ((yi > point.y) !== (yj > point.y)) &&
+      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+    
+    if (intersect) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+/**
+ * Calculate the distance between two points
+ */
+function calculateDistance(point1: Point, point2: Point): number {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}

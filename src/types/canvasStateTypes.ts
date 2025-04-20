@@ -1,6 +1,6 @@
 
 import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/types/FloorPlan';
+import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasState {
   drawingMode: DrawingMode;

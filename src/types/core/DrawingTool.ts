@@ -38,14 +38,13 @@ export function getToolDisplayName(tool: DrawingTool): string {
     [DrawingMode.DRAW]: 'Draw',
     [DrawingMode.WALL]: 'Wall',
     [DrawingMode.ROOM]: 'Room',
-    [DrawingMode.STAIR]: 'Stair',
     [DrawingMode.DOOR]: 'Door',
     [DrawingMode.WINDOW]: 'Window',
     [DrawingMode.HAND]: 'Hand',
     [DrawingMode.PAN]: 'Pan',
     [DrawingMode.ERASE]: 'Erase',
-    [DrawingMode.COLUMN]: 'Column',
-    [DrawingMode.DIMENSION]: 'Dimension'
+    [DrawingMode.PENCIL]: 'Pencil',
+    [DrawingMode.SHAPE]: 'Shape'
   };
   
   return names[tool] || 'Unknown Tool';
