@@ -14,8 +14,12 @@ import {
   StrokeTypeLiteral,
   RoomTypeLiteral,
   FloorPlanMetadata,
-  PaperSize
+  PaperSize,
+  asStrokeType,
+  asRoomType
 } from '@/types/floor-plan/typesBarrel';
+
+console.log('Loading mock floor plan factory');
 
 /**
  * Create a mock point
@@ -41,10 +45,15 @@ export function createMockStroke({
   color = '#000000',
   thickness = 2
 }: Partial<Stroke> = {}): Stroke {
+  console.log('Creating mock stroke with type:', type);
+  
+  // Ensure type is a valid StrokeTypeLiteral
+  const validatedType = typeof type === 'string' ? asStrokeType(type) : type;
+  
   return {
     id: uuidv4(),
     points,
-    type,
+    type: validatedType,
     color,
     thickness,
     width: thickness
@@ -101,10 +110,15 @@ export function createMockRoom({
   level = 0,
   area = 100
 }: Partial<Room> = {}): Room {
+  console.log('Creating mock room with type:', type);
+  
+  // Ensure type is a valid RoomTypeLiteral
+  const validatedType = typeof type === 'string' ? asRoomType(type) : type;
+  
   return {
     id: uuidv4(),
     name,
-    type,
+    type: validatedType,
     points,
     color,
     area,
@@ -156,6 +170,7 @@ export function createMockFloorPlan({
   rooms = [createMockRoom()],
   gia = 0
 }: Partial<FloorPlan> = {}): FloorPlan {
+  console.log('Creating mock floor plan with data and userId');
   const now = new Date().toISOString();
   return {
     id,

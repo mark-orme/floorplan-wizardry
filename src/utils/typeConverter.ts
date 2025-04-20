@@ -22,6 +22,8 @@ import {
   RoomTypeLiteral as LegacyRoomType
 } from '@/types/floorPlanTypes';
 
+console.log('Loading type converter utility');
+
 /**
  * Converts a legacy FloorPlan to a unified FloorPlan
  * Ensures all required properties are present
@@ -29,7 +31,12 @@ import {
  * @returns Unified floor plan
  */
 export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan {
-  console.log('Converting legacy floor plan to unified format');
+  console.log('Converting legacy floor plan to unified format', {
+    id: floorPlan.id,
+    name: floorPlan.name,
+    hasData: !!floorPlan.data,
+    hasUserId: !!floorPlan.userId
+  });
   
   // Create a new floor plan with all required properties
   return {
@@ -48,8 +55,8 @@ export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan
     index: floorPlan.index || 0,
     metadata: floorPlan.metadata || {},
     // Critical required properties
-    data: floorPlan.data,
-    userId: floorPlan.userId
+    data: floorPlan.data || {}, // Ensure data is present
+    userId: floorPlan.userId || 'unknown' // Ensure userId is present
   };
 }
 
@@ -59,10 +66,15 @@ export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan
  * @returns Unified stroke
  */
 export function toUnifiedStroke(stroke: LegacyStroke): UnifiedStroke {
+  console.log('Converting legacy stroke to unified format', {
+    id: stroke.id,
+    type: stroke.type
+  });
+  
   if (typeof stroke.type === 'string') {
     // Convert the type using the type guard
-    console.log(`Converting stroke type: ${stroke.type}`);
     const validType = asStrokeType(stroke.type);
+    console.log(`Converted stroke type: ${stroke.type} -> ${validType}`);
     
     return {
       ...stroke,
@@ -81,10 +93,15 @@ export function toUnifiedStroke(stroke: LegacyStroke): UnifiedStroke {
  * @returns Unified room
  */
 export function toUnifiedRoom(room: LegacyRoom): UnifiedRoom {
+  console.log('Converting legacy room to unified format', {
+    id: room.id,
+    type: room.type
+  });
+  
   if (typeof room.type === 'string') {
     // Convert the type using the type guard
-    console.log(`Converting room type: ${room.type}`);
     const validType = asRoomType(room.type);
+    console.log(`Converted room type: ${room.type} -> ${validType}`);
     
     return {
       ...room,
@@ -101,10 +118,15 @@ export function toUnifiedRoom(room: LegacyRoom): UnifiedRoom {
  * @returns Unified wall
  */
 export function toUnifiedWall(wall: LegacyWall): UnifiedWall {
+  console.log('Converting legacy wall to unified format', {
+    id: wall.id,
+    hasRoomIds: !!wall.roomIds
+  });
+  
   // Ensure all required wall properties are present
   return {
     ...wall,
-    roomIds: wall.roomIds || []
+    roomIds: wall.roomIds || [] // Ensure roomIds is present
   };
 }
 
@@ -114,7 +136,10 @@ export function toUnifiedWall(wall: LegacyWall): UnifiedWall {
  * @returns Legacy floor plan
  */
 export function toLegacyFloorPlan(floorPlan: UnifiedFloorPlan): LegacyFloorPlan {
-  console.log('Converting unified floor plan to legacy format');
+  console.log('Converting unified floor plan to legacy format', {
+    id: floorPlan.id,
+    name: floorPlan.name
+  });
   
   // Create a legacy floor plan with all properties
   return floorPlan as unknown as LegacyFloorPlan;

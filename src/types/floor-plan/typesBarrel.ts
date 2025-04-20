@@ -5,6 +5,8 @@
  * @module types/floor-plan/typesBarrel
  */
 
+console.log('Loading Floor Plan types barrel file');
+
 // Re-export all types from the unified types file
 export type { 
   Point, 

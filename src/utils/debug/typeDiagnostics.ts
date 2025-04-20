@@ -1,238 +1,391 @@
 
 /**
- * Type diagnostics utilities
- * Provides utilities for validating and debugging types
+ * Type diagnostic utilities
+ * Provides runtime type checking and validation
  * @module utils/debug/typeDiagnostics
  */
-
 import { 
   FloorPlan, 
   Stroke, 
   Wall, 
-  Room,
-  createEmptyFloorPlan,
-  createEmptyStroke,
-  createEmptyWall,
-  createEmptyRoom
-} from '@/types/floor-plan/typesBarrel';
+  Room, 
+  StrokeTypeLiteral, 
+  RoomTypeLiteral 
+} from '@/types/floor-plan/unifiedTypes';
+import { captureMessage } from '@/utils/sentryUtils';
+
+// Validation cache to avoid repeat warnings
+const validationCache = new Map<string, boolean>();
 
 /**
- * Check if an object has a property
- * @param obj Object to check
- * @param prop Property name
- * @returns Whether the object has the property
+ * Log validation issues
+ * @param message - Message to log
+ * @param data - Additional data
+ * @param force - Whether to log even if cached
  */
-function hasProperty(obj: any, prop: string): boolean {
-  return obj && typeof obj === 'object' && prop in obj;
+function logValidationIssue(message: string, data: any, force = false): void {
+  const cacheKey = `${message}-${JSON.stringify(data)}`;
+  
+  if (force || !validationCache.has(cacheKey)) {
+    console.error(`[Type Validation] ${message}`, data);
+    validationCache.set(cacheKey, true);
+    
+    // Report to monitoring system
+    captureMessage(`Type validation issue: ${message}`, 'type-validation', {
+      level: 'warning',
+      tags: {
+        component: 'typeDiagnostics'
+      },
+      extra: data
+    });
+  }
 }
 
 /**
- * Validates that a floor plan has all required properties
- * @param floorPlan FloorPlan to validate
- * @returns Whether the floor plan is valid
+ * Check if a value is a valid stroke type
+ * @param type - Value to check
+ * @param source - Source of the value for logging
+ * @returns Whether the value is valid
  */
-export function isValidFloorPlan(floorPlan: any): floorPlan is FloorPlan {
-  return (
-    floorPlan &&
-    typeof floorPlan === 'object' &&
-    typeof floorPlan.id === 'string' &&
-    typeof floorPlan.name === 'string' &&
-    typeof floorPlan.label === 'string' &&
-    Array.isArray(floorPlan.walls) &&
-    Array.isArray(floorPlan.rooms) &&
-    Array.isArray(floorPlan.strokes) &&
-    typeof floorPlan.createdAt === 'string' &&
-    typeof floorPlan.updatedAt === 'string' &&
-    typeof floorPlan.level === 'number' &&
-    typeof floorPlan.data === 'object' &&
-    typeof floorPlan.userId === 'string'
-  );
+export function isValidStrokeType(type: any, source = 'unknown'): boolean {
+  console.log(`Validating stroke type: ${type} from ${source}`);
+  
+  const validTypes: StrokeTypeLiteral[] = [
+    'line', 'polyline', 'wall', 'room', 'freehand', 
+    'door', 'window', 'furniture', 'annotation', 'straight', 'other'
+  ];
+  
+  const isValid = typeof type === 'string' && validTypes.includes(type as StrokeTypeLiteral);
+  
+  if (!isValid) {
+    logValidationIssue('Invalid stroke type', { type, source, validTypes });
+  }
+  
+  return isValid;
 }
 
 /**
- * Validates that a stroke has all required properties
- * @param stroke Stroke to validate
+ * Check if a value is a valid room type
+ * @param type - Value to check
+ * @param source - Source of the value for logging
+ * @returns Whether the value is valid
+ */
+export function isValidRoomType(type: any, source = 'unknown'): boolean {
+  console.log(`Validating room type: ${type} from ${source}`);
+  
+  const validTypes: RoomTypeLiteral[] = [
+    'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
+  ];
+  
+  const isValid = typeof type === 'string' && validTypes.includes(type as RoomTypeLiteral);
+  
+  if (!isValid) {
+    logValidationIssue('Invalid room type', { type, source, validTypes });
+  }
+  
+  return isValid;
+}
+
+/**
+ * Validate a stroke object
+ * @param stroke - Stroke to validate
+ * @param source - Source of the object for logging
  * @returns Whether the stroke is valid
  */
-export function isValidStroke(stroke: any): stroke is Stroke {
-  return (
-    stroke &&
-    typeof stroke === 'object' &&
-    typeof stroke.id === 'string' &&
-    Array.isArray(stroke.points) &&
-    typeof stroke.type === 'string' &&
-    typeof stroke.color === 'string' &&
-    typeof stroke.thickness === 'number' &&
-    typeof stroke.width === 'number'
-  );
-}
-
-/**
- * Validates that a wall has all required properties
- * @param wall Wall to validate
- * @returns Whether the wall is valid
- */
-export function isValidWall(wall: any): wall is Wall {
-  return (
-    wall &&
-    typeof wall === 'object' &&
-    typeof wall.id === 'string' &&
-    hasProperty(wall, 'start') &&
-    hasProperty(wall, 'end') &&
-    typeof wall.thickness === 'number' &&
-    typeof wall.color === 'string' &&
-    Array.isArray(wall.roomIds) &&
-    typeof wall.length === 'number'
-  );
-}
-
-/**
- * Validates that a room has all required properties
- * @param room Room to validate
- * @returns Whether the room is valid
- */
-export function isValidRoom(room: any): room is Room {
-  return (
-    room &&
-    typeof room === 'object' &&
-    typeof room.id === 'string' &&
-    typeof room.name === 'string' &&
-    typeof room.type === 'string' &&
-    Array.isArray(room.points) &&
-    typeof room.color === 'string' &&
-    typeof room.area === 'number' &&
-    typeof room.level === 'number' &&
-    Array.isArray(room.walls)
-  );
-}
-
-/**
- * Reports validation failures for a floor plan
- * @param floorPlan FloorPlan to validate
- * @param context Context for error reporting
- * @returns Whether the floor plan is valid
- */
-export function validateFloorPlanWithReporting(floorPlan: any, context: string = ''): floorPlan is FloorPlan {
-  const issues: string[] = [];
-
-  // Check required primitive properties
-  for (const prop of ['id', 'name', 'label', 'createdAt', 'updatedAt', 'userId']) {
-    if (typeof floorPlan[prop] !== 'string') {
-      issues.push(`Missing or invalid ${prop}: ${floorPlan[prop]}`);
-    }
-  }
-
-  // Check required numeric properties
-  for (const prop of ['level', 'index', 'gia']) {
-    if (typeof floorPlan[prop] !== 'number') {
-      issues.push(`Missing or invalid ${prop}: ${floorPlan[prop]}`);
-    }
-  }
-
-  // Check data object
-  if (!floorPlan.data || typeof floorPlan.data !== 'object') {
-    issues.push(`Missing or invalid data object: ${floorPlan.data}`);
-  }
-
-  // Check array properties
-  for (const prop of ['walls', 'rooms', 'strokes']) {
-    if (!Array.isArray(floorPlan[prop])) {
-      issues.push(`Missing or invalid ${prop} array: ${floorPlan[prop]}`);
-    }
-  }
-
-  // Log issues if any were found
-  if (issues.length > 0) {
-    console.warn(`Floor plan validation issues in ${context}:`, issues);
-    console.warn('FloorPlan:', floorPlan);
+export function isValidStroke(stroke: any, source = 'unknown'): stroke is Stroke {
+  if (!stroke) {
+    logValidationIssue('Stroke is null or undefined', { source });
     return false;
   }
-
+  
+  // Check for required properties
+  const requiredProps = ['id', 'points', 'type', 'color', 'thickness', 'width'];
+  const missingProps = requiredProps.filter(prop => stroke[prop] === undefined);
+  
+  if (missingProps.length > 0) {
+    logValidationIssue('Stroke missing required properties', { 
+      stroke, 
+      missingProps,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate type
+  if (!isValidStrokeType(stroke.type, `${source}.type`)) {
+    return false;
+  }
+  
+  // Validate points array
+  if (!Array.isArray(stroke.points)) {
+    logValidationIssue('Stroke points is not an array', { 
+      stroke, 
+      pointsType: typeof stroke.points,
+      source 
+    });
+    return false;
+  }
+  
   return true;
 }
 
 /**
- * Fixes a floor plan by filling in missing properties
- * @param floorPlan Partial floor plan
- * @returns Complete floor plan
+ * Validate a wall object
+ * @param wall - Wall to validate
+ * @param source - Source of the object for logging
+ * @returns Whether the wall is valid
  */
-export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
-  if (isValidFloorPlan(floorPlan)) {
-    return floorPlan;
+export function isValidWall(wall: any, source = 'unknown'): wall is Wall {
+  if (!wall) {
+    logValidationIssue('Wall is null or undefined', { source });
+    return false;
   }
   
-  // Create a base floor plan with defaults
-  const base = createEmptyFloorPlan();
+  // Check for required properties
+  const requiredProps = ['id', 'start', 'end', 'thickness', 'color', 'roomIds', 'length'];
+  const missingProps = requiredProps.filter(prop => wall[prop] === undefined);
   
-  // Merge the partial floor plan with the base
-  return { ...base, ...floorPlan };
+  if (missingProps.length > 0) {
+    logValidationIssue('Wall missing required properties', { 
+      wall, 
+      missingProps,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate roomIds
+  if (!Array.isArray(wall.roomIds)) {
+    logValidationIssue('Wall roomIds is not an array', { 
+      wall, 
+      roomIdsType: typeof wall.roomIds,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate points array
+  if (!Array.isArray(wall.points)) {
+    // Add missing points array based on start/end
+    if (wall.start && wall.end) {
+      console.log('Adding missing points array to wall based on start/end');
+      wall.points = [wall.start, wall.end];
+    } else {
+      logValidationIssue('Wall points is not an array and start/end not available', { 
+        wall,
+        source 
+      });
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 /**
- * Fixes a stroke by filling in missing properties
- * @param stroke Partial stroke
- * @returns Complete stroke
+ * Validate a room object
+ * @param room - Room to validate
+ * @param source - Source of the object for logging
+ * @returns Whether the room is valid
  */
-export function ensureStroke(stroke: Partial<Stroke>): Stroke {
-  if (isValidStroke(stroke)) {
-    return stroke;
+export function isValidRoom(room: any, source = 'unknown'): room is Room {
+  if (!room) {
+    logValidationIssue('Room is null or undefined', { source });
+    return false;
   }
   
-  // Create a base stroke with defaults
-  const base = createEmptyStroke();
+  // Check for required properties
+  const requiredProps = ['id', 'name', 'type', 'points', 'color', 'area', 'walls'];
+  const missingProps = requiredProps.filter(prop => room[prop] === undefined);
   
-  // Merge the partial stroke with the base
-  return { ...base, ...stroke };
+  if (missingProps.length > 0) {
+    logValidationIssue('Room missing required properties', { 
+      room, 
+      missingProps,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate type
+  if (!isValidRoomType(room.type, `${source}.type`)) {
+    return false;
+  }
+  
+  // Validate points array
+  if (!Array.isArray(room.points)) {
+    logValidationIssue('Room points is not an array', { 
+      room, 
+      pointsType: typeof room.points,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate walls array
+  if (!Array.isArray(room.walls)) {
+    logValidationIssue('Room walls is not an array', { 
+      room, 
+      wallsType: typeof room.walls,
+      source 
+    });
+    return false;
+  }
+  
+  return true;
 }
 
 /**
- * Fixes a wall by filling in missing properties
- * @param wall Partial wall
- * @returns Complete wall
+ * Validate a floor plan object
+ * @param floorPlan - Floor plan to validate
+ * @param source - Source of the object for logging
+ * @returns Whether the floor plan is valid
  */
-export function ensureWall(wall: Partial<Wall>): Wall {
-  if (isValidWall(wall)) {
-    return wall;
+export function isValidFloorPlan(floorPlan: any, source = 'unknown'): floorPlan is FloorPlan {
+  if (!floorPlan) {
+    logValidationIssue('FloorPlan is null or undefined', { source });
+    return false;
   }
   
-  // Create a base wall with defaults
-  const base = createEmptyWall();
+  // Check for required properties
+  const requiredProps = [
+    'id', 'name', 'label', 'walls', 'rooms', 'strokes', 
+    'createdAt', 'updatedAt', 'data', 'userId'
+  ];
+  const missingProps = requiredProps.filter(prop => floorPlan[prop] === undefined);
   
-  // Merge the partial wall with the base
-  return { ...base, ...stroke };
+  if (missingProps.length > 0) {
+    logValidationIssue('FloorPlan missing required properties', { 
+      floorPlan, 
+      missingProps,
+      source 
+    });
+    return false;
+  }
+  
+  // Validate arrays
+  if (!Array.isArray(floorPlan.walls)) {
+    logValidationIssue('FloorPlan walls is not an array', { 
+      floorPlan, 
+      wallsType: typeof floorPlan.walls,
+      source 
+    });
+    return false;
+  }
+  
+  if (!Array.isArray(floorPlan.rooms)) {
+    logValidationIssue('FloorPlan rooms is not an array', { 
+      floorPlan, 
+      roomsType: typeof floorPlan.rooms,
+      source 
+    });
+    return false;
+  }
+  
+  if (!Array.isArray(floorPlan.strokes)) {
+    logValidationIssue('FloorPlan strokes is not an array', { 
+      floorPlan, 
+      strokesType: typeof floorPlan.strokes,
+      source 
+    });
+    return false;
+  }
+  
+  // Check data property (required)
+  if (!floorPlan.data) {
+    logValidationIssue('FloorPlan data property is missing or null', {
+      floorPlan,
+      source
+    });
+    return false;
+  }
+  
+  // Check userId property (required)
+  if (!floorPlan.userId) {
+    logValidationIssue('FloorPlan userId property is missing or null', {
+      floorPlan,
+      source
+    });
+    return false;
+  }
+  
+  return true;
 }
 
 /**
- * Fixes a room by filling in missing properties
- * @param room Partial room
- * @returns Complete room
+ * Validate a floor plan with detailed reporting
+ * @param floorPlan - Floor plan to validate
+ * @param source - Source of the object for logging
+ * @returns Whether the floor plan is valid
  */
-export function ensureRoom(room: Partial<Room>): Room {
-  if (isValidRoom(room)) {
-    return room;
+export function validateFloorPlanWithReporting(floorPlan: any, source = 'unknown'): boolean {
+  console.log(`Deep validating floor plan from ${source}`);
+  
+  // First validate the floor plan itself
+  if (!isValidFloorPlan(floorPlan, source)) {
+    return false;
   }
   
-  // Create a base room with defaults
-  const base = createEmptyRoom();
+  let isValid = true;
   
-  // Merge the partial room with the base
-  return { ...base, ...room };
-}
-
-/**
- * Logs type information for debugging
- * @param obj Object to log
- * @param label Optional label
- */
-export function logTypeInfo(obj: any, label: string = ''): void {
-  if (process.env.NODE_ENV === 'production') {
-    return;
+  // Validate all strokes
+  for (let i = 0; i < floorPlan.strokes.length; i++) {
+    const stroke = floorPlan.strokes[i];
+    if (!isValidStroke(stroke, `${source}.strokes[${i}]`)) {
+      isValid = false;
+      // Fix the stroke if possible
+      if (stroke) {
+        if (typeof stroke.type === 'string') {
+          console.log(`Fixing invalid stroke type: ${stroke.type}`);
+          // This references the validateStroke function which will check if stroke.type is valid and potentially fix it
+          const validTypes: StrokeTypeLiteral[] = [
+            'line', 'polyline', 'wall', 'room', 'freehand', 
+            'door', 'window', 'furniture', 'annotation', 'straight', 'other'
+          ];
+          
+          if (!validTypes.includes(stroke.type as StrokeTypeLiteral)) {
+            console.log(`Converting invalid stroke type ${stroke.type} to 'other'`);
+            stroke.type = 'other';
+          }
+        }
+      }
+    }
   }
   
-  console.log(`[TypeInfo] ${label || 'Object'}:`, {
-    type: typeof obj,
-    isArray: Array.isArray(obj),
-    keys: obj && typeof obj === 'object' ? Object.keys(obj) : undefined,
-    value: obj
-  });
+  // Validate all rooms
+  for (let i = 0; i < floorPlan.rooms.length; i++) {
+    const room = floorPlan.rooms[i];
+    if (!isValidRoom(room, `${source}.rooms[${i}]`)) {
+      isValid = false;
+      // Fix the room if possible
+      if (room) {
+        if (typeof room.type === 'string') {
+          console.log(`Fixing invalid room type: ${room.type}`);
+          const validTypes: RoomTypeLiteral[] = [
+            'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
+          ];
+          
+          if (!validTypes.includes(room.type as RoomTypeLiteral)) {
+            console.log(`Converting invalid room type ${room.type} to 'other'`);
+            room.type = 'other';
+          }
+        }
+      }
+    }
+  }
+  
+  // Validate all walls
+  for (let i = 0; i < floorPlan.walls.length; i++) {
+    const wall = floorPlan.walls[i];
+    if (!isValidWall(wall, `${source}.walls[${i}]`)) {
+      isValid = false;
+      // Fix the wall if possible
+      if (wall && !wall.roomIds) {
+        console.log('Fixing missing roomIds on wall');
+        wall.roomIds = [];
+      }
+    }
+  }
+  
+  return isValid;
 }

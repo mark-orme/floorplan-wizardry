@@ -11,6 +11,8 @@ import { Canvas as FabricCanvas } from 'fabric';
  * that always returns Promise<void> to satisfy TypeScript
  */
 export const createWithImplementationMock = () => {
+  console.log('Creating withImplementation mock that returns Promise<void>');
+  
   // This must return a function that returns a Promise<void>
   return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
     console.log('MockCanvas: Using withImplementation mock');

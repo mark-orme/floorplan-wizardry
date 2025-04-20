@@ -29,6 +29,8 @@ export interface ICanvasMock {
  * Useful when you don't need all canvas methods
  */
 export function createMinimalCanvasMock(): ICanvasMock {
+  console.log('Creating minimal canvas mock with correct withImplementation return type');
+  
   return {
     add: jest.fn(),
     remove: jest.fn(),
@@ -42,6 +44,7 @@ export function createMinimalCanvasMock(): ICanvasMock {
     contains: jest.fn().mockReturnValue(false),
     // Properly implement withImplementation to return Promise<void>
     withImplementation: jest.fn().mockImplementation((callback?: Function): Promise<void> => {
+      console.log('ICanvasMock: withImplementation called');
       if (callback && typeof callback === 'function') {
         try {
           const result = callback();
@@ -62,5 +65,6 @@ export function createMinimalCanvasMock(): ICanvasMock {
  * Useful when you have an object that's structurally compatible but types don't match
  */
 export function asMockCanvas(canvas: any): ICanvasMock {
+  console.log('Converting object to ICanvasMock type');
   return canvas as ICanvasMock;
 }

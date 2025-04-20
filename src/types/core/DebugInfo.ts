@@ -91,6 +91,12 @@ export interface DebugInfoState {
   /** Whether the grid has been rendered */
   gridRendered?: boolean;
   
+  /** Canvas created flag (for CanvasControllerEnhanced) */
+  canvasCreated?: boolean;
+  
+  /** Visible objects count */
+  visibleObjectCount?: number;
+  
   /** Performance statistics */
   performanceStats?: {
     /** Frames per second */
@@ -141,6 +147,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   gridObjectCount: 0,
   toolsInitialized: false,
   gridRendered: false,
+  canvasCreated: false,
   showDebugInfo: process.env.NODE_ENV === 'development'
 };
 
