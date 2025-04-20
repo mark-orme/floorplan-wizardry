@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for handling canvas interaction options
  * Provides selection, deletion, and interaction modes for canvas objects
@@ -7,7 +6,7 @@
 import { useCallback, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { DrawingTool } from "@/types/canvasStateTypes";
+import { DrawingTool, DrawingMode } from "@/types/canvasStateTypes";
 import { enableSelection, disableSelection } from "@/utils/fabric";
 import logger from "@/utils/logger";
 
@@ -168,7 +167,7 @@ export const useCanvasInteraction = ({
   const setupSelectionMode = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     
-    if (tool === "select") {
+    if (tool === DrawingMode.SELECT) {
       logger.info("Setting up selection mode for tool:", { tool });
       enablePointSelection();
     } else {
@@ -178,7 +177,7 @@ export const useCanvasInteraction = ({
   
   // Apply selection mode immediately when tool changes
   useEffect(() => {
-    if (tool === "select") {
+    if (tool === DrawingMode.SELECT) {
       logger.info("Selection tool active - setting up selection mode");
       enablePointSelection();
     }

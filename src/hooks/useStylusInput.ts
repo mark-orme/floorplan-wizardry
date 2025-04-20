@@ -1,70 +1,55 @@
-
-import { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useEffect, useState } from 'react';
 import { getPressure, isTiltSupported, getTilt } from '@/utils/canvas/pointerEvents';
 
 interface UseStylusInputProps {
-  fabricCanvas: FabricCanvas | null;
-  baseWidth?: number;
-  baseColor?: string;
+  isEnabled: boolean;
+  onPressureChange: (pressure: number) => void;
+  onTiltChange?: (tiltX: number, tiltY: number) => void;
 }
 
-/**
- * Hook to enhance drawing with stylus input
- * @param props Hook configuration
- * @returns void
- */
-export function useStylusInput({
-  fabricCanvas,
-  baseWidth = 2,
-  baseColor = '#000000'
-}: UseStylusInputProps) {
+export const useStylusInput = ({ isEnabled, onPressureChange, onTiltChange }: UseStylusInputProps) => {
+  const [isStylus, setIsStylus] = useState(false);
+
   useEffect(() => {
-    if (!fabricCanvas) return;
-    
-    // Set up drawing brush
-    fabricCanvas.freeDrawingBrush.width = baseWidth;
-    fabricCanvas.freeDrawingBrush.color = baseColor;
-    
-    // Event handlers
-    const handlePointerDown = (e: PointerEvent) => {
-      if (fabricCanvas.isDrawingMode) {
-        // Apply pressure sensitivity for width
-        const pressure = getPressure(e);
-        fabricCanvas.freeDrawingBrush.width = baseWidth * (pressure * 2);
-        
-        // Apply tilt for brush effects if supported
-        if (isTiltSupported()) {
-          const { tiltX, tiltY } = getTilt(e);
-          console.log('Tilt detected:', tiltX, tiltY);
-          // Could modify brush behavior based on tilt
+    if (!isEnabled) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === 'stylus' || event.pointerType === 'pen') {
+        setIsStylus(true);
+        const pressure = getPressure(event);
+        onPressureChange(pressure);
+
+        if (isTiltSupported() && onTiltChange) {
+          const { tiltX, tiltY } = getTilt(event);
+          onTiltChange(tiltX, tiltY);
         }
+      } else {
+        setIsStylus(false);
       }
     };
-    
-    const handlePointerMove = (e: PointerEvent) => {
-      if (fabricCanvas.isDrawingMode && e.buttons === 1) {
-        // Update pressure during move
-        const pressure = getPressure(e);
-        fabricCanvas.freeDrawingBrush.width = baseWidth * (pressure * 2);
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'stylus' || event.pointerType === 'pen') {
+        setIsStylus(true);
+      } else {
+        setIsStylus(false);
       }
     };
-    
-    // Add event listeners
-    if (fabricCanvas.upperCanvasEl) {
-      fabricCanvas.upperCanvasEl.addEventListener('pointerdown', handlePointerDown);
-      fabricCanvas.upperCanvasEl.addEventListener('pointermove', handlePointerMove);
-    }
-    
-    // Clean up listeners
+
+    const handlePointerUp = () => {
+      setIsStylus(false);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handlePointerUp);
+
     return () => {
-      if (fabricCanvas.upperCanvasEl) {
-        fabricCanvas.upperCanvasEl.removeEventListener('pointerdown', handlePointerDown);
-        fabricCanvas.upperCanvasEl.removeEventListener('pointermove', handlePointerMove);
-      }
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [fabricCanvas, baseWidth, baseColor]);
-  
-  // No return value needed for this hook
-  return;
-}
+  }, [isEnabled, onPressureChange, onTiltChange]);
+
+  return { isStylus };
+};

@@ -1,70 +1,120 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject, Group } from 'fabric';
+import { Point } from '@/types/core/Point';
 
-import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
-import logger from '@/utils/logger';
-
-interface SimpleGridLayerProps {
-  canvas: FabricCanvas;
-  gridSize?: number;
-  majorGridSize?: number;
-  gridColor?: string;
-  majorGridColor?: string;
+interface SimpleGridProps {
+  canvas: FabricCanvas | null;
+  showControls?: boolean;
+  defaultVisible?: boolean;
+  onGridCreated?: (gridObjects: FabricObject[]) => void;
 }
 
-const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
-  canvas,
-  gridSize = 20,
-  majorGridSize = 100,
-  gridColor = 'rgba(200, 200, 200, 0.4)',
-  majorGridColor = 'rgba(150, 150, 150, 0.6)'
-}) => {
+export const SimpleGrid: React.FC<SimpleGridProps> = ({ canvas, showControls = true, defaultVisible = true, onGridCreated }) => {
+  const [gridSize, setGridSize] = useState(50);
+  const [lineColor, setLineColor] = useState('#e0e0e0');
+  const [visible, setVisible] = useState(defaultVisible);
   const gridObjectsRef = useRef<FabricObject[]>([]);
-  const initialized = useRef(false);
   
-  useEffect(() => {
-    if (!canvas || initialized.current) return;
+  const createGrid = useCallback(() => {
+    if (!canvas) return [];
     
-    logger.info('Creating grid layer');
+    const gridObjects: FabricObject[] = [];
+    const width = canvas.getWidth() || 1000;
+    const height = canvas.getHeight() || 800;
     
-    try {
-      // Create grid with proper parameters
-      const gridObjects = createSimpleGrid(canvas, gridSize, gridColor);
-      gridObjectsRef.current = gridObjects;
-      
-      // Ensure grid is visible
-      ensureGridVisible(canvas, gridObjectsRef.current, true);
-      
-      initialized.current = true;
-      logger.info(`Grid layer created with ${gridObjects.length} objects`);
-    } catch (error) {
-      logger.error('Error creating grid layer:', error);
+    for (let i = gridSize; i < width; i += gridSize) {
+      const line = new FabricObject('line', {
+        x1: i,
+        y1: 0,
+        x2: i,
+        y2: height,
+        stroke: lineColor,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        visible: visible
+      });
+      gridObjects.push(line);
     }
     
-    // Cleanup function
-    return () => {
-      if (gridObjectsRef.current.length > 0) {
-        logger.info('Removing grid layer');
-        gridObjectsRef.current.forEach(obj => {
-          canvas.remove(obj);
-        });
-        canvas.requestRenderAll();
-      }
-    };
-  }, [canvas, gridSize, majorGridSize, gridColor, majorGridColor]);
+    for (let j = gridSize; j < height; j += gridSize) {
+      const line = new FabricObject('line', {
+        x1: 0,
+        y1: j,
+        x2: width,
+        y2: j,
+        stroke: lineColor,
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        visible: visible
+      });
+      gridObjects.push(line);
+    }
+    
+    return gridObjects;
+  }, [canvas, gridSize, lineColor, visible]);
   
-  // Periodically check grid visibility
   useEffect(() => {
-    if (!canvas || gridObjectsRef.current.length === 0) return;
+    if (!canvas) return;
     
-    const checkGridInterval = setInterval(() => {
-      ensureGridVisible(canvas, gridObjectsRef.current, true);
-    }, 5000);
+    // Remove old grid
+    gridObjectsRef.current.forEach(obj => canvas.remove(obj));
+    gridObjectsRef.current = [];
     
-    return () => clearInterval(checkGridInterval);
-  }, [canvas]);
+    // Create new grid
+    const gridObjects = createGrid();
+    gridObjectsRef.current = gridObjects;
+    
+    // Add new grid to canvas
+    gridObjects.forEach(obj => canvas.add(obj));
+    
+    // Send callback with grid objects
+    if (onGridCreated) {
+      onGridCreated(gridObjects);
+    }
+    
+    // Ensure grid is rendered behind other objects
+    gridObjects.forEach(obj => obj.sendToBack());
+    
+    canvas.requestRenderAll();
+    
+    // Debugging
+    console.log(`Grid created with ${gridObjects.length} objects`);
+  }, [canvas, gridSize, lineColor, visible, createGrid, onGridCreated]);
   
-  return null; // Non-visual component
+  const handleGridSizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setGridSize(parseInt(event.target.value, 10));
+  };
+  
+  const handleLineColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLineColor(event.target.value);
+  };
+  
+  const handleVisibleChange = () => {
+    setVisible(!visible);
+  };
+  
+  return (
+    <div className="grid-controls">
+      {showControls && (
+        <>
+          <label>
+            Grid Size:
+            <input type="number" value={gridSize} onChange={handleGridSizeChange} />
+          </label>
+          <label>
+            Line Color:
+            <input type="color" value={lineColor} onChange={handleLineColorChange} />
+          </label>
+          <label>
+            Visible:
+            <input type="checkbox" checked={visible} onChange={handleVisibleChange} />
+          </label>
+        </>
+      )}
+    </div>
+  );
 };
-
-export default SimpleGridLayer;

@@ -1,82 +1,135 @@
-
-import { useEffect, useState, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingTool } from '@/types/canvasStateTypes';
+import { useState, useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas, Line, Group } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface UseCanvasInteractionsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool: DrawingTool;
+  canvas: FabricCanvas | null;
+  tool: DrawingMode;
   lineThickness: number;
   lineColor: string;
 }
 
-/**
- * Hook for managing canvas interactions
- * Handles drawing, selection, and other canvas interactivity
- * 
- * @param props Canvas interaction props
- * @returns Canvas interaction state and handlers
- */
+interface UseCanvasInteractionsResult {
+  drawingState: {
+    isDrawing: boolean;
+    startPoint: Point | null;
+    endPoint: Point | null;
+  };
+  currentZoom: number;
+  toggleSnap: () => void;
+  snapEnabled: boolean;
+}
+
 export const useCanvasInteractions = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  tool: DrawingTool,
+  canvas: FabricCanvas | null,
+  tool: DrawingMode,
   lineThickness: number,
   lineColor: string
-) => {
-  const [currentZoom, setCurrentZoom] = useState<number>(1);
-  const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
-  const [drawingState, setDrawingState] = useState(null);
-  
-  // Toggle snap to grid
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-  
-  // Handle tool changes
+): UseCanvasInteractionsResult => {
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [endPoint, setEndPoint] = useState<Point | null>(null);
+  const [snapEnabled, setSnapEnabled] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
+
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
-    // Configure canvas based on selected tool
-    if (tool === 'draw') {
-      canvas.isDrawingMode = true;
-      if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.width = lineThickness;
-        canvas.freeDrawingBrush.color = lineColor;
-      }
-    } else {
-      canvas.isDrawingMode = false;
-    }
-    
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef, tool, lineThickness, lineColor]);
-  
-  // Update zoom when it changes
-  const handleZoomChange = useCallback((zoom: number) => {
-    setCurrentZoom(zoom);
-  }, []);
-  
-  // Set up zoom change handler
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    const updateZoom = () => {
+
+    const handleObjectModified = () => {
       setCurrentZoom(canvas.getZoom());
     };
-    
-    canvas.on('zoom:changed', updateZoom);
-    
+
+    canvas.on('object:modified', handleObjectModified);
+
     return () => {
-      canvas.off('zoom:changed', updateZoom);
+      canvas.off('object:modified', handleObjectModified);
     };
-  }, [fabricCanvasRef]);
-  
+  }, [canvas]);
+
+  useEffect(() => {
+    if (!canvas) return;
+
+    const handleZoom = () => {
+      setCurrentZoom(canvas.getZoom());
+    };
+
+    canvas.on('mouse:wheel', handleZoom);
+
+    return () => {
+      canvas.off('mouse:wheel', handleZoom);
+    };
+  }, [canvas]);
+
+  useEffect(() => {
+    if (!canvas) return;
+
+    let line: Line | null = null;
+
+    const handleMouseDown = (event: any) => {
+      if (tool === DrawingMode.DRAW) {
+        const pointer = canvas.getPointer(event.e);
+        setIsDrawing(true);
+        setStartPoint({ x: pointer.x, y: pointer.y });
+        setEndPoint({ x: pointer.x, y: pointer.y });
+
+        line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+          strokeWidth: lineThickness,
+          stroke: lineColor,
+          originX: 'center',
+          originY: 'center',
+          selectable: false,
+          evented: false,
+        });
+
+        canvas.add(line);
+      }
+    };
+
+    const handleMouseMove = (event: any) => {
+      if (!isDrawing || !line) return;
+
+      const pointer = canvas.getPointer(event.e);
+      setEndPoint({ x: pointer.x, y: pointer.y });
+
+      line.set({ x2: pointer.x, y2: pointer.y });
+      canvas.renderAll();
+    };
+
+    const handleMouseUp = () => {
+      if (isDrawing && line) {
+        setIsDrawing(false);
+        line.set({ evented: true, selectable: true });
+        canvas.setActiveObject(line);
+        canvas.renderAll();
+      }
+    };
+
+    if (tool === DrawingMode.DRAW) {
+      canvas.on('mouse:down', handleMouseDown);
+      canvas.on('mouse:move', handleMouseMove);
+      canvas.on('mouse:up', handleMouseUp);
+    }
+
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+    };
+  }, [canvas, isDrawing, lineColor, lineThickness, tool]);
+
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled((prev) => !prev);
+  }, []);
+
   return {
-    drawingState,
+    drawingState: {
+      isDrawing,
+      startPoint,
+      endPoint,
+    },
     currentZoom,
     toggleSnap,
     snapEnabled,
-    handleZoomChange
   };
 };

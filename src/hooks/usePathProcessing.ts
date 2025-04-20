@@ -1,214 +1,168 @@
-/**
- * Path processing hook
- * Handles processing of drawing paths
- * @module hooks/usePathProcessing
- */
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Path as FabricPath, Object as FabricObject, Line } from 'fabric';
-import { FloorPlan, Stroke, StrokeTypeLiteral } from '@/types/floorPlanTypes';
-import { DrawingTool } from '@/types/core/DrawingTool';
-import { Point } from '@/types/drawingTypes';
-import { v4 as uuidv4 } from 'uuid';
-import { isStraightPath, straightenPath } from '@/utils/geometry/pathStraightening';
-import { useDrawingContext } from '@/contexts/DrawingContext';
-import { DrawingMode } from '@/constants/drawingModes';
+import { Canvas as FabricCanvas, Path } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/types/canvasStateTypes';
 
-/**
- * Minimum stroke length for processing
- */
-const MIN_STROKE_LENGTH = 5;
-
-/**
- * Props for the path processing hook
- */
-export interface UsePathProcessingProps {
-  /** Reference to the fabric canvas */
+interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to the history object (optional) */
-  historyRef?: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current drawing tool (optional) */
-  tool?: DrawingTool;
-  /** Function to set floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Current floor index */
-  currentFloor: number;
-  /** Function to set gross internal area (optional) */
-  setGia?: React.Dispatch<React.SetStateAction<number>>;
+  tool: DrawingMode;
 }
 
-/**
- * Convert drawing tool to stroke type
- * @param tool - The drawing tool
- * @returns The corresponding stroke type
- */
-const drawingToolToStrokeType = (tool?: DrawingTool): StrokeTypeLiteral => {
-  if (!tool) return 'line';
-  
-  // Map drawing tools to stroke types
-  switch (tool) {
-    case 'wall':
-      return 'wall';
-    case 'room':
-      return 'line'; // Changed from 'room' to 'line' to match StrokeTypeLiteral
-    case 'line':
-      return 'line';
-    case 'draw':
-      return 'line'; // Changed from 'freehand' to 'line' to match StrokeTypeLiteral
-    default:
-      return 'line';
-  }
-};
+export const usePathProcessing = ({ fabricCanvasRef, tool }: UsePathProcessingProps) => {
+  const processPath = useCallback((path: Path) => {
+    if (!fabricCanvasRef.current) return;
 
-/**
- * Hook for processing drawing paths
- * 
- * @param props - Hook properties
- * @returns Path processing utilities
- */
-export const usePathProcessing = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  historyRef,
-  tool,
-  setFloorPlans,
-  currentFloor,
-  setGia
-}: UsePathProcessingProps) => {
-  // Get drawing context to access snapToGrid setting
-  const { snapToGrid } = useDrawingContext();
-  
-  const processCreatedPath = useCallback((path: FabricPath) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !path) return;
-    
-    // Extract points from the path
-    const points = extractPointsFromPath(path);
-    
-    // Skip if path is too short
-    if (points.length < MIN_STROKE_LENGTH) {
-      canvas.remove(path);
-      return;
-    }
-    
-    // Check if the path is nearly straight
-    const isNearlyStraight = isStraightPath(points);
-    
-    // Create stroke data
-    let stroke: Stroke;
-    
-    // If nearly straight, convert to a straight line
-    if (isNearlyStraight && tool === 'draw') {
-      // Remove the original path
-      canvas.remove(path);
-      
-      // Get straightened endpoints
-      const { start, end } = straightenPath(points, snapToGrid);
-      
-      // Create a Fabric.js Line
-      const line = new Line([start.x, start.y, end.x, end.y], {
-        stroke: path.stroke?.toString() || '#000000',
-        strokeWidth: path.strokeWidth || 1,
-        selectable: true,
-        evented: true,
-        objectType: 'straight-line'
-      });
-      
-      // Add the line to canvas
-      canvas.add(line);
-      
-      // Create stroke with just the endpoints
-      stroke = {
-        id: uuidv4(),
-        points: [start, end],
-        type: 'line',
-        color: path.stroke?.toString() || '#000000',
-        thickness: path.strokeWidth || 1,
-        width: path.strokeWidth || 1
-      };
-    } else {
-      // Handle as normal path
-      stroke = {
-        id: uuidv4(),
-        points,
-        type: drawingToolToStrokeType(tool),
-        color: path.stroke?.toString() || '#000000',
-        thickness: path.strokeWidth || 1,
-        width: path.strokeWidth || 1
-      };
-      
-      // Apply styling based on tool type
-      const strokeOptions = {
-        stroke: stroke.color,
-        strokeWidth: stroke.thickness,
-        fill: 'transparent',
-        opacity: 1,
-        selectable: true,
-        objectCaching: true
-      };
-      
-      // Apply path properties from stroke options
-      Object.keys(strokeOptions).forEach(key => {
-        // Type assertion to access properties dynamically
-        (path as any)[key] = (strokeOptions as any)[key];
-      });
-    }
-    
-    // Update floor plans with the new stroke
-    setFloorPlans(prevFloorPlans => {
-      const updatedFloorPlans = [...prevFloorPlans];
-      
-      if (updatedFloorPlans[currentFloor]) {
-        // Ensure the strokes array exists
-        if (!updatedFloorPlans[currentFloor].strokes) {
-          updatedFloorPlans[currentFloor].strokes = [];
-        }
-        
-        // Update existing floor plan
-        updatedFloorPlans[currentFloor] = {
-          ...updatedFloorPlans[currentFloor],
-          strokes: [
-            ...updatedFloorPlans[currentFloor].strokes!,
-            stroke
-          ],
-          updatedAt: new Date().toISOString()
-        };
-      }
-      
-      return updatedFloorPlans;
-    });
-    
-    canvas.renderAll();
-  }, [fabricCanvasRef, tool, setFloorPlans, currentFloor, snapToGrid]);
-  
-  return {
-    processCreatedPath
-  };
-};
 
-/**
- * Helper function for extracting points from a path
- * 
- * @param path - Fabric path object
- * @returns Array of point coordinates
- */
-const extractPointsFromPath = (path: FabricPath): Point[] => {
-  const points: Point[] = [];
-  const pathData = path.path;
-  
-  if (!pathData || !Array.isArray(pathData)) {
-    return points;
-  }
-  
-  // Extract points from path data
-  // This is a simplified version
-  for (let i = 0; i < pathData.length; i++) {
-    const segment = pathData[i];
-    if (segment[0] === 'L' || segment[0] === 'M') {
-      points.push({ x: segment[1], y: segment[2] });
+    if (tool === DrawingMode.WALL) {
+      path.set({
+        stroke: 'rgba(255,0,0,1)',
+        fill: null,
+        strokeWidth: 5,
+        objectCaching: false,
+        cornerStyle: 'circle',
+        cornerColor: 'blue',
+        dirty: true
+      });
     }
-  }
-  
-  return points;
+    else if (tool === DrawingMode.ROOM) {
+      path.set({
+        stroke: 'rgba(0,255,0,1)',
+        fill: null,
+        strokeWidth: 5,
+        objectCaching: false,
+        cornerStyle: 'circle',
+        cornerColor: 'blue',
+        dirty: true
+      });
+    }
+    else if (tool === DrawingMode.LINE) {
+      path.set({
+        stroke: 'rgba(0,0,255,1)',
+        fill: null,
+        strokeWidth: 5,
+        objectCaching: false,
+        cornerStyle: 'circle',
+        cornerColor: 'blue',
+        dirty: true
+      });
+    }
+    else if (tool === DrawingMode.DRAW) {
+      path.set({
+        stroke: 'rgba(0,0,0,1)',
+        fill: null,
+        strokeWidth: 5,
+        objectCaching: false,
+        cornerStyle: 'circle',
+        cornerColor: 'blue',
+        dirty: true
+      });
+    }
+
+    canvas.add(path);
+    canvas.renderAll();
+  }, [fabricCanvasRef, tool]);
+
+  const simplifyPath = useCallback((points: Point[], tolerance: number = 5): Point[] => {
+    if (points.length <= 2) {
+      return points;
+    }
+
+    const simplified: Point[] = [points[0]];
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const p1 = simplified[simplified.length - 1];
+      const p2 = points[i];
+      const p3 = points[i + 1];
+
+      const dist = Math.abs((p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y));
+      const segmentLength = Math.sqrt(Math.pow(p3.x - p1.x, 2) + Math.pow(p3.y - p1.y, 2));
+
+      if ((dist / segmentLength) > tolerance) {
+        simplified.push(p2);
+      }
+    }
+
+    simplified.push(points[points.length - 1]);
+    return simplified;
+  }, []);
+
+  const isToolMatch = useCallback((currentTool: DrawingMode, targetTool: DrawingMode): boolean => {
+    return currentTool === targetTool;
+  }, []);
+
+  const isDrawingMode = useCallback(() => {
+    return tool === DrawingMode.DRAW;
+  }, [tool]);
+
+  const isStraightLineMode = useCallback(() => {
+    return tool === DrawingMode.STRAIGHT_LINE;
+  }, [tool]);
+
+  const isDrawing = useCallback(() => {
+    return isDrawingMode() || isStraightLineMode();
+  }, [isDrawingMode, isStraightLineMode]);
+
+  const isSelectMode = useCallback(() => {
+    return tool === DrawingMode.SELECT;
+  }, [tool]);
+
+  const isHandMode = useCallback(() => {
+    return tool === DrawingMode.HAND;
+  }, [tool]);
+
+  const isEraserMode = useCallback(() => {
+    return tool === DrawingMode.ERASER;
+  }, [tool]);
+
+  const isMeasureMode = useCallback(() => {
+    return tool === DrawingMode.MEASURE;
+  }, [tool]);
+
+  const isWallMode = useCallback(() => {
+    return tool === DrawingMode.WALL;
+  }, [tool]);
+
+  const isRoomMode = useCallback(() => {
+    return tool === DrawingMode.ROOM;
+  }, [tool]);
+
+  const isLineMode = useCallback(() => {
+    return tool === DrawingMode.LINE;
+  }, [tool]);
+
+  const isDrawMode = useCallback(() => {
+    return tool === DrawingMode.DRAW;
+  }, [tool]);
+
+  const isCurrentTool = useCallback((targetTool: DrawingMode): boolean => {
+    return tool === targetTool;
+  }, [tool]);
+
+  const isCurrentDrawingTool = useCallback((): boolean => {
+    if (tool === DrawingMode.DRAW) {
+      return true;
+    }
+
+    return false;
+  }, [tool]);
+
+  return {
+    processPath,
+    simplifyPath,
+    isToolMatch,
+    isDrawingMode,
+    isStraightLineMode,
+    isDrawing,
+    isSelectMode,
+    isHandMode,
+    isEraserMode,
+    isMeasureMode,
+    isWallMode,
+    isRoomMode,
+    isLineMode,
+    isDrawMode,
+    isCurrentTool,
+    isCurrentDrawingTool
+  };
 };
