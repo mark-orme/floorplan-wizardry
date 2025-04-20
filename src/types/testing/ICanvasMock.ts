@@ -17,9 +17,9 @@ export interface ICanvasMock {
   requestRenderAll: jest.Mock;
   on: jest.Mock;
   off: jest.Mock;
-  getActiveObjects: jest.Mock;
+  getActiveObjects?: jest.Mock;
   discardActiveObject: jest.Mock;
-  contains: jest.Mock;
+  contains?: jest.Mock;
   // Properly typed withImplementation that returns Promise<void>
   withImplementation: jest.Mock<Promise<void>, [callback?: Function]>;
 }

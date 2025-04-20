@@ -5,7 +5,7 @@
  * @module utils/test/createMockCanvas
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { asMockCanvas } from '@/types/test/MockTypes';
+import { asMockCanvas } from '@/types/testing/ICanvasMock';
 import { vi } from 'vitest';
 
 /**
@@ -33,6 +33,7 @@ export const createTypedMockCanvas = () => {
     requestRenderAll: vi.fn(),
     loadFromJSON: vi.fn((json, callback) => {
       if (callback) callback();
+      return Promise.resolve();
     }),
     toJSON: vi.fn().mockReturnValue({}),
     getCenter: vi.fn().mockReturnValue({ top: 300, left: 400 }),
@@ -46,13 +47,13 @@ export const createTypedMockCanvas = () => {
     defaultCursor: 'default',
     getHandlers: vi.fn((eventName) => [() => {}]),
     triggerEvent: vi.fn((eventName, eventData) => {}),
-    // Critical fix for withImplementation - ensure it returns Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback?: Function) => {
+    // CRITICAL FIX: Ensure withImplementation returns Promise<void>
+    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
       if (callback) {
         try {
           const result = callback();
           if (result instanceof Promise) {
-            return result;
+            return result.then(() => Promise.resolve());
           }
         } catch (error) {
           console.error('Error in mock withImplementation:', error);
