@@ -1,156 +1,153 @@
 
 /**
- * Type Diagnostics Utility
- * Provides debugging functions for type checking
+ * Type diagnostics utilities
+ * Provides validation and debugging utilities for floor plan types
  * @module utils/debug/typeDiagnostics
  */
-import { FloorPlan, Stroke, Room, Wall, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
+import { 
+  FloorPlan, 
+  Stroke, 
+  Wall, 
+  Room, 
+  StrokeTypeLiteral, 
+  RoomTypeLiteral,
+  FloorPlanMetadata
+} from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Validates a StrokeType value against the allowed types
- * @param type Type to validate
- * @returns Type validation result
+ * Validate if a value is a valid StrokeTypeLiteral
+ * @param type The value to check
+ * @returns Whether the value is a valid StrokeTypeLiteral
  */
-export function validateStrokeType(type: string): { valid: boolean; value?: StrokeTypeLiteral } {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'straight', 'wall', 'room'];
-  
-  if (validTypes.includes(type as StrokeTypeLiteral)) {
-    return { valid: true, value: type as StrokeTypeLiteral };
-  }
-  
-  console.error(`Invalid stroke type: ${type}. Valid types are: ${validTypes.join(', ')}`);
-  return { valid: false };
-}
+export const isValidStrokeType = (type: unknown): type is StrokeTypeLiteral => {
+  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room'];
+  return typeof type === 'string' && validTypes.includes(type as StrokeTypeLiteral);
+};
 
 /**
- * Validates a RoomType value against the allowed types
- * @param type Type to validate
- * @returns Type validation result
+ * Validate if a value is a valid RoomTypeLiteral
+ * @param type The value to check
+ * @returns Whether the value is a valid RoomTypeLiteral
  */
-export function validateRoomType(type: string): { valid: boolean; value?: RoomTypeLiteral } {
+export const isValidRoomType = (type: unknown): type is RoomTypeLiteral => {
   const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  
-  if (validTypes.includes(type as RoomTypeLiteral)) {
-    return { valid: true, value: type as RoomTypeLiteral };
-  }
-  
-  console.error(`Invalid room type: ${type}. Valid types are: ${validTypes.join(', ')}`);
-  return { valid: false };
-}
+  return typeof type === 'string' && validTypes.includes(type as RoomTypeLiteral);
+};
 
 /**
- * Validates a floor plan structure to ensure type correctness
- * @param floorPlan Floor plan to validate
- * @returns Validation result with errors if any
+ * Validate if an object is a valid FloorPlan
+ * @param obj The object to check
+ * @returns Whether the object is a valid FloorPlan
  */
-export function validateFloorPlanWithReporting(floorPlan: any): { 
-  valid: boolean; 
-  errors: string[]; 
-  fixedFloorPlan?: FloorPlan 
-} {
-  const errors: string[] = [];
-  const fixedFloorPlan = { ...floorPlan };
-  
-  // Check required properties
-  if (!floorPlan) {
-    errors.push('Floor plan is null or undefined');
-    return { valid: false, errors };
-  }
-  
-  // Check ID and name
-  if (!floorPlan.id) {
-    errors.push('Floor plan has no ID');
-  }
-  
-  if (!floorPlan.name) {
-    errors.push('Floor plan has no name');
-    fixedFloorPlan.name = 'Untitled Floor Plan';
-  }
-  
-  // Check arrays
-  if (!Array.isArray(floorPlan.walls)) {
-    errors.push('Floor plan walls is not an array');
-    fixedFloorPlan.walls = [];
-  }
-  
-  if (!Array.isArray(floorPlan.rooms)) {
-    errors.push('Floor plan rooms is not an array');
-    fixedFloorPlan.rooms = [];
-  }
-  
-  if (!Array.isArray(floorPlan.strokes)) {
-    errors.push('Floor plan strokes is not an array');
-    fixedFloorPlan.strokes = [];
-  }
-  
-  // Check metadata
-  if (!floorPlan.metadata) {
-    errors.push('Floor plan has no metadata');
-    fixedFloorPlan.metadata = {
-      version: '1.0',
-      author: '',
-      dateCreated: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      notes: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      paperSize: 'A4',
-      level: 0
-    };
-  } else if (floorPlan.metadata) {
-    // Check required metadata properties
-    const requiredFields = ['version', 'author', 'dateCreated', 'lastModified', 'notes'];
-    const missingFields = requiredFields.filter(field => !floorPlan.metadata[field]);
-    
-    if (missingFields.length > 0) {
-      errors.push(`Floor plan metadata missing required fields: ${missingFields.join(', ')}`);
-      
-      // Add missing fields with default values
-      missingFields.forEach(field => {
-        if (field === 'version') fixedFloorPlan.metadata.version = '1.0';
-        if (field === 'author') fixedFloorPlan.metadata.author = '';
-        if (field === 'dateCreated') fixedFloorPlan.metadata.dateCreated = new Date().toISOString();
-        if (field === 'lastModified') fixedFloorPlan.metadata.lastModified = new Date().toISOString();
-        if (field === 'notes') fixedFloorPlan.metadata.notes = '';
-      });
-    }
-  }
-  
-  // Check required properties for unified API
-  if (!floorPlan.data) {
-    errors.push('Floor plan has no data property (required by unified API)');
-    fixedFloorPlan.data = {};
-  }
-  
-  if (!floorPlan.userId) {
-    errors.push('Floor plan has no userId property (required by unified API)');
-    fixedFloorPlan.userId = 'system';
-  }
-  
-  return { 
-    valid: errors.length === 0, 
-    errors,
-    fixedFloorPlan: errors.length > 0 ? fixedFloorPlan : undefined
+export const isValidFloorPlan = (obj: unknown): obj is FloorPlan => {
+  return obj !== null && 
+    typeof obj === 'object' && 
+    'id' in obj && 
+    'strokes' in obj && 
+    'walls' in obj && 
+    'rooms' in obj && 
+    'metadata' in obj;
+};
+
+/**
+ * Validate if an object is a valid Wall
+ * @param obj The object to check
+ * @returns Whether the object is a valid Wall
+ */
+export const isValidWall = (obj: unknown): obj is Wall => {
+  return obj !== null && 
+    typeof obj === 'object' && 
+    'id' in obj && 
+    'start' in obj && 
+    'end' in obj && 
+    'thickness' in obj && 
+    'length' in obj;
+};
+
+/**
+ * Validate if an object is a valid Room
+ * @param obj The object to check
+ * @returns Whether the object is a valid Room
+ */
+export const isValidRoom = (obj: unknown): obj is Room => {
+  return obj !== null && 
+    typeof obj === 'object' && 
+    'id' in obj && 
+    'name' in obj && 
+    'type' in obj && 
+    'area' in obj && 
+    'vertices' in obj;
+};
+
+/**
+ * Validate if an object is a valid Stroke
+ * @param obj The object to check
+ * @returns Whether the object is a valid Stroke
+ */
+export const isValidStroke = (obj: unknown): obj is Stroke => {
+  return obj !== null && 
+    typeof obj === 'object' && 
+    'id' in obj && 
+    'points' in obj && 
+    'type' in obj && 
+    'thickness' in obj;
+};
+
+/**
+ * Calculate the length of a wall from start and end points
+ * @param start The starting point
+ * @param end The ending point
+ * @returns The calculated length
+ */
+export const calculateWallLength = (start: { x: number, y: number }, end: { x: number, y: number }): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+/**
+ * Log type information for debugging
+ * @param obj The object to inspect
+ * @param label An optional label for the log
+ */
+export const logTypeInfo = (obj: unknown, label?: string): void => {
+  console.log(`Type info ${label ? 'for ' + label : ''}:`, {
+    type: typeof obj,
+    isArray: Array.isArray(obj),
+    isFloorPlan: isValidFloorPlan(obj),
+    isRoom: isValidRoom(obj),
+    isWall: isValidWall(obj),
+    isStroke: isValidStroke(obj),
+    value: obj
+  });
+};
+
+/**
+ * Create a complete FloorPlanMetadata with all required fields
+ * @param partial Partial metadata to extend
+ * @returns Complete FloorPlanMetadata
+ */
+export const createCompleteMetadata = (partial: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata => {
+  const now = new Date().toISOString();
+  return {
+    version: partial.version || '1.0',
+    author: partial.author || '',
+    dateCreated: partial.dateCreated || now,
+    lastModified: partial.lastModified || now,
+    notes: partial.notes || '',
+    createdAt: partial.createdAt || now,
+    updatedAt: partial.updatedAt || now,
+    paperSize: partial.paperSize || 'A4',
+    level: partial.level || 0
   };
-}
+};
 
 /**
- * Logs type information for debugging purposes
- * @param object Object to log type information for
- * @param objectName Name of the object
+ * Ensure a wall has length property calculated
+ * @param wall The wall to ensure has length
+ * @returns The wall with length calculated
  */
-export function logTypeInfo(object: any, objectName: string = 'Object'): void {
-  console.log(`Type information for ${objectName}:`);
-  console.log(`- Type: ${typeof object}`);
-  console.log(`- Is null: ${object === null}`);
-  console.log(`- Is array: ${Array.isArray(object)}`);
-  
-  if (object && typeof object === 'object' && !Array.isArray(object)) {
-    console.log(`- Keys: ${Object.keys(object).join(', ')}`);
-    
-    // Log first-level property types
-    Object.entries(object).forEach(([key, value]) => {
-      console.log(`  - ${key}: ${typeof value} ${value === null ? '[null]' : ''} ${Array.isArray(value) ? `[Array(${(value as any[]).length})]` : ''}`);
-    });
-  }
-}
+export const ensureWallLength = (wall: Omit<Wall, 'length'>): Wall => {
+  const length = calculateWallLength(wall.start, wall.end);
+  return { ...wall, length };
+};

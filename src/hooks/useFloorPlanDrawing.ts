@@ -5,8 +5,9 @@
  */
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType, StrokeTypeLiteral } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
 import { DrawingMode } from '@/constants/drawingModes';
+import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlanDrawingProps {
   canvas: FabricCanvas;
@@ -79,8 +80,14 @@ export const useFloorPlanDrawing = ({
   }, [canvas, floorPlan, onFloorPlanUpdate]);
 
   // Add a wall to the floor plan
-  const addWall = useCallback((wall: Wall) => {
+  const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
     if (!canvas) return;
+    
+    // Calculate length if not provided
+    const completeWall: Wall = {
+      ...wall,
+      length: wall.length || calculateWallLength(wall.start, wall.end)
+    };
     
     // Add the wall to the canvas
     canvas.add(/* wall visual representation */);
@@ -89,7 +96,7 @@ export const useFloorPlanDrawing = ({
     // Update the floor plan data
     const updatedFloorPlan = {
       ...floorPlan,
-      walls: [...floorPlan.walls, wall],
+      walls: [...floorPlan.walls, completeWall],
       updatedAt: new Date().toISOString()
     };
     

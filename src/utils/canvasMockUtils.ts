@@ -1,128 +1,101 @@
 
 /**
- * Canvas mock utilities for testing
- * Provides functions to create properly typed canvas mocks
+ * Canvas mock utilities
+ * Provides typed mock objects for testing canvas components
  * @module utils/canvasMockUtils
  */
-import { Canvas as FabricCanvas } from 'fabric';
 import { vi } from 'vitest';
+import type { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Creates a withImplementation mock that returns Promise<void>
- * @returns Mock function with correct return type
+ * Interface for typed canvas mock
  */
-export function createWithImplementationMock() {
-  // Create a mock that returns a promise
-  return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-    // Log that withImplementation was called for debugging
-    console.log('Mock withImplementation called');
-    
-    // If a callback is provided, execute it
-    if (callback && typeof callback === 'function') {
-      try {
-        const result = callback();
-        
-        // If the callback returns a promise, return that promise
-        if (result instanceof Promise) {
-          return result.then(() => Promise.resolve());
-        }
-      } catch (error) {
-        console.error('Error in mock withImplementation:', error);
-        // Don't rethrow, just log for test stability
-      }
-    }
-    
-    // Always return a resolved promise for stability
-    return Promise.resolve();
-  });
+export interface TypedCanvasMock {
+  add: jest.Mock | ViJestMock;
+  remove: jest.Mock | ViJestMock;
+  renderAll: jest.Mock | ViJestMock;
+  isDrawingMode: boolean;
+  freeDrawingBrush: {
+    color: string;
+    width: number;
+  };
+  getObjects: jest.Mock | ViJestMock;
+  clear: jest.Mock | ViJestMock;
+  setWidth: jest.Mock | ViJestMock;
+  setHeight: jest.Mock | ViJestMock;
+  setZoom: jest.Mock | ViJestMock;
+  getZoom: jest.Mock | ViJestMock;
+  viewportTransform: number[];
+  selection: boolean;
+  on: jest.Mock | ViJestMock;
+  off: jest.Mock | ViJestMock;
+  toJSON: jest.Mock | ViJestMock;
+  loadFromJSON: jest.Mock | ViJestMock;
+  requestRenderAll: jest.Mock | ViJestMock;
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
+  [key: string]: any;
 }
 
+type ViJestMock = ReturnType<typeof vi.fn>;
+
 /**
- * Creates a strongly-typed mock Fabric.js canvas for testing
- * Ensures all required properties and methods are properly mocked
- * 
- * @returns A properly typed mock canvas object
+ * Create a typed mock canvas for testing
+ * @returns A canvas mock with all required methods
  */
-export const createTypedMockCanvas = () => {
-  console.log('Creating typed mock canvas with proper interface');
+export const createTypedMockCanvas = (): TypedCanvasMock => {
+  const eventHandlers: Record<string, Function[]> = {};
   
   const mockCanvas = {
-    on: vi.fn(),
-    off: vi.fn(),
     add: vi.fn(),
     remove: vi.fn(),
+    renderAll: vi.fn(),
+    isDrawingMode: false,
+    freeDrawingBrush: {
+      color: '#000000',
+      width: 2
+    },
     getObjects: vi.fn().mockReturnValue([]),
     clear: vi.fn(),
-    renderAll: vi.fn(),
-    getWidth: vi.fn().mockReturnValue(800),
-    getHeight: vi.fn().mockReturnValue(600),
     setWidth: vi.fn(),
     setHeight: vi.fn(),
-    getElement: vi.fn(),
-    getContext: vi.fn(),
-    dispose: vi.fn(),
-    requestRenderAll: vi.fn(),
-    loadFromJSON: vi.fn((json, callback) => {
-      if (callback) callback();
-      return Promise.resolve();
-    }),
-    toJSON: vi.fn().mockReturnValue({}),
-    getCenter: vi.fn().mockReturnValue({ top: 300, left: 400 }),
-    setViewportTransform: vi.fn(),
-    getActiveObject: vi.fn(),
-    sendObjectToBack: vi.fn(),
-    bringObjectToFront: vi.fn(),
-    discardActiveObject: vi.fn(),
-    isDrawingMode: false,
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    viewportTransform: [1, 0, 0, 1, 0, 0],
     selection: true,
-    defaultCursor: 'default',
-    getHandlers: vi.fn((eventName) => [() => {}]),
-    triggerEvent: vi.fn((eventName, eventData) => {}),
-    // Enhanced Canvas properties for test compatibility
-    enablePointerEvents: true,
-    _willAddMouseDown: false,
-    _dropTarget: null,
-    _isClick: false,
-    _objects: [],
-    // Use the fixed withImplementation implementation that returns Promise<void>
-    withImplementation: createWithImplementationMock()
+    on: vi.fn().mockImplementation((eventName: string, handler: Function) => {
+      if (!eventHandlers[eventName]) {
+        eventHandlers[eventName] = [];
+      }
+      eventHandlers[eventName].push(handler);
+      return mockCanvas;
+    }),
+    off: vi.fn(),
+    toJSON: vi.fn().mockReturnValue({}),
+    loadFromJSON: vi.fn().mockImplementation((json, callback) => {
+      if (callback) callback();
+      return mockCanvas;
+    }),
+    requestRenderAll: vi.fn(),
+    // Helper methods for tests
+    getHandlers: (eventName: string) => eventHandlers[eventName] || [],
+    triggerEvent: (eventName: string, eventData: any) => {
+      if (eventHandlers[eventName]) {
+        eventHandlers[eventName].forEach(handler => handler(eventData));
+      }
+    }
   };
   
-  // Use type assertion to cast to the expected type
-  return mockCanvas as unknown as FabricCanvas & {
-    getHandlers: (eventName: string) => Function[];
-    triggerEvent: (eventName: string, eventData: any) => void;
-  };
+  return mockCanvas;
 };
 
 /**
- * Helper function to convert any canvas-like object to a properly typed canvas
- * @param canvas Canvas object to convert
- * @returns Properly typed canvas object
+ * Assert that a value is a mock canvas
+ * @param value The value to check
+ * @returns The value as a mock canvas, casting only if it matches the interface
  */
-export function asTypedCanvas(canvas: any): FabricCanvas & {
-  getHandlers?: (eventName: string) => Function[];
-  triggerEvent?: (eventName: string, eventData: any) => void;
-} {
-  return canvas as FabricCanvas & {
-    getHandlers?: (eventName: string) => Function[];
-    triggerEvent?: (eventName: string, eventData: any) => void;
-  };
-}
-
-/**
- * Helper function to validate a wall object and ensure it has a length property
- * @param wall Wall to validate
- * @returns Wall with length calculated if missing
- */
-export function ensureWallLength(wall: any): any {
-  if (wall.length !== undefined) return wall;
-  
-  if (wall.start && wall.end) {
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    wall.length = Math.sqrt(dx * dx + dy * dy);
-  }
-  
-  return wall;
-}
+export const asMockCanvas = (value: any): FabricCanvas => {
+  // This function only performs a type assertion, not actual runtime validation
+  // In real code, you would add validation here
+  return value as unknown as FabricCanvas;
+};
