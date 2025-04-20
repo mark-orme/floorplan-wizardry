@@ -96,6 +96,28 @@ export class Canvas {
   dispose(): void {
     // Mock implementation
   }
+  
+  // CRITICAL FIX: Ensure withImplementation returns Promise<void>
+  withImplementation(callback?: Function): Promise<void> {
+    console.log('MockCanvas: Using withImplementation mock');
+    
+    // Invoke the callback if provided 
+    if (callback && typeof callback === 'function') {
+      try {
+        const result = callback();
+        
+        // If callback returns a promise, chain it
+        if (result instanceof Promise) {
+          return result.then(() => Promise.resolve());
+        }
+      } catch (error) {
+        console.error('Error in withImplementation mock:', error);
+      }
+    }
+    
+    // Always return a Promise<void>
+    return Promise.resolve();
+  }
 }
 
 // Mock PencilBrush class
