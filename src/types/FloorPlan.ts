@@ -1,4 +1,9 @@
 
+/**
+ * Floor Plan type definitions
+ * Centralized to avoid duplicates
+ */
+
 export interface FloorPlan {
   id: string;
   name: string;
@@ -42,24 +47,35 @@ export const stringToPaperSize = (size: string): PaperSize => {
   }
 };
 
-// Define the DrawingMode enum and export it to fix the import/export errors
-export enum DrawingMode {
-  SELECT = 'select',
-  DRAW = 'draw',
-  WALL = 'wall',
-  ROOM = 'room',
-  LINE = 'line',
-  STRAIGHT_LINE = 'straight_line',
-  ERASER = 'eraser',
-  HAND = 'hand',
-  MEASURE = 'measure',
-  TEXT = 'text',
-  SHAPE = 'shape',
-  RECTANGLE = 'rectangle',
-  CIRCLE = 'circle',
-  DOOR = 'door',
-  WINDOW = 'window',
-  PAN = 'pan',
-  ERASE = 'erase',
-  PENCIL = 'pencil'
+// Import drawing modes from the centralized source
+export { DrawingMode } from '@/constants/drawingModes';
+
+// Create an empty floor plan with defaults
+export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: `fp-${Date.now()}`,
+    name: 'New Floor Plan',
+    label: 'Untitled',
+    data: {},
+    userId: 'anonymous',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasJson: null,
+    canvasData: null,
+    createdAt: now,
+    updatedAt: now,
+    gia: 0,
+    level: 0,
+    index: 0,
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: PaperSize.A4,
+      level: 0
+    },
+    ...overrides
+  };
 }
