@@ -1,6 +1,9 @@
 
 import * as Sentry from '@sentry/react';
 import { CaptureMessageOptions } from './types';
+import {
+  FloorPlan, Stroke, Wall, Room
+} from '@/types/floor-plan/typesBarrel';
 
 /**
  * Tracks type errors during development and testing
@@ -107,4 +110,51 @@ export function validateStroke(stroke: any): boolean {
     ['id', 'points', 'type', 'color', 'thickness', 'width'],
     'Stroke'
   );
+}
+
+/**
+ * Enhanced validation for FloorPlan with type checking for arrays
+ * @param floorPlan FloorPlan to validate
+ * @returns True if valid, false otherwise
+ */
+export function validateFloorPlanWithTypeCheck(floorPlan: Partial<FloorPlan>): boolean {
+  // First check basic properties
+  if (!validateFloorPlan(floorPlan)) {
+    return false;
+  }
+
+  // Check array types
+  let isValid = true;
+  
+  // Check rooms
+  if (floorPlan.rooms && floorPlan.rooms.length > 0) {
+    for (const room of floorPlan.rooms) {
+      if (!validateRoom(room)) {
+        isValid = false;
+        trackTypeError('Invalid room in floor plan', { roomId: room.id, room });
+      }
+    }
+  }
+  
+  // Check walls
+  if (floorPlan.walls && floorPlan.walls.length > 0) {
+    for (const wall of floorPlan.walls) {
+      if (!validateWall(wall)) {
+        isValid = false;
+        trackTypeError('Invalid wall in floor plan', { wallId: wall.id, wall });
+      }
+    }
+  }
+  
+  // Check strokes
+  if (floorPlan.strokes && floorPlan.strokes.length > 0) {
+    for (const stroke of floorPlan.strokes) {
+      if (!validateStroke(stroke)) {
+        isValid = false;
+        trackTypeError('Invalid stroke in floor plan', { strokeId: stroke.id, stroke });
+      }
+    }
+  }
+  
+  return isValid;
 }

@@ -9,6 +9,14 @@ import {
   StrokeTypeLiteral, 
   RoomTypeLiteral 
 } from '@/types/floorPlanTypes';
+import { 
+  ensureFloorPlan, 
+  ensureStroke, 
+  ensureRoom,
+  ensureWall,
+  asStrokeType,
+  asRoomType
+} from '@/utils/test/typeGaurd';
 
 /**
  * Creates a test stroke with proper typing
@@ -16,14 +24,12 @@ import {
  * @returns Properly typed Stroke object
  */
 export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
-  return {
-    id: overrides.id || uuidv4(),
-    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: (overrides.type as StrokeTypeLiteral) || 'line',
-    color: overrides.color || '#000000',
-    thickness: overrides.thickness || 2,
-    width: overrides.width || 2
-  };
+  // Safely cast the type to ensure it's a valid StrokeTypeLiteral
+  if (overrides.type && typeof overrides.type === 'string') {
+    overrides.type = asStrokeType(overrides.type);
+  }
+  
+  return ensureStroke(overrides);
 }
 
 /**
@@ -32,22 +38,12 @@ export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
  * @returns Properly typed Wall object
  */
 export function createTestWall(overrides: Partial<Wall> = {}): Wall {
-  const start = overrides.start || { x: 0, y: 0 };
-  const end = overrides.end || { x: 100, y: 0 };
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
+  // Ensure wall has roomIds property
+  if (!overrides.roomIds) {
+    overrides.roomIds = [];
+  }
   
-  return {
-    id: overrides.id || uuidv4(),
-    start: start,
-    end: end,
-    points: overrides.points || [start, end],
-    thickness: overrides.thickness || 5,
-    color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [],
-    length: overrides.length || length
-  };
+  return ensureWall(overrides);
 }
 
 /**
@@ -56,16 +52,12 @@ export function createTestWall(overrides: Partial<Wall> = {}): Wall {
  * @returns Properly typed Room object
  */
 export function createTestRoom(overrides: Partial<Room> = {}): Room {
-  return {
-    id: overrides.id || uuidv4(),
-    name: overrides.name || 'Test Room',
-    type: (overrides.type as RoomTypeLiteral) || 'other',
-    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
-    color: overrides.color || '#ffffff',
-    area: overrides.area || 10000,
-    level: overrides.level || 0,
-    walls: overrides.walls || []
-  };
+  // Safely cast the type to ensure it's a valid RoomTypeLiteral
+  if (overrides.type && typeof overrides.type === 'string') {
+    overrides.type = asRoomType(overrides.type);
+  }
+  
+  return ensureRoom(overrides);
 }
 
 /**
@@ -84,33 +76,16 @@ export function createTestPoint(x = 0, y = 0): Point {
  * @returns Properly typed FloorPlan object
  */
 export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
+  // Ensure we have required fields
+  if (!overrides.data) {
+    overrides.data = {};
+  }
   
-  return {
-    id: overrides.id || uuidv4(),
-    name: overrides.name || 'Test Floor Plan',
-    label: overrides.label || 'Test Floor Plan',
-    walls: overrides.walls || [],
-    rooms: overrides.rooms || [],
-    strokes: overrides.strokes || [],
-    canvasData: overrides.canvasData || null,
-    canvasJson: overrides.canvasJson || null,
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    gia: overrides.gia || 0,
-    level: overrides.level || 0,
-    index: overrides.index || 0,
-    metadata: overrides.metadata || {
-      id: overrides.id || uuidv4(),
-      name: overrides.name || 'Test Floor Plan',
-      thumbnail: '',
-      paperSize: 'A4',
-      level: 0,
-      version: '1.0'
-    },
-    data: overrides.data || {},
-    userId: overrides.userId || 'test-user'
-  };
+  if (!overrides.userId) {
+    overrides.userId = 'test-user';
+  }
+  
+  return ensureFloorPlan(overrides);
 }
 
 /**

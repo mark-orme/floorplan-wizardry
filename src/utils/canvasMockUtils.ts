@@ -20,7 +20,7 @@ export const createWithImplementationMock = () => {
         console.error('Error in withImplementation mock:', error);
       }
     }
-    // Always resolve with void
+    // Always return a resolved Promise<void>
     return Promise.resolve();
   });
 };
@@ -41,6 +41,7 @@ export const createMockCanvas = (): Partial<FabricCanvas> => {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
+    // Ensure withImplementation always returns Promise<void>
     withImplementation: createWithImplementationMock()
   };
 };

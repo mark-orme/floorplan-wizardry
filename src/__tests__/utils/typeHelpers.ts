@@ -10,8 +10,17 @@ import {
   StrokeTypeLiteral, RoomTypeLiteral
 } from '@/types/floorPlanTypes';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
-import { validateFloorPlan, validateRoom, validateStroke, validateWall } from '@/utils/sentry/typeMonitoring';
-import { createTestFloorPlan, createTestRoom, createTestStroke, createTestWall } from '@/tests/utils/testObjectCreator';
+import { 
+  validateFloorPlan, validateRoom, validateStroke, validateWall,
+  validateFloorPlanWithTypeCheck 
+} from '@/utils/sentry/typeMonitoring';
+import { 
+  createTestFloorPlan, createTestRoom, createTestStroke, createTestWall 
+} from '@/tests/utils/testObjectCreator';
+import {
+  ensureFloorPlan, ensureStroke, ensureRoom, ensureWall,
+  asStrokeType, asRoomType
+} from '@/utils/test/typeGaurd';
 
 /**
  * Safely type a canvas mock as a minimal interface
@@ -31,9 +40,9 @@ export function asCanvasMock(mockCanvas: any): ICanvasMock {
  * @param floorPlan Floor plan object to check
  * @returns Typed floor plan
  */
-export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
+export function ensureFloorPlanType(floorPlan: Partial<FloorPlan>): FloorPlan {
   // Validate the floor plan to ensure it has all required properties
-  if (!validateFloorPlan(floorPlan)) {
+  if (!validateFloorPlanWithTypeCheck(floorPlan)) {
     return createTestFloorPlan(floorPlan);
   }
   
@@ -58,6 +67,9 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
  * @returns A properly typed Stroke object
  */
 export function createTestTypeStroke(overrides: Partial<Stroke> = {}): Stroke {
+  if (overrides.type && typeof overrides.type === 'string') {
+    overrides.type = asStrokeType(overrides.type);
+  }
   return createTestStroke(overrides);
 }
 
@@ -69,6 +81,9 @@ export function createTestTypeStroke(overrides: Partial<Stroke> = {}): Stroke {
  * @returns A properly typed Room object
  */
 export function createTestTypeRoom(overrides: Partial<Room> = {}): Room {
+  if (overrides.type && typeof overrides.type === 'string') {
+    overrides.type = asRoomType(overrides.type);
+  }
   return createTestRoom(overrides);
 }
 

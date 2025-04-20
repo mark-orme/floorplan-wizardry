@@ -48,18 +48,11 @@ export interface ICanvasMock {
   // For type compatibility
   [key: string]: any;
   
-  // Fixed: Ensure withImplementation explicitly returns Promise<void>
+  // Critical fix: Ensure withImplementation returns Promise<void>
   withImplementation?: (impl: Function) => Promise<void>;
 
   // Add proper typing for performance monitoring
   __lastRenderTime?: number;
-  
-  // Add proper typing for Supabase query methods
-  eq?: (field: string, value: any) => any;
-  single?: () => Promise<{ data: any; error: any }>;
-  order?: (column: string, options?: { ascending?: boolean }) => any;
-  data?: any;
-  error?: any;
 }
 
 /**
@@ -67,42 +60,43 @@ export interface ICanvasMock {
  * @returns A canvas mock that implements ICanvasMock
  */
 export function createMinimalCanvasMock(): ICanvasMock {
-  return {
-    getObjects: jest.fn<FabricObject[], []>().mockReturnValue([]),
-    remove: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    add: jest.fn<ICanvasMock, FabricObject[]>().mockReturnThis(),
-    requestRenderAll: jest.fn<void, []>(),
-    renderAll: jest.fn<void, []>(),
+  const mockCanvas: ICanvasMock = {
+    getObjects: vi.fn().mockReturnValue([]),
+    remove: vi.fn().mockReturnThis(),
+    add: vi.fn().mockReturnThis(),
+    requestRenderAll: vi.fn(),
+    renderAll: vi.fn(),
     isDrawingMode: false,
     freeDrawingBrush: {
       color: '#000000',
       width: 2
     },
     selection: true,
-    on: jest.fn<ICanvasMock, [string, Function]>().mockReturnThis(),
-    off: jest.fn<ICanvasMock, [string, Function?]>().mockReturnThis(),
-    getPointerCoords: jest.fn<{ x: number, y: number }, []>().mockReturnValue({ x: 0, y: 0 }),
-    getClass: jest.fn<any, []>(),
-    sendToBack: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    sendObjectToBack: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    bringToFront: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    bringObjectToFront: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    getActiveObject: jest.fn<FabricObject | null, []>().mockReturnValue(null),
-    setActiveObject: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
-    discardActiveObject: jest.fn<ICanvasMock, []>().mockReturnThis(),
-    getWidth: jest.fn<number, []>().mockReturnValue(800),
-    getHeight: jest.fn<number, []>().mockReturnValue(600),
-    setZoom: jest.fn<ICanvasMock, [number]>().mockReturnThis(),
-    getZoom: jest.fn<number, []>().mockReturnValue(1),
+    on: vi.fn().mockReturnThis(),
+    off: vi.fn().mockReturnThis(),
+    getPointerCoords: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    getClass: vi.fn(),
+    sendToBack: vi.fn().mockReturnThis(),
+    sendObjectToBack: vi.fn().mockReturnThis(),
+    bringToFront: vi.fn().mockReturnThis(),
+    bringObjectToFront: vi.fn().mockReturnThis(),
+    getActiveObject: vi.fn().mockReturnValue(null),
+    setActiveObject: vi.fn().mockReturnThis(),
+    discardActiveObject: vi.fn().mockReturnThis(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setZoom: vi.fn().mockReturnThis(),
+    getZoom: vi.fn().mockReturnValue(1),
     viewportTransform: [1, 0, 0, 1, 0, 0],
     // Fixed: Ensure implementation returns Promise<void>
-    withImplementation: jest.fn<Promise<void>, [Function]>().mockImplementation(() => Promise.resolve()),
+    withImplementation: vi.fn().mockImplementation(() => Promise.resolve()),
     __lastRenderTime: Date.now(),
-    // Add mock methods for Supabase query
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn<Promise<{ data: any; error: any }>, []>().mockResolvedValue({ data: null, error: null }),
-    order: jest.fn().mockReturnThis(),
-    data: null,
-    error: null
+    
+    // Add Supabase query mock methods
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    order: vi.fn().mockReturnThis()
   };
+  
+  return mockCanvas;
 }
