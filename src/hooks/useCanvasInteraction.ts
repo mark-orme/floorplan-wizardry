@@ -4,7 +4,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasInteractionOptions {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   tool?: DrawingMode;
   saveCurrentState?: () => void;
   onInteractionStart?: () => void;
@@ -55,7 +55,6 @@ export const useCanvasInteraction = ({
     canvas.remove(...activeObjects);
     canvas.discardActiveObject();
     canvas.requestRenderAll();
-
   }, [fabricCanvasRef, saveCurrentState]);
 
   const enablePointSelection = useCallback(() => {

@@ -1,8 +1,9 @@
 
-import { Canvas, Object as FabricObject, IEvent } from 'fabric';
-import { CanvasObject, Point, DrawOptions } from '@/types/canvas';
+import { Canvas, Object as FabricObject, Line, Rect, Circle, Path, IObjectOptions } from 'fabric';
+import { CanvasObject, Point, DrawOptions, StrokeStyle } from '@/types/canvas';
+import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
 
-export class FabricCanvasEngine {
+export class FabricCanvasEngine implements ICanvasEngine {
   private canvas: Canvas | null = null;
   private eventHandlers: Record<string, Function[]> = {};
 
@@ -15,6 +16,10 @@ export class FabricCanvasEngine {
     });
   }
 
+  public getCanvas(): Canvas | null {
+    return this.canvas;
+  }
+
   public dispose(): void {
     if (this.canvas) {
       this.canvas.dispose();
@@ -23,11 +28,11 @@ export class FabricCanvasEngine {
     this.eventHandlers = {};
   }
 
-  public drawLine(start: Point, end: Point, options: DrawOptions): string {
-    if (!this.canvas) return '';
+  public drawLine(points: Point[], options: DrawOptions): void {
+    if (!this.canvas || points.length < 2) return;
 
-    const line = new FabricObject.Line(
-      [start.x, start.y, end.x, end.y],
+    const line = new Line(
+      [points[0].x, points[0].y, points[1].x, points[1].y],
       {
         stroke: options.color,
         strokeWidth: options.width,
@@ -39,69 +44,144 @@ export class FabricCanvasEngine {
 
     this.canvas.add(line);
     this.canvas.renderAll();
-
-    return line.id?.toString() || '';
   }
 
-  public drawRect(left: number, top: number, width: number, height: number, options: DrawOptions): string {
-    if (!this.canvas) return '';
-
-    const rect = new FabricObject.Rect({
-      left,
-      top,
-      width,
-      height,
+  public drawShape(points: Point[], options: DrawOptions): void {
+    if (!this.canvas || points.length < 3) return;
+    
+    const pathData = points.map((point, i) => 
+      (i === 0 ? 'M' : 'L') + point.x + ' ' + point.y
+    ).join(' ') + ' Z';
+    
+    const path = new Path(pathData, {
       fill: 'transparent',
       stroke: options.color,
       strokeWidth: options.width,
-      opacity: options.opacity || 1,
-      selectable: true,
-      evented: true
+      opacity: options.opacity || 1
     });
-
-    this.canvas.add(rect);
+    
+    this.canvas.add(path);
     this.canvas.renderAll();
-
-    return rect.id?.toString() || '';
   }
 
-  public removeObject(id: string): void {
+  public clear(): void {
     if (!this.canvas) return;
+    this.canvas.clear();
+    this.canvas.renderAll();
+  }
 
-    const objects = this.canvas.getObjects();
-    const object = objects.find(obj => obj.id === id);
+  public undo(): void {
+    // Implement undo logic
+    console.log('Undo not implemented');
+  }
+
+  public redo(): void {
+    // Implement redo logic
+    console.log('Redo not implemented');
+  }
+
+  public addObject(object: CanvasObject): void {
+    if (!this.canvas) return;
     
-    if (object) {
-      this.canvas.remove(object);
+    // Convert CanvasObject to FabricObject
+    // This is a simplified implementation
+    const fabricObject = this.createFabricObject(object);
+    if (fabricObject) {
+      this.canvas.add(fabricObject);
       this.canvas.renderAll();
     }
   }
 
-  public addEventListener(eventType: string, callback: Function): void {
+  private createFabricObject(object: CanvasObject): FabricObject | null {
+    // Simplified implementation
+    return null;
+  }
+
+  public removeObject(object: CanvasObject): void {
+    if (!this.canvas) return;
+    
+    // Find and remove object by id
+    const objects = this.canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === object.id);
+    
+    if (targetObject) {
+      this.canvas.remove(targetObject);
+      this.canvas.renderAll();
+    }
+  }
+
+  public updateObject(object: CanvasObject): void {
+    // Implement update logic
+    console.log('Update object not implemented');
+  }
+
+  public getObjects(): CanvasObject[] {
+    if (!this.canvas) return [];
+    
+    // Convert FabricObject[] to CanvasObject[]
+    // This is a simplified implementation
+    return [];
+  }
+
+  public getCanvasState(): any {
+    if (!this.canvas) return null;
+    return this.canvas.toJSON();
+  }
+
+  public setCanvasState(state: any): void {
+    if (!this.canvas) return;
+    this.canvas.loadFromJSON(state, () => {
+      this.canvas?.renderAll();
+    });
+  }
+
+  public setStrokeStyle(style: StrokeStyle): void {
+    if (!this.canvas) return;
+    
+    if (this.canvas.isDrawingMode && this.canvas.freeDrawingBrush) {
+      this.canvas.freeDrawingBrush.color = style.color;
+      this.canvas.freeDrawingBrush.width = style.width;
+      this.canvas.freeDrawingBrush.opacity = style.opacity;
+    }
+  }
+
+  public setZoom(level: number): void {
+    if (!this.canvas) return;
+    this.canvas.setZoom(level);
+    this.canvas.renderAll();
+  }
+
+  public setPan(x: number, y: number): void {
+    if (!this.canvas) return;
+    this.canvas.relativePan({ x, y });
+    this.canvas.renderAll();
+  }
+
+  public on(event: string, callback: Function): void {
     if (!this.canvas) return;
 
-    if (!this.eventHandlers[eventType]) {
-      this.eventHandlers[eventType] = [];
+    if (!this.eventHandlers[event]) {
+      this.eventHandlers[event] = [];
     }
 
-    this.eventHandlers[eventType].push(callback);
+    this.eventHandlers[event].push(callback);
 
-    this.canvas.on(eventType as any, (e: IEvent) => {
-      const handlers = this.eventHandlers[eventType] || [];
+    this.canvas.on(event as any, (e: any) => {
+      const handlers = this.eventHandlers[event] || [];
       handlers.forEach(handler => handler(e));
     });
   }
 
-  public removeEventListener(eventType: string, callback: Function): void {
+  public off(event: string, callback: Function): void {
     if (!this.canvas) return;
 
-    if (this.eventHandlers[eventType]) {
-      this.eventHandlers[eventType] = this.eventHandlers[eventType].filter(
+    if (this.eventHandlers[event]) {
+      this.eventHandlers[event] = this.eventHandlers[event].filter(
         handler => handler !== callback
       );
       
-      if (this.eventHandlers[eventType].length === 0) {
-        this.canvas.off(eventType as any);
+      if (this.eventHandlers[event].length === 0) {
+        this.canvas.off(event as any);
       }
     }
   }

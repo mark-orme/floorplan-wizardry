@@ -8,10 +8,10 @@ import {
   MousePointer, 
   Pencil, 
   Hand, 
-  Line, 
   Eraser,
   Home
 } from 'lucide-react';
+import { Line } from '@/components/icons/Line';
 
 // Define the tool interface
 export interface Tool {
@@ -48,7 +48,7 @@ export const useCanvasToolsManager = ({
       id: 'pencil',
       name: 'Pencil',
       icon: Pencil,
-      mode: DrawingMode.PENCIL,
+      mode: DrawingMode.DRAW,
       shortcut: 'P'
     },
     {
@@ -97,7 +97,7 @@ export const useCanvasToolsManager = ({
       id: 'hand',
       name: 'Pan',
       icon: Hand,
-      mode: DrawingMode.HAND,
+      mode: DrawingMode.PAN,
       shortcut: 'H'
     }
   ];

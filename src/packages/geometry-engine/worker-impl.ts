@@ -1,67 +1,107 @@
 
-/**
- * Web worker implementation for geometry calculations
- * This file runs in a separate thread
- */
-import { WorkerMessageData } from './types';
-import { 
-  calculatePolygonArea, 
-  calculateDistance, 
-  isPointInPolygon,
-  perpendicularDistance
-} from './core';
-import {
-  optimizePoints,
-  snapPointsToGrid
-} from './transformations';
+import { Point } from './types';
 
-// Listen for messages from the main thread
-self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
-  const { id, type, payload } = event.data;
+export interface WorkerMessageData {
+  id?: string;
+  type: string;
+  payload: any;
+}
+
+// Define optimization functions locally since we can't import them
+function optimizePoints(points: Point[], tolerance: number = 1): Point[] {
+  if (points.length <= 2) return points;
   
-  try {
-    let result;
+  const result: Point[] = [points[0]];
+  
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const next = points[i + 1];
     
-    // Process different calculation types
-    switch (type) {
-      case 'calculateArea':
-        result = calculatePolygonArea(payload.points);
-        break;
-        
-      case 'calculateDistance':
-        result = calculateDistance(payload.start, payload.end);
-        break;
-        
-      case 'optimizePoints':
-        result = optimizePoints(payload.points, payload.tolerance || 1);
-        break;
-        
-      case 'snapToGrid':
-        result = snapPointsToGrid(payload.points, payload.gridSize);
-        break;
-        
-      case 'isPointInPolygon':
-        result = isPointInPolygon(payload.point, payload.polygon);
-        break;
-        
-      default:
-        throw new Error(`Unknown calculation type: ${type}`);
+    // Calculate distance between curr and line from prev to next
+    const d = perpendicularDistance(curr, prev, next);
+    
+    if (d > tolerance) {
+      result.push(curr);
     }
-    
-    // Send result back to main thread
-    self.postMessage({
-      id,
-      success: true,
-      result
-    });
-  } catch (error) {
-    self.postMessage({
-      id,
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    });
+  }
+  
+  result.push(points[points.length - 1]);
+  return result;
+}
+
+function snapPointsToGrid(points: Point[], gridSize: number = 10): Point[] {
+  return points.map(point => ({
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  }));
+}
+
+// Helper function for optimizePoints
+function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  
+  // Line length
+  const lineLengthSquared = dx * dx + dy * dy;
+  
+  if (lineLengthSquared === 0) {
+    // Line is actually a point
+    return Math.sqrt(
+      Math.pow(point.x - lineStart.x, 2) + 
+      Math.pow(point.y - lineStart.y, 2)
+    );
+  }
+  
+  // Calculate projection of point onto line
+  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
+  
+  if (t < 0) {
+    // Point is beyond lineStart
+    return Math.sqrt(
+      Math.pow(point.x - lineStart.x, 2) + 
+      Math.pow(point.y - lineStart.y, 2)
+    );
+  }
+  
+  if (t > 1) {
+    // Point is beyond lineEnd
+    return Math.sqrt(
+      Math.pow(point.x - lineEnd.x, 2) + 
+      Math.pow(point.y - lineEnd.y, 2)
+    );
+  }
+  
+  // Perpendicular point on line
+  const projX = lineStart.x + t * dx;
+  const projY = lineStart.y + t * dy;
+  
+  // Distance from point to this perpendicular point
+  return Math.sqrt(
+    Math.pow(point.x - projX, 2) + 
+    Math.pow(point.y - projY, 2)
+  );
+}
+
+// Listen for messages
+self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
+  const { type, payload } = event.data;
+  
+  switch (type) {
+    case 'optimize-points':
+      const optimized = optimizePoints(payload.points, payload.tolerance);
+      self.postMessage({ type: 'optimize-result', payload: optimized });
+      break;
+      
+    case 'snap-to-grid':
+      const snapped = snapPointsToGrid(payload.points, payload.gridSize);
+      self.postMessage({ type: 'snap-result', payload: snapped });
+      break;
+      
+    default:
+      self.postMessage({ 
+        type: 'error', 
+        payload: { message: `Unknown command: ${type}` } 
+      });
   }
 });
-
-// Let the main thread know the worker is ready
-self.postMessage({ type: 'ready' });

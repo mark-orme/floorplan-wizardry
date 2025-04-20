@@ -1,6 +1,6 @@
 
 import { calculateDistance, calculateArea, calculateIntersection } from './calculations';
-import { rotatePoint, scalePoint, translatePoint, optimizePoints, snapPointsToGrid } from './transformations';
+import { rotatePoint, scalePoint, translatePoint } from './transformations';
 import { snapToGrid, snapToPoints, isWithinSnappingDistance } from './snapping';
 import { 
   isPointInPolygon, 
@@ -25,8 +25,6 @@ export {
   rotatePoint,
   scalePoint,
   translatePoint,
-  optimizePoints,
-  snapPointsToGrid,
   
   // Snapping
   snapToGrid,

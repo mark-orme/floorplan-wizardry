@@ -1,41 +1,44 @@
 
-/**
- * Floor Plan Factory Functions
- * Functions to create floor plan objects with default values
- * @module types/floor-plan/factoryFunctions
- */
-import { FloorPlan } from './floorPlanTypes';
-import { PaperSize } from './basicTypes';
-import { FloorPlanMetadata } from './metadataTypes';
+import { FloorPlan, FloorPlanMetadata } from './floorPlanTypes';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Create a default floor plan
- * @param {number} index Floor index
- * @returns {FloorPlan} Default floor plan
+ * Creates an empty floor plan metadata object
+ * @returns Empty floor plan metadata
  */
-export const createDefaultFloorPlan = (index: number = 0): FloorPlan => {
-  const now = new Date().toISOString();
-  const name = `Floor ${index + 1}`;
-  
+export function createEmptyFloorPlanMetadata(): FloorPlanMetadata {
   return {
-    id: `floor-${Date.now()}-${index}`,
-    name,
-    label: name,
-    gia: 0,
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    createdAt: now,
-    updatedAt: now,
-    level: index,
-    index,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: index
-    }
+    version: '1.0',
+    author: '',
+    dateCreated: new Date().toISOString(),
+    lastModified: new Date().toISOString(),
+    notes: ''
   };
-};
+}
+
+/**
+ * Creates an empty floor plan object with default values
+ * @param partialFloorPlan Partial floor plan data to override defaults
+ * @returns Empty floor plan
+ */
+export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
+  return {
+    id: partialFloorPlan.id || uuidv4(),
+    name: partialFloorPlan.name || 'Untitled Floor Plan',
+    label: partialFloorPlan.label || '',
+    walls: partialFloorPlan.walls || [],
+    rooms: partialFloorPlan.rooms || [],
+    strokes: partialFloorPlan.strokes || [],
+    canvasData: partialFloorPlan.canvasData || null,
+    canvasJson: partialFloorPlan.canvasJson || null,
+    createdAt: partialFloorPlan.createdAt || new Date().toISOString(),
+    updatedAt: partialFloorPlan.updatedAt || new Date().toISOString(),
+    gia: partialFloorPlan.gia || 0,
+    level: partialFloorPlan.level || 0,
+    index: partialFloorPlan.index || 0,
+    metadata: partialFloorPlan.metadata || createEmptyFloorPlanMetadata(),
+    // Add the missing required properties
+    data: partialFloorPlan.data || {},
+    userId: partialFloorPlan.userId || ''
+  };
+}
