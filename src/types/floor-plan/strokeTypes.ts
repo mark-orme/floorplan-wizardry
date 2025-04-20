@@ -4,8 +4,9 @@
  * Stroke interface and related types for floor plans
  * @module types/floor-plan/strokeTypes
  */
-import { Point } from '../core/Point';
-import { StrokeTypeLiteral } from './basicTypes';
+// Import the StrokeTypeLiteral from floorPlanTypes for consistency
+import { StrokeTypeLiteral } from '../floorPlanTypes';
+import { Point } from '../floorPlanTypes';
 
 /**
  * Stroke interface for annotations

@@ -1,229 +1,232 @@
 
 /**
- * Tests for the floor plan drawing hook
- * @module __tests__/hooks/useFloorPlanDrawing.test
+ * Tests for useFloorPlanDrawing hook
+ * @jest-environment jsdom
  */
 import { renderHook, act } from '@testing-library/react-hooks';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
-import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { createMockFloorPlan } from '@/utils/testing/mockFloorPlanFactory';
+import { asCanvasMock, createCanvasRef } from '@/__tests__/utils/typeHelpers';
+import { ICanvasMock, createMinimalCanvasMock } from '@/types/testing/ICanvasMock';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { createEmptyFloorPlan } from '@/types/floor-plan/factoryFunctions';
-
-// Mock fabric.js
-jest.mock('fabric');
-
-// Create a mock floor plan that matches the FloorPlan interface
-const mockFloorPlan = createEmptyFloorPlan({
-  id: 'floor-1',
-  name: 'Floor 1',
-  label: 'First Floor',
-  index: 0,
-  strokes: [],
-  walls: [],
-  rooms: [],
-  level: 0,
-  gia: 0,
-  canvasData: null,
-  canvasJson: null,
-  metadata: {
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    paperSize: 'A4',
-    level: 0
-  },
-  data: {},
-  userId: 'test-user-id'
-});
-
-// Create mock setFloorPlan function
-const mockSetFloorPlan = jest.fn();
 
 describe('useFloorPlanDrawing', () => {
-  let canvas: Canvas;
-  let canvasRef: React.MutableRefObject<Canvas | null>;
-  
+  let mockCanvas: ICanvasMock;
+  let mockCanvasRef: React.MutableRefObject<ICanvasMock>;
+  let mockFloorPlan: FloorPlan;
+  let setFloorPlan: jest.Mock;
+
   beforeEach(() => {
-    // Create a new canvas instance for each test
-    canvas = new Canvas(document.createElement('canvas'));
-    canvasRef = { current: canvas };
+    // Set up mock canvas
+    mockCanvas = createMinimalCanvasMock();
+    mockCanvasRef = createCanvasRef(mockCanvas);
     
-    // Reset mocks
-    mockSetFloorPlan.mockReset();
+    // Create a test floor plan
+    mockFloorPlan = createMockFloorPlan();
+    
+    // Mock setFloorPlan function
+    setFloorPlan = vi.fn();
   });
-  
-  afterEach(() => {
-    canvas = null as unknown as Canvas;
-    canvasRef.current = null;
-  });
-  
-  it('should initialize with isDrawing set to false', () => {
+
+  it('should initialize with default values', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.SELECT,
       floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
+      setFloorPlan
     }));
-    
+
+    // Check initial state
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.drawingPoints).toEqual([]);
     expect(result.current.currentPoint).toBeNull();
   });
-  
-  it('should start drawing when startDrawing is called', () => {
+
+  it('should handle startDrawing', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.LINE,
       floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
+      setFloorPlan
     }));
-    
-    const point = { x: 100, y: 100 };
-    
+
+    // Start drawing
     act(() => {
-      result.current.startDrawing(point);
+      result.current.startDrawing({ x: 10, y: 20 });
     });
-    
+
+    // Check that drawing state is updated
     expect(result.current.isDrawing).toBe(true);
-    expect(result.current.drawingPoints).toEqual([point]);
-    expect(result.current.currentPoint).toEqual(point);
+    expect(result.current.drawingPoints).toEqual([{ x: 10, y: 20 }]);
+    expect(result.current.currentPoint).toEqual({ x: 10, y: 20 });
   });
-  
-  it('should continue drawing when continueDrawing is called', () => {
+
+  it('should handle continueDrawing', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.LINE,
       floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
+      setFloorPlan
     }));
-    
-    const startPoint = { x: 100, y: 100 };
-    const movePoint = { x: 150, y: 150 };
-    
+
+    // Start and continue drawing
     act(() => {
-      result.current.startDrawing(startPoint);
+      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.continueDrawing({ x: 30, y: 40 });
     });
-    
-    act(() => {
-      result.current.continueDrawing(movePoint);
-    });
-    
+
+    // Check that drawing state is updated
     expect(result.current.isDrawing).toBe(true);
-    expect(result.current.drawingPoints).toEqual([startPoint, movePoint]);
-    expect(result.current.currentPoint).toEqual(movePoint);
+    expect(result.current.drawingPoints).toEqual([{ x: 10, y: 20 }, { x: 30, y: 40 }]);
+    expect(result.current.currentPoint).toEqual({ x: 30, y: 40 });
   });
-  
-  it('should end drawing and update floor plan when endDrawing is called', () => {
+
+  it('should handle endDrawing and create a new stroke', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.LINE,
       floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
+      setFloorPlan
     }));
-    
-    const startPoint = { x: 100, y: 100 };
-    const endPoint = { x: 200, y: 200 };
-    
+
+    // Complete a drawing sequence
     act(() => {
-      result.current.startDrawing(startPoint);
+      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.continueDrawing({ x: 30, y: 40 });
+      result.current.endDrawing({ x: 50, y: 60 });
     });
-    
-    act(() => {
-      result.current.endDrawing(endPoint);
-    });
-    
+
+    // Check that drawing state is reset
     expect(result.current.isDrawing).toBe(false);
-    expect(result.current.drawingPoints).toEqual([startPoint, endPoint]);
     expect(result.current.currentPoint).toBeNull();
+    
+    // Check that setFloorPlan was called
+    expect(setFloorPlan).toHaveBeenCalled();
+    
+    // Get the function passed to setFloorPlan
+    const updateFn = setFloorPlan.mock.calls[0][0];
+    const updatedFloorPlan = updateFn(mockFloorPlan);
+    
+    // Check that a new stroke was added
+    expect(updatedFloorPlan.strokes.length).toBe(mockFloorPlan.strokes.length + 1);
+    
+    // Check the new stroke properties
+    const newStroke = updatedFloorPlan.strokes[updatedFloorPlan.strokes.length - 1];
+    expect(newStroke.type).toBe('line');
+    expect(newStroke.points).toEqual([{ x: 10, y: 20 }, { x: 30, y: 40 }, { x: 50, y: 60 }]);
   });
-  
-  it('should add a stroke when addStroke is called', () => {
+
+  it('should handle cancelDrawing', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.LINE,
       floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
+      setFloorPlan
     }));
-    
-    const mockStroke = {
-      id: 'test-stroke',
-      points: [{ x: 100, y: 100 }, { x: 200, y: 200 }],
-      type: 'line' as const,
-      color: '#000000',
-      thickness: 2,
-      width: 2
-    };
-    
+
+    // Start drawing then cancel
     act(() => {
-      result.current.addStroke(mockStroke);
-    });
-  });
-  
-  it('should calculate areas when calculateAreas is called', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
-      floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
-    }));
-    
-    const areas = result.current.calculateAreas();
-    
-    // Currently returns a mock value of 100
-    expect(areas).toEqual([100]);
-  });
-  
-  it('should cancel drawing when cancelDrawing is called', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
-      floorPlan: mockFloorPlan,
-      setFloorPlan: mockSetFloorPlan
-    }));
-    
-    const startPoint = { x: 100, y: 100 };
-    
-    act(() => {
-      result.current.startDrawing(startPoint);
-    });
-    
-    // Verify drawing started
-    expect(result.current.isDrawing).toBe(true);
-    
-    act(() => {
+      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.continueDrawing({ x: 30, y: 40 });
       result.current.cancelDrawing();
     });
-    
-    // Verify drawing was canceled
+
+    // Check that drawing state is reset
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.drawingPoints).toEqual([]);
     expect(result.current.currentPoint).toBeNull();
+    
+    // Check that setFloorPlan was not called
+    expect(setFloorPlan).not.toHaveBeenCalled();
   });
-  
-  it('should draw a floor plan to canvas', () => {
-    const mockFloorPlanWithRooms = {
-      ...mockFloorPlan,
-      rooms: [{ id: 'room-1', name: 'Living Room', points: [], area: 100, color: '#ff0000', level: 0, type: 'living', walls: [] }],
-      walls: [{ id: 'wall-1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, points: [], thickness: 5, color: '#000000', roomIds: [], length: 100 }]
-    };
-    
+
+  it('should handle addStroke', () => {
+    // Render the hook
     const { result } = renderHook(() => useFloorPlanDrawing({
-      fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
-      floorPlan: mockFloorPlanWithRooms,
-      setFloorPlan: mockSetFloorPlan
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.LINE,
+      floorPlan: mockFloorPlan,
+      setFloorPlan
     }));
-    
-    // Make canvas have getObjects method
-    canvasRef.current = {
-      ...canvasRef.current,
-      getObjects: jest.fn().mockReturnValue([]),
-      remove: jest.fn(),
-      requestRenderAll: jest.fn()
+
+    // Add a stroke directly
+    const newStroke = {
+      id: 'test-stroke-id',
+      points: [{ x: 10, y: 20 }, { x: 30, y: 40 }],
+      type: 'line',
+      color: '#ff0000',
+      thickness: 3,
+      width: 3
     };
     
     act(() => {
-      result.current.drawFloorPlan(canvasRef.current as any, mockFloorPlanWithRooms);
+      result.current.addStroke(newStroke);
     });
+
+    // Check that setFloorPlan was called
+    expect(setFloorPlan).toHaveBeenCalled();
+    
+    // Get the function passed to setFloorPlan
+    const updateFn = setFloorPlan.mock.calls[0][0];
+    const updatedFloorPlan = updateFn(mockFloorPlan);
+    
+    // Check that a new stroke was added
+    expect(updatedFloorPlan.strokes.length).toBe(mockFloorPlan.strokes.length + 1);
+    
+    // Check the new stroke properties
+    const addedStroke = updatedFloorPlan.strokes[updatedFloorPlan.strokes.length - 1];
+    expect(addedStroke).toEqual(newStroke);
+  });
+
+  it('should calculate areas', () => {
+    // Create a floor plan with rooms
+    const floorPlanWithRooms = {
+      ...mockFloorPlan,
+      rooms: [
+        { id: 'room1', name: 'Room 1', area: 50, points: [], color: '#cccccc', level: 0, type: 'living', walls: [] },
+        { id: 'room2', name: 'Room 2', area: 75, points: [], color: '#dddddd', level: 0, type: 'bedroom', walls: [] }
+      ]
+    };
+    
+    // Render the hook
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.SELECT,
+      floorPlan: floorPlanWithRooms,
+      setFloorPlan
+    }));
+
+    // Calculate areas
+    const areas = result.current.calculateAreas();
+    
+    // Check that areas were calculated correctly
+    expect(areas).toEqual([50, 75]);
+  });
+
+  it('should drawFloorPlan to canvas', () => {
+    // Render the hook
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: mockCanvasRef as any,
+      tool: DrawingMode.SELECT,
+      floorPlan: mockFloorPlan,
+      setFloorPlan
+    }));
+
+    // Draw floor plan
+    act(() => {
+      result.current.drawFloorPlan(mockCanvas as any, mockFloorPlan);
+    });
+    
+    // Check that canvas methods were called
+    expect(mockCanvas.getObjects).toHaveBeenCalled();
+    expect(mockCanvas.remove).toHaveBeenCalled();
+    expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
   });
 });

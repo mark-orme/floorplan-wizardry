@@ -9,16 +9,16 @@
  * Stroke type literals for various drawing types
  */
 export type StrokeTypeLiteral = 
-  'freehand' | 
-  'straight' | 
-  'wall' | 
-  'room' | 
   'line' | 
   'polyline' | 
+  'wall' | 
+  'room' | 
+  'freehand' | 
   'door' | 
   'window' | 
   'furniture' | 
   'annotation' | 
+  'straight' |  // Added 'straight' to match floorPlanTypes.ts
   'other';
 
 /**
