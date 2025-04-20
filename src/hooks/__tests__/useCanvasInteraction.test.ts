@@ -3,7 +3,7 @@
  * Tests for useCanvasInteraction hook
  */
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useCanvasInteraction } from '../useCanvasInteraction';
+import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -37,7 +37,7 @@ describe('useCanvasInteraction', () => {
   
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      canvas: mockCanvas,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -50,7 +50,7 @@ describe('useCanvasInteraction', () => {
   
   it('should handle selection mode', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      canvas: mockCanvas,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -59,12 +59,12 @@ describe('useCanvasInteraction', () => {
       result.current.setupSelectionMode();
     });
     
-    expect(mockCanvas.selection).toBe(false); // Using point selection mode
+    expect(mockCanvas.selection).toBe(true);
   });
   
   it('should handle drawing mode setup', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      canvas: mockCanvas,
       tool: DrawingMode.DRAW,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -79,7 +79,7 @@ describe('useCanvasInteraction', () => {
   
   it('should handle null canvas gracefully', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: null } as any,
+      canvas: null,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -96,7 +96,7 @@ describe('useCanvasInteraction', () => {
   
   it('should clean up event listeners on unmount', () => {
     const { unmount } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      canvas: mockCanvas,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));

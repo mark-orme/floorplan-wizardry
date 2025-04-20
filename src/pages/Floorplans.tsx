@@ -63,8 +63,12 @@ export default function FloorPlans() {
   const deleteFloorPlan = async (id: string): Promise<boolean> => {
     try {
       const result = await deleteFloorPlanHandler(id);
-      // Return true if the operation succeeded
-      return result.error ? false : true;
+      // Check if there was an error in the result
+      if (result && 'error' in result && result.error) {
+        console.error('Error deleting floor plan:', result.error);
+        return false;
+      }
+      return true;
     } catch (error) {
       console.error('Error deleting floor plan:', error);
       return false;

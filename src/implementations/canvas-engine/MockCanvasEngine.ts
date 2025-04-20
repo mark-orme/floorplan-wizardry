@@ -1,115 +1,126 @@
 
-import { CanvasObject, Point } from '@/types/canvas';
+import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
+import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
 
-export class MockCanvasEngine {
+export class MockCanvasEngine implements ICanvasEngine {
   private objects: CanvasObject[] = [];
-  private eventHandlers: Map<string, ((...args: any[]) => void)[]> = new Map();
-  private backgroundColor: string = '#FFFFFF';
-  private zoomLevel: number = 1;
+  private eventHandlers: Record<string, Function[]> = {};
 
-  // Mock implementation of FabricCanvasEngine for testing
-  constructor(canvasElement?: HTMLCanvasElement) {
-    // Initialize with sample objects
-    this.objects = [
-      {
-        id: '1',
-        type: 'line',
-        properties: { color: 'black', width: 2 },
-        options: { selectable: true }
-      },
-      {
-        id: '2',
-        type: 'rectangle',
-        properties: { fill: 'transparent', stroke: 'black', strokeWidth: 1 },
-        options: { selectable: true }
-      }
-    ];
-  }
-
-  // Getter for canvas to match FabricCanvasEngine
-  public getCanvas(): any {
-    // Return a mock canvas object
-    return {
-      getObjects: () => this.objects,
-      on: this.addEventListener.bind(this),
-      off: this.removeEventListener.bind(this),
-      add: this.addObject.bind(this),
-      remove: this.removeObject.bind(this),
-      setBackgroundColor: this.setBackgroundColor.bind(this),
-      renderAll: this.renderAll.bind(this),
-      setZoom: this.setZoom.bind(this)
+  // Drawing operations
+  drawLine(points: Point[], options: DrawOptions): void {
+    const object: CanvasObject = {
+      id: `line-${Date.now()}`,
+      type: 'line',
+      points: points,
+      properties: { stroke: options.color, strokeWidth: options.width }
     };
+    
+    this.objects.push(object);
+    this.triggerEvent('object:added', { target: object });
   }
 
-  dispose(): void {
+  drawShape(points: Point[], options: DrawOptions): void {
+    const object: CanvasObject = {
+      id: `shape-${Date.now()}`,
+      type: 'polygon',
+      points: points,
+      properties: { stroke: options.color, strokeWidth: options.width }
+    };
+    
+    this.objects.push(object);
+    this.triggerEvent('object:added', { target: object });
+  }
+
+  // Canvas state management
+  clear(): void {
     this.objects = [];
-    this.eventHandlers.clear();
+    this.triggerEvent('canvas:cleared', {});
   }
 
+  undo(): void {
+    console.log('Undo operation');
+  }
+
+  redo(): void {
+    console.log('Redo operation');
+  }
+
+  // Object manipulation
   addObject(object: CanvasObject): void {
     this.objects.push(object);
     this.triggerEvent('object:added', { target: object });
   }
 
-  removeObject(id: string | CanvasObject): void {
-    const objectId = typeof id === 'string' ? id : id.id;
-    const index = this.objects.findIndex(obj => obj.id === objectId);
-    
+  removeObject(object: CanvasObject): void {
+    this.objects = this.objects.filter(obj => obj.id !== object.id);
+    this.triggerEvent('object:removed', { target: object });
+  }
+
+  updateObject(object: CanvasObject): void {
+    const index = this.objects.findIndex(obj => obj.id === object.id);
     if (index !== -1) {
-      const removed = this.objects.splice(index, 1)[0];
-      this.triggerEvent('object:removed', { target: removed });
+      this.objects[index] = object;
+      this.triggerEvent('object:modified', { target: object });
     }
   }
 
+  // Canvas state
   getObjects(): CanvasObject[] {
     return [...this.objects];
   }
 
-  addEventListener(eventName: string, handler: (...args: any[]) => void): void {
-    if (!this.eventHandlers.has(eventName)) {
-      this.eventHandlers.set(eventName, []);
-    }
-    this.eventHandlers.get(eventName)?.push(handler);
+  getCanvasState(): any {
+    return { objects: this.objects };
   }
 
-  removeEventListener(eventName: string, handler: (...args: any[]) => void): void {
-    const handlers = this.eventHandlers.get(eventName);
-    if (handlers) {
-      const index = handlers.indexOf(handler);
-      if (index !== -1) {
-        handlers.splice(index, 1);
-      }
+  setCanvasState(state: any): void {
+    if (state && Array.isArray(state.objects)) {
+      this.objects = [...state.objects];
     }
   }
 
-  triggerEvent(eventName: string, data: any): void {
-    const handlers = this.eventHandlers.get(eventName);
-    if (handlers) {
-      handlers.forEach(handler => handler(data));
+  // Style management
+  setStrokeStyle(style: StrokeStyle): void {
+    console.log('Set stroke style operation', style);
+  }
+
+  // Zoom and pan
+  setZoom(level: number): void {
+    console.log('Set zoom level', level);
+  }
+
+  setPan(x: number, y: number): void {
+    console.log('Set pan', x, y);
+  }
+
+  // Event handlers
+  on(event: string, callback: Function): void {
+    if (!this.eventHandlers[event]) {
+      this.eventHandlers[event] = [];
     }
+    this.eventHandlers[event].push(callback);
   }
 
-  getPointerPosition(event: MouseEvent | TouchEvent): Point {
-    // Mock implementation
-    return { x: 100, y: 100 };
+  off(event: string, callback: Function): void {
+    if (!this.eventHandlers[event]) return;
+    
+    this.eventHandlers[event] = this.eventHandlers[event].filter(
+      handler => handler !== callback
+    );
   }
 
-  setBackgroundColor(color: string, callback?: () => void): void {
-    this.backgroundColor = color;
-    if (callback) {
-      callback();
+  // Cleanup
+  dispose(): void {
+    this.objects = [];
+    this.eventHandlers = {};
+  }
+
+  // Helper to trigger events
+  private triggerEvent(event: string, data: any): void {
+    if (!this.eventHandlers[event]) return;
+    
+    for (const handler of this.eventHandlers[event]) {
+      handler(data);
     }
-  }
-
-  setZoom(zoomLevel: number): void {
-    this.zoomLevel = zoomLevel;
-  }
-
-  pan(deltaX: number, deltaY: number): void {
-    // Mock implementation
-  }
-
-  renderAll(): void {
-    // Mock implementation
   }
 }

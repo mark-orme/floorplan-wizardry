@@ -1,26 +1,42 @@
 
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
 
 interface CanvasRetryButtonProps {
-  errorMessage: string | null;
+  errorMessage?: string;
   onRetry: () => void;
 }
 
-export const CanvasRetryButton: React.FC<CanvasRetryButtonProps> = ({ errorMessage, onRetry }) => {
+const CanvasRetryButton: React.FC<CanvasRetryButtonProps> = ({
+  errorMessage,
+  onRetry
+}) => {
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gray-50 border border-gray-200 rounded-md p-4">
-      <p className="text-red-500 mb-2">Canvas initialization failed.</p>
-      
-      {errorMessage && (
-        <p className="text-sm text-gray-700 mb-4">Error: {errorMessage}</p>
-      )}
-      
-      <Button onClick={onRetry} variant="outline">
-        <RefreshCw className="mr-2 h-4 w-4" />
-        Try Again
-      </Button>
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90 z-10">
+      <div className="text-center p-4 max-w-md">
+        <h3 className="font-semibold text-lg text-red-600 mb-2">Canvas Error</h3>
+        
+        {errorMessage && (
+          <p className="text-gray-600 mb-4 text-sm">
+            {errorMessage}
+          </p>
+        )}
+        
+        <div className="text-sm text-gray-500 mb-4">
+          <p>The drawing canvas could not be initialized. This may be due to:</p>
+          <ul className="list-disc list-inside mt-2">
+            <li>Low memory or resources</li>
+            <li>Browser compatibility issues</li>
+            <li>Web GL not supported</li>
+          </ul>
+        </div>
+        
+        <Button onClick={onRetry} variant="default">
+          <RefreshCcw className="w-4 h-4 mr-2" />
+          Retry Loading Canvas
+        </Button>
+      </div>
     </div>
   );
 };

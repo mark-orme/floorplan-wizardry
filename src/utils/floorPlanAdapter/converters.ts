@@ -1,103 +1,65 @@
 
-import { Point } from "@/types/core/Point";
-import { createPoint } from "../pointHelpers";
-import { validatePoint, validateColor, validateTimestamp, validateRoomType } from "./types";
+import { FloorPlan, PaperSize } from '@/types/FloorPlan';
+import { DrawingMode } from '@/constants/drawingModes';
 
-// Function to convert data types for floor plan exports
-export const convertPoints = (points: { x: number; y: number }[]): Point[] => {
-  return points.map(point => createPoint(point.x, point.y));
-};
-
-// App to Core floor plan conversion functions
-export const appToCoreFloorPlan = (appFloorPlan: any): any => {
-  // Convert app floor plan to core floor plan format
+/**
+ * Adapts a floor plan object to ensure it has all required properties
+ * @param floorPlan Floor plan object to adapt
+ * @returns Adapted floor plan with all required properties
+ */
+export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
+  const now = new Date().toISOString();
+  
   return {
-    id: appFloorPlan.id,
-    name: appFloorPlan.name,
-    label: appFloorPlan.label || appFloorPlan.name,
-    walls: appFloorPlan.walls.map((wall: any) => ({
-      id: wall.id,
-      start: validatePoint(wall.start),
-      end: validatePoint(wall.end),
-      thickness: wall.thickness || 2,
-      color: validateColor(wall.color),
-      length: wall.length
-    })),
-    rooms: appFloorPlan.rooms.map((room: any) => ({
-      id: room.id,
-      name: room.name || "Unnamed Room",
-      type: validateRoomType(room.type),
-      area: room.area || 0,
-      color: validateColor(room.color, "#ffffff"),
-      points: room.points || []
-    })),
-    strokes: appFloorPlan.strokes || [],
-    createdAt: validateTimestamp(appFloorPlan.createdAt),
-    updatedAt: validateTimestamp(appFloorPlan.updatedAt),
-    gia: appFloorPlan.gia || 0,
-    level: appFloorPlan.level || 0,
-    index: appFloorPlan.index || 0,
-    canvasData: appFloorPlan.canvasData,
-    canvasJson: appFloorPlan.canvasJson,
-    metadata: appFloorPlan.metadata || {
-      createdAt: validateTimestamp(null),
-      updatedAt: validateTimestamp(null),
-      paperSize: 'A4',
-      level: appFloorPlan.level || 0
+    id: floorPlan.id || `fp-${Date.now()}`,
+    name: floorPlan.name || 'New Floor Plan',
+    label: floorPlan.label || floorPlan.name || 'Untitled',
+    data: floorPlan.data || {},
+    userId: floorPlan.userId || 'anonymous',
+    walls: floorPlan.walls || [],
+    rooms: floorPlan.rooms || [],
+    strokes: floorPlan.strokes || [],
+    canvasJson: floorPlan.canvasJson || null,
+    canvasData: floorPlan.canvasData || null,
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    index: floorPlan.index || 0,
+    metadata: {
+      createdAt: floorPlan.metadata?.createdAt || now,
+      updatedAt: floorPlan.metadata?.updatedAt || now,
+      paperSize: floorPlan.metadata?.paperSize || PaperSize.A4,
+      level: floorPlan.metadata?.level || 0,
+      collaborators: floorPlan.metadata?.collaborators || [],
+      version: floorPlan.metadata?.version || 1,
+      lastModifiedBy: floorPlan.metadata?.lastModifiedBy,
+      lastModifiedAt: floorPlan.metadata?.lastModifiedAt
     }
   };
-};
+}
 
-// Core to App floor plan conversion
-export const coreToAppFloorPlan = (coreFloorPlan: any): any => {
-  // Convert core floor plan to app floor plan format
-  return {
-    id: coreFloorPlan.id,
-    name: coreFloorPlan.name,
-    label: coreFloorPlan.label || coreFloorPlan.name,
-    walls: coreFloorPlan.walls.map((wall: any) => ({
-      id: wall.id,
-      start: wall.start,
-      end: wall.end,
-      points: [wall.start, wall.end],
-      thickness: wall.thickness || 2,
-      color: validateColor(wall.color),
-      length: wall.length
-    })),
-    rooms: coreFloorPlan.rooms.map((room: any) => ({
-      id: room.id,
-      name: room.name || "Unnamed Room",
-      type: validateRoomType(room.type),
-      area: room.area || 0,
-      color: validateColor(room.color, "#ffffff"),
-      level: coreFloorPlan.level || 0,
-      points: room.points || [],
-      walls: []
-    })),
-    strokes: coreFloorPlan.strokes || [],
-    createdAt: validateTimestamp(coreFloorPlan.createdAt),
-    updatedAt: validateTimestamp(coreFloorPlan.updatedAt),
-    gia: coreFloorPlan.gia || 0,
-    level: coreFloorPlan.level || 0,
-    index: coreFloorPlan.index || coreFloorPlan.level || 0,
-    canvasData: coreFloorPlan.canvasData,
-    canvasJson: coreFloorPlan.canvasJson,
-    metadata: coreFloorPlan.metadata || {
-      createdAt: validateTimestamp(null),
-      updatedAt: validateTimestamp(null),
-      paperSize: 'A4',
-      level: coreFloorPlan.level || 0
+/**
+ * Convert application floor plans to core format
+ */
+export function appToCoreFloorPlans(floorPlans: Partial<FloorPlan>[]): FloorPlan[] {
+  return floorPlans.map(adaptFloorPlan);
+}
+
+/**
+ * Normalize drawing mode to ensure compatibility
+ */
+export function normalizeDrawingMode(mode: string | DrawingMode): DrawingMode {
+  if (typeof mode === 'string') {
+    // Check if the mode exists in the enum
+    for (const key in DrawingMode) {
+      if (DrawingMode[key as keyof typeof DrawingMode] === mode) {
+        return mode as DrawingMode;
+      }
     }
-  };
-};
-
-// Batch conversion functions
-export const appToCoreFloorPlans = (appFloorPlans: any[]): any[] => {
-  return appFloorPlans.map(appToCoreFloorPlan);
-};
-
-export const coreToAppFloorPlans = (coreFloorPlans: any[]): any[] => {
-  return coreFloorPlans.map(coreToAppFloorPlan);
-};
-
-// Additional conversion functions can be added here as needed
+    // Default to select mode
+    return DrawingMode.SELECT;
+  }
+  
+  return mode;
+}

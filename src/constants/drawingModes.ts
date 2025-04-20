@@ -1,31 +1,55 @@
 
 /**
- * Centralized DrawingMode enum to ensure consistency across the application
+ * Drawing modes enum used throughout the application.
+ * This is the single source of truth for drawing modes.
  */
 export enum DrawingMode {
   SELECT = 'select',
   DRAW = 'draw',
-  ERASE = 'erase',
-  HAND = 'hand',
-  WALL = 'wall',
-  PENCIL = 'pencil',
-  ROOM = 'room',
-  TEXT = 'text',
-  SHAPE = 'shape',
   LINE = 'line',
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
+  WALL = 'wall',
+  ROOM = 'room',
   DOOR = 'door',
   WINDOW = 'window',
-  STRAIGHT_LINE = 'straight_line',
-  PAN = 'pan',
-  ERASER = 'eraser',
-  MEASURE = 'measure',
+  TEXT = 'text',
   DIMENSION = 'dimension',
-  STAIR = 'stair',
-  COLUMN = 'column'
+  PAN = 'pan',
+  HAND = 'hand',
+  ZOOM = 'zoom',
+  ERASER = 'eraser',
+  RULER = 'ruler',
+  ANNOTATION = 'annotation',
+  FURNITURE = 'furniture'
 }
 
-// Type aliases for compatibility with different parts of the application
-export type DrawingTool = DrawingMode;
-export type DrawingToolId = keyof typeof DrawingMode;
+/**
+ * Convert a string to drawing mode safely
+ * @param mode Mode string
+ * @returns DrawingMode enum value or default (SELECT)
+ */
+export const toDrawingMode = (mode: string): DrawingMode => {
+  // Check if the mode exists in the enum
+  for (const key in DrawingMode) {
+    if (DrawingMode[key as keyof typeof DrawingMode] === mode) {
+      return mode as DrawingMode;
+    }
+  }
+  // Default to select mode
+  return DrawingMode.SELECT;
+};
+
+/**
+ * Check if mode is valid
+ * @param mode Mode to check
+ * @returns boolean indicating if mode is valid
+ */
+export const isValidDrawingMode = (mode: string): boolean => {
+  for (const key in DrawingMode) {
+    if (DrawingMode[key as keyof typeof DrawingMode] === mode) {
+      return true;
+    }
+  }
+  return false;
+};

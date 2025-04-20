@@ -1,21 +1,35 @@
 
-import { Point } from "@/types/core/Point";
-import { createPoint } from "../pointHelpers";
+import { FloorPlan } from '@/types/FloorPlan';
 
-// Validations for point data
-export const isValidPoint = (point: any): boolean => {
-  if (!point || typeof point !== 'object') return false;
-  if (typeof point.x !== 'number' || typeof point.y !== 'number') return false;
-  return true;
-};
+/**
+ * Validates a floor plan object to ensure it has all required properties
+ * @param floorPlan Floor plan object to validate
+ * @returns Boolean indicating if the floor plan is valid
+ */
+export function isValidFloorPlan(floorPlan: any): floorPlan is FloorPlan {
+  if (!floorPlan) return false;
+  
+  return (
+    typeof floorPlan.id === 'string' &&
+    typeof floorPlan.name === 'string' &&
+    typeof floorPlan.data === 'object' &&
+    typeof floorPlan.userId === 'string' &&
+    Array.isArray(floorPlan.walls) &&
+    Array.isArray(floorPlan.rooms) &&
+    Array.isArray(floorPlan.strokes) &&
+    typeof floorPlan.createdAt === 'string' &&
+    typeof floorPlan.updatedAt === 'string' &&
+    typeof floorPlan.metadata === 'object'
+  );
+}
 
-// Create default point if invalid
-export const ensureValidPoint = (point: any): Point => {
-  if (isValidPoint(point)) return point;
-  return createPoint(0, 0);
-};
-
-// Re-export the validation functions from types.ts for backwards compatibility
-export { validatePoint, validateColor, validateTimestamp } from './types';
-
-// Additional validation functions can be added here as needed
+/**
+ * Validates an array of floor plans
+ * @param floorPlans Array of floor plans to validate
+ * @returns Array of valid floor plans
+ */
+export function validateFloorPlans(floorPlans: any[]): FloorPlan[] {
+  if (!Array.isArray(floorPlans)) return [];
+  
+  return floorPlans.filter(isValidFloorPlan);
+}

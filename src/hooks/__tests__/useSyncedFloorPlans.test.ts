@@ -1,3 +1,4 @@
+
 /**
  * Tests for useSyncedFloorPlans hook
  * Verifies floor plan synchronization and persistence
@@ -8,9 +9,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
 import { Canvas } from 'fabric';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan, createEmptyFloorPlan } from '@/types/FloorPlan';
 import { toast } from 'sonner';
-import { adaptFloorPlan } from '@/utils/floorPlanAdapter';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -42,27 +42,11 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-// Use adaptFloorPlan to ensure all required properties are present
-const mockFloorPlan = adaptFloorPlan({
+// Create a mock floor plan using the createEmptyFloorPlan utility
+const mockFloorPlan = createEmptyFloorPlan({
   id: 'floor-1',
   name: 'Floor 1',
   label: 'First Floor',
-  strokes: [],
-  walls: [],
-  rooms: [],
-  level: 0,
-  index: 0,
-  gia: 0,
-  canvasData: null,
-  canvasJson: null,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  metadata: {
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    paperSize: 'A4',
-    level: 0
-  }
 });
 
 describe('useSyncedFloorPlans Hook', () => {
