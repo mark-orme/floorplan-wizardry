@@ -1,6 +1,8 @@
 
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan, Point, Stroke, Wall, Room } from '@/types/FloorPlan';
+import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
+import { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Normalizes a drawing mode value to ensure it's a valid DrawingMode
@@ -46,7 +48,7 @@ export const normalizeDrawingMode = (mode: string | DrawingMode): DrawingMode =>
  * @param floorPlan The floor plan object to adapt
  * @returns A valid FloorPlan object
  */
-export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
+export const adaptFloorPlan = (floorPlan: Partial<CoreFloorPlan>): AppFloorPlan => {
   const now = new Date().toISOString();
   
   return {
@@ -54,7 +56,11 @@ export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
     name: floorPlan.name || 'Untitled Floor Plan',
     label: floorPlan.label || 'Untitled',
     index: floorPlan.index || 0,
-    strokes: floorPlan.strokes || [],
+    strokes: floorPlan.strokes?.map(stroke => ({
+      ...stroke,
+      type: 'line' as any,
+      width: stroke.thickness
+    })) || [],
     walls: floorPlan.walls || [],
     rooms: floorPlan.rooms || [],
     gia: floorPlan.gia || 0,
@@ -65,11 +71,16 @@ export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
     updatedAt: floorPlan.updatedAt || now,
     metadata: floorPlan.metadata || {
       version: '1.0',
-      author: 'System',
+      author: '',
       dateCreated: now,
       lastModified: now,
-      notes: ''
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0
     },
+    // Add the missing required properties
     data: floorPlan.data || {},
     userId: floorPlan.userId || 'anonymous'
   };
@@ -80,19 +91,22 @@ export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
  * @param corePlans Core floor plan data
  * @returns Application-compatible floor plans
  */
-export const appToCoreFloorPlans = (appPlans: FloorPlan[]): any[] => {
+export const coreToAppFloorPlans = (corePlans: CoreFloorPlan[]): AppFloorPlan[] => {
+  return corePlans.map(plan => adaptFloorPlan(plan));
+};
+
+/**
+ * Converts application floor plans to core floor plans
+ * @param appPlans Application floor plan data
+ * @returns Core-compatible floor plans
+ */
+export const appToCoreFloorPlans = (appPlans: AppFloorPlan[]): CoreFloorPlan[] => {
   return appPlans.map(plan => ({
-    id: plan.id,
-    name: plan.name,
-    label: plan.label,
-    index: plan.index,
-    data: plan.data,
-    userId: plan.userId,
-    metadata: {
-      ...plan.metadata,
-      level: plan.level,
-    }
-  }));
+    ...plan,
+    label: plan.label || plan.name,
+    data: plan.data || {},
+    userId: plan.userId || 'anonymous'
+  } as CoreFloorPlan));
 };
 
 /**
@@ -100,7 +114,7 @@ export const appToCoreFloorPlans = (appPlans: FloorPlan[]): any[] => {
  * @param index Index for the new floor plan
  * @returns An empty floor plan
  */
-export const createEmptyFloorPlan = (index: number = 0): FloorPlan => {
+export const createEmptyFloorPlan = (index: number = 0): AppFloorPlan => {
   const now = new Date().toISOString();
   return adaptFloorPlan({
     name: `Floor ${index + 1}`,

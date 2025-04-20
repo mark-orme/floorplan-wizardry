@@ -1,188 +1,299 @@
 
-import { Canvas, Object as FabricObject, Line, Rect, Circle, Path, IObjectOptions } from 'fabric';
-import { CanvasObject, Point, DrawOptions, StrokeStyle } from '@/types/canvas';
-import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
+import { CanvasEngine } from './CanvasEngine';
+import { Canvas as FabricCanvas, Object as FabricObject, Point } from 'fabric';
 
-export class FabricCanvasEngine implements ICanvasEngine {
-  private canvas: Canvas | null = null;
-  private eventHandlers: Record<string, Function[]> = {};
+// Define simple point interface to use within this file
+interface SimplePoint {
+  x: number;
+  y: number;
+}
 
-  constructor(canvasElement: HTMLCanvasElement) {
-    this.canvas = new Canvas(canvasElement, {
-      width: canvasElement.width,
-      height: canvasElement.height,
-      selection: true,
-      backgroundColor: '#ffffff'
-    });
+export class FabricCanvasEngine implements CanvasEngine {
+  private canvas: FabricCanvas | null = null;
+  private objectMap: Map<string, FabricObject> = new Map();
+  private defaultOptions = {
+    stroke: '#000000',
+    strokeWidth: 2,
+    fill: 'transparent',
+    selectable: true,
+    hasControls: true,
+    hasBorders: true
+  };
+
+  constructor(canvasElement: HTMLCanvasElement | null) {
+    if (canvasElement) {
+      this.initializeCanvas(canvasElement);
+    }
   }
 
-  public getCanvas(): Canvas | null {
+  private initializeCanvas(element: HTMLCanvasElement): void {
+    try {
+      this.canvas = new FabricCanvas(element, {
+        width: element.width,
+        height: element.height,
+        selection: true,
+        preserveObjectStacking: true,
+        renderOnAddRemove: true,
+        stopContextMenu: true
+      });
+      
+      console.log('FabricCanvasEngine: Canvas initialized');
+    } catch (error) {
+      console.error('FabricCanvasEngine: Error initializing canvas', error);
+      throw error;
+    }
+  }
+
+  getCanvas(): FabricCanvas | null {
     return this.canvas;
   }
 
-  public dispose(): void {
-    if (this.canvas) {
-      this.canvas.dispose();
-      this.canvas = null;
-    }
-    this.eventHandlers = {};
-  }
-
-  public drawLine(points: Point[], options: DrawOptions): void {
-    if (!this.canvas || points.length < 2) return;
-
-    const line = new Line(
-      [points[0].x, points[0].y, points[1].x, points[1].y],
-      {
-        stroke: options.color,
-        strokeWidth: options.width,
-        opacity: options.opacity || 1,
-        selectable: true,
-        evented: true
-      }
-    );
-
-    this.canvas.add(line);
-    this.canvas.renderAll();
-  }
-
-  public drawShape(points: Point[], options: DrawOptions): void {
-    if (!this.canvas || points.length < 3) return;
-    
-    const pathData = points.map((point, i) => 
-      (i === 0 ? 'M' : 'L') + point.x + ' ' + point.y
-    ).join(' ') + ' Z';
-    
-    const path = new Path(pathData, {
-      fill: 'transparent',
-      stroke: options.color,
-      strokeWidth: options.width,
-      opacity: options.opacity || 1
-    });
-    
-    this.canvas.add(path);
-    this.canvas.renderAll();
-  }
-
-  public clear(): void {
+  clear(): void {
     if (!this.canvas) return;
     this.canvas.clear();
-    this.canvas.renderAll();
+    this.objectMap.clear();
   }
 
-  public undo(): void {
-    // Implement undo logic
-    console.log('Undo not implemented');
+  refresh(): void {
+    if (!this.canvas) return;
+    this.canvas.requestRenderAll();
   }
 
-  public redo(): void {
-    // Implement redo logic
-    console.log('Redo not implemented');
+  resize(width: number, height: number): void {
+    if (!this.canvas) return;
+    this.canvas.setWidth(width);
+    this.canvas.setHeight(height);
+    this.canvas.requestRenderAll();
   }
 
-  public addObject(object: CanvasObject): void {
+  /* Drawing Methods */
+  
+  drawRectangle(
+    id: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    options: any = {}
+  ): void {
     if (!this.canvas) return;
     
-    // Convert CanvasObject to FabricObject
-    // This is a simplified implementation
-    const fabricObject = this.createFabricObject(object);
-    if (fabricObject) {
-      this.canvas.add(fabricObject);
-      this.canvas.renderAll();
-    }
-  }
-
-  private createFabricObject(object: CanvasObject): FabricObject | null {
-    // Simplified implementation
-    return null;
-  }
-
-  public removeObject(object: CanvasObject): void {
-    if (!this.canvas) return;
-    
-    // Find and remove object by id
-    const objects = this.canvas.getObjects();
-    const targetObject = objects.find(obj => obj.data?.id === object.id);
-    
-    if (targetObject) {
-      this.canvas.remove(targetObject);
-      this.canvas.renderAll();
-    }
-  }
-
-  public updateObject(object: CanvasObject): void {
-    // Implement update logic
-    console.log('Update object not implemented');
-  }
-
-  public getObjects(): CanvasObject[] {
-    if (!this.canvas) return [];
-    
-    // Convert FabricObject[] to CanvasObject[]
-    // This is a simplified implementation
-    return [];
-  }
-
-  public getCanvasState(): any {
-    if (!this.canvas) return null;
-    return this.canvas.toJSON();
-  }
-
-  public setCanvasState(state: any): void {
-    if (!this.canvas) return;
-    this.canvas.loadFromJSON(state, () => {
-      this.canvas?.renderAll();
-    });
-  }
-
-  public setStrokeStyle(style: StrokeStyle): void {
-    if (!this.canvas) return;
-    
-    if (this.canvas.isDrawingMode && this.canvas.freeDrawingBrush) {
-      this.canvas.freeDrawingBrush.color = style.color;
-      this.canvas.freeDrawingBrush.width = style.width;
-      this.canvas.freeDrawingBrush.opacity = style.opacity;
-    }
-  }
-
-  public setZoom(level: number): void {
-    if (!this.canvas) return;
-    this.canvas.setZoom(level);
-    this.canvas.renderAll();
-  }
-
-  public setPan(x: number, y: number): void {
-    if (!this.canvas) return;
-    this.canvas.relativePan({ x, y });
-    this.canvas.renderAll();
-  }
-
-  public on(event: string, callback: Function): void {
-    if (!this.canvas) return;
-
-    if (!this.eventHandlers[event]) {
-      this.eventHandlers[event] = [];
-    }
-
-    this.eventHandlers[event].push(callback);
-
-    this.canvas.on(event as any, (e: any) => {
-      const handlers = this.eventHandlers[event] || [];
-      handlers.forEach(handler => handler(e));
-    });
-  }
-
-  public off(event: string, callback: Function): void {
-    if (!this.canvas) return;
-
-    if (this.eventHandlers[event]) {
-      this.eventHandlers[event] = this.eventHandlers[event].filter(
-        handler => handler !== callback
-      );
+    try {
+      // Use fabric.js Rect class
+      const rect = new fabric.Rect({
+        left: x,
+        top: y,
+        width: width,
+        height: height,
+        ...this.defaultOptions,
+        ...options,
+        id
+      });
       
-      if (this.eventHandlers[event].length === 0) {
-        this.canvas.off(event as any);
-      }
+      this.canvas.add(rect);
+      this.objectMap.set(id, rect);
+    } catch (error) {
+      console.error('Error creating rectangle:', error);
     }
+  }
+
+  drawCircle(
+    id: string,
+    x: number,
+    y: number,
+    radius: number,
+    options: any = {}
+  ): void {
+    if (!this.canvas) return;
+    
+    try {
+      // Use fabric.js Circle class
+      const circle = new fabric.Circle({
+        left: x - radius,
+        top: y - radius,
+        radius: radius,
+        ...this.defaultOptions,
+        ...options,
+        id
+      });
+      
+      this.canvas.add(circle);
+      this.objectMap.set(id, circle);
+    } catch (error) {
+      console.error('Error creating circle:', error);
+    }
+  }
+
+  drawLine(
+    id: string,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    options: any = {}
+  ): void {
+    if (!this.canvas) return;
+    
+    try {
+      // Use fabric.js Line class
+      const line = new fabric.Line([x1, y1, x2, y2], {
+        ...this.defaultOptions,
+        ...options,
+        id
+      });
+      
+      this.canvas.add(line);
+      this.objectMap.set(id, line);
+    } catch (error) {
+      console.error('Error creating line:', error);
+    }
+  }
+
+  drawPolyline(
+    id: string,
+    points: SimplePoint[],
+    options: any = {}
+  ): void {
+    if (!this.canvas) return;
+    
+    try {
+      // Convert points to fabric.js format
+      const fabricPoints = points.flatMap(p => [p.x, p.y]);
+      
+      // Use fabric.js Polyline class
+      const polyline = new fabric.Polyline(fabricPoints as any, {
+        ...this.defaultOptions,
+        ...options,
+        fill: 'transparent',
+        id
+      });
+      
+      this.canvas.add(polyline);
+      this.objectMap.set(id, polyline);
+    } catch (error) {
+      console.error('Error creating polyline:', error);
+    }
+  }
+
+  drawPath(
+    id: string,
+    path: string,
+    options: any = {}
+  ): void {
+    if (!this.canvas) return;
+    
+    try {
+      // Use fabric.js Path class
+      const pathObj = new fabric.Path(path, {
+        ...this.defaultOptions,
+        ...options,
+        id
+      });
+      
+      this.canvas.add(pathObj);
+      this.objectMap.set(id, pathObj);
+    } catch (error) {
+      console.error('Error creating path:', error);
+    }
+  }
+
+  drawText(
+    id: string,
+    text: string,
+    x: number,
+    y: number,
+    options: any = {}
+  ): void {
+    if (!this.canvas) return;
+    
+    try {
+      // Use fabric.js Text class
+      const textObj = new fabric.Text(text, {
+        left: x,
+        top: y,
+        ...this.defaultOptions,
+        ...options,
+        id
+      });
+      
+      this.canvas.add(textObj);
+      this.objectMap.set(id, textObj);
+    } catch (error) {
+      console.error('Error creating text:', error);
+    }
+  }
+
+  /* Object Management */
+  
+  removeObject(id: string): void {
+    if (!this.canvas) return;
+    
+    const obj = this.objectMap.get(id);
+    if (obj) {
+      this.canvas.remove(obj);
+      this.objectMap.delete(id);
+    }
+  }
+
+  updateObject(id: string, options: any): void {
+    if (!this.canvas) return;
+    
+    const obj = this.objectMap.get(id);
+    if (obj) {
+      obj.set(options);
+      obj.setCoords();
+      this.canvas.requestRenderAll();
+    }
+  }
+
+  getObject(id: string): FabricObject | undefined {
+    return this.objectMap.get(id);
+  }
+
+  /* Canvas Management */
+  
+  zoomTo(level: number, point?: SimplePoint): void {
+    if (!this.canvas) return;
+    
+    const center = point || {
+      x: this.canvas.getWidth() / 2,
+      y: this.canvas.getHeight() / 2
+    };
+    
+    this.canvas.zoomToPoint(new fabric.Point(center.x, center.y), level);
+  }
+
+  panTo(x: number, y: number): void {
+    if (!this.canvas) return;
+    
+    const vpt = this.canvas.viewportTransform;
+    if (!vpt) return;
+    
+    vpt[4] = x;
+    vpt[5] = y;
+    
+    this.canvas.requestRenderAll();
+  }
+
+  /* Event Handling */
+  
+  enableEvents(): void {
+    if (!this.canvas) return;
+    
+    this.canvas.selection = true;
+    this.canvas.forEachObject(obj => {
+      obj.selectable = true;
+      obj.evented = true;
+    });
+  }
+
+  disableEvents(): void {
+    if (!this.canvas) return;
+    
+    this.canvas.selection = false;
+    this.canvas.forEachObject(obj => {
+      obj.selectable = false;
+      obj.evented = false;
+    });
   }
 }

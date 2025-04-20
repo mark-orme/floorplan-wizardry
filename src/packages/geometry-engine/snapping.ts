@@ -1,65 +1,58 @@
 
 import { Point } from './types';
+import { calculateDistance } from './core';
 
 /**
- * Snap a point to the nearest grid point
+ * Snap a point to the grid
  * @param point Point to snap
- * @param gridSize Size of grid cells
+ * @param gridSize Grid size
  * @returns Snapped point
  */
-export const snapToGrid = (point: Point, gridSize: number): Point => {
+export function snapToGrid(point: Point, gridSize: number): Point {
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
   };
-};
+}
 
 /**
- * Snap a point to the nearest point in a set of points
+ * Snap a point to the nearest point in a collection
  * @param point Point to snap
- * @param points Set of points to snap to
- * @param threshold Maximum distance for snapping
- * @returns Snapped point or original if no points are within threshold
+ * @param points Collection of points to snap to
+ * @param threshold Maximum snapping distance
+ * @returns Snapped point or original point if no snap
  */
-export const snapToPoints = (point: Point, points: Point[], threshold: number): Point => {
-  let minDist = threshold;
-  let closest = point;
+export function snapToPoints(
+  point: Point,
+  points: Point[],
+  threshold: number
+): Point {
+  let closestPoint = point;
+  let minDistance = threshold;
   
-  for (const p of points) {
-    const dx = p.x - point.x;
-    const dy = p.y - point.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+  for (const target of points) {
+    const distance = calculateDistance(point, target);
     
-    if (dist < minDist) {
-      minDist = dist;
-      closest = p;
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestPoint = target;
     }
   }
   
-  return closest;
-};
+  return closestPoint;
+}
 
 /**
- * Check if a point is within snapping distance of any points
+ * Check if a point is within snapping distance of another point
  * @param point Point to check
- * @param points Array of points to check against
- * @param threshold Snapping threshold distance
- * @returns True if point is within threshold of any points
+ * @param target Target point
+ * @param threshold Snapping threshold
+ * @returns Whether the point is within snapping distance
  */
-export const isWithinSnappingDistance = (
-  point: Point, 
-  points: Point[], 
+export function isWithinSnappingDistance(
+  point: Point,
+  target: Point,
   threshold: number
-): boolean => {
-  for (const p of points) {
-    const dx = p.x - point.x;
-    const dy = p.y - point.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    
-    if (dist < threshold) {
-      return true;
-    }
-  }
-  
-  return false;
-};
+): boolean {
+  return calculateDistance(point, target) <= threshold;
+}

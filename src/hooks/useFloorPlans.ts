@@ -15,7 +15,7 @@ import { Canvas as FabricCanvas } from "fabric";
 import { FloorPlan } from "@/types/floorPlanTypes";
 
 // Import specialized floor plan hooks for different concerns
-import { useFloorPlanDrawing } from "./floor-plan";
+import { useFloorPlanDrawing } from "./floor-plan/useFloorPlanDrawing";
 import { useFloorPlanGIA } from "./useFloorPlanGIA";
 import { useFloorPlanManagement } from "./useFloorPlanManagement";
 import { useFloorPlanStorage } from "./useFloorPlanStorage";
@@ -76,19 +76,25 @@ export const useFloorPlans = ({
     setGia
   });
   
-  // Memoize hook dependencies to prevent circular dependencies and rerenders
-  const hookDeps = useMemo(() => ({
-    fabricCanvasRef,
-    gridLayerRef,
-    createGrid,
-    floorChangeInProgressRef,
-    recalculateGIA  // Pass recalculateGIA to the drawing hook
-  }), [fabricCanvasRef, gridLayerRef, createGrid, recalculateGIA]);
+  // Get the current floor plan
+  const currentFloorPlan = floorPlans[currentFloor] || null;
   
   // Initialize floor plan drawing functionality with proper implementation
   const { drawFloorPlan } = useFloorPlanDrawing({
     fabricCanvasRef: fabricCanvasRef,
-    gridLayerRef: gridLayerRef.current,
+    tool: 'SELECT' as any, // Default tool
+    floorPlan: currentFloorPlan as FloorPlan,
+    setFloorPlan: (updatedPlan) => {
+      if (!currentFloorPlan) return;
+      
+      // Update the floor plan in the array
+      const newFloorPlans = [...floorPlans];
+      newFloorPlans[currentFloor] = typeof updatedPlan === 'function' 
+        ? updatedPlan(currentFloorPlan as FloorPlan) 
+        : updatedPlan;
+      
+      setFloorPlans(newFloorPlans);
+    },
     onDrawComplete: recalculateGIA
   });
 

@@ -54,4 +54,13 @@ export interface FloorPlan {
   
   /** Floor plan metadata */
   metadata: FloorPlanMetadata;
+  
+  /** Additional data for the floor plan (required) */
+  data: any;
+  
+  /** User ID who owns the floor plan (required) */
+  userId: string;
 }
+
+// Export FloorPlanMetadata for use in other modules
+export { FloorPlanMetadata };
