@@ -2,7 +2,7 @@
 /**
  * Utility for dynamic imports and feature flag checking
  */
-import React, { Suspense, lazy, ComponentType } from 'react';
+import { Suspense, lazy, ComponentType } from 'react';
 import logger from './logger';
 
 // Feature flags configuration
@@ -160,11 +160,11 @@ export function lazyWithFeatureFlag<T extends ComponentType<any>>(
     }
     
     return Promise.resolve({
-      default: (props: any) => (
+      default: ((props: any) => (
         <div className="p-4 text-center text-gray-500">
           Feature {featureName} is disabled
         </div>
-      )
-    }) as Promise<{ default: T }>;
+      )) as unknown as T
+    });
   });
 }
