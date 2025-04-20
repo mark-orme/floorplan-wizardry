@@ -39,7 +39,7 @@ export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     floorPlan.createdAt = floorPlan.updatedAt;
   }
   
-  // Ensure data and userId properties exist (add if missing)
+  // CRITICAL FIX: Ensure data and userId properties exist (add if missing)
   if (!floorPlan.data) {
     floorPlan.data = {};
   }
@@ -95,10 +95,14 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
  * @returns A properly typed Stroke object
  */
 export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
+  // CRITICAL FIX: Ensure type is properly cast to StrokeTypeLiteral
+  const typeValue = overrides.type || 'line';
+  const validType = typeof typeValue === 'string' ? asStrokeType(typeValue) : typeValue;
+  
   return {
     id: `stroke-${Date.now()}`,
     points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: asStrokeType(overrides.type as string || 'line'),
+    type: validType,
     color: overrides.color || '#000000',
     thickness: overrides.thickness || 2,
     width: overrides.width || 2,
@@ -112,10 +116,14 @@ export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
  * @returns A properly typed Room object
  */
 export function createTestRoom(overrides: Partial<any> = {}): any {
+  // CRITICAL FIX: Ensure type is properly cast to RoomTypeLiteral
+  const typeValue = overrides.type || 'other';
+  const validType = typeof typeValue === 'string' ? asRoomType(typeValue) : typeValue;
+  
   return {
     id: `room-${Date.now()}`,
     name: overrides.name || 'Test Room',
-    type: asRoomType(overrides.type as string || 'other'),
+    type: validType,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
     color: overrides.color || '#ffffff',
     area: overrides.area || 10000,
@@ -151,7 +159,7 @@ export function createTestWall(overrides: Partial<any> = {}): any {
     points: [start, end],
     thickness: overrides.thickness || 5,
     color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [],
+    roomIds: overrides.roomIds || [], // CRITICAL FIX: Ensure roomIds property is present
     length: overrides.length || length,
     ...overrides
   };

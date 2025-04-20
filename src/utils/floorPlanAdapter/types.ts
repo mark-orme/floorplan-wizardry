@@ -30,5 +30,14 @@ export type { RoomTypeLiteral };
 export type { FloorPlanMetadata };
 export { asStrokeType, asRoomType };
 
-// Also export validator functions for backwards compatibility
-export { validateStrokeType, validateRoomType, mapRoomType } from './validators';
+// Export validator functions directly rather than re-exporting
+// This ensures type-safe exports without circular references
+export function validateStrokeType(type: string): StrokeTypeLiteral {
+  return asStrokeType(type);
+}
+
+export function validateRoomType(type: string): RoomTypeLiteral {
+  return asRoomType(type);
+}
+
+export const mapRoomType = validateRoomType;

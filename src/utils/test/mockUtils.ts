@@ -83,12 +83,17 @@ export function createMockAsyncImplementation<T>(value: T): () => Promise<T> {
 
 /**
  * Creates a properly typed test stroke
+ * CRITICAL FIX: Ensure type property is properly cast to StrokeTypeLiteral
  */
 export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
+  // Ensure type is properly converted to StrokeTypeLiteral
+  const typeValue = overrides.type || 'line';
+  const validType = typeof typeValue === 'string' ? asStrokeType(typeValue) : typeValue;
+  
   return {
     id: overrides.id || `stroke-${Date.now()}`,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: asStrokeType(overrides.type as string || 'line'),
+    type: validType,
     color: overrides.color || '#000000',
     thickness: overrides.thickness || 2,
     width: overrides.width || 2,
@@ -98,12 +103,17 @@ export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
 
 /**
  * Creates a properly typed test room
+ * CRITICAL FIX: Ensure type property is properly cast to RoomTypeLiteral
  */
 export function createMockRoom(overrides: Partial<Room> = {}): Room {
+  // Ensure type is properly converted to RoomTypeLiteral
+  const typeValue = overrides.type || 'other';
+  const validType = typeof typeValue === 'string' ? asRoomType(typeValue) : typeValue;
+  
   return {
     id: overrides.id || `room-${Date.now()}`,
     name: overrides.name || 'Test Room',
-    type: asRoomType(overrides.type as string || 'other'),
+    type: validType,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
     color: overrides.color || '#ffffff',
     area: overrides.area || 10000,
@@ -115,6 +125,7 @@ export function createMockRoom(overrides: Partial<Room> = {}): Room {
 
 /**
  * Creates a properly typed test wall
+ * CRITICAL FIX: Ensure roomIds property is present
  */
 export function createMockWall(overrides: Partial<Wall> = {}): Wall {
   const start = overrides.start || { x: 0, y: 0 };
@@ -131,7 +142,7 @@ export function createMockWall(overrides: Partial<Wall> = {}): Wall {
     points,
     thickness: overrides.thickness || 5,
     color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [],  // Make sure to include roomIds
+    roomIds: overrides.roomIds || [],  // Ensure roomIds are present
     length: overrides.length || length,
     ...overrides
   };
@@ -139,6 +150,7 @@ export function createMockWall(overrides: Partial<Wall> = {}): Wall {
 
 /**
  * Creates a properly typed test floor plan
+ * CRITICAL FIX: Ensure data and userId properties are present
  */
 export function createMockFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
