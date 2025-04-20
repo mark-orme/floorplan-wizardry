@@ -1,25 +1,28 @@
 
+/**
+ * Drawing mode enum
+ * Defines the available tools for drawing and interacting with the canvas
+ */
 export enum DrawingMode {
-  SELECT = 'SELECT',
-  DRAW = 'DRAW',
-  LINE = 'LINE',
-  STRAIGHT_LINE = 'STRAIGHT_LINE',
-  RECTANGLE = 'RECTANGLE',
-  CIRCLE = 'CIRCLE',
-  TEXT = 'TEXT',
-  PAN = 'PAN',
-  ZOOM = 'ZOOM',
-  ERASE = 'ERASE',
-  ERASER = 'ERASER',
-  MEASURE = 'MEASURE',
-  WALL = 'WALL',
-  DOOR = 'DOOR',
-  WINDOW = 'WINDOW',
-  ROOM = 'ROOM',
-  ROOM_LABEL = 'ROOM_LABEL',
-  HAND = 'HAND',
-  PENCIL = 'PENCIL',
-  DIMENSION = 'DIMENSION',
-  STAIR = 'STAIR',
-  COLUMN = 'COLUMN'
+  SELECT = 'select',
+  DRAW = 'draw',
+  LINE = 'line',
+  STRAIGHT_LINE = 'straightLine',
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  TEXT = 'text',
+  PAN = 'pan',
+  HAND = 'hand',
+  ZOOM = 'zoom',
+  ERASE = 'erase',
+  ERASER = 'eraser',
+  MEASURE = 'measure',
+  WALL = 'wall',
+  DOOR = 'door',
+  WINDOW = 'window',
+  ROOM = 'room',
+  ROOM_LABEL = 'roomLabel',
+  PENCIL = 'pencil',
+  SHAPE = 'shape',
+  // Add any other drawing modes needed by the application
 }

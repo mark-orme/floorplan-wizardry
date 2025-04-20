@@ -1,5 +1,6 @@
 
-import { FloorPlan, FloorPlanMetadata } from './floorPlanTypes';
+import { FloorPlan } from './floorPlanTypes';
+import { FloorPlanMetadata } from './metadataTypes';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -7,12 +8,17 @@ import { v4 as uuidv4 } from 'uuid';
  * @returns Empty floor plan metadata
  */
 export function createEmptyFloorPlanMetadata(): FloorPlanMetadata {
+  const now = new Date().toISOString();
   return {
     version: '1.0',
     author: '',
-    dateCreated: new Date().toISOString(),
-    lastModified: new Date().toISOString(),
-    notes: ''
+    notes: '',
+    createdAt: now,
+    updatedAt: now,
+    paperSize: 'A4',
+    level: 0,
+    dateCreated: now,
+    lastModified: now
   };
 }
 
@@ -22,6 +28,7 @@ export function createEmptyFloorPlanMetadata(): FloorPlanMetadata {
  * @returns Empty floor plan
  */
 export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
   return {
     id: partialFloorPlan.id || uuidv4(),
     name: partialFloorPlan.name || 'Untitled Floor Plan',
@@ -31,13 +38,12 @@ export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}):
     strokes: partialFloorPlan.strokes || [],
     canvasData: partialFloorPlan.canvasData || null,
     canvasJson: partialFloorPlan.canvasJson || null,
-    createdAt: partialFloorPlan.createdAt || new Date().toISOString(),
-    updatedAt: partialFloorPlan.updatedAt || new Date().toISOString(),
+    createdAt: partialFloorPlan.createdAt || now,
+    updatedAt: partialFloorPlan.updatedAt || now,
     gia: partialFloorPlan.gia || 0,
     level: partialFloorPlan.level || 0,
     index: partialFloorPlan.index || 0,
     metadata: partialFloorPlan.metadata || createEmptyFloorPlanMetadata(),
-    // Add the missing required properties
     data: partialFloorPlan.data || {},
     userId: partialFloorPlan.userId || ''
   };

@@ -13,7 +13,7 @@ export interface UseFloorPlanDrawingProps {
   setFloorPlan: (floorPlan: FloorPlan | ((prev: FloorPlan) => FloorPlan)) => void;
   // Optional properties
   onDrawComplete?: () => void;
-  gridLayerRef?: any[];
+  gridLayerRef?: React.MutableRefObject<any[]>;
 }
 
 export const useFloorPlanDrawing = ({

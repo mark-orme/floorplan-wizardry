@@ -1,50 +1,44 @@
 
-import { calculateDistance, calculateArea, calculateIntersection } from './calculations';
-import { rotatePoint, scalePoint, translatePoint } from './transformations';
-import { snapToGrid, snapToPoints, isWithinSnappingDistance } from './snapping';
-import { 
-  isPointInPolygon, 
-  doLinesIntersect, 
-  rectangleContainsPoint 
-} from './collision';
-import {
-  generateGridPoints,
-  getNearestGridPoint,
-  getGridCell
-} from './grid';
-import { simplifyPolyline, perpendicularDistance } from './simplification';
+/**
+ * Geometry Engine
+ * Export all functionality from the geometry engine
+ */
 
-// Re-export all functions
-export {
-  // Calculations
+// Export core functions
+export { 
   calculateDistance,
-  calculateArea,
-  calculateIntersection,
-  
-  // Transformations
-  rotatePoint,
-  scalePoint,
-  translatePoint,
-  
-  // Snapping
+  calculateAngle,
+  perpendicularDistance,
+  linesIntersect
+} from './core';
+
+// Export simplification utilities
+export { 
+  simplifyPolyline 
+} from './simplification';
+
+// Export snapping utilities
+export { 
   snapToGrid,
   snapToPoints,
-  isWithinSnappingDistance,
-  
-  // Collision
-  isPointInPolygon,
-  doLinesIntersect,
-  rectangleContainsPoint,
-  
-  // Grid
-  generateGridPoints,
-  getNearestGridPoint,
-  getGridCell,
-  
-  // Simplification
-  simplifyPolyline,
-  perpendicularDistance
-};
+  isWithinSnappingDistance
+} from './snapping';
 
-// Re-export types using export type
-export type { Point, Line, LineSegment, WorkerMessageData } from './types';
+// Export validation utilities
+export { 
+  isValidPoint,
+  isValidLine,
+  isValidPolygon
+} from './validation';
+
+// Export core types
+export type { 
+  Point,
+  LineSegment,
+  Line,
+  WorkerMessageData,
+  WorkerResponseData
+} from './types';
+
+// This ensures typescript's isolatedModules can properly handle type exports
+export type * from './types';

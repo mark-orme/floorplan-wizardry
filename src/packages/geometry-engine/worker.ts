@@ -1,88 +1,81 @@
 
-import { WorkerMessageData } from './types';
-import { optimizePoints, snapPointsToGrid } from './transformations';
-import { calculateDistance, perpendicularDistance } from './core';
+/**
+ * Web worker for geometry calculations
+ */
+import { Point } from './types';
 import { simplifyPolyline } from './simplification';
+import { calculateDistance, perpendicularDistance } from './core';
+import { snapToGrid } from './snapping';
 
-// Worker entrypoint
-self.onmessage = (event: MessageEvent<WorkerMessageData>) => {
+// Set up worker context
+const ctx: Worker = self as any;
+
+// Handle worker messages
+ctx.addEventListener('message', (e: MessageEvent) => {
+  const { type, points, options } = e.data;
+  
   try {
-    const data = event.data;
+    let result;
     
-    switch (data.type) {
-      case 'transform':
-        handleTransform(data);
-        break;
-      case 'calculate':
-        handleCalculate(data);
-        break;
+    switch (type) {
       case 'simplify':
-        handleSimplify(data);
+        result = simplifyPolyline(points, options?.epsilon || 2);
         break;
+        
       case 'snap':
-        handleSnap(data);
+        result = points.map(point => snapToGrid(point, options?.gridSize || 10));
         break;
+        
+      case 'calculate':
+        result = calculateDistances(points);
+        break;
+        
       default:
-        throw new Error(`Unknown operation type: ${data.type}`);
+        throw new Error(`Unknown operation type: ${type}`);
     }
+    
+    // Send results back to main thread
+    ctx.postMessage({
+      type,
+      result
+    });
   } catch (error) {
-    self.postMessage({
-      type: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error',
+    // Send error back to main thread
+    ctx.postMessage({
+      type,
+      error: error instanceof Error ? error.message : String(error),
       result: null
     });
   }
-};
+});
 
-function handleTransform(data: WorkerMessageData) {
-  const { points, options } = data;
-  
-  if (options?.optimize) {
-    const optimized = optimizePoints(points, options.minDistance || 5);
-    self.postMessage({
-      type: 'transform.optimize',
-      result: optimized
-    });
+/**
+ * Calculate various distances for a set of points
+ * @param points Array of points
+ * @returns Object with various distance calculations
+ */
+function calculateDistances(points: Point[]) {
+  if (points.length < 2) {
+    return {
+      totalLength: 0,
+      segmentLengths: []
+    };
   }
-}
-
-function handleCalculate(data: WorkerMessageData) {
-  const { points, options } = data;
   
-  if (options?.distances) {
-    const distances: number[] = [];
-    
-    for (let i = 1; i < points.length; i++) {
-      distances.push(calculateDistance(points[i-1], points[i]));
-    }
-    
-    self.postMessage({
-      type: 'calculate.distances',
-      result: distances
-    });
+  const segmentLengths: number[] = [];
+  let totalLength = 0;
+  
+  for (let i = 0; i < points.length - 1; i++) {
+    const distance = calculateDistance(points[i], points[i + 1]);
+    segmentLengths.push(distance);
+    totalLength += distance;
   }
+  
+  return {
+    totalLength,
+    segmentLengths
+  };
 }
 
-function handleSimplify(data: WorkerMessageData) {
-  const { points, options } = data;
-  const epsilon = options?.epsilon || 2;
-  
-  const simplified = simplifyPolyline(points, epsilon);
-  
-  self.postMessage({
-    type: 'simplify.result',
-    result: simplified
-  });
-}
-
-function handleSnap(data: WorkerMessageData) {
-  const { points, options } = data;
-  const gridSize = options?.gridSize || 10;
-  
-  const snapped = snapPointsToGrid(points, gridSize);
-  
-  self.postMessage({
-    type: 'snap.result',
-    result: snapped
-  });
-}
+// Notify that the worker is ready
+ctx.postMessage({ type: 'ready' });

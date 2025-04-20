@@ -5,6 +5,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasInteractionOptions {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas?: React.MutableRefObject<FabricCanvas | null>; // Added for test compatibility
   tool?: DrawingMode;
   saveCurrentState?: () => void;
   onInteractionStart?: () => void;
@@ -22,11 +23,14 @@ export interface UseCanvasInteractionResult {
 
 export const useCanvasInteraction = ({
   fabricCanvasRef,
+  canvas,
   tool = DrawingMode.SELECT,
   saveCurrentState,
   onInteractionStart,
   onInteractionEnd
 }: CanvasInteractionOptions): UseCanvasInteractionResult => {
+  // Use canvas or fabricCanvasRef, whichever is provided
+  const canvasRef = canvas || fabricCanvasRef;
   const [isInteracting, setIsInteracting] = useState(false);
 
   const startInteraction = useCallback(() => {
@@ -40,7 +44,7 @@ export const useCanvasInteraction = ({
   }, [onInteractionEnd]);
 
   const deleteSelectedObjects = useCallback(() => {
-    const canvas = fabricCanvasRef?.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     const activeObjects = canvas.getActiveObjects();
@@ -55,10 +59,10 @@ export const useCanvasInteraction = ({
     canvas.remove(...activeObjects);
     canvas.discardActiveObject();
     canvas.requestRenderAll();
-  }, [fabricCanvasRef, saveCurrentState]);
+  }, [canvasRef, saveCurrentState]);
 
   const enablePointSelection = useCallback(() => {
-    const canvas = fabricCanvasRef?.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     canvas.selection = false; // Disable group selection
@@ -67,10 +71,10 @@ export const useCanvasInteraction = ({
       obj.evented = true;
     });
     canvas.requestRenderAll();
-  }, [fabricCanvasRef]);
+  }, [canvasRef]);
 
   const setupSelectionMode = useCallback(() => {
-    const canvas = fabricCanvasRef?.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     if (tool === DrawingMode.SELECT) {
@@ -85,17 +89,17 @@ export const useCanvasInteraction = ({
       });
     }
     canvas.requestRenderAll();
-  }, [fabricCanvasRef, tool, enablePointSelection]);
+  }, [canvasRef, tool, enablePointSelection]);
 
   // Set up cleanup on unmount
   useEffect(() => {
     return () => {
-      const canvas = fabricCanvasRef?.current;
+      const canvas = canvasRef?.current;
       if (canvas) {
         canvas.off();
       }
     };
-  }, [fabricCanvasRef]);
+  }, [canvasRef]);
 
   return {
     isInteracting,

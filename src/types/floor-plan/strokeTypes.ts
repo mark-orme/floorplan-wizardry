@@ -27,5 +27,5 @@ export interface Stroke {
   thickness: number;
   
   /** Stroke width (same as thickness for compatibility) */
-  width?: number;
+  width: number;
 }

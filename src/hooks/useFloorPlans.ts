@@ -1,198 +1,121 @@
 
-/**
- * Main hook for floor plan operations
- * Combines specialized floor plan hooks for various functionalities
- * 
- * This hook serves as an orchestration layer for all floor plan-related
- * operations, including drawing, calculation, management, and storage.
- * 
- * @module useFloorPlans
- */
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { v4 as uuidv4 } from 'uuid';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { useFloorPlanDrawing, UseFloorPlanDrawingProps } from '@/hooks/floor-plan/useFloorPlanDrawing';
+import { DrawingMode } from '@/constants/drawingModes';
 
-// Import the unified FloorPlan type from the centralized location
-import { FloorPlan } from "@/types/floorPlanTypes";
-
-// Import specialized floor plan hooks for different concerns
-import { useFloorPlanDrawing } from "./floor-plan/useFloorPlanDrawing";
-import { useFloorPlanGIA } from "./useFloorPlanGIA";
-import { useFloorPlanManagement } from "./useFloorPlanManagement";
-import { useFloorPlanStorage } from "./useFloorPlanStorage";
-
-/**
- * Props for the useFloorPlans hook
- * @interface UseFloorPlansProps
- */
-interface UseFloorPlansProps {
-  /** Reference to the Fabric canvas instance */
+export interface UseFloorPlansProps {
+  initialFloorPlans?: FloorPlan[];
+  defaultFloorIndex?: number;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<any[]>;
-  /** Array of floor plans */
-  floorPlans: FloorPlan[];
-  /** Index of the currently selected floor */
-  currentFloor: number;
-  /** Whether data is currently loading */
-  isLoading: boolean;
-  /** State setter for Gross Internal Area */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** State setter for floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to clear all drawings from canvas */
-  clearDrawings: () => void;
-  /** Function to create a grid on the canvas */
-  createGrid: (canvas: FabricCanvas) => any[];
+  gridLayerRef?: React.MutableRefObject<FabricObject[]>;
+  tool?: DrawingMode;
 }
 
-/**
- * Hook for managing floor plans with multiple specialized sub-hooks
- * 
- * This hook follows the composition pattern, delegating specific
- * responsibilities to specialized hooks while coordinating their
- * interactions.
- * 
- * @param {UseFloorPlansProps} props - Hook properties
- * @returns {Object} Floor plan operations and state
- */
 export const useFloorPlans = ({
+  initialFloorPlans = [],
+  defaultFloorIndex = 0,
   fabricCanvasRef,
   gridLayerRef,
-  floorPlans,
-  currentFloor,
-  isLoading,
-  setGia,
-  setFloorPlans,
-  clearDrawings,
-  createGrid
+  tool = DrawingMode.SELECT
 }: UseFloorPlansProps) => {
-  // Reference to track floor change operation status
-  // Prevents multiple simultaneous floor change operations
-  const floorChangeInProgressRef = useRef(false);
+  // State for floor plans
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
+  const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
+  const [gia, setGia] = useState(0);
   
-  // Initialize GIA calculation hook for area measurements
-  const { recalculateGIA } = useFloorPlanGIA({
+  // Get current floor plan
+  const currentFloorPlan = floorPlans[currentFloorIndex] || null;
+  
+  // Initialize floor plan drawing hook
+  const drawingHook = useFloorPlanDrawing({
     fabricCanvasRef,
-    setGia
-  });
-  
-  // Get the current floor plan
-  const currentFloorPlan = floorPlans[currentFloor] || null;
-  
-  // Initialize floor plan drawing functionality with proper implementation
-  const { drawFloorPlan } = useFloorPlanDrawing({
-    fabricCanvasRef: fabricCanvasRef,
-    tool: 'SELECT' as any, // Default tool
+    tool,
     floorPlan: currentFloorPlan as FloorPlan,
-    setFloorPlan: (updatedPlan) => {
-      if (!currentFloorPlan) return;
-      
-      // Update the floor plan in the array
-      const newFloorPlans = [...floorPlans];
-      newFloorPlans[currentFloor] = typeof updatedPlan === 'function' 
-        ? updatedPlan(currentFloorPlan as FloorPlan) 
-        : updatedPlan;
-      
-      setFloorPlans(newFloorPlans);
-    },
-    onDrawComplete: recalculateGIA
-  });
-
-  // Initialize floor plan management for adding and selecting floors
-  const { handleAddFloor, handleSelectFloor } = useFloorPlanManagement({
-    floorPlans,
-    currentFloor,
-    setFloorPlans
+    setFloorPlan: (floorPlan) => {
+      if (typeof floorPlan === 'function') {
+        setFloorPlans(prev => {
+          const updated = [...prev];
+          updated[currentFloorIndex] = floorPlan(prev[currentFloorIndex]);
+          return updated;
+        });
+      } else {
+        setFloorPlans(prev => {
+          const updated = [...prev];
+          updated[currentFloorIndex] = floorPlan;
+          return updated;
+        });
+      }
+    }
   });
   
-  // Initialize floor plan storage for persistence
-  const { loadData, saveData, lastSaved, isLoggedIn, isSaving } = useFloorPlanStorage();
-
-  /**
-   * Draws the floor plan on the canvas with proper error handling
-   * 
-   * @param {number} floorIndex - Index of the floor to draw
-   * @param {FloorPlan[]} plans - Array of floor plans
-   */
-  const drawFloorPlanWithCanvas = useCallback((floorIndex: number, plans: FloorPlan[]) => {
-    // Safety checks before attempting to draw
-    if (!fabricCanvasRef.current) return;
-    if (plans.length === 0 || floorIndex >= plans.length) return;
-    
-    const floorPlan = plans[floorIndex];
-    if (drawFloorPlan) {
-      drawFloorPlan(fabricCanvasRef.current, floorPlan);
+  // Memoize the drawFloorPlan function
+  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
+    if (!drawingHook.drawFloorPlan) {
+      console.error('drawFloorPlan function not available');
+      return;
     }
     
-    // Schedule GIA recalculation after drawing completes
-    // Using setTimeout to ensure drawing has finished rendering
-    setTimeout(recalculateGIA, 200);
-  }, [fabricCanvasRef, drawFloorPlan, recalculateGIA]);
-
-  // Update canvas when floor changes with debouncing
-  useEffect(() => {
-    // Skip rendering under these conditions
-    if (!fabricCanvasRef.current || isLoading || floorPlans.length === 0) return;
-    if (floorChangeInProgressRef.current) return;
-    
-    console.log("Floor changed, updating canvas");
-    
-    // Handler function to redraw the floor plan
-    const floorChangeHandler = () => {
-      // Clear the canvas first
-      clearDrawings();
-      
-      // Draw the selected floor plan
-      drawFloorPlanWithCanvas(currentFloor, floorPlans);
-      
-      // OPTIMIZATION: Delay GIA calculation for better performance
-      setTimeout(recalculateGIA, 200);
+    drawingHook.drawFloorPlan(canvas, floorPlan);
+  }, [drawingHook.drawFloorPlan]);
+  
+  // Add a new floor plan
+  const addFloorPlan = useCallback(() => {
+    const newFloorPlan: FloorPlan = {
+      id: uuidv4(),
+      name: `Floor ${floorPlans.length + 1}`,
+      label: `Floor ${floorPlans.length + 1}`,
+      index: floorPlans.length,
+      level: floorPlans.length,
+      walls: [],
+      rooms: [],
+      strokes: [],
+      gia: 0,
+      canvasData: null,
+      canvasJson: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        paperSize: 'A4',
+        level: floorPlans.length
+      },
+      data: {},
+      userId: 'default-user'
     };
     
-    // Execute with a short delay to avoid rapid consecutive calls
-    // This helps prevent performance issues during rapid floor changes
-    setTimeout(floorChangeHandler, 50);
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+    setCurrentFloorIndex(floorPlans.length);
+  }, [floorPlans.length]);
+  
+  // Remove a floor plan
+  const removeFloorPlan = useCallback((index: number) => {
+    if (floorPlans.length <= 1) {
+      console.warn('Cannot remove the last floor plan');
+      return;
+    }
     
-  }, [
-    currentFloor, 
-    floorPlans.length, // Only depend on the length of floorPlans to reduce rerenders
-    isLoading,
-    fabricCanvasRef,
-    clearDrawings,
-    drawFloorPlanWithCanvas,
-    recalculateGIA
-  ]);
-
-  // Return public API of the hook
+    setFloorPlans(prev => prev.filter((_, i) => i !== index));
+    
+    if (currentFloorIndex >= index) {
+      setCurrentFloorIndex(prev => Math.max(0, prev - 1));
+    }
+  }, [floorPlans.length, currentFloorIndex]);
+  
   return {
-    // Draw the current floor plan or a specific floor
-    drawFloorPlan: useCallback((floorIndex = currentFloor) => {
-      if (!fabricCanvasRef.current || !floorPlans[floorIndex]) return;
-      
-      // Clear existing drawings
-      clearDrawings();
-      
-      // Draw the floor plan
-      drawFloorPlan(fabricCanvasRef.current, floorPlans[floorIndex]);
-      
-      // Recalculate GIA after drawing
-      setTimeout(recalculateGIA, 200);
-    }, [currentFloor, floorPlans, clearDrawings, drawFloorPlan, recalculateGIA]),
-    
-    // Area calculation
-    recalculateGIA,
-    
-    // Floor management
-    handleAddFloor,
-    handleSelectFloor,
-    
-    // Storage operations
-    loadData,
-    saveData,
-    
-    // Status indicators
-    lastSaved,
-    isLoggedIn,
-    isSaving
+    floorPlans,
+    setFloorPlans,
+    currentFloorIndex,
+    setCurrentFloorIndex,
+    currentFloorPlan,
+    addFloorPlan,
+    removeFloorPlan,
+    drawFloorPlan,
+    gia,
+    setGia,
+    ...drawingHook
   };
 };

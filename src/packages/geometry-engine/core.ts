@@ -1,86 +1,71 @@
 
-import { Point, Line, LineSegment } from './types';
+import { Point, LineSegment } from './types';
 
 /**
- * Calculate distance between two points
+ * Calculate the distance between two points
  * @param p1 First point
  * @param p2 Second point
- * @returns Distance between points
+ * @returns Distance between the points
  */
 export function calculateDistance(p1: Point, p2: Point): number {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
+  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
 
 /**
- * Calculate perpendicular distance from point to line
- * @param point Point to measure from
- * @param lineP1 First point on line
- * @param lineP2 Second point on line
- * @returns Distance from point to line
+ * Calculate the angle between a line and the x-axis
+ * @param line Line segment
+ * @returns Angle in radians
  */
-export function perpendicularDistance(point: Point, lineP1: Point, lineP2: Point): number {
-  const lineLength = calculateDistance(lineP1, lineP2);
+export function calculateAngle(line: LineSegment): number {
+  return Math.atan2(line.p2.y - line.p1.y, line.p2.x - line.p1.x);
+}
+
+/**
+ * Calculate the perpendicular distance from a point to a line segment
+ * @param point Point to calculate distance from
+ * @param lineStart Start point of the line
+ * @param lineEnd End point of the line
+ * @returns Perpendicular distance from the point to the line
+ */
+export function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const lineLength = calculateDistance(lineStart, lineEnd);
   
-  if (lineLength === 0) return calculateDistance(point, lineP1);
+  if (lineLength === 0) {
+    return calculateDistance(point, lineStart);
+  }
   
-  const t = ((point.x - lineP1.x) * (lineP2.x - lineP1.x) + 
-             (point.y - lineP1.y) * (lineP2.y - lineP1.y)) / 
+  const t = ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + 
+            (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) / 
             (lineLength * lineLength);
   
-  const projectionX = lineP1.x + t * (lineP2.x - lineP1.x);
-  const projectionY = lineP1.y + t * (lineP2.y - lineP1.y);
+  const clampedT = Math.max(0, Math.min(1, t));
+  
+  const projectionX = lineStart.x + clampedT * (lineEnd.x - lineStart.x);
+  const projectionY = lineStart.y + clampedT * (lineEnd.y - lineStart.y);
   
   return calculateDistance(point, { x: projectionX, y: projectionY });
 }
 
 /**
- * Calculate area of a polygon
- * @param points Polygon vertices
- * @returns Area of polygon
+ * Check if two line segments intersect
+ * @param line1 First line segment
+ * @param line2 Second line segment
+ * @returns Whether the line segments intersect
  */
-export function calculateArea(points: Point[]): number {
-  let area = 0;
-  const n = points.length;
+export function linesIntersect(line1: LineSegment, line2: LineSegment): boolean {
+  const a = line1.p1;
+  const b = line1.p2;
+  const c = line2.p1;
+  const d = line2.p2;
   
-  if (n < 3) return 0;
+  const denominator = ((b.y - a.y) * (d.x - c.x)) - ((b.x - a.x) * (d.y - c.y));
   
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
+  if (denominator === 0) {
+    return false; // Lines are parallel
   }
   
-  return Math.abs(area) / 2;
-}
-
-/**
- * Calculate intersection point of two lines
- * @param line1 First line
- * @param line2 Second line
- * @returns Intersection point or null if parallel
- */
-export function calculateIntersection(line1: Line, line2: Line): Point | null {
-  const det = line1.a * line2.b - line2.a * line1.b;
+  const ua = (((b.x - a.x) * (c.y - a.y)) - ((b.y - a.y) * (c.x - a.x))) / denominator;
+  const ub = (((d.x - c.x) * (c.y - a.y)) - ((d.y - c.y) * (c.x - a.x))) / denominator;
   
-  if (Math.abs(det) < 1e-10) return null; // Lines are parallel
-  
-  const x = (line2.b * line1.c - line1.b * line2.c) / det;
-  const y = (line1.a * line2.c - line2.a * line1.c) / det;
-  
-  return { x, y };
-}
-
-/**
- * Convert two points to Line (ax + by + c = 0)
- * @param p1 First point
- * @param p2 Second point
- * @returns Line equation coefficients
- */
-export function pointsToLine(p1: Point, p2: Point): Line {
-  const a = p2.y - p1.y;
-  const b = p1.x - p2.x;
-  const c = p2.x * p1.y - p1.x * p2.y;
-  return { a, b, c };
+  return (ua >= 0 && ua <= 1) && (ub >= 0 && ub <= 1);
 }

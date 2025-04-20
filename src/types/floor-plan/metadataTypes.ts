@@ -37,3 +37,6 @@ export interface FloorPlanMetadata {
   /** Date the floor plan was last modified (alias for updatedAt) */
   lastModified?: string;
 }
+
+// Export the interface to avoid the "declares locally but not exported" error
+export { FloorPlanMetadata };
