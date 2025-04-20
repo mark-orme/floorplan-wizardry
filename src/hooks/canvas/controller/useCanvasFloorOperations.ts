@@ -1,100 +1,109 @@
 
-/**
- * Hook for managing floor operations
- */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { toast } from "sonner";
-import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
-import { serializeCanvasState, deserializeCanvasState } from "@/utils/canvas/canvasSerializer";
-import * as Sentry from '@sentry/react';
+import { useState, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { FloorPlan, PaperSize } from '@/types/floor-plan/unifiedTypes';
 
+/**
+ * Props for the useCanvasFloorOperations hook
+ */
 interface UseCanvasFloorOperationsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  floorPlans: FloorPlan[];
-  currentFloor: number;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  canvasRef: React.RefObject<FabricCanvas | null>;
 }
 
-export const useCanvasFloorOperations = ({
-  fabricCanvasRef,
-  floorPlans,
-  currentFloor,
-  historyRef,
-  setFloorPlans
-}: UseCanvasFloorOperationsProps) => {
-  const handleFloorSelect = useCallback((index: number) => {
-    if (index >= 0 && index < floorPlans.length && index !== currentFloor) {
-      Sentry.addBreadcrumb({
-        category: 'floorplan',
-        message: `Changed to floor ${index + 1} (${floorPlans[index]?.name})`,
-        level: 'info',
-        data: {
-          previousFloor: currentFloor,
-          newFloor: index,
-          floorName: floorPlans[index]?.name
-        }
-      });
-
-      if (fabricCanvasRef.current && floorPlans[currentFloor]) {
-        const updatedFloorPlans = [...floorPlans];
-        
-        // Save current canvas state to floor plan
-        const canvasState = serializeCanvasState(fabricCanvasRef.current);
-        updatedFloorPlans[currentFloor] = {
-          ...updatedFloorPlans[currentFloor],
-          canvasState
-        };
-        
-        setFloorPlans(updatedFloorPlans);
-        
-        // Clear history when switching floors
-        historyRef.current = { past: [], future: [] };
-        
-        // Load the selected floor's canvas state
-        if (floorPlans[index]?.canvasState) {
-          const loadSuccess = deserializeCanvasState(fabricCanvasRef.current, floorPlans[index].canvasState);
-          if (loadSuccess) {
-            toast.success(`Loaded floor ${index + 1}`);
-          } else {
-            toast.error(`Failed to load floor ${index + 1}`);
-          }
-        } else {
-          fabricCanvasRef.current.clear();
-          fabricCanvasRef.current.renderAll();
-        }
-      }
+/**
+ * Hook for floor plan operations in the canvas
+ */
+export const useCanvasFloorOperations = ({ canvasRef }: UseCanvasFloorOperationsProps) => {
+  const [currentFloorPlan, setCurrentFloorPlan] = useState<FloorPlan | null>(null);
+  
+  /**
+   * Load a floor plan into the canvas
+   */
+  const loadFloorPlan = useCallback(async (floorPlan: FloorPlan) => {
+    if (!canvasRef.current) {
+      console.error('Canvas is not initialized');
+      return;
     }
-  }, [fabricCanvasRef, floorPlans, currentFloor, historyRef, setFloorPlans]);
-
-  const handleAddFloor = useCallback(() => {
+    
+    try {
+      // Load the floor plan data into the canvas
+      if (floorPlan.canvasJson) {
+        await canvasRef.current.loadFromJSON(JSON.parse(floorPlan.canvasJson), () => {
+          console.log('Floor plan loaded successfully');
+        });
+      }
+      
+      setCurrentFloorPlan(floorPlan);
+    } catch (error) {
+      console.error('Error loading floor plan:', error);
+    }
+  }, [canvasRef]);
+  
+  /**
+   * Create a new floor plan with default settings
+   */
+  const createNewFloorPlan = useCallback(() => {
     const now = new Date().toISOString();
+    
     const newFloorPlan: FloorPlan = {
-      id: `floor-${floorPlans.length + 1}`,
-      name: `Floor ${floorPlans.length + 1}`,
-      data: {},
-      userId: '',
+      id: `fp-${Date.now()}`,
+      name: 'New Floor Plan',
+      label: 'New Floor Plan',
+      walls: [],
+      rooms: [],
+      strokes: [],
+      canvasData: null,
+      canvasJson: null,
       createdAt: now,
       updatedAt: now,
-      label: `Floor ${floorPlans.length + 1}`,
-      order: floorPlans.length,
-      level: floorPlans.length,
       gia: 0,
-      canvasState: null,
+      level: 0,
+      index: 0,
       metadata: {
         createdAt: now,
         updatedAt: now,
-        paperSize: PaperSize.A4
-      }
+        paperSize: PaperSize.A4,
+        level: 0, // Fix: Added required level property
+        version: '1.0',
+        author: '',
+        dateCreated: now,
+        lastModified: now,
+        notes: ''
+      },
+      // Fix: Added required properties
+      data: {},
+      userId: 'current-user'
     };
     
-    setFloorPlans(prev => [...prev, newFloorPlan]);
-    toast.success(`Added new floor: ${newFloorPlan.name}`);
-  }, [floorPlans, setFloorPlans]);
-
+    setCurrentFloorPlan(newFloorPlan);
+    return newFloorPlan;
+  }, []);
+  
+  /**
+   * Save the current canvas state to the floor plan
+   */
+  const saveCanvasToFloorPlan = useCallback(() => {
+    if (!canvasRef.current || !currentFloorPlan) {
+      console.error('Canvas or floor plan is not initialized');
+      return null;
+    }
+    
+    const canvasJson = JSON.stringify(canvasRef.current.toJSON());
+    
+    const updatedFloorPlan: FloorPlan = {
+      ...currentFloorPlan,
+      canvasJson,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setCurrentFloorPlan(updatedFloorPlan);
+    return updatedFloorPlan;
+  }, [canvasRef, currentFloorPlan]);
+  
   return {
-    handleFloorSelect,
-    handleAddFloor
+    currentFloorPlan,
+    loadFloorPlan,
+    createNewFloorPlan,
+    saveCanvasToFloorPlan
   };
 };

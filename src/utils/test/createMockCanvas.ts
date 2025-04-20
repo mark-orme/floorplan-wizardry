@@ -15,6 +15,8 @@ import { vi } from 'vitest';
  * @returns A properly typed mock canvas object
  */
 export const createTypedMockCanvas = () => {
+  console.log('Creating typed mock canvas with proper interface');
+  
   const mockCanvas = {
     on: vi.fn(),
     off: vi.fn(),
@@ -47,7 +49,13 @@ export const createTypedMockCanvas = () => {
     defaultCursor: 'default',
     getHandlers: vi.fn((eventName) => [() => {}]),
     triggerEvent: vi.fn((eventName, eventData) => {}),
-    // CRITICAL FIX: Ensure withImplementation returns Promise<void>
+    // Enhanced Canvas properties for test compatibility
+    enablePointerEvents: true,
+    _willAddMouseDown: false,
+    _dropTarget: null,
+    _isClick: false,
+    _objects: [],
+    // Fixed withImplementation implementation
     withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
       if (callback) {
         try {

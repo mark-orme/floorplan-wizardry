@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DebugInfoState } from "@/types/debugTypes";
-import { StrokeTypeLiteral } from "@/types/floorPlanTypes";
+import { StrokeTypeLiteral, asStrokeType } from "@/types/floor-plan/unifiedTypes";
 
 /**
  * Timeout duration for loading operations in milliseconds
@@ -105,12 +105,12 @@ export const useCanvasControllerLoader = ({
   
   // Map of allowed stroke types matching StrokeTypeLiteral
   const strokeTypeMap: Record<string, StrokeTypeLiteral> = {
-    'line': 'line',
-    'wall': 'wall',
-    'door': 'door',
-    'window': 'window',
-    'furniture': 'furniture',
-    'annotation': 'annotation'
+    'line': asStrokeType('line'),
+    'wall': asStrokeType('wall'),
+    'door': asStrokeType('door'),
+    'window': asStrokeType('window'),
+    'furniture': asStrokeType('furniture'),
+    'annotation': asStrokeType('annotation')
   };
   
   return {

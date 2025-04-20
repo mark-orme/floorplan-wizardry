@@ -1,12 +1,11 @@
 
 /**
- * Debug info state types
- * Provides types for debug information and state
+ * Debug information state
  * @module types/core/DebugInfo
  */
 
 /**
- * Debug info state interface
+ * Debug information state interface
  */
 export interface DebugInfoState {
   /** Whether an error has occurred */
@@ -15,16 +14,16 @@ export interface DebugInfoState {
   /** Error message if an error has occurred */
   errorMessage: string;
   
-  /** Time taken for last canvas initialization (ms) */
+  /** Timestamp of last initialization */
   lastInitTime: number;
   
-  /** Time taken for last grid creation (ms) */
+  /** Timestamp of last grid creation */
   lastGridCreationTime: number;
   
-  /** Current rendering FPS */
+  /** Current frames per second */
   currentFps: number;
   
-  /** Number of objects in canvas */
+  /** Number of objects in the canvas */
   objectCount: number;
   
   /** Canvas dimensions */
@@ -33,94 +32,29 @@ export interface DebugInfoState {
     height: number;
   };
   
-  /** Additional debug flags */
+  /** Feature flags */
   flags: {
-    /** Whether grid is enabled */
     gridEnabled: boolean;
-    /** Whether snap to grid is enabled */
     snapToGridEnabled: boolean;
-    /** Whether debug logging is enabled */
     debugLoggingEnabled: boolean;
   };
   
-  /** Whether canvas is initialized */
+  // Additional properties for DrawingDebugInfoState compatibility
   canvasInitialized?: boolean;
-  
-  /** Whether canvas dimensions are set */
   dimensionsSet?: boolean;
-  
-  /** Whether grid is created */
   gridCreated?: boolean;
-  
-  /** Whether event handlers are set */
-  eventHandlersSet?: boolean;
-  
-  /** Whether canvas events are registered */
   canvasEventsRegistered?: boolean;
-  
-  /** Whether canvas is ready */
   canvasReady?: boolean;
-  
-  /** Whether brush is initialized */
-  brushInitialized?: boolean;
-  
-  /** Grid object count */
   gridObjectCount?: number;
-  
-  /** Canvas width */
-  canvasWidth?: number;
-  
-  /** Canvas height */
-  canvasHeight?: number;
-  
-  /** Device pixel ratio */
-  devicePixelRatio?: number;
-  
-  /** Last error message */
-  lastError?: string;
-  
-  /** Last error timestamp */
-  lastErrorTime?: number;
-  
-  /** Whether to show debug info */
-  showDebugInfo?: boolean;
-  
-  /** Whether tools are initialized */
-  toolsInitialized?: boolean;
-  
-  /** Whether the grid has been rendered */
-  gridRendered?: boolean;
-  
-  /** Canvas created flag (for CanvasControllerEnhanced) */
-  canvasCreated?: boolean;
-  
-  /** Visible objects count */
   visibleObjectCount?: number;
-  
-  /** Performance statistics */
-  performanceStats?: {
-    /** Frames per second */
-    fps?: number;
-    /** Number of dropped frames */
-    droppedFrames?: number;
-    /** Average frame time in milliseconds */
-    frameTime?: number;
-    /** Maximum frame time in milliseconds */
-    maxFrameTime?: number;
-    /** Number of long frames */
-    longFrames?: number;
-  };
-  
-  /** Legacy performance object */
-  performance?: {
-    /** Frames per second */
-    fps?: number;
-  };
-  
-  /** Additional properties for enhanced debugging */
+  zoomLevel?: number;
+  gridVisible?: boolean;
+  objectsSelectedCount?: number;
+  eventHandlersSet?: boolean;
+  gridRendered?: boolean;
+  toolsInitialized?: boolean;
+  fps?: number;
   lastRefresh?: number;
-  fabricCanvasRef?: any;
-  gridLayerRef?: any;
 }
 
 /**
@@ -145,33 +79,16 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   canvasInitialized: false,
   dimensionsSet: false,
   gridCreated: false,
-  eventHandlersSet: false,
   canvasEventsRegistered: false,
   canvasReady: false,
-  brushInitialized: false,
   gridObjectCount: 0,
-  toolsInitialized: false,
+  visibleObjectCount: 0,
+  zoomLevel: 1,
+  gridVisible: true,
+  objectsSelectedCount: 0,
+  eventHandlersSet: false,
   gridRendered: false,
-  canvasCreated: false,
-  showDebugInfo: process.env.NODE_ENV === 'development',
-  performanceStats: {
-    fps: 0,
-    droppedFrames: 0,
-    frameTime: 0,
-    maxFrameTime: 0,
-    longFrames: 0
-  }
+  toolsInitialized: false,
+  fps: 0,
+  lastRefresh: Date.now()
 };
-
-/**
- * Debug logger function that only logs in development
- */
-export function debugLog(message: string, data?: any): void {
-  if (process.env.NODE_ENV !== 'production') {
-    if (data) {
-      console.log(`[DEBUG] ${message}`, data);
-    } else {
-      console.log(`[DEBUG] ${message}`);
-    }
-  }
-}

@@ -20,8 +20,16 @@ export interface ICanvasMock {
   getActiveObjects?: jest.Mock;
   discardActiveObject: jest.Mock;
   contains?: jest.Mock;
-  // Properly typed withImplementation that returns Promise<void>
+  // Fix for withImplementation type
   withImplementation: jest.Mock<Promise<void>, [callback?: Function]>;
+  // Additional properties to match expected Canvas structure
+  enablePointerEvents?: boolean;
+  _willAddMouseDown?: boolean;
+  _dropTarget?: any;
+  _isClick?: boolean;
+  _objects?: any[];
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
 }
 
 /**
@@ -56,7 +64,15 @@ export function createMinimalCanvasMock(): ICanvasMock {
         }
       }
       return Promise.resolve();
-    })
+    }),
+    // Additional Canvas properties
+    enablePointerEvents: true,
+    _willAddMouseDown: false,
+    _dropTarget: null,
+    _isClick: false,
+    _objects: [],
+    getHandlers: (eventName: string) => [() => {}],
+    triggerEvent: (eventName: string, eventData: any) => {}
   };
 }
 
@@ -64,7 +80,13 @@ export function createMinimalCanvasMock(): ICanvasMock {
  * Convert any canvas-like object to ICanvasMock type
  * Useful when you have an object that's structurally compatible but types don't match
  */
-export function asMockCanvas(canvas: any): ICanvasMock {
+export function asMockCanvas(canvas: any): ICanvasMock & {
+  getHandlers: (eventName: string) => Function[];
+  triggerEvent: (eventName: string, eventData: any) => void;
+} {
   console.log('Converting object to ICanvasMock type');
-  return canvas as ICanvasMock;
+  return canvas as ICanvasMock & {
+    getHandlers: (eventName: string) => Function[];
+    triggerEvent: (eventName: string, eventData: any) => void;
+  };
 }

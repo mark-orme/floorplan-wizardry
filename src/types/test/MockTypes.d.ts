@@ -10,7 +10,7 @@ import { Mock } from 'vitest';
 /**
  * Type for mock functions to ensure type safety
  */
-export type MockFunction<T extends (...args: any[]) => any> = Mock<T>;
+export type MockFunction<T extends (...args: any[]) => any> = Mock<Parameters<T>, ReturnType<T>>;
 
 /**
  * Strongly typed mock canvas for testing with comprehensive properties
@@ -18,10 +18,11 @@ export type MockFunction<T extends (...args: any[]) => any> = Mock<T>;
 export interface IMockCanvas extends Partial<Canvas> {
   on: MockFunction<(eventName: string, handler: Function) => any>;
   off: MockFunction<(eventName: string, handler?: Function) => any>;
-  add: MockFunction<(objects: any[]) => any>;
-  remove: MockFunction<(objects: any[]) => any>;
-  getPointer: MockFunction<(event: any) => { x: number; y: number }>;
+  add: MockFunction<(objects: any) => any>;
+  remove: MockFunction<(objects: any) => any>;
+  getPointer?: MockFunction<(event: any) => { x: number; y: number }>;
   requestRenderAll: MockFunction<() => void>;
+  getObjects: MockFunction<() => any[]>;
   
   // Add properties required by Fabric.js Canvas
   enablePointerEvents?: boolean;
@@ -29,16 +30,11 @@ export interface IMockCanvas extends Partial<Canvas> {
   _dropTarget?: any;
   _isClick?: boolean;
   _objects?: any[];
-  _activeObject?: any;
-  _groupSelector?: any;
-  viewportTransform?: number[];
-  defaultCursor?: string;
-  hoverCursor?: string;
-  moveCursor?: string;
+  withImplementation: MockFunction<(callback?: Function) => Promise<void>>;
   
   // Add methods for testing event handling
-  getHandlers: (eventName: string) => Function[];
-  triggerEvent: (eventName: string, eventData: any) => void;
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
 }
 
 /**
@@ -54,8 +50,9 @@ export interface IMockObject extends Partial<FabricObject> {
  * Helper function signature to properly type a mock canvas
  */
 export function asMockCanvas(mockCanvas: any): Canvas & {
-  getHandlers: (eventName: string) => Function[];
-  triggerEvent: (eventName: string, eventData: any) => void;
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
+  withImplementation: MockFunction<(callback?: Function) => Promise<void>>;
 };
 
 /**
