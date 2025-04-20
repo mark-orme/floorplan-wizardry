@@ -1,3 +1,4 @@
+
 import { Point } from '@/types/floor-plan/typesBarrel';
 
 interface Line {
@@ -49,7 +50,7 @@ const doIntersect = (p1: Point, q1: Point, p2: Point, q2: Point): boolean => {
 }
 
 // Calculate intersection point
-const calculateIntersectionPoint = (line1: Line, line2: Line): Point => {
+const calculateIntersectionPoint = (line1: Line, line2: Line): Point | null => {
   const x1 = line1.start.x;
   const y1 = line1.start.y;
   const x2 = line1.end.x;
@@ -77,11 +78,12 @@ const calculateIntersectionPoint = (line1: Line, line2: Line): Point => {
   }
 };
 
-export const calculateIntersection = async (line1: Line, line2: Line): Promise<Point> => {
-  const result = await calculateIntersectionPoint(line1, line2);
-  return { x: result.x, y: result.y };
+// Fix the return type to not be a Promise
+export const calculateIntersection = (line1: Line, line2: Line): Point | null => {
+  return calculateIntersectionPoint(line1, line2);
 };
 
-export const areLinesIntersecting = async (line1: Line, line2: Line): Promise<boolean> => {
+// Fix the return type to be a boolean, not a Promise
+export const areLinesIntersecting = (line1: Line, line2: Line): boolean => {
   return doIntersect(line1.start, line1.end, line2.start, line2.end);
 };

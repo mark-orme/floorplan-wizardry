@@ -1,3 +1,4 @@
+
 /**
  * Floor Plan Types Barrel
  * Centralizes all floor plan type definitions
@@ -132,7 +133,9 @@ export function createEmptyRoom(id: string = crypto.randomUUID()): Room {
     type: 'other',
     points: [],
     walls: [],
-    color: '#ffffff' // Make sure to set a default color since it's required
+    color: '#ffffff',
+    area: 0,
+    level: 0
   };
 }
 

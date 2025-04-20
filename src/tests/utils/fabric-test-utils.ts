@@ -14,24 +14,24 @@ export const createMockCanvas = (): Canvas => {
   const eventHandlers = new Map<string, Array<Function>>();
   
   const canvas = {
-    add: vi.fn<any[], Canvas>(),
-    remove: vi.fn<[FabricObject], Canvas>(),
-    contains: vi.fn<[FabricObject], boolean>().mockReturnValue(true),
-    getObjects: vi.fn<[], FabricObject[]>().mockReturnValue([]),
-    setActiveObject: vi.fn<[FabricObject], Canvas>(),
-    getActiveObject: vi.fn<[], FabricObject | null>(),
-    renderAll: vi.fn<[], void>(),
-    requestRenderAll: vi.fn<[], void>(),
-    getZoom: vi.fn<[], number>().mockReturnValue(1),
-    setZoom: vi.fn<[number], void>(),
-    on: vi.fn<[string, Function], Canvas>((eventName: string, handler: Function) => {
+    add: vi.fn(),
+    remove: vi.fn(),
+    contains: vi.fn().mockReturnValue(true),
+    getObjects: vi.fn().mockReturnValue([]),
+    setActiveObject: vi.fn(),
+    getActiveObject: vi.fn(),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    setZoom: vi.fn(),
+    on: vi.fn((eventName: string, handler: Function) => {
       if (!eventHandlers.has(eventName)) {
         eventHandlers.set(eventName, []);
       }
       eventHandlers.get(eventName)!.push(handler);
       return canvas;
     }),
-    off: vi.fn<[string, Function?], Canvas>((eventName: string, handler?: Function) => {
+    off: vi.fn((eventName: string, handler?: Function) => {
       if (eventHandlers.has(eventName)) {
         if (handler) {
           const handlers = eventHandlers.get(eventName)!;
@@ -45,23 +45,23 @@ export const createMockCanvas = (): Canvas => {
       }
       return canvas;
     }),
-    fire: vi.fn<[string, any?], Canvas>((eventName: string, options?: any) => {
+    fire: vi.fn((eventName: string, options?: any) => {
       if (eventHandlers.has(eventName)) {
         eventHandlers.get(eventName)!.forEach(handler => handler(options));
       }
       return canvas;
     }),
-    getWidth: vi.fn<[], number>().mockReturnValue(800),
-    getHeight: vi.fn<[], number>().mockReturnValue(600),
-    dispose: vi.fn<[], void>(),
-    clear: vi.fn<[], void>(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    dispose: vi.fn(),
+    clear: vi.fn(),
     isDrawingMode: false,
     freeDrawingBrush: {
       color: '#000000',
       width: 2
     },
     // Fix the withImplementation method to correctly return Promise<void>
-    withImplementation: vi.fn<[Function], Promise<void>>().mockImplementation((callback) => Promise.resolve())
+    withImplementation: vi.fn().mockImplementation((callback) => Promise.resolve())
   } as unknown as Canvas;
   
   return canvas;

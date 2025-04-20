@@ -1,3 +1,4 @@
+
 import { vi } from 'vitest';
 
 /**
@@ -16,7 +17,8 @@ export function setupFabricMock() {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
+    // Fix the withImplementation method to correctly return Promise<void>
+    withImplementation: vi.fn().mockImplementation((callback) => Promise.resolve())
   }));
 
   return {
@@ -94,4 +96,3 @@ export function createCanvasTestUtils() {
     }
   };
 }
-
