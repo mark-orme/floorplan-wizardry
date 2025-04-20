@@ -1,16 +1,15 @@
 
 /**
- * Canvas Mock Utilities
- * Provides mock implementations for Canvas methods
+ * Canvas mock utilities for testing
+ * Provides functions to create properly typed canvas mocks
  * @module utils/canvasMockUtils
  */
+import { Canvas as FabricCanvas } from 'fabric';
 import { vi } from 'vitest';
 
 /**
- * Creates a proper withImplementation mock that returns Promise<void>
- * This ensures compatibility with the Canvas.withImplementation method
- * 
- * @returns Mock function for withImplementation
+ * Creates a withImplementation mock that returns Promise<void>
+ * @returns Mock function with correct return type
  */
 export function createWithImplementationMock() {
   // Create a mock that returns a promise
@@ -39,45 +38,58 @@ export function createWithImplementationMock() {
 }
 
 /**
- * Create mock grid objects for testing
+ * Creates a strongly-typed mock Fabric.js canvas for testing
+ * Ensures all required properties and methods are properly mocked
  * 
- * @param count Number of grid objects to create
- * @returns Array of mock grid objects
+ * @returns A properly typed mock canvas object
  */
-export function createMockGridObjects(count = 10) {
-  const gridObjects = [];
+export const createTypedMockCanvas = () => {
+  console.log('Creating typed mock canvas with proper interface');
   
-  for (let i = 0; i < count; i++) {
-    gridObjects.push({
-      id: `grid-${i}`,
-      type: i % 2 === 0 ? 'line' : 'text',
-      set: vi.fn(),
-      setCoords: vi.fn(),
-      visible: true
-    });
-  }
-  
-  return gridObjects;
-}
-
-/**
- * Create mock canvas for tests that returns Promise<void> from withImplementation
- */
-export function createMockCanvas() {
-  return {
+  const mockCanvas = {
+    on: vi.fn(),
+    off: vi.fn(),
     add: vi.fn(),
     remove: vi.fn(),
     getObjects: vi.fn().mockReturnValue([]),
+    clear: vi.fn(),
     renderAll: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    getElement: vi.fn(),
+    getContext: vi.fn(),
+    dispose: vi.fn(),
     requestRenderAll: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
-    getActiveObjects: vi.fn().mockReturnValue([]),
+    loadFromJSON: vi.fn((json, callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    }),
+    toJSON: vi.fn().mockReturnValue({}),
+    getCenter: vi.fn().mockReturnValue({ top: 300, left: 400 }),
+    setViewportTransform: vi.fn(),
+    getActiveObject: vi.fn(),
+    sendObjectToBack: vi.fn(),
+    bringObjectToFront: vi.fn(),
     discardActiveObject: vi.fn(),
-    contains: vi.fn().mockReturnValue(false),
-    withImplementation: createWithImplementationMock(),
-    enablePointerEvents: true,
+    isDrawingMode: false,
+    selection: true,
+    defaultCursor: 'default',
     getHandlers: vi.fn((eventName) => [() => {}]),
-    triggerEvent: vi.fn((eventName, eventData) => {})
+    triggerEvent: vi.fn((eventName, eventData) => {}),
+    // Enhanced Canvas properties for test compatibility
+    enablePointerEvents: true,
+    _willAddMouseDown: false,
+    _dropTarget: null,
+    _isClick: false,
+    _objects: [],
+    // Use the fixed withImplementation implementation that returns Promise<void>
+    withImplementation: createWithImplementationMock()
   };
-}
+  
+  return mockCanvas as unknown as FabricCanvas & {
+    getHandlers: (eventName: string) => Function[];
+    triggerEvent: (eventName: string, eventData: any) => void;
+  };
+};

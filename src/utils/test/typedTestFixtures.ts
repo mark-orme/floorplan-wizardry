@@ -20,12 +20,13 @@ import {
   createTestPoint as createTypedTestPoint
 } from '@/types/floor-plan/unifiedTypes';
 
-// Re-export the functions directly from unifiedTypes.ts
+// Export the functions directly from unifiedTypes.ts
 export const createTestStroke = createTypedTestStroke;
 export const createTestWall = createTypedTestWall;
 export const createTestRoom = createTypedTestRoom;
 export const createTestPoint = createTypedTestPoint;
 export const createTestFloorPlan = createTypedTestFloorPlan;
+export const createTypedTestFloorPlan = createTypedTestFloorPlan; // Export alias to fix import issues
 
 // Alias to createMockFloorPlan for backward compatibility with tests
 export const createMockFloorPlan = createTypedTestFloorPlan;

@@ -20,7 +20,7 @@ export interface DebugInfoState {
   /** Timestamp of last grid creation */
   lastGridCreationTime: number;
   
-  /** Current frames per second */
+  /** Current frames per second - needed by debugInfoAdapter */
   currentFps: number;
   
   /** Number of objects in the canvas */
@@ -90,6 +90,9 @@ export interface DebugInfoState {
     memory: number;
     renderTime: number;
   };
+  
+  // Canvas state properties needed by CanvasControllerEnhanced
+  canvasCreated?: boolean;
 }
 
 /**
@@ -149,5 +152,6 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
     fps: 0,
     memory: 0,
     renderTime: 0
-  }
+  },
+  canvasCreated: false
 };

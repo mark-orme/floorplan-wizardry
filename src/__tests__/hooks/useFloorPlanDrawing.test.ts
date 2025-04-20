@@ -6,9 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
-import { Canvas } from 'fabric';
-import { asMockCanvas } from '@/types/testing/ICanvasMock';
-import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 import {
   FloorPlan,
   Stroke,
@@ -19,44 +16,18 @@ import {
   createTestRoom,
   createTestWall
 } from '@/types/floor-plan/unifiedTypes';
-
-// Mock the canvas
-vi.mock('fabric', () => {
-  return {
-    Canvas: vi.fn().mockImplementation(() => ({
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      // Fix: Ensure withImplementation returns Promise<void>
-      withImplementation: createWithImplementationMock()
-    }))
-  };
-});
+import { createTypedMockCanvas } from '@/utils/canvasMockUtils';
 
 describe('useFloorPlanDrawing', () => {
   let mockCanvas: any;
   
   beforeEach(() => {
-    mockCanvas = {
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      // Fix: Ensure withImplementation returns Promise<void>
-      withImplementation: createWithImplementationMock()
-    };
+    mockCanvas = createTypedMockCanvas();
   });
 
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: asMockCanvas(mockCanvas),
+      canvas: mockCanvas,
       floorPlan: createTestFloorPlan()
     }));
     
@@ -66,7 +37,7 @@ describe('useFloorPlanDrawing', () => {
 
   it('should handle tool change', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: asMockCanvas(mockCanvas),
+      canvas: mockCanvas,
       floorPlan: createTestFloorPlan()
     }));
     
@@ -81,7 +52,7 @@ describe('useFloorPlanDrawing', () => {
     // Arrange
     const testFloorPlan = createTestFloorPlan();
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: asMockCanvas(mockCanvas),
+      canvas: mockCanvas,
       floorPlan: testFloorPlan
     }));
     
@@ -105,7 +76,7 @@ describe('useFloorPlanDrawing', () => {
     
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: asMockCanvas(mockCanvas),
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
       onFloorPlanUpdate: updateFloorPlan
     }));
@@ -130,7 +101,7 @@ describe('useFloorPlanDrawing', () => {
     });
     
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: asMockCanvas(mockCanvas),
+      canvas: mockCanvas,
       floorPlan: testFloorPlan
     }));
     

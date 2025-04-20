@@ -1,141 +1,136 @@
 
 /**
  * Type diagnostics utilities
- * Validates object types with reporting
+ * Provides functions to check and log type information
  * @module utils/debug/typeDiagnostics
  */
-import type { FloorPlan, Room, Stroke, Wall } from '@/types/floor-plan/typesBarrel';
 
 /**
- * Checks if a floor plan object is valid
- * @param floorPlan Floor plan to validate
- * @returns Whether the floor plan is valid
+ * Log detailed type information for debugging
+ * @param obj Object to inspect
+ * @param label Optional label for the log
  */
-export function isValidFloorPlan(floorPlan: any): floorPlan is FloorPlan {
-  if (!floorPlan) return false;
-  if (typeof floorPlan.id !== 'string') return false;
-  if (typeof floorPlan.name !== 'string') return false;
-  if (typeof floorPlan.label !== 'string') return false;
-  if (!Array.isArray(floorPlan.walls)) return false;
-  if (!Array.isArray(floorPlan.rooms)) return false;
-  if (!Array.isArray(floorPlan.strokes)) return false;
-  // Required properties check
-  if (!floorPlan.data) return false;
-  if (!floorPlan.userId) return false;
+export function logTypeInfo(obj: any, label = 'Type info'): void {
+  console.group(label);
   
-  return true;
+  console.log('Type:', typeof obj);
+  console.log('Value:', obj);
+  
+  // Check if it's an object
+  if (typeof obj === 'object' && obj !== null) {
+    console.log('Properties:', Object.keys(obj));
+    console.log('Has constructor:', Boolean(obj.constructor));
+    if (obj.constructor) {
+      console.log('Constructor name:', obj.constructor.name);
+    }
+  }
+  
+  // Check for common properties
+  if (obj && typeof obj === 'object') {
+    const commonProps = ['id', 'name', 'type', 'metadata', 'points', 'length'];
+    commonProps.forEach(prop => {
+      if (prop in obj) {
+        console.log(`Has '${prop}':`, true);
+        console.log(`${prop} value:`, obj[prop]);
+        console.log(`${prop} type:`, typeof obj[prop]);
+      }
+    });
+  }
+  
+  console.groupEnd();
 }
 
 /**
- * Checks if a room object is valid
- * @param room Room to validate
- * @returns Whether the room is valid
+ * Check if an object has all required properties of a given type
+ * @param obj Object to check
+ * @param requiredProps Array of required property names
+ * @returns Whether the object has all required properties
  */
-export function isValidRoom(room: any): room is Room {
-  if (!room) return false;
-  if (typeof room.id !== 'string') return false;
-  if (typeof room.name !== 'string') return false;
-  if (!Array.isArray(room.points)) return false;
-  // Make sure type is a valid RoomTypeLiteral
-  const validRoomTypes = ['living', 'kitchen', 'bedroom', 'bathroom', 'dining', 'office', 'hallway', 'other'];
-  if (!validRoomTypes.includes(room.type)) return false;
-  
-  return true;
-}
-
-/**
- * Checks if a stroke object is valid
- * @param stroke Stroke to validate
- * @returns Whether the stroke is valid
- */
-export function isValidStroke(stroke: any): stroke is Stroke {
-  if (!stroke) return false;
-  if (typeof stroke.id !== 'string') return false;
-  if (!Array.isArray(stroke.points)) return false;
-  // Make sure type is a valid StrokeTypeLiteral
-  const validStrokeTypes = ['line', 'curve', 'straight', 'freehand', 'polyline'];
-  if (!validStrokeTypes.includes(stroke.type)) return false;
-  
-  return true;
-}
-
-/**
- * Checks if a wall object is valid
- * @param wall Wall to validate
- * @returns Whether the wall is valid
- */
-export function isValidWall(wall: any): wall is Wall {
-  if (!wall) return false;
-  if (typeof wall.id !== 'string') return false;
-  if (!wall.start || typeof wall.start.x !== 'number' || typeof wall.start.y !== 'number') return false;
-  if (!wall.end || typeof wall.end.x !== 'number' || typeof wall.end.y !== 'number') return false;
-  if (!Array.isArray(wall.points)) return false;
-  if (!Array.isArray(wall.roomIds)) return false;
-  if (typeof wall.length !== 'number') return false;
-  
-  return true;
-}
-
-/**
- * Validates a floor plan with detailed reporting
- * @param floorPlan Floor plan to validate
- * @param context Context for logging
- * @returns Whether the floor plan is valid
- */
-export function validateFloorPlanWithReporting(floorPlan: any, context = 'validation'): boolean {
-  if (!floorPlan) {
-    console.error(`[${context}] Floor plan is null or undefined`);
+export function hasRequiredProps(obj: any, requiredProps: string[]): boolean {
+  if (!obj || typeof obj !== 'object') {
     return false;
   }
   
-  let isValid = true;
-  const errors: string[] = [];
-  
-  // Check required properties
-  if (typeof floorPlan.id !== 'string') {
-    errors.push('id is missing or not a string');
-    isValid = false;
+  for (const prop of requiredProps) {
+    if (!(prop in obj)) {
+      console.warn(`Missing required property: ${prop}`);
+      return false;
+    }
   }
   
-  if (typeof floorPlan.name !== 'string') {
-    errors.push('name is missing or not a string');
-    isValid = false;
+  return true;
+}
+
+/**
+ * Type guard for FloorPlanMetadata
+ * @param obj Object to check
+ * @returns Whether the object is a valid FloorPlanMetadata
+ */
+export function isValidFloorPlanMetadata(obj: any): boolean {
+  const requiredProps = [
+    'createdAt', 'updatedAt', 'paperSize', 'level',
+    'version', 'author', 'dateCreated', 'lastModified', 'notes'
+  ];
+  
+  return hasRequiredProps(obj, requiredProps);
+}
+
+/**
+ * Type guard for Wall
+ * @param obj Object to check
+ * @returns Whether the object is a valid Wall
+ */
+export function isValidWall(obj: any): boolean {
+  const requiredProps = [
+    'id', 'start', 'end', 'thickness', 'color', 'length', 'roomIds'
+  ];
+  
+  return hasRequiredProps(obj, requiredProps);
+}
+
+/**
+ * Type guard for Room
+ * @param obj Object to check
+ * @returns Whether the object is a valid Room
+ */
+export function isValidRoom(obj: any): boolean {
+  const requiredProps = [
+    'id', 'name', 'type', 'points', 'color'
+  ];
+  
+  return hasRequiredProps(obj, requiredProps);
+}
+
+/**
+ * Type guard for Stroke
+ * @param obj Object to check
+ * @returns Whether the object is a valid Stroke
+ */
+export function isValidStroke(obj: any): boolean {
+  const requiredProps = [
+    'id', 'points', 'type', 'color', 'thickness'
+  ];
+  
+  return hasRequiredProps(obj, requiredProps);
+}
+
+/**
+ * Type guard for FloorPlan
+ * @param obj Object to check
+ * @returns Whether the object is a valid FloorPlan
+ */
+export function isValidFloorPlan(obj: any): boolean {
+  const requiredProps = [
+    'id', 'name', 'label', 'walls', 'rooms', 'strokes', 
+    'canvasData', 'canvasJson', 'createdAt', 'updatedAt',
+    'gia', 'level', 'index', 'metadata', 'data', 'userId'
+  ];
+  
+  const isValid = hasRequiredProps(obj, requiredProps);
+  
+  if (isValid && obj.metadata) {
+    return isValidFloorPlanMetadata(obj.metadata);
   }
   
-  if (typeof floorPlan.label !== 'string') {
-    errors.push('label is missing or not a string');
-    isValid = false;
-  }
-  
-  if (!Array.isArray(floorPlan.walls)) {
-    errors.push('walls is missing or not an array');
-    isValid = false;
-  }
-  
-  if (!Array.isArray(floorPlan.rooms)) {
-    errors.push('rooms is missing or not an array');
-    isValid = false;
-  }
-  
-  if (!Array.isArray(floorPlan.strokes)) {
-    errors.push('strokes is missing or not an array');
-    isValid = false;
-  }
-  
-  if (!floorPlan.data) {
-    errors.push('data is missing');
-    isValid = false;
-  }
-  
-  if (!floorPlan.userId) {
-    errors.push('userId is missing');
-    isValid = false;
-  }
-  
-  // Log errors if any
-  if (!isValid) {
-    console.error(`[${context}] Floor plan validation failed:`, errors);
-  }
-  
-  return isValid;
+  return false;
 }

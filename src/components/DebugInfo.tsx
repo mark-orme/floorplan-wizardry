@@ -24,7 +24,7 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
   };
 
   // Access the fps safely - make sure to check performanceStats fields exist
-  const fps = debugInfo.performanceStats?.fps || debugInfo.performance?.fps;
+  const fps = debugInfo.performanceStats?.fps || debugInfo.fps || debugInfo.currentFps || 0;
   const droppedFrames = debugInfo.performanceStats?.droppedFrames || 0;
   const frameTime = debugInfo.performanceStats?.frameTime || 0;
   const maxFrameTime = debugInfo.performanceStats?.maxFrameTime || 0;
@@ -36,6 +36,7 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
         <div>
           <h3 className="font-bold">Canvas State</h3>
           <p>Initialized: {debugInfo.canvasInitialized ? "✅" : "❌"}</p>
+          <p>Created: {debugInfo.canvasCreated ? "✅" : "❌"}</p>
           <p>Grid Created: {debugInfo.gridCreated ? "✅" : "❌"}</p>
           <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
           <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
