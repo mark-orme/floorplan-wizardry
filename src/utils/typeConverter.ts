@@ -13,6 +13,8 @@ import {
   asRoomType
 } from '@/types/floor-plan/unifiedTypes';
 
+// This is intentional to be able to convert from legacy to unified and back
+// It should reference the actual legacy types module
 import {
   FloorPlan as LegacyFloorPlan,
   Stroke as LegacyStroke,
@@ -20,7 +22,7 @@ import {
   Wall as LegacyWall,
   StrokeTypeLiteral as LegacyStrokeType,
   RoomTypeLiteral as LegacyRoomType
-} from '@/types/floorPlanTypes';
+} from '@/types/floor-plan/unifiedTypes';
 
 console.log('Loading type converter utility');
 

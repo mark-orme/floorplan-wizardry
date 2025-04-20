@@ -116,6 +116,11 @@ export interface DebugInfoState {
     /** Frames per second */
     fps?: number;
   };
+  
+  /** Additional properties for enhanced debugging */
+  lastRefresh?: number;
+  fabricCanvasRef?: any;
+  gridLayerRef?: any;
 }
 
 /**
