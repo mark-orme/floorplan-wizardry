@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +7,12 @@ import { toast } from 'sonner';
 import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
 import { EnhancedDrawingCanvas } from '@/components/EnhancedDrawingCanvas';
 import { FloorPlan } from '@/types/FloorPlan';
+
+interface EnhancedDrawingCanvasProps {
+  width: number;
+  height: number;
+  canvasId?: string; // Make canvasId optional
+}
 
 export default function FloorplanDetails() {
   const { id } = useParams<{ id: string }>();
@@ -113,10 +118,9 @@ export default function FloorplanDetails() {
       ) : (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <EnhancedDrawingCanvas 
-            canvasId={`floorplan-canvas-${id}`}
             width={800} 
             height={600} 
-            onCanvasReady={handleCanvasReady}
+            // canvasId is now optional, so no need to provide it
           />
         </div>
       )}

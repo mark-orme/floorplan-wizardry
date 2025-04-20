@@ -65,8 +65,8 @@ export function SimpleGridLayer({
     const allLines = [...horizontalLines, ...verticalLines];
     allLines.forEach(line => {
       if (line.canvas) {
-        // Use canvas.sendToBack for the line
-        canvas.sendToBack(line);
+        // Fix: Use canvas.sendObjectToBack instead of line.sendToBack
+        canvas.sendObjectToBack(line);
       }
     });
 

@@ -1,4 +1,3 @@
-
 /**
  * Security Key Rotation Utility
  * Handles rotation of security keys and secrets
@@ -6,6 +5,7 @@
 import { generateCSRFToken } from './enhancedCsrfProtection';
 import { toast } from 'sonner';
 import { logAuditEvent, AuditEventType, AuditEventSeverity } from '@/utils/audit/auditLogger';
+import { safeQuery, safeFilterQuery } from '@/utils/supabase/supabaseApiWrapper';
 
 /**
  * Generate a secure random key

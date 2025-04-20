@@ -1,10 +1,10 @@
-
 /**
  * Resource Ownership Utilities
  * Functions for verifying ownership of resources
  */
 import { supabase } from '@/lib/supabase';
 import { AuditEventType, AuditEventSeverity, logAuditEvent } from '@/utils/audit/auditLogger';
+import { safeQuery, safeFilterQuery } from '@/utils/supabase/supabaseApiWrapper';
 
 // Define resource types
 export enum ResourceType {
@@ -207,5 +207,43 @@ export async function getOwnedResourceIds(
   } catch (error) {
     console.error(`Error getting owned ${resourceType} IDs for user ${userId}:`, error);
     return [];
+  }
+}
+
+/**
+ * Checks if a user owns a resource
+ * @param resourceId Resource ID to check
+ * @param resourceType Type of resource (table name)
+ * @param userId User ID to check ownership for
+ * @returns Promise resolving to boolean
+ */
+export async function checkResourceOwnership(
+  resourceId: string,
+  resourceType: string,
+  userId: string
+): Promise<boolean> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return false;
+  }
+  
+  try {
+    // Use the safe filter query
+    const { data, error } = await safeFilterQuery(
+      supabase.from(resourceType),
+      'id',
+      resourceId
+    );
+    
+    if (error || !data || data.length === 0) {
+      console.error(`Error checking ${resourceType} ownership:`, error);
+      return false;
+    }
+    
+    const resource = data[0];
+    return resource.user_id === userId || resource.userId === userId;
+  } catch (error) {
+    console.error(`Error checking ${resourceType} ownership:`, error);
+    return false;
   }
 }

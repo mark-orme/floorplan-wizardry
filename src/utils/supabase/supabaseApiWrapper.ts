@@ -1,0 +1,63 @@
+
+/**
+ * Wrapper for Supabase API calls to standardize the interface
+ */
+import { createClient } from '@supabase/supabase-js';
+
+// Create a Supabase client with error handling
+export const createSafeSupabaseClient = () => {
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
+  const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase URL or key is missing');
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
+
+/**
+ * Safe wrapper for Supabase queries
+ * @param queryBuilder The Supabase query builder
+ * @returns A promise with data and error
+ */
+export const safeQuery = async (queryBuilder: any) => {
+  try {
+    // For single() queries
+    if (queryBuilder.single && typeof queryBuilder.single === 'function') {
+      return await queryBuilder.single();
+    }
+    
+    // For select() queries
+    if (queryBuilder.select && typeof queryBuilder.select === 'function') {
+      return await queryBuilder.select();
+    }
+    
+    // For other query types
+    return await queryBuilder;
+  } catch (error) {
+    console.error('Supabase query error:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Executes a filter query with proper error handling
+ * @param table The Supabase table
+ * @param column The column to filter on
+ * @param value The value to match
+ */
+export const safeFilterQuery = async (table: any, column: string, value: any) => {
+  if (!table || !table.select) {
+    return { data: null, error: new Error('Invalid table reference') };
+  }
+  
+  try {
+    const query = table.select().eq(column, value);
+    return await query;
+  } catch (error) {
+    console.error('Filter query error:', error);
+    return { data: null, error };
+  }
+};

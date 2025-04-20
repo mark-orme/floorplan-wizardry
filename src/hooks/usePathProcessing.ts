@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/types/FloorPlan';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;

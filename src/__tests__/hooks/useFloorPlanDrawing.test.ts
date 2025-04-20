@@ -8,12 +8,13 @@ import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan, Stroke, StrokeTypeLiteral, PaperSize } from '@/types/floorPlanTypes';
+import { adaptFloorPlan } from '@/utils/floorPlanAdapter';
 
 // Mock fabric.js
 jest.mock('fabric');
 
 // Create a mock floor plan that matches the FloorPlan interface
-const mockFloorPlan: FloorPlan = {
+const mockFloorPlan = adaptFloorPlan({
   id: 'floor-1',
   name: 'Floor 1',
   label: 'First Floor',
@@ -33,7 +34,7 @@ const mockFloorPlan: FloorPlan = {
     paperSize: PaperSize.A4,
     level: 0
   }
-};
+});
 
 // Create mock setFloorPlan function
 const mockSetFloorPlan = jest.fn();

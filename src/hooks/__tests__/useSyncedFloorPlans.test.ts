@@ -1,4 +1,3 @@
-
 /**
  * Tests for useSyncedFloorPlans hook
  * Verifies floor plan synchronization and persistence
@@ -11,6 +10,7 @@ import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
 import { Canvas } from 'fabric';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { toast } from 'sonner';
+import { adaptFloorPlan } from '@/utils/floorPlanAdapter';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -42,29 +42,30 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('useSyncedFloorPlans Hook', () => {
-  const mockFloorPlan: FloorPlan = {
-    id: 'test-floor-1',
-    name: 'Test Floor 1',
-    label: 'Test Floor 1',
-    strokes: [],
-    walls: [],
-    rooms: [],
-    level: 0,
-    index: 0,
-    gia: 0,
-    canvasData: null,
-    canvasJson: null,
+// Use adaptFloorPlan to ensure all required properties are present
+const mockFloorPlan = adaptFloorPlan({
+  id: 'floor-1',
+  name: 'Floor 1',
+  label: 'First Floor',
+  strokes: [],
+  walls: [],
+  rooms: [],
+  level: 0,
+  index: 0,
+  gia: 0,
+  canvasData: null,
+  canvasJson: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      paperSize: 'A4',
-      level: 0
-    }
-  };
+    paperSize: 'A4',
+    level: 0
+  }
+});
 
+describe('useSyncedFloorPlans Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();

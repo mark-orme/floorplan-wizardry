@@ -3,24 +3,24 @@
  * Drawing modes for canvas operations
  */
 export enum DrawingMode {
-  SELECT = 'SELECT',
-  DRAW = 'DRAW',
-  ERASE = 'ERASE',
-  HAND = 'HAND',
-  WALL = 'WALL',
-  PENCIL = 'PENCIL',
-  ROOM = 'ROOM',
-  TEXT = 'TEXT',
-  SHAPE = 'SHAPE',
-  LINE = 'LINE',
-  RECTANGLE = 'RECTANGLE',
-  CIRCLE = 'CIRCLE',
-  DOOR = 'DOOR',
-  WINDOW = 'WINDOW',
+  SELECT = 'select',
+  DRAW = 'draw',
+  ERASE = 'erase',
+  HAND = 'hand',
+  WALL = 'wall',
+  PENCIL = 'pencil',
+  ROOM = 'room',
+  TEXT = 'text',
+  SHAPE = 'shape',
+  LINE = 'line',
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  DOOR = 'door',
+  WINDOW = 'window',
   
   // Add missing modes referenced in errors
-  STRAIGHT_LINE = 'STRAIGHT_LINE',
-  PAN = 'PAN',
-  ERASER = 'ERASER',
-  MEASURE = 'MEASURE'
+  STRAIGHT_LINE = 'straight_line',
+  PAN = 'pan',
+  ERASER = 'eraser',
+  MEASURE = 'measure'
 }

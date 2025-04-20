@@ -1,9 +1,8 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { toast } from "sonner";
-import { DrawingTool, UseCanvasStateResult } from "@/types/canvasStateTypes";
+import { UseCanvasStateResult } from "@/types/canvasStateTypes";
 import { loadCanvasState, saveCanvasState } from "@/utils/persistence";
 import logger from "@/utils/logger";
 
@@ -11,7 +10,7 @@ export const useCanvasState = (): UseCanvasStateResult => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [showGridDebug, setShowGridDebug] = useState<boolean>(false);
   const [forceRefreshKey, setForceRefreshKey] = useState<number>(0);
-  const [activeTool, setActiveTool] = useState<DrawingTool>(DrawingMode.SELECT);
+  const [activeTool, setActiveTool] = useState(DrawingMode.SELECT);
   const [lineThickness, setLineThickness] = useState<number>(2);
   const [lineColor, setLineColor] = useState<string>("#000000");
   
@@ -134,6 +133,5 @@ export const useCanvasState = (): UseCanvasStateResult => {
   };
 };
 
-// Re-export the types for backward compatibility
-export type { DrawingTool, UseCanvasStateResult } from "@/types/canvasStateTypes";
+// Export types from the appropriate source
 export { DEFAULT_CANVAS_STATE } from "@/types/canvasStateTypes";
