@@ -6,7 +6,14 @@
 import { vi } from 'vitest';
 import { Point } from '@/types/floor-plan/typesBarrel';
 import { ICanvasMock, createMinimalCanvasMock } from '@/types/testing/ICanvasMock';
-import { FloorPlan, Wall, Room, Stroke, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
+import { 
+  FloorPlan, 
+  Wall, 
+  Room, 
+  Stroke, 
+  StrokeTypeLiteral, 
+  RoomTypeLiteral 
+} from '@/types/floor-plan/typesBarrel';
 import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
 /**

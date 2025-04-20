@@ -12,9 +12,9 @@ import {
   FloorPlan as AppFloorPlan, 
   Stroke, Wall, Room, 
   StrokeTypeLiteral, 
-  RoomTypeLiteral,
-  FloorPlanMetadata
+  RoomTypeLiteral
 } from '@/types/floor-plan/typesBarrel';
+import { FloorPlanMetadata } from '@/types/floor-plan/metadataTypes';
 import { v4 as uuidv4 } from 'uuid';
 import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
@@ -31,14 +31,14 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan | any>): AppFloo
   
   // Create a properly formatted metadata object that matches the FloorPlanMetadata interface
   const metadata: FloorPlanMetadata = {
-    createdAt: floorPlan.metadata?.createdAt || now,
-    updatedAt: floorPlan.metadata?.updatedAt || now,
+    createdAt: typeof floorPlan.metadata?.createdAt === 'string' ? floorPlan.metadata.createdAt : now,
+    updatedAt: typeof floorPlan.metadata?.updatedAt === 'string' ? floorPlan.metadata.updatedAt : now,
     paperSize: floorPlan.metadata?.paperSize || 'A4',
-    level: floorPlan.metadata?.level || 0,
+    level: typeof floorPlan.metadata?.level === 'number' ? floorPlan.metadata.level : 0,
     version: floorPlan.metadata?.version || '1.0',
     author: floorPlan.metadata?.author || '',
-    dateCreated: floorPlan.metadata?.dateCreated || now,
-    lastModified: floorPlan.metadata?.lastModified || now,
+    dateCreated: typeof floorPlan.metadata?.dateCreated === 'string' ? floorPlan.metadata.dateCreated : now,
+    lastModified: typeof floorPlan.metadata?.lastModified === 'string' ? floorPlan.metadata.lastModified : now,
     notes: floorPlan.metadata?.notes || ''
   };
   
@@ -46,7 +46,7 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan | any>): AppFloo
     id: floorPlan.id || uuidv4(),
     name: floorPlan.name || 'Untitled Floor Plan',
     label: floorPlan.label || '',
-    index: floorPlan.index || 0,
+    index: typeof floorPlan.index === 'number' ? floorPlan.index : 0,
     strokes: Array.isArray(floorPlan.strokes) ? floorPlan.strokes.map((stroke: any) => ({
       id: stroke.id || uuidv4(),
       points: Array.isArray(stroke.points) ? stroke.points : [],
@@ -62,25 +62,25 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan | any>): AppFloo
       end: wall.end || (wall.points && wall.points[1]) || { x: 0, y: 0 },
       thickness: wall.thickness || 1,
       color: wall.color || '#000000',
-      roomIds: wall.roomIds || [], // Ensure roomIds exists
-      length: wall.length || 0
+      roomIds: Array.isArray(wall.roomIds) ? wall.roomIds : [],
+      length: typeof wall.length === 'number' ? wall.length : 0
     })) : [],
     rooms: Array.isArray(floorPlan.rooms) ? floorPlan.rooms.map((room: any) => ({
       id: room.id || uuidv4(),
       name: room.name || 'Unnamed Room',
       type: asRoomType(room.type || 'other'),
-      points: room.points || room.vertices || [],
+      points: Array.isArray(room.points) ? room.points : Array.isArray(room.vertices) ? room.vertices : [],
       color: room.color || '#ffffff',
-      area: room.area || 0,
-      level: room.level || 0,
-      walls: room.walls || []
+      area: typeof room.area === 'number' ? room.area : 0,
+      level: typeof room.level === 'number' ? room.level : 0,
+      walls: Array.isArray(room.walls) ? room.walls : []
     })) : [],
-    level: floorPlan.level || 0,
-    gia: floorPlan.gia || 0,
+    level: typeof floorPlan.level === 'number' ? floorPlan.level : 0,
+    gia: typeof floorPlan.gia === 'number' ? floorPlan.gia : 0,
     canvasData: floorPlan.canvasData ? (typeof floorPlan.canvasData === 'string' ? floorPlan.canvasData : JSON.stringify(floorPlan.canvasData)) : null,
     canvasJson: floorPlan.canvasJson || null,
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
+    createdAt: typeof floorPlan.createdAt === 'string' ? floorPlan.createdAt : now,
+    updatedAt: typeof floorPlan.updatedAt === 'string' ? floorPlan.updatedAt : now,
     metadata,
     // Add the missing required properties
     data: floorPlan.data || {},
