@@ -1,263 +1,205 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Canvas } from 'fabric';
-import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
-import logger from '@/utils/logger';
+
+import { useCallback, useRef, useState, useEffect } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
-interface HistoryState {
-  canvasState: string | null;
-  userId: string;
-  timestamp: number;
-}
-
+/**
+ * Per-user canvas history management
+ * Creates separate history stacks per user for collaborative editing
+ */
 interface UsePerUserCanvasHistoryProps {
-  canvas: Canvas | null;
-  userId?: string;
+  canvas: FabricCanvas | null;
+  userId: string;
   maxHistoryLength?: number;
 }
 
-/**
- * Hook for managing per-user canvas history for collaborative editing
- * Each user has their own independent undo/redo stack
- */
-export const usePerUserCanvasHistory = ({
+type HistoryState = {
+  canvasState: string;
+  timestamp: number;
+  userId: string;
+};
+
+export function usePerUserCanvasHistory({
   canvas,
-  userId = 'anonymous',
+  userId,
   maxHistoryLength = 30
-}: UsePerUserCanvasHistoryProps) => {
-  // Store history stacks per user
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const historyStackRef = useRef<HistoryState[]>([]);
-  const isUndoRedoOperationRef = useRef<boolean>(false);
+}: UsePerUserCanvasHistoryProps) {
+  // Create a history map of user ID -> history stack
+  const historyMapRef = useRef<Map<string, HistoryState[]>>(new Map());
+  const futureMapRef = useRef<Map<string, HistoryState[]>>(new Map());
   
+  // Current history pointer for this user
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  // Initialize user's history stack if needed
+  useEffect(() => {
+    if (!historyMapRef.current.has(userId)) {
+      historyMapRef.current.set(userId, []);
+    }
+    if (!futureMapRef.current.has(userId)) {
+      futureMapRef.current.set(userId, []);
+    }
+  }, [userId]);
+
   // Save the current canvas state to history
   const saveCurrentState = useCallback(() => {
     if (!canvas) return;
     
     try {
-      // Convert canvas to JSON string
-      const canvasStateJson = JSON.stringify(canvas.toJSON());
+      // Get the user's history stack
+      const userHistory = historyMapRef.current.get(userId) || [];
       
-      if (historyIndex >= 0) {
-        // If we're not at the end of the history (user has undone some changes)
-        // Remove all future states
-        historyStackRef.current = historyStackRef.current.slice(0, historyIndex + 1);
+      // Serialize the canvas state
+      const canvasState = JSON.stringify(canvas.toJSON(['id', 'objectType']));
+      
+      // Create a new history state
+      const newState: HistoryState = {
+        canvasState,
+        timestamp: Date.now(),
+        userId
+      };
+      
+      // Add state to the user's history
+      userHistory.push(newState);
+      
+      // Trim history if needed
+      if (userHistory.length > maxHistoryLength) {
+        userHistory.shift();
       }
       
-      // Check if we should add to history
-      // Don't add if the current state is identical to the last state
-      const currentStateLength = historyStackRef.current.length;
+      // Update history map
+      historyMapRef.current.set(userId, userHistory);
       
-      if (
-        currentStateLength === 0 ||
-        historyStackRef.current[currentStateLength - 1].canvasState !== canvasStateJson
-      ) {
-        // Add new state to history
-        historyStackRef.current.push({
-          canvasState: canvasStateJson,
-          userId,
-          timestamp: Date.now()
-        });
-        
-        // Limit history length to prevent memory issues
-        if (historyStackRef.current.length > maxHistoryLength) {
-          historyStackRef.current.shift();
-        }
-        
-        setHistoryIndex(historyStackRef.current.length - 1);
-        logger.info(`Canvas state saved for user ${userId}, index: ${historyStackRef.current.length - 1}`);
-      }
+      // Clear future states for this user
+      futureMapRef.current.set(userId, []);
+      
+      // Update can undo/redo states
+      setCanUndo(true);
+      setCanRedo(false);
+      
+      logger.debug(`Saved history state for user ${userId}`);
     } catch (error) {
       logger.error('Error saving canvas state:', error);
     }
-  }, [canvas, historyIndex, userId, maxHistoryLength]);
-  
-  // Undo action - move back in history
+  }, [canvas, userId, maxHistoryLength]);
+
+  // Undo action - apply previous state
   const undo = useCallback(() => {
-    if (!canvas || historyIndex <= 0) return;
-    
-    try {
-      isUndoRedoOperationRef.current = true;
-      
-      // Go to previous state that belongs to current user
-      let targetIndex = historyIndex - 1;
-      
-      // Find the last state that belongs to this user
-      while (targetIndex >= 0) {
-        if (historyStackRef.current[targetIndex].userId === userId) {
-          break;
-        }
-        targetIndex--;
-      }
-      
-      if (targetIndex < 0) {
-        toast.info('No more actions to undo for this user');
-        return;
-      }
-      
-      // Apply the state
-      const historyState = historyStackRef.current[targetIndex];
-      if (historyState.canvasState) {
-        canvas.loadFromJSON(JSON.parse(historyState.canvasState), () => {
-          canvas.renderAll();
-          setHistoryIndex(targetIndex);
-          logger.info(`Canvas state restored from history for user ${userId}, index: ${targetIndex}`);
-        });
-      }
-    } catch (error) {
-      logger.error('Error during undo operation:', error);
-    } finally {
-      isUndoRedoOperationRef.current = false;
-    }
-  }, [canvas, historyIndex, userId]);
-  
-  // Redo action - move forward in history
-  const redo = useCallback(() => {
-    if (!canvas || historyIndex >= historyStackRef.current.length - 1) return;
-    
-    try {
-      isUndoRedoOperationRef.current = true;
-      
-      // Go to next state that belongs to current user
-      let targetIndex = historyIndex + 1;
-      
-      // Find the next state that belongs to this user
-      while (targetIndex < historyStackRef.current.length) {
-        if (historyStackRef.current[targetIndex].userId === userId) {
-          break;
-        }
-        targetIndex++;
-      }
-      
-      if (targetIndex >= historyStackRef.current.length) {
-        toast.info('No more actions to redo for this user');
-        return;
-      }
-      
-      // Apply the state
-      const historyState = historyStackRef.current[targetIndex];
-      if (historyState.canvasState) {
-        canvas.loadFromJSON(JSON.parse(historyState.canvasState), () => {
-          canvas.renderAll();
-          setHistoryIndex(targetIndex);
-          logger.info(`Canvas state restored from history for user ${userId}, index: ${targetIndex}`);
-        });
-      }
-    } catch (error) {
-      logger.error('Error during redo operation:', error);
-    } finally {
-      isUndoRedoOperationRef.current = false;
-    }
-  }, [canvas, historyIndex, userId]);
-  
-  // Function to handle another user's state change
-  const applyExternalStateChange = useCallback((
-    canvasState: string,
-    externalUserId: string,
-    preserveSelection: boolean = false
-  ) => {
     if (!canvas) return;
     
+    // Get the user's history stack
+    const userHistory = historyMapRef.current.get(userId) || [];
+    
+    if (userHistory.length <= 1) {
+      toast.info('Nothing to undo');
+      setCanUndo(false);
+      return;
+    }
+    
     try {
-      // Keep track of current selection if needed
-      const activeObject = preserveSelection ? canvas.getActiveObject() : null;
-      
-      // Add to history but don't apply if it's from another user
-      historyStackRef.current.push({
-        canvasState,
-        userId: externalUserId,
-        timestamp: Date.now()
-      });
-      
-      // Limit history length
-      if (historyStackRef.current.length > maxHistoryLength) {
-        historyStackRef.current.shift();
+      // Get the current state and move it to future
+      const currentState = userHistory.pop();
+      if (currentState) {
+        const userFuture = futureMapRef.current.get(userId) || [];
+        userFuture.push(currentState);
+        futureMapRef.current.set(userId, userFuture);
       }
       
-      setHistoryIndex(historyStackRef.current.length - 1);
-      logger.info(`External canvas state saved for user ${externalUserId}`);
+      // Apply the previous state
+      const previousState = userHistory[userHistory.length - 1];
+      if (previousState) {
+        canvas.loadFromJSON(JSON.parse(previousState.canvasState), () => {
+          canvas.renderAll();
+          logger.debug(`Undo to state at ${new Date(previousState.timestamp).toLocaleString()}`);
+        });
+      }
       
-      // Apply the state to canvas if it's from another user
-      canvas.loadFromJSON(JSON.parse(canvasState), () => {
-        // Restore selection if needed
-        if (activeObject && preserveSelection) {
-          // Try to find the same object in the new state
-          const objects = canvas.getObjects();
-          const similarObject = objects.find(obj => 
-            obj.type === activeObject.type
-          );
-          
-          if (similarObject) {
-            canvas.setActiveObject(similarObject);
-          }
-        }
-        
-        requestOptimizedRender(canvas, 'external-state-change');
-      });
+      // Update can undo/redo states
+      setCanUndo(userHistory.length > 1);
+      setCanRedo(true);
+      
+      toast.success('Undo successful');
     } catch (error) {
-      logger.error('Error applying external state change:', error);
+      logger.error('Error during undo:', error);
+      toast.error('Failed to undo');
     }
-  }, [canvas, maxHistoryLength]);
+  }, [canvas, userId]);
+
+  // Redo action - apply next state
+  const redo = useCallback(() => {
+    if (!canvas) return;
+    
+    // Get the user's future stack
+    const userFuture = futureMapRef.current.get(userId) || [];
+    
+    if (userFuture.length === 0) {
+      toast.info('Nothing to redo');
+      setCanRedo(false);
+      return;
+    }
+    
+    try {
+      // Get the next state
+      const nextState = userFuture.pop();
+      if (nextState) {
+        // Apply the state
+        canvas.loadFromJSON(JSON.parse(nextState.canvasState), () => {
+          canvas.renderAll();
+          logger.debug(`Redo to state at ${new Date(nextState.timestamp).toLocaleString()}`);
+        });
+        
+        // Add to history
+        const userHistory = historyMapRef.current.get(userId) || [];
+        userHistory.push(nextState);
+        historyMapRef.current.set(userId, userHistory);
+      }
+      
+      // Update can undo/redo states
+      setCanUndo(true);
+      setCanRedo(userFuture.length > 0);
+      
+      toast.success('Redo successful');
+    } catch (error) {
+      logger.error('Error during redo:', error);
+      toast.error('Failed to redo');
+    }
+  }, [canvas, userId]);
   
-  // Delete selected objects with history tracking
+  // Delete selected objects and save state
   const deleteSelectedObjects = useCallback(() => {
     if (!canvas) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
-    
-    if (activeObject.type === 'activeSelection') {
-      // @ts-ignore - activeSelection has forEachObject method
-      activeObject.forEachObject((obj: any) => {
-        canvas.remove(obj);
-      });
-      canvas.discardActiveObject();
-    } else {
-      canvas.remove(activeObject);
+    const selectedObjects = canvas.getActiveObjects();
+    if (selectedObjects.length === 0) {
+      toast.info('No objects selected');
+      return;
     }
     
-    requestOptimizedRender(canvas, 'delete-selection');
+    // Save current state before deletion
     saveCurrentState();
+    
+    // Delete objects
+    canvas.discardActiveObject();
+    selectedObjects.forEach((obj: FabricObject) => {
+      canvas.remove(obj);
+    });
+    
+    canvas.requestRenderAll();
+    
+    // Save state after deletion
+    saveCurrentState();
+    
+    toast.success(`Deleted ${selectedObjects.length} object(s)`);
   }, [canvas, saveCurrentState]);
-  
-  // Initialize with an empty state when canvas changes
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Save initial state
-    if (historyStackRef.current.length === 0) {
-      saveCurrentState();
-    }
-    
-    // Update history when objects are added, modified, or removed
-    const handleObjectModified = () => {
-      if (!isUndoRedoOperationRef.current) {
-        saveCurrentState();
-      }
-    };
-    
-    // Listen for canvas changes
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('object:added', handleObjectModified);
-    canvas.on('object:removed', handleObjectModified);
-    
-    return () => {
-      // Remove event listeners
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('object:added', handleObjectModified);
-      canvas.off('object:removed', handleObjectModified);
-    };
-  }, [canvas, saveCurrentState]);
-  
+
   return {
     undo,
     redo,
     saveCurrentState,
     deleteSelectedObjects,
-    applyExternalStateChange,
-    historyIndex,
-    historyLength: historyStackRef.current.length,
-    hasUndo: historyIndex > 0,
-    hasRedo: historyIndex < historyStackRef.current.length - 1
+    canUndo,
+    canRedo
   };
-};
+}

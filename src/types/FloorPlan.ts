@@ -4,6 +4,9 @@
  * Centralized to avoid duplicates
  */
 
+// Import drawing modes from the centralized source
+export { DrawingMode } from '@/constants/drawingModes';
+
 export interface FloorPlan {
   id: string;
   name: string;
@@ -25,6 +28,11 @@ export interface FloorPlan {
     updatedAt: string;
     paperSize: PaperSize;
     level: number;
+    collaborators?: string[]; // Add collaborators list
+    lastModifiedBy?: string; // Track who last modified the floor plan
+    lastModifiedAt?: string; // Track when the floor plan was last modified
+    version?: number; // Version tracking for conflict resolution
+    crdtState?: string; // Store CRDT state for offline-first collaboration
   };
 }
 
@@ -34,6 +42,20 @@ export enum PaperSize {
   A2 = 'A2', 
   A1 = 'A1',
   A0 = 'A0'
+}
+
+export enum DrawingMode {
+  SELECT = 'select',
+  WALL = 'wall',
+  ROOM = 'room',
+  LINE = 'line',
+  DIMENSION = 'dimension',
+  TEXT = 'text',
+  DOOR = 'door',
+  WINDOW = 'window',
+  STAIR = 'stair',
+  COLUMN = 'column',
+  ERASER = 'eraser'
 }
 
 export const stringToPaperSize = (size: string): PaperSize => {
@@ -46,9 +68,6 @@ export const stringToPaperSize = (size: string): PaperSize => {
     default: return PaperSize.A4;
   }
 };
-
-// Import drawing modes from the centralized source
-export { DrawingMode } from '@/constants/drawingModes';
 
 // Create an empty floor plan with defaults
 export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
@@ -74,7 +93,9 @@ export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorP
       createdAt: now,
       updatedAt: now,
       paperSize: PaperSize.A4,
-      level: 0
+      level: 0,
+      collaborators: [],
+      version: 1
     },
     ...overrides
   };

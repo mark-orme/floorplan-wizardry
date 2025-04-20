@@ -1,61 +1,69 @@
 
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
+import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export interface Collaborator {
+interface Collaborator {
   id: string;
   name: string;
   color: string;
   lastActive: number;
+  isActive: boolean;
 }
 
 interface CanvasCollaborationIndicatorProps {
   collaborators: Collaborator[];
-  enabled: boolean;
+  enabled?: boolean;
 }
 
 export const CanvasCollaborationIndicator: React.FC<CanvasCollaborationIndicatorProps> = ({
   collaborators,
-  enabled
+  enabled = true
 }) => {
-  if (!enabled) return null;
-  
+  if (!enabled || collaborators.length === 0) return null;
+
+  // Get active collaborators within the last 60 seconds
   const activeCollaborators = collaborators.filter(
-    c => Date.now() - c.lastActive < 60000 // Active in the last minute
+    c => c.isActive && Date.now() - c.lastActive < 60000
   );
-  
+
   if (activeCollaborators.length === 0) return null;
-  
+
   return (
-    <div className="absolute top-4 left-4 z-10">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="outline" className="flex items-center gap-1 bg-white/80 hover:bg-white">
-              <Users className="h-3.5 w-3.5" />
-              <span>{activeCollaborators.length}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="text-sm">
-              <div className="font-semibold mb-1">Active collaborators:</div>
-              <ul className="space-y-1">
-                {activeCollaborators.map(user => (
-                  <li key={user.id} className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: user.color }}
-                    />
-                    <span>{user.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className="absolute top-4 left-4 flex flex-col space-y-2 z-50">
+      <Badge variant="outline" className="bg-white/80 backdrop-blur-sm shadow-sm">
+        {activeCollaborators.length} {activeCollaborators.length === 1 ? 'person' : 'people'} editing
+      </Badge>
+      
+      <div className="flex -space-x-2">
+        {activeCollaborators.slice(0, 3).map(collaborator => (
+          <Tooltip key={collaborator.id}>
+            <TooltipTrigger asChild>
+              <Avatar className="h-8 w-8 border-2 border-white">
+                <AvatarFallback 
+                  style={{ backgroundColor: collaborator.color }}
+                  className="text-white text-xs"
+                >
+                  {collaborator.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{collaborator.name}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+        
+        {activeCollaborators.length > 3 && (
+          <Avatar className="h-8 w-8 border-2 border-white">
+            <AvatarFallback className="bg-muted">
+              +{activeCollaborators.length - 3}
+            </AvatarFallback>
+          </Avatar>
+        )}
+      </div>
     </div>
   );
 };

@@ -27,7 +27,7 @@ export function useRealtimeSync({
   enabled = true,
   onRemoteUpdate
 }: RealtimeSyncProps) {
-  // Determine which sync implementation to use based on feature flags
+  // Always use CRDT as default for better collaboration
   const useCRDT = isFeatureEnabled('enableCollaboration');
   
   // CRDT-based sync (conflict-free)
@@ -40,7 +40,7 @@ export function useRealtimeSync({
     onRemoteUpdate
   });
   
-  // Simple last-write-wins sync
+  // Simple last-write-wins sync (fallback)
   const simpleSync = useRealtimeCanvasSync({
     canvas,
     enabled: enabled && !useCRDT,

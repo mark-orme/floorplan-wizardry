@@ -1,108 +1,116 @@
 
 /**
- * Utilities for dynamic imports and code splitting
- * @module utils/dynamicImport
+ * Utility for dynamic imports and feature flag checking
  */
+import logger from './logger';
 
-import { lazy, Suspense } from 'react';
-import { toast } from 'sonner';
-
-// Type for feature flag configuration
-export interface FeatureFlags {
-  [key: string]: boolean;
+// Feature flags configuration
+interface FeatureFlags {
+  enableCollaboration: boolean;
+  enableOfflineMode: boolean;
+  enableAutoSave: boolean;
+  enableGridOptimization: boolean;
+  enableExperimentalTools: boolean;
 }
 
-// Default feature flags
-let featureFlags: FeatureFlags = {
-  enableExperimentalTools: false,
-  enableAdvancedExport: false,
+// Default feature flag values
+const DEFAULT_FLAGS: FeatureFlags = {
   enableCollaboration: true,
   enableOfflineMode: true,
-  enablePerformanceMode: false
+  enableAutoSave: true,
+  enableGridOptimization: true,
+  enableExperimentalTools: false
 };
 
-/**
- * Set feature flags
- * @param flags Feature flag configuration
- */
-export function setFeatureFlags(flags: Partial<FeatureFlags>): void {
-  featureFlags = { ...featureFlags, ...flags };
-}
+// Current feature flags (initialized with defaults)
+let currentFlags: FeatureFlags = { ...DEFAULT_FLAGS };
 
 /**
- * Get current feature flags
- * @returns Current feature flag configuration
+ * Initialize feature flags
+ * @param flags - Feature flags to override defaults
  */
-export function getFeatureFlags(): FeatureFlags {
-  return { ...featureFlags };
+export function initFeatureFlags(flags: Partial<FeatureFlags> = {}): void {
+  currentFlags = {
+    ...DEFAULT_FLAGS,
+    ...flags
+  };
+  
+  logger.info('Feature flags initialized', currentFlags);
 }
 
 /**
  * Check if a feature is enabled
- * @param feature Feature flag key
- * @returns Whether feature is enabled
+ * @param featureName - Feature flag name
+ * @returns True if feature is enabled
  */
-export function isFeatureEnabled(feature: string): boolean {
-  return Boolean(featureFlags[feature]);
+export function isFeatureEnabled(featureName: keyof FeatureFlags): boolean {
+  if (!(featureName in currentFlags)) {
+    logger.warn(`Unknown feature flag: ${featureName}`);
+    return false;
+  }
+  
+  return currentFlags[featureName];
 }
 
 /**
- * Create a dynamic import with error handling
- * @param importFn Import function
- * @returns Lazy-loaded component
+ * Dynamically import a module based on feature flag
+ * @param importFn - Function returning dynamic import
+ * @param featureName - Feature flag name
+ * @param fallbackFn - Function to handle when feature is disabled
+ * @returns Promise resolving to module or fallback
  */
-export function createDynamicImport(importFn: () => Promise<any>) {
-  return lazy(() => 
-    importFn().catch(error => {
-      console.error('Failed to load module:', error);
-      toast.error('Failed to load module');
-      return { default: () => <div>Failed to load component</div> };
-    })
-  );
-}
-
-/**
- * Dynamic import with feature flag check
- * @param importFn Import function
- * @param featureFlag Feature flag name
- * @param fallback Fallback component if feature is disabled
- * @returns Component or fallback
- */
-export function createFeatureFlaggedImport(
-  importFn: () => Promise<any>,
-  featureFlag: string,
-  fallback: React.ComponentType = () => null
-) {
-  return lazy(async () => {
-    if (isFeatureEnabled(featureFlag)) {
-      try {
-        return await importFn();
-      } catch (error) {
-        console.error(`Failed to load feature "${featureFlag}":`, error);
-        toast.error(`Failed to load feature "${featureFlag}"`);
-        return { default: fallback };
+export async function dynamicImportWithFlag<T>(
+  importFn: () => Promise<T>,
+  featureName: keyof FeatureFlags,
+  fallbackFn?: () => Promise<T>
+): Promise<T> {
+  if (isFeatureEnabled(featureName)) {
+    try {
+      return await importFn();
+    } catch (error) {
+      logger.error(`Failed to import module for feature: ${featureName}`, error);
+      if (fallbackFn) {
+        return fallbackFn();
       }
-    } else {
-      return { default: fallback };
+      throw error;
     }
-  });
+  } else if (fallbackFn) {
+    return fallbackFn();
+  } else {
+    throw new Error(`Feature ${featureName} is disabled and no fallback provided`);
+  }
 }
 
 /**
- * Dynamic import wrapper component
+ * Dynamically import a module
+ * @param importPath - Path to module
+ * @returns Promise resolving to module
  */
-export function DynamicImport({ 
-  component: Component, 
-  fallback = <div>Loading...</div>,
-  ...props 
-}: { 
-  component: React.ComponentType<any>;
-  fallback?: React.ReactNode;
-  [key: string]: any;
-}) {
-  return (
-    <Suspense fallback={fallback}>
-      <Component {...props} />
-    </Suspense>
-  );
+export async function dynamicImport<T>(importPath: string): Promise<T> {
+  try {
+    const module = await import(/* @vite-ignore */ importPath);
+    return module as T;
+  } catch (error) {
+    logger.error(`Failed to dynamically import: ${importPath}`, error);
+    throw error;
+  }
+}
+
+/**
+ * Create a function that only executes if a feature is enabled
+ * @param fn - Function to conditionally execute
+ * @param featureName - Feature flag name
+ * @returns Conditional function
+ */
+export function withFeatureGuard<T extends (...args: any[]) => any>(
+  fn: T,
+  featureName: keyof FeatureFlags
+): (...args: Parameters<T>) => ReturnType<T> | undefined {
+  return (...args: Parameters<T>): ReturnType<T> | undefined => {
+    if (isFeatureEnabled(featureName)) {
+      return fn(...args);
+    }
+    logger.info(`Function call skipped - feature ${featureName} is disabled`);
+    return undefined;
+  };
 }
