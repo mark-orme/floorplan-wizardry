@@ -23,8 +23,12 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
     return String(value);
   };
 
-  // Access the fps safely
+  // Access the fps safely - make sure to check performanceStats fields exist
   const fps = debugInfo.performanceStats?.fps || debugInfo.performance?.fps;
+  const droppedFrames = debugInfo.performanceStats?.droppedFrames || 0;
+  const frameTime = debugInfo.performanceStats?.frameTime || 0;
+  const maxFrameTime = debugInfo.performanceStats?.maxFrameTime || 0;
+  const longFrames = debugInfo.performanceStats?.longFrames || 0;
 
   return (
     <div className="mt-4 p-2 text-xs bg-gray-100 rounded-md overflow-auto max-h-32">
@@ -48,10 +52,10 @@ export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
         <div>
           <h3 className="font-bold">Performance Metrics</h3>
           <p>FPS: {fps?.toFixed(1) || 'N/A'}</p>
-          <p>Dropped Frames: {debugInfo.performanceStats?.droppedFrames || 0}</p>
-          <p>Avg Frame Time: {debugInfo.performanceStats?.frameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Max Frame Time: {debugInfo.performanceStats?.maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Long Frames: {debugInfo.performanceStats?.longFrames || 0}</p>
+          <p>Dropped Frames: {droppedFrames}</p>
+          <p>Avg Frame Time: {frameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Max Frame Time: {maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
+          <p>Long Frames: {longFrames}</p>
           {debugInfo.lastError && (
             <p className="text-red-500">
               Error: {String(debugInfo.lastError)} ({new Date(typeof debugInfo.lastErrorTime === 'number' ? debugInfo.lastErrorTime : 0).toLocaleTimeString()})

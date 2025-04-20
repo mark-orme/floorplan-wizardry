@@ -171,72 +171,6 @@ export class Line {
   }
 }
 
-// Mock Circle class
-export class Circle {
-  left: number;
-  top: number;
-  radius: number;
-  fill: string;
-  stroke: string;
-  strokeWidth: number;
-  activeOn: boolean;
-  
-  constructor(options?: any) {
-    this.left = options?.left || 0;
-    this.top = options?.top || 0;
-    this.radius = options?.radius || 20;
-    this.fill = options?.fill || 'transparent';
-    this.stroke = options?.stroke || '#000000';
-    this.strokeWidth = options?.strokeWidth || 1;
-    this.activeOn = false;
-  }
-  
-  set(options: any): Circle {
-    // Replace Object.assign with manual property assignment
-    if (options) {
-      // Manual assignment of properties
-      for (const key in options) {
-        if (Object.prototype.hasOwnProperty.call(options, key)) {
-          (this as any)[key] = options[key];
-        }
-      }
-    }
-    return this;
-  }
-}
-
-// Mock Text class
-export class Text {
-  text: string;
-  left: number;
-  top: number;
-  fontSize: number;
-  fill: string;
-  activeOn: boolean;
-  
-  constructor(text: string, options?: any) {
-    this.text = text;
-    this.left = options?.left || 0;
-    this.top = options?.top || 0;
-    this.fontSize = options?.fontSize || 14;
-    this.fill = options?.fill || '#000000';
-    this.activeOn = false;
-  }
-  
-  set(options: any): Text {
-    // Replace Object.assign with manual property assignment
-    if (options) {
-      // Manual assignment of properties
-      for (const key in options) {
-        if (Object.prototype.hasOwnProperty.call(options, key)) {
-          (this as any)[key] = options[key];
-        }
-      }
-    }
-    return this;
-  }
-}
-
 // Export mock classes
 export const Object = {
   prototype: {}
@@ -246,5 +180,3 @@ export const Object = {
 export type { Canvas as FabricCanvas };
 export type { PencilBrush as FabricPencilBrush };
 export type { Line as FabricLine };
-export type { Circle as FabricCircle };
-export type { Text as FabricText };

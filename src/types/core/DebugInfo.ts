@@ -62,6 +62,11 @@ export interface DebugInfoState {
     eventHandlingTime?: number;
     objectCreationTime?: number;
     lastFrameTime?: number;
+    fps?: number;
+    droppedFrames?: number;
+    frameTime?: number;
+    maxFrameTime?: number;
+    longFrames?: number;
   };
   
   // Canvas properties
@@ -126,7 +131,12 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
     renderTime: 0,
     eventHandlingTime: 0,
     objectCreationTime: 0,
-    lastFrameTime: 0
+    lastFrameTime: 0,
+    fps: 0,
+    droppedFrames: 0,
+    frameTime: 0,
+    maxFrameTime: 0,
+    longFrames: 0
   },
   canvasWidth: 0,
   canvasHeight: 0,

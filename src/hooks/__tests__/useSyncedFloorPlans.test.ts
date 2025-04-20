@@ -9,8 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
 import { Canvas } from 'fabric';
-import { createTypedTestFloorPlan } from '@/utils/test/typedTestFixtures';
-import { FloorPlan } from '@/types/floor-plan/typesBarrel';
+import { createTestFloorPlan } from '@/utils/test/typedTestFixtures';
 import { toast } from 'sonner';
 
 // Mock dependencies
@@ -43,8 +42,8 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-// Create a mock floor plan using createTypedTestFloorPlan
-const mockFloorPlan = createTypedTestFloorPlan({
+// Create a mock floor plan using the fixed helper function
+const mockFloorPlan = createTestFloorPlan({
   id: 'floor-1',
   name: 'Floor 1',
   label: 'First Floor',
@@ -140,40 +139,5 @@ describe('useSyncedFloorPlans Hook', () => {
         result.current.addFloorPlan(mockFloorPlan);
       });
     }
-    
-    // Note: This test is checking the availability of methods, adapt as needed
-  });
-
-  it('should support floor plan loading functionality', () => {
-    // Setup: Create mock canvas
-    const mockCanvas = new Canvas(null);
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Check if there's an addFloorPlan method
-    if (typeof result.current.addFloorPlan === 'function') {
-      // Execute: Add a floor plan
-      act(() => {
-        result.current.addFloorPlan(mockFloorPlan);
-      });
-    }
-    
-    // Note: This test is checking the availability of methods, adapt as needed
-  });
-
-  it('should support GIA calculation', () => {
-    // Setup: Create floor plans with different GIA values
-    const floorPlansWithGIA = [
-      { ...mockFloorPlan, gia: 100 },
-      { ...mockFloorPlan, id: 'test-floor-2', gia: 200 }
-    ] as FloorPlan[];
-    
-    const { result } = renderHook(() => useSyncedFloorPlans());
-    
-    // Calculate total GIA manually for testing
-    const totalGia = floorPlansWithGIA.reduce((sum, fp) => sum + (fp.gia || 0), 0);
-    expect(totalGia).toBe(300);
-    
-    // If your hook has a calculateGIA method, test it
-    // Otherwise this test just verifies we can calculate GIA manually
   });
 });
