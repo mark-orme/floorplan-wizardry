@@ -31,8 +31,25 @@ export interface ICanvasMock {
   // For type compatibility with useDrawingHistory
   getPointerCoords?: () => { x: number, y: number };
   
+  // Additional properties required by some tests
+  sendToBack?: (obj: FabricObject) => ICanvasMock;
+  sendObjectToBack?: (obj: FabricObject) => ICanvasMock;
+  bringToFront?: (obj: FabricObject) => ICanvasMock;
+  bringObjectToFront?: (obj: FabricObject) => ICanvasMock;
+  getActiveObject?: () => FabricObject | null;
+  setActiveObject?: (obj: FabricObject) => ICanvasMock;
+  discardActiveObject?: () => ICanvasMock;
+  getWidth?: () => number;
+  getHeight?: () => number;
+  setZoom?: (zoom: number) => ICanvasMock;
+  getZoom?: () => number;
+  viewportTransform?: number[];
+  
   // For type compatibility
   [key: string]: any;
+  
+  // For vitest mocks
+  withImplementation?: (impl: Function) => Promise<void>;
 }
 
 /**
@@ -55,6 +72,19 @@ export function createMinimalCanvasMock(): ICanvasMock {
     on: jest.fn<ICanvasMock, [string, Function]>().mockReturnThis(),
     off: jest.fn<ICanvasMock, [string, Function?]>().mockReturnThis(),
     getPointerCoords: jest.fn<{ x: number, y: number }, []>().mockReturnValue({ x: 0, y: 0 }),
-    getClass: jest.fn<any, []>()
+    getClass: jest.fn<any, []>(),
+    sendToBack: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    sendObjectToBack: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    bringToFront: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    bringObjectToFront: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    getActiveObject: jest.fn<FabricObject | null, []>().mockReturnValue(null),
+    setActiveObject: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    discardActiveObject: jest.fn<ICanvasMock, []>().mockReturnThis(),
+    getWidth: jest.fn<number, []>().mockReturnValue(800),
+    getHeight: jest.fn<number, []>().mockReturnValue(600),
+    setZoom: jest.fn<ICanvasMock, [number]>().mockReturnThis(),
+    getZoom: jest.fn<number, []>().mockReturnValue(1),
+    viewportTransform: [1, 0, 0, 1, 0, 0],
+    withImplementation: jest.fn<any, [Function]>().mockResolvedValue(undefined)
   };
 }

@@ -5,7 +5,7 @@
  * @module __tests__/utils/typeHelpers
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Point, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
+import { FloorPlan, Stroke, Point, StrokeTypeLiteral, RoomTypeLiteral, asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
 
 /**
@@ -25,10 +25,18 @@ export function asCanvasMock(mockCanvas: any): ICanvasMock {
  * @param floorPlan Floor plan object to check
  * @returns Typed floor plan
  */
-export function ensureFloorPlan(floorPlan: any): FloorPlan {
+export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
   // Ensure required properties exist
-  if (!floorPlan.id || !floorPlan.updatedAt) {
-    throw new Error('Invalid floor plan object');
+  if (!floorPlan.id) {
+    floorPlan.id = `test-fp-${Date.now()}`;
+  }
+  
+  if (!floorPlan.updatedAt) {
+    floorPlan.updatedAt = new Date().toISOString();
+  }
+  
+  if (!floorPlan.createdAt) {
+    floorPlan.createdAt = floorPlan.updatedAt;
   }
   
   // Ensure data and userId properties exist (add if missing)
@@ -39,6 +47,34 @@ export function ensureFloorPlan(floorPlan: any): FloorPlan {
   if (!floorPlan.userId) {
     floorPlan.userId = 'test-user';
   }
+  
+  // Add metadata if missing
+  if (!floorPlan.metadata) {
+    floorPlan.metadata = {
+      createdAt: floorPlan.createdAt,
+      updatedAt: floorPlan.updatedAt,
+      paperSize: 'A4',
+      level: 0,
+      version: "1.0",
+      author: "Test User",
+      dateCreated: floorPlan.createdAt,
+      lastModified: floorPlan.updatedAt,
+      notes: ""
+    };
+  }
+  
+  // Add empty arrays for collections if missing
+  if (!floorPlan.strokes) floorPlan.strokes = [];
+  if (!floorPlan.walls) floorPlan.walls = [];
+  if (!floorPlan.rooms) floorPlan.rooms = [];
+  
+  // Set defaults for other required fields
+  if (floorPlan.label === undefined) floorPlan.label = floorPlan.name || 'Test Floor Plan';
+  if (floorPlan.gia === undefined) floorPlan.gia = 0;
+  if (floorPlan.level === undefined) floorPlan.level = 0;
+  if (floorPlan.index === undefined) floorPlan.index = 0;
+  if (floorPlan.canvasData === undefined) floorPlan.canvasData = null;
+  if (floorPlan.canvasJson === undefined) floorPlan.canvasJson = null;
   
   return floorPlan as FloorPlan;
 }
@@ -54,27 +90,62 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
 }
 
 /**
- * Safely cast a string to StrokeTypeLiteral
- * @param type String to cast
- * @returns Properly typed StrokeTypeLiteral
+ * Create a correct stroke with properly typed properties
+ * @param overrides Properties to override default values
+ * @returns A properly typed Stroke object
  */
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'other'];
-  if (validTypes.includes(type as StrokeTypeLiteral)) {
-    return type as StrokeTypeLiteral;
-  }
-  return 'other';
+export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
+  return {
+    id: `stroke-${Date.now()}`,
+    points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+    type: asStrokeType(overrides.type || 'line'),
+    color: overrides.color || '#000000',
+    thickness: overrides.thickness || 2,
+    width: overrides.width || 2,
+    ...overrides
+  };
 }
 
 /**
- * Safely cast a string to RoomTypeLiteral
- * @param type String to cast
- * @returns Properly typed RoomTypeLiteral
+ * Create a correct room with properly typed properties
+ * @param overrides Properties to override default values
+ * @returns A properly typed Room object
  */
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  if (validTypes.includes(type as RoomTypeLiteral)) {
-    return type as RoomTypeLiteral;
-  }
-  return 'other';
+export function createTestRoom(overrides: Partial<any> = {}): any {
+  return {
+    id: `room-${Date.now()}`,
+    name: overrides.name || 'Test Room',
+    type: asRoomType(overrides.type || 'other'),
+    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
+    color: overrides.color || '#ffffff',
+    area: overrides.area || 10000,
+    level: overrides.level || 0,
+    walls: overrides.walls || [],
+    ...overrides
+  };
+}
+
+/**
+ * Create a correct wall with properly typed properties
+ * @param overrides Properties to override default values
+ * @returns A properly typed Wall object
+ */
+export function createTestWall(overrides: Partial<any> = {}): any {
+  const start = overrides.start || { x: 0, y: 0 };
+  const end = overrides.end || { x: 100, y: 0 };
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  return {
+    id: `wall-${Date.now()}`,
+    start,
+    end,
+    points: [start, end],
+    thickness: overrides.thickness || 5,
+    color: overrides.color || '#000000',
+    roomIds: overrides.roomIds || [],
+    length: overrides.length || length,
+    ...overrides
+  };
 }

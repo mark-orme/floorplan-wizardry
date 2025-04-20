@@ -60,3 +60,68 @@ export function isRoom(obj: any): obj is Room {
     typeof obj.color === 'string' &&
     typeof obj.area === 'number';
 }
+
+/**
+ * Safely cast a string to StrokeTypeLiteral
+ * @param type String to cast
+ * @returns Properly typed StrokeTypeLiteral
+ */
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'other'];
+  if (validTypes.includes(type as StrokeTypeLiteral)) {
+    return type as StrokeTypeLiteral;
+  }
+  return 'other';
+}
+
+/**
+ * Safely cast a string to RoomTypeLiteral
+ * @param type String to cast
+ * @returns Properly typed RoomTypeLiteral
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  if (validTypes.includes(type as RoomTypeLiteral)) {
+    return type as RoomTypeLiteral;
+  }
+  return 'other';
+}
+
+/**
+ * Creates a test floor plan with all required properties
+ * @param overrides - Optional properties to override defaults
+ * @returns FloorPlan object for testing
+ */
+export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
+  const now = new Date().toISOString();
+  
+  return {
+    id: `test-fp-${Date.now()}`,
+    name: 'Test Floor Plan',
+    label: 'Test Floor Plan',
+    data: {},
+    userId: 'test-user',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasJson: null,
+    canvasData: null,
+    createdAt: now,
+    updatedAt: now,
+    gia: 0,
+    level: 0,
+    index: 0,
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: PaperSize.A4,
+      level: 0,
+      version: "1.0",
+      author: "Test User",
+      dateCreated: now,
+      lastModified: now,
+      notes: ""
+    },
+    ...overrides
+  };
+};

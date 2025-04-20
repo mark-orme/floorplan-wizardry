@@ -4,7 +4,8 @@
  * Provides helper functions for creating properly typed mocks
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { asMockCanvas } from '@/types/test/MockTypes';
+import { ICanvasMock, createMinimalCanvasMock } from '@/types/testing/ICanvasMock';
+import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
 /**
  * Create a mock error logger for tests
@@ -60,69 +61,100 @@ export const createMockEventHandlers = <T extends Record<string, Function>>(hand
 
 /**
  * Type-safe way to create a mock canvas with proper typing
- * This is preferred over direct casting with 'as'
  */
-export const createSafeMockCanvas = () => {
-  const mockCanvas = {
-    on: jest.fn(),
-    off: jest.fn(),
-    add: jest.fn(),
-    remove: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    clear: jest.fn(),
-    renderAll: jest.fn(),
-    getWidth: jest.fn().mockReturnValue(800),
-    getHeight: jest.fn().mockReturnValue(600),
-    setWidth: jest.fn(),
-    setHeight: jest.fn(),
-    getElement: jest.fn(),
-    getContext: jest.fn(),
-    dispose: jest.fn(),
-    requestRenderAll: jest.fn(),
-    loadFromJSON: jest.fn((json, callback) => {
-      if (callback) callback();
-    }),
-    toJSON: jest.fn().mockReturnValue({}),
-    getCenter: jest.fn().mockReturnValue({ top: 300, left: 400 }),
-    setViewportTransform: jest.fn(),
-    getActiveObject: jest.fn(),
-    sendObjectToBack: jest.fn(),
-    bringObjectToFront: jest.fn(),
-    discardActiveObject: jest.fn(),
-    isDrawingMode: false,
-    selection: true,
-    defaultCursor: 'default',
-    getHandlers: jest.fn((eventName) => [() => {}]),
-    triggerEvent: jest.fn((eventName, eventData) => {})
+export const createSafeMockCanvas = (): ICanvasMock => {
+  return createMinimalCanvasMock();
+};
+
+/**
+ * Create a mock stroke with valid type
+ */
+export const createMockStroke = (overrides: Partial<Stroke> = {}): Stroke => {
+  return {
+    id: `stroke-${Date.now()}`,
+    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+    type: asStrokeType(overrides.type as string || 'line'),
+    color: overrides.color || '#000000',
+    thickness: overrides.thickness || 2,
+    width: overrides.width || 2,
+    ...overrides
   };
+};
+
+/**
+ * Create a mock room with valid type
+ */
+export const createMockRoom = (overrides: Partial<Room> = {}): Room => {
+  return {
+    id: `room-${Date.now()}`,
+    name: overrides.name || 'Test Room',
+    type: asRoomType(overrides.type as string || 'other'),
+    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
+    color: overrides.color || '#ffffff',
+    area: overrides.area || 10000,
+    level: overrides.level || 0,
+    walls: overrides.walls || [],
+    ...overrides
+  };
+};
+
+/**
+ * Create a mock wall
+ */
+export const createMockWall = (overrides: Partial<Wall> = {}): Wall => {
+  const start = overrides.start || { x: 0, y: 0 };
+  const end = overrides.end || { x: 100, y: 0 };
+  const points = overrides.points || [start, end];
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
   
-  return asMockCanvas(mockCanvas as unknown as FabricCanvas);
+  return {
+    id: `wall-${Date.now()}`,
+    start,
+    end,
+    points,
+    thickness: overrides.thickness || 5,
+    color: overrides.color || '#000000',
+    roomIds: overrides.roomIds || [],
+    length: overrides.length || length,
+    ...overrides
+  };
 };
 
 /**
- * Utility to create a deep copy of fabric objects
- * @param obj Object to copy
- * @returns Deep copy of the object
+ * Create a test floor plan with all required properties
  */
-export const deepCopyFabricObject = <T>(obj: T): T => {
-  if (!obj) return obj;
-  return JSON.parse(JSON.stringify(obj));
+export const createMockFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
+  const now = new Date().toISOString();
+  
+  return {
+    id: overrides.id || `test-fp-${Date.now()}`,
+    name: overrides.name || 'Test Floor Plan',
+    label: overrides.label || 'Test Floor Plan',
+    data: overrides.data || {},
+    userId: overrides.userId || 'test-user',
+    walls: overrides.walls || [],
+    rooms: overrides.rooms || [],
+    strokes: overrides.strokes || [],
+    canvasJson: overrides.canvasJson || null,
+    canvasData: overrides.canvasData || null,
+    createdAt: overrides.createdAt || now,
+    updatedAt: overrides.updatedAt || now,
+    gia: overrides.gia || 0,
+    level: overrides.level || 0,
+    index: overrides.index || 0,
+    metadata: overrides.metadata || {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0,
+      version: "1.0",
+      author: "Test User",
+      dateCreated: now,
+      lastModified: now,
+      notes: ""
+    },
+    ...overrides
+  };
 };
-
-/**
- * Create mock function parameters with the correct type
- * Used to fix the error in the tests
- * @param params The parameters for the mock function
- * @returns Typed parameters
- */
-export const createMockFunctionParams = <T extends Record<string, any>>(params: T): T => {
-  return params;
-};
-
-/**
- * Create a typed Point for use in tests
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A properly typed Point object
- */
-export const createTestPoint = (x: number, y: number) => ({ x, y });
