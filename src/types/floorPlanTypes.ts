@@ -1,3 +1,4 @@
+
 /**
  * Floor Plan Types
  */
@@ -96,7 +97,7 @@ export interface Room {
   name: string;
   type: RoomTypeLiteral;
   points: Point[];
-  color: string;
+  color: string; // Make color required for consistency
   area: number;
   level: number;
   walls: string[];

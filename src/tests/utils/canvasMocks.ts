@@ -7,35 +7,35 @@ import { vi } from 'vitest';
  */
 export function setupFabricMock() {
   const MockCanvas = vi.fn().mockImplementation(() => ({
-    add: vi.fn<[any], any>(),
-    remove: vi.fn<[any], any>(),
-    getObjects: vi.fn<[], any[]>().mockReturnValue([]),
-    renderAll: vi.fn<[], void>(),
-    requestRenderAll: vi.fn<[], void>(),
-    on: vi.fn<[string, Function], any>(),
-    off: vi.fn<[string, Function?], any>(),
-    getActiveObjects: vi.fn<[], any[]>().mockReturnValue([]),
-    discardActiveObject: vi.fn<[], any>(),
-    contains: vi.fn<[any], boolean>().mockReturnValue(false),
-    withImplementation: vi.fn<[Function], Promise<void>>().mockImplementation(() => Promise.resolve())
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
   }));
 
   return {
     Canvas: MockCanvas,
     Line: vi.fn().mockImplementation(() => ({
-      set: vi.fn<[any], any>(),
-      setCoords: vi.fn<[], void>(),
-      toObject: vi.fn<[], Record<string, any>>().mockReturnValue({})
+      set: vi.fn(),
+      setCoords: vi.fn(),
+      toObject: vi.fn().mockReturnValue({})
     })),
     Rect: vi.fn().mockImplementation(() => ({
-      set: vi.fn<[any], any>(),
-      setCoords: vi.fn<[], void>(),
-      toObject: vi.fn<[], Record<string, any>>().mockReturnValue({})
+      set: vi.fn(),
+      setCoords: vi.fn(),
+      toObject: vi.fn().mockReturnValue({})
     })),
     Circle: vi.fn().mockImplementation(() => ({
-      set: vi.fn<[any], any>(),
-      setCoords: vi.fn<[], void>(),
-      toObject: vi.fn<[], Record<string, any>>().mockReturnValue({})
+      set: vi.fn(),
+      setCoords: vi.fn(),
+      toObject: vi.fn().mockReturnValue({})
     }))
   };
 }
@@ -79,8 +79,8 @@ export function createCanvasTestUtils() {
         type,
         clientX: x,
         clientY: y,
-        preventDefault: vi.fn<[], void>(),
-        stopPropagation: vi.fn<[], void>()
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn()
       };
     },
     triggerMouseEvent: (element: HTMLElement, type: string, x: number, y: number) => {

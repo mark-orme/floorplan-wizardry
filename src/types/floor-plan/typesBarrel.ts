@@ -59,7 +59,7 @@ export interface Room {
   type: RoomTypeLiteral;
   points: Point[];
   walls: any[] | string[]; // Can be wall IDs or Wall objects
-  color?: string;
+  color: string; // Make color required for consistency
   area?: number;
   level?: number;
 }
@@ -132,7 +132,8 @@ export function createEmptyRoom(id: string = crypto.randomUUID()): Room {
     name: 'Untitled Room',
     type: 'other',
     points: [],
-    walls: []
+    walls: [],
+    color: '#ffffff' // Make sure to set a default color since it's required
   };
 }
 
