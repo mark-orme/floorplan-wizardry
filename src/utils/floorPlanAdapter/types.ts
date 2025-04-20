@@ -16,19 +16,16 @@ import {
   RoomTypeLiteral,
   FloorPlanMetadata,
   asStrokeType,
-  asRoomType
+  asRoomType,
+  createEmptyFloorPlan,
+  createEmptyStroke,
+  createEmptyWall,
+  createEmptyRoom
 } from '@/types/floor-plan/typesBarrel';
 
 // Re-export all of these with proper type export syntax for isolated modules
-export type { FloorPlan };
-export type { Stroke };
-export type { Wall };
-export type { Room };
-export type { Point };
-export type { StrokeTypeLiteral };
-export type { RoomTypeLiteral };
-export type { FloorPlanMetadata };
-export { asStrokeType, asRoomType };
+export type { FloorPlan, Stroke, Wall, Room, Point, StrokeTypeLiteral, RoomTypeLiteral, FloorPlanMetadata };
+export { asStrokeType, asRoomType, createEmptyFloorPlan, createEmptyStroke, createEmptyWall, createEmptyRoom };
 
 // Export validator functions directly rather than re-exporting
 // This ensures type-safe exports without circular references

@@ -63,3 +63,20 @@ export function validateRoomType(type: string): RoomTypeLiteral {
  * @returns Properly typed RoomTypeLiteral
  */
 export const mapRoomType = validateRoomType;
+
+/**
+ * Enhanced validation logging
+ * @param propertyName Name of property being validated
+ * @param originalValue Original value
+ * @param validatedValue Validated value
+ * @param source Source object
+ */
+export function logValidation(propertyName: string, originalValue: any, validatedValue: any, source?: any): void {
+  if (originalValue !== validatedValue && process.env.NODE_ENV !== 'production') {
+    console.warn(`Validation modified ${propertyName}:`, { 
+      from: originalValue, 
+      to: validatedValue,
+      source
+    });
+  }
+}

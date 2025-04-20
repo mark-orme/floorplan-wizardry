@@ -1,127 +1,165 @@
 
 /**
  * Floor Plan Types Barrel
- * Single source of truth for all floor plan types
+ * Centralizes all floor plan type definitions
  * @module types/floor-plan/typesBarrel
  */
 
-// Import from the main floorPlanTypes.ts (our source of truth)
-import {
-  FloorPlan,
-  Stroke,
-  Wall,
-  Room,
-  Point,
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
-  FloorPlanMetadata,
-  PaperSize,
-  DrawingMode
-} from '../floorPlanTypes';
-
-// Re-export all types using the proper syntax for isolated modules
-export type { FloorPlan };
-export type { Stroke };
-export type { Wall };
-export type { Room };
-export type { Point };
-export type { StrokeTypeLiteral };
-export type { RoomTypeLiteral };
-export type { FloorPlanMetadata };
-export type { PaperSize };
-export type { DrawingMode };
-
-// Type validation functions
-export function isFloorPlan(obj: any): obj is FloorPlan {
-  return obj && 
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.userId === 'string' &&
-    typeof obj.data === 'object';
+export interface FloorPlan {
+  id: string;
+  name: string;
+  label?: string;
+  data: any; // Canvas JSON or other serialized data (required)
+  userId: string; // Owner of the floor plan (required)
+  strokes: Stroke[];
+  walls: Wall[];
+  rooms: Room[];
+  createdAt: string;
+  updatedAt: string;
+  gia?: number;
+  level?: number;
+  index?: number;
+  canvasData?: any;
+  canvasJson?: string | null;
+  metadata?: FloorPlanMetadata;
+  order?: number;
 }
 
-export function isStroke(obj: any): obj is Stroke {
-  return obj && 
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    Array.isArray(obj.points) &&
-    typeof obj.color === 'string' &&
-    typeof obj.thickness === 'number' &&
-    typeof obj.width === 'number';
+export interface Point {
+  x: number;
+  y: number;
 }
 
-export function isRoom(obj: any): obj is Room {
-  return obj && 
-    typeof obj === 'object' &&
-    typeof obj.id === 'string' &&
-    typeof obj.name === 'string' &&
-    Array.isArray(obj.points) &&
-    typeof obj.color === 'string' &&
-    typeof obj.area === 'number';
+export type StrokeTypeLiteral = 'line' | 'polyline' | 'wall' | 'room' | 'freehand' | 'door' | 'window' | 'furniture' | 'annotation' | 'other';
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+
+export interface Stroke {
+  id: string;
+  points: Point[];
+  type: StrokeTypeLiteral;
+  color: string;
+  thickness: number;
+  width: number;
 }
 
-/**
- * Safely cast a string to StrokeTypeLiteral
- * @param type String to cast
- * @returns Properly typed StrokeTypeLiteral
- */
+export interface Wall {
+  id: string;
+  start: Point;
+  end: Point;
+  thickness: number;
+  points: Point[];
+  color: string;
+  length: number;
+  roomIds: string[];
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  type: RoomTypeLiteral;
+  points: Point[];
+  walls: any[] | string[]; // Can be wall IDs or Wall objects
+  color?: string;
+  area?: number;
+  level?: number;
+}
+
+export interface FloorPlanMetadata {
+  version?: string;
+  author?: string;
+  dateCreated?: string;
+  lastModified?: string;
+  notes?: string;
+  paperSize?: string;
+  level?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export enum PaperSize {
+  A4 = 'A4',
+  A3 = 'A3',
+  A5 = 'A5',
+  LETTER = 'LETTER',
+  LEGAL = 'LEGAL',
+  TABLOID = 'TABLOID',
+  CUSTOM = 'CUSTOM'
+}
+
+// Type guard functions for safer type casting
 export function asStrokeType(type: string): StrokeTypeLiteral {
   const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'other'];
-  if (validTypes.includes(type as StrokeTypeLiteral)) {
-    return type as StrokeTypeLiteral;
-  }
-  return 'other';
+  return validTypes.includes(type as StrokeTypeLiteral) 
+    ? (type as StrokeTypeLiteral) 
+    : 'line'; // Default to line if invalid
 }
 
-/**
- * Safely cast a string to RoomTypeLiteral
- * @param type String to cast
- * @returns Properly typed RoomTypeLiteral
- */
 export function asRoomType(type: string): RoomTypeLiteral {
   const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  if (validTypes.includes(type as RoomTypeLiteral)) {
-    return type as RoomTypeLiteral;
-  }
-  return 'other';
+  return validTypes.includes(type as RoomTypeLiteral) 
+    ? (type as RoomTypeLiteral) 
+    : 'other'; // Default to other if invalid
 }
 
-/**
- * Creates a test floor plan with all required properties
- * @param overrides - Optional properties to override defaults
- * @returns FloorPlan object for testing
- */
-export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
-  const now = new Date().toISOString();
-  
+// Create empty objects for testing
+export function createEmptyStroke(id: string = crypto.randomUUID()): Stroke {
   return {
-    id: `test-fp-${Date.now()}`,
-    name: 'Test Floor Plan',
-    label: 'Test Floor Plan',
-    data: {},
-    userId: 'test-user',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasJson: null,
-    canvasData: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0,
-      version: "1.0",
-      author: "Test User",
+    id,
+    points: [],
+    type: 'line',
+    color: '#000000',
+    thickness: 1,
+    width: 1
+  };
+}
+
+export function createEmptyWall(id: string = crypto.randomUUID()): Wall {
+  return {
+    id,
+    start: { x: 0, y: 0 },
+    end: { x: 100, y: 100 },
+    thickness: 10,
+    points: [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+    color: '#000000',
+    length: 141.42, // Sqrt(100^2 + 100^2)
+    roomIds: []
+  };
+}
+
+export function createEmptyRoom(id: string = crypto.randomUUID()): Room {
+  return {
+    id,
+    name: 'Untitled Room',
+    type: 'other',
+    points: [],
+    walls: []
+  };
+}
+
+export function createEmptyFloorPlan(data: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
+  return {
+    id: data.id ?? crypto.randomUUID(),
+    name: data.name ?? 'Untitled Floor Plan',
+    label: data.label ?? 'Untitled',
+    data: data.data ?? {},
+    userId: data.userId ?? 'user-1',
+    strokes: data.strokes ?? [],
+    walls: data.walls ?? [],
+    rooms: data.rooms ?? [],
+    createdAt: data.createdAt ?? now,
+    updatedAt: data.updatedAt ?? now,
+    gia: data.gia ?? 0,
+    level: data.level ?? 0,
+    index: data.index ?? 0,
+    canvasData: data.canvasData ?? null,
+    canvasJson: data.canvasJson ?? null,
+    metadata: data.metadata ?? {
+      version: '1.0',
+      author: '',
       dateCreated: now,
       lastModified: now,
-      notes: ""
-    },
-    ...overrides
+      notes: ''
+    }
   };
-};
+}

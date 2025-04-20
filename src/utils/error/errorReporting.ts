@@ -26,7 +26,14 @@ export const handleError = (
       component: context.component || 'unknown',
       operation: context.operation || 'unknown'
     });
-    scope.setExtras(context);
+    
+    // Convert ErrorContext to Record<string, any> for Sentry
+    const extras: Record<string, any> = {};
+    if (context.component) extras.component = context.component;
+    if (context.operation) extras.operation = context.operation;
+    if (context.context) extras.contextData = context.context;
+    
+    scope.setExtras(extras);
 
     if (error instanceof Error) {
       Sentry.captureException(error);
