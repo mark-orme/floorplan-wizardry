@@ -1,31 +1,8 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { MutableRefObject } from "react";
+import { Canvas as FabricCanvas } from 'fabric';
 
-/**
- * Canvas reference type
- */
-export type CanvasRef = MutableRefObject<FabricCanvas | null>;
-
-/**
- * Grid layer reference type
- */
-export type GridLayerRef = MutableRefObject<FabricObject[]>;
-
-/**
- * Canvas history reference type
- */
-export type HistoryRef = MutableRefObject<{
-  past: FabricObject[][];
-  future: FabricObject[][];
-}>;
-
-/**
- * Canvas references bundle
- * Common set of references used in canvas components and hooks
- */
 export interface CanvasReferences {
-  fabricCanvasRef: CanvasRef;
-  gridLayerRef?: GridLayerRef;
-  historyRef?: HistoryRef;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<any[]>;
 }

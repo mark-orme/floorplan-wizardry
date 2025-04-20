@@ -1,90 +1,95 @@
-
-/**
- * Floor Plan type definitions
- * Centralized to avoid duplicates
- */
-
-// Import drawing modes from the centralized source
 import { DrawingMode } from '@/constants/drawingModes';
-// Re-export DrawingMode to maintain backward compatibility
-export { DrawingMode };
 
 export interface FloorPlan {
   id: string;
   name: string;
   label: string;
-  data: any; // Generic data container 
-  userId: string;
-  walls: any[];
-  rooms: any[];
-  strokes: any[];
-  canvasJson: string | null;
-  canvasData: any | null;
-  createdAt: string;
-  updatedAt: string;
+  index: number;
+  strokes: Stroke[];
+  walls: Wall[];
+  rooms: Room[];
   gia: number;
   level: number;
-  index: number;
-  metadata: {
-    createdAt: string;
-    updatedAt: string;
-    paperSize: PaperSize;
-    level: number;
-    collaborators?: string[];
-    lastModifiedBy?: string;
-    lastModifiedAt?: string;
-    version?: number;
-    crdtState?: string;
-  };
+  canvasData: CanvasData | null;
+  canvasJson: string | null;
+  createdAt: string;
+  updatedAt: string;
+  metadata: FloorPlanMetadata;
+  data: any; // Required for interface compatibility
+  userId: string; // Required for interface compatibility
 }
 
-export enum PaperSize {
-  A4 = 'A4',
-  A3 = 'A3',
-  A2 = 'A2', 
-  A1 = 'A1',
-  A0 = 'A0'
+export interface Room {
+  id: string;
+  name: string;
+  floorPlanId: string;
+  area: number;
+  perimeter: number;
+  center: Point;
+  vertices: Point[];
+  labelPosition: Point;
+  createdAt: string;
+  updatedAt: string;
+  metadata: RoomMetadata;
 }
 
-export const stringToPaperSize = (size: string): PaperSize => {
-  switch (size.toUpperCase()) {
-    case 'A4': return PaperSize.A4;
-    case 'A3': return PaperSize.A3;
-    case 'A2': return PaperSize.A2; 
-    case 'A1': return PaperSize.A1;
-    case 'A0': return PaperSize.A0;
-    default: return PaperSize.A4;
-  }
-};
+export interface Wall {
+  id: string;
+  floorPlanId: string;
+  start: Point;
+  end: Point;
+  thickness: number;
+  length: number;
+  angle: number;
+  createdAt: string;
+  updatedAt: string;
+  metadata: WallMetadata;
+}
 
-// Create an empty floor plan with defaults
-export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
-  
-  return {
-    id: `fp-${Date.now()}`,
-    name: 'New Floor Plan',
-    label: 'Untitled',
-    data: {},
-    userId: 'anonymous',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasJson: null,
-    canvasData: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0,
-      collaborators: [],
-      version: 1
-    },
-    ...overrides
-  };
+export interface Stroke {
+  id: string;
+  floorPlanId: string;
+  points: Point[];
+  color: string;
+  thickness: number;
+  drawingMode: DrawingMode;
+  createdAt: string;
+  updatedAt: string;
+  metadata: StrokeMetadata;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface CanvasData {
+  zoom: number;
+  offset: Point;
+}
+
+export interface FloorPlanMetadata {
+  version: string;
+  author: string;
+  dateCreated: string;
+  lastModified: string;
+  notes: string;
+}
+
+export interface RoomMetadata {
+  type: string;
+  material: string;
+  notes: string;
+}
+
+export interface WallMetadata {
+  type: string;
+  material: string;
+  height: number;
+  notes: string;
+}
+
+export interface StrokeMetadata {
+  type: string;
+  notes: string;
 }
