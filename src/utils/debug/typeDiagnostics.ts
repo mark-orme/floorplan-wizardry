@@ -3,7 +3,7 @@
  * Type diagnostics utility
  * @module utils/debug/typeDiagnostics
  */
-import { PaperSize, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import { PaperSize, FloorPlanMetadata, FloorPlan } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Calculate wall length based on start and end points
@@ -35,5 +35,77 @@ export function createCompleteMetadata(overrides: Partial<FloorPlanMetadata> = {
     dateCreated: overrides.dateCreated || now,
     lastModified: overrides.lastModified || now,
     notes: overrides.notes || ''
+  };
+}
+
+/**
+ * Validates a floor plan and reports any issues
+ * @param floorPlan The floor plan to validate
+ * @returns Validation result with issues if any
+ */
+export function validateFloorPlanWithReporting(floorPlan: FloorPlan): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+  
+  if (!floorPlan) {
+    return { valid: false, issues: ['Floor plan is null or undefined'] };
+  }
+  
+  if (!floorPlan.id) {
+    issues.push('Missing floor plan ID');
+  }
+  
+  if (!floorPlan.name) {
+    issues.push('Missing floor plan name');
+  }
+  
+  if (!floorPlan.metadata) {
+    issues.push('Missing floor plan metadata');
+  } else {
+    if (!floorPlan.metadata.version) {
+      issues.push('Missing metadata version');
+    }
+    if (!floorPlan.metadata.author) {
+      issues.push('Missing metadata author');
+    }
+    // More metadata validations if needed
+  }
+  
+  // Validate walls
+  if (!Array.isArray(floorPlan.walls)) {
+    issues.push('Walls property is not an array');
+  } else {
+    floorPlan.walls.forEach((wall, index) => {
+      if (!wall.id) {
+        issues.push(`Wall at index ${index} is missing an ID`);
+      }
+      if (!wall.start || typeof wall.start.x !== 'number' || typeof wall.start.y !== 'number') {
+        issues.push(`Wall at index ${index} has invalid start point`);
+      }
+      if (!wall.end || typeof wall.end.x !== 'number' || typeof wall.end.y !== 'number') {
+        issues.push(`Wall at index ${index} has invalid end point`);
+      }
+    });
+  }
+  
+  // Validate rooms
+  if (!Array.isArray(floorPlan.rooms)) {
+    issues.push('Rooms property is not an array');
+  } else {
+    floorPlan.rooms.forEach((room, index) => {
+      if (!room.id) {
+        issues.push(`Room at index ${index} is missing an ID`);
+      }
+      if (!room.name) {
+        issues.push(`Room at index ${index} is missing a name`);
+      }
+      if (!Array.isArray(room.vertices) || room.vertices.length < 3) {
+        issues.push(`Room at index ${index} has invalid vertices (less than 3 points)`);
+      }
+    });
+  }
+  
+  return {
+    valid: issues.length === 0,
+    issues
   };
 }

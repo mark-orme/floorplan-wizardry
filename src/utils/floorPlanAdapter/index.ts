@@ -11,17 +11,25 @@ export {
   appToCoreFloorPlans,
   appToCoreFloorPlan,
   coreToAppFloorPlans,
-  coreToAppFloorPlan
+  coreToAppFloorPlan,
+  normalizeDrawingMode,
+  validateStrokeType,
+  asStrokeType,
+  validateRoomType,
+  asRoomType,
+  VALID_STROKE_TYPES,
+  VALID_ROOM_TYPES
 } from './converters';
 
 // Re-export validators
 export {
-  validateStrokeType,
-  validateRoomType,
   validatePoint,
   validateColor,
   validateTimestamp,
-  mapRoomType
+  validateStrokeType as validateStrokeTypeValidator,
+  validateRoomType as validateRoomTypeValidator,
+  mapRoomType,
+  logValidation
 } from './validators';
 
 // Re-export types 
@@ -36,18 +44,12 @@ export type {
   FloorPlanMetadata
 } from './types';
 
-export { asStrokeType, asRoomType } from './types';
-
-/**
- * Normalizes a drawing mode value to ensure it's a valid DrawingMode
- * @param mode The drawing mode to normalize
- * @returns A valid DrawingMode enum value
- */
-export { normalizeDrawingMode } from '../floorPlanAdapter';
-
 /**
  * Creates an empty floor plan
  * @param index Index for the new floor plan
  * @returns An empty floor plan
  */
-export { createEmptyFloorPlan } from '../floorPlanAdapter';
+export function createEmptyFloorPlan(index: number = 0): any {
+  const { createEmptyFloorPlan } = require('../floor-plan/unifiedTypes');
+  return createEmptyFloorPlan(index);
+}

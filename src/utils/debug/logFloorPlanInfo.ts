@@ -5,11 +5,48 @@
  */
 import { FloorPlan, Room, Wall } from '@/types/floor-plan/unifiedTypes';
 import { 
-  isValidFloorPlan, 
-  isValidRoom, 
-  isValidWall, 
   validateFloorPlanWithReporting 
 } from './typeDiagnostics';
+
+/**
+ * Validate if a room is valid
+ * @param room Room to validate
+ * @returns Whether the room is valid
+ */
+export function isValidRoom(room: Room): boolean {
+  return room && 
+         typeof room.id === 'string' && 
+         typeof room.name === 'string' && 
+         Array.isArray(room.vertices) && 
+         room.vertices.length >= 3;
+}
+
+/**
+ * Validate if a wall is valid
+ * @param wall Wall to validate
+ * @returns Whether the wall is valid
+ */
+export function isValidWall(wall: Wall): boolean {
+  return wall && 
+         typeof wall.id === 'string' && 
+         wall.start && 
+         typeof wall.start.x === 'number' && 
+         typeof wall.start.y === 'number' && 
+         wall.end && 
+         typeof wall.end.x === 'number' && 
+         typeof wall.end.y === 'number';
+}
+
+/**
+ * Validate if a floor plan is valid
+ * @param floorPlan Floor plan to validate
+ * @returns Whether the floor plan is valid
+ */
+export function isValidFloorPlan(floorPlan: FloorPlan): boolean {
+  return floorPlan && 
+         typeof floorPlan.id === 'string' && 
+         typeof floorPlan.name === 'string';
+}
 
 /**
  * Log detailed floor plan information for debugging

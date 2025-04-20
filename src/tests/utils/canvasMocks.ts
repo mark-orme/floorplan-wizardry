@@ -51,7 +51,9 @@ export const createMockHistoryRef = () => {
       canUndo: vi.fn().mockReturnValue(true),
       canRedo: vi.fn().mockReturnValue(true),
       push: vi.fn(),
-      clear: vi.fn()
+      clear: vi.fn(),
+      past: [],
+      future: []
     }
   };
 };
@@ -62,6 +64,17 @@ export const createMockHistoryRef = () => {
  */
 export const createMockGridLayerRef = () => {
   return { current: [] };
+};
+
+/**
+ * Setup Fabric mock for test
+ */
+export const setupFabricMock = () => {
+  return {
+    canvas: createMockCanvas(),
+    historyRef: createMockHistoryRef(),
+    gridLayerRef: createMockGridLayerRef()
+  };
 };
 
 /**
