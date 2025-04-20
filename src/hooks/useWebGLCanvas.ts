@@ -19,6 +19,7 @@ export const useWebGLCanvas = ({ canvasRef, fabricCanvas }: UseWebGLCanvasProps)
       console.log('WebGL renderer initialized successfully');
     } catch (error) {
       console.error('Error initializing WebGL renderer:', error);
+      // Consider adding error handling or fallback mechanism
     }
 
     return () => {

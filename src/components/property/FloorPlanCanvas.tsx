@@ -1,49 +1,28 @@
-
-/**
- * Floor Plan Canvas component
- * Handles canvas rendering and initialization
- */
-import { useState, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric"; 
+import React, { useRef, useEffect } from "react";
+import { Canvas as FabricCanvas } from "fabric"; 
+import { useWebGLCanvas } from "@/hooks/useWebGLCanvas";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasContainer";
-import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import { Canvas as CanvasComponent } from "@/components/Canvas";
-import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
-import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid"; // React component import
-import { resetGridProgress } from "@/utils/gridManager";
-import { useCanvasInitialization } from "./canvas/useCanvasInitialization";
-import { useDebugPanel } from "./canvas/useDebugPanel";
-import { CanvasRetryButton } from "./canvas/CanvasRetryButton";
-import { startCanvasTransaction } from "@/utils/sentry/performance";
 
-// Constants for component
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
-const INIT_DELAY = 500; // ms
 
-/**
- * Props for the FloorPlanCanvas component
- */
-interface FloorPlanCanvasProps {
-  /** Callback for canvas error */
-  onCanvasError?: () => void;
-}
+export const FloorPlanCanvas = ({ onCanvasError }: { onCanvasError?: () => void }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fabricCanvas, setFabricCanvas] = React.useState<FabricCanvas | null>(null);
 
-/**
- * Floor Plan Canvas component
- * Handles canvas rendering and initialization
- * 
- * @param {FloorPlanCanvasProps} props - Component properties
- * @returns {JSX.Element} Rendered component
- */
-export const FloorPlanCanvas = ({ onCanvasError }: FloorPlanCanvasProps) => {
+  // Initialize WebGL canvas
+  const { webglRenderer } = useWebGLCanvas({
+    canvasRef,
+    fabricCanvas
+  });
+
   // Use the canvas initialization hook
   const {
     isReady,
     setIsReady,
     initAttempt,
-    fabricCanvas,
+    fabricCanvas: canvas,
     canvasError,
     unmountedRef,
     fabricCanvasRef,

@@ -2,7 +2,7 @@
 import { Canvas as FabricCanvas } from 'fabric';
 
 export class WebGLRenderer {
-  private gl: WebGLRenderingContext | null = null;
+  private gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
   private canvas: HTMLCanvasElement | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -18,17 +18,17 @@ export class WebGLRenderer {
         stencil: true,
         antialias: true,
         preserveDrawingBuffer: true,
-        premultipliedAlpha: false
+        premultipliedAlpha: false,
+        powerPreference: 'high-performance'
       };
 
-      this.gl = this.canvas?.getContext('webgl', contextOptions) || 
-                this.canvas?.getContext('experimental-webgl', contextOptions) as WebGLRenderingContext;
+      this.gl = (this.canvas?.getContext('webgl2', contextOptions) || 
+                 this.canvas?.getContext('webgl', contextOptions)) as WebGLRenderingContext | WebGL2RenderingContext;
 
       if (!this.gl) {
         throw new Error('WebGL not supported');
       }
 
-      // Configure WebGL context
       const gl = this.gl;
       gl.clearColor(0.0, 0.0, 0.0, 0.0);
       gl.enable(gl.BLEND);
