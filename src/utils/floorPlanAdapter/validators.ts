@@ -5,8 +5,7 @@
  * @module utils/floorPlanAdapter/validators
  */
 
-import { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
-import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
+import { StrokeTypeLiteral, RoomTypeLiteral, asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
 /**
  * Validates a point with x and y coordinates

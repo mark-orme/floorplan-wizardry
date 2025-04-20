@@ -33,5 +33,5 @@ export {
   asRoomType
 };
 
-// Re-export validateStrokeType and validateRoomType for backward compatibility
-export { validateStrokeType, validateRoomType, mapRoomType } from '../floorPlanAdapter';
+// We don't re-export these since they're now in validators.ts
+// They are imported directly from there in index.ts

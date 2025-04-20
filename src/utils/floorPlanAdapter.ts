@@ -1,6 +1,12 @@
 
+/**
+ * FloorPlanAdapter Module
+ * Provides utilities for converting between different floor plan formats
+ * @module utils/floorPlanAdapter
+ */
+
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 import { FloorPlan as AppFloorPlan, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -23,7 +29,7 @@ import {
   mapRoomType
 } from './floorPlanAdapter/validators';
 
-// Re-export converters
+// Re-export converters and validators
 export { 
   adaptFloorPlan, 
   appToCoreFloorPlans, 

@@ -62,7 +62,7 @@ export function createMockFunction<TArgs extends any[], TReturn>(): jest.Mock<TR
   return vi.fn<TArgs, TReturn>();
 }
 
-// Alias to maintain backward compatibility
+// Alias to maintain backward compatibility (used in tests)
 export const createMockFunctionParams = createMockParams;
 
 /**
