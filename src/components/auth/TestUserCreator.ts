@@ -11,12 +11,14 @@ export interface TestUser {
 
 export const createTestUser = async (user: TestUser) => {
   try {
-    // Check if user already exists (using auth API directly)
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(user.email);
+    // Check if user already exists
+    const { data: existingUser, error: getUserError } = await supabase.auth.admin.listUsers({
+      filter: { email: user.email }
+    });
     
-    if (authUser) {
+    if (existingUser?.users && existingUser.users.length > 0) {
       console.log('User already exists:', user.email);
-      return authUser;
+      return existingUser.users[0];
     }
 
     // Create new user
@@ -38,23 +40,42 @@ export const createTestUser = async (user: TestUser) => {
   }
 };
 
+export const loginAsTestUser = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error logging in as test user:', error);
+    throw error;
+  }
+};
+
 export const deleteTestUser = async (email: string) => {
   try {
     // Find the user by email
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(email);
+    const { data: users, error: getUserError } = await supabase.auth.admin.listUsers({
+      filter: { email }
+    });
 
-    if (authError) {
-      console.error('Error fetching user to delete:', authError);
-      throw authError;
+    if (getUserError) {
+      console.error('Error fetching user to delete:', getUserError);
+      throw getUserError;
     }
 
-    if (!authUser) {
+    if (!users?.users || users.users.length === 0) {
       console.log('User not found:', email);
       return;
     }
 
+    const userId = users.users[0].id;
+
     // Delete the user
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(authUser.id);
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
     if (deleteError) {
       console.error('Error deleting user:', deleteError);

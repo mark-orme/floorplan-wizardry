@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Path } from 'fabric';
 import { Point } from '@/types/core/Point';
 
 interface UseOptimizedDrawingProps {
@@ -19,7 +20,7 @@ export const useOptimizedDrawing = ({
 }: UseOptimizedDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
-  const [currentPath, setCurrentPath] = useState<fabric.Path | null>(null);
+  const [currentPath, setCurrentPath] = useState<Path | null>(null);
 
   const handlePointerDown = useCallback((event: any) => {
     if (!canvas || !enabled) return;
@@ -30,7 +31,7 @@ export const useOptimizedDrawing = ({
     setIsDrawing(true);
     setStartPoint(point);
 
-    const path = new fabric.Path(`M ${point.x} ${point.y} L ${point.x} ${point.y}`, {
+    const path = new Path(`M ${point.x} ${point.y} L ${point.x} ${point.y}`, {
       stroke: lineColor,
       strokeWidth: lineThickness,
       fill: null,
@@ -55,7 +56,7 @@ export const useOptimizedDrawing = ({
     const point: Point = { x: pointer.x, y: pointer.y };
 
     const newPathData = `M ${startPoint.x} ${startPoint.y} L ${point.x} ${point.y}`;
-    currentPath.set({ path: new fabric.Path(newPathData).path });
+    currentPath.set({ path: new Path(newPathData).path });
     canvas.requestRenderAll();
   }, [canvas, isDrawing, startPoint, currentPath]);
 

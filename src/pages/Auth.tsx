@@ -1,132 +1,91 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserRole } from '@/lib/supabase';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { createTestUser, loginAsTestUser } from '@/components/auth/TestUserCreator';
 import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { UserRole } from '@/lib/supabase';
+import { createTestUser, loginAsTestUser, TestUser } from '@/components/auth/TestUserCreator';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Define test users that can be created with a single click
-const testUsers = [
-  {
-    email: 'admin@example.com',
-    password: 'password123',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: UserRole.ADMIN,
-    label: 'Admin User'
-  },
-  {
-    email: 'manager@example.com',
-    password: 'password123',
-    firstName: 'Manager',
-    lastName: 'User',
-    role: UserRole.MANAGER,
-    label: 'Property Manager'
-  },
-  {
-    email: 'photographer@example.com',
-    password: 'password123',
-    firstName: 'Photo',
-    lastName: 'Grapher',
-    role: UserRole.PHOTOGRAPHER,
-    label: 'Photographer'
-  }
-];
-
-export default function Auth() {
+const Auth = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [loading, setLoading] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsLoggingIn(true);
+    setLoading(true);
     
     try {
-      const success = await loginAsTestUser(email, password);
-      if (success) {
-        navigate('/');
-      } else {
-        setError('Invalid email or password');
-      }
-    } catch (err) {
-      setError('An error occurred during login');
+      await login(email, password);
+      toast.success('Logged in successfully');
+      navigate('/');
+    } catch (error: any) {
+      toast.error(`Login failed: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsLoggingIn(false);
+      setLoading(false);
     }
   };
-  
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsRegistering(true);
+
+  const handleCreateTestUser = async (role: UserRole) => {
+    setLoading(true);
     
     try {
-      const success = await createTestUser({
-        email,
-        password,
-        firstName: 'Test',
-        lastName: 'User',
-        role: UserRole.USER,
-        label: 'Test User'
-      });
+      const testEmail = `test-${role}@example.com`;
+      const testPassword = 'password123';
       
-      if (success) {
-        setError(null);
-        navigate('/login');
-      } else {
-        setError('Failed to create account');
-      }
-    } catch (err) {
-      setError('An error occurred during registration');
-    } finally {
-      setIsRegistering(false);
-    }
-  };
-  
-  const handleCreateTestUser = async (user: any) => {
-    setError(null);
-    
-    try {
+      const user: TestUser = {
+        email: testEmail,
+        password: testPassword,
+        role: role,
+        label: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`
+      };
+      
       await createTestUser(user);
-    } catch (err) {
-      setError('Failed to create test user');
+      toast.success(`Test ${role} user created: ${testEmail}`);
+      
+      // Auto login
+      await loginAsTestUser(testEmail, testPassword);
+      toast.success('Logged in as test user');
+      navigate('/');
+      
+    } catch (error: any) {
+      toast.error(`Error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
+      <div className="w-full max-w-md p-4">
         <Card>
           <CardHeader>
             <CardTitle>Authentication</CardTitle>
-            <CardDescription>Login or create an account to continue</CardDescription>
+            <CardDescription>Log in to access the application</CardDescription>
           </CardHeader>
           
-          <Tabs defaultValue="login">
+          <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsTrigger value="test-users">Test Users</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
-                <CardContent className="space-y-4 pt-4">
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="your@email.com" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -134,97 +93,66 @@ export default function Auth() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      placeholder="••••••••" 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                   </div>
-                  
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
                 </CardContent>
-                
-                <CardFooter className="flex justify-between">
-                  <Button type="button" variant="outline" onClick={() => navigate('/')}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoggingIn}>
-                    {isLoggingIn ? 'Logging in...' : 'Login'}
+                <CardFooter>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Logging in..." : "Log In"}
                   </Button>
                 </CardFooter>
               </form>
             </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleRegister}>
-                <CardContent className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">Email</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Password</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <div className="pt-4">
-                    <h3 className="text-sm font-medium mb-2">Or create a test user:</h3>
-                    <div className="grid grid-cols-1 gap-2">
-                      {testUsers.map((user) => (
-                        <Button
-                          key={user.email}
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCreateTestUser(user)}
-                        >
-                          Create {user.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="flex justify-between">
-                  <Button type="button" variant="outline" onClick={() => navigate('/')}>
-                    Cancel
+
+            <TabsContent value="test-users">
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleCreateTestUser(UserRole.ADMIN)}
+                    disabled={loading}
+                  >
+                    Create & Login as Admin
                   </Button>
-                  <Button type="submit" disabled={isRegistering}>
-                    {isRegistering ? 'Registering...' : 'Register'}
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleCreateTestUser(UserRole.MANAGER)}
+                    disabled={loading}
+                  >
+                    Create & Login as Manager
                   </Button>
-                </CardFooter>
-              </form>
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleCreateTestUser(UserRole.PHOTOGRAPHER)}
+                    disabled={loading}
+                  >
+                    Create & Login as Photographer
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleCreateTestUser(UserRole.USER)}
+                    disabled={loading}
+                  >
+                    Create & Login as Regular User
+                  </Button>
+                </div>
+              </CardContent>
+              <CardFooter className="text-xs text-gray-500">
+                Test accounts are automatically created with password "password123"
+              </CardFooter>
             </TabsContent>
           </Tabs>
         </Card>
       </div>
     </div>
   );
-}
+};
+
+export default Auth;
