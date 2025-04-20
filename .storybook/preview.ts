@@ -18,39 +18,27 @@ const preview: Preview = {
       },
     },
     a11y: {
-      // Axe-core configuration
       config: {
         rules: [
           {
             id: 'color-contrast',
-            reviewOnFail: true,
+            reviewOnFail: true
           },
           {
             id: 'heading-order',
-            reviewOnFail: true,
-          },
-          {
-            id: 'label',
-            reviewOnFail: true,
-          },
-          {
-            id: 'landmark-one-main',
-            reviewOnFail: true,
-          },
-        ],
+            reviewOnFail: true
+          }
+        ]
       },
-      // Component-specific options
       options: {
         runOnly: {
           type: 'tag',
-          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-        },
+          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
+        }
       },
-      // Fail the build on critical violations
-      manual: true,
+      manual: true
     },
     layout: 'fullscreen',
-    // Configure viewport sizes
     viewport: {
       viewports: {
         mobile: {

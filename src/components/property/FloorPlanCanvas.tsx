@@ -1,8 +1,16 @@
 import React, { useRef, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric"; 
+import { Canvas as FabricCanvas } from "fabric";
 import { useWebGLCanvas } from "@/hooks/useWebGLCanvas";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { ReliableCanvasContainer } from "@/components/canvas/ReliableCanvasContainer";
+import { useCanvasInitialization } from "@/hooks/canvas/useCanvasInitialization";
+import { useDebugPanel } from "@/hooks/useDebugPanel";
+import { GridDebugPanel } from "@/components/canvas/grid/GridDebugPanel";
+import { SimpleGrid } from "@/components/canvas/grid/SimpleGrid";
+import { CanvasRetryButton } from "@/components/canvas/CanvasRetryButton";
+import { CanvasComponent } from "@/components/canvas/CanvasComponent";
+import { startCanvasTransaction } from "@/utils/sentry/performance";
+import { resetInitializationState, resetGridProgress, INIT_DELAY } from "@/utils/canvas/canvasInit";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
