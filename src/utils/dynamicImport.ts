@@ -2,7 +2,7 @@
 /**
  * Utility for dynamic imports and feature flag checking
  */
-import { Suspense, lazy, ComponentType } from 'react';
+import React, { Suspense, lazy, ComponentType } from 'react';
 import logger from './logger';
 
 // Feature flags configuration
