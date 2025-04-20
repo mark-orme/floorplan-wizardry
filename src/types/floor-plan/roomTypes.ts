@@ -5,7 +5,11 @@
  * @module types/floor-plan/roomTypes
  */
 import { Point } from '../core/Point';
-import { RoomTypeLiteral } from './basicTypes';
+
+/**
+ * Room type literals
+ */
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
 
 /**
  * Room interface for floor plan
@@ -35,4 +39,3 @@ export interface Room {
   /** Wall IDs associated with this room (required for compatibility) */
   walls: string[];
 }
-

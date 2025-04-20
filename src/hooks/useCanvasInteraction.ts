@@ -4,7 +4,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasInteractionOptions {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
   canvas?: React.MutableRefObject<FabricCanvas | null> | FabricCanvas | null; // Added for test compatibility
   tool?: DrawingMode;
   saveCurrentState?: () => void;

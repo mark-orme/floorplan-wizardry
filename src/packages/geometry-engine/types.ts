@@ -14,6 +14,11 @@ export interface LineSegment {
   end: Point;
 }
 
+export interface Line extends LineSegment {
+  slope?: number;
+  yIntercept?: number;
+}
+
 export interface Polygon {
   points: Point[];
 }
@@ -23,3 +28,14 @@ export interface GeometryOperationOptions {
   maxIterations?: number;
 }
 
+export interface WorkerMessageData {
+  operation: string;
+  payload: any;
+  id: string;
+}
+
+export interface WorkerResponse {
+  result: any;
+  id: string;
+  error?: string;
+}

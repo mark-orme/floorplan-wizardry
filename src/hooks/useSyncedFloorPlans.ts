@@ -1,88 +1,34 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { useFloorPlanDrawing } from './floor-plan/useFloorPlanDrawing';
-import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
-  defaultFloorIndex?: number;
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  syncInterval?: number;
-  autoSync?: boolean;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
 }
 
 export interface UseSyncedFloorPlansResult {
   floorPlans: FloorPlan[];
   currentFloorIndex: number;
-  setCurrentFloorIndex: React.Dispatch<React.SetStateAction<number>>;
-  currentFloorPlan: FloorPlan | null;
+  setCurrentFloorIndex: (index: number) => void;
   addFloorPlan: () => void;
   removeFloorPlan: (index: number) => void;
-  drawFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => void;
-  isDrawing: boolean;
-  isSyncing: boolean;
-  lastSynced: Date | null;
-  // Add functions needed by tests
-  syncFloorPlans: () => Promise<void>;
-  loadFloorPlan: (id: string) => Promise<void>;
-  calculateGIA: () => number;
+  updateFloorPlan: (floorPlan: FloorPlan) => void;
+  saveFloorPlan: () => Promise<string | null>;
 }
 
 export const useSyncedFloorPlans = ({
   initialFloorPlans = [],
-  defaultFloorIndex = 0,
-  fabricCanvasRef,
-  syncInterval = 30000, // Default to 30 seconds
-  autoSync = true
+  fabricCanvasRef
 }: UseSyncedFloorPlansProps): UseSyncedFloorPlansResult => {
-  // State for floor plans
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans.map(plan => ({
-    ...plan,
-    data: plan.data || {},
-    userId: plan.userId || 'default-user'
-  })));
-  const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
+  const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   
-  // Get current floor plan
-  const currentFloorPlan = floorPlans[currentFloorIndex] || null;
-  
-  // Initialize floor plan drawing hook
-  const {
-    isDrawing,
-    drawingPoints,
-    currentPoint,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing,
-    addStroke,
-    calculateAreas,
-    drawFloorPlan
-  } = useFloorPlanDrawing({
-    fabricCanvasRef: fabricCanvasRef || { current: null },
-    tool: DrawingMode.SELECT,
-    floorPlan: currentFloorPlan as FloorPlan,
-    setFloorPlan: (floorPlan) => {
-      if (typeof floorPlan === 'function') {
-        setFloorPlans(prev => {
-          const updated = [...prev];
-          updated[currentFloorIndex] = floorPlan(prev[currentFloorIndex]);
-          return updated;
-        });
-      } else {
-        setFloorPlans(prev => {
-          const updated = [...prev];
-          updated[currentFloorIndex] = floorPlan;
-          return updated;
-        });
-      }
-    }
-  });
+  const getCurrentFloorPlan = useCallback(() => {
+    return floorPlans[currentFloorIndex] || null;
+  }, [floorPlans, currentFloorIndex]);
   
   // Add a new floor plan
   const addFloorPlan = useCallback(() => {
@@ -90,12 +36,12 @@ export const useSyncedFloorPlans = ({
       id: uuidv4(),
       name: `Floor ${floorPlans.length + 1}`,
       label: `Floor ${floorPlans.length + 1}`,
-      index: floorPlans.length,
-      level: floorPlans.length,
       walls: [],
       rooms: [],
       strokes: [],
       gia: 0,
+      level: floorPlans.length,
+      index: floorPlans.length,
       canvasData: null,
       canvasJson: null,
       createdAt: new Date().toISOString(),
@@ -106,13 +52,13 @@ export const useSyncedFloorPlans = ({
         paperSize: 'A4',
         level: floorPlans.length
       },
-      data: {},
-      userId: 'default-user'
+      data: {}, // Required by FloorPlan interface
+      userId: 'default-user' // Required by FloorPlan interface
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
     setCurrentFloorIndex(floorPlans.length);
-  }, [floorPlans.length]);
+  }, [floorPlans]);
   
   // Remove a floor plan
   const removeFloorPlan = useCallback((index: number) => {
@@ -128,61 +74,47 @@ export const useSyncedFloorPlans = ({
     }
   }, [floorPlans.length, currentFloorIndex]);
   
-  // Implement functions needed by tests
-  const syncFloorPlans = useCallback(async () => {
-    setIsSyncing(true);
-    try {
-      // Simulate network request
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setLastSynced(new Date());
-    } finally {
-      setIsSyncing(false);
-    }
+  // Update floor plan
+  const updateFloorPlan = useCallback((floorPlan: FloorPlan) => {
+    setFloorPlans(prev => {
+      const updated = [...prev];
+      const index = updated.findIndex(p => p.id === floorPlan.id);
+      if (index !== -1) {
+        updated[index] = floorPlan;
+      }
+      return updated;
+    });
   }, []);
   
-  const loadFloorPlan = useCallback(async (id: string) => {
-    // Mock implementation
-    const index = floorPlans.findIndex(fp => fp.id === id);
-    if (index >= 0) {
-      setCurrentFloorIndex(index);
+  // Save floor plan to backend
+  const saveFloorPlan = useCallback(async (): Promise<string | null> => {
+    const currentFloorPlan = getCurrentFloorPlan();
+    if (!currentFloorPlan) return null;
+    
+    // Save canvas state to floor plan
+    if (fabricCanvasRef.current) {
+      const canvasJson = JSON.stringify(fabricCanvasRef.current.toJSON());
+      const updatedFloorPlan: FloorPlan = {
+        ...currentFloorPlan,
+        canvasJson,
+        updatedAt: new Date().toISOString()
+      };
+      
+      updateFloorPlan(updatedFloorPlan);
+      console.log('Floor plan saved with canvas state');
+      return updatedFloorPlan.id;
     }
-  }, [floorPlans]);
-  
-  const calculateGIA = useCallback(() => {
-    // Mock implementation
-    if (!currentFloorPlan) return 0;
     
-    const totalArea = currentFloorPlan.rooms.reduce((sum, room) => sum + room.area, 0);
-    return totalArea;
-  }, [currentFloorPlan]);
-  
-  // Auto-sync functionality
-  useEffect(() => {
-    if (!autoSync) return;
-    
-    const syncTimer = setInterval(() => {
-      syncFloorPlans();
-    }, syncInterval);
-    
-    return () => {
-      clearInterval(syncTimer);
-    };
-  }, [autoSync, syncInterval, syncFloorPlans]);
+    return null;
+  }, [fabricCanvasRef, getCurrentFloorPlan, updateFloorPlan]);
   
   return {
     floorPlans,
     currentFloorIndex,
     setCurrentFloorIndex,
-    currentFloorPlan,
     addFloorPlan,
     removeFloorPlan,
-    drawFloorPlan,
-    isDrawing,
-    isSyncing,
-    lastSynced,
-    // Functions needed by tests
-    syncFloorPlans,
-    loadFloorPlan,
-    calculateGIA
+    updateFloorPlan,
+    saveFloorPlan
   };
 };

@@ -64,7 +64,9 @@ export const useGrid = ({
     }
 
     // Send grid to the back
-    gridObjects.forEach(obj => obj.sendToBack());
+    gridObjects.forEach(obj => {
+      obj.moveTo(0); // Use moveTo(0) instead of sendToBack()
+    });
     
     // Update the ref
     gridLayerRef.current = gridObjects;

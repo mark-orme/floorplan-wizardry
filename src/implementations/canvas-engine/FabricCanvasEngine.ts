@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line, Polygon } from 'fabric';
 import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
 import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
 
@@ -23,7 +23,7 @@ export class FabricCanvasEngine implements ICanvasEngine {
 
   // Core drawing operations
   drawLine(points: Point[], options: DrawOptions): void {
-    const line = new fabric.Line([
+    const line = new Line([
       points[0].x, points[0].y, 
       points[1].x, points[1].y
     ], {
@@ -40,7 +40,7 @@ export class FabricCanvasEngine implements ICanvasEngine {
   }
 
   drawShape(points: Point[], options: DrawOptions): void {
-    const polygon = new fabric.Polygon(points.map(p => ({ x: p.x, y: p.y })), {
+    const polygon = new Polygon(points.map(p => ({ x: p.x, y: p.y })), {
       fill: 'transparent',
       stroke: options.color || this.strokeStyle.color,
       strokeWidth: options.width || this.strokeStyle.width,
@@ -158,17 +158,17 @@ export class FabricCanvasEngine implements ICanvasEngine {
   }
 
   setPan(x: number, y: number): void {
-    this.canvas.relativePan({ x, y } as fabric.Point);
+    this.canvas.relativePan({ x, y } as any);
     this.canvas.renderAll();
   }
 
   // Event handlers
   on(event: string, callback: Function): void {
-    this.canvas.on(event, callback as any);
+    this.canvas.on(event as any, callback as any);
   }
 
   off(event: string, callback: Function): void {
-    this.canvas.off(event, callback as any);
+    this.canvas.off(event as any, callback as any);
   }
 
   // Cleanup

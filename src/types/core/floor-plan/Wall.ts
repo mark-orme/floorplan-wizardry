@@ -29,11 +29,14 @@ export interface Wall {
   /** Wall height in pixels (optional) */
   height?: number;
   
-  /** Associated room IDs (optional) */
-  roomIds?: string[];
+  /** Associated room IDs (required for compatibility) */
+  roomIds: string[];
   
   /** Length of the wall (calculated property) */
   length: number;
+  
+  /** Points array for compatibility */
+  points?: Point[];
 }
 
 /**
