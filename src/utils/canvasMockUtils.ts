@@ -15,6 +15,7 @@ export const createTypedMockCanvas = () => {
     remove: vi.fn(),
     clear: vi.fn(),
     renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
     setWidth: vi.fn(),
     setHeight: vi.fn(),
     getObjects: vi.fn().mockReturnValue([]),
@@ -83,4 +84,46 @@ export const createMockGridLayerRef = () => {
  */
 export const createMockFabricCanvasRef = () => {
   return { current: createTypedMockCanvas() };
+};
+
+/**
+ * Create a mock history reference
+ * @returns Mock history reference
+ */
+export const createMockHistoryRef = () => {
+  return { 
+    current: {
+      undo: vi.fn(),
+      redo: vi.fn(),
+      canUndo: vi.fn().mockReturnValue(true),
+      canRedo: vi.fn().mockReturnValue(true),
+      push: vi.fn(),
+      clear: vi.fn()
+    }
+  };
+};
+
+/**
+ * Create a typed mock object for Fabric.js
+ * @returns Mock object
+ */
+export const createMockFabricObject = () => {
+  return {
+    set: vi.fn(),
+    setCoords: vi.fn(),
+    get: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    remove: vi.fn()
+  };
+};
+
+/**
+ * Cast a canvas-like object to a proper Canvas type
+ * This is safe for tests, but should not be used in production code
+ * @param canvas Canvas-like object
+ * @returns Canvas type
+ */
+export const castAsCanvas = (canvas: any) => {
+  return canvas as any;
 };

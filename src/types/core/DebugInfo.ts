@@ -20,7 +20,7 @@ export interface DebugInfoState {
   /** Timestamp of last grid creation */
   lastGridCreationTime: number;
   
-  /** Current frames per second - needed by debugInfoAdapter */
+  /** Current frames per second */
   currentFps: number;
   
   /** Number of objects in the canvas */
@@ -39,7 +39,7 @@ export interface DebugInfoState {
     debugLoggingEnabled: boolean;
   };
   
-  // Additional properties needed for components
+  // Additional properties for components
   canvasInitialized?: boolean;
   dimensionsSet?: boolean;
   gridCreated?: boolean;
@@ -53,16 +53,17 @@ export interface DebugInfoState {
   eventHandlersSet?: boolean;
   gridRendered?: boolean;
   toolsInitialized?: boolean;
-  brushInitialized?: boolean; // Added for DebugInfo component
+  brushInitialized?: boolean;
   fps?: number;
   lastRefresh?: number;
   canvasCreated?: boolean;
-  canvasWidth?: number; // Added for DebugInfo component
-  canvasHeight?: number; // Added for DebugInfo component
-  devicePixelRatio?: number; // Added for DebugInfo component
-  showDebugInfo?: boolean; // Added for CanvasDebugWrapper
-  lastError?: string; // Added for DebugInfo component
-  lastErrorTime?: number; // Added for DebugInfo component
+  canvasWidth?: number;
+  canvasHeight?: number;
+  devicePixelRatio?: number;
+  showDebugInfo?: boolean;
+  lastError?: string;
+  lastErrorTime?: number;
+  canvasState?: string;
   
   // Performance metrics
   performanceStats?: {
@@ -116,7 +117,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   canvasCreated: false,
   canvasWidth: 0,
   canvasHeight: 0,
-  devicePixelRatio: window.devicePixelRatio || 1,
+  devicePixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
   showDebugInfo: false,
   lastError: '',
   lastErrorTime: 0,

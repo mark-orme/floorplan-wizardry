@@ -1,4 +1,3 @@
-
 /**
  * Unified floor plan type definitions
  * @module types/floor-plan/unifiedTypes
@@ -20,7 +19,7 @@ export interface Point {
   y: number;
 }
 
-// Stroke type literals
+// Stroke type literals - now including polyline
 export type StrokeTypeLiteral = 'freehand' | 'line' | 'wall' | 'room' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline';
 
 // Room type literals
@@ -93,7 +92,7 @@ export interface Room {
 export interface FloorPlan {
   id: string;
   name: string;
-  label: string;
+  label?: string; // Made label optional
   walls: Wall[];
   rooms: Room[];
   strokes: Stroke[];
@@ -107,6 +106,7 @@ export interface FloorPlan {
   metadata: FloorPlanMetadata;
   data: any; // Required property
   userId: string; // Required property
+  canvasState?: string; // Optional property for canvas state
 }
 
 // Helper for creating test data

@@ -11,5 +11,11 @@ export {
   appToCoreFloorPlans,
   appToCoreFloorPlan,
   coreToAppFloorPlans,
-  coreToAppFloorPlan
+  coreToAppFloorPlan,
+  validatePoint,
+  validateColor,
+  validateTimestamp,
+  validateStrokeType,
+  mapRoomType,
+  normalizeDrawingMode
 } from './floorPlanAdapter/converters';

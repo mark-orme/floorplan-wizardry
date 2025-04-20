@@ -1,9 +1,8 @@
-
 /**
  * Type diagnostics utilities
  * @module utils/debug/typeDiagnostics
  */
-import { FloorPlan, Room, Wall, Stroke, createCompleteMetadata } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan, Room, Wall, Stroke, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Check if a floor plan is structurally valid
@@ -190,4 +189,25 @@ export const logTypeInfo = (obj: any, label: string = 'Object'): void => {
   }
   
   console.groupEnd();
+};
+
+/**
+ * Create a complete metadata object with all required fields
+ * @param overrides Optional property overrides
+ * @returns Complete FloorPlanMetadata object
+ */
+export const createCompleteMetadata = (overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata => {
+  const now = new Date().toISOString();
+  
+  return {
+    version: overrides.version ?? "1.0",
+    author: overrides.author ?? "Test User",
+    dateCreated: overrides.dateCreated ?? now,
+    lastModified: overrides.lastModified ?? now,
+    notes: overrides.notes ?? "",
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+    paperSize: overrides.paperSize ?? "A4",
+    level: overrides.level ?? 0
+  };
 };
