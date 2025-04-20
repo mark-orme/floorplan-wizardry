@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import { FloorPlan } from '@/types/floorPlanTypes';
+import { toast } from 'sonner';
 
 export interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
@@ -23,9 +24,34 @@ export interface UseSyncedFloorPlansResult {
 export const useSyncedFloorPlans = ({
   initialFloorPlans = [],
   fabricCanvasRef
-}: UseSyncedFloorPlansProps): UseSyncedFloorPlansResult => {
+}: UseSyncedFloorPlansProps = { fabricCanvasRef: { current: null } }): UseSyncedFloorPlansResult => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
+  
+  // Try to load floor plans from localStorage on initialization
+  useEffect(() => {
+    try {
+      const storedFloorPlans = localStorage.getItem('floorPlans');
+      if (storedFloorPlans && initialFloorPlans.length === 0) {
+        setFloorPlans(JSON.parse(storedFloorPlans));
+      }
+    } catch (error) {
+      console.error('Failed to load floor plans from localStorage:', error);
+      toast.error('Failed to load floor plans');
+    }
+  }, [initialFloorPlans.length]);
+  
+  // Save floor plans to localStorage when they change
+  useEffect(() => {
+    if (floorPlans.length > 0) {
+      try {
+        localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+      } catch (error) {
+        console.error('Failed to save floor plans to localStorage:', error);
+        toast.error('Failed to save floor plans');
+      }
+    }
+  }, [floorPlans]);
   
   const getCurrentFloorPlan = useCallback(() => {
     return floorPlans[currentFloorIndex] || null;

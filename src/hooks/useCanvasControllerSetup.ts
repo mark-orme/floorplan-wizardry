@@ -8,6 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useGrid } from "./useGrid";
 import { useCanvasInteraction } from "./useCanvasInteraction";
+import { useDrawingHistory } from "./useDrawingHistory";
 
 interface UseCanvasControllerSetupProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -40,7 +41,11 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   // Create references
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
-  const historyRef = useRef<{ past: any[][], future: any[][] }>({ past: [], future: [] });
+  
+  // Initialize drawing history
+  const drawingHistory = useDrawingHistory({
+    fabricCanvasRef
+  });
   
   // Initialize grid hook
   const {
@@ -66,64 +71,8 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   } = useCanvasInteraction({
     fabricCanvasRef,
     tool,
-    saveCurrentState: () => {
-      // Save current state to history
-      console.log('Saving current canvas state');
-    }
+    saveCurrentState: drawingHistory.saveState
   });
-  
-  // Handle drawing history
-  const saveCurrentState = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const objects = fabricCanvasRef.current.getObjects();
-    historyRef.current.past.push([...objects]);
-    historyRef.current.future = [];
-    
-    // Limit history size
-    if (historyRef.current.past.length > 50) {
-      historyRef.current.past.shift();
-    }
-  }, [fabricCanvasRef]);
-  
-  const handleUndo = useCallback(() => {
-    if (!fabricCanvasRef.current || historyRef.current.past.length === 0) return;
-    
-    const current = fabricCanvasRef.current.getObjects();
-    historyRef.current.future.push([...current]);
-    
-    // Remove all current objects
-    fabricCanvasRef.current.clear();
-    
-    // Restore last state
-    const lastState = historyRef.current.past.pop() || [];
-    lastState.forEach(obj => {
-      fabricCanvasRef.current?.add(obj);
-    });
-    
-    fabricCanvasRef.current.requestRenderAll();
-  }, [fabricCanvasRef]);
-  
-  const handleRedo = useCallback(() => {
-    if (!fabricCanvasRef.current || historyRef.current.future.length === 0) return;
-    
-    const current = fabricCanvasRef.current.getObjects();
-    historyRef.current.past.push([...current]);
-    
-    // Remove all current objects
-    fabricCanvasRef.current.clear();
-    
-    // Restore next state
-    const nextState = historyRef.current.future.pop() || [];
-    nextState.forEach(obj => {
-      fabricCanvasRef.current?.add(obj);
-    });
-    
-    fabricCanvasRef.current.requestRenderAll();
-  }, [fabricCanvasRef]);
-  
-  const canUndo = historyRef.current.past.length > 0;
-  const canRedo = historyRef.current.future.length > 0;
   
   /**
    * Function to handle canvas ready event
@@ -146,8 +95,8 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     gridLayerRef.current = gridObjects;
     
     // Save initial canvas state
-    saveCurrentState();
-  }, [createGrid, saveCurrentState, setupSelectionMode]);
+    drawingHistory.saveState();
+  }, [createGrid, drawingHistory.saveState, setupSelectionMode]);
   
   /**
    * Function to handle canvas init error
@@ -198,11 +147,11 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     deleteSelectedObjects,
     enablePointSelection,
     setupSelectionMode,
-    handleUndo,
-    handleRedo,
-    canUndo,
-    canRedo,
-    saveCurrentState,
+    handleUndo: drawingHistory.undo,
+    handleRedo: drawingHistory.redo,
+    canUndo: drawingHistory.canUndo,
+    canRedo: drawingHistory.canRedo,
+    saveCurrentState: drawingHistory.saveState,
     handleCanvasReady,
     handleCanvasInitError,
     handleCanvasRetry,

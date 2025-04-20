@@ -5,8 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan, Stroke } from '@/types/floorPlanTypes';
 import { Point } from '@/types/core/Point';
-import { Room, RoomTypeLiteral } from '@/types/floor-plan/roomTypes';
-import { Wall } from '@/types/floor-plan/wallTypes';
 
 export interface UseFloorPlanDrawingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;

@@ -1,35 +1,46 @@
 
 /**
- * Floor Plan Basic Types
- * Core type definitions for floor plans
+ * Basic Types for Floor Plans
+ * Common type definitions used across floor plan modules
  * @module types/floor-plan/basicTypes
  */
 
 /**
- * Paper size enum for printing
+ * Stroke type literals for various drawing types
+ */
+export type StrokeTypeLiteral = 
+  'freehand' | 
+  'straight' | 
+  'wall' | 
+  'room' | 
+  'line' | 
+  'polyline' | 
+  'door' | 
+  'window' | 
+  'furniture' | 
+  'annotation' | 
+  'other';
+
+/**
+ * Room type literals for different room types
+ */
+export type RoomTypeLiteral = 
+  'living' | 
+  'bedroom' | 
+  'kitchen' | 
+  'bathroom' | 
+  'office' | 
+  'other';
+
+/**
+ * Paper size literals for floor plan exports
  */
 export enum PaperSize {
-  A3 = "A3",
-  A4 = "A4",
-  A5 = "A5",
-  Letter = "Letter",
-  Legal = "Legal",
-  Tabloid = "Tabloid",
-  Custom = "Custom"
+  A4 = 'A4',
+  A3 = 'A3',
+  A5 = 'A5',
+  LETTER = 'LETTER',
+  LEGAL = 'LEGAL',
+  TABLOID = 'TABLOID',
+  CUSTOM = 'CUSTOM'
 }
-
-/**
- * Stroke type literal for drawing types
- * Ensure this matches the main floorPlanTypes.ts StrokeTypeLiteral
- */
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
-
-/**
- * Stroke type (same as StrokeTypeLiteral for backward compatibility)
- */
-export type StrokeType = StrokeTypeLiteral;
-
-/**
- * Room type literal
- */
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';

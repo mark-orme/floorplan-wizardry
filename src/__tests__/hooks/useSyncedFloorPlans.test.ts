@@ -2,24 +2,39 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { Canvas as FabricCanvas } from 'fabric';
+import { FloorPlan } from '@/types/floorPlanTypes';
 
-// Mock canvas
-const mockCanvas = {
-  toJSON: vi.fn().mockReturnValue({ objects: [] }),
-  requestRenderAll: vi.fn()
-};
+// Mock the FabricCanvas type for testing
+vi.mock('fabric', () => {
+  return {
+    Canvas: vi.fn().mockImplementation(() => ({
+      toJSON: vi.fn().mockReturnValue({ objects: [] }),
+      requestRenderAll: vi.fn()
+    }))
+  };
+});
 
-// Mock ref
-const mockCanvasRef = {
-  current: mockCanvas
-};
+// Mocked FabricCanvas ref that satisfies the type constraints
+const createMockCanvasRef = () => ({
+  current: {
+    toJSON: vi.fn().mockReturnValue({ objects: [] }),
+    requestRenderAll: vi.fn()
+  } as unknown as FabricCanvas
+});
 
 describe('useSyncedFloorPlans', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Clear localStorage mock
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => null);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
   });
 
   it('should initialize with empty floor plans', () => {
+    const mockCanvasRef = createMockCanvasRef();
+    
     const { result } = renderHook(() => useSyncedFloorPlans({
       fabricCanvasRef: mockCanvasRef
     }));
@@ -29,7 +44,9 @@ describe('useSyncedFloorPlans', () => {
   });
 
   it('should initialize with provided floor plans', () => {
-    const initialFloorPlans = [
+    const mockCanvasRef = createMockCanvasRef();
+    
+    const initialFloorPlans: FloorPlan[] = [
       {
         id: 'test-1',
         name: 'Floor 1',
@@ -65,6 +82,8 @@ describe('useSyncedFloorPlans', () => {
   });
 
   it('should add a new floor plan', () => {
+    const mockCanvasRef = createMockCanvasRef();
+    
     const { result } = renderHook(() => useSyncedFloorPlans({
       fabricCanvasRef: mockCanvasRef
     }));
@@ -79,7 +98,9 @@ describe('useSyncedFloorPlans', () => {
   });
 
   it('should remove a floor plan', () => {
-    const initialFloorPlans = [
+    const mockCanvasRef = createMockCanvasRef();
+    
+    const initialFloorPlans: FloorPlan[] = [
       {
         id: 'test-1',
         name: 'Floor 1',
@@ -151,7 +172,9 @@ describe('useSyncedFloorPlans', () => {
   });
 
   it('should update a floor plan', () => {
-    const initialFloorPlans = [
+    const mockCanvasRef = createMockCanvasRef();
+    
+    const initialFloorPlans: FloorPlan[] = [
       {
         id: 'test-1',
         name: 'Floor 1',
@@ -182,7 +205,7 @@ describe('useSyncedFloorPlans', () => {
       fabricCanvasRef: mockCanvasRef
     }));
 
-    const updatedFloorPlan = {
+    const updatedFloorPlan: FloorPlan = {
       ...initialFloorPlans[0],
       name: 'Updated Floor',
       label: 'Updated Floor'
@@ -197,9 +220,10 @@ describe('useSyncedFloorPlans', () => {
   });
 
   it('should save floor plan with canvas state', async () => {
-    mockCanvas.toJSON.mockReturnValue({ objects: [{ id: 'obj-1' }] });
-
-    const initialFloorPlans = [
+    const mockCanvasRef = createMockCanvasRef();
+    mockCanvasRef.current.toJSON = vi.fn().mockReturnValue({ objects: [{ id: 'obj-1' }] });
+    
+    const initialFloorPlans: FloorPlan[] = [
       {
         id: 'test-1',
         name: 'Floor 1',

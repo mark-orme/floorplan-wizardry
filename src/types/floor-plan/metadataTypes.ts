@@ -1,42 +1,58 @@
 
 /**
- * Floor Plan Metadata Types
- * Metadata interface for floor plan
+ * Metadata Types
+ * Metadata interface and related types for floor plans
  * @module types/floor-plan/metadataTypes
  */
 import { PaperSize } from './basicTypes';
 
 /**
- * FloorPlan metadata interface
+ * Floor plan metadata interface
  */
 export interface FloorPlanMetadata {
-  /** Version of the floor plan format */
-  version?: string;
+  /** Unique identifier (optional) */
+  id?: string;
   
-  /** Author of the floor plan */
-  author?: string;
+  /** Metadata name (optional) */
+  name?: string;
   
-  /** Notes about the floor plan */
-  notes?: string;
+  /** Thumbnail URL (optional) */
+  thumbnail?: string;
   
-  /** Date when the floor plan was created */
+  /** Creation date timestamp */
   createdAt: string;
   
-  /** Date when the floor plan was last updated */
+  /** Last update timestamp */
   updatedAt: string;
   
-  /** Paper size for printing */
-  paperSize: PaperSize | string;
+  /** Paper size for printing (optional) */
+  paperSize?: PaperSize | string;
   
   /** Floor level (0 = ground floor) */
-  level: number;
+  level?: number;
   
-  /** Date the floor plan was created (alias for createdAt) */
+  /** Legacy fields for backward compatibility */
+  version?: string;
+  author?: string;
   dateCreated?: string;
-  
-  /** Date the floor plan was last modified (alias for updatedAt) */
   lastModified?: string;
+  notes?: string;
 }
 
-// Export the interface to avoid the "declares locally but not exported" error
-export { FloorPlanMetadata };
+/**
+ * Create default metadata object
+ * @param level Floor level
+ * @returns Default metadata object
+ */
+export function createDefaultMetadata(level: number = 0): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  return {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: PaperSize.A4,
+    level,
+    version: '1.0',
+    author: '',
+    notes: ''
+  };
+}
