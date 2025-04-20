@@ -1,11 +1,10 @@
-
 /**
  * Hook for managing canvas tools and operations
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { DrawingTool } from "@/types/canvasStateTypes";
+import { DrawingMode } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { usePusherConnection } from "@/hooks/usePusherConnection";
 import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
@@ -86,7 +85,7 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     createGrid
   });
 
-  // Get canvas interaction methods
+  // Get canvas interaction methods - fix by passing the ref correctly
   const {
     deleteSelectedObjects,
     enablePointSelection,
@@ -97,18 +96,23 @@ export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
     saveCurrentState
   });
 
-  // Get canvas interactions for drawing
-  const {
-    drawingState,
-    currentZoom,
-    toggleSnap,
-    snapEnabled
-  } = useCanvasInteractions(
-    fabricCanvasRef,
+  // Important: Pass the canvas instance, not the ref
+  const canvasInstance = fabricCanvasRef.current;
+  
+  // Get canvas interactions for drawing - make sure to pass the canvas instance, not the ref 
+  const interactions = useCanvasInteractions(
+    canvasInstance,
     tool,
     lineThickness,
     lineColor
-  ) as CanvasInteractionsResult;
+  );
+  
+  const { 
+    drawingState, 
+    currentZoom, 
+    toggleSnap, 
+    snapEnabled 
+  } = interactions || { currentZoom: zoomLevel, snapEnabled: false };
 
   // Initialize line settings
   const { handleLineThicknessChange, handleLineColorChange, applyLineSettings } = useLineSettings({

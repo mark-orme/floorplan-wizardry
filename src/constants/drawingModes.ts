@@ -1,4 +1,3 @@
-
 /**
  * Drawing modes for canvas operations
  * Centralized definition to avoid duplicate declarations
@@ -21,7 +20,8 @@ export enum DrawingMode {
   STRAIGHT_LINE = 'straight_line',
   PAN = 'pan',
   ERASER = 'eraser',
-  MEASURE = 'measure'
+  MEASURE = 'measure',
+  DIMENSION = 'dimension'
 }
 
 // Function to convert between string and enum
@@ -77,6 +77,7 @@ export function getDrawingModeName(mode: DrawingMode): string {
     case DrawingMode.PAN: return 'Pan';
     case DrawingMode.ERASER: return 'Eraser';
     case DrawingMode.MEASURE: return 'Measure';
+    case DrawingMode.DIMENSION: return 'Dimension';
     default: return 'Unknown';
   }
 }
