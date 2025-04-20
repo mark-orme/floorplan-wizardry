@@ -7,32 +7,50 @@ module.exports = {
     sourceType: 'module',
     ecmaFeatures: {
       jsx: true
-    }
+    },
+    project: './tsconfig.json'
   },
   settings: {
     react: {
       version: 'detect'
+    },
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true
+      }
     }
   },
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:react-hooks/recommended',
-    'plugin:security/recommended'  // Add security plugin
+    'plugin:security/recommended',
+    'plugin:import/errors',
+    'plugin:import/warnings',
+    'plugin:import/typescript'
   ],
   plugins: [
     'react',
     '@typescript-eslint',
     'react-hooks',
-    'fabric-react',  // Add our custom plugin
-    'security'       // Add security plugin
+    'fabric-react',
+    'security',
+    'import',
+    'promise',
+    'prettier',
+    'jsx-a11y'
   ],
   rules: {
     // React rules
     'react/prop-types': 'off',
     'react/react-in-jsx-scope': 'off',
     'react/display-name': 'off',
+    'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
+    'react/jsx-no-target-blank': 'error',
+    'react/jsx-no-useless-fragment': 'warn',
+    'react/no-array-index-key': 'warn',
     
     // TypeScript rules
     '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -41,6 +59,55 @@ module.exports = {
       argsIgnorePattern: '^_',
       varsIgnorePattern: '^_'
     }],
+    '@typescript-eslint/no-floating-promises': 'error',
+    '@typescript-eslint/no-misused-promises': 'error',
+    '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+    '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+    '@typescript-eslint/prefer-optional-chain': 'warn',
+    '@typescript-eslint/unbound-method': ['error', { ignoreStatic: true }],
+    '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
+    '@typescript-eslint/naming-convention': [
+      'error',
+      {
+        selector: 'interface',
+        format: ['PascalCase'],
+        custom: {
+          regex: '^I[A-Z]',
+          match: true
+        }
+      },
+      {
+        selector: 'typeAlias',
+        format: ['PascalCase']
+      },
+      {
+        selector: 'enum',
+        format: ['PascalCase']
+      }
+    ],
+    
+    // Import rules
+    'import/no-unresolved': 'error',
+    'import/no-cycle': 'error',
+    'import/no-self-import': 'error',
+    'import/no-useless-path-segments': 'warn',
+    'import/no-duplicates': 'warn',
+    'import/order': ['warn', {
+      'groups': ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+      'newlines-between': 'always',
+      'alphabetize': { order: 'asc', caseInsensitive: true }
+    }],
+    
+    // Accessibility rules
+    'jsx-a11y/alt-text': 'error',
+    'jsx-a11y/anchor-has-content': 'error',
+    'jsx-a11y/anchor-is-valid': 'error',
+    'jsx-a11y/aria-props': 'error',
+    'jsx-a11y/aria-role': 'error',
+    'jsx-a11y/aria-unsupported-elements': 'error',
+    'jsx-a11y/img-redundant-alt': 'error',
+    'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+    'jsx-a11y/no-static-element-interactions': 'warn',
     
     // Hook rules
     'react-hooks/rules-of-hooks': 'error',
@@ -50,9 +117,6 @@ module.exports = {
     'fabric-react/canvas-props-validation': 'error',
     'fabric-react/fabric-event-handlers': 'warn',
     'fabric-react/fabric-object-type-check': 'warn',
-    
-    // Grid constants validation rules
-    './src/eslint/grid-constant-checker/ensure-valid-properties': 'error',
     
     // Security rules
     'security/detect-object-injection': 'warn',
@@ -67,33 +131,22 @@ module.exports = {
     'security/detect-pseudo-random-bytes': 'error',
     'security/detect-possible-timing-attacks': 'warn',
     
+    // Promise handling
+    'promise/always-return': 'error',
+    'promise/no-return-wrap': 'error',
+    'promise/param-names': 'error',
+    'promise/catch-or-return': 'error',
+    'promise/no-native': 'off',
+    'promise/no-new-statics': 'error',
+    'promise/no-return-in-finally': 'warn',
+    
     // Additional AI safety rules
     'no-undef': 'error',
     'no-unused-expressions': 'warn',
     'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],
     'prefer-const': 'warn',
     
-    // Enhanced TypeScript strictness
-    '@typescript-eslint/strict-boolean-expressions': 'warn',
-    '@typescript-eslint/no-non-null-assertion': 'error',
-    '@typescript-eslint/ban-ts-comment': ['error', {
-      'ts-ignore': 'allow-with-description',
-      minimumDescriptionLength: 10
-    }],
-    '@typescript-eslint/no-misused-promises': 'error',
-    '@typescript-eslint/no-floating-promises': 'error',
-    '@typescript-eslint/naming-convention': [
-      'error',
-      {
-        selector: 'interface',
-        format: ['PascalCase'],
-        prefix: ['I']
-      },
-      {
-        selector: 'typeAlias',
-        format: ['PascalCase']
-      }
-    ]
+    // Grid constants validation rules
+    './src/eslint/grid-constant-checker/ensure-valid-properties': 'error',
   }
 };
-

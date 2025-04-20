@@ -9,7 +9,7 @@ import Login from '@/pages/Login';
 import Auth from '@/pages/Auth';
 import Properties from '@/pages/Properties';
 import PropertyForm from '@/components/PropertyForm';
-import FloorPlans from '@/pages/FloorPlans'; // Fixed casing to match file name
+import FloorPlans from '@/pages/FloorPlans';
 import FloorplanDetails from '@/pages/FloorplanDetails';
 import Register from '@/pages/Register';
 import RoleGuard from '@/components/RoleGuard';
@@ -17,7 +17,6 @@ import { UserRole } from '@/lib/supabase';
 import AdminPanel from '@/pages/AdminPanel';
 import PropertyDetails from '@/pages/PropertyDetails';
 import EditPropertyForm from '@/components/EditPropertyForm';
-import { initializeSecurity } from '@/utils/security/securityInit';
 
 function App() {
   return (
@@ -62,4 +61,3 @@ function App() {
 }
 
 export default App;
-

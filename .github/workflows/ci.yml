@@ -59,8 +59,7 @@ jobs:
           
       # Check if any bundles exceed size limits
       - name: Check bundle size limits
-        run: |
-          node scripts/check-bundle-size.js
+        run: node scripts/check-bundle-sizes.js
   
   security:
     runs-on: ubuntu-latest
@@ -79,13 +78,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      # Run dependency management scripts
+      - name: Check dependencies
+        run: bash scripts/check-dependencies.sh
+      
+      # Run automated dependency management
+      - name: Run dependency manager
+        run: bash scripts/dependency-manager.sh
+      
       # Enhanced npm security audit with moderate level
       - name: Run npm security audit
         run: |
           echo "Running npm audit..."
-          npm audit --audit-level=moderate
+          npm audit --audit-level=high
           if [ $? -ne 0 ]; then
-            echo "::error::Security vulnerabilities at moderate or higher level found. Please resolve these issues."
+            echo "::error::Security vulnerabilities at high or critical level found. Please resolve these issues."
             exit 1
           fi
       
@@ -131,4 +138,3 @@ jobs:
             reports/
             codeql-results.sarif
           retention-days: 30
-

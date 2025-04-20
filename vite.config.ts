@@ -36,10 +36,11 @@ export default defineConfig(({ mode }) => ({
       }
     }),
     visualizer({
-      open: true,
+      open: mode === 'development',
       filename: 'dist/stats.html',
       gzipSize: true,
-      brotliSize: true
+      brotliSize: true,
+      template: 'treemap'
     })
   ].filter(Boolean),
   resolve: {
@@ -62,9 +63,11 @@ export default defineConfig(({ mode }) => ({
           'vendor-canvas': ['fabric'],
           'vendor-utils': ['date-fns', 'uuid', 'zod', 'clsx'],
           // Feature based chunks
-          'feature-collaboration': ['y-websocket', '@automerge/automerge'],
+          'feature-collaboration': ['y-websocket', 'yjs'],
           'feature-charts': ['recharts'],
           'feature-forms': ['react-hook-form', '@hookform/resolvers'],
+          // Geometry engine as a separate chunk for optimization
+          'geometry-engine': ['./src/packages/geometry-engine/index.ts']
         }
       }
     },
