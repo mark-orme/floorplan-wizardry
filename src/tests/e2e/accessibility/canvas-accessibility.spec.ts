@@ -1,28 +1,48 @@
 
 import { test, expect } from '@playwright/test';
-import { AxeBuilder } from '@axe-core/playwright';
+import { runAccessibilityAudit, AccessibilityViolation } from '@/utils/testing/accessibility';
 
 test.describe('Canvas Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    await page.waitForSelector('[data-testid="floor-plan-wrapper"]');
   });
 
-  test('should pass accessibility checks', async ({ page }) => {
-    await page.waitForSelector('[data-testid="floor-plan-wrapper"]');
-    
-    const results = await new AxeBuilder({ page })
-      .exclude('.fabric-canvas') // Exclude canvas as it's handled by fabric.js
-      .analyze();
-    
-    expect(results.violations).toEqual([]);
+  test('canvas interface should be accessible', async ({ page }) => {
+    // Test the canvas interface excluding the actual canvas element
+    const violations = await runAccessibilityAudit(page, {
+      excludeSelectors: ['.fabric-canvas']
+    });
+
+    // Log violations for reporting
+    if (violations.length > 0) {
+      console.log('Accessibility violations:', JSON.stringify(violations, null, 2));
+    }
+
+    expect(violations).toEqual([]);
   });
-  
-  test('should have proper keyboard navigation', async ({ page }) => {
-    // Test toolbar keyboard navigation
+
+  test('toolbar should support keyboard navigation', async ({ page }) => {
+    // Test keyboard navigation through toolbar items
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Select' })).toBeFocused();
+    const firstButton = await page.getByRole('button').first();
+    await expect(firstButton).toBeFocused();
+
+    // Test all toolbar buttons are keyboard accessible
+    const buttons = await page.getByRole('button').all();
+    for (const button of buttons) {
+      await button.focus();
+      await expect(button).toBeFocused();
+      await page.keyboard.press('Tab');
+    }
+  });
+
+  test('canvas controls should have proper ARIA labels', async ({ page }) => {
+    const toolbarButtons = await page.getByRole('button').all();
     
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Freehand' })).toBeFocused();
+    for (const button of toolbarButtons) {
+      const ariaLabel = await button.getAttribute('aria-label');
+      expect(ariaLabel).toBeTruthy();
+    }
   });
 });

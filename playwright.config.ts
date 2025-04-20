@@ -1,4 +1,3 @@
-
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -13,7 +12,11 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['list'],
-    ['json', { outputFile: 'playwright-report/accessibility-violations.json' }],
+    ['json', { 
+      outputFile: 'playwright-report/accessibility-violations.json',
+      includeTestCases: true,
+      includeAttachments: true
+    }],
     ['junit', { outputFile: 'reports/junit.xml' }],
     ['html', { open: 'never', outputFolder: 'reports/html' }]
   ],
@@ -26,11 +29,22 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   
-  /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        contextOptions: {
+          logger: {
+            isEnabled: (name, severity) => true,
+            log: (name, severity, message, args) => {
+              if (name === 'Browser.accessibility') {
+                console.log(`[Accessibility] ${message}`);
+              }
+            }
+          }
+        }
+      },
     },
     {
       name: 'firefox',
@@ -42,7 +56,6 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before starting the tests */
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:8080',
