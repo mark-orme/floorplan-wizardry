@@ -18,7 +18,7 @@ export type StrokeTypeLiteral =
   'window' | 
   'furniture' | 
   'annotation' | 
-  'straight' |  // Added 'straight' to match floorPlanTypes.ts
+  'straight' |  // Ensure 'straight' is included to match floorPlanTypes.ts
   'other';
 
 /**

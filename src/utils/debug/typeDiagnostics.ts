@@ -1,5 +1,7 @@
 
-import { validateFloorPlan, validateRoom, validateStroke, validateWall } from '@/types/floor-plan/typesBarrel';
+import { 
+  validateFloorPlan, validateRoom, validateStroke, validateWall 
+} from '@/types/floor-plan/typesBarrel';
 import * as Sentry from '@sentry/react';
 import { captureError } from '../sentry';
 

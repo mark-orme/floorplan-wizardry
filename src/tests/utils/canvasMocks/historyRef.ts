@@ -1,15 +1,19 @@
 
+import { vi } from 'vitest';
+
 /**
- * Creates a mock history reference with optional past and future states
- * @param past Optional past states
- * @param future Optional future states
+ * Creates a mock history reference object for testing
  * @returns Mock history reference
  */
-export function createMockHistoryRef(past: any[][] = [], future: any[][] = []) {
+export function createMockHistoryRef() {
   return {
     current: {
-      past: [...past],
-      future: [...future]
+      undo: vi.fn(),
+      redo: vi.fn(),
+      canUndo: vi.fn().mockReturnValue(true),
+      canRedo: vi.fn().mockReturnValue(false),
+      pushState: vi.fn(),
+      clearHistory: vi.fn()
     }
   };
 }

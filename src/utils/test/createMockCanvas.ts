@@ -15,36 +15,38 @@ import { asMockCanvas } from '@/types/test/MockTypes';
  */
 export const createTypedMockCanvas = () => {
   const mockCanvas = {
-    on: jest.fn(),
-    off: jest.fn(),
-    add: jest.fn(),
-    remove: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    clear: jest.fn(),
-    renderAll: jest.fn(),
-    getWidth: jest.fn().mockReturnValue(800),
-    getHeight: jest.fn().mockReturnValue(600),
-    setWidth: jest.fn(),
-    setHeight: jest.fn(),
-    getElement: jest.fn(),
-    getContext: jest.fn(),
-    dispose: jest.fn(),
-    requestRenderAll: jest.fn(),
-    loadFromJSON: jest.fn((json, callback) => {
+    on: vi.fn(),
+    off: vi.fn(),
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    clear: vi.fn(),
+    renderAll: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    getElement: vi.fn(),
+    getContext: vi.fn(),
+    dispose: vi.fn(),
+    requestRenderAll: vi.fn(),
+    loadFromJSON: vi.fn((json, callback) => {
       if (callback) callback();
     }),
-    toJSON: jest.fn().mockReturnValue({}),
-    getCenter: jest.fn().mockReturnValue({ top: 300, left: 400 }),
-    setViewportTransform: jest.fn(),
-    getActiveObject: jest.fn(),
-    sendObjectToBack: jest.fn(),
-    bringObjectToFront: jest.fn(),
-    discardActiveObject: jest.fn(),
+    toJSON: vi.fn().mockReturnValue({}),
+    getCenter: vi.fn().mockReturnValue({ top: 300, left: 400 }),
+    setViewportTransform: vi.fn(),
+    getActiveObject: vi.fn(),
+    sendObjectToBack: vi.fn(),
+    bringObjectToFront: vi.fn(),
+    discardActiveObject: vi.fn(),
     isDrawingMode: false,
     selection: true,
     defaultCursor: 'default',
-    getHandlers: jest.fn((eventName) => [() => {}]),
-    triggerEvent: jest.fn((eventName, eventData) => {})
+    getHandlers: vi.fn((eventName) => [() => {}]),
+    triggerEvent: vi.fn((eventName, eventData) => {}),
+    // Add missing withImplementation to ensure it returns Promise<void>
+    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
   };
   
   return asMockCanvas(mockCanvas as unknown as FabricCanvas);

@@ -8,12 +8,12 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { 
   FloorPlan, Stroke, Point, Wall, Room,
   StrokeTypeLiteral, RoomTypeLiteral
-} from '@/types/floorPlanTypes';
+} from '@/types/floor-plan/typesBarrel';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
 import { 
   validateFloorPlan, validateRoom, validateStroke, validateWall,
-  validateFloorPlanWithTypeCheck 
-} from '@/utils/sentry/typeMonitoring';
+  validateFloorPlanWithReporting 
+} from '@/utils/debug/typeDiagnostics';
 import { 
   createTestFloorPlan, createTestRoom, createTestStroke, createTestWall 
 } from '@/tests/utils/testObjectCreator';
@@ -41,8 +41,12 @@ export function asCanvasMock(mockCanvas: any): ICanvasMock {
  * @returns Typed floor plan
  */
 export function ensureFloorPlanType(floorPlan: Partial<FloorPlan>): FloorPlan {
-  // Validate the floor plan to ensure it has all required properties
-  if (!validateFloorPlanWithTypeCheck(floorPlan)) {
+  // First ensure we have critical required properties
+  if (!floorPlan.data) floorPlan.data = {};
+  if (!floorPlan.userId) floorPlan.userId = 'test-user';
+  
+  // Then use the more thorough validator
+  if (!validateFloorPlanWithReporting(floorPlan, 'ensureFloorPlanType')) {
     return createTestFloorPlan(floorPlan);
   }
   
@@ -102,5 +106,7 @@ export function createTestPoint(x = 0, y = 0): Point {
  * @returns A properly typed Wall object
  */
 export function createTestTypeWall(overrides: Partial<Wall> = {}): Wall {
+  // Ensure roomIds is present
+  if (!overrides.roomIds) overrides.roomIds = [];
   return createTestWall(overrides);
 }

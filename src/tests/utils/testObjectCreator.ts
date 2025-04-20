@@ -8,7 +8,7 @@ import {
   Point, 
   StrokeTypeLiteral, 
   RoomTypeLiteral 
-} from '@/types/floorPlanTypes';
+} from '@/types/floor-plan/typesBarrel';
 import { 
   ensureFloorPlan, 
   ensureStroke, 
@@ -94,6 +94,7 @@ export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPl
  * @returns FloorPlanMetadata object
  */
 export function createTestFloorPlanMetadata(overrides: Partial<any> = {}): any {
+  const now = new Date().toISOString();
   return {
     id: overrides.id || uuidv4(),
     name: overrides.name || 'Test Floor Plan',
@@ -101,6 +102,11 @@ export function createTestFloorPlanMetadata(overrides: Partial<any> = {}): any {
     paperSize: overrides.paperSize || 'A4',
     level: overrides.level || 0,
     version: overrides.version || '1.0',
-    ...overrides
+    author: overrides.author || 'Test User',
+    createdAt: overrides.createdAt || now,
+    updatedAt: overrides.updatedAt || now,
+    dateCreated: overrides.dateCreated || now,
+    lastModified: overrides.lastModified || now,
+    notes: overrides.notes || ''
   };
 }

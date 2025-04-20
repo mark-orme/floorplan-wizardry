@@ -21,7 +21,7 @@ import {
 export function asStrokeType(type: string): StrokeTypeLiteral {
   const validTypes: StrokeTypeLiteral[] = [
     'line', 'polyline', 'wall', 'room', 'freehand', 
-    'door', 'window', 'furniture', 'annotation', 'other'
+    'door', 'window', 'furniture', 'annotation', 'straight', 'other'
   ];
   
   return validTypes.includes(type as StrokeTypeLiteral) 
@@ -71,12 +71,15 @@ export function ensureFloorPlan(plan: Partial<FloorPlan>): FloorPlan {
     data: plan.data || {},
     userId: plan.userId || 'test-user',
     metadata: plan.metadata || {
-      id: plan.id || `md-${Date.now()}`,
-      name: plan.name || 'Test Floor Plan',
-      thumbnail: '',
+      createdAt: now,
+      updatedAt: now,
       paperSize: 'A4',
       level: plan.level || 0,
-      version: '1.0'
+      version: '1.0',
+      author: 'Test User',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
     }
   };
 }

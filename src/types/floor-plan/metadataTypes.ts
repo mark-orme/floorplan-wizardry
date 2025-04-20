@@ -53,6 +53,8 @@ export function createDefaultMetadata(level: number = 0): FloorPlanMetadata {
     level,
     version: '1.0',
     author: '',
+    dateCreated: now,
+    lastModified: now,
     notes: ''
   };
 }
