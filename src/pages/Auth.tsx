@@ -8,8 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { UserRole } from '@/lib/supabase';
-import { createTestUser, loginAsTestUser, TestUser } from '@/components/auth/TestUserCreator';
+import { TestUserCreator } from '@/components/auth/TestUserCreator';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Define the TestUser type locally since it's not exported
+interface TestUser {
+  email: string;
+  password: string;
+  role: UserRole;
+  label: string;
+}
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -47,11 +55,12 @@ const Auth = () => {
         label: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`
       };
       
-      await createTestUser(user);
+      // Use the static method from TestUserCreator class
+      await TestUserCreator.createDummyUser(user);
       toast.success(`Test ${role} user created: ${testEmail}`);
       
       // Auto login
-      await loginAsTestUser(testEmail, testPassword);
+      await login(testEmail, testPassword);
       toast.success('Logged in as test user');
       navigate('/');
       

@@ -3,8 +3,19 @@
  * TestUserCreator component
  * Used for creating and managing test users in development environments
  */
-import { adaptUserWithEmail, TestUser } from './userUtils';
+import { adaptUserWithEmail } from './userUtils';
 
+// Export the TestUser interface
+export interface TestUser {
+  id?: string;
+  email: string;
+  name?: string;
+  password?: string;
+  role: string;
+  label?: string;
+}
+
+// Export the TestUserCreator class with static methods
 export class TestUserCreator {
   static createDummyUser(overrides = {}): TestUser {
     const defaultUser: TestUser = {
