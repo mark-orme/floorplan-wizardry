@@ -62,6 +62,9 @@ export function createMockFunction<TArgs extends any[], TReturn>(): jest.Mock<TR
   return vi.fn<TArgs, TReturn>();
 }
 
+// Alias to maintain backward compatibility
+export const createMockFunctionParams = createMockParams;
+
 /**
  * Creates a mock implementation that returns a Promise
  * @param value Value to resolve with

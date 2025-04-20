@@ -7,6 +7,30 @@ import { FloorPlan as AppFloorPlan, StrokeTypeLiteral, RoomTypeLiteral, Stroke, 
 import { v4 as uuidv4 } from 'uuid';
 import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
+// Import validators
+import { validatePoint, validateColor, validateTimestamp } from './validators';
+
+// Re-export validators for use in index.ts
+export { validatePoint, validateColor, validateTimestamp };
+
+/**
+ * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
+ * @param type Type to validate
+ * @returns Valid StrokeTypeLiteral
+ */
+export function validateStrokeType(type: string): StrokeTypeLiteral {
+  return asStrokeType(type);
+}
+
+/**
+ * Validates a room type to ensure it's a valid RoomTypeLiteral
+ * @param type Type to validate
+ * @returns Valid RoomTypeLiteral
+ */
+export function validateRoomType(type: string): RoomTypeLiteral {
+  return asRoomType(type);
+}
+
 /**
  * Adapts a FloorPlan from one type to another
  * @param floorPlan Floor plan to adapt
@@ -14,6 +38,19 @@ import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
  */
 export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan {
   const now = new Date().toISOString();
+  
+  // Create a properly formatted metadata object
+  const metadata = {
+    createdAt: floorPlan.metadata?.createdAt || now,
+    updatedAt: floorPlan.metadata?.updatedAt || now,
+    paperSize: floorPlan.metadata?.paperSize || 'A4',
+    level: floorPlan.metadata?.level || 0,
+    version: floorPlan.metadata?.version || '1.0',
+    author: floorPlan.metadata?.author || '',
+    dateCreated: floorPlan.metadata?.dateCreated || now,
+    lastModified: floorPlan.metadata?.lastModified || now,
+    notes: floorPlan.metadata?.notes || ''
+  };
   
   return {
     id: floorPlan.id || uuidv4(),
@@ -23,7 +60,7 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan 
     strokes: floorPlan.strokes?.map(stroke => ({
       id: stroke.id,
       points: stroke.points || [],
-      type: asStrokeType('line'), // Default to line if type is not present
+      type: asStrokeType(stroke.type || 'line'),
       color: stroke.color || '#000000',
       thickness: stroke.thickness || 2,
       width: stroke.thickness || 2 // Use thickness as width if not present
@@ -35,18 +72,18 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan 
       end: wall.end,
       thickness: wall.thickness || 1,
       color: '#000000', // Default color
-      roomIds: [], // Default empty array
+      roomIds: wall.roomIds || [], // Ensure roomIds exists
       length: wall.length || 0
     })) || [],
     rooms: floorPlan.rooms?.map(room => ({
       id: room.id,
       name: room.name || 'Unnamed Room',
-      type: asRoomType('other'), // Default to other if type is not present
-      points: [], // Default empty array
-      color: '#ffffff', // Default color
+      type: asRoomType(room.type || 'other'),
+      points: room.vertices || room.points || [], // Try vertices first, then points
+      color: room.color || '#ffffff', // Default color
       area: room.area || 0,
-      level: 0, // Default level
-      walls: [] // Default empty array
+      level: room.level || 0, // Default level
+      walls: room.walls || [] // Default empty array
     })) || [],
     level: floorPlan.level || 0,
     gia: floorPlan.gia || 0,
@@ -54,17 +91,7 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan 
     canvasJson: floorPlan.canvasJson || null,
     createdAt: floorPlan.createdAt || now,
     updatedAt: floorPlan.updatedAt || now,
-    metadata: floorPlan.metadata || {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: 0,
-      version: '1.0',
-      author: '',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    },
+    metadata,
     // Add the missing required properties
     data: floorPlan.data || {},
     userId: floorPlan.userId || ''
@@ -78,11 +105,21 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan 
  */
 export function appToCoreFloorPlans(appFloorPlans: AppFloorPlan[]): CoreFloorPlan[] {
   return appFloorPlans.map(floorPlan => ({
-    ...floorPlan,
+    id: floorPlan.id,
+    name: floorPlan.name,
     label: floorPlan.label || floorPlan.name,
-    // Convert canvasData from string to object if needed
-    canvasData: typeof floorPlan.canvasData === 'string' ? floorPlan.canvasData : null,
-    // Ensure compatibility with CoreFloorPlan
+    index: floorPlan.index,
+    level: floorPlan.level,
+    walls: floorPlan.walls,
+    rooms: floorPlan.rooms,
+    strokes: floorPlan.strokes,
+    gia: floorPlan.gia,
+    canvasData: typeof floorPlan.canvasData === 'string' ? JSON.parse(floorPlan.canvasData) : null,
+    canvasJson: floorPlan.canvasJson,
+    createdAt: floorPlan.createdAt,
+    updatedAt: floorPlan.updatedAt,
+    metadata: floorPlan.metadata,
+    // Ensure data and userId exist
     data: floorPlan.data || {},
     userId: floorPlan.userId || ''
   })) as unknown as CoreFloorPlan[];
@@ -112,51 +149,3 @@ export const appToCoreFloorPlan = (appFloorPlan: AppFloorPlan): CoreFloorPlan =>
  */
 export const coreToAppFloorPlan = (coreFloorPlan: CoreFloorPlan): AppFloorPlan => 
   coreToAppFloorPlans([coreFloorPlan])[0];
-
-/**
- * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
- * @param type Type to validate
- * @returns Valid StrokeTypeLiteral
- */
-export function validateStrokeType(type: string): StrokeTypeLiteral {
-  return asStrokeType(type);
-}
-
-/**
- * Validates a room type to ensure it's a valid RoomTypeLiteral
- * @param type Type to validate
- * @returns Valid RoomTypeLiteral
- */
-export function validateRoomType(type: string): RoomTypeLiteral {
-  return asRoomType(type);
-}
-
-/**
- * Validates a point with x and y coordinates
- * @param point Point to validate
- * @returns Valid point with x and y properties
- */
-export function validatePoint(point: any): { x: number, y: number } {
-  return {
-    x: typeof point?.x === 'number' ? point.x : 0,
-    y: typeof point?.y === 'number' ? point.y : 0
-  };
-}
-
-/**
- * Validates a color string
- * @param color Color to validate
- * @returns Valid color string
- */
-export function validateColor(color: any): string {
-  return typeof color === 'string' ? color : '#000000';
-}
-
-/**
- * Validates a timestamp string
- * @param timestamp Timestamp to validate
- * @returns Valid timestamp
- */
-export function validateTimestamp(timestamp: any): string {
-  return typeof timestamp === 'string' ? timestamp : new Date().toISOString();
-}

@@ -11,12 +11,17 @@ import {
   appToCoreFloorPlan,
   coreToAppFloorPlans,
   coreToAppFloorPlan,
+} from './floorPlanAdapter/converters';
+
+// Import validators
+import {
   validateStrokeType,
   validateRoomType,
   validatePoint,
   validateColor,
-  validateTimestamp
-} from './floorPlanAdapter/converters';
+  validateTimestamp,
+  mapRoomType
+} from './floorPlanAdapter/validators';
 
 // Re-export converters
 export { 
@@ -29,7 +34,8 @@ export {
   validateRoomType,
   validatePoint,
   validateColor,
-  validateTimestamp
+  validateTimestamp,
+  mapRoomType
 };
 
 /**
@@ -68,15 +74,6 @@ export const normalizeDrawingMode = (mode: string | DrawingMode): DrawingMode =>
   };
   
   return modeMap[mode.toLowerCase()] || DrawingMode.SELECT;
-};
-
-/**
- * Maps a room type string to a valid RoomTypeLiteral
- * @param type Room type to map
- * @returns Properly typed RoomTypeLiteral
- */
-export const mapRoomType = (type: string): RoomTypeLiteral => {
-  return validateRoomType(type);
 };
 
 /**

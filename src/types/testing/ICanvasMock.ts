@@ -48,7 +48,7 @@ export interface ICanvasMock {
   // For type compatibility
   [key: string]: any;
   
-  // Fixed the return type to Promise<void>
+  // Fix: Ensure withImplementation returns Promise<void>
   withImplementation?(impl: Function): Promise<void>;
 }
 
@@ -85,7 +85,7 @@ export function createMinimalCanvasMock(): ICanvasMock {
     setZoom: jest.fn<ICanvasMock, [number]>().mockReturnThis(),
     getZoom: jest.fn<number, []>().mockReturnValue(1),
     viewportTransform: [1, 0, 0, 1, 0, 0],
-    // Fix: Ensure withImplementation returns Promise<void>
+    // Fixed: Ensure withImplementation returns Promise<void>
     withImplementation: jest.fn().mockImplementation((impl) => Promise.resolve())
   };
 }

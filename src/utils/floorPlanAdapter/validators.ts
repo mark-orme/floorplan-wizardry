@@ -1,35 +1,65 @@
 
-import { FloorPlan } from '@/types/FloorPlan';
+/**
+ * Validators for floor plan data
+ * Provides utility functions for validating floor plan properties
+ * @module utils/floorPlanAdapter/validators
+ */
+
+import { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
+import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
 /**
- * Validates a floor plan object to ensure it has all required properties
- * @param floorPlan Floor plan object to validate
- * @returns Boolean indicating if the floor plan is valid
+ * Validates a point with x and y coordinates
+ * @param point Point to validate
+ * @returns Valid point with x and y properties
  */
-export function isValidFloorPlan(floorPlan: any): floorPlan is FloorPlan {
-  if (!floorPlan) return false;
-  
-  return (
-    typeof floorPlan.id === 'string' &&
-    typeof floorPlan.name === 'string' &&
-    typeof floorPlan.data === 'object' &&
-    typeof floorPlan.userId === 'string' &&
-    Array.isArray(floorPlan.walls) &&
-    Array.isArray(floorPlan.rooms) &&
-    Array.isArray(floorPlan.strokes) &&
-    typeof floorPlan.createdAt === 'string' &&
-    typeof floorPlan.updatedAt === 'string' &&
-    typeof floorPlan.metadata === 'object'
-  );
+export function validatePoint(point: any): { x: number, y: number } {
+  return {
+    x: typeof point?.x === 'number' ? point.x : 0,
+    y: typeof point?.y === 'number' ? point.y : 0
+  };
 }
 
 /**
- * Validates an array of floor plans
- * @param floorPlans Array of floor plans to validate
- * @returns Array of valid floor plans
+ * Validates a color string
+ * @param color Color to validate
+ * @returns Valid color string
  */
-export function validateFloorPlans(floorPlans: any[]): FloorPlan[] {
-  if (!Array.isArray(floorPlans)) return [];
-  
-  return floorPlans.filter(isValidFloorPlan);
+export function validateColor(color: any): string {
+  return typeof color === 'string' ? color : '#000000';
 }
+
+/**
+ * Validates a timestamp string
+ * @param timestamp Timestamp to validate
+ * @returns Valid timestamp
+ */
+export function validateTimestamp(timestamp: any): string {
+  return typeof timestamp === 'string' ? timestamp : new Date().toISOString();
+}
+
+/**
+ * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
+ * @param type Type to validate
+ * @returns Valid StrokeTypeLiteral
+ */
+export function validateStrokeType(type: string): StrokeTypeLiteral {
+  return asStrokeType(type);
+}
+
+/**
+ * Validates a room type to ensure it's a valid RoomTypeLiteral
+ * @param type Type to validate
+ * @returns Valid RoomTypeLiteral
+ */
+export function validateRoomType(type: string): RoomTypeLiteral {
+  return asRoomType(type);
+}
+
+/**
+ * Maps a room type string to a valid RoomTypeLiteral 
+ * (Alias for validateRoomType for backward compatibility)
+ * @param type Room type to map
+ * @returns Properly typed RoomTypeLiteral
+ */
+export const mapRoomType = validateRoomType;
