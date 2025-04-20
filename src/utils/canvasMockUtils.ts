@@ -11,7 +11,7 @@ import { Canvas as FabricCanvas } from 'fabric';
  * that always returns Promise<void> to satisfy TypeScript
  */
 export const createWithImplementationMock = () => {
-  // CRITICAL FIX: This must return a function that returns a Promise<void>
+  // This must return a function that returns a Promise<void>
   return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
     console.log('MockCanvas: Using withImplementation mock');
     
@@ -52,7 +52,7 @@ export const createMockCanvas = (): Partial<FabricCanvas> => {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // This is the key fix - ensure withImplementation returns Promise<void>
+    // Properly implemented withImplementation that returns Promise<void>
     withImplementation: createWithImplementationMock()
   };
 };

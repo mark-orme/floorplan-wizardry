@@ -1,12 +1,33 @@
 
 /**
- * Floor Plan Types Barrel
- * Central export file for all floor plan related types
+ * Barrel file for Floor Plan types
+ * Re-exports all floor plan types from the unified source
  * @module types/floor-plan/typesBarrel
  */
 
-// Re-export everything from the unified types file
-export * from './unifiedTypes';
+// Re-export all types from the unified types file
+export type { 
+  Point, 
+  Stroke, 
+  Wall, 
+  Room, 
+  FloorPlan, 
+  FloorPlanMetadata,
+  StrokeTypeLiteral,
+  RoomTypeLiteral
+} from './unifiedTypes';
 
-// Console log for debugging imports
-console.log('Loading typesBarrel.ts - using unified type definitions');
+export { 
+  PaperSize, 
+  asStrokeType, 
+  asRoomType,
+  createEmptyFloorPlan,
+  createEmptyStroke,
+  createEmptyWall,
+  createEmptyRoom,
+  createTestFloorPlan,
+  createTestStroke,
+  createTestWall,
+  createTestRoom,
+  createTestPoint
+} from './unifiedTypes';

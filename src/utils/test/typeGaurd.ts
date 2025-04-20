@@ -1,24 +1,44 @@
 
 /**
- * Type guard utilities for testing
- * Helps ensure proper typing of test fixtures
+ * Type Guard Utilities for Tests
+ * Provides utilities for ensuring correct types in tests
  * @module utils/test/typeGaurd
  */
-import { 
-  StrokeTypeLiteral, 
-  RoomTypeLiteral,
+
+import {
   FloorPlan,
   Stroke,
+  Wall,
   Room,
-  Wall
-} from '../floor-plan/typesBarrel';
+  StrokeTypeLiteral,
+  RoomTypeLiteral,
+  createEmptyFloorPlan,
+  createEmptyStroke,
+  createEmptyWall,
+  createEmptyRoom
+} from '@/types/floor-plan/typesBarrel';
 
 /**
- * Ensure a string is a valid StrokeTypeLiteral
- * @param type String value to check
- * @returns Properly typed StrokeTypeLiteral
+ * Type guard for room type
+ * @param type Room type to check
+ * @returns Validated room type
  */
-export function asStrokeType(type: string): StrokeTypeLiteral {
+export function asRoomType(type: unknown): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = [
+    'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
+  ];
+  
+  return validTypes.includes(type as RoomTypeLiteral) 
+    ? (type as RoomTypeLiteral) 
+    : 'other';
+}
+
+/**
+ * Type guard for stroke type
+ * @param type Stroke type to check
+ * @returns Validated stroke type
+ */
+export function asStrokeType(type: unknown): StrokeTypeLiteral {
   const validTypes: StrokeTypeLiteral[] = [
     'line', 'polyline', 'wall', 'room', 'freehand', 
     'door', 'window', 'furniture', 'annotation', 'straight', 'other'
@@ -26,118 +46,90 @@ export function asStrokeType(type: string): StrokeTypeLiteral {
   
   return validTypes.includes(type as StrokeTypeLiteral) 
     ? (type as StrokeTypeLiteral) 
-    : 'line'; // Default to 'line' if invalid
+    : 'other';
 }
 
 /**
- * Ensure a string is a valid RoomTypeLiteral
- * @param type String value to check
- * @returns Properly typed RoomTypeLiteral
+ * Ensure a floor plan has all required properties
+ * @param floorPlan Partial floor plan
+ * @returns Complete floor plan
  */
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = [
-    'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
-  ];
+export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
+  // Add required data and userId if missing
+  if (!floorPlan.data) floorPlan.data = {};
+  if (!floorPlan.userId) floorPlan.userId = 'test-user';
   
-  return validTypes.includes(type as RoomTypeLiteral) 
-    ? (type as RoomTypeLiteral) 
-    : 'other'; // Default to 'other' if invalid
-}
-
-/**
- * Ensures a FloorPlan has all required properties
- * @param plan Partial FloorPlan to validate
- * @returns Fully typed FloorPlan with defaults for missing fields
- */
-export function ensureFloorPlan(plan: Partial<FloorPlan>): FloorPlan {
-  const now = new Date().toISOString();
-  
-  // Always provide required fields
   return {
-    id: plan.id || `fp-${Date.now()}`,
-    name: plan.name || 'Test Floor Plan',
-    label: plan.label || 'Test Floor Plan',
-    walls: plan.walls || [],
-    rooms: plan.rooms || [],
-    strokes: plan.strokes || [],
-    canvasData: plan.canvasData || null,
-    canvasJson: plan.canvasJson || null,
-    createdAt: plan.createdAt || now,
-    updatedAt: plan.updatedAt || now,
-    gia: plan.gia || 0,
-    level: plan.level || 0,
-    index: plan.index || 0,
-    // Critical required fields often missed
-    data: plan.data || {},
-    userId: plan.userId || 'test-user',
-    metadata: plan.metadata || {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: plan.level || 0,
-      version: '1.0',
-      author: 'Test User',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    }
+    ...createEmptyFloorPlan(),
+    ...floorPlan
   };
 }
 
 /**
- * Ensures a Stroke has all required properties with proper types
- * @param stroke Partial Stroke to validate
- * @returns Fully typed Stroke with defaults for missing fields
+ * Ensure a stroke has all required properties
+ * @param stroke Partial stroke
+ * @returns Complete stroke
  */
 export function ensureStroke(stroke: Partial<Stroke>): Stroke {
-  return {
-    id: stroke.id || `stroke-${Date.now()}`,
-    points: stroke.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: stroke.type ? asStrokeType(stroke.type.toString()) : 'line',
-    color: stroke.color || '#000000',
-    thickness: stroke.thickness || 2,
-    width: stroke.width || 2
-  };
-}
-
-/**
- * Ensures a Room has all required properties with proper types
- * @param room Partial Room to validate
- * @returns Fully typed Room with defaults for missing fields
- */
-export function ensureRoom(room: Partial<Room>): Room {
-  return {
-    id: room.id || `room-${Date.now()}`,
-    name: room.name || 'Test Room',
-    type: room.type ? asRoomType(room.type.toString()) : 'other',
-    points: room.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
-    color: room.color || '#ffffff',
-    area: room.area || 10000,
-    level: room.level || 0,
-    walls: room.walls || []
-  };
-}
-
-/**
- * Ensures a Wall has all required properties
- * @param wall Partial Wall to validate
- * @returns Fully typed Wall with defaults for missing fields
- */
-export function ensureWall(wall: Partial<Wall>): Wall {
-  const start = wall.start || { x: 0, y: 0 };
-  const end = wall.end || { x: 100, y: 0 };
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
+  // Ensure type is a valid StrokeTypeLiteral
+  if (stroke.type && typeof stroke.type === 'string') {
+    stroke.type = asStrokeType(stroke.type);
+  }
   
   return {
-    id: wall.id || `wall-${Date.now()}`,
-    start,
-    end,
-    points: wall.points || [start, end],
-    thickness: wall.thickness || 5,
-    color: wall.color || '#000000',
-    roomIds: wall.roomIds || [], // Crucial - must be present
-    length: wall.length || length
+    ...createEmptyStroke(),
+    ...stroke
   };
+}
+
+/**
+ * Ensure a wall has all required properties
+ * @param wall Partial wall
+ * @returns Complete wall
+ */
+export function ensureWall(wall: Partial<Wall>): Wall {
+  // Ensure roomIds is present
+  if (!wall.roomIds) wall.roomIds = [];
+  
+  return {
+    ...createEmptyWall(),
+    ...wall
+  };
+}
+
+/**
+ * Ensure a room has all required properties
+ * @param room Partial room
+ * @returns Complete room
+ */
+export function ensureRoom(room: Partial<Room>): Room {
+  // Ensure type is a valid RoomTypeLiteral
+  if (room.type && typeof room.type === 'string') {
+    room.type = asRoomType(room.type);
+  }
+  
+  return {
+    ...createEmptyRoom(),
+    ...room
+  };
+}
+
+/**
+ * Deep check to ensure all room and stroke types are valid in a floor plan
+ * @param floorPlan Floor plan to validate
+ * @returns Validated floor plan
+ */
+export function deepValidateFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
+  const validatedFloorPlan = ensureFloorPlan(floorPlan);
+  
+  // Validate all strokes
+  validatedFloorPlan.strokes = validatedFloorPlan.strokes.map(ensureStroke);
+  
+  // Validate all rooms
+  validatedFloorPlan.rooms = validatedFloorPlan.rooms.map(ensureRoom);
+  
+  // Validate all walls
+  validatedFloorPlan.walls = validatedFloorPlan.walls.map(ensureWall);
+  
+  return validatedFloorPlan;
 }

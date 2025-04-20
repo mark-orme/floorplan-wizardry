@@ -5,32 +5,11 @@
  * @module types/floor-plan/basicTypes
  */
 
-/**
- * Stroke type literals for various drawing types
- */
-export type StrokeTypeLiteral = 
-  'line' | 
-  'polyline' | 
-  'wall' | 
-  'room' | 
-  'freehand' | 
-  'door' | 
-  'window' | 
-  'furniture' | 
-  'annotation' | 
-  'straight' |  // Ensure 'straight' is included
-  'other';
+// Import the unified types to ensure consistency
+import type { StrokeTypeLiteral, RoomTypeLiteral } from './typesBarrel';
 
-/**
- * Room type literals for different room types
- */
-export type RoomTypeLiteral = 
-  'living' | 
-  'bedroom' | 
-  'kitchen' | 
-  'bathroom' | 
-  'office' | 
-  'other';
+// Re-export the types
+export type { StrokeTypeLiteral, RoomTypeLiteral };
 
 /**
  * Paper size literals for floor plan exports

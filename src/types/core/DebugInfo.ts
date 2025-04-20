@@ -55,6 +55,9 @@ export interface DebugInfoState {
   /** Whether event handlers are set */
   eventHandlersSet?: boolean;
   
+  /** Whether canvas events are registered */
+  canvasEventsRegistered?: boolean;
+  
   /** Whether canvas is ready */
   canvasReady?: boolean;
   
@@ -81,6 +84,12 @@ export interface DebugInfoState {
   
   /** Whether to show debug info */
   showDebugInfo?: boolean;
+  
+  /** Whether tools are initialized */
+  toolsInitialized?: boolean;
+  
+  /** Whether the grid has been rendered */
+  gridRendered?: boolean;
   
   /** Performance statistics */
   performanceStats?: {
@@ -126,9 +135,12 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   dimensionsSet: false,
   gridCreated: false,
   eventHandlersSet: false,
+  canvasEventsRegistered: false,
   canvasReady: false,
   brushInitialized: false,
   gridObjectCount: 0,
+  toolsInitialized: false,
+  gridRendered: false,
   showDebugInfo: process.env.NODE_ENV === 'development'
 };
 

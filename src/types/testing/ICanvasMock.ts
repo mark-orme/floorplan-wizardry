@@ -20,7 +20,7 @@ export interface ICanvasMock {
   getActiveObjects: jest.Mock;
   discardActiveObject: jest.Mock;
   contains: jest.Mock;
-  // CRITICAL FIX: Ensure withImplementation returns Promise<void>
+  // Properly typed withImplementation that returns Promise<void>
   withImplementation: jest.Mock<Promise<void>, [callback?: Function]>;
 }
 
@@ -40,22 +40,20 @@ export function createMinimalCanvasMock(): ICanvasMock {
     getActiveObjects: jest.fn().mockReturnValue([]),
     discardActiveObject: jest.fn(),
     contains: jest.fn().mockReturnValue(false),
-    // CRITICAL FIX: Ensure withImplementation returns Promise<void>
-    withImplementation: jest.fn().mockImplementation(
-      (callback?: Function): Promise<void> => {
-        if (callback && typeof callback === 'function') {
-          try {
-            const result = callback();
-            if (result instanceof Promise) {
-              return result.then(() => Promise.resolve());
-            }
-          } catch (error) {
-            console.error('Error in minimal mock withImplementation:', error);
+    // Properly implement withImplementation to return Promise<void>
+    withImplementation: jest.fn().mockImplementation((callback?: Function): Promise<void> => {
+      if (callback && typeof callback === 'function') {
+        try {
+          const result = callback();
+          if (result instanceof Promise) {
+            return result.then(() => Promise.resolve());
           }
+        } catch (error) {
+          console.error('Error in minimal mock withImplementation:', error);
         }
-        return Promise.resolve();
       }
-    )
+      return Promise.resolve();
+    })
   };
 }
 
