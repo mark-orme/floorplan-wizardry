@@ -1,3 +1,4 @@
+
 /**
  * Drawing tool type definitions
  * @module types/core/DrawingTool

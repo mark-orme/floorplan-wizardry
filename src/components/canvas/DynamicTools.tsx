@@ -1,7 +1,8 @@
+
 import React, { Suspense, lazy } from 'react'; // Added missing Suspense and lazy imports
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from '@/components/ui/button';
-import { Calculator, Circle, CircleSquare, Eraser, Hammer, Home, MousePointer, Pencil, Ruler, Square, Type } from 'lucide-react';
+import { Calculator, Circle, Eraser, Hammer, Home, MousePointer, Pencil, Ruler, Square, Type } from 'lucide-react';
 
 // Define a type for the plugin registration
 interface CanvasToolPlugin {

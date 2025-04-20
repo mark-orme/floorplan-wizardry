@@ -1,8 +1,12 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { CircleSquare } from 'lucide-react';
+import { 
+  Circle, 
+  Square, 
+  Type
+} from 'lucide-react';
 
 interface ShapeToolsProps {
   activeTool: DrawingMode;
@@ -10,31 +14,52 @@ interface ShapeToolsProps {
 }
 
 const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => {
+  const handleRectangleClick = useCallback(() => {
+    onSelectTool(DrawingMode.RECTANGLE);
+  }, [onSelectTool]);
+
+  const handleCircleClick = useCallback(() => {
+    onSelectTool(DrawingMode.CIRCLE);
+  }, [onSelectTool]);
+
+  const handleTextClick = useCallback(() => {
+    onSelectTool(DrawingMode.TEXT);
+  }, [onSelectTool]);
+
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium">Advanced Shapes</h3>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">Shape Tools</h3>
+      <div className="flex space-x-1">
+        <Button 
           variant={activeTool === DrawingMode.RECTANGLE ? "default" : "outline"}
           size="sm"
-          onClick={() => onSelectTool(DrawingMode.RECTANGLE)}
-          className="flex items-center gap-2"
+          onClick={handleRectangleClick}
+          title="Rectangle"
         >
-          <CircleSquare size={16} />
-          Shapes
+          <Square className="h-4 w-4" />
+          <span className="sr-only">Rectangle</span>
+        </Button>
+        <Button 
+          variant={activeTool === DrawingMode.CIRCLE ? "default" : "outline"}
+          size="sm"
+          onClick={handleCircleClick}
+          title="Circle"
+        >
+          <Circle className="h-4 w-4" />
+          <span className="sr-only">Circle</span>
+        </Button>
+        <Button 
+          variant={activeTool === DrawingMode.TEXT ? "default" : "outline"}
+          size="sm"
+          onClick={handleTextClick}
+          title="Text"
+        >
+          <Type className="h-4 w-4" />
+          <span className="sr-only">Text</span>
         </Button>
       </div>
     </div>
   );
-};
-
-// For plugin registration
-const plugin = {
-  id: 'shape-tools',
-  name: 'Shape Tools',
-  description: 'Advanced shapes and drawing tools',
-  mode: DrawingMode.RECTANGLE,
-  version: '1.0.0'
 };
 
 export default ShapeTools;

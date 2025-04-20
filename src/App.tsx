@@ -9,7 +9,7 @@ import Login from '@/pages/Login';
 import Auth from '@/pages/Auth';
 import Properties from '@/pages/Properties';
 import PropertyForm from '@/components/PropertyForm';
-import FloorPlans from '@/pages/Floorplans'; // Fixed casing here
+import FloorPlans from '@/pages/FloorPlans'; // Fixed the import casing
 import FloorplanDetails from '@/pages/FloorplanDetails';
 import Register from '@/pages/Register';
 import RoleGuard from '@/components/RoleGuard';
