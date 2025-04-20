@@ -65,6 +65,7 @@ export default function FloorPlans() {
     try {
       const { error } = await deleteFloorPlan(id);
       if (error) {
+        toast.error('Failed to delete floor plan');
         return false;
       }
       toast.success('Floor plan deleted');

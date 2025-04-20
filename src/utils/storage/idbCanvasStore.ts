@@ -1,76 +1,185 @@
 
-import { openDB } from 'idb';
+/**
+ * IndexedDB Canvas Storage
+ * 
+ * Provides functions for saving and loading canvas data to/from IndexedDB
+ */
 
-const DB_NAME = 'floorplan-db';
-const STORE_NAME = 'canvas-snapshots';
+// Database and store names
+const DB_NAME = 'floorplan-app-db';
+const CANVAS_STORE = 'canvas-state';
+const DB_VERSION = 1;
 
 /**
- * Get or create IndexedDB database instance
- * @returns Promise resolving to database instance
+ * Initialize the IndexedDB database
+ * @returns Promise resolving to an IDBDatabase instance
  */
-export const getDB = () =>
-  openDB(DB_NAME, 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+const openDatabase = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = (event) => {
+      console.error('IndexedDB error:', event);
+      reject(new Error('Failed to open IndexedDB database'));
+    };
+    
+    request.onsuccess = (event) => {
+      resolve((event.target as IDBOpenDBRequest).result);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      
+      // Create canvas state store
+      if (!db.objectStoreNames.contains(CANVAS_STORE)) {
+        db.createObjectStore(CANVAS_STORE, { keyPath: 'key' });
       }
-    },
+    };
   });
+};
 
 /**
- * Save canvas state to IndexedDB
- * @param key Unique identifier for the canvas state
- * @param json Canvas JSON representation
+ * Save canvas data to IndexedDB
+ * @param key Unique identifier for the canvas data
+ * @param canvasData Canvas data to store
+ * @returns Promise resolving to boolean indicating success
  */
-export async function saveCanvasToIDB(key: string, json: object) {
+export const saveCanvasToIDB = async (key: string, canvasData: any): Promise<boolean> => {
   try {
-    const db = await getDB();
-    await db.put(STORE_NAME, json, key);
-    console.log(`Canvas state saved to IndexedDB with key: ${key}`);
+    const db = await openDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([CANVAS_STORE], 'readwrite');
+      const store = transaction.objectStore(CANVAS_STORE);
+      
+      const request = store.put({
+        key,
+        data: canvasData,
+        timestamp: new Date().toISOString()
+      });
+      
+      request.onsuccess = () => {
+        resolve(true);
+      };
+      
+      request.onerror = (event) => {
+        console.error('Error saving canvas data:', event);
+        reject(new Error('Failed to save canvas data'));
+      };
+      
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
   } catch (error) {
-    console.error('Error saving canvas to IndexedDB:', error);
+    console.error('Error in saveCanvasToIDB:', error);
+    return false;
   }
-}
+};
 
 /**
- * Load canvas state from IndexedDB
- * @param key Unique identifier for the canvas state
- * @returns Promise resolving to the saved canvas state or undefined if not found
+ * Load canvas data from IndexedDB
+ * @param key Unique identifier for the canvas data
+ * @returns Promise resolving to loaded canvas data or null if not found
  */
-export async function loadCanvasFromIDB(key: string) {
+export const loadCanvasFromIDB = async (key: string): Promise<any> => {
   try {
-    const db = await getDB();
-    return db.get(STORE_NAME, key);
+    const db = await openDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([CANVAS_STORE], 'readonly');
+      const store = transaction.objectStore(CANVAS_STORE);
+      
+      const request = store.get(key);
+      
+      request.onsuccess = (event) => {
+        const record = (event.target as IDBRequest).result;
+        if (record) {
+          resolve(record.data);
+        } else {
+          resolve(null);
+        }
+      };
+      
+      request.onerror = (event) => {
+        console.error('Error loading canvas data:', event);
+        reject(new Error('Failed to load canvas data'));
+      };
+      
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
   } catch (error) {
-    console.error('Error loading canvas from IndexedDB:', error);
-    return undefined;
+    console.error('Error in loadCanvasFromIDB:', error);
+    return null;
   }
-}
+};
 
 /**
- * Delete a saved canvas state from IndexedDB
- * @param key Unique identifier for the canvas state to delete
+ * Clear saved canvas data
+ * @param key Unique identifier for the canvas data
+ * @returns Promise resolving to boolean indicating success
  */
-export async function clearSavedCanvas(key: string) {
+export const clearSavedCanvas = async (key: string): Promise<boolean> => {
   try {
-    const db = await getDB();
-    await db.delete(STORE_NAME, key);
-    console.log(`Canvas state with key ${key} cleared from IndexedDB`);
+    const db = await openDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([CANVAS_STORE], 'readwrite');
+      const store = transaction.objectStore(CANVAS_STORE);
+      
+      const request = store.delete(key);
+      
+      request.onsuccess = () => {
+        resolve(true);
+      };
+      
+      request.onerror = (event) => {
+        console.error('Error clearing canvas data:', event);
+        reject(new Error('Failed to clear canvas data'));
+      };
+      
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
   } catch (error) {
-    console.error('Error clearing canvas from IndexedDB:', error);
+    console.error('Error in clearSavedCanvas:', error);
+    return false;
   }
-}
+};
 
 /**
  * List all saved canvas keys
  * @returns Promise resolving to array of canvas keys
  */
-export async function listSavedCanvasKeys() {
+export const listSavedCanvasKeys = async (): Promise<string[]> => {
   try {
-    const db = await getDB();
-    return db.getAllKeys(STORE_NAME);
+    const db = await openDatabase();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([CANVAS_STORE], 'readonly');
+      const store = transaction.objectStore(CANVAS_STORE);
+      
+      const request = store.getAllKeys();
+      
+      request.onsuccess = (event) => {
+        const keys = (event.target as IDBRequest).result;
+        resolve(keys as string[]);
+      };
+      
+      request.onerror = (event) => {
+        console.error('Error listing canvas keys:', event);
+        reject(new Error('Failed to list canvas keys'));
+      };
+      
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
   } catch (error) {
-    console.error('Error listing canvas keys from IndexedDB:', error);
+    console.error('Error in listSavedCanvasKeys:', error);
     return [];
   }
-}
+};

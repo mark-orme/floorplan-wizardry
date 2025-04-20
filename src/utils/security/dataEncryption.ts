@@ -1,22 +1,31 @@
 
 /**
- * Data Encryption Utilities
- * Provides functions for encrypting and decrypting data using Web Crypto API
+ * Data Encryption Utilities using Web Crypto API
+ * Provides functions for encrypting and decrypting data
  */
 
 /**
+ * Check if the Web Crypto API is supported in this environment
+ */
+export function isEncryptionSupported(): boolean {
+  return typeof window !== 'undefined' && 
+         window.crypto && 
+         window.crypto.subtle && 
+         typeof window.crypto.subtle.generateKey === 'function';
+}
+
+/**
  * Generate an encryption key from a passphrase
- * @param passphrase String to generate key from
- * @returns Promise resolving to CryptoKey
+ * @param passphrase String to derive key from
+ * @returns Promise resolving to a CryptoKey
  */
 export async function generateEncryptionKey(passphrase: string): Promise<CryptoKey> {
   // Convert passphrase to bytes
   const encoder = new TextEncoder();
   const passphraseBytes = encoder.encode(passphrase);
   
-  // Create a key using PBKDF2
-  const salt = encoder.encode('floor-plan-app-salt');
-  const importedKey = await window.crypto.subtle.importKey(
+  // Create a key from the passphrase
+  const baseKey = await window.crypto.subtle.importKey(
     'raw',
     passphraseBytes,
     { name: 'PBKDF2' },
@@ -24,7 +33,8 @@ export async function generateEncryptionKey(passphrase: string): Promise<CryptoK
     ['deriveKey']
   );
   
-  // Derive an AES-GCM key
+  // Generate a strong key using PBKDF2
+  const salt = encoder.encode('secure-floorplan-app-salt');
   return window.crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
@@ -32,7 +42,7 @@ export async function generateEncryptionKey(passphrase: string): Promise<CryptoK
       iterations: 100000,
       hash: 'SHA-256'
     },
-    importedKey,
+    baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt']
@@ -43,101 +53,86 @@ export async function generateEncryptionKey(passphrase: string): Promise<CryptoK
  * Encrypt data using AES-GCM
  * @param data Data to encrypt
  * @param key CryptoKey to use for encryption
- * @returns Promise resolving to encrypted data
+ * @returns Promise resolving to encrypted data object
  */
 export async function encryptData(data: any, key: CryptoKey): Promise<{
   iv: string;
-  encryptedData: string;
+  data: string;
 }> {
-  try {
-    // Generate an initialization vector
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    
-    // Convert data to string if it's not already
-    const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
-    
-    // Convert to bytes
-    const encoder = new TextEncoder();
-    const dataBytes = encoder.encode(dataStr);
-    
-    // Encrypt the data
-    const encryptedBuffer = await window.crypto.subtle.encrypt(
-      {
-        name: 'AES-GCM',
-        iv
-      },
-      key,
-      dataBytes
-    );
-    
-    // Convert to base64 strings for storage
-    const encryptedData = btoa(String.fromCharCode(...new Uint8Array(encryptedBuffer)));
-    const ivString = btoa(String.fromCharCode(...iv));
-    
-    return {
-      iv: ivString,
-      encryptedData
-    };
-  } catch (error) {
-    console.error('Encryption error:', error);
-    throw new Error('Failed to encrypt data');
-  }
+  // Create initialization vector
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  
+  // Convert data to string and then to bytes
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(JSON.stringify(data));
+  
+  // Encrypt the data
+  const encryptedData = await window.crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv
+    },
+    key,
+    dataBytes
+  );
+  
+  // Convert encrypted data and IV to Base64 strings for storage
+  return {
+    iv: bufferToBase64(iv),
+    data: bufferToBase64(encryptedData)
+  };
 }
 
 /**
  * Decrypt data using AES-GCM
- * @param encryptedData Object containing IV and encrypted data
+ * @param encryptedData Encrypted data object
  * @param key CryptoKey to use for decryption
  * @returns Promise resolving to decrypted data
  */
 export async function decryptData(
-  encryptedData: { iv: string; encryptedData: string },
+  encryptedData: { iv: string; data: string },
   key: CryptoKey
 ): Promise<any> {
-  try {
-    // Convert base64 strings back to bytes
-    const iv = new Uint8Array(
-      [...atob(encryptedData.iv)].map(char => char.charCodeAt(0))
-    );
-    
-    const encryptedBytes = new Uint8Array(
-      [...atob(encryptedData.encryptedData)].map(char => char.charCodeAt(0))
-    );
-    
-    // Decrypt the data
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv
-      },
-      key,
-      encryptedBytes
-    );
-    
-    // Convert bytes to string
-    const decoder = new TextDecoder();
-    const decryptedStr = decoder.decode(decryptedBuffer);
-    
-    // Parse JSON if the decrypted data is JSON
-    try {
-      return JSON.parse(decryptedStr);
-    } catch {
-      // If not valid JSON, return the string as is
-      return decryptedStr;
-    }
-  } catch (error) {
-    console.error('Decryption error:', error);
-    throw new Error('Failed to decrypt data');
-  }
+  // Convert Base64 strings back to buffers
+  const iv = base64ToBuffer(encryptedData.iv);
+  const data = base64ToBuffer(encryptedData.data);
+  
+  // Decrypt the data
+  const decryptedData = await window.crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv
+    },
+    key,
+    data
+  );
+  
+  // Convert bytes back to string and parse JSON
+  const decoder = new TextDecoder();
+  const decodedData = decoder.decode(decryptedData);
+  return JSON.parse(decodedData);
 }
 
 /**
- * Test if Web Crypto API is available
- * @returns Boolean indicating if encryption is supported
+ * Convert ArrayBuffer to Base64 string
  */
-export function isEncryptionSupported(): boolean {
-  return typeof window !== 'undefined' && 
-         typeof window.crypto !== 'undefined' && 
-         typeof window.crypto.subtle !== 'undefined';
+function bufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
+/**
+ * Convert Base64 string to ArrayBuffer
+ */
+function base64ToBuffer(base64: string): ArrayBuffer {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}

@@ -1,6 +1,6 @@
 
 import { initializeEncryption } from '@/utils/storage/encryptedCanvasStore';
-import { createFormProtection } from '@/utils/security/enhancedCsrfProtection';
+import { generateCSRFToken } from '@/utils/security/csrfProtection';
 import { toast } from 'sonner';
 
 let encryptionKey: CryptoKey | null = null;
@@ -14,16 +14,23 @@ export async function initializeSecurity(): Promise<void> {
     
     // Set up CSRF protection
     if (typeof document !== 'undefined') {
-      createFormProtection();
+      generateCSRFToken();
       console.info('CSRF protection initialized');
     }
     
     // Set up encryption
-    const encryptionSuccess = await initializeEncryption();
-    if (encryptionSuccess) {
-      console.info('Encryption initialized successfully');
+    const encryptionSupported = typeof window !== 'undefined' && 
+                              window.crypto && 
+                              window.crypto.subtle;
+    
+    if (encryptionSupported) {
+      console.info('Web Crypto API is supported, initializing encryption...');
+      // Initialization will happen when needed
     } else {
-      console.warn('Encryption initialization failed or is not supported');
+      console.warn('Web Crypto API is not supported in this browser');
+      toast.warning('Secure storage not available in your browser', { 
+        duration: 5000 
+      });
     }
     
     // Apply security-related meta tags
@@ -34,19 +41,8 @@ export async function initializeSecurity(): Promise<void> {
       metaReferrer.content = 'no-referrer';
       document.head.appendChild(metaReferrer);
       
-      // Set content security policy
-      const metaCsp = document.createElement('meta');
-      metaCsp.setAttribute('http-equiv', 'Content-Security-Policy');
-      metaCsp.content = "default-src 'self'; script-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data: blob:;";
-      document.head.appendChild(metaCsp);
-      
       console.info('Security headers initialized');
     }
-    
-    toast.success('Security features initialized', {
-      duration: 3000,
-      position: 'bottom-right'
-    });
     
   } catch (error) {
     console.error('Error initializing security features:', error);
@@ -69,4 +65,3 @@ export function getEncryptionKey(): CryptoKey | null {
 export function setEncryptionKey(key: CryptoKey): void {
   encryptionKey = key;
 }
-

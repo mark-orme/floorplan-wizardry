@@ -26,7 +26,6 @@ export async function initializeEncryption(passphrase?: string): Promise<boolean
   try {
     if (!isEncryptionSupported()) {
       console.warn('Encryption is not supported in this browser');
-      toast.warning('Secure storage is not available in this browser');
       return false;
     }
 
@@ -39,7 +38,6 @@ export async function initializeEncryption(passphrase?: string): Promise<boolean
     return true;
   } catch (error) {
     console.error('Failed to initialize encryption:', error);
-    toast.error('Could not set up secure storage');
     return false;
   }
 }
@@ -171,4 +169,3 @@ export async function listEncryptedCanvasKeys(): Promise<string[]> {
     return [];
   }
 }
-

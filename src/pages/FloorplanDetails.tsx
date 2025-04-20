@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
 import { EnhancedDrawingCanvas } from '@/components/EnhancedDrawingCanvas';
 import { FloorPlan } from '@/types/FloorPlan';
+import { saveEncryptedCanvas, loadEncryptedCanvas } from '@/utils/storage/encryptedCanvasStore';
+import { isRateLimited } from '@/utils/security/rateLimiting';
 
 interface EnhancedDrawingCanvasProps {
   width: number;
@@ -22,6 +24,9 @@ export default function FloorplanDetails() {
   const { getFloorPlan, updateFloorPlan, deleteFloorPlan } = useSupabaseFloorPlans();
   const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Rate limiting
+  const saveRateLimitOptions = { windowMs: 30000, maxRequests: 5 }; // 5 saves per 30 seconds
   
   useEffect(() => {
     const loadFloorPlan = async () => {
@@ -39,6 +44,17 @@ export default function FloorplanDetails() {
         if (data) {
           // Correctly set the FloorPlan data
           setFloorPlan(data as FloorPlan);
+          
+          // Try to load any cached data from encrypted storage
+          try {
+            const cachedData = await loadEncryptedCanvas(`floorplan-${id}`);
+            if (cachedData) {
+              console.log('Loaded cached data from encrypted storage');
+              // Merge cached data with server data if needed
+            }
+          } catch (cacheError) {
+            console.warn('Could not load cached data:', cacheError);
+          }
         } else {
           toast.error('Floor plan not found');
           navigate('/floorplans');
@@ -66,8 +82,23 @@ export default function FloorplanDetails() {
   const handleSave = async () => {
     if (!floorPlan || !id) return;
     
+    // Check for rate limiting
+    if (isRateLimited(`floorplan_save_${id}`, saveRateLimitOptions)) {
+      toast.warning('You are saving too frequently. Please wait a moment before trying again.');
+      return;
+    }
+    
     try {
+      // Save to server
       await updateFloorPlan(id, floorPlan);
+      
+      // Also save to encrypted local storage for backup
+      try {
+        await saveEncryptedCanvas(`floorplan-${id}`, floorPlan);
+      } catch (localError) {
+        console.warn('Could not save to local encrypted storage:', localError);
+      }
+      
       toast.success('Floor plan saved');
     } catch (error) {
       console.error('Error saving floor plan:', error);

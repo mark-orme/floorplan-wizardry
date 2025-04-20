@@ -5,11 +5,21 @@ import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { FloorPlan } from '@/types/floorPlanTypes';
 import { safeQuery, safeFilterQuery } from '@/utils/supabase/supabaseApiWrapper';
+import { isRateLimited } from '@/utils/security/rateLimiting';
 
 // Use import.meta.env instead of process.env for browser environment
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Rate limiting options for different operations
+const rateLimitOptions = {
+  list: { windowMs: 60000, maxRequests: 10 },
+  get: { windowMs: 60000, maxRequests: 20 },
+  create: { windowMs: 60000, maxRequests: 5 },
+  update: { windowMs: 60000, maxRequests: 10 },
+  delete: { windowMs: 60000, maxRequests: 3 }
+};
 
 export const useSupabaseFloorPlans = () => {
   const [loading, setLoading] = useState(false);
@@ -19,6 +29,12 @@ export const useSupabaseFloorPlans = () => {
   // Get all floor plans (to resolve missing floorPlans property)
   const getAllFloorPlans = async () => {
     if (!supabase) return { data: [], error: 'Supabase client not initialized' };
+    
+    // Check for rate limiting
+    if (isRateLimited('floor_plans_list', rateLimitOptions.list)) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      return { data: [], error: 'Rate limit exceeded' };
+    }
     
     setLoading(true);
     try {
@@ -54,6 +70,12 @@ export const useSupabaseFloorPlans = () => {
   const getFloorPlan = async (id: string) => {
     if (!supabase) return { data: null, error: 'Supabase client not initialized' };
   
+    // Check for rate limiting
+    if (isRateLimited(`floor_plan_get_${id}`, rateLimitOptions.get)) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      return { data: null, error: 'Rate limit exceeded' };
+    }
+    
     setLoading(true);
     try {
       const { data, error } = await safeQuery(
@@ -81,6 +103,12 @@ export const useSupabaseFloorPlans = () => {
 
   const createFloorPlan = async (floorPlan: FloorPlan) => {
     if (!supabase) return { data: null, error: 'Supabase client not initialized' };
+    
+    // Check for rate limiting
+    if (isRateLimited('floor_plan_create', rateLimitOptions.create)) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      return { data: null, error: 'Rate limit exceeded' };
+    }
     
     setLoading(true);
     try {
@@ -113,6 +141,12 @@ export const useSupabaseFloorPlans = () => {
   const updateFloorPlan = async (id: string, updates: Partial<FloorPlan>) => {
     if (!supabase) return { data: null, error: 'Supabase client not initialized' };
     
+    // Check for rate limiting
+    if (isRateLimited(`floor_plan_update_${id}`, rateLimitOptions.update)) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      return { data: null, error: 'Rate limit exceeded' };
+    }
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -144,6 +178,12 @@ export const useSupabaseFloorPlans = () => {
 
   const deleteFloorPlan = async (id: string) => {
     if (!supabase) return { data: null, error: 'Supabase client not initialized' };
+    
+    // Check for rate limiting
+    if (isRateLimited(`floor_plan_delete_${id}`, rateLimitOptions.delete)) {
+      toast.error('Too many requests. Please wait a moment before trying again.');
+      return { data: null, error: 'Rate limit exceeded' };
+    }
     
     setLoading(true);
     try {

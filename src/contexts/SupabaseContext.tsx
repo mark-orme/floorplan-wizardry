@@ -1,6 +1,7 @@
 
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getCsrfToken } from '@/utils/security/csrfProtection';
 
 interface SupabaseContextType {
   supabase: SupabaseClient;
@@ -21,11 +22,38 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      // If not available, use default test values (should be replaced in production)
-      const url = supabaseUrl || 'https://example.supabase.co';
-      const key = supabaseKey || 'your-anon-key';
+      // Check if environment variables are available
+      if (!supabaseUrl || !supabaseKey) {
+        setError('Supabase URL or key is missing');
+        setIsLoading(false);
+        return;
+      }
 
-      const client = createClient(url, key);
+      // Create a custom fetch function with CSRF protection
+      const fetchWithCSRF = (url: RequestInfo, options?: RequestInit) => {
+        const csrfToken = getCsrfToken();
+        const fetchOptions = {
+          ...options,
+          headers: {
+            ...options?.headers,
+            'X-CSRF-Token': csrfToken
+          }
+        };
+        
+        return fetch(url, fetchOptions);
+      };
+
+      // Create the Supabase client with enhanced security
+      const client = createClient(supabaseUrl, supabaseKey, {
+        global: {
+          fetch: fetchWithCSRF
+        },
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      });
+      
       setSupabase(client);
       setIsLoading(false);
     } catch (err) {

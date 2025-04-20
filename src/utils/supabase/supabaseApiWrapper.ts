@@ -3,6 +3,7 @@
  * Wrapper for Supabase API calls to standardize the interface
  */
 import { createClient } from '@supabase/supabase-js';
+import { getCSRFToken } from '../security/enhancedCsrfProtection';
 
 // Create a Supabase client with error handling
 export const createSafeSupabaseClient = () => {
@@ -14,7 +15,29 @@ export const createSafeSupabaseClient = () => {
     return null;
   }
   
-  return createClient(supabaseUrl, supabaseKey);
+  // Add CSRF token to all fetch requests
+  const fetchWithCSRF = (url: RequestInfo | URL, options?: RequestInit) => {
+    const csrfToken = getCSRFToken();
+    const fetchOptions = {
+      ...options,
+      headers: {
+        ...options?.headers,
+        'X-CSRF-Token': csrfToken
+      }
+    };
+    
+    return fetch(url, fetchOptions);
+  };
+  
+  return createClient(supabaseUrl, supabaseKey, {
+    global: {
+      fetch: fetchWithCSRF
+    },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  });
 };
 
 /**
