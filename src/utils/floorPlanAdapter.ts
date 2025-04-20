@@ -22,3 +22,14 @@ export {
   mapRoomType,
   normalizeDrawingMode
 } from './floorPlanAdapter/converters';
+
+// Re-export validators from the validators module
+export {
+  validatePoint,
+  validateColor,
+  validateTimestamp,
+  validateStrokeType,
+  validateRoomType,
+  mapRoomType,
+  logValidation
+} from './floorPlanAdapter/validators';

@@ -15,13 +15,15 @@ import {
   RoomTypeLiteral,
   FloorPlanMetadata,
   asStrokeType,
-  asRoomType
+  asRoomType,
+  createTestPoint,
+  createTestStroke,
+  createTestWall,
+  createTestRoom,
+  createTestFloorPlan
 } from '@/types/floor-plan/unifiedTypes';
 
-import { 
-  calculateWallLength,
-  createCompleteMetadata
-} from '@/utils/debug/typeDiagnostics';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 /**
  * Determine if a stroke type is valid
@@ -29,7 +31,7 @@ import {
  * @returns Whether the type is valid
  */
 export const isValidStrokeType = (type: string): boolean => {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'line', 'wall', 'room'];
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
   return validTypes.includes(type as StrokeTypeLiteral);
 };
 
@@ -43,13 +45,14 @@ export const isValidRoomType = (type: string): boolean => {
   return validTypes.includes(type as RoomTypeLiteral);
 };
 
-/**
- * Create a test point object
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A point object
- */
-export const createPoint = (x: number = 0, y: number = 0): Point => ({ x, y });
+// Re-export test utilities from the unifiedTypes
+export { 
+  createTestPoint,
+  createTestStroke,
+  createTestWall,
+  createTestRoom,
+  createTestFloorPlan
+};
 
 /**
  * Create a typed test stroke
@@ -61,7 +64,7 @@ export const createTypedStroke = (partialStroke: Partial<Stroke> = {}): Stroke =
   
   return {
     id: partialStroke.id || 'stroke-' + Math.random().toString(36).substring(2, 9),
-    points: partialStroke.points || [createPoint(0, 0), createPoint(100, 100)],
+    points: partialStroke.points || [createTestPoint(0, 0), createTestPoint(100, 100)],
     type,
     color: partialStroke.color || '#000000',
     thickness: partialStroke.thickness || 2,
@@ -75,8 +78,8 @@ export const createTypedStroke = (partialStroke: Partial<Stroke> = {}): Stroke =
  * @returns A complete wall
  */
 export const createTypedWall = (partialWall: Partial<Wall> = {}): Wall => {
-  const start = partialWall.start || createPoint(0, 0);
-  const end = partialWall.end || createPoint(100, 0);
+  const start = partialWall.start || createTestPoint(0, 0);
+  const end = partialWall.end || createTestPoint(100, 0);
   
   return {
     id: partialWall.id || 'wall-' + Math.random().toString(36).substring(2, 9),
@@ -85,7 +88,9 @@ export const createTypedWall = (partialWall: Partial<Wall> = {}): Wall => {
     thickness: partialWall.thickness || 5,
     color: partialWall.color || '#333333',
     roomIds: partialWall.roomIds || [],
-    length: partialWall.length || calculateWallLength(start, end),
+    length: partialWall.length || Math.sqrt(
+      Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+    ),
     height: partialWall.height
   };
 };
@@ -98,17 +103,37 @@ export const createTypedWall = (partialWall: Partial<Wall> = {}): Wall => {
 export const createTypedRoom = (partialRoom: Partial<Room> = {}): Room => {
   const type = partialRoom.type ? asRoomType(partialRoom.type as string) : asRoomType('other');
   
+  const vertices = partialRoom.vertices || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 0),
+    createTestPoint(100, 100),
+    createTestPoint(0, 100)
+  ];
+  
+  const center = {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
+    y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length
+  };
+  
+  // Calculate perimeter
+  let perimeter = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const p1 = vertices[i];
+    const p2 = vertices[(i + 1) % vertices.length];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    perimeter += Math.sqrt(dx * dx + dy * dy);
+  }
+  
   return {
     id: partialRoom.id || 'room-' + Math.random().toString(36).substring(2, 9),
     name: partialRoom.name || 'Test Room',
     type,
-    vertices: partialRoom.vertices || [
-      createPoint(0, 0),
-      createPoint(100, 0),
-      createPoint(100, 100),
-      createPoint(0, 100)
-    ],
+    vertices,
     area: partialRoom.area || 10000,
+    perimeter: partialRoom.perimeter || perimeter,
+    labelPosition: partialRoom.labelPosition || center,
+    center: partialRoom.center || center,
     color: partialRoom.color || '#f5f5f5'
   };
 };
@@ -134,6 +159,7 @@ export const createTypedFloorPlan = (partialFloorPlan: Partial<FloorPlan> = {}):
     strokes: partialFloorPlan.strokes || [],
     canvasData: partialFloorPlan.canvasData || null,
     canvasJson: partialFloorPlan.canvasJson || null,
+    canvasState: partialFloorPlan.canvasState || null,
     createdAt: partialFloorPlan.createdAt || now,
     updatedAt: partialFloorPlan.updatedAt || now,
     gia: partialFloorPlan.gia || 0,

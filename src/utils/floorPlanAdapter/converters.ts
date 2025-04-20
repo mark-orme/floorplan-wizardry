@@ -1,222 +1,130 @@
 
 /**
- * Floor plan converters
+ * Floor plan adapter converters
+ * Provides utilities for converting between different floor plan formats
  * @module utils/floorPlanAdapter/converters
  */
-import { 
+import { DrawingMode } from '@/constants/drawingModes';
+import {
   FloorPlan,
   Stroke,
   Wall,
   Room,
-  Point,
   StrokeTypeLiteral,
-  RoomTypeLiteral
+  RoomTypeLiteral,
+  FloorPlanMetadata
 } from '@/types/floor-plan/unifiedTypes';
 
-import { DrawingMode } from '@/constants/drawingModes';
-import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
-
 /**
- * Validates a point with x and y coordinates
- * @param point Point to validate
- * @returns Valid point with x and y properties
- */
-export function validatePoint(point: any): { x: number, y: number } {
-  return {
-    x: typeof point?.x === 'number' ? point.x : 0,
-    y: typeof point?.y === 'number' ? point.y : 0
-  };
-}
-
-/**
- * Validates a color string
- * @param color Color to validate
- * @returns Valid color string
- */
-export function validateColor(color: any): string {
-  return typeof color === 'string' ? color : '#000000';
-}
-
-/**
- * Validates a timestamp string
- * @param timestamp Timestamp to validate
- * @returns Valid timestamp
- */
-export function validateTimestamp(timestamp: any): string {
-  return typeof timestamp === 'string' ? timestamp : new Date().toISOString();
-}
-
-/**
- * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
- * @param type Type to validate
- * @returns Valid StrokeTypeLiteral
- */
-export function validateStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
-  return validTypes.includes(type as StrokeTypeLiteral) ? type as StrokeTypeLiteral : 'line';
-}
-
-/**
- * Checks if a string is a valid StrokeTypeLiteral
- * @param type Type to check
- * @returns Valid StrokeTypeLiteral
- */
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  return validateStrokeType(type);
-}
-
-/**
- * Validates a room type to ensure it's a valid RoomTypeLiteral
- * @param type Type to validate
- * @returns Valid RoomTypeLiteral
- */
-export function validateRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  return validTypes.includes(type as RoomTypeLiteral) ? type as RoomTypeLiteral : 'other';
-}
-
-/**
- * Checks if a string is a valid RoomTypeLiteral
- * @param type Type to check
- * @returns Valid RoomTypeLiteral
- */
-export function asRoomType(type: string): RoomTypeLiteral {
-  return validateRoomType(type);
-}
-
-/**
- * Maps a room type string to a valid RoomTypeLiteral 
- * (Alias for validateRoomType for backward compatibility)
- * @param type Room type to map
- * @returns Properly typed RoomTypeLiteral
- */
-export const mapRoomType = validateRoomType;
-
-/**
- * Normalize drawing mode to ensure compatibility
- * @param mode Drawing mode to normalize
+ * Normalize drawing mode to a standard format
+ * @param mode Drawing mode or string to normalize
  * @returns Normalized drawing mode
  */
-export function normalizeDrawingMode(mode: string | DrawingMode): DrawingMode {
-  const validModes = Object.values(DrawingMode);
-  if (validModes.includes(mode as DrawingMode)) {
+export function normalizeDrawingMode(mode: DrawingMode | string): DrawingMode {
+  if (mode in DrawingMode) {
     return mode as DrawingMode;
   }
-  return DrawingMode.SELECT;
+  
+  // Map legacy mode names to new mode names
+  const modeMap: Record<string, DrawingMode> = {
+    'select': DrawingMode.SELECT,
+    'draw': DrawingMode.DRAW,
+    'line': DrawingMode.LINE,
+    'wall': DrawingMode.WALL,
+    'room': DrawingMode.ROOM,
+    'pan': DrawingMode.PAN,
+    'hand': DrawingMode.HAND,
+    'eraser': DrawingMode.ERASER
+  };
+  
+  return modeMap[mode.toLowerCase()] || DrawingMode.SELECT;
 }
 
 /**
- * Adapt a floor plan for API compatibility
+ * Valid stroke types
+ */
+export const VALID_STROKE_TYPES: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+
+/**
+ * Ensure a stroke type is valid or return a default
+ * @param type Type to validate
+ * @returns Valid stroke type
+ */
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  if (VALID_STROKE_TYPES.includes(type as StrokeTypeLiteral)) {
+    return type as StrokeTypeLiteral;
+  }
+  return 'line';
+}
+
+/**
+ * Valid room types
+ */
+export const VALID_ROOM_TYPES: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+
+/**
+ * Ensure a room type is valid or return a default
+ * @param type Type to validate
+ * @returns Valid room type
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  if (VALID_ROOM_TYPES.includes(type as RoomTypeLiteral)) {
+    return type as RoomTypeLiteral;
+  }
+  return 'other';
+}
+
+/**
+ * Adapt a floor plan from one format to another
  * @param floorPlan Floor plan to adapt
  * @returns Adapted floor plan
  */
-export function adaptFloorPlan(floorPlan: any): FloorPlan {
-  // Handle walls - ensure they have all required properties
-  const adaptedWalls = Array.isArray(floorPlan.walls) ? floorPlan.walls.map((wall: any) => {
-    // Ensure basic properties exist
-    const start = validatePoint(wall.start || wall.startPoint);
-    const end = validatePoint(wall.end || wall.endPoint);
-    
-    // Calculate length if not provided
-    const length = typeof wall.length === 'number' ? wall.length : calculateWallLength(start, end);
-    
-    return {
-      id: wall.id || `wall-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      start,
-      end,
-      thickness: typeof wall.thickness === 'number' ? wall.thickness : 5,
-      length,
-      color: validateColor(wall.color),
-      roomIds: Array.isArray(wall.roomIds) ? wall.roomIds : []
-    } as Wall;
-  }) : [];
-  
-  // Handle rooms - ensure they have all required properties
-  const adaptedRooms = Array.isArray(floorPlan.rooms) ? floorPlan.rooms.map((room: any) => {
-    const points = Array.isArray(room.points) ? room.points.map(validatePoint) : [];
-    const vertices = Array.isArray(room.vertices) ? room.vertices.map(validatePoint) : points;
-    
-    return {
-      id: room.id || `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: room.name || 'Unnamed Room',
-      type: asRoomType(room.type || 'other'),
-      area: typeof room.area === 'number' ? room.area : 0,
-      vertices: vertices.length > 0 ? vertices : [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
-      perimeter: room.perimeter || 0,
-      labelPosition: validatePoint(room.labelPosition),
-      center: validatePoint(room.center),
-      color: validateColor(room.color)
-    } as Room;
-  }) : [];
-  
-  // Handle complete metadata
-  const now = new Date().toISOString();
-  const metadata = {
-    version: floorPlan.metadata?.version || '1.0',
-    author: floorPlan.metadata?.author || '',
-    dateCreated: floorPlan.metadata?.dateCreated || floorPlan.metadata?.createdAt || now,
-    lastModified: floorPlan.metadata?.lastModified || floorPlan.metadata?.updatedAt || now,
-    notes: floorPlan.metadata?.notes || '',
-    createdAt: floorPlan.metadata?.createdAt || now,
-    updatedAt: floorPlan.metadata?.updatedAt || now,
-    paperSize: floorPlan.metadata?.paperSize || 'A4',
-    level: typeof floorPlan.metadata?.level === 'number' ? floorPlan.metadata.level : 0
-  };
-  
-  // Create adapted floor plan
+export function adaptFloorPlan(floorPlan: FloorPlan): FloorPlan {
   return {
-    id: floorPlan.id || `fp-${Date.now()}`,
-    name: floorPlan.name || 'Untitled Floor Plan',
-    label: floorPlan.label || floorPlan.name || 'Untitled Floor Plan',
-    walls: adaptedWalls,
-    rooms: adaptedRooms,
-    strokes: Array.isArray(floorPlan.strokes) ? floorPlan.strokes : [],
-    canvasData: floorPlan.canvasData || null,
-    canvasJson: floorPlan.canvasJson || null,
-    canvasState: floorPlan.canvasState || null,
-    createdAt: validateTimestamp(floorPlan.createdAt),
-    updatedAt: validateTimestamp(floorPlan.updatedAt),
-    gia: typeof floorPlan.gia === 'number' ? floorPlan.gia : 0,
-    level: typeof floorPlan.level === 'number' ? floorPlan.level : 0,
-    index: typeof floorPlan.index === 'number' ? floorPlan.index : 0,
-    metadata,
-    data: floorPlan.data || {},
-    userId: floorPlan.userId || 'default-user'
+    ...floorPlan,
+    strokes: floorPlan.strokes.map(stroke => ({
+      ...stroke,
+      type: asStrokeType(stroke.type)
+    })),
+    rooms: floorPlan.rooms.map(room => ({
+      ...room,
+      type: asRoomType(room.type)
+    }))
   };
 }
 
 /**
- * Convert app floor plans to core floor plans
- * @param appFloorPlans App floor plans
+ * Convert application floor plans to core format
+ * @param floorPlans Application floor plans
  * @returns Core floor plans
  */
-export function appToCoreFloorPlans(appFloorPlans: FloorPlan[]): FloorPlan[] {
-  return appFloorPlans.map(appToCoreFloorPlan);
+export function appToCoreFloorPlans(floorPlans: FloorPlan[]): FloorPlan[] {
+  return floorPlans.map(appToCoreFloorPlan);
 }
 
 /**
- * Convert a single app floor plan to core floor plan
- * @param appFloorPlan App floor plan
+ * Convert a single application floor plan to core format
+ * @param floorPlan Application floor plan
  * @returns Core floor plan
  */
-export function appToCoreFloorPlan(appFloorPlan: FloorPlan): FloorPlan {
-  return adaptFloorPlan(appFloorPlan);
+export function appToCoreFloorPlan(floorPlan: FloorPlan): FloorPlan {
+  return adaptFloorPlan(floorPlan);
 }
 
 /**
- * Convert core floor plans to app floor plans
- * @param coreFloorPlans Core floor plans
- * @returns App floor plans
+ * Convert core floor plans to application format
+ * @param floorPlans Core floor plans
+ * @returns Application floor plans
  */
-export function coreToAppFloorPlans(coreFloorPlans: FloorPlan[]): FloorPlan[] {
-  return coreFloorPlans.map(coreToAppFloorPlan);
+export function coreToAppFloorPlans(floorPlans: FloorPlan[]): FloorPlan[] {
+  return floorPlans.map(coreToAppFloorPlan);
 }
 
 /**
- * Convert a single core floor plan to app floor plan
- * @param coreFloorPlan Core floor plan
- * @returns App floor plan
+ * Convert a single core floor plan to application format
+ * @param floorPlan Core floor plan
+ * @returns Application floor plan
  */
-export function coreToAppFloorPlan(coreFloorPlan: FloorPlan): FloorPlan {
-  return adaptFloorPlan(coreFloorPlan);
+export function coreToAppFloorPlan(floorPlan: FloorPlan): FloorPlan {
+  return adaptFloorPlan(floorPlan);
 }
