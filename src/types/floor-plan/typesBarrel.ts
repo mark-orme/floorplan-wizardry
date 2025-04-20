@@ -48,8 +48,8 @@ export interface FloorPlan {
   id: string;
   name: string;
   label: string;
-  data: any;
-  userId: string;
+  data: any; // Required property
+  userId: string; // Required property
   strokes: Stroke[];
   walls: Wall[];
   rooms: Room[];
@@ -72,8 +72,6 @@ export interface FloorPlanMetadata {
   notes?: string;
   paperSize?: string;
   level?: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export enum PaperSize {
@@ -99,6 +97,87 @@ export function asRoomType(type: string): RoomTypeLiteral {
   return validTypes.includes(type as RoomTypeLiteral) 
     ? (type as RoomTypeLiteral) 
     : 'other'; // Default to other if invalid
+}
+
+// Validation helpers - useful for debugging type issues
+export function validateStroke(obj: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!obj) {
+    return { valid: false, errors: ['Stroke object is null or undefined'] };
+  }
+  
+  if (!obj.id) errors.push('Missing id');
+  if (!obj.points || !Array.isArray(obj.points)) errors.push('Missing or invalid points array');
+  if (!obj.type) errors.push('Missing type');
+  else if (!['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'other'].includes(obj.type)) 
+    errors.push(`Invalid type: ${obj.type}`);
+  if (obj.thickness === undefined) errors.push('Missing thickness');
+  if (obj.width === undefined) errors.push('Missing width');
+  if (!obj.color) errors.push('Missing color');
+  
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateWall(obj: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!obj) {
+    return { valid: false, errors: ['Wall object is null or undefined'] };
+  }
+  
+  if (!obj.id) errors.push('Missing id');
+  if (!obj.start) errors.push('Missing start point');
+  if (!obj.end) errors.push('Missing end point');
+  if (!obj.points || !Array.isArray(obj.points)) errors.push('Missing or invalid points array');
+  if (obj.thickness === undefined) errors.push('Missing thickness');
+  if (obj.length === undefined) errors.push('Missing length');
+  if (!obj.color) errors.push('Missing color');
+  if (!obj.roomIds || !Array.isArray(obj.roomIds)) errors.push('Missing or invalid roomIds array');
+  
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateRoom(obj: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!obj) {
+    return { valid: false, errors: ['Room object is null or undefined'] };
+  }
+  
+  if (!obj.id) errors.push('Missing id');
+  if (!obj.name) errors.push('Missing name');
+  if (!obj.type) errors.push('Missing type');
+  else if (!['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'].includes(obj.type)) 
+    errors.push(`Invalid type: ${obj.type}`);
+  if (!obj.points || !Array.isArray(obj.points)) errors.push('Missing or invalid points array');
+  if (!obj.walls || !Array.isArray(obj.walls)) errors.push('Missing or invalid walls array');
+  if (!obj.color) errors.push('Missing color');
+  if (obj.area === undefined) errors.push('Missing area');
+  if (obj.level === undefined) errors.push('Missing level');
+  
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateFloorPlan(obj: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!obj) {
+    return { valid: false, errors: ['FloorPlan object is null or undefined'] };
+  }
+  
+  if (!obj.id) errors.push('Missing id');
+  if (!obj.name) errors.push('Missing name');
+  if (!obj.label) errors.push('Missing label');
+  if (!obj.data) errors.push('Missing data (required)');
+  if (!obj.userId) errors.push('Missing userId (required)');
+  if (!obj.strokes || !Array.isArray(obj.strokes)) errors.push('Missing or invalid strokes array');
+  if (!obj.walls || !Array.isArray(obj.walls)) errors.push('Missing or invalid walls array');
+  if (!obj.rooms || !Array.isArray(obj.rooms)) errors.push('Missing or invalid rooms array');
+  if (!obj.createdAt) errors.push('Missing createdAt');
+  if (!obj.updatedAt) errors.push('Missing updatedAt');
+  
+  return { valid: errors.length === 0, errors };
 }
 
 // Create empty objects for testing

@@ -9,6 +9,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 
 // Type augmentations for better mock typings
 type MockFabricObject = {
@@ -44,11 +45,8 @@ const createCanvasMock = (): Canvas => {
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
     clear: vi.fn(),
-    // Fix: Ensure withImplementation returns Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback) => {
-      // Properly implement to always return Promise<void>
-      return Promise.resolve();
-    })
+    // Standardized implementation that correctly returns Promise<void>
+    withImplementation: createWithImplementationMock()
   } as unknown as Canvas;
 };
 

@@ -1,5 +1,6 @@
 
 import { vi } from 'vitest';
+import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 
 /**
  * Creates a mock setup for Fabric.js
@@ -17,8 +18,8 @@ export function setupFabricMock() {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // Fix: Proper implementation that returns Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback) => Promise.resolve())
+    // Standardized implementation that correctly returns Promise<void>
+    withImplementation: createWithImplementationMock()
   }));
 
   return {
@@ -41,58 +42,7 @@ export function setupFabricMock() {
   };
 }
 
-/**
- * Creates a mock grid layer reference
- * @returns Mock grid layer reference
- */
-export function createMockGridLayerRef() {
-  return { 
-    current: [
-      { id: 'grid1', isGrid: true },
-      { id: 'grid2', isGrid: true }
-    ] 
-  };
-}
-
-/**
- * Creates a mock history reference with optional past and future states
- * @param past Optional past states
- * @param future Optional future states
- * @returns Mock history reference
- */
-export function createMockHistoryRef(past: any[][] = [], future: any[][] = []) {
-  return {
-    current: {
-      past: [...past],
-      future: [...future]
-    }
-  };
-}
-
-/**
- * Creates a mock canvas test utility
- * @returns Canvas test utilities
- */
-export function createCanvasTestUtils() {
-  return {
-    getMouseEvent: (type: string, x: number, y: number) => {
-      return {
-        type,
-        clientX: x,
-        clientY: y,
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn()
-      };
-    },
-    triggerMouseEvent: (element: HTMLElement, type: string, x: number, y: number) => {
-      const event = new MouseEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        clientX: x,
-        clientY: y
-      });
-      element.dispatchEvent(event);
-      return event;
-    }
-  };
-}
+// Re-export other functions
+export { createMockGridLayerRef } from './canvasMocks/gridLayerRef';
+export { createMockHistoryRef } from './canvasMocks/historyRef';
+export { createCanvasTestUtils } from './canvasMocks/testUtils';

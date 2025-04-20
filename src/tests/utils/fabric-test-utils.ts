@@ -5,6 +5,7 @@
  */
 import { vi } from 'vitest';
 import { Canvas, Object as FabricObject, Line, Point } from 'fabric';
+import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 
 /**
  * Create a mock Canvas instance
@@ -60,8 +61,8 @@ export const createMockCanvas = (): Canvas => {
       color: '#000000',
       width: 2
     },
-    // Fix: Correctly typed withImplementation that returns Promise<void>
-    withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
+    // Standardized withImplementation that correctly returns Promise<void>
+    withImplementation: createWithImplementationMock()
   } as unknown as Canvas;
   
   return canvas;
