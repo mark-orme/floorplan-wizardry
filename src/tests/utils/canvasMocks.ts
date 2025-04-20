@@ -1,4 +1,3 @@
-
 import { vi } from 'vitest';
 
 /**
@@ -95,3 +94,4 @@ export function createCanvasTestUtils() {
     }
   };
 }
+

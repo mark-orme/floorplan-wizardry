@@ -1,29 +1,8 @@
-
 /**
  * Floor Plan Types Barrel
  * Centralizes all floor plan type definitions
  * @module types/floor-plan/typesBarrel
  */
-
-export interface FloorPlan {
-  id: string;
-  name: string;
-  label: string; // Making label required consistently
-  data: any; // Canvas JSON or other serialized data (required)
-  userId: string; // Owner of the floor plan (required)
-  strokes: Stroke[];
-  walls: Wall[];
-  rooms: Room[];
-  createdAt: string;
-  updatedAt: string;
-  gia?: number;
-  level?: number;
-  index?: number;
-  canvasData?: any;
-  canvasJson?: string | null;
-  metadata?: FloorPlanMetadata;
-  order?: number;
-}
 
 export interface Point {
   x: number;
@@ -50,7 +29,7 @@ export interface Wall {
   points: Point[];
   color: string;
   length: number;
-  roomIds: string[]; // Required field
+  roomIds: string[];
 }
 
 export interface Room {
@@ -58,10 +37,30 @@ export interface Room {
   name: string;
   type: RoomTypeLiteral;
   points: Point[];
-  walls: any[] | string[]; // Can be wall IDs or Wall objects
-  color: string; // Make color required for consistency
-  area?: number;
+  walls: string[];
+  color: string;
+  area: number;
+  level: number;
+}
+
+export interface FloorPlan {
+  id: string;
+  name: string;
+  label: string;
+  data: any;
+  userId: string;
+  strokes: Stroke[];
+  walls: Wall[];
+  rooms: Room[];
+  createdAt: string;
+  updatedAt: string;
   level?: number;
+  index?: number;
+  gia?: number;
+  canvasData?: any;
+  canvasJson?: string | null;
+  metadata?: FloorPlanMetadata;
+  order?: number;
 }
 
 export interface FloorPlanMetadata {

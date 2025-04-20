@@ -1,219 +1,87 @@
+import { Point } from '@/types/floor-plan/typesBarrel';
 
-/**
- * Geometry Engine
- * Core module for geometric calculations
- * @module geometry-engine
- */
+interface Line {
+  start: Point;
+  end: Point;
+}
 
-import {
-  Point,
-  Line,
-  LineSegment,
-  Polygon,
-  GeometryOperationOptions,
-  WorkerMessageData,
-  WorkerResponse
-} from './types';
+// Function to calculate the determinant of a matrix
+const determinant = (p1: Point, p2: Point, p3: Point): number => {
+  return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+};
 
-// Worker instance for offloading calculations
-let geometryWorker: Worker | null = null;
+// Function to check if point r lies on line segment pq
+const onSegment = (p: Point, q: Point, r: Point): boolean => {
+  if (r.x <= Math.max(p.x, q.x) && r.x >= Math.min(p.x, q.x) &&
+      r.y <= Math.max(p.y, q.y) && r.y >= Math.min(p.y, q.y))
+     return true;
 
-// Pending requests map
-const pendingRequests = new Map<string, {
-  resolve: (value: any) => void;
-  reject: (reason: any) => void;
-}>();
+  return false;
+}
 
-/**
- * Initialize the geometry engine with a worker
- */
-export function initGeometryEngine(): void {
-  if (typeof Worker !== 'undefined' && !geometryWorker) {
-    try {
-      geometryWorker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-      
-      geometryWorker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-        const { id, result, error } = event.data;
-        const request = pendingRequests.get(id);
-        
-        if (request) {
-          if (error) {
-            request.reject(new Error(error));
-          } else {
-            request.resolve(result);
-          }
-          pendingRequests.delete(id);
-        }
-      };
-      
-      geometryWorker.onerror = (error) => {
-        console.error('Geometry engine worker error:', error);
-      };
-    } catch (error) {
-      console.error('Failed to initialize geometry engine worker:', error);
-    }
+// The main function to check whether line segments p1q1 and p2q2 intersect
+const doIntersect = (p1: Point, q1: Point, p2: Point, q2: Point): boolean => {
+  // Find the four orientations needed for general and
+  // special cases
+  const o1 = determinant(p1, q1, p2);
+  const o2 = determinant(p1, q1, q2);
+  const o3 = determinant(p2, q2, p1);
+  const o4 = determinant(p2, q2, q1);
+
+  // General case
+  if (o1 !== 0 && o2 !== 0 && o3 !== 0 && o4 !== 0 && o1 * o2 < 0 && o3 * o4 < 0)
+    return true;
+
+  // Special Cases
+  // p1, q1 and p2 are colinear and p2 lies on segment p1q1
+  if (o1 === 0 && onSegment(p1, q1, p2)) return true;
+
+  // p1, q1 and q2 are colinear and q2 lies on segment p1q1
+  if (o2 === 0 && onSegment(p1, q1, q2)) return true;
+
+  // p2, q2 and p1 are colinear and p1 lies on segment p2q2
+  if (o3 === 0 && onSegment(p2, q2, p1)) return true;
+
+  // p2, q2 and q1 are colinear and q1 lies on segment p2q2
+  if (o4 === 0 && onSegment(p2, q2, q1)) return true;
+
+  return false; // Doesn't fall in any of the above cases
+}
+
+// Calculate intersection point
+const calculateIntersectionPoint = (line1: Line, line2: Line): Point => {
+  const x1 = line1.start.x;
+  const y1 = line1.start.y;
+  const x2 = line1.end.x;
+  const y2 = line1.end.y;
+
+  const x3 = line2.start.x;
+  const y3 = line2.start.y;
+  const x4 = line2.end.x;
+  const y4 = line2.end.y;
+
+  const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (den === 0) {
+    return null;
   }
-}
 
-/**
- * Clean up the geometry engine, terminating the worker
- */
-export function terminateGeometryEngine(): void {
-  if (geometryWorker) {
-    geometryWorker.terminate();
-    geometryWorker = null;
-    pendingRequests.clear();
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+
+  if (t > 0 && t < 1 && u > 0 && u < 1) {
+    const x = x1 + t * (x2 - x1);
+    const y = y1 + t * (y2 - y1);
+    return { x, y };
+  } else {
+    return null;
   }
-}
+};
 
-/**
- * Send a message to the geometry worker
- */
-function sendToWorker<T>(
-  operation: string,
-  payload: any,
-  options?: GeometryOperationOptions
-): Promise<T> {
-  return new Promise((resolve, reject) => {
-    if (!geometryWorker) {
-      initGeometryEngine();
-      
-      if (!geometryWorker) {
-        // Fallback for client-side calculation
-        try {
-          const result = processClientSide(operation, payload, options);
-          resolve(result as T);
-        } catch (error) {
-          reject(error);
-        }
-        return;
-      }
-    }
-    
-    const id = Math.random().toString(36).substring(2, 15);
-    
-    pendingRequests.set(id, { resolve, reject });
-    
-    const message: WorkerMessageData = {
-      operation,
-      payload: { ...payload, options },
-      id
-    };
-    
-    geometryWorker.postMessage(message);
-  });
-}
+export const calculateIntersection = async (line1: Line, line2: Line): Promise<Point> => {
+  const result = await calculateIntersectionPoint(line1, line2);
+  return { x: result.x, y: result.y };
+};
 
-/**
- * Process geometry operations on the client side as a fallback
- */
-function processClientSide(
-  operation: string,
-  payload: any,
-  options?: GeometryOperationOptions
-): any {
-  switch (operation) {
-    case 'calculateIntersection':
-      return calculateIntersection(payload.line1, payload.line2, options);
-    case 'calculatePolygonArea':
-      return calculatePolygonArea(payload.polygon, options);
-    case 'isPointInPolygon':
-      return isPointInPolygon(payload.point, payload.polygon, options);
-    case 'calculateDistance':
-      return calculateDistance(payload.point1, payload.point2);
-    default:
-      throw new Error(`Unknown operation: ${operation}`);
-  }
-}
-
-/**
- * Calculate intersection point between two line segments
- */
-export function calculateIntersection(
-  line1: LineSegment,
-  line2: LineSegment,
-  options?: GeometryOperationOptions
-): Point | null {
-  return sendToWorker<Point | null>('calculateIntersection', { line1, line2 }, options);
-}
-
-/**
- * Calculate the area of a polygon
- */
-export function calculatePolygonArea(
-  polygon: Polygon,
-  options?: GeometryOperationOptions
-): Promise<number> {
-  return sendToWorker<number>('calculatePolygonArea', { polygon }, options);
-}
-
-/**
- * Check if a point is inside a polygon
- */
-export function isPointInPolygon(
-  point: Point,
-  polygon: Polygon,
-  options?: GeometryOperationOptions
-): Promise<boolean> {
-  return sendToWorker<boolean>('isPointInPolygon', { point, polygon }, options);
-}
-
-/**
- * Calculate the distance between two points
- */
-export function calculateDistance(point1: Point, point2: Point): number {
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Client-side implementation of these functions for fallback
-function calculateIntersectionClientSide(
-  line1: LineSegment,
-  line2: LineSegment,
-  options?: GeometryOperationOptions
-): Point | null {
-  // Implementation omitted for brevity, will be added if needed
-  return null;
-}
-
-function calculatePolygonAreaClientSide(
-  polygon: Polygon,
-  options?: GeometryOperationOptions
-): number {
-  const { points } = polygon;
-  if (points.length < 3) return 0;
-  
-  let area = 0;
-  for (let i = 0; i < points.length; i++) {
-    const j = (i + 1) % points.length;
-    area += points[i].x * points[j].y;
-    area -= points[j].x * points[i].y;
-  }
-  
-  return Math.abs(area) / 2;
-}
-
-function isPointInPolygonClientSide(
-  point: Point,
-  polygon: Polygon,
-  options?: GeometryOperationOptions
-): boolean {
-  const { points } = polygon;
-  if (points.length < 3) return false;
-  
-  let inside = false;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const { x: xi, y: yi } = points[i];
-    const { x: xj, y: yj } = points[j];
-    
-    const intersect = ((yi > point.y) !== (yj > point.y)) &&
-      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    
-    if (intersect) {
-      inside = !inside;
-    }
-  }
-  
-  return inside;
-}
+export const areLinesIntersecting = async (line1: Line, line2: Line): Promise<boolean> => {
+  return doIntersect(line1.start, line1.end, line2.start, line2.end);
+};

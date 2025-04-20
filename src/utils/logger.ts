@@ -1,4 +1,3 @@
-
 /**
  * Logger Utility
  * Centralized logging with different log levels and optional metadata
