@@ -41,3 +41,12 @@ export const stringToPaperSize = (size: string): PaperSize => {
     default: return PaperSize.A4;
   }
 };
+
+// Define the DrawingMode enum and export it to fix the import/export errors
+export enum DrawingMode {
+  SELECT = 'select',
+  DRAW = 'draw',
+  WALL = 'wall',
+  ROOM = 'room',
+  LINE = 'line'
+}

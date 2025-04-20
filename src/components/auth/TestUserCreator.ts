@@ -11,14 +11,14 @@ export interface TestUser {
 
 export const createTestUser = async (user: TestUser) => {
   try {
-    // Check if user already exists
-    const { data: existingUser, error: getUserError } = await supabase.auth.admin.listUsers({
-      filter: { email: user.email }
-    });
+    // Check if user already exists - using auth.admin API with updated syntax
+    const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
     
-    if (existingUser?.users && existingUser.users.length > 0) {
+    const userExists = existingUsers?.users?.some(u => u.email === user.email);
+    
+    if (userExists) {
       console.log('User already exists:', user.email);
-      return existingUser.users[0];
+      return existingUsers.users.find(u => u.email === user.email);
     }
 
     // Create new user
@@ -57,22 +57,22 @@ export const loginAsTestUser = async (email: string, password: string) => {
 
 export const deleteTestUser = async (email: string) => {
   try {
-    // Find the user by email
-    const { data: users, error: getUserError } = await supabase.auth.admin.listUsers({
-      filter: { email }
-    });
+    // Find the user by email using the updated syntax
+    const { data: users, error: getUserError } = await supabase.auth.admin.listUsers();
 
     if (getUserError) {
       console.error('Error fetching user to delete:', getUserError);
       throw getUserError;
     }
 
-    if (!users?.users || users.users.length === 0) {
+    const userToDelete = users?.users?.find(u => u.email === email);
+
+    if (!userToDelete) {
       console.log('User not found:', email);
       return;
     }
 
-    const userId = users.users[0].id;
+    const userId = userToDelete.id;
 
     // Delete the user
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);

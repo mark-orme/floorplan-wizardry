@@ -1,55 +1,43 @@
 
-import { DrawingMode } from "@/constants/drawingModes";
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/types/FloorPlan';
 
-/**
- * DrawingTool type definition
- * Uses DrawingMode enum for consistency across the application
- */
-export type DrawingTool = DrawingMode;
-
-/**
- * Canvas state interface
- * Defines the shape of the canvas state used across the application
- */
 export interface CanvasState {
-  tool: DrawingTool;
-  zoomLevel: number;
-  lineThickness: number;
-  lineColor: string;
-  snapToGrid: boolean;
+  drawingMode: DrawingMode;
+  selectedObjectId: string | null;
+  objects: CanvasObject[];
+  viewportTransform: number[];
+  zoom: number;
 }
 
-/**
- * Default canvas state values
- * Provides initial values for canvas state properties
- */
-export const DEFAULT_CANVAS_STATE: CanvasState = {
-  tool: DrawingMode.SELECT,
-  zoomLevel: 1,
-  lineThickness: 2,
-  lineColor: "#000000",
-  snapToGrid: true
-};
-
-/**
- * Interface for the result of useCanvasState hook
- */
-export interface UseCanvasStateResult {
-  canvas: null | any;
-  setCanvas: React.Dispatch<React.SetStateAction<null | any>>;
-  showGridDebug: boolean;
-  setShowGridDebug: React.Dispatch<React.SetStateAction<boolean>>;
-  forceRefreshKey: number;
-  setForceRefreshKey: React.Dispatch<React.SetStateAction<number>>;
-  activeTool: DrawingTool;
-  setActiveTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
-  lineThickness: number;
-  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
-  lineColor: string;
-  setLineColor: React.Dispatch<React.SetStateAction<string>>;
-  gridInitializedRef: React.MutableRefObject<boolean>;
-  retryCountRef: React.MutableRefObject<number>;
-  maxRetries: number;
-  canvasStableRef: React.MutableRefObject<boolean>;
-  mountedRef: React.MutableRefObject<boolean>;
+export interface CanvasObject {
+  id: string;
+  type: CanvasObjectType;
+  points?: Point[];
+  position?: Point;
+  properties: Record<string, any>;
 }
+
+export type CanvasObjectType = 'wall' | 'room' | 'line' | 'text' | 'image' | 'path';
+
+export interface StrokeProperties {
+  color: string;
+  width: number;
+  opacity: number;
+}
+
+export interface WallProperties extends StrokeProperties {
+  thickness: number;
+  length: number;
+}
+
+export interface RoomProperties {
+  name: string;
+  area: number;
+  color: string;
+}
+
+export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'room';
+
+// Export DrawingMode to fix import errors in other files
+export { DrawingMode };

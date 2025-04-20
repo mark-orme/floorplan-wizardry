@@ -1,59 +1,62 @@
 
-import React, { useRef } from 'react';
-import { OptimizedCanvas } from './OptimizedCanvas';
-import { useStylusInput } from '@/hooks/useStylusInput';
-import { usePredictiveDrawing } from '@/hooks/usePredictiveDrawing';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useEffect, useState, useRef } from 'react';
+import { Canvas } from 'fabric';
+import { useStylusInput } from '@/hooks/useStylusInput'; 
 
 interface EnhancedDrawingCanvasProps {
-  width?: number;
-  height?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
-  baseWidth?: number;
-  baseColor?: string;
+  canvasId: string;
+  width: number;
+  height: number;
+  onCanvasReady?: (canvas: Canvas) => void;
+  enableStylus?: boolean;
+  className?: string;
 }
 
-export const EnhancedDrawingCanvas: React.FC<EnhancedDrawingCanvasProps> = ({
-  width = 800,
-  height = 600,
+export function EnhancedDrawingCanvas({
+  canvasId,
+  width,
+  height,
   onCanvasReady,
-  baseWidth = 2,
-  baseColor = "#000000"
-}) => {
-  const canvasRef = useRef<FabricCanvas | null>(null);
-
-  const handleCanvasReady = (canvas: FabricCanvas) => {
-    canvasRef.current = canvas;
-    if (onCanvasReady) {
-      onCanvasReady(canvas);
-    }
-  };
-
-  // Use our optimized input hooks
-  useStylusInput({
-    fabricCanvas: canvasRef.current,
-    baseWidth,
-    baseColor
+  enableStylus = true,
+  className
+}: EnhancedDrawingCanvasProps) {
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
+  const [brushPressure, setBrushPressure] = useState(0.5);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Initialize fabric canvas
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    const fabricCanvas = new Canvas(canvasRef.current, {
+      width,
+      height,
+      selection: true,
+      preserveObjectStacking: true
+    });
+    
+    setCanvas(fabricCanvas);
+    if (onCanvasReady) onCanvasReady(fabricCanvas);
+    
+    return () => {
+      fabricCanvas.dispose();
+    };
+  }, [width, height, onCanvasReady]);
+  
+  // Handle stylus input
+  const { isStylus } = useStylusInput({
+    isEnabled: enableStylus && !!canvas,
+    onPressureChange: setBrushPressure
   });
-
-  // Use predictive drawing for lower latency
-  const { handlePointerMove, predictionEnabled, togglePrediction } = usePredictiveDrawing(canvasRef.current);
-
+  
   return (
-    <div className="relative">
-      <OptimizedCanvas
-        width={width}
-        height={height}
-        onCanvasReady={handleCanvasReady}
-        onPointerMove={handlePointerMove}
-      />
-      {/* Optional prediction toggle */}
-      <div 
-        className="absolute top-2 right-2 bg-white/80 text-xs px-2 py-1 rounded cursor-pointer hover:bg-white"
-        onClick={() => togglePrediction()}
-      >
-        Prediction: {predictionEnabled ? 'On' : 'Off'}
-      </div>
+    <div className={className}>
+      <canvas ref={canvasRef} id={canvasId} />
+      {isStylus && (
+        <div className="stylus-indicator">
+          Pressure: {Math.round(brushPressure * 100)}%
+        </div>
+      )}
     </div>
   );
-};
+}

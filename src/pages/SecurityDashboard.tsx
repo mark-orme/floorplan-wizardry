@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { scanForVulnerabilities, ScanResult } from '@/utils/security/vulnerabilityScanner';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ const SecurityDashboard = () => {
         )}
         
         <Button
-          variant="outline"  // Changed from "success" to "outline"
+          variant="outline"
           onClick={handleSecurityCheck}
         >
           Run Security Check
@@ -116,7 +117,7 @@ const SecurityDashboard = () => {
               <CardContent>
                 {scanResults.mediumIssues.map(issue => (
                   <div key={issue.id} className="mb-4">
-                    <Badge variant="warning">Medium</Badge>
+                    <Badge variant="secondary">Medium</Badge>
                     <h3 className="text-lg font-semibold">{issue.title}</h3>
                     <p>{issue.description}</p>
                     <p>Location: {issue.location}</p>
