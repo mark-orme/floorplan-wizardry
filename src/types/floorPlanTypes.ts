@@ -11,7 +11,7 @@ export interface FloorPlan {
   createdAt: string;
   updatedAt: string;
   // Additional properties used in various components
-  label?: string;
+  label: string;
   strokes?: Stroke[];
   walls?: Wall[];
   rooms?: Room[];
@@ -33,6 +33,12 @@ export interface FloorPlanMetadata {
   updatedAt: string;
   paperSize?: PaperSize | string;
   level?: number;
+  // For backward compatibility
+  version?: string;
+  author?: string;
+  dateCreated?: string;
+  lastModified?: string;
+  notes?: string;
 }
 
 export interface FloorPlanDimensions {
@@ -77,12 +83,13 @@ export interface Wall {
   points: Point[];
   startPoint?: Point;
   endPoint?: Point;
-  start?: Point;
-  end?: Point;
+  start: Point;
+  end: Point;
   thickness: number;
   height?: number;
   color: string;
   roomIds: string[];
+  length: number;
 }
 
 export interface Room {
@@ -110,6 +117,6 @@ export enum PaperSize {
   CUSTOM = 'CUSTOM'
 }
 
-// Defer to centralized DrawingMode from constants
+// Export DrawingMode from constants
 import { DrawingMode } from '@/constants/drawingModes';
 export { DrawingMode };

@@ -24,5 +24,7 @@ export enum DrawingMode {
   ROOM_LABEL = 'roomLabel',
   PENCIL = 'pencil',
   SHAPE = 'shape',
-  // Add any other drawing modes needed by the application
+  COLUMN = 'column',
+  DIMENSION = 'dimension',
+  STAIR = 'stair'
 }

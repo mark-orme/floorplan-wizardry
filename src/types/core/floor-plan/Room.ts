@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Room type enum
  */
 export type RoomType = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
 
 /**
  * Room interface for floor plan
@@ -33,6 +34,12 @@ export interface Room {
   
   /** Fill color */
   color: string;
+  
+  /** Floor level this room belongs to */
+  level: number;
+  
+  /** Wall IDs associated with this room */
+  walls: string[];
 }
 
 /**
@@ -64,6 +71,8 @@ export function createRoom(options: {
   type?: RoomType;
   points: Point[];
   color?: string;
+  level?: number;
+  walls?: string[];
 }): Room {
   const area = calculateArea(options.points);
   
@@ -73,6 +82,8 @@ export function createRoom(options: {
     type: options.type || 'other',
     area,
     points: options.points,
-    color: options.color || '#ffffff'
+    color: options.color || '#ffffff',
+    level: options.level || 0,
+    walls: options.walls || []
   };
 }

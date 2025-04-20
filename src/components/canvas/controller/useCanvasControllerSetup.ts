@@ -1,129 +1,199 @@
 /**
- * Hook for canvas initialization and setup
+ * Hook for setting up the canvas controller
+ * Initializes canvas, grid, and history
  * @module useCanvasControllerSetup
  */
-import { useRef, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useCanvasInitialization } from "@/hooks/canvas-initialization";
-import { DebugInfoState } from "@/types/drawingTypes";
+import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
+import { useDrawingHistory } from "@/hooks/useDrawingHistory";
+import { useGrid } from "@/hooks/useGrid";
 import { DrawingMode } from "@/constants/drawingModes";
-import { resetInitializationState } from "@/utils/canvas/safeCanvasInitialization";
-import logger from "@/utils/logger";
-import { adaptCoreToDrawingDebugInfo, adaptDrawingToCoreDebugInfo } from "@/utils/debugInfoAdapter";
+import { useFloorPlanState } from "@/hooks/useFloorPlanState";
+import { useSyncedFloorPlans } from "@/hooks/useSyncedFloorPlans";
+import { FloorPlan } from "@/types/floorPlanTypes";
+
+interface CanvasReferences {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas>;
+  canvas: FabricCanvas;
+  fabricRef?: any; // Add missing fabricRef property
+}
 
 /**
- * Props interface for useCanvasControllerSetup hook
+ * Props for the useCanvasControllerSetup hook
  * @interface UseCanvasControllerSetupProps
  */
 interface UseCanvasControllerSetupProps {
-  /** Current canvas dimensions */
-  canvasDimensions: { width: number; height: number };
-  /** Current drawing tool */
-  tool: DrawingMode;
-  /** Current floor index */
-  currentFloor: number;
-  /** Function to set zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to set debug info */
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  /** Function to set error state */
-  setHasError: (value: boolean) => void;
-  /** Function to set error message */
-  setErrorMessage: (value: string) => void;
-}
-
-interface UseCanvasControllerSetupResult {
+  /** Reference to the HTML canvas element */
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  fabricRef: React.MutableRefObject<FabricCanvas | null>;
-  historyRef: React.MutableRefObject<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>;
+  /** Initial drawing tool */
+  initialTool?: DrawingMode;
+  /** Initial line thickness */
+  initialLineThickness?: number;
+  /** Initial line color */
+  initialLineColor?: string;
+  /** Initial zoom level */
+  initialZoomLevel?: number;
+  /** Initial floor plans */
+  initialFloorPlans?: FloorPlan[];
 }
 
 /**
- * Hook that handles canvas initialization and setup
- * Manages canvas creation, initialization and validation
+ * Hook that sets up the canvas controller
+ * Initializes canvas, grid, drawing history, and floor plan state
  * 
- * @param {UseCanvasControllerSetupProps} props - Hook properties 
- * @returns {UseCanvasControllerSetupResult} Initialized canvas references and related objects
+ * @param {UseCanvasControllerSetupProps} props - Hook properties
+ * @returns {Object} Canvas setup functions and references
  */
-export const useCanvasControllerSetup = ({
-  canvasDimensions,
-  tool,
-  currentFloor,
-  setZoomLevel,
-  setDebugInfo,
-  setHasError,
-  setErrorMessage
-}: UseCanvasControllerSetupProps): UseCanvasControllerSetupResult => {
-  // Reset initialization state at the beginning
-  useEffect(() => {
-    resetInitializationState();
-  }, []);
+export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) => {
+  const {
+    canvasRef,
+    initialTool = DrawingMode.SELECT,
+    initialLineThickness = 2,
+    initialLineColor = "#000000",
+    initialZoomLevel = 1,
+    initialFloorPlans = []
+  } = props;
   
-  // Create a wrapped setDebugInfo function that adapts between types
-  const setCompatibleDebugInfo = (debugInfo: any) => {
-    if (typeof debugInfo === 'function') {
-      setDebugInfo((prev: DebugInfoState) => {
-        const compatiblePrev = adaptDrawingToCoreDebugInfo(prev);
-        const nextCoreState = debugInfo(compatiblePrev);
-        return adaptCoreToDrawingDebugInfo(nextCoreState);
-      });
-    } else {
-      setDebugInfo(adaptCoreToDrawingDebugInfo(debugInfo));
-    }
-  };
+  // Initialize state variables
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [tool, setTool] = useState<DrawingMode>(initialTool);
+  const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
+  const [lineThickness, setLineThickness] = useState<number>(initialLineThickness);
+  const [lineColor, setLineColor] = useState<string>(initialLineColor);
+  const [isGridVisible, setIsGridVisible] = useState(true);
+  const [gia, setGia] = useState(0);
+  const [currentFloor, setCurrentFloor] = useState(0);
   
-  // Initialize canvas and grid with improved error handling
-  const { 
-    canvasRef, 
-    fabricCanvasRef, 
-    historyRef 
-  } = useCanvasInitialization({
-    canvasDimensions,
-    tool,
-    currentFloor,
-    setZoomLevel,
-    setDebugInfo: setCompatibleDebugInfo,
-    setHasError,
-    setErrorMessage
+  // Create references
+  const fabricCanvasRef = useRef<FabricCanvas>(null as any);
+  const gridLayerRef = useRef<FabricObject[]>([]);
+  const historyRef = useRef<{ past: any[][], future: any[][] }>({ past: [], future: [] });
+  
+  // Initialize drawing history hook
+  const {
+    history,
+    saveCurrentState,
+    undo,
+    redo
+  } = useDrawingHistory({ fabricCanvasRef, historyRef });
+  
+  // Initialize floor plan state hook
+  const {
+    floorPlans,
+    setFloorPlans
+  } = useSyncedFloorPlans({
+    initialFloorPlans: initialFloorPlans,
+    fabricCanvasRef: fabricCanvasRef
   });
   
-  // Add a check to verify that canvas references are valid
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      // Verify canvas element exists in the DOM
-      if (!canvasRef.current) {
-        logger.warn("Canvas element not found in DOM");
-      } else {
-        logger.info("Canvas element found in DOM");
-      }
-      
-      // Verify fabric canvas is properly initialized
-      if (!fabricCanvasRef.current) {
-        logger.warn("Fabric canvas not initialized");
-      } else {
-        logger.info("Canvas setup complete with dimensions:", canvasDimensions);
-        setCompatibleDebugInfo((prev: any) => ({
-          ...prev,
-          dimensionsSet: true,
-          canvasInitialized: true
-        }));
-      }
-    }, 500);
+  // Initialize grid hook
+  const {
+    gridSize,
+    createGrid,
+    toggleGridVisibility,
+    snapToGrid
+  } = useGrid({ fabricCanvasRef, gridLayerRef });
+  
+  // Initialize canvas interaction hook
+  const {
+    isInteracting,
+    startInteraction,
+    endInteraction,
+    deleteSelectedObjects,
+    enablePointSelection,
+    setupSelectionMode
+  } = useCanvasInteraction({
+    fabricCanvasRef,
+    tool,
+    saveCurrentState
+  });
+  
+  /**
+   * Function to handle canvas ready event
+   * Initializes the Fabric canvas and sets up event listeners
+   * 
+   * @param {FabricCanvas} fabricCanvas - Fabric canvas instance
+   */
+  const handleCanvasReady = useCallback((fabricCanvas: FabricCanvas) => {
+    // Set fabric canvas reference
+    fabricCanvasRef.current = fabricCanvas;
     
-    // Cleanup function
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [canvasRef, fabricCanvasRef, canvasDimensions, setCompatibleDebugInfo]);
-
+    // Set canvas state
+    setCanvas(fabricCanvas);
+    
+    // Set up selection mode
+    setupSelectionMode();
+    
+    // Create initial grid
+    const gridObjects = createGrid(fabricCanvas);
+    gridLayerRef.current = gridObjects;
+    
+    // Save initial canvas state
+    saveCurrentState();
+  }, [createGrid, saveCurrentState, setupSelectionMode]);
+  
+  /**
+   * Function to handle canvas init error
+   * Logs the error message
+   * 
+   * @param {string} message - Error message
+   */
+  const handleCanvasInitError = useCallback((message: string) => {
+    console.error("Canvas initialization error:", message);
+  }, []);
+  
+  /**
+   * Function to handle canvas retry
+   * Logs a message indicating canvas retry
+   */
+  const handleCanvasRetry = useCallback(() => {
+    console.log("Retrying canvas initialization...");
+  }, []);
+  
+  // Update drawing mode when tool changes
+  useEffect(() => {
+    setupSelectionMode();
+  }, [tool, setupSelectionMode]);
+  
+  // Return all the functions and references
   return {
     canvasRef,
     fabricCanvasRef,
-    fabricRef: fabricCanvasRef, // Add this line to match required interface
-    historyRef
+    canvas,
+    tool,
+    setTool,
+    zoomLevel,
+    setZoomLevel,
+    lineThickness,
+    setLineThickness,
+    lineColor,
+    setLineColor,
+    isGridVisible,
+    setIsGridVisible,
+    gridSize,
+    createGrid,
+    toggleGridVisibility,
+    snapToGrid,
+    isInteracting,
+    startInteraction,
+    endInteraction,
+    deleteSelectedObjects,
+    enablePointSelection,
+    setupSelectionMode,
+    history,
+    saveCurrentState,
+    undo,
+    redo,
+    handleCanvasReady,
+    handleCanvasInitError,
+    handleCanvasRetry,
+    floorPlans,
+    setFloorPlans,
+    gia,
+    setGia,
+    currentFloor,
+    setCurrentFloor
   };
 };
