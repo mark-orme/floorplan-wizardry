@@ -1,38 +1,48 @@
 
 /**
- * Geometry Engine Types
- * Core types for geometric operations
+ * Type definitions for the geometry engine
+ * @module geometry-engine/types
  */
 
-// Basic 2D point
+/**
+ * Point interface
+ */
 export interface Point {
   x: number;
   y: number;
 }
 
-// Line segment between two points
+/**
+ * Line segment between two points
+ */
 export interface LineSegment {
-  p1: Point;
-  p2: Point;
+  start: Point;
+  end: Point;
 }
 
-// General line equation (ax + by + c = 0)
+/**
+ * Line definition (can be infinite)
+ */
 export interface Line {
-  a: number;
-  b: number;
-  c: number;
+  point: Point;
+  angle: number; // In radians
 }
 
-// Worker message data structure
+/**
+ * Worker message data interface
+ */
 export interface WorkerMessageData {
-  type: 'calculate' | 'transform' | 'snap' | 'simplify';
-  points: Point[];
-  options?: any;
+  id: string;
+  operation: 'simplifyPolyline' | 'calculateIntersections' | 'other';
+  data: any;
 }
 
-// Worker response data structure
+/**
+ * Worker response data interface
+ */
 export interface WorkerResponseData {
-  type: string;
-  result: any;
+  id: string;
+  status: 'success' | 'error';
+  result?: any;
   error?: string;
 }

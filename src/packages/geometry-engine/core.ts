@@ -1,71 +1,85 @@
 
+/**
+ * Core geometry functions
+ * @module geometry-engine/core
+ */
 import { Point, LineSegment } from './types';
 
 /**
- * Calculate the distance between two points
+ * Calculate Euclidean distance between two points
  * @param p1 First point
  * @param p2 Second point
  * @returns Distance between the points
  */
 export function calculateDistance(p1: Point, p2: Point): number {
-  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
- * Calculate the angle between a line and the x-axis
- * @param line Line segment
+ * Calculate angle between two points in radians
+ * @param p1 First point
+ * @param p2 Second point
  * @returns Angle in radians
  */
-export function calculateAngle(line: LineSegment): number {
-  return Math.atan2(line.p2.y - line.p1.y, line.p2.x - line.p1.x);
+export function calculateAngle(p1: Point, p2: Point): number {
+  return Math.atan2(p2.y - p1.y, p2.x - p1.x);
 }
 
 /**
- * Calculate the perpendicular distance from a point to a line segment
- * @param point Point to calculate distance from
- * @param lineStart Start point of the line
- * @param lineEnd End point of the line
- * @returns Perpendicular distance from the point to the line
+ * Calculate the perpendicular distance from a point to a line
+ * @param point The point
+ * @param line Line defined by two points
+ * @returns Perpendicular distance
  */
-export function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
-  const lineLength = calculateDistance(lineStart, lineEnd);
+export function perpendicularDistance(point: Point, line: LineSegment): number {
+  const { start, end } = line;
+  
+  // Line length
+  const lineLength = calculateDistance(start, end);
   
   if (lineLength === 0) {
-    return calculateDistance(point, lineStart);
+    return calculateDistance(point, start);
   }
   
-  const t = ((point.x - lineStart.x) * (lineEnd.x - lineStart.x) + 
-            (point.y - lineStart.y) * (lineEnd.y - lineStart.y)) / 
-            (lineLength * lineLength);
+  // Calculate the cross product
+  const cross = 
+    ((end.x - start.x) * (point.y - start.y)) - 
+    ((end.y - start.y) * (point.x - start.x));
   
-  const clampedT = Math.max(0, Math.min(1, t));
-  
-  const projectionX = lineStart.x + clampedT * (lineEnd.x - lineStart.x);
-  const projectionY = lineStart.y + clampedT * (lineEnd.y - lineStart.y);
-  
-  return calculateDistance(point, { x: projectionX, y: projectionY });
+  return Math.abs(cross / lineLength);
 }
 
 /**
  * Check if two line segments intersect
  * @param line1 First line segment
  * @param line2 Second line segment
- * @returns Whether the line segments intersect
+ * @returns True if the lines intersect
  */
 export function linesIntersect(line1: LineSegment, line2: LineSegment): boolean {
-  const a = line1.p1;
-  const b = line1.p2;
-  const c = line2.p1;
-  const d = line2.p2;
+  const { start: p1, end: p2 } = line1;
+  const { start: p3, end: p4 } = line2;
   
-  const denominator = ((b.y - a.y) * (d.x - c.x)) - ((b.x - a.x) * (d.y - c.y));
+  // Calculate direction vectors
+  const d1x = p2.x - p1.x;
+  const d1y = p2.y - p1.y;
+  const d2x = p4.x - p3.x;
+  const d2y = p4.y - p3.y;
   
-  if (denominator === 0) {
-    return false; // Lines are parallel
+  // Calculate determinant
+  const det = d1x * d2y - d1y * d2x;
+  
+  if (det === 0) {
+    // Lines are parallel
+    return false;
   }
   
-  const ua = (((b.x - a.x) * (c.y - a.y)) - ((b.y - a.y) * (c.x - a.x))) / denominator;
-  const ub = (((d.x - c.x) * (c.y - a.y)) - ((d.y - c.y) * (c.x - a.x))) / denominator;
+  const dx = p3.x - p1.x;
+  const dy = p3.y - p1.y;
   
-  return (ua >= 0 && ua <= 1) && (ub >= 0 && ub <= 1);
+  const t1 = (dx * d2y - dy * d2x) / det;
+  const t2 = (dx * d1y - dy * d1x) / det;
+  
+  return (t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1);
 }

@@ -1,81 +1,59 @@
 
 /**
- * Web worker for geometry calculations
+ * Geometry Engine Worker
+ * Performs heavy computations off the main thread
  */
-import { Point } from './types';
-import { simplifyPolyline } from './simplification';
-import { calculateDistance, perpendicularDistance } from './core';
-import { snapToGrid } from './snapping';
+import { 
+  simplifyPolyline 
+} from './simplification';
+import {
+  Point,
+  LineSegment,
+  WorkerMessageData,
+  WorkerResponseData
+} from './types';
 
-// Set up worker context
-const ctx: Worker = self as any;
-
-// Handle worker messages
-ctx.addEventListener('message', (e: MessageEvent) => {
-  const { type, points, options } = e.data;
-  
+// Handle messages from the main thread
+self.onmessage = (e: MessageEvent<WorkerMessageData>) => {
   try {
+    const { operation, data, id } = e.data;
     let result;
     
-    switch (type) {
-      case 'simplify':
-        result = simplifyPolyline(points, options?.epsilon || 2);
+    switch (operation) {
+      case 'simplifyPolyline':
+        result = simplifyPolyline(
+          data.points as Point[], 
+          data.tolerance as number
+        );
         break;
         
-      case 'snap':
-        result = points.map(point => snapToGrid(point, options?.gridSize || 10));
-        break;
-        
-      case 'calculate':
-        result = calculateDistances(points);
-        break;
+      // Add other operations as needed
         
       default:
-        throw new Error(`Unknown operation type: ${type}`);
+        throw new Error(`Unknown operation: ${operation}`);
     }
     
     // Send results back to main thread
-    ctx.postMessage({
-      type,
+    const response: WorkerResponseData = {
+      id,
+      status: 'success',
       result
-    });
+    };
+    
+    self.postMessage(response);
   } catch (error) {
     // Send error back to main thread
-    ctx.postMessage({
-      type,
-      error: error instanceof Error ? error.message : String(error),
-      result: null
-    });
-  }
-});
-
-/**
- * Calculate various distances for a set of points
- * @param points Array of points
- * @returns Object with various distance calculations
- */
-function calculateDistances(points: Point[]) {
-  if (points.length < 2) {
-    return {
-      totalLength: 0,
-      segmentLengths: []
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    const response: WorkerResponseData = {
+      id: e.data.id,
+      status: 'error',
+      error: errorMessage
     };
+    
+    self.postMessage(response);
   }
-  
-  const segmentLengths: number[] = [];
-  let totalLength = 0;
-  
-  for (let i = 0; i < points.length - 1; i++) {
-    const distance = calculateDistance(points[i], points[i + 1]);
-    segmentLengths.push(distance);
-    totalLength += distance;
-  }
-  
-  return {
-    totalLength,
-    segmentLengths
-  };
-}
+};
 
-// Notify that the worker is ready
-ctx.postMessage({ type: 'ready' });
+// Export nothing - this is a worker script
+export {};

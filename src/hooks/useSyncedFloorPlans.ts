@@ -1,101 +1,85 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { createEmptyFloorPlan } from '@/types/floor-plan/factoryFunctions';
+import { Canvas as FabricCanvas } from 'fabric';
+import { toast } from 'sonner';
+import { FloorPlan } from '@/types/FloorPlan';
 
-interface UseSyncedFloorPlansResult {
+export interface UseSyncedFloorPlansResult {
   floorPlans: FloorPlan[];
-  currentFloorIndex: number;
-  isLoading: boolean;
-  error: string | null;
-  addFloorPlan: () => void;
-  updateFloorPlan: (index: number, floorPlan: FloorPlan) => void;
-  removeFloorPlan: (index: number) => void;
-  setCurrentFloorIndex: (index: number) => void;
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  addFloorPlan: (floorPlan: FloorPlan) => void;
+  removeFloorPlan: (id: string) => void;
+  syncFloorPlans: (canvas: FabricCanvas, floorPlans: FloorPlan[]) => void;
+  loadFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => void;
+  calculateGIA: (floorPlans: FloorPlan[]) => number;
 }
 
-export const useSyncedFloorPlans = (initialFloorIndex = 0): UseSyncedFloorPlansResult => {
-  const [floorPlans, setFloorPlans] = useLocalStorage<FloorPlan[]>('floorPlans', []);
-  const [currentFloorIndex, setCurrentFloorIndex] = useState(initialFloorIndex);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Hook for managing synchronized floor plans with local storage
+ * @returns Floor plan management functions and state
+ */
+export const useSyncedFloorPlans = (): UseSyncedFloorPlansResult => {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
 
-  // Initialize with a default floor plan if none exist
+  // Load floor plans from localStorage on initialization
   useEffect(() => {
-    if (floorPlans.length === 0) {
-      const defaultFloorPlan = createEmptyFloorPlan({
-        id: uuidv4(),
-        name: 'Ground Floor',
-        label: 'Ground Floor',
-        level: 0,
-        index: 0,
-        data: {},
-        userId: 'default-user'
-      });
-      
-      setFloorPlans([defaultFloorPlan]);
+    try {
+      const storedFloorPlans = localStorage.getItem('floorPlans');
+      if (storedFloorPlans) {
+        setFloorPlans(JSON.parse(storedFloorPlans));
+      }
+    } catch (error) {
+      console.error('Failed to load floor plans:', error);
+      toast.error('Failed to load floor plans');
     }
-  }, [floorPlans.length, setFloorPlans]);
+  }, []);
+
+  // Save floor plans to localStorage when updated
+  useEffect(() => {
+    if (floorPlans.length > 0) {
+      try {
+        localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
+      } catch (error) {
+        console.error('Failed to save floor plans:', error);
+        toast.error('Failed to save floor plans');
+      }
+    }
+  }, [floorPlans]);
 
   // Add a new floor plan
-  const addFloorPlan = useCallback(() => {
-    const newIndex = floorPlans.length;
-    const newFloorPlan = createEmptyFloorPlan({
-      id: uuidv4(),
-      name: `Floor ${newIndex + 1}`,
-      label: `Floor ${newIndex + 1}`,
-      level: newIndex,
-      index: newIndex,
-      data: {},
-      userId: 'default-user'
-    });
-    
-    setFloorPlans([...floorPlans, newFloorPlan]);
-    setCurrentFloorIndex(newIndex);
-  }, [floorPlans, setFloorPlans]);
+  const addFloorPlan = useCallback((floorPlan: FloorPlan) => {
+    setFloorPlans(prev => [...prev, floorPlan]);
+  }, []);
 
-  // Update a floor plan
-  const updateFloorPlan = useCallback((index: number, floorPlan: FloorPlan) => {
-    if (index < 0 || index >= floorPlans.length) {
-      setError(`Invalid floor index: ${index}`);
-      return;
-    }
-    
-    const updatedFloorPlans = [...floorPlans];
-    updatedFloorPlans[index] = {
-      ...floorPlan,
-      updatedAt: new Date().toISOString()
-    };
-    
-    setFloorPlans(updatedFloorPlans);
-  }, [floorPlans, setFloorPlans]);
+  // Remove a floor plan by ID
+  const removeFloorPlan = useCallback((id: string) => {
+    setFloorPlans(prev => prev.filter(fp => fp.id !== id));
+  }, []);
 
-  // Remove a floor plan
-  const removeFloorPlan = useCallback((index: number) => {
-    if (index < 0 || index >= floorPlans.length) {
-      setError(`Invalid floor index: ${index}`);
-      return;
-    }
-    
-    const updatedFloorPlans = floorPlans.filter((_, i) => i !== index);
-    setFloorPlans(updatedFloorPlans);
-    
-    // Adjust current floor index if needed
-    if (currentFloorIndex >= updatedFloorPlans.length) {
-      setCurrentFloorIndex(Math.max(0, updatedFloorPlans.length - 1));
-    }
-  }, [floorPlans, currentFloorIndex, setFloorPlans]);
+  // Sync floor plans with canvas (save canvas state to floor plans)
+  const syncFloorPlans = useCallback((canvas: FabricCanvas, floorPlans: FloorPlan[]) => {
+    console.log('Syncing floor plans with canvas:', floorPlans.length);
+    // Implementation would save canvas state to the floor plans
+  }, []);
+
+  // Load a floor plan to canvas
+  const loadFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
+    console.log('Loading floor plan to canvas:', floorPlan.name);
+    // Implementation would load the floor plan onto the canvas
+  }, []);
+
+  // Calculate total GIA from all floor plans
+  const calculateGIA = useCallback((floorPlans: FloorPlan[]): number => {
+    return floorPlans.reduce((total, fp) => total + (fp.gia || 0), 0);
+  }, []);
 
   return {
     floorPlans,
-    currentFloorIndex,
-    isLoading,
-    error,
+    setFloorPlans,
     addFloorPlan,
-    updateFloorPlan,
     removeFloorPlan,
-    setCurrentFloorIndex
+    syncFloorPlans,
+    loadFloorPlan,
+    calculateGIA
   };
 };

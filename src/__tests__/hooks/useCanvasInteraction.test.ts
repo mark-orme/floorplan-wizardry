@@ -15,6 +15,7 @@ vi.mock('fabric', () => ({
 
 describe('useCanvasInteraction', () => {
   let mockCanvas: any;
+  let mockFabricCanvasRef: any;
   const mockSaveCurrentState = vi.fn();
   
   beforeEach(() => {
@@ -32,12 +33,13 @@ describe('useCanvasInteraction', () => {
       off: vi.fn(),
       selection: true
     };
+    mockFabricCanvasRef = { current: mockCanvas };
     mockSaveCurrentState.mockClear();
   });
   
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -49,7 +51,7 @@ describe('useCanvasInteraction', () => {
   
   it('should handle selection mode', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -63,7 +65,7 @@ describe('useCanvasInteraction', () => {
   
   it('should handle drawing mode setup', () => {
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.DRAW,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -77,8 +79,10 @@ describe('useCanvasInteraction', () => {
   });
   
   it('should handle null canvas gracefully', () => {
+    mockFabricCanvasRef.current = null;
+    
     const { result } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: null } as any,
+      fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));
@@ -95,7 +99,7 @@ describe('useCanvasInteraction', () => {
   
   it('should clean up event listeners on unmount', () => {
     const { unmount } = renderHook(() => useCanvasInteraction({
-      fabricCanvasRef: { current: mockCanvas } as any,
+      fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT,
       saveCurrentState: mockSaveCurrentState
     }));

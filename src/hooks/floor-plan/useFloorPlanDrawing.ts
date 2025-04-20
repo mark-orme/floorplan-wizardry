@@ -14,6 +14,7 @@ export interface UseFloorPlanDrawingProps {
   // Optional properties
   onDrawComplete?: () => void;
   gridLayerRef?: React.MutableRefObject<any[]>;
+  setGia?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export const useFloorPlanDrawing = ({
@@ -21,7 +22,9 @@ export const useFloorPlanDrawing = ({
   tool,
   floorPlan,
   setFloorPlan,
-  onDrawComplete
+  onDrawComplete,
+  gridLayerRef,
+  setGia
 }: UseFloorPlanDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState<Point[]>([]);

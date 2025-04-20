@@ -4,8 +4,8 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface CanvasInteractionOptions {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: React.MutableRefObject<FabricCanvas | null>; // Added for test compatibility
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  canvas?: React.MutableRefObject<FabricCanvas | null> | FabricCanvas | null; // Added for test compatibility
   tool?: DrawingMode;
   saveCurrentState?: () => void;
   onInteractionStart?: () => void;
@@ -29,8 +29,19 @@ export const useCanvasInteraction = ({
   onInteractionStart,
   onInteractionEnd
 }: CanvasInteractionOptions): UseCanvasInteractionResult => {
-  // Use canvas or fabricCanvasRef, whichever is provided
-  const canvasRef = canvas || fabricCanvasRef;
+  // Create a mutable reference if canvas is provided directly
+  const canvasRef = useCallback(() => {
+    if (fabricCanvasRef) return fabricCanvasRef;
+    
+    // If canvas is a direct FabricCanvas instance or null
+    if (canvas === null || canvas instanceof FabricCanvas) {
+      return { current: canvas };
+    }
+    
+    // If canvas is a ref
+    return canvas;
+  }, [fabricCanvasRef, canvas])();
+
   const [isInteracting, setIsInteracting] = useState(false);
 
   const startInteraction = useCallback(() => {
