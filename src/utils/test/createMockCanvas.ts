@@ -7,6 +7,7 @@
 import { Canvas as FabricCanvas } from 'fabric';
 import { asMockCanvas } from '@/types/testing/ICanvasMock';
 import { vi } from 'vitest';
+import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 
 /**
  * Creates a strongly-typed mock Fabric.js canvas for testing
@@ -55,20 +56,8 @@ export const createTypedMockCanvas = () => {
     _dropTarget: null,
     _isClick: false,
     _objects: [],
-    // Fixed withImplementation implementation
-    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-      if (callback) {
-        try {
-          const result = callback();
-          if (result instanceof Promise) {
-            return result.then(() => Promise.resolve());
-          }
-        } catch (error) {
-          console.error('Error in mock withImplementation:', error);
-        }
-      }
-      return Promise.resolve();
-    })
+    // Use the special withImplementation implementation that returns Promise<void>
+    withImplementation: createWithImplementationMock()
   };
   
   return asMockCanvas(mockCanvas as unknown as FabricCanvas);

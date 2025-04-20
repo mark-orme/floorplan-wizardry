@@ -20,7 +20,7 @@ export interface ICanvasMock {
   getActiveObjects?: jest.Mock;
   discardActiveObject: jest.Mock;
   contains?: jest.Mock;
-  // Fix for withImplementation type
+  // Fix for withImplementation type - MUST return Promise<void>
   withImplementation: jest.Mock<Promise<void>, [callback?: Function]>;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;

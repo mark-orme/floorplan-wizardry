@@ -15,12 +15,30 @@ import type {
   RoomTypeLiteral 
 } from './floor-plan/typesBarrel';
 
-// Import PaperSize enum
-import { PaperSize } from './floor-plan/typesBarrel';
+// Import PaperSize enum and helper functions
+import { 
+  PaperSize, 
+  asStrokeType, 
+  asRoomType, 
+  createTestFloorPlan, 
+  createTestStroke,
+  createTestWall,
+  createTestRoom,
+  createTestPoint
+} from './floor-plan/typesBarrel';
 
 // Export all types used in the app
 export type { StrokeTypeLiteral, RoomTypeLiteral, Point };
-export { PaperSize };
+export { 
+  PaperSize, 
+  asStrokeType, 
+  asRoomType,
+  createTestFloorPlan,
+  createTestStroke,
+  createTestWall,
+  createTestRoom,
+  createTestPoint
+};
 
 // Re-export the DrawingMode from constants
 import { DrawingMode } from '@/constants/drawingModes';

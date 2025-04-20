@@ -61,46 +61,23 @@ export function createMockGridObjects(count = 10) {
 }
 
 /**
- * Create mock paths for testing
- * 
- * @param count Number of paths to create
- * @returns Array of mock paths
+ * Create mock canvas for tests that returns Promise<void> from withImplementation
  */
-export function createMockPaths(count = 3) {
-  const paths = [];
-  
-  for (let i = 0; i < count; i++) {
-    paths.push({
-      id: `path-${i}`,
-      type: 'path',
-      path: [[`M`, 0, 0], [`L`, i * 100, i * 100]],
-      set: vi.fn(),
-      setCoords: vi.fn()
-    });
-  }
-  
-  return paths;
-}
-
-/**
- * Create mock canvas event mock for testing
- * 
- * @param options Options for the event
- * @returns Mock canvas event
- */
-export function createMockCanvasEvent(options: { 
-  target?: any; 
-  pointer?: { x: number; y: number }; 
-  e?: any;
-}) {
+export function createMockCanvas() {
   return {
-    target: options.target,
-    pointer: options.pointer || { x: 0, y: 0 },
-    e: options.e || { 
-      clientX: options.pointer?.x || 0, 
-      clientY: options.pointer?.y || 0,
-      preventDefault: vi.fn(),
-      stopPropagation: vi.fn()
-    }
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+    withImplementation: createWithImplementationMock(),
+    enablePointerEvents: true,
+    getHandlers: vi.fn((eventName) => [() => {}]),
+    triggerEvent: vi.fn((eventName, eventData) => {})
   };
 }

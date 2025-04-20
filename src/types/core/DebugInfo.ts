@@ -39,7 +39,7 @@ export interface DebugInfoState {
     debugLoggingEnabled: boolean;
   };
   
-  // Additional properties for DrawingDebugInfoState compatibility
+  // Additional properties needed for components
   canvasInitialized?: boolean;
   dimensionsSet?: boolean;
   gridCreated?: boolean;
@@ -55,6 +55,36 @@ export interface DebugInfoState {
   toolsInitialized?: boolean;
   fps?: number;
   lastRefresh?: number;
+  
+  // Performance metrics
+  performanceStats?: {
+    renderTime?: number;
+    eventHandlingTime?: number;
+    objectCreationTime?: number;
+    lastFrameTime?: number;
+  };
+  
+  // Canvas properties
+  canvasWidth?: number;
+  canvasHeight?: number;
+  devicePixelRatio?: number;
+  
+  // Error tracking
+  lastError?: string;
+  lastErrorTime?: number;
+  
+  // UI flags
+  showDebugInfo?: boolean;
+  
+  // Brush state
+  brushInitialized?: boolean;
+  
+  // Performance summary
+  performance?: {
+    fps: number;
+    memory: number;
+    renderTime: number;
+  };
 }
 
 /**
@@ -90,5 +120,24 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   gridRendered: false,
   toolsInitialized: false,
   fps: 0,
-  lastRefresh: Date.now()
+  lastRefresh: Date.now(),
+  // Add newly required fields for compatibility
+  performanceStats: {
+    renderTime: 0,
+    eventHandlingTime: 0,
+    objectCreationTime: 0,
+    lastFrameTime: 0
+  },
+  canvasWidth: 0,
+  canvasHeight: 0,
+  devicePixelRatio: window.devicePixelRatio || 1,
+  lastError: '',
+  lastErrorTime: 0,
+  showDebugInfo: false,
+  brushInitialized: false,
+  performance: {
+    fps: 0,
+    memory: 0,
+    renderTime: 0
+  }
 };
