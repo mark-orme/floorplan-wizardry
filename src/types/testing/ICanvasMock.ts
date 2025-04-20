@@ -48,7 +48,7 @@ export interface ICanvasMock {
   // For type compatibility
   [key: string]: any;
   
-  // FIX: Ensure withImplementation explicitly returns Promise<void>
+  // Fixed: Ensure withImplementation explicitly returns Promise<void>
   withImplementation?: (impl: Function) => Promise<void>;
 
   // Add proper typing for performance monitoring
@@ -95,12 +95,12 @@ export function createMinimalCanvasMock(): ICanvasMock {
     setZoom: jest.fn<ICanvasMock, [number]>().mockReturnThis(),
     getZoom: jest.fn<number, []>().mockReturnValue(1),
     viewportTransform: [1, 0, 0, 1, 0, 0],
-    // FIX: Ensure implementation returns Promise<void>
-    withImplementation: jest.fn().mockImplementation(() => Promise.resolve()),
+    // Fixed: Ensure implementation returns Promise<void>
+    withImplementation: jest.fn<Promise<void>, [Function]>().mockImplementation(() => Promise.resolve()),
     __lastRenderTime: Date.now(),
     // Add mock methods for Supabase query
     eq: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    single: jest.fn<Promise<{ data: any; error: any }>, []>().mockResolvedValue({ data: null, error: null }),
     order: jest.fn().mockReturnThis(),
     data: null,
     error: null

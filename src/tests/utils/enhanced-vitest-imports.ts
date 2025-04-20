@@ -23,36 +23,37 @@ type MockFabricObject = {
 // Create properly typed mocks
 const createCanvasMock = (): Canvas => {
   return {
-    on: vi.fn(),
-    off: vi.fn(),
-    add: vi.fn(),
-    remove: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    dispose: vi.fn(),
-    renderAll: vi.fn(),
-    requestRenderAll: vi.fn(),
-    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+    on: vi.fn<[string, Function], Canvas>(),
+    off: vi.fn<[string, Function?], Canvas>(),
+    add: vi.fn<FabricObject[], Canvas>(),
+    remove: vi.fn<[FabricObject], Canvas>(),
+    getObjects: vi.fn<[], FabricObject[]>().mockReturnValue([]),
+    dispose: vi.fn<[], void>(),
+    renderAll: vi.fn<[], void>(),
+    requestRenderAll: vi.fn<[], void>(),
+    getPointer: vi.fn<[any], { x: number; y: number }>().mockReturnValue({ x: 100, y: 100 }),
     isDrawingMode: false,
     freeDrawingBrush: {
       color: "#000000",
       width: 2
     },
-    getWidth: vi.fn().mockReturnValue(800),
-    getHeight: vi.fn().mockReturnValue(600),
+    getWidth: vi.fn<[], number>().mockReturnValue(800),
+    getHeight: vi.fn<[], number>().mockReturnValue(600),
     selection: true,
-    setActiveObject: vi.fn(),
-    discardActiveObject: vi.fn(),
-    contains: vi.fn().mockReturnValue(false),
-    clear: vi.fn()
+    setActiveObject: vi.fn<[FabricObject], Canvas>(),
+    discardActiveObject: vi.fn<[], Canvas>(),
+    contains: vi.fn<[FabricObject], boolean>().mockReturnValue(false),
+    clear: vi.fn<[], void>(),
+    withImplementation: vi.fn<[Function], Promise<void>>().mockImplementation(() => Promise.resolve())
   } as unknown as Canvas;
 };
 
 // Create properly typed mock objects
 const createMockObject = (props: Partial<MockFabricObject> = {}): FabricObject => {
   return {
-    set: vi.fn(),
-    setCoords: vi.fn(),
-    get: vi.fn((prop) => props[prop as keyof typeof props] || null),
+    set: vi.fn<[any], FabricObject>(),
+    setCoords: vi.fn<[], void>(),
+    get: vi.fn<[string], any>((prop) => props[prop as keyof typeof props] || null),
     ...props
   } as unknown as FabricObject;
 };

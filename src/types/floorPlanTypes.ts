@@ -1,4 +1,3 @@
-
 /**
  * Floor Plan Types
  */
@@ -11,7 +10,7 @@ export interface FloorPlan {
   createdAt: string;
   updatedAt: string;
   // Additional properties used in various components
-  label: string;
+  label: string; // Making label required consistently
   strokes?: Stroke[];
   walls?: Wall[];
   rooms?: Room[];
@@ -29,8 +28,8 @@ export interface FloorPlanMetadata {
   id?: string;
   name?: string;
   thumbnail?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
   paperSize?: PaperSize | string;
   level?: number;
   // For backward compatibility

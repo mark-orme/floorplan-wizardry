@@ -19,10 +19,15 @@ import {
  * Creates a properly typed test stroke
  */
 export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
+  const typeValue = overrides.type || 'line';
+  const validType: StrokeTypeLiteral = typeof typeValue === 'string' 
+    ? asStrokeType(typeValue) 
+    : typeValue;
+  
   return {
     id: overrides.id || `stroke-${Date.now()}`,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: asStrokeType(overrides.type as string || 'line'),
+    type: validType,
     color: overrides.color || '#000000',
     thickness: overrides.thickness || 2,
     width: overrides.width || 2,
@@ -34,10 +39,15 @@ export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
  * Creates a properly typed test room
  */
 export function createTestRoom(overrides: Partial<Room> = {}): Room {
+  const typeValue = overrides.type || 'other';
+  const validType: RoomTypeLiteral = typeof typeValue === 'string' 
+    ? asRoomType(typeValue) 
+    : typeValue;
+  
   return {
     id: overrides.id || `room-${Date.now()}`,
     name: overrides.name || 'Test Room',
-    type: asRoomType(overrides.type as string || 'other'),
+    type: validType,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
     color: overrides.color || '#ffffff',
     area: overrides.area || 10000,
@@ -65,7 +75,7 @@ export function createTestWall(overrides: Partial<Wall> = {}): Wall {
     points,
     thickness: overrides.thickness || 5,
     color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [],
+    roomIds: overrides.roomIds || [], // Ensuring roomIds is always provided
     length: overrides.length || length,
     ...overrides
   };
@@ -87,9 +97,9 @@ export function createTypedTestFloorPlan(overrides: Partial<FloorPlan> = {}): Fl
   return {
     id: overrides.id || `test-fp-${Date.now()}`,
     name: overrides.name || 'Test Floor Plan',
-    label: overrides.label || 'Test Floor Plan',
-    data: overrides.data || {},
-    userId: overrides.userId || 'test-user',
+    label: overrides.label || 'Test Floor Plan', // Making label required
+    data: overrides.data || {}, // Ensuring required data property is set
+    userId: overrides.userId || 'test-user', // Ensuring required userId property is set
     walls: overrides.walls || [],
     rooms: overrides.rooms || [],
     strokes: overrides.strokes || [],

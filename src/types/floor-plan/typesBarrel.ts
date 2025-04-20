@@ -8,7 +8,7 @@
 export interface FloorPlan {
   id: string;
   name: string;
-  label?: string;
+  label: string; // Making label required consistently
   data: any; // Canvas JSON or other serialized data (required)
   userId: string; // Owner of the floor plan (required)
   strokes: Stroke[];
@@ -50,7 +50,7 @@ export interface Wall {
   points: Point[];
   color: string;
   length: number;
-  roomIds: string[];
+  roomIds: string[]; // Required field
 }
 
 export interface Room {

@@ -73,7 +73,7 @@ export function createMockWall({
     points,
     thickness,
     color,
-    roomIds: [],
+    roomIds: [], // Ensuring roomIds is always provided
     length: Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2))
   };
 }
@@ -172,7 +172,7 @@ export function createMockFloorPlan({
     createdAt: now,
     updatedAt: now,
     metadata: createMockMetadata({ level }),
-    data: {},
-    userId: 'test-user'
+    data: {}, // Ensuring required data property is set
+    userId: 'test-user' // Ensuring required userId property is set
   };
 }

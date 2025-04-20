@@ -39,7 +39,7 @@ export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     floorPlan.createdAt = floorPlan.updatedAt;
   }
   
-  // CRITICAL FIX: Ensure data and userId properties exist (add if missing)
+  // Ensure data and userId properties exist (add if missing)
   if (!floorPlan.data) {
     floorPlan.data = {};
   }
@@ -95,9 +95,11 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
  * @returns A properly typed Stroke object
  */
 export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
-  // CRITICAL FIX: Ensure type is properly cast to StrokeTypeLiteral
+  // Ensure type is properly cast to StrokeTypeLiteral
   const typeValue = overrides.type || 'line';
-  const validType = typeof typeValue === 'string' ? asStrokeType(typeValue) : typeValue;
+  const validType: StrokeTypeLiteral = typeof typeValue === 'string' 
+    ? asStrokeType(typeValue) 
+    : typeValue;
   
   return {
     id: `stroke-${Date.now()}`,
@@ -116,9 +118,11 @@ export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
  * @returns A properly typed Room object
  */
 export function createTestRoom(overrides: Partial<any> = {}): any {
-  // CRITICAL FIX: Ensure type is properly cast to RoomTypeLiteral
+  // Ensure type is properly cast to RoomTypeLiteral
   const typeValue = overrides.type || 'other';
-  const validType = typeof typeValue === 'string' ? asRoomType(typeValue) : typeValue;
+  const validType: RoomTypeLiteral = typeof typeValue === 'string' 
+    ? asRoomType(typeValue) 
+    : typeValue;
   
   return {
     id: `room-${Date.now()}`,
@@ -159,7 +163,7 @@ export function createTestWall(overrides: Partial<any> = {}): any {
     points: [start, end],
     thickness: overrides.thickness || 5,
     color: overrides.color || '#000000',
-    roomIds: overrides.roomIds || [], // CRITICAL FIX: Ensure roomIds property is present
+    roomIds: overrides.roomIds || [], // Ensure roomIds property is present
     length: overrides.length || length,
     ...overrides
   };
