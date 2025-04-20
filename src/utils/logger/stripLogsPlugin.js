@@ -19,7 +19,7 @@
  * @param {string[]} options.include - Logger methods to strip (e.g., ['debug', 'dev'])
  * @returns {Object} Rollup plugin
  */
-function stripLogsPlugin(options = { include: ['debug', 'dev'] }) {
+export default function stripLogsPlugin(options = { include: ['debug', 'dev'] }) {
   const methodsToStrip = options.include || ['debug', 'dev'];
   
   return {
@@ -53,5 +53,3 @@ function stripLogsPlugin(options = { include: ['debug', 'dev'] }) {
     }
   };
 }
-
-module.exports = stripLogsPlugin;

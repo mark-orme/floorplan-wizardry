@@ -1,0 +1,19 @@
+
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run specific ESLint rules focused on JSX syntax issues
+echo "🔍 Checking JSX syntax..."
+npx eslint --config ./eslint/jsx-syntax-safety.js $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(tsx)$')
+
+if [ $? -ne 0 ]; then
+  echo "❌ JSX syntax check failed. Please fix the issues and try again."
+  echo "   Common issues:"
+  echo "   - Unclosed JSX tags"
+  echo "   - Malformed JSX expressions"
+  echo "   - Improper use of spread operator"
+  echo "   - Missing React import"
+  exit 1
+fi
+
+echo "✅ JSX syntax check passed."
