@@ -3,6 +3,8 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
 import { FloorPlan as AppFloorPlan, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
 import { v4 as uuidv4 } from 'uuid';
+
+// Import converters
 import { 
   adaptFloorPlan, 
   appToCoreFloorPlans, 

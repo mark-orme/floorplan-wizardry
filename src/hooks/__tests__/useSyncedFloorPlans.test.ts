@@ -1,3 +1,4 @@
+
 /**
  * Tests for useSyncedFloorPlans hook
  * Verifies floor plan synchronization and persistence
@@ -8,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
 import { Canvas } from 'fabric';
-import { createMockFloorPlan } from '@/utils/test/mockUtils';
+import { createTypedTestFloorPlan } from '@/utils/test/typedTestFixtures';
 import { FloorPlan } from '@/types/floor-plan/typesBarrel';
 import { toast } from 'sonner';
 
@@ -42,8 +43,8 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-// Create a mock floor plan using createMockFloorPlan
-const mockFloorPlan = createMockFloorPlan({
+// Create a mock floor plan using createTypedTestFloorPlan
+const mockFloorPlan = createTypedTestFloorPlan({
   id: 'floor-1',
   name: 'Floor 1',
   label: 'First Floor',
@@ -132,7 +133,7 @@ describe('useSyncedFloorPlans Hook', () => {
     const mockCanvas = new Canvas(null);
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    // If your hook doesn't have syncFloorPlans, use a different method or adapt test
+    // Check if there's an addFloorPlan method
     if (typeof result.current.addFloorPlan === 'function') {
       // Execute: Add a floor plan
       act(() => {
@@ -148,7 +149,7 @@ describe('useSyncedFloorPlans Hook', () => {
     const mockCanvas = new Canvas(null);
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    // If your hook doesn't have loadFloorPlan, use a different method or adapt test
+    // Check if there's an addFloorPlan method
     if (typeof result.current.addFloorPlan === 'function') {
       // Execute: Add a floor plan
       act(() => {

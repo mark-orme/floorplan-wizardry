@@ -1,6 +1,9 @@
 
 import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
-import { FloorPlan as AppFloorPlan, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
+import { Stroke as CoreStroke } from '@/types/FloorPlan';
+import { Wall as CoreWall } from '@/types/FloorPlan';
+import { Room as CoreRoom } from '@/types/FloorPlan';
+import { FloorPlan as AppFloorPlan, StrokeTypeLiteral, RoomTypeLiteral, Stroke, Wall, Room } from '@/types/floor-plan/typesBarrel';
 import { v4 as uuidv4 } from 'uuid';
 import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
 
@@ -18,27 +21,36 @@ export function adaptFloorPlan(floorPlan: Partial<CoreFloorPlan>): AppFloorPlan 
     label: floorPlan.label || '',
     index: floorPlan.index || 0,
     strokes: floorPlan.strokes?.map(stroke => ({
-      ...stroke,
-      type: asStrokeType(stroke.type as string || 'line'),
-      width: stroke.width || stroke.thickness || 2
+      id: stroke.id,
+      points: stroke.points || [],
+      type: asStrokeType('line'), // Default to line if type is not present
+      color: stroke.color || '#000000',
+      thickness: stroke.thickness || 2,
+      width: stroke.thickness || 2 // Use thickness as width if not present
     })) || [],
     walls: floorPlan.walls?.map(wall => ({
-      ...wall,
-      points: wall.points || [wall.start, wall.end],
-      color: wall.color || '#000000',
-      roomIds: wall.roomIds || []
+      id: wall.id,
+      points: [wall.start, wall.end],
+      start: wall.start,
+      end: wall.end,
+      thickness: wall.thickness || 1,
+      color: '#000000', // Default color
+      roomIds: [], // Default empty array
+      length: wall.length || 0
     })) || [],
     rooms: floorPlan.rooms?.map(room => ({
-      ...room,
-      type: asRoomType(room.type as string || 'other'),
-      points: room.points || [],
-      color: room.color || '#ffffff',
-      level: room.level || 0,
-      walls: room.walls || []
+      id: room.id,
+      name: room.name || 'Unnamed Room',
+      type: asRoomType('other'), // Default to other if type is not present
+      points: [], // Default empty array
+      color: '#ffffff', // Default color
+      area: room.area || 0,
+      level: 0, // Default level
+      walls: [] // Default empty array
     })) || [],
     level: floorPlan.level || 0,
     gia: floorPlan.gia || 0,
-    canvasData: floorPlan.canvasData || null,
+    canvasData: floorPlan.canvasData ? JSON.stringify(floorPlan.canvasData) : null,
     canvasJson: floorPlan.canvasJson || null,
     createdAt: floorPlan.createdAt || now,
     updatedAt: floorPlan.updatedAt || now,
@@ -68,10 +80,12 @@ export function appToCoreFloorPlans(appFloorPlans: AppFloorPlan[]): CoreFloorPla
   return appFloorPlans.map(floorPlan => ({
     ...floorPlan,
     label: floorPlan.label || floorPlan.name,
+    // Convert canvasData from string to object if needed
+    canvasData: typeof floorPlan.canvasData === 'string' ? floorPlan.canvasData : null,
     // Ensure compatibility with CoreFloorPlan
     data: floorPlan.data || {},
     userId: floorPlan.userId || ''
-  } as unknown as CoreFloorPlan));
+  })) as unknown as CoreFloorPlan[];
 }
 
 /**
@@ -80,13 +94,22 @@ export function appToCoreFloorPlans(appFloorPlans: AppFloorPlan[]): CoreFloorPla
  * @returns App floor plans
  */
 export function coreToAppFloorPlans(coreFloorPlans: CoreFloorPlan[]): AppFloorPlan[] {
-  return coreFloorPlans.map(floorPlan => adaptFloorPlan(floorPlan as unknown as Partial<CoreFloorPlan>));
+  return coreFloorPlans.map(floorPlan => adaptFloorPlan(floorPlan));
 }
 
-// Alias functions for backward compatibility with tests
+/**
+ * Convert a single app floor plan to core floor plan
+ * @param appFloorPlan App floor plan to convert
+ * @returns Core floor plan
+ */
 export const appToCoreFloorPlan = (appFloorPlan: AppFloorPlan): CoreFloorPlan => 
   appToCoreFloorPlans([appFloorPlan])[0];
 
+/**
+ * Convert a single core floor plan to app floor plan
+ * @param coreFloorPlan Core floor plan to convert
+ * @returns App floor plan
+ */
 export const coreToAppFloorPlan = (coreFloorPlan: CoreFloorPlan): AppFloorPlan => 
   coreToAppFloorPlans([coreFloorPlan])[0];
 
