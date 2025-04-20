@@ -119,16 +119,16 @@ export function withFeatureGuard<T extends (...args: any[]) => any>(
 /**
  * Dynamic component import with Suspense fallback
  */
-interface DynamicImportProps<P> {
+interface DynamicImportProps<P extends object> {
   component: ComponentType<P>;
   fallback?: React.ReactNode;
-  [key: string]: any;
+  props: P;
 }
 
-export function DynamicImport<P>({
+export function DynamicImport<P extends object>({
   component: Component,
   fallback = <div>Loading...</div>,
-  ...props
+  props
 }: DynamicImportProps<P>): React.ReactElement {
   return (
     <Suspense fallback={fallback}>
@@ -166,5 +166,5 @@ export function lazyWithFeatureFlag<T extends ComponentType<any>>(
         </div>
       )) as unknown as T
     });
-  });
+  }) as unknown as T;
 }

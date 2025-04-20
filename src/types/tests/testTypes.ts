@@ -1,5 +1,6 @@
 
-import { FloorPlan, PaperSize } from '@/types/FloorPlan';
+import { FloorPlan } from '@/types/floor-plan/typesBarrel';
+import { PaperSize } from '@/types/floorPlanTypes';
 
 /**
  * Creates a test floor plan for testing purposes
@@ -30,8 +31,11 @@ export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPl
       updatedAt: now,
       paperSize: PaperSize.A4,
       level: 0,
-      collaborators: [],
-      version: 1
+      version: "1.0",
+      author: "Test User",
+      dateCreated: now,
+      lastModified: now,
+      notes: ""
     },
     ...overrides
   };

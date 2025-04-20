@@ -1,135 +1,150 @@
 
 /**
- * Hook for managing grid functionality
- * @module hooks/useGrid
+ * Hook for grid creation and management
+ * @module useGrid
  */
-import { useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { useCallback, useState } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from "fabric";
+import { Point } from "@/types/floor-plan/typesBarrel";
 
-export interface UseGridProps {
+interface UseGridProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
   initialGridSize?: number;
   initialVisible?: boolean;
 }
 
-export interface UseGridResult {
-  gridSize: number;
-  setGridSize: (size: number) => void;
-  isGridVisible: boolean;
-  toggleGridVisibility: () => void;
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
-  snapToGrid: (value: number) => number;
-}
-
-/**
- * Hook for managing grid creation and visibility
- * @param props Hook properties
- * @returns Grid state and functions
- */
-export const useGrid = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  initialGridSize = 50,
-  initialVisible = true
-}: UseGridProps): UseGridResult => {
+export const useGrid = (props: UseGridProps) => {
+  const {
+    fabricCanvasRef,
+    gridLayerRef,
+    initialGridSize = 50,
+    initialVisible = true
+  } = props;
+  
+  // Grid state
   const [gridSize, setGridSize] = useState<number>(initialGridSize);
-  const [isGridVisible, setIsGridVisible] = useState<boolean>(initialVisible);
-
+  const [gridVisible, setGridVisible] = useState<boolean>(initialVisible);
+  
   /**
-   * Snap a value to the nearest grid line
-   * @param value Value to snap
-   * @returns Snapped value
+   * Create a grid of lines on the canvas
+   * @param canvas Fabric canvas reference
+   * @param size Grid size
+   * @returns Array of grid lines
    */
-  const snapToGrid = useCallback((value: number): number => {
-    return Math.round(value / gridSize) * gridSize;
-  }, [gridSize]);
-
-  /**
-   * Toggle grid visibility
-   */
-  const toggleGridVisibility = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    const gridObjects = gridLayerRef.current;
-    const visible = !isGridVisible;
-
-    // Update grid object visibility
-    gridObjects.forEach(obj => {
-      // Use obj.visible = visible instead of setZIndex
-      obj.visible = visible;
-    });
-
-    // Render canvas
-    canvas.requestRenderAll();
-    setIsGridVisible(visible);
-  }, [fabricCanvasRef, gridLayerRef, isGridVisible]);
-
-  /**
-   * Create grid lines
-   * @param canvas Canvas to add grid to
-   * @returns Array of grid objects
-   */
-  const createGrid = useCallback((canvas: FabricCanvas): FabricObject[] => {
+  const createGrid = useCallback((canvas: FabricCanvas, size: number = gridSize): FabricObject[] => {
+    if (!canvas) {
+      console.error("Cannot create grid: Canvas is null");
+      return [];
+    }
+    
+    const width = canvas.getWidth() || 800;
+    const height = canvas.getHeight() || 600;
+    
+    console.log(`Creating grid (${width}x${height}) with size ${size}`);
+    
+    // Remove any existing grid
+    if (gridLayerRef.current.length > 0) {
+      gridLayerRef.current.forEach(obj => {
+        canvas.remove(obj);
+      });
+      
+      gridLayerRef.current = [];
+    }
+    
     const gridObjects: FabricObject[] = [];
-    const canvasWidth = canvas.getWidth() || 800;
-    const canvasHeight = canvas.getHeight() || 600;
     
-    // Create horizontal grid lines
-    for (let i = 0; i < canvasHeight; i += gridSize) {
-      const line = new fabric.Line([0, i, canvasWidth, i], {
-        stroke: '#e0e0e0',
+    // Create horizontal lines
+    for (let i = 0; i <= height; i += size) {
+      const line = new Line([0, i, width, i], {
+        stroke: "#ccc",
+        strokeWidth: 0.5,
         selectable: false,
         evented: false,
-        hoverCursor: 'default',
-        visible: isGridVisible
+        objectType: "grid",
+        name: "gridLine",
+        hoverCursor: "default"
       });
       
-      // Mark as grid for filtering in other operations
-      (line as any).isGrid = true;
-      
-      // Add to canvas and grid objects
-      canvas.add(line);
       gridObjects.push(line);
+      canvas.add(line);
     }
     
-    // Create vertical grid lines
-    for (let i = 0; i < canvasWidth; i += gridSize) {
-      const line = new fabric.Line([i, 0, i, canvasHeight], {
-        stroke: '#e0e0e0',
+    // Create vertical lines
+    for (let i = 0; i <= width; i += size) {
+      const line = new Line([i, 0, i, height], {
+        stroke: "#ccc",
+        strokeWidth: 0.5,
         selectable: false,
         evented: false,
-        hoverCursor: 'default',
-        visible: isGridVisible
+        objectType: "grid",
+        name: "gridLine",
+        hoverCursor: "default"
       });
       
-      // Mark as grid for filtering in other operations
-      (line as any).isGrid = true;
-      
-      // Add to canvas and grid objects
-      canvas.add(line);
       gridObjects.push(line);
+      canvas.add(line);
     }
+    
+    // Update grid layer reference
+    gridLayerRef.current = gridObjects;
     
     // Send grid to back
     gridObjects.forEach(obj => {
-      // Move grid lines to the back
       canvas.sendObjectToBack(obj);
     });
     
-    // Render canvas
     canvas.requestRenderAll();
     
     return gridObjects;
-  }, [gridSize, isGridVisible]);
-
+  }, [gridSize, gridLayerRef]);
+  
+  /**
+   * Toggle grid visibility
+   * @returns New visibility state
+   */
+  const toggleGridVisibility = useCallback((): boolean => {
+    const canvas = fabricCanvasRef.current;
+    
+    if (!canvas) {
+      console.error("Cannot toggle grid: Canvas is null");
+      return gridVisible;
+    }
+    
+    const newVisibility = !gridVisible;
+    
+    // Update grid visibility
+    gridLayerRef.current.forEach(obj => {
+      obj.set('visible', newVisibility);
+    });
+    
+    canvas.requestRenderAll();
+    setGridVisible(newVisibility);
+    
+    return newVisibility;
+  }, [gridVisible, fabricCanvasRef, gridLayerRef]);
+  
+  /**
+   * Snap a point to the nearest grid intersection
+   * @param point Point to snap
+   * @returns Snapped point
+   */
+  const snapToGrid = useCallback((point: Point): Point => {
+    if (!point) return { x: 0, y: 0 };
+    
+    // Calculate the nearest grid intersection
+    const x = Math.round(point.x / gridSize) * gridSize;
+    const y = Math.round(point.y / gridSize) * gridSize;
+    
+    return { x, y };
+  }, [gridSize]);
+  
   return {
     gridSize,
     setGridSize,
-    isGridVisible,
-    toggleGridVisibility,
     createGrid,
-    snapToGrid
+    toggleGridVisibility,
+    snapToGrid,
+    isGridVisible: gridVisible
   };
 };

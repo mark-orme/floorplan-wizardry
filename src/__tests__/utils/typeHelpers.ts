@@ -59,7 +59,7 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
  * @returns Properly typed StrokeTypeLiteral
  */
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'straight', 'other'];
+  const validTypes: StrokeTypeLiteral[] = ['line', 'polyline', 'wall', 'room', 'freehand', 'door', 'window', 'furniture', 'annotation', 'other'];
   if (validTypes.includes(type as StrokeTypeLiteral)) {
     return type as StrokeTypeLiteral;
   }

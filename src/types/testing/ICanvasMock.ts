@@ -30,7 +30,6 @@ export interface ICanvasMock {
   
   // For type compatibility with useDrawingHistory
   getPointerCoords?: () => { x: number, y: number };
-  getClass?: any;
   
   // For type compatibility
   [key: string]: any;
@@ -42,20 +41,20 @@ export interface ICanvasMock {
  */
 export function createMinimalCanvasMock(): ICanvasMock {
   return {
-    getObjects: jest.fn().mockReturnValue([]),
-    remove: jest.fn().mockReturnThis(),
-    add: jest.fn().mockReturnThis(),
-    requestRenderAll: jest.fn(),
-    renderAll: jest.fn(),
+    getObjects: jest.fn<FabricObject[], []>().mockReturnValue([]),
+    remove: jest.fn<ICanvasMock, [FabricObject]>().mockReturnThis(),
+    add: jest.fn<ICanvasMock, FabricObject[]>().mockReturnThis(),
+    requestRenderAll: jest.fn<void, []>(),
+    renderAll: jest.fn<void, []>(),
     isDrawingMode: false,
     freeDrawingBrush: {
       color: '#000000',
       width: 2
     },
     selection: true,
-    on: jest.fn().mockReturnThis(),
-    off: jest.fn().mockReturnThis(),
-    getPointerCoords: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-    getClass: jest.fn()
+    on: jest.fn<ICanvasMock, [string, Function]>().mockReturnThis(),
+    off: jest.fn<ICanvasMock, [string, Function?]>().mockReturnThis(),
+    getPointerCoords: jest.fn<{ x: number, y: number }, []>().mockReturnValue({ x: 0, y: 0 }),
+    getClass: jest.fn<any, []>()
   };
 }

@@ -19,19 +19,17 @@ import {
   DrawingMode
 } from '../floorPlanTypes';
 
-// Re-export all types
-export {
-  FloorPlan,
-  Stroke,
-  Wall,
-  Room,
-  Point,
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
-  FloorPlanMetadata,
-  PaperSize,
-  DrawingMode
-};
+// Re-export all types using the proper syntax for isolated modules
+export type { FloorPlan };
+export type { Stroke };
+export type { Wall };
+export type { Room };
+export type { Point };
+export type { StrokeTypeLiteral };
+export type { RoomTypeLiteral };
+export type { FloorPlanMetadata };
+export type { PaperSize };
+export type { DrawingMode };
 
 // Type validation functions
 export function isFloorPlan(obj: any): obj is FloorPlan {
