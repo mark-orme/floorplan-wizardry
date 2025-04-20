@@ -15,6 +15,7 @@ export interface CanvasObject {
   type: string;
   properties?: Record<string, any>;
   points?: Point[];
+  options?: Record<string, any>; // Add options field for compatibility
 }
 
 export interface StrokeStyle {
@@ -34,4 +35,14 @@ export interface CanvasEvents {
   'mouse:down': (e: any) => void;
   'mouse:move': (e: any) => void;
   'mouse:up': (e: any) => void;
+  [key: string]: (...args: any[]) => void; // Add index signature for string keys
+}
+
+// Add PerformanceMetrics for utils/performance/canvasPerformance.ts
+export interface PerformanceMetrics {
+  frameRate: number;
+  renderTime: number;
+  objectCount: number;
+  memoryUsage?: number;
+  timestamp: number;
 }

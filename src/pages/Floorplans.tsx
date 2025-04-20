@@ -24,7 +24,7 @@ export default function FloorPlans() {
     floorPlans,
     listFloorPlans,
     createFloorPlan,
-    deleteFloorPlan
+    deleteFloorPlan: deleteFloorPlanHandler
   } = useSupabaseFloorPlans();
   
   // Load floor plans on mount
@@ -57,6 +57,18 @@ export default function FloorPlans() {
   const handleEditorClose = () => {
     setShowEditor(false);
     listFloorPlans();
+  };
+  
+  // Wrap the deleteFloorPlan to return boolean
+  const deleteFloorPlan = async (id: string): Promise<boolean> => {
+    try {
+      const result = await deleteFloorPlanHandler(id);
+      // Return true if the operation succeeded
+      return result.error ? false : true;
+    } catch (error) {
+      console.error('Error deleting floor plan:', error);
+      return false;
+    }
   };
   
   return (

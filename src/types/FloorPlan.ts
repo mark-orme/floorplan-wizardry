@@ -5,7 +5,9 @@
  */
 
 // Import drawing modes from the centralized source
-export { DrawingMode } from '@/constants/drawingModes';
+import { DrawingMode } from '@/constants/drawingModes';
+// Re-export DrawingMode to maintain backward compatibility
+export { DrawingMode };
 
 export interface FloorPlan {
   id: string;
@@ -28,11 +30,11 @@ export interface FloorPlan {
     updatedAt: string;
     paperSize: PaperSize;
     level: number;
-    collaborators?: string[]; // Add collaborators list
-    lastModifiedBy?: string; // Track who last modified the floor plan
-    lastModifiedAt?: string; // Track when the floor plan was last modified
-    version?: number; // Version tracking for conflict resolution
-    crdtState?: string; // Store CRDT state for offline-first collaboration
+    collaborators?: string[];
+    lastModifiedBy?: string;
+    lastModifiedAt?: string;
+    version?: number;
+    crdtState?: string;
   };
 }
 
@@ -42,20 +44,6 @@ export enum PaperSize {
   A2 = 'A2', 
   A1 = 'A1',
   A0 = 'A0'
-}
-
-export enum DrawingMode {
-  SELECT = 'select',
-  WALL = 'wall',
-  ROOM = 'room',
-  LINE = 'line',
-  DIMENSION = 'dimension',
-  TEXT = 'text',
-  DOOR = 'door',
-  WINDOW = 'window',
-  STAIR = 'stair',
-  COLUMN = 'column',
-  ERASER = 'eraser'
 }
 
 export const stringToPaperSize = (size: string): PaperSize => {

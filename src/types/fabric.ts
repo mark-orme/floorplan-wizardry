@@ -1,110 +1,53 @@
-/**
- * Comprehensive Fabric.js type definitions
- * @module types/fabric
- */
-import { Canvas, Object as FabricObject, PencilBrush, Line } from 'fabric';
-import { Point } from '@/types/core/Geometry';
 
-/**
- * Type alias for Fabric.js Canvas
- */
+import { Canvas, Object as FabricObject } from 'fabric';
+
+// Aliases for Fabric.js types
 export type FabricCanvas = Canvas;
+export type FabricObject = FabricObject;
+export type FabricLine = fabric.Line;
+export type FabricCircle = fabric.Circle;
+export type FabricRect = fabric.Rect;
+export type FabricPath = fabric.Path;
+export type FabricText = fabric.Text;
+export type FabricGroup = fabric.Group;
+export type FabricBrush = fabric.BaseBrush;
+export type FabricPoint = fabric.Point;
 
-/**
- * Type alias for Fabric.js Object
- */
-export type { FabricObject };
-
-/**
- * Type alias for Fabric.js PencilBrush
- */
-export type FabricBrush = PencilBrush;
-
-/**
- * Type alias for Fabric.js Line
- */
-export interface FabricLine extends Line {
-  objectType?: string;
-  id?: string;
-  data?: any; // Add data property for custom data storage
-}
-
-/**
- * Extended Fabric.js Object with custom properties
- */
+// Define object with ID
 export interface FabricObjectWithId extends FabricObject {
-  id?: string;
-  objectType?: string;
-  data?: any; // Add data property for custom data storage
+  id: string;
 }
 
-/**
- * Fabric.js Point interface
- */
-export interface FabricPoint {
-  x: number;
-  y: number;
-  clone?: () => FabricPoint;
-}
-
-/**
- * Canvas references interface for commonly used refs
- */
-export interface CanvasReferences {
-  canvasRef?: React.RefObject<HTMLCanvasElement>;
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: FabricCanvas | null;
-  gridLayerRef?: React.MutableRefObject<FabricObject[]>;
-  historyRef?: React.MutableRefObject<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>;
-}
-
-/**
- * Extended Fabric.js mouse event
- */
+// Common event interfaces
 export interface CustomFabricMouseEvent {
   e: MouseEvent;
+  target?: FabricObject;
   pointer: { x: number; y: number };
   absolutePointer: { x: number; y: number };
   button?: number;
-  target?: unknown;
-  viewportPoint?: { x: number; y: number };
-  scenePoint?: { x: number; y: number };
 }
 
-/**
- * Custom touch event interface
- */
-export interface CustomTouchEvent extends TouchEvent {
-  clientX?: number;
-  clientY?: number;
-  pointerId?: number;
+export interface CustomTouchEvent {
+  e: TouchEvent;
+  target?: FabricObject;
+  pointer: { x: number; y: number };
+  absolutePointer: { x: number; y: number };
 }
 
-/**
- * Fabric.js pointer event interface
- */
-export interface FabricPointerEvent {
-  e: MouseEvent | TouchEvent;
-  pointer?: { x: number; y: number };
-  absolutePointer?: { x: number; y: number };
-  target?: unknown;
-  viewportPoint?: { x: number; y: number };
-  scenePoint?: { x: number; y: number };
+export type FabricPointerEvent = CustomFabricMouseEvent | CustomTouchEvent;
+
+// Type guards for events
+export function isTouchEvent(event: FabricPointerEvent): event is CustomTouchEvent {
+  return 'touches' in event.e;
 }
 
-/**
- * Type guard to check if an event is a touch event
- */
-export function isTouchEvent(event: Event): event is TouchEvent {
-  return 'touches' in event;
+export function isMouseEvent(event: FabricPointerEvent): event is CustomFabricMouseEvent {
+  return 'button' in event.e;
 }
 
-/**
- * Type guard to check if an event is a mouse event
- */
-export function isMouseEvent(event: Event): event is MouseEvent {
-  return 'clientX' in event && !('touches' in event);
+// Canvas references type
+export interface CanvasReferences {
+  canvas: FabricCanvas | null;
+  fabricRef: React.MutableRefObject<FabricCanvas | null>;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }

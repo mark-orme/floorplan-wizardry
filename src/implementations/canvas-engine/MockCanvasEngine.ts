@@ -1,113 +1,115 @@
 
-import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
-import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
+import { CanvasObject, Point } from '@/types/canvas';
 
-export class MockCanvasEngine implements ICanvasEngine {
+export class MockCanvasEngine {
   private objects: CanvasObject[] = [];
-  private history: any[] = [];
-  private currentZoom = 1;
-  private eventHandlers: Map<string, Function[]> = new Map();
-  
-  drawLine(points: Point[], options: DrawOptions): void {
-    this.objects.push({ type: 'line', points, options });
-    this.emit('object:added', { target: this.objects[this.objects.length - 1] });
+  private eventHandlers: Map<string, ((...args: any[]) => void)[]> = new Map();
+  private backgroundColor: string = '#FFFFFF';
+  private zoomLevel: number = 1;
+
+  // Mock implementation of FabricCanvasEngine for testing
+  constructor(canvasElement?: HTMLCanvasElement) {
+    // Initialize with sample objects
+    this.objects = [
+      {
+        id: '1',
+        type: 'line',
+        properties: { color: 'black', width: 2 },
+        options: { selectable: true }
+      },
+      {
+        id: '2',
+        type: 'rectangle',
+        properties: { fill: 'transparent', stroke: 'black', strokeWidth: 1 },
+        options: { selectable: true }
+      }
+    ];
   }
-  
-  drawShape(points: Point[], options: DrawOptions): void {
-    this.objects.push({ type: 'shape', points, options });
-    this.emit('object:added', { target: this.objects[this.objects.length - 1] });
+
+  // Getter for canvas to match FabricCanvasEngine
+  public getCanvas(): any {
+    // Return a mock canvas object
+    return {
+      getObjects: () => this.objects,
+      on: this.addEventListener.bind(this),
+      off: this.removeEventListener.bind(this),
+      add: this.addObject.bind(this),
+      remove: this.removeObject.bind(this),
+      setBackgroundColor: this.setBackgroundColor.bind(this),
+      renderAll: this.renderAll.bind(this),
+      setZoom: this.setZoom.bind(this)
+    };
   }
-  
-  clear(): void {
+
+  dispose(): void {
     this.objects = [];
-    this.emit('canvas:cleared');
+    this.eventHandlers.clear();
   }
-  
-  undo(): void {
-    if (this.history.length > 0) {
-      this.history.pop();
-      this.emit('history:changed');
-    }
-  }
-  
-  redo(): void {
-    // Mock implementation
-  }
-  
+
   addObject(object: CanvasObject): void {
     this.objects.push(object);
-    this.emit('object:added', { target: object });
+    this.triggerEvent('object:added', { target: object });
   }
-  
-  removeObject(object: CanvasObject): void {
-    const index = this.objects.indexOf(object);
-    if (index > -1) {
-      this.objects.splice(index, 1);
-      this.emit('object:removed', { target: object });
+
+  removeObject(id: string | CanvasObject): void {
+    const objectId = typeof id === 'string' ? id : id.id;
+    const index = this.objects.findIndex(obj => obj.id === objectId);
+    
+    if (index !== -1) {
+      const removed = this.objects.splice(index, 1)[0];
+      this.triggerEvent('object:removed', { target: removed });
     }
   }
-  
-  updateObject(object: CanvasObject): void {
-    const index = this.objects.indexOf(object);
-    if (index > -1) {
-      this.objects[index] = { ...object };
-      this.emit('object:modified', { target: object });
-    }
-  }
-  
+
   getObjects(): CanvasObject[] {
     return [...this.objects];
   }
-  
-  getCanvasState(): any {
-    return {
-      objects: this.objects,
-      zoom: this.currentZoom
-    };
+
+  addEventListener(eventName: string, handler: (...args: any[]) => void): void {
+    if (!this.eventHandlers.has(eventName)) {
+      this.eventHandlers.set(eventName, []);
+    }
+    this.eventHandlers.get(eventName)?.push(handler);
   }
-  
-  setCanvasState(state: any): void {
-    this.objects = state.objects || [];
-    this.currentZoom = state.zoom || 1;
-    this.emit('canvas:loaded');
+
+  removeEventListener(eventName: string, handler: (...args: any[]) => void): void {
+    const handlers = this.eventHandlers.get(eventName);
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) {
+        handlers.splice(index, 1);
+      }
+    }
   }
-  
-  setStrokeStyle(style: StrokeStyle): void {
+
+  triggerEvent(eventName: string, data: any): void {
+    const handlers = this.eventHandlers.get(eventName);
+    if (handlers) {
+      handlers.forEach(handler => handler(data));
+    }
+  }
+
+  getPointerPosition(event: MouseEvent | TouchEvent): Point {
+    // Mock implementation
+    return { x: 100, y: 100 };
+  }
+
+  setBackgroundColor(color: string, callback?: () => void): void {
+    this.backgroundColor = color;
+    if (callback) {
+      callback();
+    }
+  }
+
+  setZoom(zoomLevel: number): void {
+    this.zoomLevel = zoomLevel;
+  }
+
+  pan(deltaX: number, deltaY: number): void {
     // Mock implementation
   }
-  
-  setZoom(level: number): void {
-    this.currentZoom = level;
-    this.emit('zoom:changed', { zoom: level });
-  }
-  
-  setPan(x: number, y: number): void {
-    this.emit('pan:changed', { x, y });
-  }
-  
-  on(event: string, callback: Function): void {
-    if (!this.eventHandlers.has(event)) {
-      this.eventHandlers.set(event, []);
-    }
-    this.eventHandlers.get(event)?.push(callback);
-  }
-  
-  off(event: string, callback: Function): void {
-    const handlers = this.eventHandlers.get(event) || [];
-    const index = handlers.indexOf(callback);
-    if (index > -1) {
-      handlers.splice(index, 1);
-    }
-  }
-  
-  dispose(): void {
-    this.eventHandlers.clear();
-    this.objects = [];
-    this.history = [];
-  }
-  
-  private emit(event: string, data?: any): void {
-    const handlers = this.eventHandlers.get(event) || [];
-    handlers.forEach(handler => handler(data));
+
+  renderAll(): void {
+    // Mock implementation
   }
 }

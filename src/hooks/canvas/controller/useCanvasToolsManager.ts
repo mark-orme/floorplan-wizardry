@@ -1,189 +1,198 @@
 
-/**
- * Hook for managing canvas tools and operations
- */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { toast } from "sonner";
-import { DrawingMode, DrawingTool } from "@/constants/drawingModes";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { usePusherConnection } from "@/hooks/usePusherConnection";
-import { useCanvasControllerTools } from "@/hooks/canvas/controller/useCanvasControllerTools";
-import { useCanvasStateEffects } from "./useCanvasStateEffects";
-import { useCanvasFloorOperations } from "./useCanvasFloorOperations";
-import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
-import { useCanvasInteractions } from "@/hooks/useCanvasInteractions";
-import { useLineSettings } from "@/hooks/useLineSettings";
-import { useMeasurementGuideDialog } from "@/hooks/useMeasurementGuideDialog";
+import { useState, useCallback, useEffect } from 'react';
+import { DrawingMode } from '@/constants/drawingModes';
+import { 
+  Square, 
+  Circle, 
+  Type, 
+  MousePointer, 
+  Pencil, 
+  Hand, 
+  Line, 
+  Eraser,
+  Home
+} from 'lucide-react';
 
-interface UseCanvasToolsManagerProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  tool: DrawingTool;
-  zoomLevel: number;
-  lineThickness: number;
-  lineColor: string;
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  floorPlans: FloorPlan[];
-  currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  createGrid: (canvas: FabricCanvas) => any[];
-  recalculateGIA?: () => void;
+// Define the tool interface
+export interface Tool {
+  id: string;
+  name: string;
+  icon: any;
+  mode: DrawingMode;
+  shortcut?: string;
 }
 
-interface CanvasInteractionsResult {
-  drawingState?: any;
-  currentZoom: number;
-  toggleSnap: () => void;
-  snapEnabled: boolean;
+interface CanvasToolsManagerProps {
+  canvas: any;
+  defaultTool?: DrawingMode;
+  onToolChange?: (tool: DrawingMode) => void;
 }
 
-export const useCanvasToolsManager = (props: UseCanvasToolsManagerProps) => {
-  const {
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
-    setTool,
-    setZoomLevel,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid
-  } = props;
+export const useCanvasToolsManager = ({
+  canvas,
+  defaultTool = DrawingMode.SELECT,
+  onToolChange
+}: CanvasToolsManagerProps) => {
+  const [activeTool, setActiveTool] = useState<DrawingMode>(defaultTool);
 
-  // Get drawing tools and operations
-  const {
-    clearDrawings,
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    saveCurrentState
-  } = useCanvasControllerTools({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
-    setTool,
-    setZoomLevel,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid
-  });
+  // Define available tools
+  const tools: Tool[] = [
+    {
+      id: 'select',
+      name: 'Select',
+      icon: MousePointer,
+      mode: DrawingMode.SELECT,
+      shortcut: 'V'
+    },
+    {
+      id: 'pencil',
+      name: 'Pencil',
+      icon: Pencil,
+      mode: DrawingMode.PENCIL,
+      shortcut: 'P'
+    },
+    {
+      id: 'line',
+      name: 'Line',
+      icon: Line,
+      mode: DrawingMode.LINE,
+      shortcut: 'L'
+    },
+    {
+      id: 'rectangle',
+      name: 'Rectangle',
+      icon: Square,
+      mode: DrawingMode.RECTANGLE,
+      shortcut: 'R'
+    },
+    {
+      id: 'circle',
+      name: 'Circle',
+      icon: Circle,
+      mode: DrawingMode.CIRCLE,
+      shortcut: 'C'
+    },
+    {
+      id: 'text',
+      name: 'Text',
+      icon: Type,
+      mode: DrawingMode.TEXT,
+      shortcut: 'T'
+    },
+    {
+      id: 'wall',
+      name: 'Wall',
+      icon: Line,
+      mode: DrawingMode.WALL,
+      shortcut: 'W'
+    },
+    {
+      id: 'eraser',
+      name: 'Eraser',
+      icon: Eraser,
+      mode: DrawingMode.ERASER,
+      shortcut: 'E'
+    },
+    {
+      id: 'hand',
+      name: 'Pan',
+      icon: Hand,
+      mode: DrawingMode.HAND,
+      shortcut: 'H'
+    }
+  ];
 
-  // Get canvas interaction methods
-  const {
-    deleteSelectedObjects,
-    enablePointSelection,
-    setupSelectionMode
-  } = useCanvasInteraction({
-    fabricCanvasRef,
-    tool,
-    saveCurrentState
-  });
+  // Set up canvas for the active tool
+  const setupCanvasForTool = useCallback((tool: DrawingMode) => {
+    if (!canvas) return;
 
-  // Important: Pass the canvas instance, not the ref
-  const canvasInstance = fabricCanvasRef.current;
-  
-  // Get canvas interactions for drawing
-  const interactions = useCanvasInteractions(
-    canvasInstance,
-    tool,
-    lineThickness,
-    lineColor
-  );
-  
-  const { 
-    drawingState, 
-    currentZoom, 
-    toggleSnap, 
-    snapEnabled 
-  } = interactions || { currentZoom: zoomLevel, snapEnabled: false, toggleSnap: () => {} };
+    // Reset canvas state
+    canvas.isDrawingMode = false;
+    canvas.selection = true;
 
-  // Initialize line settings
-  const { handleLineThicknessChange, handleLineColorChange, applyLineSettings } = useLineSettings({
-    fabricCanvasRef,
-    lineThickness,
-    lineColor
-  });
+    // Configure canvas based on the active tool
+    switch (tool) {
+      case DrawingMode.SELECT:
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+      case DrawingMode.DRAW:
+      case DrawingMode.PENCIL:
+        canvas.isDrawingMode = true;
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.LINE:
+      case DrawingMode.RECTANGLE:
+      case DrawingMode.CIRCLE:
+      case DrawingMode.WALL:
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.TEXT:
+        canvas.selection = false;
+        canvas.defaultCursor = 'text';
+        break;
+      case DrawingMode.ERASER:
+        canvas.selection = false;
+        canvas.defaultCursor = 'cell';
+        break;
+      case DrawingMode.HAND:
+      case DrawingMode.PAN:
+        canvas.selection = false;
+        canvas.defaultCursor = 'grab';
+        break;
+      default:
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+    }
 
-  // Initialize measurement guide
-  const { isOpen, openMeasurementGuide, handleOpenChange } = useMeasurementGuideDialog();
+    // Refresh canvas
+    canvas.requestRenderAll();
+  }, [canvas]);
 
-  // Connect to Pusher for real-time updates
-  const floorplanId = floorPlans[0]?.id;
-  const { isConnected: isPusherConnected } = usePusherConnection(floorplanId);
+  // Change the active tool
+  const changeTool = useCallback((tool: DrawingMode) => {
+    setActiveTool(tool);
+    setupCanvasForTool(tool);
+    if (onToolChange) {
+      onToolChange(tool);
+    }
+  }, [setupCanvasForTool, onToolChange]);
 
-  // Use the extracted floor operations
-  const { handleFloorSelect, handleAddFloor } = useCanvasFloorOperations({
-    fabricCanvasRef,
-    floorPlans,
-    currentFloor,
-    historyRef,
-    setFloorPlans
-  });
+  // Set up keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input fields
+      if (e.target instanceof HTMLInputElement || 
+          e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
 
-  // Use the extracted state effects
-  useCanvasStateEffects({
-    fabricCanvasRef,
-    gridLayerRef,
-    tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
-    floorPlans,
-    currentFloor,
-    isPusherConnected,
-    snapEnabled
-  });
+      // Find tool with matching shortcut
+      const tool = tools.find(t => t.shortcut?.toLowerCase() === e.key.toLowerCase());
+      if (tool) {
+        changeTool(tool.mode);
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [tools, changeTool]);
+
+  // Initialize canvas with default tool
+  useEffect(() => {
+    if (canvas) {
+      setupCanvasForTool(activeTool);
+    }
+  }, [canvas, activeTool, setupCanvasForTool]);
 
   return {
-    // Canvas tool operations
-    handleToolChange,
-    handleUndo,
-    handleRedo,
-    handleZoom,
-    clearCanvas,
-    saveCanvas,
-    deleteSelectedObjects,
-    
-    // Floor plan operations
-    handleFloorSelect,
-    handleAddFloor,
-    
-    // Styling operations
-    handleLineThicknessChange,
-    handleLineColorChange,
-    applyLineSettings,
-    
-    // Help operations
-    openMeasurementGuide,
-    
-    // Grid operations
-    toggleSnap,
-    snapEnabled,
-    
-    // Canvas state
-    drawingState,
-    currentZoom,
-    isPusherConnected,
-    measurementGuideOpen: isOpen,
-    onMeasurementGuideOpenChange: handleOpenChange
+    tools,
+    activeTool,
+    changeTool
   };
 };
 
