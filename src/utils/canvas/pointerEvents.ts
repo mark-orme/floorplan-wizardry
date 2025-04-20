@@ -58,3 +58,13 @@ export const isStylus = (event: PointerEvent): boolean => {
 export const isTouch = (event: PointerEvent): boolean => {
   return event.pointerType === 'touch';
 };
+
+/**
+ * Provide haptic feedback if available
+ * @param {number} duration Vibration duration in milliseconds
+ */
+export const vibrateFeedback = (duration: number = 10): void => {
+  if (navigator.vibrate) {
+    navigator.vibrate(duration);
+  }
+};

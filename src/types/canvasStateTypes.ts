@@ -8,6 +8,12 @@ export interface CanvasState {
   objects: CanvasObject[];
   viewportTransform: number[];
   zoom: number;
+  // Add missing properties needed by components
+  tool?: DrawingMode;
+  zoomLevel?: number;
+  lineThickness?: number;
+  lineColor?: string;
+  snapToGrid?: boolean;
 }
 
 export interface CanvasObject {

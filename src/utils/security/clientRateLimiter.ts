@@ -98,52 +98,43 @@ export function checkRateLimit(
  * @param identifier Rate limit identifier to reset
  */
 export function resetRateLimit(identifier: string): void {
-  delete rateLimitStates[identifier];
+  if (rateLimitStates[identifier]) {
+    delete rateLimitStates[identifier];
+  }
 }
 
 /**
  * Create a rate-limited function wrapper
  * @param fn Function to rate limit
+ * @param identifier Rate limit identifier
  * @param config Rate limit configuration
- * @param blockDurationMs Optional duration to block if rate limit exceeded
  * @returns Rate-limited function
  */
 export function createRateLimitedFunction<T extends (...args: any[]) => any>(
   fn: T,
-  config: RateLimitConfig,
-  blockDurationMs?: number
-): (...args: Parameters<T>) => Promise<ReturnType<T> | void> {
-  return async (...args: Parameters<T>): Promise<ReturnType<T> | void> => {
-    const check = checkRateLimit(config, blockDurationMs);
+  identifier: string,
+  config: Partial<RateLimitConfig> = {}
+): (...args: Parameters<T>) => ReturnType<T> | Promise<never> {
+  const defaultConfig: RateLimitConfig = {
+    maxRequests: 5,
+    timeWindowMs: 1000,
+    identifier
+  };
+  
+  const finalConfig = { ...defaultConfig, ...config };
+  
+  return (...args: Parameters<T>): ReturnType<T> | Promise<never> => {
+    const limitResult = checkRateLimit(finalConfig);
     
-    if (check.isLimited) {
-      if (check.blockedFor) {
-        console.warn(`Rate limit exceeded for ${config.identifier}. Blocked for ${check.blockedFor}ms.`);
-      } else {
-        console.warn(`Rate limit exceeded for ${config.identifier}. Try again later.`);
-      }
+    if (limitResult.isLimited) {
+      const resetTime = Math.ceil(limitResult.resetIn / 1000);
+      console.warn(`Rate limit in effect for ${identifier}. Try again in ${resetTime} seconds.`);
       
-      return;
+      return Promise.reject(
+        new Error(`Rate limit exceeded. Try again in ${resetTime} seconds.`)
+      );
     }
     
     return fn(...args);
   };
 }
-
-// Export common rate limit configurations
-export const rateLimitConfigs = {
-  api: {
-    light: { maxRequests: 20, timeWindowMs: 1000, identifier: 'api-light' },
-    normal: { maxRequests: 100, timeWindowMs: 60000, identifier: 'api-normal' },
-    strict: { maxRequests: 20, timeWindowMs: 60000, identifier: 'api-strict' }
-  },
-  auth: {
-    login: { maxRequests: 5, timeWindowMs: 60000, identifier: 'auth-login' },
-    register: { maxRequests: 3, timeWindowMs: 300000, identifier: 'auth-register' },
-    passwordReset: { maxRequests: 2, timeWindowMs: 600000, identifier: 'auth-password-reset' }
-  },
-  ui: {
-    search: { maxRequests: 10, timeWindowMs: 10000, identifier: 'ui-search' },
-    button: { maxRequests: 30, timeWindowMs: 10000, identifier: 'ui-button' }
-  }
-};
