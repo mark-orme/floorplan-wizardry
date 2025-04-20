@@ -49,7 +49,7 @@ export interface DebugInfoState {
   visibleObjectCount?: number;
   zoomLevel?: number;
   gridVisible?: boolean;
-  objectsSelectedCount?: number;
+  objectsSelectedCount?: boolean;
   eventHandlersSet?: boolean;
   gridRendered?: boolean;
   toolsInitialized?: boolean;

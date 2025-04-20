@@ -16,6 +16,9 @@ export {
   validateColor,
   validateTimestamp,
   validateStrokeType,
+  asStrokeType,
+  validateRoomType,
+  asRoomType,
   mapRoomType,
   normalizeDrawingMode
 } from './floorPlanAdapter/converters';

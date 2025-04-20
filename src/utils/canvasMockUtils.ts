@@ -127,3 +127,12 @@ export const createMockFabricObject = () => {
 export const castAsCanvas = (canvas: any) => {
   return canvas as any;
 };
+
+/**
+ * Helper function for tests to cast a mock canvas to any expected type
+ * @param canvas Mock canvas object
+ * @returns Canvas with any type
+ */
+export const asMockCanvas = (canvas: any) => {
+  return canvas as any;
+};

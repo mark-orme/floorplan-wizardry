@@ -15,8 +15,13 @@ import {
   StrokeTypeLiteral,
   RoomTypeLiteral,
   PaperSize,
-  createCompleteMetadata
 } from '@/types/floor-plan/unifiedTypes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
+import { asStrokeType, asRoomType } from '@/utils/floorPlanAdapter/converters';
+
+// Export types used in tests
+export type { FloorPlan, Stroke, Wall, Room, Point, StrokeTypeLiteral, RoomTypeLiteral };
+export { asStrokeType, asRoomType, PaperSize, createCompleteMetadata };
 
 /**
  * Creates a test point
@@ -78,20 +83,22 @@ export const createTestWall = (overrides: Partial<Wall> = {}): Wall => {
  * @returns Test room
  */
 export const createTestRoom = (overrides: Partial<Room> = {}): Room => {
+  const vertices = overrides.vertices ?? [
+    createTestPoint(),
+    createTestPoint({ x: 100, y: 0 }),
+    createTestPoint({ x: 100, y: 100 }),
+    createTestPoint({ x: 0, y: 100 })
+  ];
+  
   return {
     id: overrides.id ?? uuidv4(),
     name: overrides.name ?? 'Test Room',
     type: overrides.type ?? 'other' as RoomTypeLiteral,
     area: overrides.area ?? 0,
-    vertices: overrides.vertices ?? [
-      createTestPoint(),
-      createTestPoint({ x: 100, y: 0 }),
-      createTestPoint({ x: 100, y: 100 }),
-      createTestPoint({ x: 0, y: 100 })
-    ],
-    perimeter: overrides.perimeter,
-    labelPosition: overrides.labelPosition,
-    center: overrides.center,
+    vertices,
+    perimeter: overrides.perimeter ?? 400,
+    labelPosition: overrides.labelPosition ?? createTestPoint({ x: 50, y: 50 }),
+    center: overrides.center ?? createTestPoint({ x: 50, y: 50 }),
     color: overrides.color ?? '#ffffff'
   };
 };
@@ -103,6 +110,7 @@ export const createTestRoom = (overrides: Partial<Room> = {}): Room => {
  */
 export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
   const now = new Date().toISOString();
+  const level = overrides.level ?? 0;
   
   return {
     id: overrides.id ?? uuidv4(),
@@ -113,67 +121,16 @@ export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPl
     strokes: overrides.strokes ?? [],
     canvasData: overrides.canvasData ?? null,
     canvasJson: overrides.canvasJson ?? null,
+    canvasState: overrides.canvasState ?? null,
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,
     gia: overrides.gia ?? 0,
-    level: overrides.level ?? 0,
-    index: overrides.index ?? 0,
+    level: level,
+    index: overrides.index ?? level,
     metadata: overrides.metadata ?? createCompleteMetadata({
-      level: overrides.level ?? 0
+      level
     }),
     data: overrides.data ?? {},
-    userId: overrides.userId ?? 'test-user',
-    canvasState: overrides.canvasState
+    userId: overrides.userId ?? 'test-user'
   };
-};
-
-/**
- * Creates a typed mock canvas that satisfies the Canvas type
- * @returns Mock canvas
- */
-export const createTypedMockCanvas = () => {
-  const eventHandlers: Record<string, Function[]> = {};
-  
-  const canvas = {
-    add: jest.fn(),
-    remove: jest.fn(),
-    clear: jest.fn(),
-    renderAll: jest.fn(),
-    requestRenderAll: jest.fn(),
-    setWidth: jest.fn(),
-    setHeight: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    getContext: jest.fn(),
-    getElement: jest.fn().mockReturnValue(document.createElement('canvas')),
-    setBackgroundColor: jest.fn(),
-    setZoom: jest.fn(),
-    getZoom: jest.fn().mockReturnValue(1),
-    on: jest.fn((eventName, handler) => {
-      if (!eventHandlers[eventName]) {
-        eventHandlers[eventName] = [];
-      }
-      eventHandlers[eventName].push(handler);
-    }),
-    off: jest.fn(),
-    fire: jest.fn(),
-    getWidth: jest.fn().mockReturnValue(800),
-    getHeight: jest.fn().mockReturnValue(600),
-    dispose: jest.fn(),
-    isDrawingMode: false,
-    freeDrawingBrush: {
-      color: '#000',
-      width: 1
-    },
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    selection: true,
-    
-    // Add extra testing helpers
-    getHandlers: (eventName: string) => eventHandlers[eventName] || [],
-    triggerEvent: (eventName: string, eventData: any) => {
-      const handlers = eventHandlers[eventName] || [];
-      handlers.forEach(handler => handler(eventData));
-    }
-  };
-  
-  return canvas;
 };
