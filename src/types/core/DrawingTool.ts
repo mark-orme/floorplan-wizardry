@@ -32,7 +32,20 @@ export function getToolDisplayName(tool: DrawingTool): string {
     [DrawingMode.TEXT]: 'Text',
     [DrawingMode.STRAIGHT_LINE]: 'Straight Line',
     [DrawingMode.MEASURE]: 'Measure',
-    [DrawingMode.ERASER]: 'Eraser'
+    [DrawingMode.ERASER]: 'Eraser',
+    [DrawingMode.RECTANGLE]: 'Rectangle',
+    [DrawingMode.CIRCLE]: 'Circle',
+    [DrawingMode.DRAW]: 'Draw',
+    [DrawingMode.WALL]: 'Wall',
+    [DrawingMode.ROOM]: 'Room',
+    [DrawingMode.STAIR]: 'Stair',
+    [DrawingMode.DOOR]: 'Door',
+    [DrawingMode.WINDOW]: 'Window',
+    [DrawingMode.HAND]: 'Hand',
+    [DrawingMode.PAN]: 'Pan',
+    [DrawingMode.ERASE]: 'Erase',
+    [DrawingMode.COLUMN]: 'Column',
+    [DrawingMode.DIMENSION]: 'Dimension'
   };
   
   return names[tool] || 'Unknown Tool';

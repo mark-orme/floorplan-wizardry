@@ -86,3 +86,19 @@ export function transformPoint(point: Point, matrix: number[]): Point {
     y: b * point.x + d * point.y + f
   };
 }
+
+/**
+ * Snap points to the nearest grid intersection
+ * @param points - Array of points to snap
+ * @param gridSize - Size of the grid
+ * @returns Array of snapped points
+ */
+export function snapPointsToGrid(points: Point[], gridSize: number): Point[] {
+  if (!points || !Array.isArray(points)) return [];
+  if (!gridSize || gridSize <= 0) return [...points];
+
+  return points.map(point => ({
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  }));
+}
