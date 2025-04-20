@@ -43,132 +43,21 @@ export interface CanvasEvents {
   [key: string]: any;
 }
 
-// Fix the implementation of MockCanvasEngine
-<lov-write file_path="src/implementations/canvas-engine/MockCanvasEngine.ts">
-import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
-import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
+// Define core geometry interfaces
+export interface GeometryEngine {
+  calculateArea(points: Point[]): number;
+  calculatePerimeter(points: Point[]): number;
+  isPointInPolygon(point: Point, polygon: Point[]): boolean;
+  getDistance(p1: Point, p2: Point): number;
+}
 
-export class MockCanvasEngine implements ICanvasEngine {
-  private objects: CanvasObject[] = [];
-  private eventHandlers: Record<string, Function[]> = {};
-  private strokeStyle: StrokeStyle = { color: 'black', width: 1 };
+export interface GeometryCalculator {
+  area: number;
+  perimeter: number;
+  centroid: Point;
+}
 
-  drawLine(points: Point[], options: DrawOptions): void {
-    const line = {
-      id: `line-${this.objects.length}`,
-      type: 'line',
-      points: [...points],
-      ...options
-    };
-    this.objects.push(line);
-    this.triggerEvent('object:added', line);
-  }
-
-  drawShape(points: Point[], options: DrawOptions): void {
-    const shape = {
-      id: `shape-${this.objects.length}`,
-      type: 'shape',
-      points: [...points],
-      ...options
-    };
-    this.objects.push(shape);
-    this.triggerEvent('object:added', shape);
-  }
-
-  clear(): void {
-    this.objects = [];
-    this.triggerEvent('canvas:cleared', null);
-  }
-
-  undo(): void {
-    if (this.objects.length > 0) {
-      const removed = this.objects.pop();
-      this.triggerEvent('object:removed', removed);
-    }
-  }
-
-  redo(): void {
-    // Mock implementation
-  }
-
-  addObject(object: CanvasObject): void {
-    this.objects.push(object);
-    this.triggerEvent('object:added', object);
-  }
-
-  removeObject(object: CanvasObject): void {
-    const index = this.objects.findIndex(obj => obj.id === object.id);
-    if (index !== -1) {
-      this.objects.splice(index, 1);
-      this.triggerEvent('object:removed', object);
-    }
-  }
-
-  updateObject(object: CanvasObject): void {
-    const index = this.objects.findIndex(obj => obj.id === object.id);
-    if (index !== -1) {
-      this.objects[index] = { ...this.objects[index], ...object };
-      this.triggerEvent('object:modified', this.objects[index]);
-    }
-  }
-
-  getObjects(): CanvasObject[] {
-    return [...this.objects];
-  }
-
-  getCanvasState(): any {
-    return {
-      objects: this.getObjects(),
-      strokeStyle: this.strokeStyle
-    };
-  }
-
-  setCanvasState(state: any): void {
-    if (state.objects) {
-      this.objects = [...state.objects];
-    }
-    if (state.strokeStyle) {
-      this.strokeStyle = { ...state.strokeStyle };
-    }
-  }
-
-  setStrokeStyle(style: StrokeStyle): void {
-    this.strokeStyle = { ...style };
-  }
-
-  setZoom(level: number): void {
-    this.triggerEvent('zoom:changed', level);
-  }
-
-  setPan(x: number, y: number): void {
-    this.triggerEvent('pan:changed', { x, y });
-  }
-
-  on(event: string, callback: Function): void {
-    if (!this.eventHandlers[event]) {
-      this.eventHandlers[event] = [];
-    }
-    this.eventHandlers[event].push(callback);
-  }
-
-  off(event: string, callback: Function): void {
-    if (this.eventHandlers[event]) {
-      this.eventHandlers[event] = this.eventHandlers[event].filter(
-        handler => handler !== callback
-      );
-    }
-  }
-
-  private triggerEvent(event: string, data: any): void {
-    if (this.eventHandlers[event]) {
-      for (const handler of this.eventHandlers[event]) {
-        handler(data);
-      }
-    }
-  }
-
-  dispose(): void {
-    this.objects = [];
-    this.eventHandlers = {};
-  }
+export interface GeometryValidator {
+  isValid(points: Point[]): boolean;
+  getErrors(): string[];
 }
