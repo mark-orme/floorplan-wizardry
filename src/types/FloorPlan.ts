@@ -48,5 +48,10 @@ export enum DrawingMode {
   DRAW = 'draw',
   WALL = 'wall',
   ROOM = 'room',
-  LINE = 'line'
+  LINE = 'line',
+  STRAIGHT_LINE = 'straight_line',
+  ERASER = 'eraser',
+  HAND = 'hand',
+  MEASURE = 'measure',
+  TEXT = 'text'
 }

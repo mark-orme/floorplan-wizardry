@@ -4,7 +4,7 @@ import { Canvas } from 'fabric';
 import { useStylusInput } from '@/hooks/useStylusInput'; 
 
 interface EnhancedDrawingCanvasProps {
-  canvasId: string;
+  canvasId?: string; // Make canvasId optional
   width: number;
   height: number;
   onCanvasReady?: (canvas: Canvas) => void;
@@ -13,7 +13,7 @@ interface EnhancedDrawingCanvasProps {
 }
 
 export function EnhancedDrawingCanvas({
-  canvasId,
+  canvasId = 'enhanced-canvas', // Default value
   width,
   height,
   onCanvasReady,

@@ -1,7 +1,8 @@
+
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Path } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/types/canvasStateTypes';
+import { DrawingMode } from '@/types/FloorPlan';
 
 interface UsePathProcessingProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -140,11 +141,7 @@ export const usePathProcessing = ({ fabricCanvasRef, tool }: UsePathProcessingPr
   }, [tool]);
 
   const isCurrentDrawingTool = useCallback((): boolean => {
-    if (tool === DrawingMode.DRAW) {
-      return true;
-    }
-
-    return false;
+    return tool === DrawingMode.DRAW;
   }, [tool]);
 
   return {

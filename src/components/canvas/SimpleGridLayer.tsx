@@ -64,8 +64,8 @@ export function SimpleGridLayer({
     // Ensure grid lines are in the background
     const allLines = [...horizontalLines, ...verticalLines];
     allLines.forEach(line => {
-      if (typeof line.sendToBack === 'function') {
-        line.sendToBack();
+      if (line.canvas) {
+        line.moveTo(0); // Use moveTo instead of sendToBack
       }
     });
 

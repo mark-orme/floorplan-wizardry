@@ -14,11 +14,13 @@ export const createTestUser = async (user: TestUser) => {
     // Check if user already exists - using auth.admin API with updated syntax
     const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers();
     
-    const userExists = existingUsers?.users?.some(u => u.email === user.email);
-    
-    if (userExists) {
-      console.log('User already exists:', user.email);
-      return existingUsers.users.find(u => u.email === user.email);
+    if (existingUsers && existingUsers.users) {
+      const userExists = existingUsers.users.some(u => u.email === user.email);
+      
+      if (userExists) {
+        console.log('User already exists:', user.email);
+        return existingUsers.users.find(u => u.email === user.email);
+      }
     }
 
     // Create new user
@@ -65,24 +67,26 @@ export const deleteTestUser = async (email: string) => {
       throw getUserError;
     }
 
-    const userToDelete = users?.users?.find(u => u.email === email);
+    if (users && users.users) {
+      const userToDelete = users.users.find(u => u.email === email);
 
-    if (!userToDelete) {
-      console.log('User not found:', email);
-      return;
+      if (!userToDelete) {
+        console.log('User not found:', email);
+        return;
+      }
+
+      const userId = userToDelete.id;
+
+      // Delete the user
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+
+      if (deleteError) {
+        console.error('Error deleting user:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('User deleted successfully:', email);
     }
-
-    const userId = userToDelete.id;
-
-    // Delete the user
-    const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
-
-    if (deleteError) {
-      console.error('Error deleting user:', deleteError);
-      throw deleteError;
-    }
-
-    console.log('User deleted successfully:', email);
 
   } catch (error) {
     console.error('Error deleting test user:', error);
