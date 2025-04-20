@@ -11,7 +11,7 @@ import {
   asStrokeType, asRoomType,
   createEmptyFloorPlan, createEmptyRoom,
   createEmptyStroke, createEmptyWall
-} from '@/types/floor-plan/typesBarrel';
+} from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Ensures a partial floor plan is a valid FloorPlan
@@ -22,6 +22,13 @@ export function ensureFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
   // Ensure data and userId are present
   if (!floorPlan.data) floorPlan.data = {};
   if (!floorPlan.userId) floorPlan.userId = 'test-user';
+  
+  // Log diagnostic information
+  console.log('Ensuring FloorPlan has required properties', {
+    hasData: !!floorPlan.data,
+    hasUserId: !!floorPlan.userId,
+    id: floorPlan.id
+  });
   
   // Create a complete floor plan using our factory
   return createEmptyFloorPlan(floorPlan);
@@ -36,6 +43,9 @@ export function ensureStroke(stroke: Partial<Stroke>): Stroke {
   // Ensure type is valid
   if (stroke.type && typeof stroke.type === 'string') {
     stroke.type = asStrokeType(stroke.type);
+    
+    // Log conversion
+    console.log(`Converted stroke type to valid type: ${stroke.type}`);
   }
   
   // Create a complete stroke using our factory
@@ -51,6 +61,9 @@ export function ensureRoom(room: Partial<Room>): Room {
   // Ensure type is valid
   if (room.type && typeof room.type === 'string') {
     room.type = asRoomType(room.type);
+    
+    // Log conversion
+    console.log(`Converted room type to valid type: ${room.type}`);
   }
   
   // Create a complete room using our factory
@@ -65,6 +78,13 @@ export function ensureRoom(room: Partial<Room>): Room {
 export function ensureWall(wall: Partial<Wall>): Wall {
   // Ensure roomIds is present
   if (!wall.roomIds) wall.roomIds = [];
+  
+  // Log validation
+  console.log('Ensuring Wall has required properties', {
+    hasRoomIds: !!wall.roomIds,
+    start: wall.start,
+    end: wall.end
+  });
   
   // Create a complete wall using our factory
   return createEmptyWall(wall);

@@ -153,7 +153,14 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   toolsInitialized: false,
   gridRendered: false,
   canvasCreated: false,
-  showDebugInfo: process.env.NODE_ENV === 'development'
+  showDebugInfo: process.env.NODE_ENV === 'development',
+  performanceStats: {
+    fps: 0,
+    droppedFrames: 0,
+    frameTime: 0,
+    maxFrameTime: 0,
+    longFrames: 0
+  }
 };
 
 /**
