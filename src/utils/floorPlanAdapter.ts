@@ -91,5 +91,7 @@ export const createEmptyFloorPlan = (index: number = 0): AppFloorPlan => {
     level: index,
     createdAt: now,
     updatedAt: now,
+    data: {}, // Required property
+    userId: '' // Required property
   });
 };

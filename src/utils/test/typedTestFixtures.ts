@@ -114,3 +114,9 @@ export function createTypedTestFloorPlan(overrides: Partial<FloorPlan> = {}): Fl
     ...overrides
   };
 }
+
+// Alias to createMockFloorPlan for backward compatibility with tests
+export const createMockFloorPlan = createTypedTestFloorPlan;
+export const createMockWall = createTestWall;
+export const createMockRoom = createTestRoom;
+export const createMockStroke = createTestStroke;
