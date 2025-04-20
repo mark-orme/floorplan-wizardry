@@ -88,8 +88,41 @@ export const createTypedMockCanvas = () => {
     withImplementation: createWithImplementationMock()
   };
   
+  // Use type assertion to cast to the expected type
   return mockCanvas as unknown as FabricCanvas & {
     getHandlers: (eventName: string) => Function[];
     triggerEvent: (eventName: string, eventData: any) => void;
   };
 };
+
+/**
+ * Helper function to convert any canvas-like object to a properly typed canvas
+ * @param canvas Canvas object to convert
+ * @returns Properly typed canvas object
+ */
+export function asTypedCanvas(canvas: any): FabricCanvas & {
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
+} {
+  return canvas as FabricCanvas & {
+    getHandlers?: (eventName: string) => Function[];
+    triggerEvent?: (eventName: string, eventData: any) => void;
+  };
+}
+
+/**
+ * Helper function to validate a wall object and ensure it has a length property
+ * @param wall Wall to validate
+ * @returns Wall with length calculated if missing
+ */
+export function ensureWallLength(wall: any): any {
+  if (wall.length !== undefined) return wall;
+  
+  if (wall.start && wall.end) {
+    const dx = wall.end.x - wall.start.x;
+    const dy = wall.end.y - wall.start.y;
+    wall.length = Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  return wall;
+}

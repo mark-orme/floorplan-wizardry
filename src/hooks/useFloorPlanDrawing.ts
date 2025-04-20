@@ -5,7 +5,7 @@
  */
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType, StrokeTypeLiteral } from '@/types/floor-plan/unifiedTypes';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseFloorPlanDrawingProps {
@@ -35,7 +35,6 @@ export const useFloorPlanDrawing = ({
     };
     
     // Add the stroke to the canvas
-    // (Implementation would add visual representation to canvas)
     canvas.add(/* stroke visual representation */);
     canvas.renderAll();
     
@@ -63,7 +62,6 @@ export const useFloorPlanDrawing = ({
     };
     
     // Add the room to the canvas
-    // (Implementation would add visual representation to canvas)
     canvas.add(/* room visual representation */);
     canvas.renderAll();
     
@@ -85,7 +83,6 @@ export const useFloorPlanDrawing = ({
     if (!canvas) return;
     
     // Add the wall to the canvas
-    // (Implementation would add visual representation to canvas)
     canvas.add(/* wall visual representation */);
     canvas.renderAll();
     

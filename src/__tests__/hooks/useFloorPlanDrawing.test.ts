@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
+import { DrawingMode } from '@/constants/drawingModes';
 import {
   FloorPlan,
   Stroke,
@@ -15,7 +16,7 @@ import {
   createTestStroke,
   createTestRoom,
   createTestWall
-} from '@/types/floor-plan/unifiedTypes';
+} from '@/utils/test/typedTestFixtures';
 import { createTypedMockCanvas } from '@/utils/canvasMockUtils';
 
 describe('useFloorPlanDrawing', () => {
@@ -42,10 +43,10 @@ describe('useFloorPlanDrawing', () => {
     }));
     
     act(() => {
-      result.current.setTool('wall');
+      result.current.setTool(DrawingMode.WALL);
     });
     
-    expect(result.current.tool).toBe('wall');
+    expect(result.current.tool).toBe(DrawingMode.WALL);
   });
 
   it('should create strokes with the correct type', () => {
@@ -58,7 +59,7 @@ describe('useFloorPlanDrawing', () => {
     
     // Act
     act(() => {
-      result.current.setTool('wall');
+      result.current.setTool(DrawingMode.WALL);
       const myStroke = createTestStroke({
         type: asStrokeType('wall')
       });

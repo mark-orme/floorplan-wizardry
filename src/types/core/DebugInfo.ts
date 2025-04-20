@@ -55,6 +55,7 @@ export interface DebugInfoState {
   toolsInitialized?: boolean;
   fps?: number;
   lastRefresh?: number;
+  canvasCreated?: boolean;
   
   // Performance metrics
   performanceStats?: {
@@ -90,9 +91,6 @@ export interface DebugInfoState {
     memory: number;
     renderTime: number;
   };
-  
-  // Canvas state properties needed by CanvasControllerEnhanced
-  canvasCreated?: boolean;
 }
 
 /**
@@ -129,6 +127,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   toolsInitialized: false,
   fps: 0,
   lastRefresh: Date.now(),
+  canvasCreated: false,
   // Add newly required fields for compatibility
   performanceStats: {
     renderTime: 0,
@@ -152,6 +151,5 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
     fps: 0,
     memory: 0,
     renderTime: 0
-  },
-  canvasCreated: false
+  }
 };
