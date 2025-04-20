@@ -2,6 +2,7 @@
 /**
  * Utility for dynamic imports and feature flag checking
  */
+import React, { Suspense, lazy, ComponentType } from 'react';
 import logger from './logger';
 
 // Feature flags configuration
@@ -113,4 +114,57 @@ export function withFeatureGuard<T extends (...args: any[]) => any>(
     logger.info(`Function call skipped - feature ${featureName} is disabled`);
     return undefined;
   };
+}
+
+/**
+ * Dynamic component import with Suspense fallback
+ */
+interface DynamicImportProps<P> {
+  component: ComponentType<P>;
+  fallback?: React.ReactNode;
+  [key: string]: any;
+}
+
+export function DynamicImport<P>({
+  component: Component,
+  fallback = <div>Loading...</div>,
+  ...props
+}: DynamicImportProps<P>): React.ReactElement {
+  return (
+    <Suspense fallback={fallback}>
+      <Component {...props} />
+    </Suspense>
+  );
+}
+
+/**
+ * Lazy load a component with feature flag check
+ * @param importFn - Function that imports the component
+ * @param featureName - Feature flag name to check
+ * @param fallbackComponent - Component to show if feature is disabled
+ */
+export function lazyWithFeatureFlag<T extends ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>,
+  featureName: keyof FeatureFlags,
+  fallbackComponent?: T
+): T {
+  return lazy(() => {
+    if (isFeatureEnabled(featureName)) {
+      return importFn();
+    }
+    
+    if (fallbackComponent) {
+      return Promise.resolve({
+        default: fallbackComponent
+      });
+    }
+    
+    return Promise.resolve({
+      default: (props: any) => (
+        <div className="p-4 text-center text-gray-500">
+          Feature {featureName} is disabled
+        </div>
+      )
+    }) as Promise<{ default: T }>;
+  });
 }

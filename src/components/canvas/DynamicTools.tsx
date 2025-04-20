@@ -4,18 +4,19 @@
  * Loads tools on demand based on user interaction
  */
 import React, { useState, useEffect } from 'react';
-import { DynamicImport, isFeatureEnabled } from '@/utils/dynamicImport';
+import { isFeatureEnabled, DynamicImport } from '@/utils/dynamicImport';
 import { Button } from '@/components/ui/button';
 import { pluginRegistry } from '@/packages/plugin-api';
 import { Separator } from '@/components/ui/separator';
 import { DrawingMode } from '@/constants/drawingModes';
+import { Loader2 } from 'lucide-react';
 
-// Lazy-loaded components
-const AdvancedRuler = React.lazy(() => import('@/components/canvas/tools/AdvancedRuler'));
-const AreaCalculator = React.lazy(() => import('@/components/canvas/tools/AreaCalculator'));
-const WallBuilder = React.lazy(() => import('@/components/canvas/tools/WallBuilder'));
-const TextAnnotator = React.lazy(() => import('@/components/canvas/tools/TextAnnotator'));
-const ShapeTools = React.lazy(() => import('@/components/canvas/tools/ShapeTools'));
+// Tool components will be lazy-loaded
+const LazyLoadingPlaceholder = () => (
+  <div className="p-2 flex justify-center">
+    <Loader2 className="animate-spin h-4 w-4" />
+  </div>
+);
 
 interface DynamicToolsProps {
   activeTool: DrawingMode;
@@ -24,17 +25,18 @@ interface DynamicToolsProps {
 
 export function DynamicTools({ activeTool, onSelectTool }: DynamicToolsProps) {
   const [loadedTools, setLoadedTools] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
   
   // Load core tools
   useEffect(() => {
-    // Always load these core tools
+    // Load essential tools on mount
     Promise.all([
-      import('@/components/canvas/tools/BasicShapes').then(module => {
+      import('./tools/BasicShapes').then(module => {
         const toolPlugin = module.default;
         pluginRegistry.registerTool(toolPlugin);
         return toolPlugin.id;
       }),
-      import('@/components/canvas/tools/DrawingTools').then(module => {
+      import('./tools/DrawingTools').then(module => {
         const toolPlugin = module.default;
         pluginRegistry.registerTool(toolPlugin);
         return toolPlugin.id;
@@ -52,25 +54,27 @@ export function DynamicTools({ activeTool, onSelectTool }: DynamicToolsProps) {
   const loadTool = async (toolName: string) => {
     if (loadedTools.includes(toolName)) return;
     
+    setIsLoading(toolName);
+    
     try {
       // Dynamic imports for different tools
       let toolModule;
       
       switch (toolName) {
         case 'advanced-ruler':
-          toolModule = await import('@/components/canvas/tools/AdvancedRuler');
+          toolModule = await import('./tools/AdvancedRuler');
           break;
         case 'area-calculator':
-          toolModule = await import('@/components/canvas/tools/AreaCalculator');
+          toolModule = await import('./tools/AreaCalculator');
           break;
         case 'wall-builder':
-          toolModule = await import('@/components/canvas/tools/WallBuilder');
+          toolModule = await import('./tools/WallBuilder');
           break;
         case 'text-annotator':
-          toolModule = await import('@/components/canvas/tools/TextAnnotator');
+          toolModule = await import('./tools/TextAnnotator');
           break;
         case 'shape-tools':
-          toolModule = await import('@/components/canvas/tools/ShapeTools');
+          toolModule = await import('./tools/ShapeTools');
           break;
         default:
           throw new Error(`Unknown tool: ${toolName}`);
@@ -87,6 +91,8 @@ export function DynamicTools({ activeTool, onSelectTool }: DynamicToolsProps) {
       onSelectTool(toolPlugin.mode);
     } catch (error) {
       console.error(`Failed to load tool ${toolName}:`, error);
+    } finally {
+      setIsLoading(null);
     }
   };
   
@@ -121,29 +127,36 @@ export function DynamicTools({ activeTool, onSelectTool }: DynamicToolsProps) {
           variant="outline" 
           size="sm"
           onClick={() => loadTool('area-calculator')}
-          disabled={!isFeatureEnabled('enableExperimentalTools')}
+          disabled={!isFeatureEnabled('enableExperimentalTools') || isLoading === 'area-calculator'}
         >
+          {isLoading === 'area-calculator' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Area Calculator
         </Button>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => loadTool('advanced-ruler')}
+          disabled={isLoading === 'advanced-ruler'}
         >
+          {isLoading === 'advanced-ruler' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Ruler
         </Button>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => loadTool('wall-builder')}
+          disabled={isLoading === 'wall-builder'}
         >
+          {isLoading === 'wall-builder' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Wall Builder
         </Button>
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => loadTool('text-annotator')}
+          disabled={isLoading === 'text-annotator'}
         >
+          {isLoading === 'text-annotator' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Text
         </Button>
       </div>
@@ -151,43 +164,53 @@ export function DynamicTools({ activeTool, onSelectTool }: DynamicToolsProps) {
       {/* Render loaded tools */}
       <div className="mt-4">
         {loadedTools.includes('advanced-ruler') && (
-          <DynamicImport 
-            component={AdvancedRuler} 
-            activeTool={activeTool}
-            onSelectTool={onSelectTool}
-          />
+          <Suspense fallback={<LazyLoadingPlaceholder />}>
+            <DynamicImport 
+              component={React.lazy(() => import('./tools/AdvancedRuler'))}
+              activeTool={activeTool}
+              onSelectTool={onSelectTool}
+            />
+          </Suspense>
         )}
         
         {loadedTools.includes('area-calculator') && (
-          <DynamicImport 
-            component={AreaCalculator} 
-            activeTool={activeTool}
-            onSelectTool={onSelectTool}
-          />
+          <Suspense fallback={<LazyLoadingPlaceholder />}>
+            <DynamicImport 
+              component={React.lazy(() => import('./tools/AreaCalculator'))}
+              activeTool={activeTool}
+              onSelectTool={onSelectTool}
+            />
+          </Suspense>
         )}
         
         {loadedTools.includes('wall-builder') && (
-          <DynamicImport 
-            component={WallBuilder} 
-            activeTool={activeTool}
-            onSelectTool={onSelectTool}
-          />
+          <Suspense fallback={<LazyLoadingPlaceholder />}>
+            <DynamicImport 
+              component={React.lazy(() => import('./tools/WallBuilder'))}
+              activeTool={activeTool}
+              onSelectTool={onSelectTool}
+            />
+          </Suspense>
         )}
         
         {loadedTools.includes('text-annotator') && (
-          <DynamicImport 
-            component={TextAnnotator} 
-            activeTool={activeTool}
-            onSelectTool={onSelectTool}
-          />
+          <Suspense fallback={<LazyLoadingPlaceholder />}>
+            <DynamicImport 
+              component={React.lazy(() => import('./tools/TextAnnotator'))}
+              activeTool={activeTool}
+              onSelectTool={onSelectTool}
+            />
+          </Suspense>
         )}
         
         {loadedTools.includes('shape-tools') && (
-          <DynamicImport 
-            component={ShapeTools} 
-            activeTool={activeTool}
-            onSelectTool={onSelectTool}
-          />
+          <Suspense fallback={<LazyLoadingPlaceholder />}>
+            <DynamicImport 
+              component={React.lazy(() => import('./tools/ShapeTools'))}
+              activeTool={activeTool}
+              onSelectTool={onSelectTool}
+            />
+          </Suspense>
         )}
       </div>
     </div>
