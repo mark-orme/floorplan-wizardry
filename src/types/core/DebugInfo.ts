@@ -1,86 +1,47 @@
 
 /**
- * Debug information state
- * Tracks various debugging metrics for the canvas
+ * Debug info state types
+ * Provides types for debug information and state
+ * @module types/core/DebugInfo
+ */
+
+/**
+ * Debug info state interface
  */
 export interface DebugInfoState {
-  /** Whether there's an error */
+  /** Whether an error has occurred */
   hasError: boolean;
-  /** Error message if any */
+  
+  /** Error message if an error has occurred */
   errorMessage: string;
-  /** Last initialization time */
+  
+  /** Time taken for last canvas initialization (ms) */
   lastInitTime: number;
-  /** Last grid creation time */
+  
+  /** Time taken for last grid creation (ms) */
   lastGridCreationTime: number;
-  /** Whether event handlers are set */
-  eventHandlersSet?: boolean;
-  /** Whether canvas events are registered */
-  canvasEventsRegistered: boolean;
-  /** Whether grid is rendered */
-  gridRendered: boolean;
-  /** Whether tools are initialized */
-  toolsInitialized: boolean;
-  /** Whether grid is created */
-  gridCreated?: boolean;
-  /** Whether canvas is initialized */
-  canvasInitialized?: boolean;
-  /** Whether dimensions are set */
-  dimensionsSet?: boolean;
-  /** Whether brush is initialized */
-  brushInitialized?: boolean;
-  /** Whether canvas is ready */
-  canvasReady?: boolean;
-  /** Whether canvas is created */
-  canvasCreated?: boolean;
-  /** Number of grid objects */
-  gridObjectCount?: number;
-  /** Number of total objects */
-  objectCount?: number;
+  
+  /** Current rendering FPS */
+  currentFps: number;
+  
+  /** Number of objects in canvas */
+  objectCount: number;
+  
   /** Canvas dimensions */
-  canvasDimensions?: {
+  canvasDimensions: {
     width: number;
     height: number;
   };
-  /** Canvas width */
-  canvasWidth?: number;
-  /** Canvas height */
-  canvasHeight?: number;
-  /** Device pixel ratio */
-  devicePixelRatio?: number;
-  /** Last error */
-  lastError?: string;
-  /** Last error time */
-  lastErrorTime?: number;
-  /** Last refresh time */
-  lastRefresh?: number;
-  /** Performance statistics */
-  performanceStats?: {
-    /** Frames per second */
-    fps?: number;
-    /** Number of dropped frames */
-    droppedFrames?: number;
-    /** Average frame time in milliseconds */
-    frameTime?: number;
-    /** Maximum frame time in milliseconds */
-    maxFrameTime?: number;
-    /** Number of long frames */
-    longFrames?: number;
-    /** Error count */
-    errorCount?: number;
-    /** Retry count */
-    retryCount?: number;
-    /** Any other performance metrics */
-    [key: string]: number | undefined;
+  
+  /** Additional debug flags */
+  flags: {
+    /** Whether grid is enabled */
+    gridEnabled: boolean;
+    /** Whether snap to grid is enabled */
+    snapToGridEnabled: boolean;
+    /** Whether debug logging is enabled */
+    debugLoggingEnabled: boolean;
   };
-  /** Legacy performance field */
-  performance?: {
-    fps?: number;
-    [key: string]: any;
-  };
-  /** Whether to show debug info */
-  showDebugInfo?: boolean;
-  /** Additional properties */
-  [key: string]: any;
 }
 
 /**
@@ -91,34 +52,28 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   errorMessage: '',
   lastInitTime: 0,
   lastGridCreationTime: 0,
-  canvasEventsRegistered: false,
-  gridRendered: false,
-  toolsInitialized: false,
-  gridCreated: false,
-  canvasInitialized: false,
-  dimensionsSet: false,
-  brushInitialized: false,
-  canvasReady: false,
-  canvasCreated: false,
-  gridObjectCount: 0,
+  currentFps: 0,
   objectCount: 0,
   canvasDimensions: {
     width: 0,
     height: 0
   },
-  canvasWidth: 0,
-  canvasHeight: 0,
-  devicePixelRatio: window.devicePixelRatio || 1,
-  performanceStats: {
-    fps: 0,
-    droppedFrames: 0,
-    frameTime: 0,
-    maxFrameTime: 0,
-    longFrames: 0,
-    errorCount: 0,
-    retryCount: 0
-  },
-  showDebugInfo: process.env.NODE_ENV === 'development',
-  lastError: '',
-  lastRefresh: Date.now()
+  flags: {
+    gridEnabled: true,
+    snapToGridEnabled: false,
+    debugLoggingEnabled: false
+  }
 };
+
+/**
+ * Debug logger function that only logs in development
+ */
+export function debugLog(message: string, data?: any): void {
+  if (process.env.NODE_ENV !== 'production') {
+    if (data) {
+      console.log(`[DEBUG] ${message}`, data);
+    } else {
+      console.log(`[DEBUG] ${message}`);
+    }
+  }
+}

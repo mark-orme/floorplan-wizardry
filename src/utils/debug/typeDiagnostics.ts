@@ -1,134 +1,93 @@
 
 /**
- * Type Diagnostics Utilities
- * Provides validation helpers for floor plan data structures
+ * Type diagnostics utilities
+ * Provides functions for validating and troubleshooting types
+ * @module utils/debug/typeDiagnostics
  */
-
-import {
-  FloorPlan,
-  Stroke,
-  Room,
+import { 
+  FloorPlan, 
+  Stroke, 
+  Room, 
   Wall,
-  asStrokeType,
-  asRoomType,
-  createTestFloorPlan,
-  createTestStroke,
-  createTestRoom,
-  createTestWall
+  isValidFloorPlan,
+  isValidStroke, 
+  isValidRoom 
 } from '@/types/floor-plan/unifiedTypes';
 
-/**
- * Check if an object is a valid FloorPlan
- */
-export function isValidFloorPlan(obj: any): obj is FloorPlan {
-  if (!obj) {
-    console.error('FloorPlan is null or undefined');
-    return false;
-  }
+// Re-export the validator functions with aliases to maintain compatibility
+export { 
+  isValidFloorPlan, 
+  isValidStroke, 
+  isValidRoom 
+};
 
-  const errors: string[] = [];
+/**
+ * Validate a wall object
+ * @param wall - Wall to validate
+ * @returns Whether wall is valid
+ */
+export function isValidWall(wall: any): boolean {
+  if (!wall) return false;
   
-  if (!obj.id) errors.push('Missing id property');
-  if (!obj.data) errors.push('Missing data property'); 
-  if (!obj.userId) errors.push('Missing userId property');
-  if (!obj.label) errors.push('Missing label property');
-  if (!obj.metadata) errors.push('Missing metadata property');
-  
-  // Check the type of arrays
-  if (!Array.isArray(obj.walls)) errors.push('walls is not an array');
-  if (!Array.isArray(obj.rooms)) errors.push('rooms is not an array');
-  if (!Array.isArray(obj.strokes)) errors.push('strokes is not an array');
-  
-  if (errors.length > 0) {
-    console.error('FloorPlan validation errors:', errors, obj);
-    return false;
-  }
-  
-  return true;
+  return (
+    typeof wall.id === 'string' &&
+    Array.isArray(wall.points) &&
+    typeof wall.start === 'object' &&
+    typeof wall.start.x === 'number' &&
+    typeof wall.start.y === 'number' &&
+    typeof wall.end === 'object' &&
+    typeof wall.end.x === 'number' &&
+    typeof wall.end.y === 'number' &&
+    typeof wall.thickness === 'number' &&
+    typeof wall.color === 'string' &&
+    Array.isArray(wall.roomIds) &&
+    typeof wall.length === 'number'
+  );
 }
 
 /**
- * Fix a potentially invalid FloorPlan object by adding missing properties
+ * Validate a floor plan with detailed reporting
+ * @param floorPlan - Floor plan to validate
+ * @param source - Source of validation for logging
+ * @returns Whether floor plan is valid
  */
-export function fixFloorPlan(obj: any): FloorPlan {
-  console.log('Fixing FloorPlan object:', obj);
-  return createTestFloorPlan(obj);
-}
-
-/**
- * Check if an object is a valid Stroke
- */
-export function isValidStroke(obj: any): obj is Stroke {
-  if (!obj) {
-    console.error('Stroke is null or undefined');
+export function validateFloorPlanWithReporting(floorPlan: any, source: string = 'unknown'): boolean {
+  if (!floorPlan) {
+    console.error(`[${source}] FloorPlan validation failed: undefined or null`);
     return false;
   }
-
-  const errors: string[] = [];
   
-  if (!obj.id) errors.push('Missing id property');
-  if (!obj.type) errors.push('Missing type property');
-  if (!obj.points) errors.push('Missing points property');
-  if (!obj.color) errors.push('Missing color property');
-  if (obj.thickness === undefined) errors.push('Missing thickness property');
-  if (obj.width === undefined) errors.push('Missing width property');
+  // Check required properties
+  const requiredProps = [
+    'id', 'name', 'label', 'walls', 'rooms', 'strokes', 
+    'createdAt', 'updatedAt', 'gia', 'level', 'data', 'userId'
+  ];
   
-  // Check if type is valid
-  if (obj.type && typeof obj.type === 'string') {
-    try {
-      asStrokeType(obj.type);
-    } catch (e) {
-      errors.push(`Invalid stroke type: ${obj.type}`);
+  for (const prop of requiredProps) {
+    if (floorPlan[prop] === undefined) {
+      console.error(`[${source}] FloorPlan validation failed: missing ${prop} property`);
+      console.warn('FloorPlan structure:', Object.keys(floorPlan));
+      return false;
     }
   }
   
-  if (errors.length > 0) {
-    console.error('Stroke validation errors:', errors, obj);
-    return false;
-  }
-  
-  return true;
-}
-
-/**
- * Fix a potentially invalid Stroke object by adding missing properties
- */
-export function fixStroke(obj: any): Stroke {
-  console.log('Fixing Stroke object:', obj);
-  return createTestStroke(obj);
-}
-
-/**
- * Check if an object is a valid Room
- */
-export function isValidRoom(obj: any): obj is Room {
-  if (!obj) {
-    console.error('Room is null or undefined');
-    return false;
-  }
-
-  const errors: string[] = [];
-  
-  if (!obj.id) errors.push('Missing id property');
-  if (!obj.type) errors.push('Missing type property');
-  if (!obj.name) errors.push('Missing name property');
-  if (!obj.points) errors.push('Missing points property');
-  if (!obj.color) errors.push('Missing color property');
-  if (obj.area === undefined) errors.push('Missing area property');
-  if (obj.level === undefined) errors.push('Missing level property');
-  if (!Array.isArray(obj.walls)) errors.push('walls is not an array');
-  
-  // Check if type is valid
-  if (obj.type && typeof obj.type === 'string') {
-    try {
-      asRoomType(obj.type);
-    } catch (e) {
-      errors.push(`Invalid room type: ${obj.type}`);
+  // Check array properties
+  const arrayProps = ['walls', 'rooms', 'strokes'];
+  for (const prop of arrayProps) {
+    if (!Array.isArray(floorPlan[prop])) {
+      console.error(`[${source}] FloorPlan validation failed: ${prop} is not an array`);
+      return false;
     }
   }
   
-  if (errors.length > 0) {
-    console.error('Room validation errors:', errors, obj);
+  // Specific checks for data and userId
+  if (typeof floorPlan.data !== 'object') {
+    console.error(`[${source}] FloorPlan validation failed: data is not an object`);
+    return false;
+  }
+  
+  if (typeof floorPlan.userId !== 'string') {
+    console.error(`[${source}] FloorPlan validation failed: userId is not a string`);
     return false;
   }
   
@@ -136,41 +95,50 @@ export function isValidRoom(obj: any): obj is Room {
 }
 
 /**
- * Fix a potentially invalid Room object by adding missing properties
- */
-export function fixRoom(obj: any): Room {
-  console.log('Fixing Room object:', obj);
-  return createTestRoom(obj);
-}
-
-/**
- * Log detailed type information for debugging
+ * Log detailed type information about an object
+ * @param obj - Object to log
+ * @param label - Label for logging
  */
 export function logTypeInfo(obj: any, label: string = 'Object'): void {
-  console.log(`Type Info for ${label}:`, {
-    type: typeof obj,
-    isArray: Array.isArray(obj),
-    constructor: obj?.constructor?.name,
-    keys: obj ? Object.keys(obj) : [],
-    prototype: obj?.constructor?.prototype,
-    toString: obj?.toString?.(),
-  });
+  console.group(`Type info for ${label}`);
   
-  if (obj && typeof obj === 'object') {
-    console.log(`${label} properties:`, Object.entries(obj).reduce((acc, [key, value]) => {
-      acc[key] = {
-        type: typeof value,
-        isArray: Array.isArray(value),
-        isNull: value === null,
-        isUndefined: value === undefined,
-        sample: Array.isArray(value) ? 
-          (value.length > 0 ? 
-            typeof value[0] === 'object' ? 
-              Object.keys(value[0]) : value[0] 
-            : '[]') 
-          : (typeof value === 'object' && value !== null ? Object.keys(value) : String(value).substring(0, 50))
-      };
-      return acc;
-    }, {} as Record<string, any>));
+  if (!obj) {
+    console.log('Object is null or undefined');
+    console.groupEnd();
+    return;
   }
+  
+  // Basic type info
+  console.log('Type:', typeof obj);
+  console.log('Constructor:', obj.constructor?.name);
+  
+  // If it's an object, log its keys and their types
+  if (typeof obj === 'object' && obj !== null) {
+    console.log('Keys:', Object.keys(obj));
+    
+    console.group('Properties');
+    for (const key in obj) {
+      const value = obj[key];
+      console.log(`${key}:`, typeof value, Array.isArray(value) ? 'Array' : '', value);
+    }
+    console.groupEnd();
+    
+    // Special handling for arrays
+    if (Array.isArray(obj) && obj.length > 0) {
+      console.group('Array item sample');
+      console.log('First item:', obj[0]);
+      console.log('First item type:', typeof obj[0]);
+      console.groupEnd();
+    }
+  }
+  
+  // Check for common interfaces
+  console.group('Interface checks');
+  console.log('Is FloorPlan:', isValidFloorPlan(obj));
+  console.log('Is Stroke:', isValidStroke(obj));
+  console.log('Is Room:', isValidRoom(obj));
+  console.log('Is Wall:', isValidWall(obj));
+  console.groupEnd();
+  
+  console.groupEnd();
 }

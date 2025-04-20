@@ -4,8 +4,21 @@
  * Re-exports all application types from a single location
  */
 
+// Export Point type
+export { Point } from './core/Point';
+
+// Export debug info types
+export { DebugInfoState, DEFAULT_DEBUG_STATE } from './core/DebugInfo';
+
+// Export zoom options type
+export { ZoomOptions, ZOOM_CONSTANTS } from './core/ZoomOptions';
+
 // Export types from the unified floor plan types
 export * from './floor-plan/unifiedTypes';
 
+// Export testing mock interfaces
+export { ICanvasMock } from './testing/ICanvasMock';
+
 // Console log for debugging imports
 console.log('Loading types/index.ts - using unified type definitions');
+

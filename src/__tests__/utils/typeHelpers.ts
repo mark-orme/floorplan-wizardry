@@ -11,7 +11,7 @@ import {
 } from '@/types/floor-plan/typesBarrel';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
 import { 
-  validateFloorPlan, validateRoom, validateStroke, validateWall,
+  isValidFloorPlan, isValidRoom, isValidStroke, isValidWall,
   validateFloorPlanWithReporting 
 } from '@/utils/debug/typeDiagnostics';
 import { 
@@ -47,9 +47,11 @@ export function ensureFloorPlanType(floorPlan: Partial<FloorPlan>): FloorPlan {
   
   // Then use the more thorough validator
   if (!validateFloorPlanWithReporting(floorPlan, 'ensureFloorPlanType')) {
+    console.log('Creating new floor plan with defaults');
     return createTestFloorPlan(floorPlan);
   }
   
+  console.log('Floor plan validated successfully');
   return floorPlan as FloorPlan;
 }
 
@@ -60,6 +62,7 @@ export function ensureFloorPlanType(floorPlan: Partial<FloorPlan>): FloorPlan {
  * @returns Canvas reference object
  */
 export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICanvasMock> {
+  console.log('Creating canvas ref with mock');
   return { current: canvas };
 }
 
@@ -72,7 +75,9 @@ export function createCanvasRef(canvas: ICanvasMock): React.MutableRefObject<ICa
  */
 export function createTestTypeStroke(overrides: Partial<Stroke> = {}): Stroke {
   if (overrides.type && typeof overrides.type === 'string') {
+    const originalType = overrides.type;
     overrides.type = asStrokeType(overrides.type);
+    console.log(`Converting stroke type "${originalType}" to "${overrides.type}"`);
   }
   return createTestStroke(overrides);
 }
@@ -86,7 +91,9 @@ export function createTestTypeStroke(overrides: Partial<Stroke> = {}): Stroke {
  */
 export function createTestTypeRoom(overrides: Partial<Room> = {}): Room {
   if (overrides.type && typeof overrides.type === 'string') {
+    const originalType = overrides.type;
     overrides.type = asRoomType(overrides.type);
+    console.log(`Converting room type "${originalType}" to "${overrides.type}"`);
   }
   return createTestRoom(overrides);
 }
@@ -107,6 +114,9 @@ export function createTestPoint(x = 0, y = 0): Point {
  */
 export function createTestTypeWall(overrides: Partial<Wall> = {}): Wall {
   // Ensure roomIds is present
-  if (!overrides.roomIds) overrides.roomIds = [];
+  if (!overrides.roomIds) {
+    console.log('Adding missing roomIds to wall');
+    overrides.roomIds = [];
+  }
   return createTestWall(overrides);
 }

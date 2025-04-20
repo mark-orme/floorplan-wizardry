@@ -1,11 +1,26 @@
 
 /**
- * Unified Floor Plan Types
- * Single source of truth for all floor plan type definitions
+ * Unified Types for Floor Plans
+ * Central source of truth for all floor plan related types
  * @module types/floor-plan/unifiedTypes
  */
 
-// Basic type definitions
+import { v4 as uuidv4 } from 'uuid';
+
+// Console log for debugging module loading
+console.log('Loading unified floor plan types');
+
+/**
+ * Standardized Point interface
+ */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Stroke type literals - ensures all possible values are included
+ */
 export type StrokeTypeLiteral = 
   'line' | 
   'polyline' | 
@@ -16,9 +31,12 @@ export type StrokeTypeLiteral =
   'window' | 
   'furniture' | 
   'annotation' | 
-  'straight' | 
+  'straight' |  // Crucial: Include 'straight' in both type definitions
   'other';
 
+/**
+ * Room type literals
+ */
 export type RoomTypeLiteral = 
   'living' | 
   'bedroom' | 
@@ -27,6 +45,9 @@ export type RoomTypeLiteral =
   'office' | 
   'other';
 
+/**
+ * Paper size literals for floor plan exports
+ */
 export enum PaperSize {
   A4 = 'A4',
   A3 = 'A3',
@@ -37,223 +58,232 @@ export enum PaperSize {
   CUSTOM = 'CUSTOM'
 }
 
-// Point interface
-export interface Point {
-  x: number;
-  y: number;
-}
-
-// Stroke interface
-export interface Stroke {
-  /** Unique identifier */
-  id: string;
-  
-  /** Stroke points */
-  points: Point[];
-  
-  /** Stroke type */
-  type: StrokeTypeLiteral;
-  
-  /** Stroke color */
-  color: string;
-  
-  /** Stroke thickness */
-  thickness: number;
-  
-  /** Stroke width (same as thickness for compatibility) */
-  width: number;
-}
-
-// Wall interface
-export interface Wall {
-  /** Unique identifier */
-  id: string;
-  
-  /** Points array (start and end) */
-  points: Point[];
-  
-  /** Start point (alias for points[0]) */
-  startPoint?: Point;
-  
-  /** End point (alias for points[1]) */
-  endPoint?: Point;
-  
-  /** Start point (required) */
-  start: Point;
-  
-  /** End point (required) */
-  end: Point;
-  
-  /** Wall thickness */
-  thickness: number;
-  
-  /** Wall height (optional) */
-  height?: number;
-  
-  /** Wall color */
-  color: string;
-  
-  /** Room IDs connected to this wall */
-  roomIds: string[];
-  
-  /** Length of the wall (calculated property) */
-  length: number;
-}
-
-// Room interface
-export interface Room {
-  /** Unique identifier */
-  id: string;
-  
-  /** Room name */
-  name: string;
-  
-  /** Room type */
-  type: RoomTypeLiteral;
-  
-  /** Room area in square meters (required) */
-  area: number;
-  
-  /** Room boundary points */
-  points: Point[];
-  
-  /** Room color (required) */
-  color: string;
-  
-  /** Floor level this room belongs to */
-  level: number;
-  
-  /** Wall IDs associated with this room (required for compatibility) */
-  walls: string[];
-}
-
-// Metadata interface
+/**
+ * Floor Plan Metadata interface
+ */
 export interface FloorPlanMetadata {
-  /** Creation date timestamp (required) */
-  createdAt: string;
-  
-  /** Last update timestamp (required) */
-  updatedAt: string;
-  
-  /** Paper size (required) */
-  paperSize: PaperSize | string;
-  
-  /** Floor level (0 = ground floor) */
-  level: number;
-  
-  /** Version identifier */
+  createdAt?: string;
+  updatedAt?: string;
+  paperSize?: PaperSize | string;
+  level?: number;
+  // For backward compatibility
   version?: string;
-  
-  /** Author identifier */
   author?: string;
-  
-  /** Date created (legacy format) */
   dateCreated?: string;
-  
-  /** Last modified (legacy format) */
   lastModified?: string;
-  
-  /** Additional notes */
   notes?: string;
 }
 
-// FloorPlan interface
-export interface FloorPlan {
-  /** Unique identifier */
+/**
+ * Stroke interface for floor plan annotations
+ */
+export interface Stroke {
   id: string;
-  
-  /** Floor plan name */
-  name: string;
-  
-  /** Display label */
-  label: string;
-  
-  /** Walls array */
-  walls: Wall[];
-  
-  /** Rooms array */
-  rooms: Room[];
-  
-  /** Strokes array */
-  strokes: Stroke[];
-  
-  /** Serialized canvas data (optional) */
-  canvasData: string | null;
-  
-  /** Canvas JSON serialization (required) */
-  canvasJson: string | null;
-  
-  /** Creation date timestamp */
-  createdAt: string;
-  
-  /** Last update timestamp */
-  updatedAt: string;
-  
-  /** Gross internal area in square meters */
-  gia: number;
-  
-  /** Floor level (0 = ground floor) */
-  level: number;
-  
-  /** Floor index (same as level for compatibility) */
-  index: number;
-  
-  /** Floor plan metadata */
-  metadata: FloorPlanMetadata;
-  
-  /** Additional data for the floor plan (required) */
-  data: any;
-  
-  /** User ID who owns the floor plan (required) */
-  userId: string;
-  
-  /** Optional order property for compatibility */
-  order?: number;
+  points: Point[];
+  type: StrokeTypeLiteral;
+  color: string;
+  thickness: number;
+  width: number;
 }
 
-// Type guards and validation functions
+/**
+ * Wall interface for floor plans
+ */
+export interface Wall {
+  id: string;
+  points: Point[];
+  startPoint?: Point;
+  endPoint?: Point;
+  start: Point;
+  end: Point;
+  thickness: number;
+  height?: number;
+  color: string;
+  roomIds: string[];
+  length: number;
+}
+
+/**
+ * Room interface for floor plans
+ */
+export interface Room {
+  id: string;
+  name: string;
+  type: RoomTypeLiteral;
+  points: Point[];
+  color: string;
+  area: number;
+  level: number;
+  walls: string[];
+}
+
+/**
+ * FloorPlan interface - the central definition
+ */
+export interface FloorPlan {
+  id: string;
+  name: string;
+  label: string;
+  walls: Wall[];
+  rooms: Room[];
+  strokes: Stroke[];
+  canvasData: string | null;
+  canvasJson: string | null;
+  createdAt: string;
+  updatedAt: string;
+  gia: number;
+  level: number;
+  index: number;
+  metadata: FloorPlanMetadata;
+  // CRITICAL: Required properties that were missing
+  data: any; // Required property
+  userId: string; // Required property
+}
+
+/**
+ * Type guard to ensure a string is a valid StrokeTypeLiteral
+ * Adds diagnostic logging for troubleshooting
+ */
 export function asStrokeType(type: string): StrokeTypeLiteral {
   const validTypes: StrokeTypeLiteral[] = [
     'line', 'polyline', 'wall', 'room', 'freehand', 
     'door', 'window', 'furniture', 'annotation', 'straight', 'other'
   ];
   
-  if (!validTypes.includes(type as StrokeTypeLiteral)) {
-    console.warn(`Invalid stroke type: ${type}, defaulting to 'line'`);
-    return 'line';
+  const isValid = validTypes.includes(type as StrokeTypeLiteral);
+  if (!isValid) {
+    console.warn(`TypeGuard: Invalid stroke type "${type}" being converted to "line"`);
   }
   
-  return type as StrokeTypeLiteral;
+  return isValid ? (type as StrokeTypeLiteral) : 'line';
 }
 
+/**
+ * Type guard to ensure a string is a valid RoomTypeLiteral
+ * Adds diagnostic logging for troubleshooting
+ */
 export function asRoomType(type: string): RoomTypeLiteral {
   const validTypes: RoomTypeLiteral[] = [
     'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
   ];
   
-  if (!validTypes.includes(type as RoomTypeLiteral)) {
-    console.warn(`Invalid room type: ${type}, defaulting to 'other'`);
-    return 'other';
+  const isValid = validTypes.includes(type as RoomTypeLiteral);
+  if (!isValid) {
+    console.warn(`TypeGuard: Invalid room type "${type}" being converted to "other"`);
   }
   
-  return type as RoomTypeLiteral;
+  return isValid ? (type as RoomTypeLiteral) : 'other';
 }
 
-// Create test objects with proper types
+/**
+ * Diagnostic function to validate a FloorPlan object
+ */
+export function isValidFloorPlan(floorPlan: any): boolean {
+  if (!floorPlan) return false;
+  
+  const hasRequiredProps = (
+    typeof floorPlan.id === 'string' &&
+    typeof floorPlan.name === 'string' &&
+    typeof floorPlan.label === 'string' &&
+    Array.isArray(floorPlan.walls) &&
+    Array.isArray(floorPlan.rooms) &&
+    Array.isArray(floorPlan.strokes) &&
+    typeof floorPlan.data === 'object' &&
+    typeof floorPlan.userId === 'string'
+  );
+  
+  if (!hasRequiredProps) {
+    console.warn('TypeValidator: FloorPlan missing required properties', {
+      id: typeof floorPlan.id,
+      name: typeof floorPlan.name,
+      label: typeof floorPlan.label,
+      walls: Array.isArray(floorPlan.walls),
+      rooms: Array.isArray(floorPlan.rooms),
+      strokes: Array.isArray(floorPlan.strokes),
+      data: typeof floorPlan.data,
+      userId: typeof floorPlan.userId
+    });
+  }
+  
+  return hasRequiredProps;
+}
+
+/**
+ * Diagnostic function to validate a Stroke object
+ */
+export function isValidStroke(stroke: any): boolean {
+  if (!stroke) return false;
+  
+  const isValid = (
+    typeof stroke.id === 'string' &&
+    Array.isArray(stroke.points) &&
+    typeof stroke.color === 'string' &&
+    typeof stroke.thickness === 'number' &&
+    typeof stroke.width === 'number'
+  );
+  
+  // Specifically validate the type field
+  let typeValid = false;
+  if (typeof stroke.type === 'string') {
+    const validTypes: StrokeTypeLiteral[] = [
+      'line', 'polyline', 'wall', 'room', 'freehand', 
+      'door', 'window', 'furniture', 'annotation', 'straight', 'other'
+    ];
+    typeValid = validTypes.includes(stroke.type as StrokeTypeLiteral);
+    
+    if (!typeValid) {
+      console.warn(`TypeValidator: Invalid stroke type "${stroke.type}"`);
+    }
+  }
+  
+  return isValid && typeValid;
+}
+
+/**
+ * Diagnostic function to validate a Room object
+ */
+export function isValidRoom(room: any): boolean {
+  if (!room) return false;
+  
+  const isValid = (
+    typeof room.id === 'string' &&
+    typeof room.name === 'string' &&
+    Array.isArray(room.points) &&
+    typeof room.color === 'string' &&
+    typeof room.area === 'number' &&
+    typeof room.level === 'number' &&
+    Array.isArray(room.walls)
+  );
+  
+  // Specifically validate the type field
+  let typeValid = false;
+  if (typeof room.type === 'string') {
+    typeValid = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'].includes(room.type);
+    
+    if (!typeValid) {
+      console.warn(`TypeValidator: Invalid room type "${room.type}"`);
+    }
+  }
+  
+  return isValid && typeValid;
+}
+
+/**
+ * Creates test floor plan with all required properties
+ */
 export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
   
-  return {
+  // Create default floor plan with ALL required fields
+  const floorPlan: FloorPlan = {
     id: overrides.id || `test-fp-${Date.now()}`,
     name: overrides.name || 'Test Floor Plan',
     label: overrides.label || 'Test Floor Plan',
-    data: overrides.data || {}, // Required property
-    userId: overrides.userId || 'test-user', // Required property
     walls: overrides.walls || [],
     rooms: overrides.rooms || [],
     strokes: overrides.strokes || [],
-    canvasJson: overrides.canvasJson || null,
     canvasData: overrides.canvasData || null,
+    canvasJson: overrides.canvasJson || null,
     createdAt: overrides.createdAt || now,
     updatedAt: overrides.updatedAt || now,
     gia: overrides.gia || 0,
@@ -270,36 +300,76 @@ export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPl
       lastModified: now,
       notes: ""
     },
-    ...overrides
+    // CRITICAL: These fields can't be omitted
+    data: overrides.data || {},
+    userId: overrides.userId || 'test-user'
   };
+  
+  // Diagnostic logging to catch any missing fields
+  if (!isValidFloorPlan(floorPlan)) {
+    console.error('TypeValidator: Created test floor plan is invalid');
+  }
+  
+  return floorPlan;
 }
 
-export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
-  return {
-    id: overrides.id || `stroke-${Date.now()}`,
-    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
-    type: typeof overrides.type === 'string' ? asStrokeType(overrides.type) : (overrides.type || 'line'),
-    color: overrides.color || '#000000',
-    thickness: overrides.thickness || 2,
-    width: overrides.width || 2,
-    ...overrides
-  };
-}
-
+/**
+ * Creates test room with type safety
+ */
 export function createTestRoom(overrides: Partial<Room> = {}): Room {
-  return {
+  // Ensure type is a valid RoomTypeLiteral using the type guard
+  const typeValue = overrides.type || 'other';
+  const validType: RoomTypeLiteral = typeof typeValue === 'string' 
+    ? asRoomType(typeValue) 
+    : typeValue;
+  
+  const room: Room = {
     id: overrides.id || `room-${Date.now()}`,
     name: overrides.name || 'Test Room',
-    type: typeof overrides.type === 'string' ? asRoomType(overrides.type) : (overrides.type || 'other'),
+    type: validType,
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
     color: overrides.color || '#ffffff',
     area: overrides.area || 10000,
     level: overrides.level || 0,
-    walls: overrides.walls || [],
-    ...overrides
+    walls: overrides.walls || []
   };
+  
+  if (!isValidRoom(room)) {
+    console.error('TypeValidator: Created test room is invalid');
+  }
+  
+  return room;
 }
 
+/**
+ * Creates test stroke with type safety
+ */
+export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
+  // Ensure type is a valid StrokeTypeLiteral using the type guard
+  const typeValue = overrides.type || 'line';
+  const validType: StrokeTypeLiteral = typeof typeValue === 'string' 
+    ? asStrokeType(typeValue) 
+    : typeValue;
+  
+  const stroke: Stroke = {
+    id: overrides.id || `stroke-${Date.now()}`,
+    points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
+    type: validType,
+    color: overrides.color || '#000000',
+    thickness: overrides.thickness || 2,
+    width: overrides.width || 2
+  };
+  
+  if (!isValidStroke(stroke)) {
+    console.error('TypeValidator: Created test stroke is invalid');
+  }
+  
+  return stroke;
+}
+
+/**
+ * Creates test wall
+ */
 export function createTestWall(overrides: Partial<Wall> = {}): Wall {
   const start = overrides.start || { x: 0, y: 0 };
   const end = overrides.end || { x: 100, y: 0 };
@@ -316,7 +386,41 @@ export function createTestWall(overrides: Partial<Wall> = {}): Wall {
     thickness: overrides.thickness || 5,
     color: overrides.color || '#000000',
     roomIds: overrides.roomIds || [], // Ensuring roomIds is always provided
-    length: overrides.length || length,
-    ...overrides
+    length: overrides.length || length
   };
+}
+
+/**
+ * Creates a test point
+ */
+export function createTestPoint(x = 0, y = 0): Point {
+  return { x, y };
+}
+
+/**
+ * Creates an empty stroke with defaults
+ */
+export function createEmptyStroke(overrides: Partial<Stroke> = {}): Stroke {
+  return createTestStroke(overrides);
+}
+
+/**
+ * Creates an empty wall with defaults
+ */
+export function createEmptyWall(overrides: Partial<Wall> = {}): Wall {
+  return createTestWall(overrides);
+}
+
+/**
+ * Creates an empty room with defaults
+ */
+export function createEmptyRoom(overrides: Partial<Room> = {}): Room {
+  return createTestRoom(overrides);
+}
+
+/**
+ * Creates an empty floor plan with defaults
+ */
+export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
+  return createTestFloorPlan(overrides);
 }
