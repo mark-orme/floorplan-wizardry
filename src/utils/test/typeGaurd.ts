@@ -11,7 +11,7 @@ import {
   Stroke,
   Room,
   Wall
-} from '@/types/floor-plan/typesBarrel';
+} from '../floor-plan/typesBarrel';
 
 /**
  * Ensure a string is a valid StrokeTypeLiteral

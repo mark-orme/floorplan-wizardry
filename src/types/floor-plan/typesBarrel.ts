@@ -5,9 +5,10 @@
  * @module types/floor-plan/typesBarrel
  */
 
-// Export from individual type files
+// Re-export from individual type files
 export * from './wallTypes';
 export * from './strokeTypes';
+export * from './roomTypes';
 export * from './metadataTypes';
 export * from './floorPlanTypes';
 export * from './basicTypes';
@@ -18,88 +19,70 @@ export interface Point {
   y: number;
 }
 
-// Export type validation functions
-export { asStrokeType, asRoomType } from '@/utils/test/typeGaurd';
-
-// Create validation functions for types to avoid circular dependencies
-export function validateFloorPlan(floorPlan: any): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+// Type validation utilities to ensure consistency
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = [
+    'line', 'polyline', 'wall', 'room', 'freehand', 
+    'door', 'window', 'furniture', 'annotation', 'straight', 'other'
+  ];
   
-  if (!floorPlan) {
-    return { valid: false, errors: ['FloorPlan is null or undefined'] };
+  if (!validTypes.includes(type as StrokeTypeLiteral)) {
+    console.warn(`Invalid stroke type: ${type}, defaulting to 'line'`);
+    return 'line';
   }
   
-  // Check required properties
-  if (!floorPlan.id) errors.push('Missing id property');
-  if (!floorPlan.data) errors.push('Missing data property'); 
-  if (!floorPlan.userId) errors.push('Missing userId property');
-  if (!floorPlan.walls) errors.push('Missing walls property');
-  if (!floorPlan.rooms) errors.push('Missing rooms property');
-  if (!floorPlan.strokes) errors.push('Missing strokes property');
-  
-  return { valid: errors.length === 0, errors };
+  return type as StrokeTypeLiteral;
 }
 
-export function validateRoom(room: any): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = [
+    'living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'
+  ];
   
-  if (!room) {
-    return { valid: false, errors: ['Room is null or undefined'] };
+  if (!validTypes.includes(type as RoomTypeLiteral)) {
+    console.warn(`Invalid room type: ${type}, defaulting to 'other'`);
+    return 'other';
   }
   
-  // Check required properties
-  if (!room.id) errors.push('Missing id property');
-  if (!room.type) errors.push('Missing type property');
-  if (!room.walls) errors.push('Missing walls property');
-  
-  // Ensure type is a valid RoomTypeLiteral
-  if (room.type && typeof room.type === 'string') {
-    try {
-      asRoomType(room.type);
-    } catch (e) {
-      errors.push(`Invalid room type: ${room.type}`);
-    }
-  }
-  
-  return { valid: errors.length === 0, errors };
+  return type as RoomTypeLiteral;
 }
 
-export function validateStroke(stroke: any): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (!stroke) {
-    return { valid: false, errors: ['Stroke is null or undefined'] };
-  }
-  
-  // Check required properties
-  if (!stroke.id) errors.push('Missing id property');
-  if (!stroke.type) errors.push('Missing type property');
-  
-  // Ensure type is a valid StrokeTypeLiteral
-  if (stroke.type && typeof stroke.type === 'string') {
-    try {
-      asStrokeType(stroke.type);
-    } catch (e) {
-      errors.push(`Invalid stroke type: ${stroke.type}`);
-    }
-  }
-  
-  return { valid: errors.length === 0, errors };
+// Create validation functions for each type
+export function validateFloorPlan(floorPlan: any): boolean {
+  if (!floorPlan) return false;
+  if (!floorPlan.id) return false;
+  if (!floorPlan.data) return false;
+  if (!floorPlan.userId) return false;
+  return true;
 }
 
-export function validateWall(wall: any): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (!wall) {
-    return { valid: false, errors: ['Wall is null or undefined'] };
+export function validateRoom(room: any): boolean {
+  if (!room) return false;
+  if (!room.id) return false;
+  if (!room.type) return false;
+  try {
+    asRoomType(room.type);
+  } catch (e) {
+    return false;
   }
-  
-  // Check required properties
-  if (!wall.id) errors.push('Missing id property');
-  if (!wall.roomIds) errors.push('Missing roomIds property');
-  
-  return { valid: errors.length === 0, errors };
+  return true;
 }
 
-// Don't re-export RoomTypeLiteral separately to avoid ambiguity
-// export { RoomTypeLiteral } from './roomTypes';
+export function validateStroke(stroke: any): boolean {
+  if (!stroke) return false;
+  if (!stroke.id) return false;
+  if (!stroke.type) return false;
+  try {
+    asStrokeType(stroke.type);
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
+export function validateWall(wall: any): boolean {
+  if (!wall) return false;
+  if (!wall.id) return false;
+  if (!wall.roomIds) return false;
+  return true;
+}
