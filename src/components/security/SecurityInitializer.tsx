@@ -30,3 +30,4 @@ export default function SecurityInitializer() {
   // This component doesn't render anything
   return null;
 }
+

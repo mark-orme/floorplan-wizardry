@@ -69,3 +69,4 @@ export function getEncryptionKey(): CryptoKey | null {
 export function setEncryptionKey(key: CryptoKey): void {
   encryptionKey = key;
 }
+

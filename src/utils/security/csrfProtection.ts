@@ -153,3 +153,4 @@ export function createProtectedSubmitHandler(
  * 1. Set the CSRF token in an HttpOnly cookie via a secure backend endpoint
  * 2. Validate that the token in the cookie matches the token in the request
  */
+

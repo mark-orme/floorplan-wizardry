@@ -185,3 +185,4 @@ export function CSRFProtection(): null {
   
   return null;
 }
+

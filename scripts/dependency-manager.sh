@@ -57,3 +57,4 @@ echo "   - $OUTDATED_REPORT"
 echo "   - $AUDIT_REPORT"
 
 echo "✨ Dependency check complete."
+

@@ -140,3 +140,4 @@ export function isEncryptionSupported(): boolean {
          typeof window.crypto !== 'undefined' && 
          typeof window.crypto.subtle !== 'undefined';
 }
+

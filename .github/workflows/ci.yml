@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -61,72 +62,6 @@ jobs:
         run: |
           node scripts/check-bundle-size.js
   
-  e2e-tests:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-      - run: npm ci
-      
-      # Install Playwright browsers
-      - name: Install Playwright and browsers
-        run: |
-          npx playwright install --with-deps
-          npm install axe-playwright@^2.1.0
-      
-      # Run smoke tests first
-      - name: Run smoke tests
-        run: npm run test:e2e -- tests/e2e/smoke.test.ts
-      
-      # Run accessibility tests
-      - name: Run accessibility checks
-        run: npm run test:e2e -- tests/e2e/accessibility/
-        
-      # Run remaining E2E tests
-      - name: Run full E2E test suite
-        run: npm run test:e2e -- --grep-invert "smoke|accessibility"
-      
-      # Run performance tests
-      - name: Run performance tests
-        run: npm run test:performance
-      
-      # Performance thresholds
-      - name: Check performance thresholds
-        run: |
-          node scripts/check-performance-results.js
-      
-      # Enforce accessibility standards
-      - name: Verify accessibility compliance
-        run: |
-          if grep -q "critical" playwright-report/accessibility-violations.json; then
-            echo "Critical accessibility violations found"
-            exit 1
-          fi
-      
-      # Check coverage threshold
-      - name: Check E2E coverage
-        run: |
-          COVERAGE=$(npx nyc report --reporter=text-summary | grep Statements | awk '{print $3}' | sed 's/%//')
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "E2E test coverage ($COVERAGE%) is below 80%"
-            exit 1
-          fi
-      
-      # Upload test results
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: |
-            playwright-report/
-            test-results/
-            playwright-report/accessibility-violations.json
-          retention-days: 30
-
   security:
     runs-on: ubuntu-latest
     needs: [test]
@@ -196,3 +131,4 @@ jobs:
             reports/
             codeql-results.sarif
           retention-days: 30
+

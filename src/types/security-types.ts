@@ -81,3 +81,4 @@ export interface SecretRotationLog {
   previousExpiry?: Date;
   newExpiry?: Date;
 }
+

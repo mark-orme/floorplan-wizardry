@@ -95,3 +95,4 @@ export const clearAuthToken = async (): Promise<boolean> => {
 export const refreshAuthToken = async (newToken: string, newExpiry?: number): Promise<boolean> => {
   return storeAuthToken(newToken, newExpiry);
 };
+
