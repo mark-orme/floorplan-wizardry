@@ -122,3 +122,90 @@ export function validateStroke(stroke: any): boolean {
   
   return true;
 }
+
+/**
+ * Create a complete floor plan metadata object
+ * @param partialMetadata Partial metadata
+ * @returns Complete metadata
+ */
+export function createCompleteMetadata(partialMetadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  
+  return {
+    version: partialMetadata.version || '1.0.0',
+    author: partialMetadata.author || 'Unknown',
+    dateCreated: partialMetadata.dateCreated || now,
+    lastModified: partialMetadata.lastModified || now,
+    notes: partialMetadata.notes || '',
+    createdAt: partialMetadata.createdAt || now,
+    updatedAt: partialMetadata.updatedAt || now,
+    paperSize: partialMetadata.paperSize || 'A4',
+    level: partialMetadata.level || 0
+  };
+}
+
+/**
+ * Type guard for FloorPlan
+ * @param value Value to check
+ * @returns Whether value is a floor plan
+ */
+export function isFloorPlan(value: any): value is FloorPlan {
+  return validateFloorPlan(value);
+}
+
+/**
+ * Type guard for Room
+ * @param value Value to check
+ * @returns Whether value is a room
+ */
+export function isRoom(value: any): value is Room {
+  return validateRoom(value);
+}
+
+/**
+ * Type guard for Wall
+ * @param value Value to check
+ * @returns Whether value is a wall
+ */
+export function isWall(value: any): value is Wall {
+  return validateWall(value);
+}
+
+/**
+ * Type guard for Stroke
+ * @param value Value to check
+ * @returns Whether value is a stroke
+ */
+export function isStroke(value: any): value is Stroke {
+  return validateStroke(value);
+}
+
+/**
+ * Detailed validation for floor plans with reporting
+ * @param floorPlan Floor plan to validate
+ * @returns Validation results with issues list
+ */
+export function validateFloorPlanWithReporting(floorPlan: any): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+  
+  if (!floorPlan) {
+    issues.push('Floor plan is null or undefined');
+    return { valid: false, issues };
+  }
+  
+  // Check required properties
+  if (!('id' in floorPlan)) issues.push('Missing id');
+  if (!('name' in floorPlan)) issues.push('Missing name');
+  if (!('label' in floorPlan)) issues.push('Missing label');
+  if (!('walls' in floorPlan)) issues.push('Missing walls');
+  if (!('rooms' in floorPlan)) issues.push('Missing rooms');
+  if (!('strokes' in floorPlan)) issues.push('Missing strokes');
+  if (!('metadata' in floorPlan)) issues.push('Missing metadata');
+  if (!('data' in floorPlan)) issues.push('Missing data');
+  if (!('userId' in floorPlan)) issues.push('Missing userId');
+  
+  return {
+    valid: issues.length === 0,
+    issues
+  };
+}

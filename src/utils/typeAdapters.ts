@@ -1,152 +1,160 @@
 
 /**
- * Type Adapters
- * Utilities for converting between different type systems
+ * Type adapters for converting between different object types
  * @module utils/typeAdapters
  */
-import { FloorPlan, Room, Wall, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import { 
+  FloorPlan, 
+  Room, 
+  Wall, 
+  Stroke, 
+  FloorPlanMetadata, 
+  StrokeTypeLiteral, 
+  RoomTypeLiteral 
+} from '@/types/floor-plan/unifiedTypes';
 import { Point } from '@/types/core/Point';
+import { createCompleteMetadata } from './debug/typeDiagnostics';
+import { calculateWallLength } from './debug/typeDiagnostics';
 
 /**
- * Calculate wall length between two points
- * @param start Start point
- * @param end End point 
- * @returns Wall length
+ * Helper to safely convert any string to a StrokeType
+ * @param type Type string to convert
+ * @returns Valid StrokeTypeLiteral
  */
-function calculateLength(start: Point, end: Point): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  return Math.sqrt(dx * dx + dy * dy);
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }
 
 /**
- * Adapts a Wall-like object to ensure it has all required properties
- * @param wall Wall-like object that may be missing properties
- * @returns Complete Wall object with all required properties
+ * Helper to safely convert any string to a RoomType
+ * @param type Type string to convert
+ * @returns Valid RoomTypeLiteral
  */
-export function adaptWall(wall: Partial<Wall> & { start: Point; end: Point }): Wall {
-  // Calculate length if it's missing
-  const length = wall.length ?? calculateLength(wall.start, wall.end);
-  
-  // Add roomIds if missing
-  const roomIds = wall.roomIds ?? [];
-  
-  // Add color if missing
-  const color = wall.color ?? '#000000';
-  
-  return {
-    id: wall.id ?? `wall-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    start: wall.start,
-    end: wall.end,
-    thickness: wall.thickness ?? 2,
-    length,
-    color,
-    roomIds,
-    ...(wall.points ? { points: wall.points } : { points: [wall.start, wall.end] }),
-    ...(wall.height ? { height: wall.height } : {}),
-    // Include any other properties from the original wall
-    ...wall
-  } as Wall;
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return validTypes.includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
 }
 
 /**
- * Adapts a Room-like object to ensure it has all required properties
- * @param room Room-like object that may be missing properties
- * @returns Complete Room object with all required properties
+ * Adapt point object to ensure it has required properties
+ * @param point Partial point data
+ * @returns Complete Point object
  */
-export function adaptRoom(room: Partial<Room> & { id: string; name: string }): Room {
-  // Ensure vertices exists (using points if available)
-  const vertices = room.vertices ?? (room.points ? [...room.points] : []);
-  const center = room.center ?? { x: 0, y: 0 };
-  const labelPosition = room.labelPosition ?? { x: 0, y: 0 };
-  const perimeter = room.perimeter ?? 0;
-  
-  // Ensure other required properties exist
+export function adaptPoint(point: Partial<Point>): Point {
   return {
-    id: room.id,
-    name: room.name,
-    type: room.type ?? 'other',
-    area: room.area ?? 0,
-    perimeter,
-    color: room.color ?? '#ffffff',
-    level: room.level ?? 0,
-    vertices,
-    labelPosition,
-    center,
-    ...(room.points ? { points: room.points } : { points: vertices }),
-    ...(room.walls ? { walls: room.walls } : { walls: [] }),
-    // Include any other properties from the original room
-    ...room
-  } as Room;
-}
-
-/**
- * Adapts a FloorPlanMetadata-like object to ensure it has all required properties
- * @param metadata Metadata-like object that may be missing properties
- * @returns Complete FloorPlanMetadata object with all required properties
- */
-export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
-  const now = new Date().toISOString();
-  return {
-    createdAt: metadata.createdAt ?? now,
-    updatedAt: metadata.updatedAt ?? now,
-    paperSize: metadata.paperSize ?? 'A4',
-    level: metadata.level ?? 0,
-    version: metadata.version ?? '1.0',
-    author: metadata.author ?? '',
-    dateCreated: metadata.dateCreated ?? now,
-    lastModified: metadata.lastModified ?? now,
-    notes: metadata.notes ?? '',
-    ...metadata
+    x: point.x || 0,
+    y: point.y || 0
   };
 }
 
 /**
- * Adapts a FloorPlan-like object to ensure it has all required properties
- * @param floorPlan FloorPlan-like object that may be missing properties
- * @returns Complete FloorPlan object with all required properties
+ * Adapt stroke to ensure it has all required properties
+ * @param stroke Partial stroke data
+ * @returns Complete Stroke object
  */
-export function adaptFloorPlan(floorPlan: Partial<FloorPlan> & { id: string; name: string }): FloorPlan {
-  const now = new Date().toISOString();
-  
-  // Adapt walls and rooms to ensure they have all required properties
-  const walls = (floorPlan.walls ?? []).map(wall => 
-    'start' in wall && 'end' in wall ? adaptWall(wall as any) : wall
-  );
-  
-  const rooms = (floorPlan.rooms ?? []).map(room => 
-    'id' in room && 'name' in room ? adaptRoom(room as any) : room
-  );
-  
-  // Adapt metadata to ensure it has all required properties
-  const metadata = adaptMetadata(floorPlan.metadata ?? {});
-  
+export function adaptStroke(stroke: Partial<Stroke>): Stroke {
   return {
-    id: floorPlan.id,
-    name: floorPlan.name,
-    label: floorPlan.label ?? floorPlan.name,
-    walls,
-    rooms,
-    strokes: floorPlan.strokes ?? [],
-    canvasData: floorPlan.canvasData ?? null,
-    canvasJson: floorPlan.canvasJson ?? null,
-    createdAt: floorPlan.createdAt ?? now,
-    updatedAt: floorPlan.updatedAt ?? now,
-    gia: floorPlan.gia ?? 0,
-    level: floorPlan.level ?? 0,
-    index: floorPlan.index ?? floorPlan.level ?? 0,
-    metadata,
-    data: floorPlan.data ?? {},
-    userId: floorPlan.userId ?? 'default-user',
-    ...floorPlan
-  } as FloorPlan;
+    id: stroke.id || `stroke-${Date.now()}`,
+    points: stroke.points || [],
+    type: stroke.type || 'line',
+    color: stroke.color || '#000000',
+    thickness: stroke.thickness || 1,
+    width: stroke.width || 1
+  };
 }
 
 /**
- * Adapts an array of FloorPlan-like objects to ensure they all have required properties
- * @param floorPlans Array of partial floor plan objects
- * @returns Array of complete FloorPlan objects
+ * Adapt wall to ensure it has all required properties
+ * @param wall Partial wall data
+ * @returns Complete Wall object
  */
-export function adaptFloorPlans(floorPlans: (Partial<FloorPlan> & { id: string; name: string })[]): FloorPlan[] {
-  return floorPlans.map(fp => adaptFloorPlan(fp));
+export function adaptWall(wall: Partial<Wall>): Wall {
+  const start = adaptPoint(wall.start || { x: 0, y: 0 });
+  const end = adaptPoint(wall.end || { x: 100, y: 0 });
+  
+  return {
+    id: wall.id || `wall-${Date.now()}`,
+    start,
+    end,
+    thickness: wall.thickness || 5,
+    color: wall.color || '#000000',
+    length: wall.length || calculateWallLength(start, end),
+    roomIds: wall.roomIds || [],
+    height: wall.height
+  };
+}
+
+/**
+ * Adapt room to ensure it has all required properties
+ * @param room Partial room data
+ * @returns Complete Room object
+ */
+export function adaptRoom(room: Partial<Room>): Room {
+  const vertices = room.vertices || [];
+  
+  // Calculate center if not provided
+  const center = room.center || {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / Math.max(vertices.length, 1),
+    y: vertices.reduce((sum, v) => sum + v.y, 0) / Math.max(vertices.length, 1)
+  };
+  
+  return {
+    id: room.id || `room-${Date.now()}`,
+    name: room.name || 'Unnamed Room',
+    type: room.type || 'other',
+    vertices: vertices,
+    area: room.area || 0,
+    perimeter: room.perimeter || 0,
+    labelPosition: room.labelPosition || center,
+    center: center,
+    color: room.color || '#f5f5f5'
+  };
+}
+
+/**
+ * Adapt floor plan to ensure it has all required properties
+ * @param floorPlan Partial floor plan data
+ * @returns Complete FloorPlan object
+ */
+export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: floorPlan.id || `plan-${Date.now()}`,
+    name: floorPlan.name || 'Untitled Floor Plan',
+    label: floorPlan.label || 'Untitled',
+    walls: floorPlan.walls || [],
+    rooms: floorPlan.rooms || [],
+    strokes: floorPlan.strokes || [],
+    canvasData: floorPlan.canvasData || null,
+    canvasJson: floorPlan.canvasJson || null,
+    canvasState: floorPlan.canvasState || null,
+    metadata: floorPlan.metadata || createCompleteMetadata(),
+    data: floorPlan.data || {},
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    index: floorPlan.index || 0,
+    userId: floorPlan.userId || 'unknown'
+  };
+}
+
+/**
+ * Adapt multiple floor plans to ensure they all have required properties
+ * @param floorPlans Array of partial floor plans
+ * @returns Array of complete floor plans
+ */
+export function adaptFloorPlans(floorPlans: Partial<FloorPlan>[]): FloorPlan[] {
+  return floorPlans.map(plan => adaptFloorPlan(plan));
+}
+
+/**
+ * Adapt metadata to ensure it has all required properties
+ * @param metadata Partial metadata
+ * @returns Complete metadata
+ */
+export function adaptFloorPlanMetadata(metadata: Partial<FloorPlanMetadata>): FloorPlanMetadata {
+  return createCompleteMetadata(metadata);
 }
