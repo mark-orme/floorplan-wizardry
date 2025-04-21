@@ -1,6 +1,4 @@
 
-// Fix duplicate export: declare and export createCompleteMetadata only once
-
 /**
  * Type diagnostics utilities
  * Functions for debugging and validating types
@@ -65,7 +63,18 @@ export function createCompleteMetadata(overrides: Record<string, any> = {}): Rec
     dateCreated: now,
     lastModified: now,
     notes: '',
+    paperSize: 'A4',
+    level: 0,
     ...overrides
   };
 }
 
+// Export placeholder validators for backward compatibility
+export const isFloorPlan = (obj: any): boolean => false;
+export const isWall = (obj: any): boolean => false;
+export const isRoom = (obj: any): boolean => false;
+export const isStroke = (obj: any): boolean => false;
+export const validateFloorPlan = (obj: any): boolean => false;
+export const validateWall = (obj: any): boolean => false;
+export const validateRoom = (obj: any): boolean => false;
+export const validateStroke = (obj: any): boolean => false;

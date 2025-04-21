@@ -49,9 +49,6 @@ const mockFloorPlan = createTestFloorPlan({
   label: 'First Floor',
 });
 
-// Define the expected return type structure that tests are expecting
-type UseSyncedFloorPlansResult = ReturnType<typeof useSyncedFloorPlans>;
-
 describe('useSyncedFloorPlans Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,12 +63,14 @@ describe('useSyncedFloorPlans Hook', () => {
     const { result } = renderHook(() => useSyncedFloorPlans());
     
     expect(result.current.floorPlans).toEqual([]);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBe(null);
   });
 
   it('should load floor plans from localStorage on init', () => {
     // Setup: Add floor plans to localStorage
     const testFloorPlans = [mockFloorPlan];
-    localStorageMock.setItem('floorPlans', JSON.stringify(testFloorPlans));
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(testFloorPlans));
     
     // Execute: Render the hook
     const { result } = renderHook(() => useSyncedFloorPlans());
@@ -92,7 +91,7 @@ describe('useSyncedFloorPlans Hook', () => {
     
     // Verify: Error is handled and toast is shown
     expect(toast.error).toHaveBeenCalledWith('Failed to load floor plans');
-    expect(result.current.floorPlans).toEqual([]);
+    expect(result.current.error).toBeTruthy();
   });
 
   it('should handle localStorage errors when saving data', async () => {
@@ -113,32 +112,51 @@ describe('useSyncedFloorPlans Hook', () => {
     });
   });
 
-  it('should support floor plan sync functionality', () => {
-    // Setup: Create mock canvas
-    const mockCanvas = new Canvas(null);
+  it('should create a new floor plan', () => {
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    // Execute: Add a floor plan if the method is available
-    if (typeof result.current.createFloorPlan === 'function') {
-      act(() => {
-        // Call createFloorPlan with minimal required properties
-        result.current.createFloorPlan({
-          name: 'New Test Floor'
-        });
+    act(() => {
+      result.current.createFloorPlan({
+        name: 'New Floor Plan',
+        level: 1
       });
-      
-      // Verify: Floor plan was added
-      expect(result.current.floorPlans.length).toBeGreaterThan(0);
-    }
+    });
     
-    // Test deleteFloorPlan if available
-    if (typeof result.current.deleteFloorPlan === 'function' && result.current.floorPlans.length > 0) {
-      const idToDelete = result.current.floorPlans[0].id;
-      
-      act(() => {
-        // Call deleteFloorPlan without additional parameters
-        result.current.deleteFloorPlan(idToDelete);
+    expect(result.current.floorPlans.length).toBe(1);
+    expect(result.current.floorPlans[0].name).toBe('New Floor Plan');
+    expect(localStorageMock.setItem).toHaveBeenCalled();
+  });
+  
+  it('should update a floor plan', () => {
+    // Setup existing floor plans
+    const existingPlans = [mockFloorPlan];
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(existingPlans));
+    
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    act(() => {
+      result.current.updateFloorPlan(0, {
+        ...mockFloorPlan,
+        name: 'Updated Floor Plan'
       });
-    }
+    });
+    
+    expect(result.current.floorPlans[0].name).toBe('Updated Floor Plan');
+    expect(localStorageMock.setItem).toHaveBeenCalled();
+  });
+  
+  it('should delete a floor plan', () => {
+    // Setup existing floor plans
+    const existingPlans = [mockFloorPlan];
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(existingPlans));
+    
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    act(() => {
+      result.current.deleteFloorPlan(mockFloorPlan.id);
+    });
+    
+    expect(result.current.floorPlans.length).toBe(0);
+    expect(localStorageMock.setItem).toHaveBeenCalled();
   });
 });

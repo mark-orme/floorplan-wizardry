@@ -17,7 +17,7 @@ export function createTestStroke(partialStroke: Partial<Stroke> = {}): Stroke {
     points: partialStroke.points || [createTestPoint(0, 0), createTestPoint(100, 100)],
     type,
     color: partialStroke.color || '#000000',
-    thickness,
-    width: partialStroke.width || thickness // Width should equal thickness if not provided
+    thickness
+    // width property removed as it's not part of the Stroke interface
   };
 }

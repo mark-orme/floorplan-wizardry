@@ -31,7 +31,7 @@ const testFloorPlan: Partial<FloorPlan> = {
   gia: 0,
   level: 0,
   index: 0,
-  metadata: createCompleteMetadata(),
+  metadata: createCompleteMetadata(), // Now creates a complete metadata object with all required fields
   data: {}, // required property
   userId: '', // required property
   // canvasState removed

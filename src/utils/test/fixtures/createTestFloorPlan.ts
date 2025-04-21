@@ -39,5 +39,6 @@ export function createTestFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): 
     level: partialFloorPlan.level || 0,
     index: partialFloorPlan.index || 0,
     userId: partialFloorPlan.userId || 'test-user'
+    // canvasState removed as it's not part of the FloorPlan interface
   };
 }

@@ -11,9 +11,9 @@ import {
   isFloorPlan,
   isWall,
   isRoom,
-  isStroke 
-} from './debug/typeDiagnostics';
-import { getObjectType } from './debug/globalTypeCheck';
+  isStroke,
+  getObjectType 
+} from './debug/globalTypeCheck';
 
 /**
  * Initialize global type checkers
