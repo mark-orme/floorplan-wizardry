@@ -1,107 +1,128 @@
 
 /**
  * Type Adapters
- * Provides utility functions to adapt between incompatible type definitions
+ * Utilities for converting between different type systems
  * @module utils/typeAdapters
  */
-import { FloorPlan as CoreFloorPlan, Wall as CoreWall, RoomType } from '@/types/core/FloorPlan';
-import { FloorPlan as AppFloorPlan, Wall as AppWall, RoomTypeLiteral, Room as AppRoom } from '@/types/floorPlanTypes';
+import { FloorPlan, Room, Wall, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import { Point } from '@/types/core/Point';
+import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 /**
- * Convert a core wall to app wall format
- * @param wall Core wall
- * @returns App wall
+ * Adapts a Wall-like object to ensure it has all required properties
+ * @param wall Wall-like object that may be missing properties
+ * @returns Complete Wall object with all required properties
  */
-export function adaptWall(wall: CoreWall): AppWall {
-  const start = wall.start;
-  const end = wall.end;
+export function adaptWall(wall: Partial<Wall> & { start: Point; end: Point }): Wall {
+  // Calculate length if it's missing
+  const length = wall.length ?? calculateWallLength(wall.start, wall.end);
   
-  // Calculate length if not already present in the core wall
-  const length = wall.length || Math.sqrt(
-    Math.pow(end.x - start.x, 2) + 
-    Math.pow(end.y - start.y, 2)
+  // Add roomIds if missing
+  const roomIds = wall.roomIds ?? [];
+  
+  // Add color if missing
+  const color = wall.color ?? '#000000';
+  
+  return {
+    id: wall.id ?? `wall-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    start: wall.start,
+    end: wall.end,
+    thickness: wall.thickness ?? 2,
+    length,
+    color,
+    roomIds,
+    ...(wall.points ? { points: wall.points } : { points: [wall.start, wall.end] }),
+    ...(wall.height ? { height: wall.height } : {}),
+    // Include any other properties from the original wall
+    ...wall
+  } as Wall;
+}
+
+/**
+ * Adapts a Room-like object to ensure it has all required properties
+ * @param room Room-like object that may be missing properties
+ * @returns Complete Room object with all required properties
+ */
+export function adaptRoom(room: Partial<Room> & { id: string; name: string }): Room {
+  // Ensure vertices exists (using points if available)
+  const vertices = room.vertices ?? (room.points ? [...room.points] : []);
+  
+  // Ensure other required properties exist
+  return {
+    id: room.id,
+    name: room.name,
+    type: room.type ?? 'other',
+    area: room.area ?? 0,
+    perimeter: room.perimeter ?? 0,
+    color: room.color ?? '#ffffff',
+    level: room.level ?? 0,
+    vertices,
+    labelPosition: room.labelPosition ?? { x: 0, y: 0 },
+    center: room.center ?? { x: 0, y: 0 },
+    ...(room.points ? { points: room.points } : {}),
+    ...(room.walls ? { walls: room.walls } : { walls: [] }),
+    // Include any other properties from the original room
+    ...room
+  } as Room;
+}
+
+/**
+ * Adapts a FloorPlanMetadata-like object to ensure it has all required properties
+ * @param metadata Metadata-like object that may be missing properties
+ * @returns Complete FloorPlanMetadata object with all required properties
+ */
+export function adaptMetadata(metadata: Partial<FloorPlanMetadata>): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  return {
+    createdAt: metadata.createdAt ?? now,
+    updatedAt: metadata.updatedAt ?? now,
+    paperSize: metadata.paperSize ?? 'A4',
+    level: metadata.level ?? 0,
+    version: metadata.version ?? '1.0',
+    author: metadata.author ?? '',
+    dateCreated: metadata.dateCreated ?? now,
+    lastModified: metadata.lastModified ?? now,
+    notes: metadata.notes ?? ''
+  };
+}
+
+/**
+ * Adapts a FloorPlan-like object to ensure it has all required properties
+ * @param floorPlan FloorPlan-like object that may be missing properties
+ * @returns Complete FloorPlan object with all required properties
+ */
+export function adaptFloorPlan(floorPlan: Partial<FloorPlan> & { id: string; name: string }): FloorPlan {
+  const now = new Date().toISOString();
+  
+  // Adapt walls and rooms to ensure they have all required properties
+  const walls = (floorPlan.walls ?? []).map(wall => 
+    'start' in wall && 'end' in wall ? adaptWall(wall as any) : wall
   );
   
-  return {
-    id: wall.id,
-    points: wall.start && wall.end ? [wall.start, wall.end] : [],
-    startPoint: wall.start,
-    endPoint: wall.end,
-    start: wall.start,  // Ensure both properties are present
-    end: wall.end,      // Ensure both properties are present
-    thickness: wall.thickness || 1, // Provide default if missing
-    color: wall.color || '#000000', // Provide default if missing
-    height: wall.height,
-    roomIds: wall.roomIds,
-    length: length      // Add the length property
-  };
-}
-
-/**
- * Safely convert RoomType to RoomTypeLiteral
- * @param type Core RoomType
- * @returns App RoomTypeLiteral
- */
-function adaptRoomType(type: RoomType): RoomTypeLiteral {
-  // Ensure we're returning a valid RoomTypeLiteral
-  switch (type) {
-    case 'living': return 'living';
-    case 'bedroom': return 'bedroom';
-    case 'kitchen': return 'kitchen';
-    case 'bathroom': return 'bathroom';
-    case 'office': return 'office';
-    case 'other': return 'other';
-    default: return 'other'; // Default to 'other' if the type is invalid
-  }
-}
-
-/**
- * Convert a core floor plan to app floor plan format
- * @param corePlan Core floor plan
- * @returns App floor plan
- */
-export function adaptFloorPlan(corePlan: CoreFloorPlan): AppFloorPlan {
-  const walls = corePlan.walls.map(adaptWall);
+  const rooms = (floorPlan.rooms ?? []).map(room => 
+    'id' in room && 'name' in room ? adaptRoom(room as any) : room
+  );
+  
+  // Adapt metadata to ensure it has all required properties
+  const metadata = adaptMetadata(floorPlan.metadata ?? {});
   
   return {
-    id: corePlan.id,
-    name: corePlan.name,
-    label: corePlan.label || corePlan.name,
-    walls: walls,
-    rooms: corePlan.rooms.map(room => ({
-      id: room.id,
-      name: room.name || 'Unnamed Room', // Ensure name is always provided
-      type: adaptRoomType(room.type), // Convert room type
-      area: room.area || 0, // Ensure area is always provided
-      color: room.color || '#ffffff', // Ensure color is always provided
-      level: corePlan.level || 0, // Set the level from the floor plan
-      points: room.points || [],
-      walls: [] // Add empty walls array to satisfy the type requirement
-    })) as AppRoom[], // Cast to AppRoom[] to satisfy TypeScript
-    strokes: corePlan.strokes,
-    index: corePlan.index || corePlan.level,
-    gia: corePlan.gia,
-    level: corePlan.level,
-    createdAt: corePlan.createdAt,
-    updatedAt: corePlan.updatedAt,
-    canvasData: corePlan.canvasData,
-    canvasJson: corePlan.canvasJson || null,
-    metadata: corePlan.metadata
-  };
+    id: floorPlan.id,
+    name: floorPlan.name,
+    label: floorPlan.label ?? floorPlan.name,
+    walls,
+    rooms,
+    strokes: floorPlan.strokes ?? [],
+    canvasData: floorPlan.canvasData ?? null,
+    canvasJson: floorPlan.canvasJson ?? null,
+    createdAt: floorPlan.createdAt ?? now,
+    updatedAt: floorPlan.updatedAt ?? now,
+    gia: floorPlan.gia ?? 0,
+    level: floorPlan.level ?? 0,
+    index: floorPlan.index ?? floorPlan.level ?? 0,
+    metadata,
+    // Add required properties that might be missing
+    data: floorPlan.data ?? {},
+    userId: floorPlan.userId ?? 'default-user'
+  } as FloorPlan;
 }
-
-/**
- * Convert multiple core floor plans to app floor plans
- * @param plans Array of core floor plans
- * @returns Array of app floor plans
- */
-export function adaptFloorPlans(corePlans: CoreFloorPlan[]): AppFloorPlan[] {
-  return corePlans.map(adaptFloorPlan);
-}
-
-/**
- * Convert multiple core floor plans to app floor plans (alias for adaptFloorPlans)
- * @param corePlans Array of core floor plans
- * @returns Array of app floor plans
- */
-export const coreToAppFloorPlans = adaptFloorPlans;

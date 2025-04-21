@@ -1,136 +1,102 @@
 
 /**
- * Canvas mock utilities for testing
+ * Canvas Mock Utilities
+ * Provides utilities for mocking canvas objects in tests
  * @module utils/canvasMockUtils
  */
-import { vi } from 'vitest';
+import { Canvas as FabricCanvas } from 'fabric';
+import { ICanvasMock } from '@/types/testing/ICanvasMock';
 
 /**
- * Creates a withImplementation mock that returns Promise<void>
- * @returns Mock function with correct return type
+ * Create a typed mock canvas for testing
+ * @returns A mock canvas object with common methods stubbed
+ */
+export function createTypedMockCanvas(): ICanvasMock {
+  return {
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+    // Properly implement withImplementation to return Promise<void>
+    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+      console.log('ICanvasMock: withImplementation called');
+      if (callback && typeof callback === 'function') {
+        try {
+          const result = callback();
+          if (result instanceof Promise) {
+            return result.then(() => Promise.resolve());
+          }
+        } catch (error) {
+          console.error('Error in mock withImplementation:', error);
+        }
+      }
+      return Promise.resolve();
+    }),
+    // Additional Canvas properties
+    enablePointerEvents: true,
+    _willAddMouseDown: false,
+    _dropTarget: null,
+    _isClick: false,
+    _objects: [],
+    getHandlers: (eventName: string) => [() => {}],
+    triggerEvent: (eventName: string, eventData: any) => {}
+  };
+}
+
+/**
+ * Create a mock implementation of withImplementation
+ * @returns A mock implementation that returns a Promise<void>
  */
 export function createWithImplementationMock() {
-  // Create a mock that returns a promise
   return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-    // Log that withImplementation was called for debugging
-    console.log('Mock withImplementation called');
-    
-    // If a callback is provided, execute it
     if (callback && typeof callback === 'function') {
       try {
         const result = callback();
-        
-        // If the callback returns a promise, return that promise
         if (result instanceof Promise) {
           return result.then(() => Promise.resolve());
         }
       } catch (error) {
-        console.error('Error in mock withImplementation:', error);
-        // Don't rethrow, just log for test stability
+        console.error('Error in withImplementation mock:', error);
       }
     }
-    
-    // Always return a resolved promise for stability
     return Promise.resolve();
   });
 }
 
 /**
- * Create a typed mock canvas for unit tests
- * @returns A mock canvas object
+ * Create a mock history ref for drawing history tests
+ * @returns A mock history ref object
  */
-export function createTypedMockCanvas() {
-  return {
-    add: vi.fn(),
-    remove: vi.fn(),
-    clear: vi.fn(),
-    renderAll: vi.fn(),
-    requestRenderAll: vi.fn(),
-    setWidth: vi.fn(),
-    setHeight: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    getContext: vi.fn(),
-    getElement: vi.fn().mockReturnValue(document.createElement('canvas')),
-    setBackgroundColor: vi.fn(),
-    setZoom: vi.fn(),
-    getZoom: vi.fn().mockReturnValue(1),
-    on: vi.fn(),
-    off: vi.fn(),
-    fire: vi.fn(),
-    getWidth: vi.fn().mockReturnValue(800),
-    getHeight: vi.fn().mockReturnValue(600),
-    dispose: vi.fn(),
-    isDrawingMode: false,
-    freeDrawingBrush: {
-      color: '#000',
-      width: 1
-    },
-    viewportTransform: [1, 0, 0, 1, 0, 0],
-    selection: true,
-    // Add helper methods for tests
-    getHandlers: vi.fn().mockReturnValue([]),
-    triggerEvent: vi.fn(),
-    // Add the withImplementation mock
-    withImplementation: createWithImplementationMock()
-  };
-}
-
-/**
- * Create a typed mock history reference for unit tests
- * @returns A mock history reference object
- */
-export function createTypedHistoryRef() {
+export function createMockHistoryRef() {
   return {
     current: {
-      undo: vi.fn(),
-      redo: vi.fn(),
-      canUndo: vi.fn().mockReturnValue(true),
-      canRedo: vi.fn().mockReturnValue(true),
-      push: vi.fn(),
-      clear: vi.fn(),
-      past: [],
-      future: []
+      states: [],
+      currentIndex: -1,
+      maxStates: 10,
+      canUndo: false,
+      canRedo: false
     }
   };
 }
 
 /**
- * Create a typed mock floor plan context for unit tests
- * @returns A mock floor plan context
+ * Type-safe assertion function to use in tests
+ * @param canvas Any canvas-like object
+ * @returns Canvas with added mock methods
  */
-export function createTypedFloorPlanContext() {
-  return {
-    isDrawing: false,
-    setIsDrawing: vi.fn(),
-    tool: 'select',
-    setTool: vi.fn(),
-    lineColor: '#000000',
-    setLineColor: vi.fn(),
-    lineThickness: 2,
-    setLineThickness: vi.fn(),
-    canUndo: true,
-    setCanUndo: vi.fn(),
-    canRedo: true,
-    setCanRedo: vi.fn(),
-    showGrid: true,
-    setShowGrid: vi.fn(),
-    snapToGrid: false,
-    setSnapToGrid: vi.fn(),
-    zoom: 1,
-    setZoom: vi.fn()
+export function assertMockCanvas(canvas: any): FabricCanvas & {
+  getHandlers: (eventName: string) => Function[];
+  triggerEvent: (eventName: string, eventData: any) => void;
+} {
+  // Use type assertion to ensure mock canvas compatibility with Fabric.Canvas
+  return canvas as unknown as FabricCanvas & {
+    getHandlers: (eventName: string) => Function[];
+    triggerEvent: (eventName: string, eventData: any) => void;
   };
-}
-
-/**
- * Create a mock history reference
- * @returns Mock history reference
- */
-export const createMockHistoryRef = createTypedHistoryRef;
-
-/**
- * Create a mock grid layer reference
- * @returns Mock grid layer reference
- */
-export function createMockGridLayerRef() {
-  return { current: [] };
 }

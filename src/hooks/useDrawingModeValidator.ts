@@ -1,95 +1,67 @@
 
 /**
- * Hook to validate and normalize drawing modes
- * Helps prevent type mismatches and inconsistencies
+ * Hook for validating drawing modes
+ * @module hooks/useDrawingModeValidator
  */
-
 import { useState, useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingTool } from '@/types/core/DrawingTool';
-import { normalizeDrawingMode } from '@/utils/floorPlanAdapter';
+import { toast } from 'sonner';
 
-/**
- * Interface defining the validator hook return value
- */
-interface DrawingModeValidatorResult {
-  /**
-   * Current validated drawing mode
-   */
-  mode: DrawingMode;
-  
-  /**
-   * Set drawing mode (validates and normalizes input)
-   */
-  setMode: (newMode: string | DrawingMode) => void;
-  
-  /**
-   * Validate if a mode is a valid DrawingMode
-   */
-  isValidMode: (value: unknown) => boolean;
-  
-  /**
-   * Get a safe default mode if current is invalid
-   */
-  getDefaultMode: () => DrawingMode;
-  
-  /**
-   * Check if the current mode is equal to the provided mode
-   */
-  isCurrentMode: (compareMode: DrawingMode) => boolean;
+interface UseDrawingModeValidatorProps {
+  /** Initial drawing mode */
+  initialMode?: DrawingMode;
+  /** Callback for mode changes */
+  onModeChange?: (mode: DrawingMode) => void;
 }
 
 /**
- * Hook that provides validated drawing mode state and utilities
- * 
- * @param initialMode - Initial drawing mode
- * @returns Object with mode state and utility functions
+ * Hook for validating drawing modes
+ * Ensures that only valid drawing modes can be set
  */
-export function useDrawingModeValidator(
-  initialMode: DrawingMode = DrawingMode.SELECT
-): DrawingModeValidatorResult {
-  // Validate initial mode
-  const validInitialMode = Object.values(DrawingMode).includes(initialMode) 
-    ? initialMode 
-    : DrawingMode.SELECT;
+export function useDrawingModeValidator({
+  initialMode = DrawingMode.SELECT,
+  onModeChange
+}: UseDrawingModeValidatorProps = {}) {
+  const [mode, setMode] = useState<DrawingMode>(initialMode);
   
-  // State for the current mode
-  const [mode, setModeState] = useState<DrawingMode>(validInitialMode);
-  
-  // Set mode with validation
-  const setMode = useCallback((newMode: string | DrawingMode) => {
-    try {
-      const normalizedMode = normalizeDrawingMode(newMode);
-      setModeState(normalizedMode);
-    } catch (error) {
-      console.error('Invalid drawing mode:', newMode);
-      // Fallback to SELECT on error
-      setModeState(DrawingMode.SELECT);
+  /**
+   * Validate and set drawing mode
+   * @param newMode The new drawing mode to set
+   * @returns Whether the mode was successfully set
+   */
+  const validateAndSetMode = useCallback((newMode: DrawingMode | string): boolean => {
+    // If newMode is a string, convert it to DrawingMode if valid
+    let validatedMode: DrawingMode;
+    
+    if (typeof newMode === 'string') {
+      // Check if the string matches a valid DrawingMode value
+      const isValidMode = Object.values(DrawingMode).includes(newMode as DrawingMode);
+      
+      if (isValidMode) {
+        validatedMode = newMode as DrawingMode;
+      } else {
+        console.error(`Invalid drawing mode: ${newMode}`);
+        toast.error(`Invalid drawing mode: ${newMode}`);
+        return false;
+      }
+    } else {
+      validatedMode = newMode;
     }
-  }, []);
-  
-  // Check if a value is a valid DrawingMode
-  const isValidMode = useCallback((value: unknown): value is DrawingMode => {
-    if (typeof value !== 'string') return false;
-    return Object.values(DrawingMode).includes(value as DrawingMode);
-  }, []);
-  
-  // Get default mode
-  const getDefaultMode = useCallback((): DrawingMode => {
-    return DrawingMode.SELECT;
-  }, []);
-  
-  // Check if current mode equals provided mode
-  const isCurrentMode = useCallback((compareMode: DrawingMode): boolean => {
-    return mode === compareMode;
-  }, [mode]);
+    
+    // Set the validated mode
+    setMode(validatedMode);
+    
+    // Call the onModeChange callback if provided
+    if (onModeChange) {
+      onModeChange(validatedMode);
+    }
+    
+    return true;
+  }, [onModeChange]);
   
   return {
     mode,
-    setMode,
-    isValidMode,
-    getDefaultMode,
-    isCurrentMode
+    setMode: validateAndSetMode
   };
 }
 

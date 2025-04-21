@@ -121,6 +121,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   showDebugInfo: false,
   lastError: '',
   lastErrorTime: 0,
+  canvasState: 'uninitialized',
   // Performance metrics
   performanceStats: {
     renderTime: 0,

@@ -15,7 +15,8 @@ import {
 } from './floorPlanAdapter';
 import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/typesBarrel';
 import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
-import { createTypedTestFloorPlan, createTestWall } from './test/typedTestFixtures';
+import { createTestFloorPlan, createTestWall } from './test/typedTestFixtures';
+import { adaptWall } from './typeAdapters';
 
 // This file now serves as an integration test for the floorPlanAdapter module
 // Individual functionality is tested in more detail in the respective test files:
@@ -37,19 +38,17 @@ describe('Floor Plan Adapter (Integration)', () => {
   
   it('should round-trip convert floor plans', () => {
     // Create a test app floor plan
-    const originalAppFloorPlan = createTypedTestFloorPlan({
+    const originalAppFloorPlan = createTestFloorPlan({
       id: 'test123',
       name: 'Test Floor',
       label: 'Test Floor',
       walls: [
-        createTestWall({ 
+        adaptWall({ 
           id: 'wall1', 
           start: { x: 0, y: 0 }, 
           end: { x: 100, y: 0 }, 
           thickness: 2,
-          points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
           color: '#000000',
-          length: 100,
           roomIds: []  // Add the required roomIds property
         })
       ],
