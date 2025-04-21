@@ -24,6 +24,8 @@ import {
   RoomTypeLiteral as LegacyRoomType
 } from '@/types/floor-plan/unifiedTypes';
 
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
+
 console.log('Loading type converter utility');
 
 /**
@@ -55,7 +57,7 @@ export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan
     gia: floorPlan.gia || 0,
     level: floorPlan.level || 0,
     index: floorPlan.index || 0,
-    metadata: floorPlan.metadata || {},
+    metadata: floorPlan.metadata || createCompleteMetadata(),
     // Critical required properties
     data: floorPlan.data || {}, // Ensure data is present
     userId: floorPlan.userId || 'unknown' // Ensure userId is present
@@ -81,8 +83,8 @@ export function toUnifiedStroke(stroke: LegacyStroke): UnifiedStroke {
     return {
       ...stroke,
       type: validType,
-      // Ensure width is present if it's missing
-      width: stroke.width || stroke.thickness
+      // Remove width property
+      // width: stroke.width || stroke.thickness
     };
   }
   

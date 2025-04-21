@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -99,8 +98,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   });
 
   useSentryCanvasMonitoring({
-    canvas: fabricCanvasRef.current,
-    enabled: isCanvasReady
+    fabricCanvasRef
   });
 
   useEffect(() => {

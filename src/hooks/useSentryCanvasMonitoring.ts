@@ -2,7 +2,6 @@
 import { useCallback, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { CaptureErrorOptions } from '@sentry/core';
 
 interface UseSentryCanvasMonitoringProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -28,18 +27,18 @@ export const useSentryCanvasMonitoring = ({
         tags: {
           component: 'Canvas',
           operation: 'FabricOperation'
-        },
-        // extra property removed
+        }
       });
     };
     
     // Add error handler to canvas
-    canvas.on('error', handleError);
+    // Use fabric's native error events
+    canvas.on('object:error', handleError as any);
     
     return () => {
       // Remove handler on cleanup
       if (canvas) {
-        canvas.off('error', handleError);
+        canvas.off('object:error', handleError as any);
       }
     };
   }, [fabricCanvasRef, enabled]);

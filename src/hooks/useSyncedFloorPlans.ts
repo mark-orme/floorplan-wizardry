@@ -1,18 +1,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { toast } from 'sonner';
+import { FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { v4 as uuidv4 } from 'uuid';
 
 interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
-  onFloorPlansChange?: (floorPlans: FloorPlan[]) => void;
+  fabricCanvasRef?: React.MutableRefObject<any>;
 }
 
 export const useSyncedFloorPlans = ({
   initialFloorPlans = [],
-  onFloorPlansChange = () => {}
+  fabricCanvasRef
 }: UseSyncedFloorPlansProps = {}) => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,12 @@ export const useSyncedFloorPlans = ({
       }
     } catch (err) {
       console.error('Failed to load floor plans from localStorage:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
+      setError(err instanceof Error ? err : new Error('Failed to load floor plans'));
       toast.error('Failed to load floor plans');
     }
   }, []);
   
-  // Sync floor plans to localStorage when they change
+  // Save floor plans to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
@@ -42,90 +42,68 @@ export const useSyncedFloorPlans = ({
     }
   }, [floorPlans]);
   
-  useEffect(() => {
-    if (initialFloorPlans.length > 0) {
-      setFloorPlans(initialFloorPlans);
-    }
-  }, [initialFloorPlans]);
+  // Create a new floor plan
+  const createFloorPlan = useCallback((options: { name?: string; level?: number } = {}) => {
+    const now = new Date().toISOString();
+    const metadata: FloorPlanMetadata = createCompleteMetadata({
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: options.level || 0,
+      version: '1.0',
+      author: 'User',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
+    }) as FloorPlanMetadata;
+    
+    const newFloorPlan: FloorPlan = {
+      id: uuidv4(),
+      name: options.name || `Floor Plan ${floorPlans.length + 1}`,
+      label: options.name || `Floor Plan ${floorPlans.length + 1}`,
+      walls: [],
+      rooms: [],
+      strokes: [],
+      canvasData: null,
+      canvasJson: null,
+      createdAt: now,
+      updatedAt: now,
+      gia: 0,
+      level: options.level || 0,
+      index: floorPlans.length,
+      metadata,
+      data: {},
+      userId: 'default-user'
+    };
+    
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+    return newFloorPlan;
+  }, [floorPlans.length]);
   
-  useEffect(() => {
-    onFloorPlansChange(floorPlans);
-  }, [floorPlans, onFloorPlansChange]);
-  
-  const updateFloorPlan = useCallback((index: number, updatedFloorPlan: FloorPlan) => {
-    setFloorPlans(prevFloorPlans => {
-      const newFloorPlans = [...prevFloorPlans];
-      
-      // Ensure the updatedFloorPlan metadata has all required fields
-      const safeMetadata = {
-        version: updatedFloorPlan.metadata?.version || '1.0',
-        author: updatedFloorPlan.metadata?.author || 'User',
-        dateCreated: updatedFloorPlan.metadata?.dateCreated || new Date().toISOString(),
-        lastModified: updatedFloorPlan.metadata?.lastModified || new Date().toISOString(),
-        notes: updatedFloorPlan.metadata?.notes || '',
-        createdAt: updatedFloorPlan.metadata?.createdAt || new Date().toISOString(),
-        updatedAt: updatedFloorPlan.metadata?.updatedAt || new Date().toISOString(),
-        paperSize: updatedFloorPlan.metadata?.paperSize || 'A4',
-        level: updatedFloorPlan.metadata?.level || 0
+  // Update an existing floor plan
+  const updateFloorPlan = useCallback((index: number, floorPlan: FloorPlan) => {
+    setFloorPlans(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...floorPlan,
+        updatedAt: new Date().toISOString()
       };
-      
-      newFloorPlans[index] = {
-        ...updatedFloorPlan,
-        metadata: safeMetadata
-      };
-      
-      return newFloorPlans;
+      return updated;
     });
   }, []);
   
-  // Add createFloorPlan function for tests
-  const createFloorPlan = useCallback((partialFloorPlan: Partial<FloorPlan> = {}) => {
-    const now = new Date().toISOString();
-    const newFloorPlan: FloorPlan = {
-      id: partialFloorPlan.id || uuidv4(),
-      name: partialFloorPlan.name || 'New Floor Plan',
-      label: partialFloorPlan.label || 'New Floor Plan',
-      walls: partialFloorPlan.walls || [],
-      rooms: partialFloorPlan.rooms || [],
-      strokes: partialFloorPlan.strokes || [],
-      gia: partialFloorPlan.gia || 0,
-      level: partialFloorPlan.level || 0,
-      index: partialFloorPlan.index || 0,
-      createdAt: partialFloorPlan.createdAt || now,
-      updatedAt: partialFloorPlan.updatedAt || now,
-      canvasData: partialFloorPlan.canvasData || null,
-      canvasJson: partialFloorPlan.canvasJson || null,
-      metadata: {
-        version: '1.0',
-        author: 'User',
-        dateCreated: now,
-        lastModified: now,
-        notes: '',
-        createdAt: now,
-        updatedAt: now,
-        paperSize: 'A4',
-        level: partialFloorPlan.level || 0
-      },
-      data: partialFloorPlan.data || {},
-      userId: partialFloorPlan.userId || 'user-id'
-    };
-    
-    setFloorPlans(prevFloorPlans => [...prevFloorPlans, newFloorPlan]);
-    return newFloorPlan;
-  }, []);
-  
-  // Add deleteFloorPlan function for tests
+  // Delete a floor plan by ID
   const deleteFloorPlan = useCallback((id: string) => {
-    setFloorPlans(prevFloorPlans => prevFloorPlans.filter(fp => fp.id !== id));
+    setFloorPlans(prev => prev.filter(plan => plan.id !== id));
   }, []);
   
   return {
     floorPlans,
     setFloorPlans,
-    updateFloorPlan,
     loading,
     error,
     createFloorPlan,
+    updateFloorPlan,
     deleteFloorPlan
   };
 };

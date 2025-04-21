@@ -4,14 +4,15 @@
  * @module utils/globalTypeCheck
  */
 import { 
-  validateFloorPlan,
-  validateWall, 
-  validateRoom, 
-  validateStroke,
-  isFloorPlan,
-  isWall,
-  isRoom,
-  isStroke,
+  // Remove imports that don't exist
+  // validateFloorPlan,
+  // validateWall, 
+  // validateRoom, 
+  // validateStroke,
+  // isFloorPlan,
+  // isWall,
+  // isRoom,
+  // isStroke,
   getObjectType 
 } from './debug/globalTypeCheck';
 
@@ -25,14 +26,14 @@ export function initGlobalTypeCheckers(): void {
   // Add to window for debugging in browser
   if (typeof window !== 'undefined') {
     (window as any).__typeCheckers = {
-      validateFloorPlan,
-      validateWall,
-      validateRoom,
-      validateStroke,
-      isFloorPlan,
-      isWall,
-      isRoom,
-      isStroke,
+      // validateFloorPlan,
+      // validateWall,
+      // validateRoom,
+      // validateStroke,
+      // isFloorPlan,
+      // isWall,
+      // isRoom,
+      // isStroke,
       getObjectType
     };
     
@@ -42,13 +43,13 @@ export function initGlobalTypeCheckers(): void {
 
 // Re-export functions
 export {
-  validateFloorPlan,
-  validateWall,
-  validateRoom,
-  validateStroke,
-  isFloorPlan,
-  isWall,
-  isRoom,
-  isStroke,
+  // validateFloorPlan,
+  // validateWall,
+  // validateRoom,
+  // validateStroke,
+  // isFloorPlan,
+  // isWall,
+  // isRoom,
+  // isStroke,
   getObjectType
 };

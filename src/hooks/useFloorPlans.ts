@@ -42,17 +42,7 @@ export const useFloorPlans = ({
     gia: 0,
     level: 0,
     index: 0,
-    metadata: createCompleteMetadata({
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      paperSize: 'A4',
-      level: 0,
-      version: '1.0',
-      author: 'User',
-      dateCreated: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      notes: ''
-    }),
+    metadata: createCompleteMetadata(),
     data: {},
     userId: ''
   });
@@ -95,17 +85,7 @@ export const useFloorPlans = ({
       canvasJson: null,
       createdAt: now,
       updatedAt: now,
-      metadata: createCompleteMetadata({
-        createdAt: now,
-        updatedAt: now,
-        paperSize: 'A4',
-        level: floorPlans.length,
-        version: '1.0',
-        author: 'User',
-        dateCreated: now,
-        lastModified: now,
-        notes: ''
-      }),
+      metadata: createCompleteMetadata(),
       data: {},
       userId: 'default-user'
     });
@@ -127,10 +107,8 @@ export const useFloorPlans = ({
     }
   }, [floorPlans.length, currentFloorIndex]);
   
-  // Add backward compatibility for syncFloorPlans
   const syncFloorPlans = useCallback(() => {
     console.log('syncFloorPlans called (compatibility function)');
-    // Add implementation if needed
   }, []);
   
   return {
@@ -144,7 +122,7 @@ export const useFloorPlans = ({
     drawFloorPlan,
     gia,
     setGia,
-    syncFloorPlans, // For backward compatibility
+    syncFloorPlans,
     ...drawingHook
   };
 };

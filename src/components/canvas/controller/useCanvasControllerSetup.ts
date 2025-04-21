@@ -1,4 +1,3 @@
-
 /**
  * Hook for setting up the canvas controller
  * Initializes canvas, grid, and history
@@ -90,8 +89,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     floorPlans,
     setFloorPlans
   } = useSyncedFloorPlans({
-    initialFloorPlans: initialFloorPlans,
-    fabricCanvasRef: fabricCanvasRef
+    initialFloorPlans: initialFloorPlans
   });
   
   // Initialize grid hook

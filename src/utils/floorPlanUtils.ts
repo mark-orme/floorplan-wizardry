@@ -26,7 +26,7 @@ export function createEmptyFloorPlan(name = 'New Floor Plan', level = 0): FloorP
     index: 0,
     data: {},
     userId: '',
-    metadata: createCompleteMetadata({ level })
+    metadata: createCompleteMetadata({ level }) as FloorPlanMetadata
   };
 }
 
@@ -72,5 +72,5 @@ export function getPaperSizeScales(paperSize: PaperSize): { width: number; heigh
  * @returns Default floor plan metadata
  */
 export function createDefaultMetadata(level: number = 0): FloorPlanMetadata {
-  return createCompleteMetadata({ level });
+  return createCompleteMetadata({ level }) as FloorPlanMetadata;
 }

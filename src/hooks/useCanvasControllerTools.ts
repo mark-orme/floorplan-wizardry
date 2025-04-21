@@ -1,9 +1,3 @@
-
-/**
- * Hook for managing canvas drawing tools
- * Centralizes the control and operation of canvas tools and actions
- * @module useCanvasControllerTools
- */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
@@ -18,7 +12,7 @@ interface CanvasToolsManagerProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current zoom level */
-  zoomLevel?: number;
+  zoomLevel?: number; // Added as optional
   /** Current line thickness */
   lineThickness: number;
   /** Current line color */

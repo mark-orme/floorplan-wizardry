@@ -59,7 +59,7 @@ describe('useSyncedFloorPlans Hook', () => {
     vi.resetAllMocks();
   });
   
-  it('should initialize with default values', () => {
+  it('should initialize with empty floor plans', () => {
     const { result } = renderHook(() => useSyncedFloorPlans());
     
     expect(result.current.floorPlans).toEqual([]);
@@ -67,29 +67,52 @@ describe('useSyncedFloorPlans Hook', () => {
     expect(result.current.error).toBe(null);
   });
   
-  it('should load floor plans from localStorage if available', () => {
-    // Setup localStorage with mock floor plans
-    const storedFloorPlans = [mockFloorPlan];
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(storedFloorPlans));
+  it('should load floor plans from localStorage on init', () => {
+    // Setup: Add floor plans to localStorage
+    const testFloorPlans = [mockFloorPlan];
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(testFloorPlans));
     
+    // Execute: Render the hook
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    expect(result.current.floorPlans).toEqual(storedFloorPlans);
-    expect(localStorageMock.getItem).toHaveBeenCalledWith('floor-plans');
+    // Verify: Floor plans are loaded from localStorage
+    expect(localStorageMock.getItem).toHaveBeenCalledWith('floorPlans');
+    expect(result.current.floorPlans).toEqual(testFloorPlans);
   });
   
-  it('should handle localStorage parsing errors', () => {
-    // Setup localStorage with invalid JSON
-    localStorageMock.getItem.mockReturnValueOnce('invalid-json');
+  it('should handle localStorage errors when loading data', async () => {
+    // Setup: Mock localStorage to throw error
+    localStorageMock.getItem.mockImplementationOnce(() => {
+      throw new Error('Test error');
+    });
     
+    // Execute: Render hook
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    expect(result.current.floorPlans).toEqual([]);
+    // Verify: Error is handled and toast is shown
+    expect(toast.error).toHaveBeenCalledWith('Failed to load floor plans');
     expect(result.current.error).toBeTruthy();
-    expect(toast.error).toHaveBeenCalled();
   });
   
-  it('should add a new floor plan', () => {
+  it('should handle localStorage errors when saving data', async () => {
+    // Setup: Mock localStorage to throw error
+    localStorageMock.setItem.mockImplementationOnce(() => {
+      throw new Error('Test error');
+    });
+    
+    // Execute: Render hook and attempt to save
+    const { result } = renderHook(() => useSyncedFloorPlans());
+    
+    await act(async () => {
+      // Trigger save via setFloorPlans which internally saves to localStorage
+      result.current.setFloorPlans([mockFloorPlan]);
+      
+      // Verify: Error handling occurred
+      expect(toast.error).toHaveBeenCalledWith('Failed to save floor plans');
+    });
+  });
+  
+  it('should create a new floor plan', () => {
     const { result } = renderHook(() => useSyncedFloorPlans());
     
     act(() => {
@@ -111,13 +134,11 @@ describe('useSyncedFloorPlans Hook', () => {
     
     const { result } = renderHook(() => useSyncedFloorPlans());
     
-    const updatedPlan = {
-      ...mockFloorPlan,
-      name: 'Updated Floor Plan'
-    };
-    
     act(() => {
-      result.current.updateFloorPlan(updatedPlan);
+      result.current.updateFloorPlan(0, {
+        ...mockFloorPlan,
+        name: 'Updated Floor Plan'
+      });
     });
     
     expect(result.current.floorPlans[0].name).toBe('Updated Floor Plan');
