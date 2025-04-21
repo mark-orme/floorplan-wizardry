@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
@@ -97,8 +98,11 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     fabricCanvasRef
   });
 
+  // Removed fabricCanvasRef prop here from useSentryCanvasMonitoring to match the known props interface
   useSentryCanvasMonitoring({
-    fabricCanvasRef
+    // fabricCanvasRef, // Removed
+    canvas: fabricCanvasRef.current,
+    // debug: false, // optional default false is fine
   });
 
   useEffect(() => {

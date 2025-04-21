@@ -1,10 +1,10 @@
-
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 import { useCanvasToolsManager } from "./canvas/controller/useCanvasToolsManager";
 import { useCanvasToolsGIA } from "./canvas/controller/useCanvasToolsGIA";
+import { DrawingMode } from "@/constants/drawingModes";
 
 // Create the proper props interface for the useCanvasToolsManager hook
 interface CanvasToolsManagerProps {
@@ -12,6 +12,9 @@ interface CanvasToolsManagerProps {
   canvas: any;
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef?: React.MutableRefObject<any[]>;
+  defaultTool?: DrawingMode;
+  onToolChange?: (tool: DrawingMode) => void;
   /** Current zoom level */
   zoomLevel?: number; // Added as optional
   /** Current line thickness */
@@ -36,6 +39,7 @@ interface CanvasToolsManagerProps {
   recalculateGIA?: () => void;
   /** Optional tool property for backward compatibility */
   tool?: string | DrawingTool;
+  lineThickness?: number; // Added this optional prop here to avoid TS error
 }
 
 /**

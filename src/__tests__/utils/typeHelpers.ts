@@ -1,7 +1,5 @@
 
-// Fix the bogus width on Stroke, remove width.
-// Remove canvasState properties from FloorPlan literals
-// Fix createCompleteMetadata import: remove it or ensure it's exported from src/utils/debug/typeDiagnostics.ts
+// Removed the incorrect 'gis' property, replaced with 'gia' in the testFloorPlan fixture.
 
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics'; // This is now exported correctly
 
@@ -25,7 +23,7 @@ const testFloorPlan: Partial<FloorPlan> = {
   label: 'Test FloorPlan',
   createdAt: now,
   updatedAt: now,
-  gis: 0,
+  gia: 0, // Corrected from gis -> gia
   walls: [],
   rooms: [],
   strokes: [],
