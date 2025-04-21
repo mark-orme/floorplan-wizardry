@@ -6,6 +6,7 @@ import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { createCompleteMetadata } from '@/types/floor-plan/unifiedTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
+import { adaptFloorPlan } from '@/utils/typeAdapters';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
@@ -29,7 +30,7 @@ export const useFloorPlans = ({
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
   // Use a safe currentFloorPlan value for the drawing hook
-  const safeFloorPlan = currentFloorPlan || {
+  const safeFloorPlan = currentFloorPlan || adaptFloorPlan({
     id: 'empty',
     name: 'Empty Floor Plan',
     walls: [],
@@ -45,7 +46,7 @@ export const useFloorPlans = ({
     metadata: createCompleteMetadata(),
     data: {},
     userId: ''
-  };
+  });
   
   const drawingHook = useFloorPlanDrawing({
     canvas: fabricCanvasRef.current,
@@ -71,7 +72,7 @@ export const useFloorPlans = ({
   
   const addFloorPlan = useCallback(() => {
     const now = new Date().toISOString();
-    const newFloorPlan: FloorPlan = {
+    const newFloorPlan = adaptFloorPlan({
       id: uuidv4(),
       name: `Floor ${floorPlans.length + 1}`,
       label: `Floor ${floorPlans.length + 1}`,
@@ -90,7 +91,7 @@ export const useFloorPlans = ({
       }),
       data: {},
       userId: 'default-user'
-    };
+    });
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
     setCurrentFloorIndex(floorPlans.length);

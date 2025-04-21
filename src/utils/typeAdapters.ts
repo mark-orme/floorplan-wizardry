@@ -21,7 +21,10 @@ import { createCompleteMetadata } from './debug/typeDiagnostics';
  * @returns Valid StrokeTypeLiteral
  */
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  const validTypes: StrokeTypeLiteral[] = [
+    'line', 'wall', 'door', 'window', 'furniture', 'annotation', 
+    'polyline', 'room', 'freehand'
+  ];
   return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }
 
@@ -146,6 +149,7 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     strokes: floorPlan.strokes || [],
     canvasData: floorPlan.canvasData || null,
     canvasJson: floorPlan.canvasJson || null,
+    canvasState: floorPlan.canvasState || null,
     metadata: floorPlan.metadata || createCompleteMetadata(),
     data: floorPlan.data || {},
     createdAt: floorPlan.createdAt || now,

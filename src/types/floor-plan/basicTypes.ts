@@ -39,8 +39,9 @@ export function createPoint(x: number, y: number): Point {
 
 /**
  * Stroke type enum as string literals
+ * Extended to include all values used in the application
  */
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation';
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
 
 /**
  * Room type enum as string literals

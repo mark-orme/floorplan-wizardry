@@ -4,7 +4,7 @@
  * @module types/testing/ICanvasMock
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { type Mock } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 /**
  * Minimal Canvas mock interface for tests
@@ -22,7 +22,7 @@ export interface ICanvasMock {
   discardActiveObject: Mock;
   contains?: Mock;
   // Fix for withImplementation type - MUST return Promise<void>
-  withImplementation: Mock;
+  withImplementation: Mock<any[], Promise<void>>;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;

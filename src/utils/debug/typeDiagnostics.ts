@@ -14,7 +14,6 @@ import type {
   StrokeTypeLiteral,
   RoomTypeLiteral
 } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Validate a floor plan object
@@ -103,7 +102,28 @@ export function calculateWallLength(start: Point, end: Point): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Re-export createCompleteMetadata for convenience
+/**
+ * Create a complete metadata object with all required fields
+ * @param partial Partial metadata to extend
+ * @returns Complete metadata object
+ */
+export function createCompleteMetadata(partial: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  
+  return {
+    createdAt: partial.createdAt || now,
+    updatedAt: partial.updatedAt || now,
+    paperSize: partial.paperSize || 'A4',
+    level: partial.level || 0,
+    version: partial.version || '1.0',
+    author: partial.author || 'System',
+    dateCreated: partial.dateCreated || now,
+    lastModified: partial.lastModified || now,
+    notes: partial.notes || ''
+  };
+}
+
+// Export createCompleteMetadata for convenience
 export { createCompleteMetadata };
 
 // Alias for backward compatibility
