@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";

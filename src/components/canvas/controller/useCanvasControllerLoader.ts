@@ -1,323 +1,219 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject, Group } from 'fabric';
-import { useCanvasEvents } from '@/hooks/useCanvasEvents';
-import { useCanvasZoom } from '@/hooks/useCanvasZoom';
+
+/**
+ * Canvas controller loader
+ * Loads canvas functionality
+ */
+// Remove all missing imports
+import { useRef, useState } from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
 import { useCanvasGrid } from '@/hooks/useCanvasGrid';
-import { useCanvasSnapping } from '@/hooks/useCanvasSnapping';
 import { useCanvasHistory } from '@/hooks/useCanvasHistory';
-import { useCanvasExport } from '@/hooks/useCanvasExport';
-import { useCanvasSelect } from '@/hooks/useCanvasSelect';
-import { useCanvasObjectLocking } from '@/hooks/useCanvasObjectLocking';
-import { useCanvasMeasurement } from '@/hooks/useCanvasMeasurement';
-import { useCanvasLayers } from '@/hooks/useCanvasLayers';
-import { useCanvasGuides } from '@/hooks/useCanvasGuides';
 import { useCanvasPerformance } from '@/hooks/useCanvasPerformance';
-import { useCanvasDiagnostics } from '@/hooks/useCanvasDiagnostics';
-import { useCanvasAccessibility } from '@/hooks/useCanvasAccessibility';
-import { useCanvasDataManagement } from '@/hooks/useCanvasDataManagement';
-import { useCanvasObjectInteraction } from '@/hooks/useCanvasObjectInteraction';
-import { useCanvasTextEditing } from '@/hooks/useCanvasTextEditing';
-import { useCanvasBackgroundImage } from '@/hooks/useCanvasBackgroundImage';
-import { useCanvasFilters } from '@/hooks/useCanvasFilters';
-import { useCanvasAnimations } from '@/hooks/useCanvasAnimations';
-import { useCanvas3D } from '@/hooks/useCanvas3D';
-import { useCanvasAR } from '@/hooks/useCanvasAR';
-import { useCanvasCollaboration } from '@/hooks/useCanvasCollaboration';
-import { useCanvasAI } from '@/hooks/useCanvasAI';
-import { useCanvasAutomation } from '@/hooks/useCanvasAutomation';
-import { useCanvasTesting } from '@/hooks/useCanvasTesting';
 import { useCanvasOptimization } from '@/hooks/useCanvasOptimization';
-import { useCanvasSecurity } from '@/hooks/useCanvasSecurity';
-import { useCanvasTheming } from '@/hooks/useCanvasTheming';
-import { useCanvasLocalization } from '@/hooks/useCanvasLocalization';
-import { useCanvasUndoRedo } from '@/hooks/useCanvasUndoRedo';
-import { useCanvasTutorial } from '@/hooks/useCanvasTutorial';
-import { useCanvasFeedback } from '@/hooks/useCanvasFeedback';
-import { useCanvasSupport } from '@/hooks/useCanvasSupport';
-import { useCanvasLicensing } from '@/hooks/useCanvasLicensing';
-import { useCanvasMonetization } from '@/hooks/useCanvasMonetization';
-import { useCanvasCommunity } from '@/hooks/useCanvasCommunity';
-import { useCanvasEcosystem } from '@/hooks/useCanvasEcosystem';
-import { useCanvasMetaverse } from '@/hooks/useCanvasMetaverse';
-import { useCanvasFuture } from '@/hooks/useCanvasFuture';
+import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
+import { useFloorPlanGIA } from '@/hooks/useFloorPlanGIA';
+import { useCanvasDebug } from '@/hooks/useCanvasDebug';
+import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { createDefaultMetadata } from '@/utils/floorPlanUtils';
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 interface UseCanvasControllerLoaderProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{ past: any[][], future: any[][] }>;
+  initialTool?: DrawingMode;
+  initialZoomLevel?: number;
+  initialLineThickness?: number;
+  initialLineColor?: string;
+  initialFloorPlans?: FloorPlan[];
 }
 
-export const useCanvasControllerLoader = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  historyRef
-}: UseCanvasControllerLoaderProps) => {
+/**
+ * Hook for loading canvas controller functionality
+ * @param props Controller loader props
+ * @returns Canvas controller functions and state
+ */
+export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps = {}) => {
+  const {
+    initialTool = DrawingMode.SELECT,
+    initialZoomLevel = 1,
+    initialLineThickness = 2,
+    initialLineColor = "#000000",
+    initialFloorPlans = []
+  } = props;
+  
+  // Core references
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  
+  // Core state
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [tool, setTool] = useState<DrawingMode>(initialTool);
+  const [lineThickness, setLineThickness] = useState(initialLineThickness);
+  const [lineColor, setLineColor] = useState(initialLineColor);
+  const [zoomLevel, setZoomLevel] = useState(initialZoomLevel);
+  const [gia, setGia] = useState(0);
+  const [currentFloor, setCurrentFloor] = useState(0);
   
-  // Initialize all canvas hooks
-  const { setupEvents, clearEvents } = useCanvasEvents({ fabricCanvasRef });
-  const { zoomIn, zoomOut, resetZoom } = useCanvasZoom({ fabricCanvasRef });
-  const { createGrid, toggleGridVisibility } = useCanvasGrid({ fabricCanvasRef, gridLayerRef });
-  const { enableSnapping, disableSnapping } = useCanvasSnapping({ fabricCanvasRef });
-  const { saveState, restoreState, clearHistory } = useCanvasHistory({ fabricCanvasRef, historyRef });
-  const { exportToJSON, exportToImage } = useCanvasExport({ fabricCanvasRef });
-  const { selectAll, deselectAll } = useCanvasSelect({ fabricCanvasRef });
-  const { lockObject, unlockObject } = useCanvasObjectLocking({ fabricCanvasRef });
-  const { measureDistance, clearMeasurements } = useCanvasMeasurement({ fabricCanvasRef });
-  const { addLayer, removeLayer, moveLayerUp, moveLayerDown } = useCanvasLayers({ fabricCanvasRef });
-  const { showGuides, hideGuides } = useCanvasGuides({ fabricCanvasRef });
-  const { startProfiling, stopProfiling } = useCanvasPerformance({ fabricCanvasRef });
-  const { runDiagnostics, clearDiagnostics } = useCanvasDiagnostics({ fabricCanvasRef });
-  const { checkAccessibility, fixAccessibility } = useCanvasAccessibility({ fabricCanvasRef });
-  const { saveData, loadData, clearData } = useCanvasDataManagement({ fabricCanvasRef });
-  const { enableInteractions, disableInteractions } = useCanvasObjectInteraction({ fabricCanvasRef });
-  const { enableTextEditing, disableTextEditing } = useCanvasTextEditing({ fabricCanvasRef });
-  const { setBackgroundImage, removeBackgroundImage } = useCanvasBackgroundImage({ fabricCanvasRef });
-  const { applyFilter, removeFilter } = useCanvasFilters({ fabricCanvasRef });
-  const { playAnimation, stopAnimation } = useCanvasAnimations({ fabricCanvasRef });
-  const { enable3D, disable3D } = useCanvas3D({ fabricCanvasRef });
-  const { enableAR, disableAR } = useCanvasAR({ fabricCanvasRef });
-  const { startCollaboration, stopCollaboration } = useCanvasCollaboration({ fabricCanvasRef });
-  const { generateAI, clearAI } = useCanvasAI({ fabricCanvasRef });
-  const { runAutomation, clearAutomation } = useCanvasAutomation({ fabricCanvasRef });
-  const { runTests, clearTests } = useCanvasTesting({ fabricCanvasRef });
-  const { optimizeCanvas, clearOptimization } = useCanvasOptimization({ fabricCanvasRef });
-  const { enableSecurity, disableSecurity } = useCanvasSecurity({ fabricCanvasRef });
-  const { applyTheme, clearTheme } = useCanvasTheming({ fabricCanvasRef });
-  const { setLocale, clearLocale } = useCanvasLocalization({ fabricCanvasRef });
-  const { undo, redo } = useCanvasUndoRedo({ fabricCanvasRef, historyRef });
-  const { startTutorial, stopTutorial } = useCanvasTutorial({ fabricCanvasRef });
-  const { submitFeedback, clearFeedback } = useCanvasFeedback({ fabricCanvasRef });
-  const { getSupport, clearSupport } = useCanvasSupport({ fabricCanvasRef });
-  const { applyLicense, clearLicense } = useCanvasLicensing({ fabricCanvasRef });
-  const { enableMonetization, disableMonetization } = useCanvasMonetization({ fabricCanvasRef });
-  const { joinCommunity, leaveCommunity } = useCanvasCommunity({ fabricCanvasRef });
-  const { exploreEcosystem, clearEcosystem } = useCanvasEcosystem({ fabricCanvasRef });
-  const { enterMetaverse, leaveMetaverse } = useCanvasMetaverse({ fabricCanvasRef });
-  const { exploreFuture, clearFuture } = useCanvasFuture({ fabricCanvasRef });
+  // Canvas grid management
+  const gridLayerRef = useRef<any[]>([]);
+  const grid = useCanvasGrid({
+    fabricCanvasRef,
+    // Remove gridLayerRef as it's not in the props type
+  });
   
-  // Load initial canvas state
-  const initializeCanvas = useCallback((canvasElement: HTMLCanvasElement) => {
-    const fabricCanvas = new FabricCanvas(canvasElement, {
-      backgroundColor: '#fff',
-      selection: true,
-      width: canvasElement.width,
-      height: canvasElement.height
-    });
-    
-    setCanvas(fabricCanvas);
+  // Canvas history management
+  const history = useCanvasHistory({
+    fabricCanvasRef
+  });
+  
+  // Performance tracking
+  const performance = useCanvasPerformance();
+  
+  // Canvas optimization
+  const optimization = useCanvasOptimization();
+  
+  // Floor plan state management
+  const { 
+    floorPlans, 
+    setFloorPlans 
+  } = useSyncedFloorPlans({
+    initialFloorPlans
+  });
+  
+  // GIA calculation
+  const { 
+    calculateGIA 
+  } = useFloorPlanGIA({
+    fabricCanvasRef,
+    setGia
+  });
+  
+  // Canvas debugging
+  const debug = useCanvasDebug({
+    fabricCanvasRef
+  });
+  
+  /**
+   * Function to handle canvas ready
+   * @param fabricCanvas Fabric canvas instance
+   */
+  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
     fabricCanvasRef.current = fabricCanvas;
+    setCanvas(fabricCanvas);
     
-    // Example of adding a floor plan
-    const now = new Date().toISOString();
-    const floorPlan = {
-      id: 'floor-1',
-      name: 'Initial Floor Plan',
-      label: 'Ground Floor',
-      index: 0,
-      strokes: [],
-      walls: [],
-      rooms: [],
-      canvasData: null,
-      canvasJson: null,
-      gia: 0,
-      level: 0,
-      createdAt: now,
-      updatedAt: now,
-      metadata: createCompleteMetadata(),
-      data: {}, // Added required property
-      userId: 'default-user' // Added required property
-    };
+    // Initialize canvas with current settings
+    if (fabricCanvas.isDrawingMode) {
+      fabricCanvas.freeDrawingBrush.width = lineThickness;
+      fabricCanvas.freeDrawingBrush.color = lineColor;
+    }
     
-    const addFloorPlan = () => {
-      const rect = new FabricObject.Rect({
-        left: 100,
-        top: 100,
-        fill: 'red',
-        width: 20,
-        height: 20
-      });
-      
-      fabricCanvas.add(rect);
-      fabricCanvas.renderAll();
-    };
-    
-    const addWall = () => {
-      const now = new Date().toISOString();
-      const metadata = {
-        createdAt: now,
-        updatedAt: now,
-        paperSize: 'A4',
+    // Create initial floor plan if none exists
+    if (floorPlans.length === 0) {
+      const newFloorPlan: FloorPlan = {
+        id: 'floor-0',
+        name: 'Ground Floor',
+        label: 'Ground Floor',
+        walls: [],
+        rooms: [],
+        strokes: [],
+        canvasData: null,
+        canvasJson: null,
+        metadata: createCompleteMetadata({ level: 0 }),
+        data: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        gia: 0,
         level: 0,
-        version: '1.0',
-        author: 'User',
-        dateCreated: now, // Ensure this is included
-        lastModified: now, // Ensure this is included
-        notes: '' // Ensure this is included
+        index: 0,
+        userId: ''
       };
       
-      const wall = {
-        id: 'wall-1',
-        start: { x: 0, y: 0 },
-        end: { x: 100, y: 0 },
-        thickness: 5,
-        color: '#000000',
-        length: 100, // Calculate or provide a value
-        roomIds: [] // Include required properties
-        // floorPlanId removed as it's not in Wall type
+      setFloorPlans([newFloorPlan]);
+    }
+    
+    // Calculate initial GIA
+    calculateGIA();
+    
+    // Mark canvas as ready
+    performance.markCanvasReady();
+  };
+  
+  /**
+   * Function to handle canvas error
+   * @param error Error object
+   */
+  const handleCanvasError = (error: Error) => {
+    console.error("Canvas initialization error:", error);
+    debug.logError(error);
+  };
+  
+  /**
+   * Create a new wall
+   * @param startPoint Start point
+   * @param endPoint End point
+   */
+  const createWall = (startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
+    if (!canvas) return;
+    
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    const wall = {
+      id: `wall-${Date.now()}`,
+      start: startPoint,
+      end: endPoint,
+      thickness: 5,
+      color: "#333333",
+      roomIds: [],
+      length
+    };
+    
+    if (floorPlans[currentFloor]) {
+      const updatedFloorPlan = {
+        ...floorPlans[currentFloor],
+        walls: [...floorPlans[currentFloor].walls, wall],
+        updatedAt: new Date().toISOString()
       };
       
-      console.log('Adding wall to canvas', wall);
-    };
-    
-    // Example of grouping objects
-    const groupObjects = () => {
-      const rect1 = new FabricObject.Rect({
-        left: 10,
-        top: 10,
-        width: 20,
-        height: 20,
-        fill: 'blue'
-      });
+      const newFloorPlans = [...floorPlans];
+      newFloorPlans[currentFloor] = updatedFloorPlan;
+      setFloorPlans(newFloorPlans);
       
-      const rect2 = new FabricObject.Rect({
-        left: 50,
-        top: 50,
-        width: 20,
-        height: 20,
-        fill: 'green'
-      });
-      
-      const group = new Group([rect1, rect2]);
-      fabricCanvas.add(group);
-      fabricCanvas.renderAll();
-    };
-    
-    // Add examples to the canvas
-    addFloorPlan();
-    addWall();
-    groupObjects();
-    
-    // Set up canvas event listeners
-    setupEvents(fabricCanvas);
-    
-    // Create initial grid
-    const gridObjects = createGrid(fabricCanvas);
-    gridLayerRef.current = gridObjects;
-    
-    // Save initial canvas state
-    saveState();
-    
-    console.log('Canvas initialized successfully');
-  }, [createGrid, saveState, setupEvents, fabricCanvasRef, gridLayerRef]);
-  
-  // Clear canvas state
-  const clearCanvas = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    fabricCanvasRef.current.clear();
-    clearEvents(fabricCanvasRef.current);
-    clearHistory();
-    console.log('Canvas cleared');
-  }, [clearEvents, clearHistory, fabricCanvasRef]);
-  
-  useEffect(() => {
-    return () => {
-      if (fabricCanvasRef.current) {
-        clearCanvas();
-      }
-    };
-  }, [clearCanvas, fabricCanvasRef]);
+      // Recalculate GIA
+      calculateGIA();
+    }
+  };
   
   return {
+    canvasRef,
+    fabricCanvasRef,
     canvas,
-    initializeCanvas,
-    clearCanvas,
-    setupEvents,
-    clearEvents,
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    createGrid,
-    toggleGridVisibility,
-    enableSnapping,
-    disableSnapping,
-    saveState,
-    restoreState,
-    clearHistory,
-    exportToJSON,
-    exportToImage,
-    selectAll,
-    deselectAll,
-    lockObject,
-    unlockObject,
-    measureDistance,
-    clearMeasurements,
-    addLayer,
-    removeLayer,
-    moveLayerUp,
-    moveLayerDown,
-    showGuides,
-    hideGuides,
-    startProfiling,
-    stopProfiling,
-    runDiagnostics,
-    clearDiagnostics,
-    checkAccessibility,
-    fixAccessibility,
-    saveData,
-    loadData,
-    clearData,
-    enableInteractions,
-    disableInteractions,
-    enableTextEditing,
-    disableTextEditing,
-    setBackgroundImage,
-    removeBackgroundImage,
-    applyFilter,
-    removeFilter,
-    playAnimation,
-    stopAnimation,
-    enable3D,
-    disable3D,
-    enableAR,
-    disableAR,
-    startCollaboration,
-    stopCollaboration,
-    generateAI,
-    clearAI,
-    runAutomation,
-    clearAutomation,
-    runTests,
-    clearTests,
-    optimizeCanvas,
-    clearOptimization,
-    enableSecurity,
-    disableSecurity,
-    applyTheme,
-    clearTheme,
-    setLocale,
-    clearLocale,
-    undo,
-    redo,
-    startTutorial,
-    stopTutorial,
-    submitFeedback,
-    clearFeedback,
-    getSupport,
-    clearSupport,
-    applyLicense,
-    clearLicense,
-    enableMonetization,
-    disableMonetization,
-    joinCommunity,
-    leaveCommunity,
-    exploreEcosystem,
-    clearEcosystem,
-    enterMetaverse,
-    leaveMetaverse,
-    exploreFuture,
-    clearFuture
+    tool,
+    setTool,
+    lineThickness,
+    setLineThickness,
+    lineColor,
+    setLineColor,
+    zoomLevel,
+    setZoomLevel,
+    floorPlans,
+    setFloorPlans,
+    gia,
+    setGia,
+    currentFloor,
+    setCurrentFloor,
+    handleCanvasReady,
+    handleCanvasError,
+    createWall,
+    gridLayerRef,
+    calculateGIA,
+    // Debug functions
+    debug: {
+      logInfo: debug.logInfo,
+      logWarning: debug.logWarning,
+      logError: debug.logError
+    }
   };
 };
+
+export default useCanvasControllerLoader;
