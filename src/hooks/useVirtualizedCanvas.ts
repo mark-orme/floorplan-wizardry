@@ -1,3 +1,4 @@
+
 /**
  * Virtualized Canvas Hook
  * 
@@ -48,20 +49,18 @@ export function useVirtualizedCanvas(
     toggleVirtualization,
     updateVirtualization,
     resetMetrics
-  } = useCanvasPerformanceMonitor({
-    fabricCanvasRef,
+  } = useGridPerformanceMonitor({
+    canvas: fabricCanvasRef.current,
     enabled,
-    viewportWidth: width,
-    viewportHeight: height,
-    virtualizationPadding: padding
+    onPerformanceUpdate: undefined
   });
   
   // Auto-enable virtualization when object count exceeds threshold
   useEffect(() => {
     if (!autoToggle || !fabricCanvasRef.current) return;
     
-    const objectCount = performanceData.objectCount;
-    
+    const objectCount = fabricCanvasRef.current.getObjects().length;
+  
     // Enable virtualization if object count exceeds threshold
     if (objectCount > threshold && !virtualizationEnabled && !isAutoEnabled) {
       toggleVirtualization();
@@ -73,7 +72,6 @@ export function useVirtualizedCanvas(
       });
     }
   }, [
-    performanceData.objectCount, 
     threshold, 
     virtualizationEnabled, 
     autoToggle, 
