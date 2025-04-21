@@ -3,7 +3,7 @@
  * Type diagnostics utility
  * @module utils/debug/typeDiagnostics
  */
-import { PaperSize, FloorPlanMetadata, FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { PaperSize, FloorPlanMetadata, FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Calculate wall length based on start and end points
@@ -108,4 +108,70 @@ export function validateFloorPlanWithReporting(floorPlan: FloorPlan): { valid: b
     valid: issues.length === 0,
     issues
   };
+}
+
+/**
+ * Validate if a floor plan is valid
+ * @param floorPlan Floor plan to validate
+ * @returns Whether the floor plan is valid
+ */
+export function isValidFloorPlan(floorPlan: FloorPlan): boolean {
+  return floorPlan && 
+         typeof floorPlan.id === 'string' && 
+         typeof floorPlan.name === 'string';
+}
+
+/**
+ * Validate if a room is valid
+ * @param room Room to validate
+ * @returns Whether the room is valid
+ */
+export function isValidRoom(room: Room): boolean {
+  return room && 
+         typeof room.id === 'string' && 
+         typeof room.name === 'string' && 
+         Array.isArray(room.vertices) && 
+         room.vertices.length >= 3;
+}
+
+/**
+ * Validate if a wall is valid
+ * @param wall Wall to validate
+ * @returns Whether the wall is valid
+ */
+export function isValidWall(wall: Wall): boolean {
+  return wall && 
+         typeof wall.id === 'string' && 
+         wall.start && 
+         typeof wall.start.x === 'number' && 
+         typeof wall.start.y === 'number' && 
+         wall.end && 
+         typeof wall.end.x === 'number' && 
+         typeof wall.end.y === 'number';
+}
+
+/**
+ * Validate if a stroke is valid
+ * @param stroke Stroke to validate
+ * @returns Whether the stroke is valid
+ */
+export function isValidStroke(stroke: Stroke): boolean {
+  return stroke && 
+         typeof stroke.id === 'string' && 
+         Array.isArray(stroke.points) && 
+         stroke.points.length > 0;
+}
+
+/**
+ * Log type information for debugging
+ * @param obj Object to log
+ * @param label Optional label
+ */
+export function logTypeInfo(obj: any, label: string = 'Object'): void {
+  console.group(`Type Info: ${label}`);
+  console.log('Type:', typeof obj);
+  console.log('Constructor:', obj?.constructor?.name);
+  console.log('Keys:', Object.keys(obj || {}));
+  console.log('Value:', obj);
+  console.groupEnd();
 }

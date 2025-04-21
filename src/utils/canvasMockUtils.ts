@@ -6,10 +6,10 @@
 import { vi } from 'vitest';
 
 /**
- * Create a typed mock canvas for testing
- * @returns Mock canvas object
+ * Create a typed mock canvas for unit tests
+ * @returns A mock canvas object
  */
-export const createTypedMockCanvas = () => {
+export function createTypedMockCanvas() {
   return {
     add: vi.fn(),
     remove: vi.fn(),
@@ -36,103 +36,55 @@ export const createTypedMockCanvas = () => {
       width: 1
     },
     viewportTransform: [1, 0, 0, 1, 0, 0],
-    selection: true
+    selection: true,
+    // Add helper methods for tests
+    getHandlers: vi.fn().mockReturnValue([]),
+    triggerEvent: vi.fn()
   };
-};
+}
 
 /**
- * Create a mock canvas with 'withImplementation' method
- * @returns Mock canvas with withImplementation
+ * Create a typed mock history reference for unit tests
+ * @returns A mock history reference object
  */
-export const createWithImplementationMock = () => {
-  const mock = createTypedMockCanvas();
-  
+export function createTypedHistoryRef() {
   return {
-    ...mock,
-    withImplementation: vi.fn().mockImplementation((callback) => {
-      callback(mock);
-      return Promise.resolve(mock);
-    })
-  };
-};
-
-/**
- * Setup a Fabric mock for use in testing
- * @returns Mock fabric object
- */
-export const setupFabricMock = () => {
-  return {
-    Canvas: vi.fn().mockImplementation(() => createTypedMockCanvas()),
-    IText: vi.fn().mockImplementation(() => ({})),
-    Line: vi.fn().mockImplementation(() => ({})),
-    Object: vi.fn().mockImplementation(() => ({})),
-    Point: vi.fn().mockImplementation((x, y) => ({ x, y }))
-  };
-};
-
-/**
- * Create a mock grid layer reference
- * @returns Mock grid layer reference
- */
-export const createMockGridLayerRef = () => {
-  return { current: [] };
-};
-
-/**
- * Create a mock fabric canvas reference
- * @returns Mock fabric canvas reference
- */
-export const createMockFabricCanvasRef = () => {
-  return { current: createTypedMockCanvas() };
-};
-
-/**
- * Create a mock history reference
- * @returns Mock history reference
- */
-export const createMockHistoryRef = () => {
-  return { 
     current: {
       undo: vi.fn(),
       redo: vi.fn(),
       canUndo: vi.fn().mockReturnValue(true),
       canRedo: vi.fn().mockReturnValue(true),
       push: vi.fn(),
-      clear: vi.fn()
+      clear: vi.fn(),
+      past: [],
+      future: []
     }
   };
-};
+}
 
 /**
- * Create a typed mock object for Fabric.js
- * @returns Mock object
+ * Create a typed mock floor plan context for unit tests
+ * @returns A mock floor plan context
  */
-export const createMockFabricObject = () => {
+export function createTypedFloorPlanContext() {
   return {
-    set: vi.fn(),
-    setCoords: vi.fn(),
-    get: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
-    remove: vi.fn()
+    isDrawing: false,
+    setIsDrawing: vi.fn(),
+    tool: 'select',
+    setTool: vi.fn(),
+    lineColor: '#000000',
+    setLineColor: vi.fn(),
+    lineThickness: 2,
+    setLineThickness: vi.fn(),
+    canUndo: true,
+    setCanUndo: vi.fn(),
+    canRedo: true,
+    setCanRedo: vi.fn(),
+    showGrid: true,
+    setShowGrid: vi.fn(),
+    snapToGrid: false,
+    setSnapToGrid: vi.fn(),
+    zoom: 1,
+    setZoom: vi.fn()
   };
-};
-
-/**
- * Cast a canvas-like object to a proper Canvas type
- * This is safe for tests, but should not be used in production code
- * @param canvas Canvas-like object
- * @returns Canvas type
- */
-export const castAsCanvas = (canvas: any) => {
-  return canvas as any;
-};
-
-/**
- * Helper function for tests to cast a mock canvas to any expected type
- * @param canvas Mock canvas object
- * @returns Canvas with any type
- */
-export const asMockCanvas = (canvas: any) => {
-  return canvas as any;
-};
+}

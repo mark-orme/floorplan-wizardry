@@ -3,7 +3,12 @@
  * Global Type Checking Utilities
  * Provides debug helpers that can be called from anywhere
  */
-import { isValidFloorPlan, isValidStroke, isValidRoom, logTypeInfo } from './typeDiagnostics';
+import { 
+  isValidFloorPlan, 
+  isValidStroke, 
+  isValidRoom, 
+  logTypeInfo 
+} from './typeDiagnostics';
 
 // Make these functions available globally for debugging
 declare global {

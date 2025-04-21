@@ -5,31 +5,11 @@
  * @module utils/floorPlanAdapter
  */
 
-// Re-export everything from the converters module
-export {
-  adaptFloorPlan,
-  appToCoreFloorPlans,
-  appToCoreFloorPlan,
-  coreToAppFloorPlans,
-  coreToAppFloorPlan,
-  validatePoint,
-  validateColor,
-  validateTimestamp,
-  validateStrokeType,
-  asStrokeType,
-  validateRoomType,
-  asRoomType,
-  mapRoomType,
-  normalizeDrawingMode
-} from './floorPlanAdapter/converters';
+// Re-export from index module
+export * from './floorPlanAdapter/index';
 
-// Re-export validators from the validators module
-export {
-  validatePoint,
-  validateColor,
-  validateTimestamp,
-  validateStrokeType,
-  validateRoomType,
-  mapRoomType,
-  logValidation
-} from './floorPlanAdapter/validators';
+// Re-export drawing mode normalization
+export const normalizeDrawingMode = (mode: string): string => {
+  // Simple implementation to normalize drawing mode
+  return mode.toLowerCase();
+};

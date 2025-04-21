@@ -1,136 +1,160 @@
 
 /**
- * Typed test fixtures
- * Provides strongly-typed test data creation helpers
+ * Type-safe test fixtures for unit tests
  * @module utils/test/typedTestFixtures
  */
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  FloorPlan, 
-  Room, 
-  Wall, 
-  Stroke, 
-  Point, 
+import {
+  FloorPlan,
   FloorPlanMetadata,
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
+  Wall,
+  Room,
+  Stroke,
+  Point,
   PaperSize,
+  StrokeTypeLiteral,
+  RoomTypeLiteral
 } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
-import { asStrokeType, asRoomType } from '@/utils/floorPlanAdapter/converters';
-
-// Export types used in tests
-export type { FloorPlan, Stroke, Wall, Room, Point, StrokeTypeLiteral, RoomTypeLiteral };
-export { asStrokeType, asRoomType, PaperSize, createCompleteMetadata };
 
 /**
- * Creates a test point
- * @param overrides Properties to override defaults
- * @returns Test point
+ * Create a test point for testing
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns A point object
  */
-export const createTestPoint = (overrides: Partial<Point> = {}): Point => {
+export function createTestPoint(x: number = 0, y: number = 0): Point {
+  return { x, y };
+}
+
+/**
+ * Create a test stroke for testing
+ * @param props Optional properties
+ * @returns A stroke object
+ */
+export function createTestStroke(props: Partial<Stroke> = {}): Stroke {
   return {
-    x: overrides.x ?? 0,
-    y: overrides.y ?? 0
+    id: props.id || `stroke-${uuidv4()}`,
+    points: props.points || [
+      createTestPoint(0, 0),
+      createTestPoint(100, 100)
+    ],
+    type: props.type || 'line',
+    color: props.color || '#000000',
+    thickness: props.thickness || 2,
+    width: props.width || 2
   };
-};
+}
 
 /**
- * Creates a test stroke with valid type
- * @param overrides Properties to override defaults
- * @returns Test stroke
+ * Create a test wall for testing
+ * @param props Optional properties
+ * @returns A wall object
  */
-export const createTestStroke = (overrides: Partial<Stroke> = {}): Stroke => {
-  return {
-    id: overrides.id ?? uuidv4(),
-    points: overrides.points ?? [createTestPoint(), createTestPoint({ x: 100, y: 100 })],
-    type: overrides.type ?? 'line' as StrokeTypeLiteral,
-    thickness: overrides.thickness ?? 2,
-    width: overrides.width ?? overrides.thickness ?? 2,
-    color: overrides.color ?? '#000000'
-  };
-};
-
-/**
- * Creates a test wall
- * @param overrides Properties to override defaults
- * @returns Test wall
- */
-export const createTestWall = (overrides: Partial<Wall> = {}): Wall => {
-  const start = overrides.start ?? createTestPoint();
-  const end = overrides.end ?? createTestPoint({ x: 100, y: 0 });
-  
-  // Calculate length if not provided
-  const length = overrides.length ?? Math.sqrt(
+export function createTestWall(props: Partial<Wall> = {}): Wall {
+  const start = props.start || createTestPoint(0, 0);
+  const end = props.end || createTestPoint(100, 0);
+  const length = props.length || Math.sqrt(
     Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
   );
   
   return {
-    id: overrides.id ?? uuidv4(),
+    id: props.id || `wall-${uuidv4()}`,
     start,
     end,
-    thickness: overrides.thickness ?? 10,
     length,
-    color: overrides.color ?? '#000000',
-    roomIds: overrides.roomIds ?? [],
-    height: overrides.height
+    thickness: props.thickness || 5,
+    color: props.color || '#333333',
+    roomIds: props.roomIds || [],
+    height: props.height
   };
-};
+}
 
 /**
- * Creates a test room
- * @param overrides Properties to override defaults
- * @returns Test room
+ * Create a test room for testing
+ * @param props Optional properties
+ * @returns A room object
  */
-export const createTestRoom = (overrides: Partial<Room> = {}): Room => {
-  const vertices = overrides.vertices ?? [
-    createTestPoint(),
-    createTestPoint({ x: 100, y: 0 }),
-    createTestPoint({ x: 100, y: 100 }),
-    createTestPoint({ x: 0, y: 100 })
+export function createTestRoom(props: Partial<Room> = {}): Room {
+  const vertices = props.vertices || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 0),
+    createTestPoint(100, 100),
+    createTestPoint(0, 100)
   ];
   
-  return {
-    id: overrides.id ?? uuidv4(),
-    name: overrides.name ?? 'Test Room',
-    type: overrides.type ?? 'other' as RoomTypeLiteral,
-    area: overrides.area ?? 0,
-    vertices,
-    perimeter: overrides.perimeter ?? 400,
-    labelPosition: overrides.labelPosition ?? createTestPoint({ x: 50, y: 50 }),
-    center: overrides.center ?? createTestPoint({ x: 50, y: 50 }),
-    color: overrides.color ?? '#ffffff'
+  // Calculate center point
+  const center = props.center || {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
+    y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length
   };
-};
-
-/**
- * Creates a complete test floor plan with all required properties
- * @param overrides Properties to override defaults
- * @returns Test floor plan
- */
-export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPlan => {
-  const now = new Date().toISOString();
-  const level = overrides.level ?? 0;
+  
+  // Calculate perimeter
+  let perimeter = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    const dx = vertices[j].x - vertices[i].x;
+    const dy = vertices[j].y - vertices[i].y;
+    perimeter += Math.sqrt(dx * dx + dy * dy);
+  }
   
   return {
-    id: overrides.id ?? uuidv4(),
-    name: overrides.name ?? 'Test Floor Plan',
-    label: overrides.label ?? 'Test Floor Plan',
-    walls: overrides.walls ?? [],
-    rooms: overrides.rooms ?? [],
-    strokes: overrides.strokes ?? [],
-    canvasData: overrides.canvasData ?? null,
-    canvasJson: overrides.canvasJson ?? null,
-    canvasState: overrides.canvasState ?? null,
-    createdAt: overrides.createdAt ?? now,
-    updatedAt: overrides.updatedAt ?? now,
-    gia: overrides.gia ?? 0,
-    level: level,
-    index: overrides.index ?? level,
-    metadata: overrides.metadata ?? createCompleteMetadata({
-      level
-    }),
-    data: overrides.data ?? {},
-    userId: overrides.userId ?? 'test-user'
+    id: props.id || `room-${uuidv4()}`,
+    name: props.name || 'Test Room',
+    type: props.type || 'other',
+    vertices,
+    area: props.area || 10000,
+    perimeter: props.perimeter || perimeter,
+    labelPosition: props.labelPosition || center,
+    center,
+    color: props.color || '#f5f5f5'
   };
-};
+}
+
+/**
+ * Create a complete metadata object with required fields
+ * @param overrides Optional overrides
+ * @returns Floor plan metadata
+ */
+export function createTestMetadata(overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  return {
+    createdAt: overrides.createdAt || now,
+    updatedAt: overrides.updatedAt || now,
+    paperSize: overrides.paperSize || PaperSize.A4,
+    level: overrides.level ?? 0,
+    version: overrides.version || '1.0',
+    author: overrides.author || 'Test Author',
+    dateCreated: overrides.dateCreated || now,
+    lastModified: overrides.lastModified || now,
+    notes: overrides.notes || ''
+  };
+}
+
+/**
+ * Create a test floor plan for testing
+ * @param props Optional properties
+ * @returns A floor plan object
+ */
+export function createTestFloorPlan(props: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: props.id || `floorplan-${uuidv4()}`,
+    name: props.name || 'Test Floor Plan',
+    label: props.label || 'Test Floor Plan',
+    walls: props.walls || [],
+    rooms: props.rooms || [],
+    strokes: props.strokes || [],
+    canvasData: props.canvasData || null,
+    canvasJson: props.canvasJson || null,
+    canvasState: props.canvasState || null,
+    createdAt: props.createdAt || now,
+    updatedAt: props.updatedAt || now,
+    gia: props.gia ?? 0,
+    level: props.level ?? 0,
+    index: props.index ?? 0,
+    metadata: props.metadata || createTestMetadata({ level: props.level }),
+    data: props.data || {},
+    userId: props.userId || 'test-user'
+  };
+}
