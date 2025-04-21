@@ -1,4 +1,3 @@
-
 /**
  * Content Security Policy Utilities
  */
@@ -21,7 +20,22 @@ export const DEFAULT_CSP_CONFIG = {
   'report-uri': [] // Added for CSP violation reporting
 };
 
-export type CspDirective = keyof typeof DEFAULT_CSP_CONFIG;
+export type CspDirective =
+  | 'default-src'
+  | 'script-src'
+  | 'style-src'
+  | 'img-src'
+  | 'font-src'
+  | 'connect-src'
+  | 'frame-src'
+  | 'object-src'
+  | 'base-uri'
+  | 'form-action'
+  | 'frame-ancestors'
+  | 'block-all-mixed-content'
+  | 'upgrade-insecure-requests'
+  | 'report-uri';
+
 export type CspConfig = Record<CspDirective, string[]>;
 
 /**
@@ -97,13 +111,13 @@ export const initializeCSP = (config: Partial<CspConfig> = {}): void => {
  */
 export const setupCspViolationReporting = (reportUri: string): void => {
   if (typeof document === 'undefined') return;
-  
+
   // Add CSP report-uri directive
   const config: Partial<CspConfig> = {
     'report-uri': [reportUri]
   };
-  
+
   applyCspMetaTag(config);
-  
+
   console.log('CSP violation reporting configured');
 };
