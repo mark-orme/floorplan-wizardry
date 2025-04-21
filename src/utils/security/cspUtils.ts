@@ -1,8 +1,19 @@
+
 /**
  * Content Security Policy Utilities
+ * 
+ * This module provides a comprehensive set of utilities for managing Content Security Policy (CSP)
+ * in web applications. CSP is a security feature that helps prevent cross-site scripting (XSS),
+ * clickjacking, and other code injection attacks.
+ * 
+ * @module utils/security/cspUtils
  */
 
-// CSP configuration that balances security and functionality
+/**
+ * Default CSP configuration that balances security and functionality.
+ * This provides a reasonably secure baseline that works with most modern web applications.
+ * Customize as needed for your specific security requirements.
+ */
 export const DEFAULT_CSP_CONFIG = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'unsafe-inline'"], // Consider removing unsafe-inline in production
@@ -20,6 +31,12 @@ export const DEFAULT_CSP_CONFIG = {
   'report-uri': [] // Added for CSP violation reporting
 };
 
+/**
+ * Valid CSP directive names as defined in the CSP specification.
+ * This union type ensures type safety when working with CSP directives.
+ * 
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+ */
 export type CspDirective =
   | 'default-src'
   | 'script-src'
@@ -36,10 +53,28 @@ export type CspDirective =
   | 'upgrade-insecure-requests'
   | 'report-uri';
 
+/**
+ * Type definition for a complete CSP configuration.
+ * Maps each CSP directive to an array of allowed sources.
+ */
 export type CspConfig = Record<CspDirective, string[]>;
 
 /**
  * Convert CSP config object to policy string
+ * 
+ * Transforms a CSP configuration object into a properly formatted CSP policy string
+ * that can be used in HTTP headers or meta tags.
+ * 
+ * @param config - Partial CSP configuration to merge with defaults
+ * @returns Formatted CSP policy string
+ * 
+ * @example
+ * ```typescript
+ * const policyString = buildCspString({
+ *   'script-src': ["'self'", "trusted-cdn.example.com"]
+ * });
+ * // Returns: "default-src 'self'; script-src 'self' trusted-cdn.example.com; ..."
+ * ```
  */
 export const buildCspString = (config: Partial<CspConfig> = {}): string => {
   // Merge with default config
@@ -58,7 +93,20 @@ export const buildCspString = (config: Partial<CspConfig> = {}): string => {
 };
 
 /**
- * Apply CSP as a meta tag
+ * Apply CSP as a meta tag in the document head
+ * 
+ * Adds or updates a Content-Security-Policy meta tag in the document.
+ * This is useful for client-side CSP enforcement when HTTP headers cannot be set.
+ * 
+ * @param config - Partial CSP configuration to apply
+ * 
+ * @example
+ * ```typescript
+ * // Apply a custom CSP with stricter script sources
+ * applyCspMetaTag({
+ *   'script-src': ["'self'"] // Disallow inline scripts
+ * });
+ * ```
  */
 export const applyCspMetaTag = (config: Partial<CspConfig> = {}): void => {
   if (typeof document === 'undefined') return;
@@ -78,6 +126,19 @@ export const applyCspMetaTag = (config: Partial<CspConfig> = {}): void => {
 
 /**
  * Initialize CSP with security headers
+ * 
+ * Sets up Content Security Policy and other security headers as meta tags.
+ * Call this during application initialization to establish baseline security.
+ * 
+ * @param config - Optional custom CSP configuration to apply
+ * 
+ * @example
+ * ```typescript
+ * // In your app initialization code:
+ * useEffect(() => {
+ *   initializeCSP();
+ * }, []);
+ * ```
  */
 export const initializeCSP = (config: Partial<CspConfig> = {}): void => {
   if (typeof document === 'undefined') return;
@@ -107,7 +168,18 @@ export const initializeCSP = (config: Partial<CspConfig> = {}): void => {
 };
 
 /**
- * Report CSP violations
+ * Configure CSP violation reporting
+ * 
+ * Adds a report-uri directive to the CSP to send violation reports to a specified endpoint.
+ * This helps monitor potential attacks and implementation issues in production.
+ * 
+ * @param reportUri - URI where CSP violation reports will be sent
+ * 
+ * @example
+ * ```typescript
+ * // Send CSP violation reports to your monitoring endpoint
+ * setupCspViolationReporting('https://example.com/csp-report-endpoint');
+ * ```
  */
 export const setupCspViolationReporting = (reportUri: string): void => {
   if (typeof document === 'undefined') return;
