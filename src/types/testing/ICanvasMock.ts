@@ -11,18 +11,18 @@ import type { Mock } from 'vitest';
  * Contains only the methods and properties commonly used in tests
  */
 export interface ICanvasMock {
-  add: Mock;
-  remove: Mock;
-  getObjects: Mock;
-  renderAll: Mock;
-  requestRenderAll: Mock;
-  on: Mock;
-  off: Mock;
-  getActiveObjects?: Mock;
-  discardActiveObject: Mock;
-  contains?: Mock;
+  add: Mock<any>;
+  remove: Mock<any>;
+  getObjects: Mock<any>;
+  renderAll: Mock<any>;
+  requestRenderAll: Mock<any>;
+  on: Mock<any>;
+  off: Mock<any>;
+  getActiveObjects?: Mock<any>;
+  discardActiveObject: Mock<any>;
+  contains?: Mock<any>;
   // Fix for withImplementation type - MUST return Promise<void>
-  withImplementation: Mock<[callback?: Function], Promise<void>>;
+  withImplementation: Mock<any, Promise<void>>;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;

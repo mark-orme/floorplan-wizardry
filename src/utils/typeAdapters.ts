@@ -1,4 +1,3 @@
-
 /**
  * Type adapters for converting between different object types
  * @module utils/typeAdapters
@@ -155,6 +154,18 @@ export function adaptFloorPlans(floorPlans: Partial<FloorPlan>[]): FloorPlan[] {
  * @param metadata Partial metadata
  * @returns Complete metadata
  */
-export function adaptFloorPlanMetadata(metadata: Partial<FloorPlanMetadata>): FloorPlanMetadata {
+export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
   return createCompleteMetadata(metadata);
 }
+
+// Export all type adapter functions
+export {
+  adaptFloorPlan,
+  adaptRoom,
+  adaptWall,
+  adaptStroke,
+  adaptPoint,
+  adaptMetadata,
+  asStrokeType,
+  asRoomType
+};

@@ -1,5 +1,6 @@
-
-import { FloorPlan, PaperSize } from '@/types/FloorPlan';
+import { FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import { PaperSize } from '@/types/floor-plan/basicTypes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -67,4 +68,13 @@ export function getPaperSizeScales(paperSize: PaperSize): { width: number; heigh
     default:
       return { width: 210, height: 297 };
   }
+}
+
+/**
+ * Create default metadata for a floor plan
+ * @param level Floor level (0 = ground floor)
+ * @returns Default floor plan metadata
+ */
+export function createDefaultMetadata(level: number = 0): FloorPlanMetadata {
+  return createCompleteMetadata({ level });
 }

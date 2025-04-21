@@ -1,10 +1,10 @@
-
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import { useFloorPlanDrawing, UseFloorPlanDrawingProps } from '@/hooks/floor-plan/useFloorPlanDrawing';
+import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
@@ -21,15 +21,12 @@ export const useFloorPlans = ({
   gridLayerRef,
   tool = DrawingMode.SELECT
 }: UseFloorPlansProps) => {
-  // State for floor plans
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
   const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
   const [gia, setGia] = useState(0);
   
-  // Get current floor plan
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
-  // Initialize floor plan drawing hook
   const drawingHook = useFloorPlanDrawing({
     fabricCanvasRef,
     tool,
@@ -51,7 +48,6 @@ export const useFloorPlans = ({
     }
   });
   
-  // Memoize the drawFloorPlan function
   const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
     if (!drawingHook.drawFloorPlan) {
       console.error('drawFloorPlan function not available');
@@ -61,8 +57,8 @@ export const useFloorPlans = ({
     drawingHook.drawFloorPlan(canvas, floorPlan);
   }, [drawingHook.drawFloorPlan]);
   
-  // Add a new floor plan
   const addFloorPlan = useCallback(() => {
+    const now = new Date().toISOString();
     const newFloorPlan: FloorPlan = {
       id: uuidv4(),
       name: `Floor ${floorPlans.length + 1}`,
@@ -75,14 +71,12 @@ export const useFloorPlans = ({
       gia: 0,
       canvasData: null,
       canvasJson: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        paperSize: 'A4',
+      canvasState: null,
+      createdAt: now,
+      updatedAt: now,
+      metadata: createCompleteMetadata({
         level: floorPlans.length
-      },
+      }),
       data: {},
       userId: 'default-user'
     };
@@ -91,7 +85,6 @@ export const useFloorPlans = ({
     setCurrentFloorIndex(floorPlans.length);
   }, [floorPlans.length]);
   
-  // Remove a floor plan
   const removeFloorPlan = useCallback((index: number) => {
     if (floorPlans.length <= 1) {
       console.warn('Cannot remove the last floor plan');

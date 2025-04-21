@@ -3,7 +3,7 @@
  * Type diagnostics utility
  * @module utils/debug/typeDiagnostics
  */
-import { FloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan, Wall, Room, Stroke, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 import { Point } from '@/types/core/Point';
 
 /**

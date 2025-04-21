@@ -1,25 +1,35 @@
 
 /**
- * Basic Types for Floor Plans
- * Common type definitions used across floor plan modules
+ * Basic types for floor plans
  * @module types/floor-plan/basicTypes
  */
 
-// Import the unified types to ensure consistency
-import type { StrokeTypeLiteral, RoomTypeLiteral } from './typesBarrel';
-
-// Re-export the types
-export type { StrokeTypeLiteral, RoomTypeLiteral };
-
 /**
- * Paper size literals for floor plan exports
+ * Paper size enum for printing
  */
 export enum PaperSize {
   A4 = 'A4',
   A3 = 'A3',
-  A5 = 'A5',
-  LETTER = 'LETTER',
-  LEGAL = 'LEGAL',
-  TABLOID = 'TABLOID',
-  CUSTOM = 'CUSTOM'
+  LETTER = 'Letter',
+  LEGAL = 'Legal',
+  TABLOID = 'Tabloid'
+}
+
+/**
+ * Point interface for coordinates
+ * Note: Re-exported from core/Point for compatibility
+ */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Create a point with the given coordinates
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns Point object
+ */
+export function createPoint(x: number, y: number): Point {
+  return { x, y };
 }
