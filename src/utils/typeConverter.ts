@@ -24,8 +24,6 @@ import {
   RoomTypeLiteral as LegacyRoomType
 } from '@/types/floor-plan/unifiedTypes';
 
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
-
 console.log('Loading type converter utility');
 
 /**
@@ -42,6 +40,7 @@ export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan
     hasUserId: !!floorPlan.userId
   });
   
+  const now = new Date().toISOString();
   // Create a new floor plan with all required properties
   return {
     id: floorPlan.id,
@@ -57,7 +56,17 @@ export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan
     gia: floorPlan.gia || 0,
     level: floorPlan.level || 0,
     index: floorPlan.index || 0,
-    metadata: floorPlan.metadata || createCompleteMetadata(),
+    metadata: floorPlan.metadata || {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: floorPlan.level || 0,
+      version: '1.0',
+      author: 'User',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
+    },
     // Critical required properties
     data: floorPlan.data || {}, // Ensure data is present
     userId: floorPlan.userId || 'unknown' // Ensure userId is present

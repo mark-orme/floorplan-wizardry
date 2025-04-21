@@ -18,12 +18,13 @@ const testStroke: Partial<Stroke> = {
 };
 
 // Example floor plan literal, removed canvasState and added missing properties for FloorPlan
+const now = new Date().toISOString();
 const testFloorPlan: Partial<FloorPlan> = {
   id: 'test-floorplan',
   name: 'Test FloorPlan',
   label: 'Test FloorPlan',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: now,
+  updatedAt: now,
   gis: 0,
   walls: [],
   rooms: [],
@@ -31,7 +32,17 @@ const testFloorPlan: Partial<FloorPlan> = {
   gia: 0,
   level: 0,
   index: 0,
-  metadata: createCompleteMetadata(), // Now creates a complete metadata object with all required fields
+  metadata: {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: 'A4',
+    level: 0,
+    version: '1.0',
+    author: 'User',
+    dateCreated: now,
+    lastModified: now,
+    notes: ''
+  },
   data: {}, // required property
   userId: '', // required property
   // canvasState removed

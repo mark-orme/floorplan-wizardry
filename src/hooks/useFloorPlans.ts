@@ -28,7 +28,7 @@ export const useFloorPlans = ({
   
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
-  // Use a safe currentFloorPlan value for the drawing hook
+  const now = new Date().toISOString();
   const safeFloorPlan = currentFloorPlan || adaptFloorPlan({
     id: 'empty',
     name: 'Empty Floor Plan',
@@ -37,12 +37,22 @@ export const useFloorPlans = ({
     strokes: [],
     canvasData: null,
     canvasJson: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
     gia: 0,
     level: 0,
     index: 0,
-    metadata: createCompleteMetadata(),
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0,
+      version: '1.0',
+      author: 'User',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
+    },
     data: {},
     userId: ''
   });
@@ -85,7 +95,17 @@ export const useFloorPlans = ({
       canvasJson: null,
       createdAt: now,
       updatedAt: now,
-      metadata: createCompleteMetadata(),
+      metadata: {
+        createdAt: now,
+        updatedAt: now,
+        paperSize: 'A4',
+        level: floorPlans.length,
+        version: '1.0',
+        author: 'User',
+        dateCreated: now,
+        lastModified: now,
+        notes: ''
+      },
       data: {},
       userId: 'default-user'
     });

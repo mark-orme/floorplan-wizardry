@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -30,13 +29,17 @@ interface CanvasToolsManagerProps {
   gridLayerRef?: React.MutableRefObject<any[]>;
   defaultTool?: DrawingMode;
   onToolChange?: (tool: DrawingMode) => void;
+  zoomLevel?: number;
+  tool?: string | DrawingMode;
 }
 
 export const useCanvasToolsManager = ({
   canvas,
   fabricCanvasRef,
   defaultTool = DrawingMode.SELECT,
-  onToolChange
+  onToolChange,
+  zoomLevel,
+  tool
 }: CanvasToolsManagerProps) => {
   const [activeTool, setActiveTool] = useState<DrawingMode>(defaultTool);
 

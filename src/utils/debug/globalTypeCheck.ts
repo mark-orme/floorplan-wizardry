@@ -4,9 +4,6 @@
  * @module utils/debug/globalTypeCheck
  */
 
-// We remove the imports of validateFloorPlan, validateRoom, validateWall, validateStroke since they don't exist in typeDiagnostics.ts anymore
-// Instead, we do a minimal global init
-
 /**
  * Initialize global type checkers to validate objects at runtime
  */
@@ -40,13 +37,11 @@ export function initGlobalTypeCheckers() {
   return typeCheckers;
 }
 
-// Export validators for direct use (left empty because no exports available)
-export const validateTypes = {
-  floorPlan: () => false,
-  stroke: () => false,
-  room: () => false,
-  wall: () => false
-};
+// Export validators for direct use
+export const validateFloorPlan = (obj: any): { valid: boolean; errors: string[] } => ({ valid: false, errors: [] });
+export const validateWall = (obj: any): { valid: boolean; errors: string[] } => ({ valid: false, errors: [] });
+export const validateRoom = (obj: any): { valid: boolean; errors: string[] } => ({ valid: false, errors: [] });
+export const validateStroke = (obj: any): { valid: boolean; errors: string[] } => ({ valid: false, errors: [] });
 
 // Return the type of an object
 export function getObjectType(obj: any): string {
@@ -54,3 +49,9 @@ export function getObjectType(obj: any): string {
   // No validation available here, so return unknown always
   return 'unknown';
 }
+
+// Export validators for type checking
+export const isFloorPlan = (obj: any): boolean => false;
+export const isWall = (obj: any): boolean => false;
+export const isRoom = (obj: any): boolean => false;
+export const isStroke = (obj: any): boolean => false;

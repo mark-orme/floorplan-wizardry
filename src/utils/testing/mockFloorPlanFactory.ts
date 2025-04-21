@@ -1,8 +1,7 @@
 
-
 // For line 58, remove width from stroke:
 const stroke = {
-  id: `stroke-${i}`,
+  id: `stroke-${Math.floor(Math.random() * 1000)}`,
   points: [{ x: 10, y: 10 }, { x: 100, y: 100 }],
   type: 'line',
   color: '#000000',
@@ -11,6 +10,7 @@ const stroke = {
 };
 
 // For any FloorPlanMetadata object, ensure all required fields are present:
+const now = new Date().toISOString();
 const metadata = {
   createdAt: now,
   updatedAt: now,
@@ -22,4 +22,3 @@ const metadata = {
   lastModified: now, // Add missing field
   notes: ''
 };
-

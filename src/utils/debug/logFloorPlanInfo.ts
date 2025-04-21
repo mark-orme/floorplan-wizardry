@@ -4,7 +4,8 @@
  * @module utils/debug/logFloorPlanInfo
  */
 
-// Remove imports of validateFloorPlan, validateRoom, validateWall since not exported anymore
+// Update imports to match available exports
+import { isFloorPlan, isWall, isRoom } from './globalTypeCheck';
 
 /**
  * Log detailed floor plan information for debugging

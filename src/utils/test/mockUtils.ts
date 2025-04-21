@@ -1,12 +1,21 @@
-import { jest } from '@jest/globals';
+
+// Replace @jest/globals import with proper mock functions
 import { FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 /**
  * Create a mock function with proper typing
  */
 export function createMock<TReturn = any, TArgs extends any[] = any[]>(): jest.Mock<TReturn, TArgs> {
   return jest.fn() as jest.Mock<TReturn, TArgs>;
+}
+
+// Add missing test utilities
+export function createMockFunctionParams() {
+  return jest.fn();
+}
+
+export function createTestPoint(x = 0, y = 0) {
+  return { x, y };
 }
 
 /**
@@ -29,7 +38,7 @@ export function createMockFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPl
     gia: 0,
     level: 0,
     index: 0,
-    metadata: createCompleteMetadata({
+    metadata: {
       createdAt: now,
       updatedAt: now,
       paperSize: 'A4',
@@ -39,7 +48,7 @@ export function createMockFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPl
       dateCreated: now,
       lastModified: now,
       notes: 'Test floor plan'
-    }),
+    },
     data: {},
     userId: 'test-user',
     ...overrides

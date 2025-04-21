@@ -3,18 +3,7 @@
  * Global type check utility
  * @module utils/globalTypeCheck
  */
-import { 
-  // Remove imports that don't exist
-  // validateFloorPlan,
-  // validateWall, 
-  // validateRoom, 
-  // validateStroke,
-  // isFloorPlan,
-  // isWall,
-  // isRoom,
-  // isStroke,
-  getObjectType 
-} from './debug/globalTypeCheck';
+import { getObjectType } from './debug/globalTypeCheck';
 
 /**
  * Initialize global type checkers
@@ -26,14 +15,6 @@ export function initGlobalTypeCheckers(): void {
   // Add to window for debugging in browser
   if (typeof window !== 'undefined') {
     (window as any).__typeCheckers = {
-      // validateFloorPlan,
-      // validateWall,
-      // validateRoom,
-      // validateStroke,
-      // isFloorPlan,
-      // isWall,
-      // isRoom,
-      // isStroke,
       getObjectType
     };
     
@@ -42,14 +23,5 @@ export function initGlobalTypeCheckers(): void {
 }
 
 // Re-export functions
-export {
-  // validateFloorPlan,
-  // validateWall,
-  // validateRoom,
-  // validateStroke,
-  // isFloorPlan,
-  // isWall,
-  // isRoom,
-  // isStroke,
-  getObjectType
-};
+export { getObjectType };
+
