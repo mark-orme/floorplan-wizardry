@@ -1,181 +1,107 @@
 
 /**
- * Geometry Transforms
- * Utilities for transforming geometric objects
+ * Geometry transforms
+ * Utilities for geometric transformations
+ * @module utils/geometry/transforms
  */
 
-import { Point, Polygon, Rect } from './engine';
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Rotate a point around a center point
- * @param point The point to rotate
- * @param center The center point to rotate around
- * @param angle The angle in degrees
+ * Identity transform matrix
  */
-export function rotatePoint(point: Point, center: Point, angle: number): Point {
-  // Convert angle to radians
-  const radians = (angle * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  
-  // Translate point to origin
-  const x = point.x - center.x;
-  const y = point.y - center.y;
-  
-  // Rotate point
-  const rotatedX = x * cos - y * sin;
-  const rotatedY = x * sin + y * cos;
-  
-  // Translate point back
-  return {
-    x: rotatedX + center.x,
-    y: rotatedY + center.y
-  };
-}
+export const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 /**
- * Scale a point from a center point
- * @param point The point to scale
- * @param center The center point to scale from
- * @param scaleX The x scale factor
- * @param scaleY The y scale factor
+ * Transform a point using a matrix
+ * @param point Point to transform
+ * @param matrix Transformation matrix [a, b, c, d, tx, ty]
+ * @returns Transformed point
  */
-export function scalePoint(
-  point: Point, 
-  center: Point, 
-  scaleX: number, 
-  scaleY: number
-): Point {
-  return {
-    x: center.x + (point.x - center.x) * scaleX,
-    y: center.y + (point.y - center.y) * scaleY
-  };
-}
-
-/**
- * Rotate a polygon around a center point
- * @param polygon The polygon to rotate
- * @param center The center point to rotate around
- * @param angle The angle in degrees
- */
-export function rotatePolygon(polygon: Polygon, center: Point, angle: number): Polygon {
-  return polygon.map(point => rotatePoint(point, center, angle));
-}
-
-/**
- * Scale a polygon from a center point
- * @param polygon The polygon to scale
- * @param center The center point to scale from
- * @param scaleX The x scale factor
- * @param scaleY The y scale factor
- */
-export function scalePolygon(
-  polygon: Polygon, 
-  center: Point, 
-  scaleX: number, 
-  scaleY: number
-): Polygon {
-  return polygon.map(point => scalePoint(point, center, scaleX, scaleY));
-}
-
-/**
- * Translate a point by a vector
- * @param point The point to translate
- * @param dx The x distance to translate
- * @param dy The y distance to translate
- */
-export function translatePoint(point: Point, dx: number, dy: number): Point {
-  return {
-    x: point.x + dx,
-    y: point.y + dy
-  };
-}
-
-/**
- * Translate a polygon by a vector
- * @param polygon The polygon to translate
- * @param dx The x distance to translate
- * @param dy The y distance to translate
- */
-export function translatePolygon(polygon: Polygon, dx: number, dy: number): Polygon {
-  return polygon.map(point => translatePoint(point, dx, dy));
-}
-
-/**
- * Convert from rectangle to polygon (4 corner points)
- * @param rect The rectangle to convert
- */
-export function rectToPolygon(rect: Rect): Polygon {
-  return [
-    { x: rect.x, y: rect.y },
-    { x: rect.x + rect.width, y: rect.y },
-    { x: rect.x + rect.width, y: rect.y + rect.height },
-    { x: rect.x, y: rect.y + rect.height }
-  ];
-}
-
-/**
- * Matrix transformation utilities for 2D transformations
- */
-
-// 3x3 transformation matrix (represented as array of 6 elements in column-major order)
-export type TransformMatrix = [number, number, number, number, number, number];
-
-/**
- * Create an identity transform matrix
- */
-export function createIdentityMatrix(): TransformMatrix {
-  return [1, 0, 0, 1, 0, 0];
-}
-
-/**
- * Apply a matrix transformation to a point
- */
-export function transformPoint(point: Point, matrix: TransformMatrix): Point {
-  const x = point.x;
-  const y = point.y;
+export function transformPoint(point: Point, matrix: number[]): Point {
+  const [a, b, c, d, tx, ty] = matrix;
   
   return {
-    x: matrix[0] * x + matrix[2] * y + matrix[4],
-    y: matrix[1] * x + matrix[3] * y + matrix[5]
+    x: a * point.x + c * point.y + tx,
+    y: b * point.x + d * point.y + ty
   };
-}
-
-/**
- * Create a translation matrix
- */
-export function createTranslationMatrix(dx: number, dy: number): TransformMatrix {
-  return [1, 0, 0, 1, dx, dy];
 }
 
 /**
  * Create a rotation matrix
+ * @param angle Angle in radians
+ * @returns Rotation matrix
  */
-export function createRotationMatrix(angle: number): TransformMatrix {
-  const radians = (angle * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
+export function createRotationMatrix(angle: number): number[] {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
   
   return [cos, sin, -sin, cos, 0, 0];
 }
 
 /**
- * Create a scale matrix
+ * Create a translation matrix
+ * @param tx X translation
+ * @param ty Y translation
+ * @returns Translation matrix
  */
-export function createScaleMatrix(sx: number, sy: number): TransformMatrix {
+export function createTranslationMatrix(tx: number, ty: number): number[] {
+  return [1, 0, 0, 1, tx, ty];
+}
+
+/**
+ * Create a scaling matrix
+ * @param sx X scale factor
+ * @param sy Y scale factor
+ * @returns Scaling matrix
+ */
+export function createScaleMatrix(sx: number, sy: number = sx): number[] {
   return [sx, 0, 0, sy, 0, 0];
 }
 
 /**
- * Multiply two transformation matrices
+ * Multiply two matrices
+ * @param m1 First matrix
+ * @param m2 Second matrix
+ * @returns Result matrix
  */
-export function multiplyMatrices(a: TransformMatrix, b: TransformMatrix): TransformMatrix {
+export function multiplyMatrices(m1: number[], m2: number[]): number[] {
+  const [a1, b1, c1, d1, tx1, ty1] = m1;
+  const [a2, b2, c2, d2, tx2, ty2] = m2;
+  
   return [
-    a[0] * b[0] + a[2] * b[1],
-    a[1] * b[0] + a[3] * b[1],
-    a[0] * b[2] + a[2] * b[3],
-    a[1] * b[2] + a[3] * b[3],
-    a[0] * b[4] + a[2] * b[5] + a[4],
-    a[1] * b[4] + a[3] * b[5] + a[5]
+    a1 * a2 + b1 * c2,      // a
+    a1 * b2 + b1 * d2,      // b
+    c1 * a2 + d1 * c2,      // c
+    c1 * b2 + d1 * d2,      // d
+    tx1 * a2 + ty1 * c2 + tx2, // tx
+    tx1 * b2 + ty1 * d2 + ty2  // ty
+  ];
+}
+
+/**
+ * Invert a matrix
+ * @param matrix Matrix to invert
+ * @returns Inverted matrix
+ */
+export function invertMatrix(matrix: number[]): number[] {
+  const [a, b, c, d, tx, ty] = matrix;
+  
+  const det = a * d - b * c;
+  
+  if (Math.abs(det) < 0.00001) {
+    // Singular matrix, cannot invert
+    return [...IDENTITY_MATRIX];
+  }
+  
+  const invDet = 1 / det;
+  
+  return [
+    d * invDet,           // a
+    -b * invDet,          // b
+    -c * invDet,          // c
+    a * invDet,           // d
+    (c * ty - d * tx) * invDet, // tx
+    (b * tx - a * ty) * invDet  // ty
   ];
 }

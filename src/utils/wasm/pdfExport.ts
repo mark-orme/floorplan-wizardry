@@ -1,4 +1,3 @@
-
 /**
  * PDF export utilities using WebAssembly
  * @module utils/wasm/pdfExport
@@ -25,6 +24,22 @@ export interface PdfExportOptions {
   onlyVisible?: boolean;
   /** Margin in points (72dpi) */
   margin?: number;
+  /** Custom width for custom paper size */
+  customWidth?: number;
+  /** Custom height for custom paper size */
+  customHeight?: number;
+  /** Page orientation (portrait or landscape) */
+  orientation?: 'portrait' | 'landscape';
+  /** Scale factor for the PDF */
+  scale?: number;
+  /** Footer text to display on the PDF */
+  footerText?: string;
+  /** Whether to include grid in the exported PDF */
+  includeGrid?: boolean;
+  /** Whether to include measurements in the exported PDF */
+  includeMeasurements?: boolean;
+  /** Whether to include a title block in the exported PDF */
+  includeTitleBlock?: boolean;
 }
 
 /**

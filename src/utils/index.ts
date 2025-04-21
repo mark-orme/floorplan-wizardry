@@ -39,7 +39,7 @@ export {
   calculateAngle,
   getDistance,
   formatDisplayDistance
-} from './geometry';
+} from './geometry/engine';
 
 // Re-export grid-related functions from their exports file
 export { 
@@ -58,4 +58,3 @@ export {
 
 // Re-export remaining grid utilities
 export * from './grid';
-
