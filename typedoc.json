@@ -1,0 +1,23 @@
+
+{
+  "entryPoints": ["src/"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "categorizeByGroup": true,
+  "categoryOrder": ["Security", "Canvas", "Drawing", "Grid", "Utils", "*"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__/**",
+    "**/node_modules/**"
+  ],
+  "plugin": ["typedoc-plugin-markdown"],
+  "readme": "README.md",
+  "name": "Floor Plan Application API Documentation",
+  "includeVersion": true,
+  "githubPages": true
+}

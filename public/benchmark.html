@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Performance Benchmark</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #results {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 16px;
+    }
+    .progress-container {
+      width: 100%;
+      height: 20px;
+      background-color: #f0f0f0;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      border-radius: 10px;
+      width: 0%;
+      transition: width 0.2s;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Canvas Performance Benchmark</h1>
+  <div class="progress-container">
+    <div class="progress-bar" id="progress"></div>
+  </div>
+  <div id="status">Initializing benchmark...</div>
+  <div id="results"></div>
+  
+  <script type="module">
+    // Import canvas benchmark module
+    import { runCanvasBenchmarks, quickPerformanceCheck } from '/src/utils/performance/canvasBenchmark.ts';
+    
+    // Set up global variables for CI reporting
+    window.benchmarkComplete = false;
+    window.benchmarkResults = null;
+    
+    const resultsDiv = document.getElementById('results');
+    const progressBar = document.getElementById('progress');
+    const statusDiv = document.getElementById('status');
+    
+    // Create results table
+    const table = document.createElement('table');
+    const headerRow = document.createElement('tr');
+    ['Test', 'Operations/sec', 'Samples', 'Error (±)', 'Score'].forEach(header => {
+      const th = document.createElement('th');
+      th.textContent = header;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+    resultsDiv.appendChild(table);
+    
+    // Start the benchmark
+    async function runBenchmark() {
+      try {
+        statusDiv.textContent = 'Running quick performance check...';
+        
+        // Run quick check first
+        const score = await quickPerformanceCheck();
+        statusDiv.textContent = `Performance score: ${score}/100 - ${score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs optimization'}`;
+        
+        // Store results for CI
+        window.benchmarkResults = { score };
+        
+        if (window.location.search.includes('full=true')) {
+          statusDiv.textContent += ' - Running full benchmark suite...';
+          
+          // Run full benchmark if requested
+          const results = await runCanvasBenchmarks('all', {
+            onProgress: (progress, scenario) => {
+              progressBar.style.width = `${progress * 100}%`;
+              statusDiv.textContent = `Running: ${scenario} (${Math.round(progress * 100)}%)`;
+            },
+            onResult: (result) => {
+              const row = document.createElement('tr');
+              
+              const nameCell = document.createElement('td');
+              nameCell.textContent = result.name;
+              row.appendChild(nameCell);
+              
+              const opsCell = document.createElement('td');
+              opsCell.textContent = result.opsPerSecond.toFixed(2);
+              row.appendChild(opsCell);
+              
+              const samplesCell = document.createElement('td');
+              samplesCell.textContent = result.sampleCount;
+              row.appendChild(samplesCell);
+              
+              const errorCell = document.createElement('td');
+              errorCell.textContent = `±${result.rme.toFixed(2)}%`;
+              row.appendChild(errorCell);
+              
+              const scoreCell = document.createElement('td');
+              const opScore = Math.min(100, result.opsPerSecond / 10);
+              scoreCell.textContent = `${opScore.toFixed(0)}/100`;
+              row.appendChild(scoreCell);
+              
+              table.appendChild(row);
+              
+              // Add to results for CI
+              window.benchmarkResults[result.name] = {
+                opsPerSecond: result.opsPerSecond,
+                error: result.rme,
+                samples: result.sampleCount,
+                score: opScore
+              };
+            }
+          });
+          
+          statusDiv.textContent = 'Benchmark complete!';
+        }
+      } catch (err) {
+        statusDiv.textContent = `Error: ${err.message}`;
+        console.error(err);
+      } finally {
+        window.benchmarkComplete = true;
+      }
+    }
+    
+    // Start benchmark on page load
+    runBenchmark();
+  </script>
+</body>
+</html>

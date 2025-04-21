@@ -32,6 +32,19 @@ export default defineConfig({
         branches: 60,
         statements: 70
       }
+    },
+    // Enable accessibility testing
+    deps: {
+      inline: [/axe-core/],
+    },
+    // Include a11y tests explicitly
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', '**/accessibility/*.test.{js,ts,jsx,tsx}'],
+    // Add mutation testing coverage
+    mutation: {
+      // Stryker will use this configuration
+      stryker: {
+        configFile: 'stryker.config.js'
+      }
     }
   },
   resolve: {

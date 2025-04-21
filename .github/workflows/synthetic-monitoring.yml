@@ -1,0 +1,125 @@
+
+name: Synthetic Monitoring
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # Run every 12 hours
+  workflow_dispatch:  # Allow manual triggering
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - '.github/workflows/synthetic-monitoring.yml'
+
+jobs:
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build app
+        run: npm run build
+      
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli@0.12.x autorun
+      
+      - name: Upload LHCI results
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          retention-days: 7
+
+  canvas-benchmark:
+    name: Canvas Performance Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build app
+        run: npm run build
+      
+      - name: Install Puppeteer
+        run: npm install puppeteer@latest
+      
+      - name: Run canvas benchmarks
+        run: node scripts/run-canvas-benchmark.js
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: canvas-benchmark-results
+          path: benchmark-results/
+          retention-days: 7
+
+  accessibility-check:
+    name: Accessibility Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run accessibility tests
+        run: npm run test -- --run 'accessibility'
+      
+      - name: Check for a11y violations
+        run: |
+          if grep -q "FAIL" test-results.txt; then
+            echo "Accessibility tests failed!"
+            exit 1
+          fi
+
+  typedoc-build:
+    name: Build API Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install typedoc plugins
+        run: npm install typedoc-plugin-markdown
+      
+      - name: Build TypeDoc documentation
+        run: npx typedoc
+      
+      - name: Upload API documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-docs
+          path: docs/api/
+          retention-days: 7
+      
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs/api
+          target-folder: api-docs
