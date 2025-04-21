@@ -1,11 +1,12 @@
 
+
 /**
  * Core types index
  * Re-exports all core type definitions
  */
 
-// Export geometry types
-export {
+// Export geometry types as types
+export type {
   Point,
   Rectangle,
   Circle,
@@ -17,10 +18,13 @@ export {
   Transform
 } from './Geometry';
 
-// Export performance types
+// Export performance types as types/constants
+export type { 
+  PerformanceStats
+} from './PerformanceStats';
 export { 
-  PerformanceStats, 
   DEFAULT_PERFORMANCE_STATS 
 } from './PerformanceStats';
 
 // Add other core type exports as needed
+
