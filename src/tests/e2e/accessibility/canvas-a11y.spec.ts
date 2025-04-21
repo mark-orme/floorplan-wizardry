@@ -1,17 +1,6 @@
 
 import { test, expect } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
-import fs from 'fs';
-import path from 'path';
-
-// Ensure the report directory exists
-const reportDir = path.join(process.cwd(), 'playwright-report');
-if (!fs.existsSync(reportDir)) {
-  fs.mkdirSync(reportDir, { recursive: true });
-}
-
-// Results file path
-const violationsFilePath = path.join(reportDir, 'accessibility-violations.json');
 
 test.describe('Application Accessibility Tests', () => {
   test.beforeAll(async () => {
