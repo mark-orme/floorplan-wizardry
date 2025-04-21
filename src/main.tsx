@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './app'; // Corrected casing to match actual filename "app.tsx"
+import App from './App'; // Fixed casing to match actual filename "App.tsx"
 import './index.css';
 import { initGlobalTypeCheckers } from './utils/debug/globalTypeCheck';
 
@@ -15,4 +15,3 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <App />
   </React.StrictMode>
 );
-
