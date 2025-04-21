@@ -1,4 +1,3 @@
-
 /**
  * Hook for tracking zoom events and operations
  * @module canvas-events/useZoomTracking
@@ -28,12 +27,16 @@ export const useZoomTracking = ({
     // Update zoom level when canvas is zoomed
     const canvas = fabricCanvasRef.current;
     
-    // Add zoom change listener
-    canvas.on('zoom:changed', () => {
+    // Add zoom change listener using a standard Fabric event
+    // Create a custom event emitter for zoom changes
+    canvas.on('mouse:wheel', () => {
       if (updateZoomLevel) {
         updateZoomLevel();
       }
       setCurrentZoom(canvas.getZoom());
+      
+      // You can emit a custom event here if needed
+      canvas.fire('custom:zoom-changed');
     });
     
     // Flag that handlers are registered

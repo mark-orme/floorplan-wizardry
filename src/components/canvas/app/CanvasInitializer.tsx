@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
@@ -35,8 +36,6 @@ export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
       updateGridWithZoom(canvas);
       requestOptimizedRender(canvas, 'zoom');
     });
-    
-    // Apply optimization but removed the non-existent function call
     
     setFabricCanvas(canvas);
     setCanvas(canvas);

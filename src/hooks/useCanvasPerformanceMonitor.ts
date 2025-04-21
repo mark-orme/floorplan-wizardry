@@ -1,283 +1,77 @@
 /**
- * Canvas Performance Monitor Hook
- * 
- * Provides utilities for monitoring and optimizing canvas performance
- * Combines virtualization, performance metrics, and optimized rendering
+ * Hook for tracking canvas zoom events and performance
+ * @module hooks/useCanvasPerformanceMonitor
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { debounce, throttle } from '@/utils/canvas/performanceTracker';
+import logger from '@/utils/logger';
+import { PerformanceStats, DEFAULT_PERFORMANCE_STATS } from '@/types/core/PerformanceStats';
 
-interface UseCanvasPerformanceMonitorProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+interface UseGridPerformanceMonitorProps {
+  canvas: FabricCanvas | null;
   enabled?: boolean;
-  viewportWidth?: number;
-  viewportHeight?: number;
-  virtualizationPadding?: number;
-  measurementInterval?: number;
+  onPerformanceUpdate?: (stats: PerformanceStats) => void;
 }
 
-interface PerformanceData {
-  fps: number;
-  renderTime: number;
-  objectCount: number;
-  visibleObjectCount: number;
-  lastRenderTimestamp: number;
-  frameDrops: number;
-}
-
-export function useCanvasPerformanceMonitor({
-  fabricCanvasRef,
+export const useGridPerformanceMonitor = ({
+  canvas,
   enabled = true,
-  viewportWidth = window.innerWidth,
-  viewportHeight = window.innerHeight,
-  virtualizationPadding = 200,
-  measurementInterval = 1000
-}: UseCanvasPerformanceMonitorProps) {
-  // Performance metrics state
-  const [performanceData, setPerformanceData] = useState<PerformanceData>({
-    fps: 0,
-    renderTime: 0,
-    objectCount: 0,
-    visibleObjectCount: 0,
-    lastRenderTimestamp: 0,
-    frameDrops: 0
-  });
-  
-  // Virtualization state
-  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+  onPerformanceUpdate
+}: UseGridPerformanceMonitorProps) => {
+  const statsRef = useRef<PerformanceStats>(DEFAULT_PERFORMANCE_STATS);
   const frameCountRef = useRef(0);
-  const frameTimesRef = useRef<number[]>([]);
-  const lastFrameTimeRef = useRef(0);
-  const measurementStartTimeRef = useRef(0);
-  
-  // Track visible area for virtualization
-  const visibleAreaRef = useRef({
-    left: 0,
-    top: 0,
-    right: viewportWidth,
-    bottom: viewportHeight
-  });
-  
-  /**
-   * Update canvas virtualization - only render objects in viewport
-   */
-  const updateVirtualization = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !virtualizationEnabled) return;
-    
-    // Get viewport transform
-    const vpt = canvas.viewportTransform;
-    if (!vpt) return;
-    
-    // Calculate visible area with padding
-    const zoom = canvas.getZoom() || 1;
-    const visibleArea = {
-      left: -vpt[4] / zoom - virtualizationPadding,
-      top: -vpt[5] / zoom - virtualizationPadding,
-      right: (-vpt[4] + canvas.width!) / zoom + virtualizationPadding,
-      bottom: (-vpt[5] + canvas.height!) / zoom + virtualizationPadding
-    };
-    
-    // Update reference
-    visibleAreaRef.current = visibleArea;
-    
-    // Count visible objects
-    let visibleCount = 0;
-    
-    // Update object visibility based on whether they're in the viewport
-    canvas.forEachObject((obj) => {
-      // Skip grid objects - they should always be visible
-      if ((obj as any).isGrid) return;
-      
-      const bounds = obj.getBoundingRect();
-      
-      // Check if object is in visible area
-      const isVisible = !(
-        bounds.left > visibleArea.right ||
-        bounds.top > visibleArea.bottom ||
-        bounds.left + bounds.width < visibleArea.left ||
-        bounds.top + bounds.height < visibleArea.top
-      );
-      
-      // Update object visibility if needed
-      if (isVisible !== obj.visible) {
-        obj.visible = isVisible;
-        obj.setCoords();
-      }
-      
-      if (isVisible) visibleCount++;
-    });
-    
-    // Update metrics with visible object count
-    setPerformanceData(prev => ({
-      ...prev,
-      visibleObjectCount: visibleCount
-    }));
-    
-    // Request render if needed
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef, virtualizationEnabled, virtualizationPadding]);
-  
-  // Throttled version to avoid excessive updates
-  const throttledUpdateVirtualization = useCallback(
-    throttle(updateVirtualization, 100),
-    [updateVirtualization]
-  );
-  
-  /**
-   * Track a frame for performance measurement
-   */
-  const trackFrame = useCallback(() => {
-    const now = performance.now();
-    frameCountRef.current++;
-    
-    // Calculate frame time
-    if (lastFrameTimeRef.current > 0) {
-      const frameTime = now - lastFrameTimeRef.current;
-      frameTimesRef.current.push(frameTime);
-      
-      // Keep only the last 60 frame times
-      if (frameTimesRef.current.length > 60) {
-        frameTimesRef.current.shift();
-      }
-    }
-    
-    lastFrameTimeRef.current = now;
-    
-    // Update metrics once per measurement interval
-    if (!measurementStartTimeRef.current) {
-      measurementStartTimeRef.current = now;
-    } else if (now - measurementStartTimeRef.current >= measurementInterval) {
-      // Calculate FPS
-      const fps = Math.round((frameCountRef.current * 1000) / (now - measurementStartTimeRef.current));
-      
-      // Calculate average frame time
-      const avgFrameTime = frameTimesRef.current.length > 0
-        ? frameTimesRef.current.reduce((sum, time) => sum + time, 0) / frameTimesRef.current.length
-        : 0;
-      
-      // Calculate dropped frames (frames taking > 16.7ms are considered dropped at 60fps)
-      const droppedFrames = frameTimesRef.current.filter(time => time > 16.7).length;
-      
-      // Get object counts
-      const canvas = fabricCanvasRef.current;
-      const objectCount = canvas ? canvas.getObjects().length : 0;
-      
-      // Update metrics
-      setPerformanceData({
-        fps,
-        renderTime: avgFrameTime,
-        objectCount,
-        visibleObjectCount: performanceData.visibleObjectCount,
-        lastRenderTimestamp: now,
-        frameDrops: droppedFrames
-      });
-      
-      // Reset measurement
-      frameCountRef.current = 0;
-      measurementStartTimeRef.current = now;
-    }
-  }, [fabricCanvasRef, measurementInterval, performanceData.visibleObjectCount]);
-  
-  /**
-   * Reset all performance metrics
-   */
-  const resetMetrics = useCallback(() => {
-    frameCountRef.current = 0;
-    frameTimesRef.current = [];
-    lastFrameTimeRef.current = 0;
-    measurementStartTimeRef.current = 0;
-    
-    setPerformanceData({
-      fps: 0,
-      renderTime: 0,
-      objectCount: 0,
-      visibleObjectCount: 0,
-      lastRenderTimestamp: 0,
-      frameDrops: 0
-    });
-  }, []);
-  
-  /**
-   * Toggle virtualization on/off
-   */
-  const toggleVirtualization = useCallback(() => {
-    setVirtualizationEnabled(prev => {
-      const newValue = !prev;
-      
-      // If disabling virtualization, make all objects visible
-      if (!newValue && fabricCanvasRef.current) {
-        fabricCanvasRef.current.getObjects().forEach(obj => {
-          obj.visible = true;
-        });
-        fabricCanvasRef.current.requestRenderAll();
-      }
-      
-      return newValue;
-    });
-  }, [fabricCanvasRef]);
-  
-  // Set up event listeners for canvas movement and zoom
+  const lastFrameTimeRef = useRef(performance.now());
+
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas || !enabled) return;
-    
-    // Set up performance monitoring
-    let animationFrameId: number;
-    
-    const renderCallback = () => {
-      if (enabled) {
-        trackFrame();
+
+    let frameId: number;
+    const measurePerformance = () => {
+      frameCountRef.current++;
+      const now = performance.now();
+      const elapsed = now - lastFrameTimeRef.current;
+
+      // Calculate FPS every second
+      if (elapsed >= 1000) {
+        const fps = Math.round((frameCountRef.current * 1000) / elapsed);
+        const frameTime = elapsed / frameCountRef.current;
+        
+        statsRef.current = {
+          ...statsRef.current,
+          fps,
+          frameTime,
+          maxFrameTime: Math.max(statsRef.current.maxFrameTime || 0, frameTime),
+          longFrames: frameTime > 16 ? (statsRef.current.longFrames || 0) + 1 : statsRef.current.longFrames || 0
+        };
+
+        if (onPerformanceUpdate) {
+          onPerformanceUpdate(statsRef.current);
+        }
+
+        // Log performance issues
+        if (fps < 30 || frameTime > 32) {
+          logger.warn('Performance issues detected', {
+            fps,
+            frameTime,
+            objectCount: canvas.getObjects().length
+          });
+        }
+
+        frameCountRef.current = 0;
+        lastFrameTimeRef.current = now;
       }
-      animationFrameId = requestAnimationFrame(renderCallback);
+
+      frameId = requestAnimationFrame(measurePerformance);
     };
-    
-    animationFrameId = requestAnimationFrame(renderCallback);
-    
-    // Pan and zoom handlers for virtualization
-    const handleObjectMoving = () => throttledUpdateVirtualization();
-    const handleCanvasModified = () => throttledUpdateVirtualization();
-    const handleZoom = () => throttledUpdateVirtualization();
-    const handleViewportTransform = () => throttledUpdateVirtualization();
-    
-    // Add event listeners
-    canvas.on('object:moving', handleObjectMoving);
-    canvas.on('object:modified', handleCanvasModified);
-    canvas.on('zoom', handleZoom);
-    canvas.on('viewport:transform', handleViewportTransform);
-    
-    // Initial virtualization
-    updateVirtualization();
-    
-    // Clean up
+
+    frameId = requestAnimationFrame(measurePerformance);
+
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      
-      canvas.off('object:moving', handleObjectMoving);
-      canvas.off('object:modified', handleCanvasModified);
-      canvas.off('zoom', handleZoom);
-      canvas.off('viewport:transform', handleViewportTransform);
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
     };
-  }, [
-    fabricCanvasRef, 
-    enabled, 
-    trackFrame, 
-    updateVirtualization, 
-    throttledUpdateVirtualization
-  ]);
-  
-  // Update virtualization when viewport size changes
-  useEffect(() => {
-    updateVirtualization();
-  }, [viewportWidth, viewportHeight, updateVirtualization]);
-  
-  return {
-    performanceData,
-    virtualizationEnabled,
-    toggleVirtualization,
-    updateVirtualization,
-    resetMetrics,
-    visibleArea: visibleAreaRef.current
-  };
-}
+  }, [canvas, enabled, onPerformanceUpdate]);
+
+  return statsRef.current;
+};
