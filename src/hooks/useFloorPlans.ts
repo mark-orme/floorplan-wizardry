@@ -3,9 +3,9 @@ import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { createCompleteMetadata } from '@/types/floor-plan/unifiedTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
@@ -28,10 +28,29 @@ export const useFloorPlans = ({
   
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
+  // Use a safe currentFloorPlan value for the drawing hook
+  const safeFloorPlan = currentFloorPlan || {
+    id: 'empty',
+    name: 'Empty Floor Plan',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    canvasJson: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    gia: 0,
+    level: 0,
+    index: 0,
+    metadata: createCompleteMetadata(),
+    data: {},
+    userId: ''
+  };
+  
   const drawingHook = useFloorPlanDrawing({
     canvas: fabricCanvasRef.current,
+    floorPlan: safeFloorPlan,
     tool,
-    floorPlan: currentFloorPlan as FloorPlan,
     onFloorPlanUpdate: (floorPlan) => {
       setFloorPlans(prev => {
         const updated = [...prev];
@@ -42,13 +61,13 @@ export const useFloorPlans = ({
   });
   
   const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
-    if (!drawingHook.drawFloorPlan) {
+    if (!drawingHook || !drawingHook.drawFloorPlan) {
       console.error('drawFloorPlan function not available');
       return;
     }
     
     drawingHook.drawFloorPlan(canvas, floorPlan);
-  }, [drawingHook.drawFloorPlan]);
+  }, [drawingHook]);
   
   const addFloorPlan = useCallback(() => {
     const now = new Date().toISOString();

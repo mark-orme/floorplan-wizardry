@@ -7,7 +7,7 @@
 
 console.log('Loading Floor Plan types barrel file');
 
-// Re-export all types from the unified types file
+// Re-export types using export type syntax
 export type { 
   Point, 
   Stroke, 
@@ -19,6 +19,7 @@ export type {
   RoomTypeLiteral
 } from './unifiedTypes';
 
+// Re-export values and functions
 export { 
   PaperSize, 
   asStrokeType, 

@@ -11,17 +11,16 @@ import {
   createTestFloorPlan,
   createTestStroke,
   createTestRoom,
-  createTestWall,
-  asStrokeType,
-  asRoomType
-} from '@/utils/test/typedTestFixtures';
+  createTestWall
+} from '@/types/floor-plan/unifiedTypes';
 import { asMockCanvas } from '@/utils/testing/testUtils';
+import type { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
 
 describe('useFloorPlanDrawing', () => {
   let mockCanvas: any;
 
   beforeEach(() => {
-    // Use a generic mock object and wrap it for typing safety in tests, per ESLint/type safety guidelines.
+    // Use a generic mock object and wrap it for typing safety in tests
     mockCanvas = asMockCanvas({
       add: vi.fn().mockReturnValue(undefined),
       renderAll: vi.fn().mockReturnValue(undefined),
@@ -64,7 +63,7 @@ describe('useFloorPlanDrawing', () => {
     act(() => {
       result.current.setTool(DrawingMode.WALL);
       const myStroke = createTestStroke({
-        type: asStrokeType('wall')
+        type: 'wall' as StrokeTypeLiteral
       });
       result.current.addStroke(myStroke);
     });
@@ -88,7 +87,7 @@ describe('useFloorPlanDrawing', () => {
     act(() => {
       // Adding a stroke with the correct type
       const stroke = createTestStroke({
-        type: asStrokeType('line')
+        type: 'line' as StrokeTypeLiteral
       });
       result.current.addStroke(stroke);
     });
@@ -112,7 +111,7 @@ describe('useFloorPlanDrawing', () => {
     // Act
     act(() => {
       const room = createTestRoom({
-        type: asRoomType('living')
+        type: 'living' as RoomTypeLiteral
       });
       result.current.addRoom(room);
     });

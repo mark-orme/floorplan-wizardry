@@ -1,40 +1,88 @@
 
 /**
- * Unified Floor Plan Types
- * Core definitions for the floor plan system
+ * Unified Types for Floor Plans
+ * Central source of truth for all floor plan related types
  * @module types/floor-plan/unifiedTypes
  */
+import { v4 as uuidv4 } from 'uuid';
+
+// Re-export PaperSize enum from basicTypes for convenience
+export { PaperSize } from './basicTypes';
 
 /**
- * Point coordinates
+ * Point interface for coordinates
  */
 export interface Point {
-  /** X coordinate */
   x: number;
-  
-  /** Y coordinate */
   y: number;
 }
 
 /**
- * Valid stroke types
+ * Create a point with the given coordinates
  */
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
+export function createPoint(x: number, y: number): Point {
+  return { x, y };
+}
 
 /**
- * Valid room types
+ * Stroke type enum as string literals
+ */
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation';
+
+/**
+ * Room type enum as string literals
  */
 export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
 
 /**
- * Paper size enum
+ * Floor plan metadata with all required fields
  */
-export enum PaperSize {
-  A4 = 'A4',
-  A3 = 'A3',
-  Letter = 'Letter',
-  Legal = 'Legal',
-  Custom = 'Custom'
+export interface FloorPlanMetadata {
+  /** Creation date timestamp */
+  createdAt: string;
+  
+  /** Last update timestamp */
+  updatedAt: string;
+  
+  /** Paper size for printing */
+  paperSize: string;
+  
+  /** Floor level (0 = ground floor) */
+  level: number;
+  
+  /** Version of the floor plan */
+  version: string;
+  
+  /** Author of the floor plan */
+  author: string;
+  
+  /** Creation date (formatted) */
+  dateCreated: string;
+  
+  /** Last modified date (formatted) */
+  lastModified: string;
+  
+  /** Additional notes */
+  notes: string;
+}
+
+/**
+ * Create a complete metadata object with all required fields
+ */
+export function createCompleteMetadata(partial: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  
+  return {
+    createdAt: partial.createdAt || now,
+    updatedAt: partial.updatedAt || now,
+    paperSize: partial.paperSize || 'A4',
+    level: partial.level || 0,
+    version: partial.version || '1.0',
+    author: partial.author || 'System',
+    dateCreated: partial.dateCreated || now,
+    lastModified: partial.lastModified || now,
+    notes: partial.notes || ''
+  };
 }
 
 /**
@@ -67,10 +115,10 @@ export interface Wall {
   /** Unique identifier */
   id: string;
   
-  /** Wall start point */
+  /** Start point coordinates */
   start: Point;
   
-  /** Wall end point */
+  /** End point coordinates */
   end: Point;
   
   /** Wall thickness in pixels */
@@ -79,14 +127,14 @@ export interface Wall {
   /** Wall color */
   color: string;
   
-  /** Room IDs associated with this wall */
+  /** Wall height in pixels (optional) */
+  height?: number;
+  
+  /** Associated room IDs */
   roomIds: string[];
   
-  /** Wall length */
+  /** Length of the wall (calculated property) */
   length: number;
-  
-  /** Wall height (optional) */
-  height?: number;
 }
 
 /**
@@ -102,7 +150,7 @@ export interface Room {
   /** Room type */
   type: RoomTypeLiteral;
   
-  /** Room vertices/boundary points */
+  /** Boundary vertices */
   vertices: Point[];
   
   /** Room area in square meters */
@@ -111,50 +159,18 @@ export interface Room {
   /** Room perimeter length */
   perimeter: number;
   
-  /** Position for room label */
-  labelPosition: Point;
-  
-  /** Room center point */
+  /** Center point of the room */
   center: Point;
+  
+  /** Position for the room label */
+  labelPosition: Point;
   
   /** Room color */
   color: string;
 }
 
 /**
- * Floor plan metadata
- */
-export interface FloorPlanMetadata {
-  /** Creation timestamp */
-  createdAt: string;
-  
-  /** Last update timestamp */
-  updatedAt: string;
-  
-  /** Paper size */
-  paperSize: PaperSize | string;
-  
-  /** Floor level */
-  level: number;
-  
-  /** Version */
-  version: string;
-  
-  /** Author */
-  author: string;
-  
-  /** Date created */
-  dateCreated: string;
-  
-  /** Last modified */
-  lastModified: string;
-  
-  /** Notes */
-  notes: string;
-}
-
-/**
- * Floor plan interface
+ * FloorPlan interface
  */
 export interface FloorPlan {
   /** Unique identifier */
@@ -163,8 +179,8 @@ export interface FloorPlan {
   /** Floor plan name */
   name: string;
   
-  /** Display label */
-  label: string;
+  /** Display label (optional) */
+  label?: string;
   
   /** Walls array */
   walls: Wall[];
@@ -176,13 +192,10 @@ export interface FloorPlan {
   strokes: Stroke[];
   
   /** Serialized canvas data (optional) */
-  canvasData: string | null;
+  canvasData: any | null;
   
-  /** Canvas JSON serialization (required) */
+  /** Canvas JSON serialization (optional) */
   canvasJson: string | null;
-  
-  /** Canvas state data for internal use */
-  canvasState?: string | null;
   
   /** Creation date timestamp */
   createdAt: string;
@@ -207,235 +220,205 @@ export interface FloorPlan {
   
   /** User ID who owns the floor plan */
   userId: string;
+  
+  /** Canvas state (optional) */
+  canvasState?: any;
 }
 
 /**
- * Create a test point
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A test point
- */
-export function createTestPoint(x: number, y: number): Point {
-  return { x, y };
-}
-
-/**
- * Ensure a stroke type is valid or return a default
- * @param type Type to validate
- * @returns Valid stroke type
+ * Type-safe conversions for string literals
  */
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'];
-  if (validTypes.includes(type as StrokeTypeLiteral)) {
-    return type as StrokeTypeLiteral;
-  }
-  return 'line';
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }
 
-/**
- * Ensure a room type is valid or return a default
- * @param type Type to validate
- * @returns Valid room type
- */
 export function asRoomType(type: string): RoomTypeLiteral {
   const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  if (validTypes.includes(type as RoomTypeLiteral)) {
-    return type as RoomTypeLiteral;
-  }
-  return 'other';
+  return validTypes.includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
 }
 
 /**
  * Create an empty floor plan with default values
- * @param index Floor index
- * @returns Empty floor plan
  */
-export function createEmptyFloorPlan(index: number = 0): FloorPlan {
+export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
+  
   return {
-    id: `floor-${Date.now()}`,
-    name: `Floor ${index}`,
-    label: `Floor ${index}`,
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    canvasState: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: index,
-    index: index,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: index,
-      version: '1.0',
-      author: '',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    },
-    data: {},
-    userId: ''
+    id: partialFloorPlan.id || uuidv4(),
+    name: partialFloorPlan.name || 'New Floor Plan',
+    label: partialFloorPlan.label || 'New Floor Plan',
+    walls: partialFloorPlan.walls || [],
+    rooms: partialFloorPlan.rooms || [],
+    strokes: partialFloorPlan.strokes || [],
+    canvasData: partialFloorPlan.canvasData || null,
+    canvasJson: partialFloorPlan.canvasJson || null,
+    createdAt: partialFloorPlan.createdAt || now,
+    updatedAt: partialFloorPlan.updatedAt || now,
+    gia: partialFloorPlan.gia || 0,
+    level: partialFloorPlan.level || 0,
+    index: partialFloorPlan.index || 0,
+    metadata: partialFloorPlan.metadata || createCompleteMetadata({ level: partialFloorPlan.level }),
+    data: partialFloorPlan.data || {},
+    userId: partialFloorPlan.userId || ''
   };
 }
 
 /**
- * Create an empty stroke
- * @returns Empty stroke
+ * Create an empty stroke with default values
  */
-export function createEmptyStroke(): Stroke {
+export function createEmptyStroke(partialStroke: Partial<Stroke> = {}): Stroke {
   return {
-    id: `stroke-${Date.now()}`,
-    points: [],
-    type: 'line',
-    color: '#000000',
-    thickness: 2,
-    width: 2
+    id: partialStroke.id || uuidv4(),
+    points: partialStroke.points || [],
+    type: partialStroke.type || 'line',
+    color: partialStroke.color || '#000000',
+    thickness: partialStroke.thickness || 1,
+    width: partialStroke.width || 1
   };
 }
 
 /**
- * Create an empty wall
- * @returns Empty wall
+ * Create an empty wall with default values
  */
-export function createEmptyWall(): Wall {
+export function createEmptyWall(partialWall: Partial<Wall> = {}): Wall {
+  const start = partialWall.start || { x: 0, y: 0 };
+  const end = partialWall.end || { x: 100, y: 0 };
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
   return {
-    id: `wall-${Date.now()}`,
-    start: { x: 0, y: 0 },
-    end: { x: 0, y: 0 },
-    thickness: 5,
-    color: '#333333',
-    roomIds: [],
-    length: 0
-  };
-}
-
-/**
- * Create an empty room
- * @returns Empty room
- */
-export function createEmptyRoom(): Room {
-  return {
-    id: `room-${Date.now()}`,
-    name: 'Unnamed Room',
-    type: 'other',
-    vertices: [
-      { x: 0, y: 0 },
-      { x: 100, y: 0 },
-      { x: 100, y: 100 },
-      { x: 0, y: 100 }
-    ],
-    area: 0,
-    perimeter: 400,
-    labelPosition: { x: 50, y: 50 },
-    center: { x: 50, y: 50 },
-    color: '#f5f5f5'
-  };
-}
-
-/**
- * Create a test stroke
- * @param id Stroke ID
- * @param type Stroke type
- * @returns Test stroke
- */
-export function createTestStroke(id?: string, type: StrokeTypeLiteral = 'line'): Stroke {
-  return {
-    id: id || `stroke-${Math.random().toString(36).substring(2, 9)}`,
-    points: [
-      { x: 10, y: 10 },
-      { x: 100, y: 100 }
-    ],
-    type,
-    color: '#000000',
-    thickness: 2,
-    width: 2
-  };
-}
-
-/**
- * Create a test wall
- * @param id Wall ID
- * @returns Test wall
- */
-export function createTestWall(id?: string): Wall {
-  const start = { x: 0, y: 0 };
-  const end = { x: 100, y: 0 };
-  return {
-    id: id || `wall-${Math.random().toString(36).substring(2, 9)}`,
+    id: partialWall.id || uuidv4(),
     start,
     end,
-    thickness: 5,
-    color: '#333333',
-    roomIds: [],
-    length: 100
+    thickness: partialWall.thickness || 5,
+    color: partialWall.color || '#333333',
+    roomIds: partialWall.roomIds || [],
+    length: partialWall.length || Math.sqrt(dx * dx + dy * dy),
+    height: partialWall.height
   };
 }
 
 /**
- * Create a test room
- * @param id Room ID
- * @param type Room type
- * @returns Test room
+ * Create an empty room with default values
  */
-export function createTestRoom(id?: string, type: RoomTypeLiteral = 'other'): Room {
-  const vertices = [
+export function createEmptyRoom(partialRoom: Partial<Room> = {}): Room {
+  const vertices = partialRoom.vertices || [
     { x: 0, y: 0 },
     { x: 100, y: 0 },
     { x: 100, y: 100 },
     { x: 0, y: 100 }
   ];
+  
+  const center = partialRoom.center || {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
+    y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length
+  };
+  
   return {
-    id: id || `room-${Math.random().toString(36).substring(2, 9)}`,
-    name: 'Test Room',
-    type,
+    id: partialRoom.id || uuidv4(),
+    name: partialRoom.name || 'Unnamed Room',
+    type: partialRoom.type || 'other',
     vertices,
-    area: 10000,
-    perimeter: 400,
-    labelPosition: { x: 50, y: 50 },
-    center: { x: 50, y: 50 },
-    color: '#f5f5f5'
+    area: partialRoom.area || 10000,
+    perimeter: partialRoom.perimeter || 400,
+    center,
+    labelPosition: partialRoom.labelPosition || center,
+    color: partialRoom.color || '#f5f5f5'
   };
 }
 
-/**
- * Create a test floor plan
- * @param id Floor plan ID
- * @returns Test floor plan
- */
-export function createTestFloorPlan(id?: string): FloorPlan {
+// Test fixture creation functions
+export function createTestPoint(x = 0, y = 0): Point {
+  return { x, y };
+}
+
+export function createTestFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
   return {
-    id: id || `floor-${Math.random().toString(36).substring(2, 9)}`,
-    name: 'Test Floor Plan',
-    label: 'Test Floor Plan',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    canvasState: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0,
-      version: '1.0',
-      author: 'Test Author',
-      dateCreated: now,
-      lastModified: now,
-      notes: 'Test notes'
-    },
-    data: {},
-    userId: 'test-user'
+    id: partialFloorPlan.id || 'floor-test',
+    name: partialFloorPlan.name || 'Test Floor Plan',
+    label: partialFloorPlan.label || 'Test Floor Plan',
+    walls: partialFloorPlan.walls || [],
+    rooms: partialFloorPlan.rooms || [],
+    strokes: partialFloorPlan.strokes || [],
+    canvasData: partialFloorPlan.canvasData || null,
+    canvasJson: partialFloorPlan.canvasJson || null,
+    canvasState: partialFloorPlan.canvasState || null,
+    metadata: partialFloorPlan.metadata || createCompleteMetadata(),
+    data: partialFloorPlan.data || {},
+    createdAt: partialFloorPlan.createdAt || now,
+    updatedAt: partialFloorPlan.updatedAt || now,
+    gia: partialFloorPlan.gia || 0,
+    level: partialFloorPlan.level || 0,
+    index: partialFloorPlan.index || 0,
+    userId: partialFloorPlan.userId || 'test-user'
+  };
+}
+
+export function createTestStroke(partialStroke: Partial<Stroke> = {}): Stroke {
+  const type = partialStroke.type || 'line';
+  return {
+    id: partialStroke.id || 'stroke-test',
+    points: partialStroke.points || [createTestPoint(0, 0), createTestPoint(100, 100)],
+    type,
+    color: partialStroke.color || '#000000',
+    thickness: partialStroke.thickness || 2,
+    width: partialStroke.width || 2
+  };
+}
+
+export function createTestWall(partialWall: Partial<Wall> = {}): Wall {
+  const start = partialWall.start || createTestPoint(0, 0);
+  const end = partialWall.end || createTestPoint(100, 0);
+
+  return {
+    id: partialWall.id || 'wall-test',
+    start,
+    end,
+    thickness: partialWall.thickness || 5,
+    color: partialWall.color || '#333333',
+    roomIds: partialWall.roomIds || [],
+    length: partialWall.length || Math.sqrt(
+      Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+    ),
+    height: partialWall.height
+  };
+}
+
+export function createTestRoom(partialRoom: Partial<Room> = {}): Room {
+  const type = partialRoom.type || 'other';
+  const vertices = partialRoom.vertices || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 0),
+    createTestPoint(100, 100),
+    createTestPoint(0, 100)
+  ];
+
+  const center = {
+    x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
+    y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length
+  };
+
+  // Calculate perimeter
+  let perimeter = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const p1 = vertices[i];
+    const p2 = vertices[(i + 1) % vertices.length];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    perimeter += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return {
+    id: partialRoom.id || 'room-test',
+    name: partialRoom.name || 'Test Room',
+    type,
+    vertices,
+    area: partialRoom.area || 10000,
+    perimeter: partialRoom.perimeter || perimeter,
+    labelPosition: partialRoom.labelPosition || center,
+    center: partialRoom.center || center,
+    color: partialRoom.color || '#f5f5f5'
   };
 }

@@ -1,26 +1,69 @@
 
 /**
- * Test utilities for working with canvas and other components
+ * Testing utilities
+ * Provides utilities for testing with fabric.js and floor plan types
  * @module utils/testing/testUtils
  */
-import { vi } from 'vitest';
 import { Canvas as FabricCanvas } from 'fabric';
-import type { ICanvasMock } from '@/types/testing/ICanvasMock';
+import { vi } from 'vitest';
+import type { 
+  FloorPlan, 
+  Room, 
+  Stroke, 
+  Wall,
+  Point
+} from '@/types/floor-plan/unifiedTypes';
+import { 
+  createTestFloorPlan,
+  createTestRoom,
+  createTestStroke,
+  createTestWall,
+  createTestPoint
+} from '@/types/floor-plan/unifiedTypes';
+
+// Re-export test creation functions
+export {
+  createTestFloorPlan,
+  createTestRoom,
+  createTestStroke,
+  createTestWall,
+  createTestPoint
+};
 
 /**
- * Type-safe wrapper for mock canvas objects
- * Ensures proper typing in tests
- * @param mockCanvas Canvas mock object
- * @returns Properly typed canvas mock
+ * Convert any canvas-like object to a typed Canvas for tests
+ * @param canvas Canvas-like object to convert
+ * @returns Properly typed Canvas object
  */
-export function asMockCanvas(mockCanvas: any): FabricCanvas & {
-  getHandlers: (eventName: string) => Function[];
-  triggerEvent: (eventName: string, eventData: any) => void;
+export function asMockCanvas(canvas: any): FabricCanvas & {
+  getHandlers?: (eventName: string) => Function[];
+  triggerEvent?: (eventName: string, eventData: any) => void;
   withImplementation: (callback?: Function) => Promise<void>;
 } {
-  // Make sure withImplementation returns a Promise<void>
-  if (mockCanvas.withImplementation && typeof mockCanvas.withImplementation !== 'function') {
-    mockCanvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+  return canvas as unknown as FabricCanvas & {
+    getHandlers?: (eventName: string) => Function[];
+    triggerEvent?: (eventName: string, eventData: any) => void;
+    withImplementation: (callback?: Function) => Promise<void>;
+  };
+}
+
+/**
+ * Create a fully compatible mock canvas for testing
+ * @returns Type-compatible mock canvas
+ */
+export function createMockCanvas() {
+  return asMockCanvas({
+    on: vi.fn(),
+    off: vi.fn(),
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
       if (callback && typeof callback === 'function') {
         try {
           const result = callback();
@@ -32,53 +75,14 @@ export function asMockCanvas(mockCanvas: any): FabricCanvas & {
         }
       }
       return Promise.resolve();
-    });
-  }
-  
-  return mockCanvas as unknown as FabricCanvas & {
-    getHandlers: (eventName: string) => Function[];
-    triggerEvent: (eventName: string, eventData: any) => void;
-    withImplementation: (callback?: Function) => Promise<void>;
-  };
-}
-
-/**
- * Creates a preconfigured mock for useFloorPlanDrawing hook
- * @returns Mocked floor plan drawing hook
- */
-export function createMockFloorPlanDrawingHook() {
-  return {
-    isDrawing: false,
-    setIsDrawing: vi.fn(),
-    tool: 'select',
-    setTool: vi.fn(),
-    addStroke: vi.fn(),
-    addRoom: vi.fn(),
-    addWall: vi.fn(),
-    drawFloorPlan: vi.fn()
-  };
-}
-
-/**
- * Create a complete debug info state for tests
- * @returns Complete debug info state
- */
-export function createCompleteDebugInfoState() {
-  return {
-    hasError: false,
-    errorMessage: '',
-    lastInitTime: Date.now(),
-    lastGridCreationTime: 0,
-    currentFps: 60,
-    objectCount: 0,
-    canvasDimensions: {
-      width: 800,
-      height: 600
-    },
-    flags: {
-      gridEnabled: true,
-      snapToGridEnabled: false,
-      debugLoggingEnabled: false
-    }
-  };
+    }),
+    // Additional Canvas properties for compatibility
+    enablePointerEvents: true,
+    _willAddMouseDown: false,
+    _dropTarget: null,
+    _isClick: false,
+    _objects: [],
+    getHandlers: (eventName: string) => [() => {}],
+    triggerEvent: (eventName: string, eventData: any) => {}
+  });
 }

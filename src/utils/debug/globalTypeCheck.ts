@@ -4,7 +4,12 @@
  * @module utils/debug/globalTypeCheck
  */
 import type { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
-import { validateFloorPlan, validateStroke, validateRoom, validateWall } from './typeDiagnostics';
+import { 
+  validateFloorPlan,
+  validateStroke,
+  validateRoom,
+  validateWall
+} from './typeDiagnostics';
 
 /**
  * Initialize global type checkers to validate objects at runtime
