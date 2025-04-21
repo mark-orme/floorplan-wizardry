@@ -201,14 +201,15 @@ const logger = {
     // Format the log message
     const formattedMessage = formatLogMessage(logData);
     
-    // Log to console - Fixed console method calls
-    const method = logMethods[level];
+    // Log to console - Fixed console method calls by accessing via indexed notation
+    const methodName = logMethods[level];
+    
     if (logData.error) {
-      console[method](formattedMessage, logData.error);
+      console[methodName](formattedMessage, logData.error);
     } else if (context) {
-      console[method](formattedMessage, context);
+      console[methodName](formattedMessage, context);
     } else {
-      console[method](formattedMessage);
+      console[methodName](formattedMessage);
     }
     
     // In production, potentially send to a logging service
