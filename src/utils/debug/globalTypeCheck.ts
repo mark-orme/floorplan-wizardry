@@ -3,7 +3,7 @@
  * Global type checking utilities
  * @module utils/debug/globalTypeCheck
  */
-import { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
 import { validateFloorPlan, validateStroke, validateRoom, validateWall } from './typeDiagnostics';
 
 /**
@@ -50,5 +50,12 @@ export const validateTypes = {
   wall: validateWall
 };
 
-// Named export for better import syntax
-export { initGlobalTypeCheckers };
+// Return the type of an object
+export function getObjectType(obj: any): string {
+  if (!obj) return 'undefined';
+  if (validateFloorPlan(obj)) return 'FloorPlan';
+  if (validateRoom(obj)) return 'Room';
+  if (validateWall(obj)) return 'Wall';
+  if (validateStroke(obj)) return 'Stroke';
+  return 'unknown';
+}

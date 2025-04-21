@@ -1,4 +1,5 @@
-import { FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+
+import type { FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 import { PaperSize } from '@/types/floor-plan/basicTypes';
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,12 +26,7 @@ export function createEmptyFloorPlan(name = 'New Floor Plan', level = 0): FloorP
     index: 0,
     data: {},
     userId: '',
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A3,
-      level
-    }
+    metadata: createCompleteMetadata({ level })
   };
 }
 

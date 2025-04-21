@@ -1,8 +1,9 @@
+
 /**
  * Type adapters for converting between different object types
  * @module utils/typeAdapters
  */
-import { 
+import type { 
   FloorPlan, 
   Room, 
   Wall, 
@@ -11,9 +12,8 @@ import {
   StrokeTypeLiteral, 
   RoomTypeLiteral 
 } from '@/types/floor-plan/unifiedTypes';
-import { Point } from '@/types/core/Point';
+import type { Point } from '@/types/core/Point';
 import { createCompleteMetadata } from './debug/typeDiagnostics';
-import { calculateWallLength } from './debug/typeDiagnostics';
 
 /**
  * Helper to safely convert any string to a StrokeType
@@ -61,6 +61,15 @@ export function adaptStroke(stroke: Partial<Stroke>): Stroke {
     thickness: stroke.thickness || 1,
     width: stroke.width || 1
   };
+}
+
+/**
+ * Calculate wall length from start and end points
+ */
+export function calculateWallLength(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
@@ -112,6 +121,15 @@ export function adaptRoom(room: Partial<Room>): Room {
 }
 
 /**
+ * Adapt metadata to ensure it has all required properties
+ * @param metadata Partial metadata
+ * @returns Complete metadata
+ */
+export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  return createCompleteMetadata(metadata);
+}
+
+/**
  * Adapt floor plan to ensure it has all required properties
  * @param floorPlan Partial floor plan data
  * @returns Complete FloorPlan object
@@ -128,7 +146,6 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     strokes: floorPlan.strokes || [],
     canvasData: floorPlan.canvasData || null,
     canvasJson: floorPlan.canvasJson || null,
-    canvasState: floorPlan.canvasState || null,
     metadata: floorPlan.metadata || createCompleteMetadata(),
     data: floorPlan.data || {},
     createdAt: floorPlan.createdAt || now,
@@ -149,15 +166,6 @@ export function adaptFloorPlans(floorPlans: Partial<FloorPlan>[]): FloorPlan[] {
   return floorPlans.map(plan => adaptFloorPlan(plan));
 }
 
-/**
- * Adapt metadata to ensure it has all required properties
- * @param metadata Partial metadata
- * @returns Complete metadata
- */
-export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
-  return createCompleteMetadata(metadata);
-}
-
 // Export all type adapter functions
 export {
   adaptFloorPlan,
@@ -167,5 +175,6 @@ export {
   adaptPoint,
   adaptMetadata,
   asStrokeType,
-  asRoomType
+  asRoomType,
+  calculateWallLength
 };

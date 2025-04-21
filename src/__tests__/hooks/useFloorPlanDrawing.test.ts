@@ -23,8 +23,8 @@ describe('useFloorPlanDrawing', () => {
   beforeEach(() => {
     // Use a generic mock object and wrap it for typing safety in tests, per ESLint/type safety guidelines.
     mockCanvas = asMockCanvas({
-      add: vi.fn(),
-      renderAll: vi.fn(),
+      add: vi.fn().mockReturnValue(undefined),
+      renderAll: vi.fn().mockReturnValue(undefined),
       // Add additional common canvas methods as needed for compatibility
     });
   });
@@ -75,7 +75,7 @@ describe('useFloorPlanDrawing', () => {
 
   it('should update floor plan when changes occur', () => {
     // Arrange
-    const updateFloorPlan = vi.fn();
+    const updateFloorPlan = vi.fn().mockReturnValue(undefined);
     const testFloorPlan = createTestFloorPlan();
 
     // Act
@@ -121,4 +121,3 @@ describe('useFloorPlanDrawing', () => {
     expect(mockCanvas.add).toHaveBeenCalled();
   });
 });
-

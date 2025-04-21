@@ -1,7 +1,8 @@
+
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
@@ -28,23 +29,15 @@ export const useFloorPlans = ({
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
   const drawingHook = useFloorPlanDrawing({
-    fabricCanvasRef,
+    canvas: fabricCanvasRef.current,
     tool,
     floorPlan: currentFloorPlan as FloorPlan,
-    setFloorPlan: (floorPlan) => {
-      if (typeof floorPlan === 'function') {
-        setFloorPlans(prev => {
-          const updated = [...prev];
-          updated[currentFloorIndex] = floorPlan(prev[currentFloorIndex]);
-          return updated;
-        });
-      } else {
-        setFloorPlans(prev => {
-          const updated = [...prev];
-          updated[currentFloorIndex] = floorPlan;
-          return updated;
-        });
-      }
+    onFloorPlanUpdate: (floorPlan) => {
+      setFloorPlans(prev => {
+        const updated = [...prev];
+        updated[currentFloorIndex] = floorPlan;
+        return updated;
+      });
     }
   });
   
@@ -71,7 +64,6 @@ export const useFloorPlans = ({
       gia: 0,
       canvasData: null,
       canvasJson: null,
-      canvasState: null,
       createdAt: now,
       updatedAt: now,
       metadata: createCompleteMetadata({
@@ -98,6 +90,12 @@ export const useFloorPlans = ({
     }
   }, [floorPlans.length, currentFloorIndex]);
   
+  // Add backward compatibility for syncFloorPlans
+  const syncFloorPlans = useCallback(() => {
+    console.log('syncFloorPlans called (compatibility function)');
+    // Add implementation if needed
+  }, []);
+  
   return {
     floorPlans,
     setFloorPlans,
@@ -109,6 +107,7 @@ export const useFloorPlans = ({
     drawFloorPlan,
     gia,
     setGia,
+    syncFloorPlans, // For backward compatibility
     ...drawingHook
   };
 };
