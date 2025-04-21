@@ -15,8 +15,9 @@ export * from './cspTypes';
 export * from './authTypes';
 export * from './encryptionTypes';
 
-// Export interfaces from security-types.ts (creating compatibility layer)
-export type { 
+// Export interface definitions for backward compatibility
+export type {
+  // Re-export using type keyword to avoid circular dependencies
   SafeUserInput,
   SecurityConfig,
   AuditLogEntry,
@@ -27,4 +28,4 @@ export type {
   SecurityReport,
   RateLimitViolation,
   SecretRotationLog
-} from '../security-types';
+} from '@/types/securityTypes';

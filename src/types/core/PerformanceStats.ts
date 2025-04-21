@@ -1,57 +1,117 @@
 
 /**
- * Performance statistics type definitions
+ * Performance Statistics Type Definitions
+ * 
+ * This module provides type definitions for tracking and analyzing performance
+ * metrics throughout the application.
+ * 
+ * @module types/core/PerformanceStats
  */
 
 /**
- * Performance statistics for monitoring application performance
+ * Represents performance statistics for the application.
  */
 export interface PerformanceStats {
   /**
-   * Frames per second
+   * Current frames per second
    */
   fps: number;
   
   /**
-   * Time taken to render a frame in milliseconds
+   * Average frames per second over time
    */
-  frameTime: number;
+  averageFps: number;
   
   /**
-   * Maximum frame time recorded in milliseconds
+   * Time (ms) taken for the last render operation
    */
-  maxFrameTime: number;
+  lastRenderTime: number;
   
   /**
-   * Count of frames that took longer than 16ms (60fps threshold)
+   * Average render time (ms) over time
    */
-  longFrames: number;
+  averageRenderTime: number;
   
   /**
-   * Count of objects on the canvas
+   * Total number of objects in the scene
    */
   objectCount: number;
   
   /**
-   * Count of visible objects after virtualization
+   * Number of visible objects in the current viewport
    */
   visibleObjectCount: number;
   
   /**
-   * Time when metrics were last updated
+   * Memory usage in MB (if available)
    */
-  lastUpdate: number;
+  memoryUsage?: number;
+  
+  /**
+   * Time (ms) spent on event handling in the last frame
+   */
+  eventHandlingTime: number;
+  
+  /**
+   * Time (ms) spent on canvas operations in the last frame
+   */
+  canvasOperationTime: number;
+  
+  /**
+   * Time (ms) taken for the last grid rendering
+   */
+  gridRenderTime: number;
+  
+  /**
+   * Timestamp when these stats were collected
+   */
+  timestamp: number;
 }
 
 /**
- * Default performance stats
+ * Default performance stats values
  */
 export const DEFAULT_PERFORMANCE_STATS: PerformanceStats = {
-  fps: 60,
-  frameTime: 0,
-  maxFrameTime: 0,
-  longFrames: 0,
+  fps: 0,
+  averageFps: 0,
+  lastRenderTime: 0,
+  averageRenderTime: 0,
   objectCount: 0,
   visibleObjectCount: 0,
-  lastUpdate: 0
+  eventHandlingTime: 0,
+  canvasOperationTime: 0,
+  gridRenderTime: 0,
+  timestamp: Date.now()
+};
+
+/**
+ * Performance threshold configuration
+ */
+export interface PerformanceThresholds {
+  /**
+   * Minimum acceptable FPS
+   * @default 30
+   */
+  minFps: number;
+  
+  /**
+   * Maximum acceptable render time in ms
+   * @default 33
+   */
+  maxRenderTime: number;
+  
+  /**
+   * Maximum number of objects before optimization is needed
+   * @default 1000
+   */
+  maxObjectCount: number;
+}
+
+/**
+ * Default performance thresholds
+ */
+export const DEFAULT_PERFORMANCE_THRESHOLDS: PerformanceThresholds = {
+  minFps: 30,
+  maxRenderTime: 33, // ~30fps
+  maxObjectCount: 1000
 };

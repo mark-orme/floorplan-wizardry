@@ -2,13 +2,14 @@
 /**
  * Audit Logging Type Definitions
  * 
- * This module provides type definitions for security audit logging functionality.
+ * This module provides type definitions for audit logging functionality,
+ * used for tracking user actions and system events for security and compliance.
  * 
  * @module types/security/auditTypes
  */
 
 /**
- * Represents an entry in the security audit log
+ * Represents a single entry in the audit log
  */
 export interface AuditLogEntry {
   /**
@@ -17,27 +18,27 @@ export interface AuditLogEntry {
   id?: string;
   
   /**
-   * When the audited action occurred
+   * Timestamp when the event occurred
    */
   timestamp: Date;
   
   /**
-   * ID of the user who performed the action
+   * User ID associated with the action
    */
   userId: string;
   
   /**
-   * The action that was performed
+   * Action performed (e.g., "create", "update", "delete", "login")
    */
   action: string;
   
   /**
-   * The resource that was affected
+   * Resource that was acted upon (e.g., "floor_plan", "user", "settings")
    */
   resource: string;
   
   /**
-   * Whether the action succeeded or failed
+   * Status of the action
    */
   status: 'success' | 'failure';
   
@@ -47,128 +48,148 @@ export interface AuditLogEntry {
   details?: Record<string, unknown>;
   
   /**
-   * IP address where the action originated
+   * IP address from which the action was performed
    */
   ipAddress?: string;
 }
 
 /**
- * Security event severity levels
+ * Audit severity levels
  */
-export enum SecuritySeverity {
+export enum AuditSeverity {
   /**
-   * Informational events with no security impact
+   * Informational events that don't require attention
    */
   INFO = 'info',
   
   /**
-   * Low severity events that should be monitored
+   * Events that may require monitoring
    */
-  LOW = 'low',
+  WARNING = 'warning',
   
   /**
-   * Medium severity events that require attention
+   * Events that require attention
    */
-  MEDIUM = 'medium',
+  ERROR = 'error',
   
   /**
-   * High severity events that require immediate attention
-   */
-  HIGH = 'high',
-  
-  /**
-   * Critical severity events that require immediate response
+   * Critical security events that require immediate attention
    */
   CRITICAL = 'critical'
 }
 
 /**
- * Types of security events that can be audited
+ * Configuration options for audit logging
  */
-export enum SecurityEventType {
+export interface AuditConfig {
   /**
-   * User authentication events (login, logout, etc.)
-   */
-  AUTHENTICATION = 'authentication',
-  
-  /**
-   * Access control events (permission checks, etc.)
-   */
-  AUTHORIZATION = 'authorization',
-  
-  /**
-   * Data access or modification events
-   */
-  DATA_ACCESS = 'data_access',
-  
-  /**
-   * Configuration changes
-   */
-  CONFIGURATION = 'configuration',
-  
-  /**
-   * Security policy violations
-   */
-  POLICY_VIOLATION = 'policy_violation',
-  
-  /**
-   * System events (startup, shutdown, etc.)
-   */
-  SYSTEM = 'system'
-}
-
-/**
- * Options for creating an audit log entry
- */
-export interface CreateAuditLogOptions {
-  /**
-   * Severity level of the event
-   * @default SecuritySeverity.INFO
-   */
-  severity?: SecuritySeverity;
-  
-  /**
-   * Type of security event
-   * @default SecurityEventType.DATA_ACCESS
-   */
-  eventType?: SecurityEventType;
-  
-  /**
-   * Whether to include user context
+   * Whether audit logging is enabled
    * @default true
    */
-  includeUserContext?: boolean;
+  enabled: boolean;
   
   /**
-   * Additional tags for filtering
+   * Where audit logs should be stored
+   * @default 'database'
    */
-  tags?: string[];
+  storage: 'database' | 'file' | 'memory';
+  
+  /**
+   * Minimum severity level to log
+   * @default AuditSeverity.INFO
+   */
+  minSeverity: AuditSeverity;
+  
+  /**
+   * Whether to include user details in logs
+   * @default true
+   */
+  includeUserDetails: boolean;
+  
+  /**
+   * Whether to include IP addresses in logs
+   * @default true
+   */
+  includeIpAddress: boolean;
 }
 
 /**
- * Factory function to create an audit log entry
- * 
- * @param action The action that was performed
- * @param resource The resource that was affected
- * @param userId ID of the user who performed the action
- * @param status Whether the action succeeded or failed
- * @param details Additional details about the action
- * @returns A properly formatted audit log entry
+ * Audit search parameters for querying logs
  */
-export function createAuditLogEntry(
-  action: string,
-  resource: string,
-  userId: string,
-  status: 'success' | 'failure',
-  details?: Record<string, unknown>
-): AuditLogEntry {
-  return {
-    timestamp: new Date(),
-    userId,
-    action,
-    resource,
-    status,
-    details,
-    // IP address would be captured at logging time
-  };
+export interface AuditSearchParams {
+  /**
+   * Start timestamp for the search range
+   */
+  startDate?: Date;
+  
+  /**
+   * End timestamp for the search range
+   */
+  endDate?: Date;
+  
+  /**
+   * User ID to filter by
+   */
+  userId?: string;
+  
+  /**
+   * Action to filter by
+   */
+  action?: string;
+  
+  /**
+   * Resource to filter by
+   */
+  resource?: string;
+  
+  /**
+   * Status to filter by
+   */
+  status?: 'success' | 'failure';
+  
+  /**
+   * IP address to filter by
+   */
+  ipAddress?: string;
+  
+  /**
+   * Maximum number of results to return
+   * @default 100
+   */
+  limit?: number;
+  
+  /**
+   * Number of results to skip (for pagination)
+   * @default 0
+   */
+  offset?: number;
+}
+
+/**
+ * Audit log service interface
+ */
+export interface AuditLogService {
+  /**
+   * Log an audit event
+   * @param entry - The audit log entry to record
+   */
+  log(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<AuditLogEntry>;
+  
+  /**
+   * Search audit logs
+   * @param params - Search parameters
+   */
+  search(params: AuditSearchParams): Promise<AuditLogEntry[]>;
+  
+  /**
+   * Get a specific audit log entry by ID
+   * @param id - The audit log entry ID
+   */
+  getById(id: string): Promise<AuditLogEntry | null>;
+  
+  /**
+   * Initialize the audit log service
+   * @param config - Configuration options
+   */
+  initialize(config: AuditConfig): Promise<void>;
 }
