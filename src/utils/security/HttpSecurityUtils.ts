@@ -3,7 +3,7 @@
  * HTTP Security Utilities
  * Functions for securing HTTP requests and responses
  */
-import { getCsrfToken, generateCSRFToken } from './csrfProtection';
+import { getCsrfToken, generateCsrfToken } from './csrfProtection';
 
 /**
  * Secure fetch wrapper that adds security headers
@@ -71,7 +71,7 @@ export function addSecurityHeaders(headers: Record<string, string> = {}): Record
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
-    'X-CSRF-Token': generateCSRFToken()
+    'X-CSRF-Token': generateCsrfToken()
   };
 }
 

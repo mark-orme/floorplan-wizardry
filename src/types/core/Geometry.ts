@@ -14,7 +14,7 @@ export interface Point {
 /**
  * Line segment defined by two points
  */
-export interface Line {
+export interface LineSegment {
   start: Point;
   end: Point;
 }
@@ -56,3 +56,22 @@ export interface BoundingBox {
  * Transform matrix (3x3 for 2D transforms)
  */
 export type TransformMatrix = [number, number, number, number, number, number];
+
+/**
+ * Canvas dimensions
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Transform data
+ */
+export interface Transform {
+  x: number;
+  y: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+}

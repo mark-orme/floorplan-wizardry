@@ -1,63 +1,119 @@
 
 /**
- * PDF export options type definitions
- * @module types/export/PdfExportOptions
+ * PDF Export Options
+ * Configuration options for PDF exports
  */
-
-import { CanvasDimensions } from '../core/Geometry';
+import { CanvasDimensions } from '@/types/core/Geometry';
 
 /**
- * Orientation for PDF export
+ * PDF page sizes in points (1/72 inch)
  */
-export type PdfOrientation = 'portrait' | 'landscape';
+export enum PdfPageSize {
+  A4 = 'a4',
+  A3 = 'a3',
+  LETTER = 'letter',
+  LEGAL = 'legal',
+  CUSTOM = 'custom'
+}
 
 /**
- * Paper size for PDF export
+ * PDF orientation
  */
-export type PdfPaperSize = 
-  | 'A4'
-  | 'A3'
-  | 'A2'
-  | 'A1'
-  | 'A0'
-  | 'Letter'
-  | 'Legal'
-  | 'Tabloid'
-  | 'custom';
+export enum PdfOrientation {
+  PORTRAIT = 'portrait',
+  LANDSCAPE = 'landscape'
+}
 
 /**
- * Options for PDF export
+ * PDF export options
  */
 export interface PdfExportOptions {
-  paperSize: PdfPaperSize;
-  dimensions: CanvasDimensions;
+  /**
+   * Page size
+   */
+  pageSize: PdfPageSize;
+  
+  /**
+   * Page orientation
+   */
   orientation: PdfOrientation;
-  scale: number;
-  footerText: string;
-  includeGrid: boolean;
-  includeMeasurements: boolean;
-  includeTitleBlock: boolean;
-  customWidth?: number;
-  customHeight?: number;
-  fileName?: string;
+  
+  /**
+   * Custom page dimensions (when pageSize is CUSTOM)
+   */
+  customDimensions?: CanvasDimensions;
+  
+  /**
+   * PDF title
+   */
   title?: string;
-  author?: string;
-  subject?: string;
-  keywords?: string[];
-  compress?: boolean;
-  quality?: number;
+  
+  /**
+   * Include measurements
+   */
+  includeMeasurements?: boolean;
+  
+  /**
+   * Include room labels
+   */
+  includeRoomLabels?: boolean;
+  
+  /**
+   * Include scale indicator
+   */
+  includeScale?: boolean;
+  
+  /**
+   * Scale value (e.g., 1:100)
+   */
+  scale?: number;
+  
+  /**
+   * Include grid
+   */
+  includeGrid?: boolean;
+  
+  /**
+   * Include legend
+   */
+  includeLegend?: boolean;
+  
+  /**
+   * Include creation date
+   */
+  includeDate?: boolean;
+  
+  /**
+   * High quality rendering
+   */
+  highQuality?: boolean;
+  
+  /**
+   * Include metadata
+   */
+  includeMetadata?: boolean;
+  
+  /**
+   * Margin in points
+   */
+  margin?: number;
 }
 
 /**
  * Default PDF export options
  */
 export const DEFAULT_PDF_EXPORT_OPTIONS: PdfExportOptions = {
-  paperSize: 'A4',
-  dimensions: { width: 595, height: 842 },
-  orientation: 'portrait',
-  scale: 1,
-  footerText: '',
-  includeGrid: true,
+  pageSize: PdfPageSize.A4,
+  orientation: PdfOrientation.LANDSCAPE,
+  title: 'Floor Plan',
   includeMeasurements: true,
-  includeTitleBlock: true
+  includeRoomLabels: true,
+  includeScale: true,
+  scale: 100, // 1:100
+  includeGrid: false,
+  includeLegend: true,
+  includeDate: true,
+  highQuality: true,
+  includeMetadata: true,
+  margin: 36 // 0.5 inch
 };

@@ -1,179 +1,68 @@
 
 /**
- * Geometry Engine Hook
- * Lazily loads geometry calculations, optionally using Web Workers for heavy operations
+ * Hook for using geometry engine features
  */
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Point, Polygon } from '@/types/core/Geometry';
-import { useGeometryWorker } from './useGeometryWorker';
+import { useState, useEffect, useCallback } from 'react';
+import * as engine from '@/utils/geometry/engine';
+import { Point } from '@/types/core/Geometry';
+import logger from '@/utils/logger';
 
-interface GeometryEngineOptions {
-  useWorker?: boolean;
-  precision?: number;
-}
-
-export const useGeometryEngine = (options: GeometryEngineOptions = {}) => {
-  const { useWorker = true, precision = 6 } = options;
+export const useGeometryEngine = () => {
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   
-  // State for tracking initialization
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Use the geometry worker for offloading calculations
-  const {
-    initialized: workerInitialized,
-    calculateArea: workerCalculateArea,
-    calculateDistance: workerCalculateDistance,
-    isProcessing: workerIsProcessing
-  } = useGeometryWorker();
-  
-  // Dynamically load the geometry utilities
+  // Initialize the geometry engine
   useEffect(() => {
-    let mounted = true;
-    
-    const initGeometryEngine = async () => {
-      setIsLoading(true);
-      
+    const initEngine = async () => {
       try {
-        if (useWorker) {
-          // Wait for worker to be ready
-          if (!workerInitialized) {
-            // Worker will be initialized by the useGeometryWorker hook
-            setIsInitialized(workerInitialized);
-          } else {
-            setIsInitialized(true);
-          }
-        } else {
-          // Dynamically import geometry utilities
-          const { initGeometryEngine } = await import('../utils/geometry/engine');
-          await initGeometryEngine();
-          
-          if (mounted) {
-            setIsInitialized(true);
-          }
-        }
+        await engine.initGeometryEngine();
+        setIsReady(true);
       } catch (err) {
-        console.error('Failed to initialize geometry engine:', err);
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Unknown initialization error');
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        setError(err instanceof Error ? err : new Error('Failed to initialize geometry engine'));
+        logger.error('Failed to initialize geometry engine', { error: err });
       }
     };
     
-    initGeometryEngine();
-    
-    return () => {
-      mounted = false;
-    };
-  }, [useWorker, workerInitialized]);
-  
-  /**
-   * Calculate area of a polygon
-   */
-  const calculatePolygonArea = useCallback(async (points: Point[]): Promise<number> => {
-    if (points.length < 3) return 0;
-    
-    try {
-      if (useWorker && workerInitialized) {
-        // Use web worker for calculation
-        return await workerCalculateArea(points);
-      } else {
-        // Fall back to direct calculation
-        const { calculatePolygonArea } = await import('../utils/geometry/engine');
-        return calculatePolygonArea(points);
-      }
-    } catch (error) {
-      console.error('Error calculating polygon area:', error);
-      return 0;
-    }
-  }, [useWorker, workerInitialized, workerCalculateArea]);
-  
-  /**
-   * Calculate distance between two points
-   */
-  const calculateDistance = useCallback(async (point1: Point, point2: Point): Promise<number> => {
-    try {
-      if (useWorker && workerInitialized) {
-        // Use web worker for calculation
-        return await workerCalculateDistance(point1, point2);
-      } else {
-        // Fall back to direct calculation
-        const { calculateDistance } = await import('../utils/geometry/engine');
-        return calculateDistance(point1, point2);
-      }
-    } catch (error) {
-      console.error('Error calculating distance:', error);
-      return 0;
-    }
-  }, [useWorker, workerInitialized, workerCalculateDistance]);
-  
-  /**
-   * Check if a point is inside a polygon
-   */
-  const isPointInPolygon = useCallback(async (point: Point, polygonPoints: Point[]): Promise<boolean> => {
-    try {
-      if (useWorker && workerInitialized) {
-        // Use web worker for calculation
-        // This would need to be implemented in the worker
-        const { isPointInPolygon } = await import('../utils/geometry/engine');
-        return isPointInPolygon(point, polygonPoints);
-      } else {
-        // Direct calculation
-        const { isPointInPolygon } = await import('../utils/geometry/engine');
-        return isPointInPolygon(point, polygonPoints);
-      }
-    } catch (error) {
-      console.error('Error checking if point is in polygon:', error);
-      return false;
-    }
-  }, [useWorker, workerInitialized]);
-  
-  /**
-   * Check if polygon vertices are ordered clockwise
-   */
-  const isPolygonClockwise = useCallback((points: Point[]): boolean => {
-    if (points.length < 3) return false;
-    
-    // Calculate signed area
-    let signedArea = 0;
-    for (let i = 0; i < points.length; i++) {
-      const nextIndex = (i + 1) % points.length;
-      signedArea += (points[i].x * points[nextIndex].y) - (points[nextIndex].x * points[i].y);
-    }
-    
-    // If signed area is positive, the polygon is counterclockwise
-    // If negative, it's clockwise
-    return signedArea < 0;
+    initEngine();
   }, []);
   
-  // The synchronous version of polygon area calculation
-  const calculatePolygonAreaSync = useCallback((points: Point[]): number => {
-    if (points.length < 3) return 0;
-    
-    let area = 0;
-    for (let i = 0; i < points.length; i++) {
-      const j = (i + 1) % points.length;
-      area += points[i].x * points[j].y;
-      area -= points[j].x * points[i].y;
+  // Calculate area using the geometry engine
+  const calculateArea = useCallback(async (points: Point[]): Promise<number> => {
+    if (!isReady) {
+      logger.warn('Geometry engine not ready, using fallback');
+      return calculatePolygonAreaFallback(points);
     }
     
-    return Math.abs(area) / 2;
-  }, []);
+    try {
+      return engine.calculatePolygonArea(points);
+    } catch (err) {
+      logger.error('Error calculating area', { error: err });
+      return calculatePolygonAreaFallback(points);
+    }
+  }, [isReady]);
+  
+  // Fallback calculation for polygon area
+  const calculatePolygonAreaFallback = (points: Point[]): number => {
+    if (points.length < 3) return 0;
+    
+    let total = 0;
+    
+    for (let i = 0, l = points.length; i < l; i++) {
+      const addX = points[i].x;
+      const addY = points[i === points.length - 1 ? 0 : i + 1].y;
+      const subX = points[i === points.length - 1 ? 0 : i + 1].x;
+      const subY = points[i].y;
+      
+      total += (addX * addY * 0.5);
+      total -= (subX * subY * 0.5);
+    }
+    
+    return Math.abs(total);
+  };
   
   return {
-    isInitialized,
-    isLoading,
+    isReady,
     error,
-    isPolygonClockwise,
-    calculatePolygonArea,
-    calculatePolygonAreaSync,
-    calculateDistance,
-    isPointInPolygon,
-    isProcessing: workerIsProcessing || isLoading
+    calculateArea
   };
 };

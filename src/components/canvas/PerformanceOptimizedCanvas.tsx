@@ -1,8 +1,6 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
-import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
 
@@ -36,7 +34,7 @@ export const PerformanceOptimizedCanvas: React.FC<PerformanceOptimizedCanvasProp
   } = useVirtualizedCanvas(fabricCanvasRef, {
     enabled: true,
     autoToggle: true,
-    autoToggleThreshold: 100
+    objectThreshold: 100
   });
   
   // Initialize canvas

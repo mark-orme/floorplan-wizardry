@@ -1,29 +1,26 @@
 
 /**
- * Core types module
+ * Core types index
  * Re-exports all core type definitions
- * @module types/core
  */
 
-// Re-export from geometry - exclude PaperSize to avoid ambiguity
-import * as GeometryTypes from './Geometry';
-export type {
+// Export geometry types
+export {
   Point,
-  LineSegment,
   Rectangle,
   Circle,
   Polygon,
   BoundingBox,
+  TransformMatrix,
+  LineSegment,
   CanvasDimensions,
   Transform
 } from './Geometry';
 
-// Re-export from drawing
-export * from './DrawingTool';
+// Export performance types
+export { 
+  PerformanceStats, 
+  DEFAULT_PERFORMANCE_STATS 
+} from './PerformanceStats';
 
-// Re-export floor plan types
-export * from './floor-plan';
-
-// Re-export canvas types - fixed import paths
-export * from './Canvas';
-export * from './CanvasObject';
+// Add other core type exports as needed

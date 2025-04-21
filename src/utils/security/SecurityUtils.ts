@@ -5,6 +5,17 @@
  */
 
 /**
+ * Generate a secure random token
+ * @returns A secure random token string
+ */
+export function generateSecureToken(): string {
+  // Generate a random token
+  const array = new Uint8Array(16);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Apply security measures to a form element
  * @param form Form element to secure
  */

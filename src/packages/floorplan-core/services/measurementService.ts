@@ -1,128 +1,56 @@
 
 /**
- * Measurement service
- * Domain logic for measurements and dimensions
- * @module packages/floorplan-core/services/measurementService
+ * Measurement Service
+ * Provides utilities for measuring distances and areas in floorplans
  */
-
-import { Point, LineSegment } from '@/types/core/Geometry';
-import { 
-  calculateDistance, 
-  calculateMidpoint, 
-  calculateAngle,
-  pixelsToMeters,
-  formatDistance
-} from '@/utils/geometry/engine';
+import { Point } from '@/types/core/Geometry';
+import { calculateDistance, calculatePolygonArea } from '@/utils/geometry/engine';
 
 /**
- * Measurement result interface
+ * Calculate distance between two points in the floorplan
+ * @param start Start point
+ * @param end End point
+ * @param scale Scale factor (pixels per unit)
+ * @returns Distance in real-world units
  */
-export interface MeasurementResult {
-  /** Distance in pixels */
-  distancePixels: number;
-  /** Distance in meters */
-  distanceMeters: number;
-  /** Distance in feet */
-  distanceFeet: number;
-  /** Formatted distance string */
-  formattedDistance: string;
-  /** Angle in degrees (if applicable) */
-  angle?: number;
-  /** Midpoint coordinates */
-  midpoint: Point;
+export function measureDistance(start: Point, end: Point, scale: number = 1): number {
+  const pixelDistance = calculateDistance(start, end);
+  return pixelDistance / scale;
 }
 
 /**
- * Measure distance between two points
- * @param point1 First point
- * @param point2 Second point
- * @param pixelsPerMeter Conversion factor
- * @returns Measurement result
- */
-export function measureDistance(
-  point1: Point, 
-  point2: Point, 
-  pixelsPerMeter: number = 100
-): MeasurementResult {
-  const distancePixels = calculateDistance(point1, point2);
-  const distanceMeters = pixelsToMeters(distancePixels, pixelsPerMeter);
-  const distanceFeet = distanceMeters * 3.28084;
-  const angle = calculateAngle(point1, point2);
-  const midpoint = calculateMidpoint(point1, point2);
-  
-  return {
-    distancePixels,
-    distanceMeters,
-    distanceFeet,
-    formattedDistance: formatDistance(distancePixels, pixelsPerMeter),
-    angle,
-    midpoint
-  };
-}
-
-/**
- * Measure a line segment
- * @param line Line segment
- * @param pixelsPerMeter Conversion factor
- * @returns Measurement result
- */
-export function measureLine(
-  line: LineSegment,
-  pixelsPerMeter: number = 100
-): MeasurementResult {
-  return measureDistance(line.start, line.end, pixelsPerMeter);
-}
-
-/**
- * Measure perimeter of a polygon
+ * Calculate area of a polygon in the floorplan
  * @param points Polygon points
- * @param pixelsPerMeter Conversion factor
- * @returns Total perimeter measurement
+ * @param scale Scale factor (pixels per unit)
+ * @returns Area in square units
  */
-export function measurePerimeter(
-  points: Point[],
-  pixelsPerMeter: number = 100
-): MeasurementResult {
-  // Handle empty or single-point polygons
-  if (points.length < 2) {
-    return {
-      distancePixels: 0,
-      distanceMeters: 0,
-      distanceFeet: 0,
-      formattedDistance: '0 m',
-      midpoint: points[0] || { x: 0, y: 0 }
-    };
+export function measureArea(points: Point[], scale: number = 1): number {
+  const pixelArea = calculatePolygonArea(points);
+  return pixelArea / (scale * scale);
+}
+
+/**
+ * Convert pixel measurements to real-world units
+ * @param value Pixel value
+ * @param scale Scale factor (pixels per unit)
+ * @param unit Unit name (e.g., 'm', 'ft')
+ * @returns Formatted measurement with units
+ */
+export function formatMeasurement(value: number, scale: number = 1, unit: string = 'm'): string {
+  const realValue = value / scale;
+  return `${realValue.toFixed(2)} ${unit}`;
+}
+
+/**
+ * Calculate the length of a path
+ * @param points Path points
+ * @param scale Scale factor (pixels per unit)
+ * @returns Path length in real-world units
+ */
+export function calculatePathLength(points: Point[], scale: number = 1): number {
+  let length = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    length += calculateDistance(points[i], points[i + 1]);
   }
-  
-  let totalDistancePixels = 0;
-  const segmentMeasurements: MeasurementResult[] = [];
-  
-  // Measure each segment
-  for (let i = 0; i < points.length; i++) {
-    const startPoint = points[i];
-    const endPoint = points[(i + 1) % points.length]; // Wrap around to first point
-    
-    const measurement = measureDistance(startPoint, endPoint, pixelsPerMeter);
-    totalDistancePixels += measurement.distancePixels;
-    segmentMeasurements.push(measurement);
-  }
-  
-  // Calculate centroid as the "midpoint" of the polygon
-  const sumX = points.reduce((sum, p) => sum + p.x, 0);
-  const sumY = points.reduce((sum, p) => sum + p.y, 0);
-  const midpoint = {
-    x: sumX / points.length,
-    y: sumY / points.length
-  };
-  
-  const distanceMeters = pixelsToMeters(totalDistancePixels, pixelsPerMeter);
-  const distanceFeet = distanceMeters * 3.28084;
-  
-  return {
-    distancePixels: totalDistancePixels,
-    distanceMeters,
-    distanceFeet,
-    formattedDistance: formatDistance(totalDistancePixels, pixelsPerMeter),
-    midpoint
-  };
+  return length / scale;
 }

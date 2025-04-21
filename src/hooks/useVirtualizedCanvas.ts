@@ -24,12 +24,13 @@ interface TileData {
   objects: Set<FabricObject>;
 }
 
-interface UseVirtualizedCanvasOptions {
+export interface UseVirtualizedCanvasOptions {
   enabled?: boolean;
   paddingPx?: number;
   tileSize?: number;
   autoToggle?: boolean;
   objectThreshold?: number;
+  autoToggleThreshold?: number;
 }
 
 export const useVirtualizedCanvas = (
@@ -41,7 +42,8 @@ export const useVirtualizedCanvas = (
     paddingPx = 200,
     tileSize = 500,
     autoToggle = true,
-    objectThreshold = 100
+    objectThreshold = 100,
+    autoToggleThreshold = 100
   } = options;
   
   const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);

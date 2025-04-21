@@ -125,18 +125,18 @@ export const useCanvasInteraction = ({
   }, [fabricCanvasRef, tool]);
   
   // Handle mouse move for panning
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: fabric.IEvent<MouseEvent>) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isDraggingRef.current) return;
     
     // Calculate delta
-    const dx = e.clientX - lastPosRef.current.x;
-    const dy = e.clientY - lastPosRef.current.y;
+    const dx = e.e.clientX - lastPosRef.current.x;
+    const dy = e.e.clientY - lastPosRef.current.y;
     
     // Update last position
     lastPosRef.current = {
-      x: e.clientX,
-      y: e.clientY
+      x: e.e.clientX,
+      y: e.e.clientY
     };
     
     // Pan viewport
@@ -145,6 +145,10 @@ export const useCanvasInteraction = ({
     
     vpt[4] += dx;
     vpt[5] += dy;
+    
+    // Get pointer position
+    const pointer = canvas.getPointer(e);
+    const canvasPoint: Point = { x: pointer.x, y: pointer.y };
     
     // Notify listeners
     if (onPanChange) {
@@ -156,7 +160,7 @@ export const useCanvasInteraction = ({
   }, [fabricCanvasRef, onPanChange]);
   
   // Handle mouse up for panning
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: fabric.IEvent<MouseEvent>) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     

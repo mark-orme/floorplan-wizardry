@@ -1,25 +1,32 @@
 
 /**
- * Creates a debounced function that delays invoking func until after wait
- * milliseconds have elapsed since the last time the debounced function was invoked.
+ * Debounce utility
+ * Limits the rate at which a function can fire
+ */
+
+/**
+ * Creates a debounced function that delays invoking the provided function
+ * until after the specified wait time has elapsed since the last time it was invoked
  * 
  * @param func The function to debounce
  * @param wait The number of milliseconds to delay
- * @returns Debounced function
+ * @returns A debounced version of the provided function
  */
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: number | undefined;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function(...args: Parameters<T>): void {
+  return function(...args: Parameters<T>) {
     const later = () => {
-      timeout = undefined;
+      timeout = null;
       func(...args);
     };
     
-    clearTimeout(timeout);
-    timeout = window.setTimeout(later, wait);
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(later, wait);
   };
 }

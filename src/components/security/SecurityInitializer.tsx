@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { initializeSecurity } from '@/utils/security/securityInit';
 import { isEncryptionSupported } from '@/utils/security/dataEncryption';
-import { generateCSRFToken } from '@/utils/security/csrfProtection';
+import { generateCsrfToken } from '@/utils/security/csrfProtection';
 import { enableOfflineEncryption } from '@/utils/security/offlineEncryption';
 import { toast } from 'sonner';
 
@@ -15,7 +15,7 @@ export default function SecurityInitializer() {
     initializeSecurity();
     
     // Set up CSRF protection
-    generateCSRFToken();
+    generateCsrfToken();
     console.info('CSRF protection initialized');
     
     // Initialize encryption for offline data
