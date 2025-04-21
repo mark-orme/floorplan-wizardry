@@ -11,10 +11,11 @@ import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: FabricCanvas;  // Added for test compatibility
+  canvas?: FabricCanvas;  // For test compatibility
   floorPlan: FloorPlan;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
   tool?: DrawingMode;
+  setFloorPlan?: React.Dispatch<React.SetStateAction<FloorPlan>>;  // For test compatibility
 }
 
 export interface UseFloorPlanDrawingResult {
@@ -29,10 +30,11 @@ export interface UseFloorPlanDrawingResult {
 
 export const useFloorPlanDrawing = ({ 
   fabricCanvasRef,
-  canvas,  // Added for test compatibility
+  canvas,  // For test compatibility
   floorPlan,
   onFloorPlanUpdate,
-  tool = DrawingMode.SELECT
+  tool = DrawingMode.SELECT,
+  setFloorPlan  // For test compatibility
 }: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentTool, setTool] = useState<DrawingMode>(tool);
@@ -70,7 +72,12 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
+    
+    // Support for the test API
+    if (setFloorPlan) {
+      setFloorPlan(updatedFloorPlan);
+    }
+  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
 
   // Add a room to the floor plan
   const addRoom = useCallback((room: Room) => {
@@ -98,7 +105,12 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
+    
+    // Support for the test API
+    if (setFloorPlan) {
+      setFloorPlan(updatedFloorPlan);
+    }
+  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
 
   // Add a wall to the floor plan
   const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
@@ -126,7 +138,12 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
+    
+    // Support for the test API
+    if (setFloorPlan) {
+      setFloorPlan(updatedFloorPlan);
+    }
+  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
 
   return {
     isDrawing,

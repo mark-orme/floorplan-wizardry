@@ -4,7 +4,7 @@
  * Handles floor-related operations
  */
 import { useCallback } from "react";
-import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
+import { FloorPlan, PaperSize } from "@/types/floor-plan/unifiedTypes";
 import { toast } from "sonner";
 
 /**
@@ -65,7 +65,13 @@ export const useFloorPlanOperations = ({
         createdAt: now,
         updatedAt: now,
         paperSize: PaperSize.A4,
-        level: floorPlans.length
+        level: floorPlans.length,
+        // Add required metadata fields
+        version: '1.0',
+        author: 'User',
+        dateCreated: now,
+        lastModified: now,
+        notes: ''
       }
     };
     

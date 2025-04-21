@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
+import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
   createTestFloorPlan,
@@ -13,8 +13,7 @@ import {
   createTestRoom,
   createTestWall
 } from '@/types/floor-plan/unifiedTypes';
-import { asMockCanvas } from '@/utils/testing/testUtils';
-import { adaptFloorPlan } from '@/utils/typeAdapters';
+import { asMockCanvas } from '@/types/ICanvasMock';
 import type { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
 
 describe('useFloorPlanDrawing', () => {
@@ -30,20 +29,13 @@ describe('useFloorPlanDrawing', () => {
   });
 
   it('should initialize with default values', () => {
-    // Create a valid fully typed test floor plan
-    const testFloorPlan = adaptFloorPlan({
-      id: 'test-plan',
-      name: 'Test Plan',
-      walls: [],
-      rooms: [],
-      strokes: [],
-      data: {},
-      userId: 'test-user'
-    });
+    const testFloorPlan = createTestFloorPlan();
 
     const { result } = renderHook(() => useFloorPlanDrawing({
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
-      fabricCanvasRef: { current: mockCanvas }
+      tool: DrawingMode.SELECT,
+      setFloorPlan: vi.fn()
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -51,20 +43,13 @@ describe('useFloorPlanDrawing', () => {
   });
 
   it('should handle tool change', () => {
-    // Create a valid fully typed test floor plan
-    const testFloorPlan = adaptFloorPlan({
-      id: 'test-plan',
-      name: 'Test Plan',
-      walls: [],
-      rooms: [],
-      strokes: [],
-      data: {},
-      userId: 'test-user'
-    });
-
+    const testFloorPlan = createTestFloorPlan();
+    
     const { result } = renderHook(() => useFloorPlanDrawing({
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
-      fabricCanvasRef: { current: mockCanvas }
+      tool: DrawingMode.SELECT,
+      setFloorPlan: vi.fn()
     }));
 
     act(() => {
@@ -76,19 +61,13 @@ describe('useFloorPlanDrawing', () => {
 
   it('should create strokes with the correct type', () => {
     // Arrange
-    const testFloorPlan = adaptFloorPlan({
-      id: 'test-plan',
-      name: 'Test Plan',
-      walls: [],
-      rooms: [],
-      strokes: [],
-      data: {},
-      userId: 'test-user'
-    });
+    const testFloorPlan = createTestFloorPlan();
 
     const { result } = renderHook(() => useFloorPlanDrawing({
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
-      fabricCanvasRef: { current: mockCanvas }
+      tool: DrawingMode.SELECT,
+      setFloorPlan: vi.fn()
     }));
 
     // Act
@@ -107,21 +86,15 @@ describe('useFloorPlanDrawing', () => {
   it('should update floor plan when changes occur', () => {
     // Arrange
     const updateFloorPlan = vi.fn().mockReturnValue(undefined);
-    const testFloorPlan = adaptFloorPlan({
-      id: 'test-plan',
-      name: 'Test Plan',
-      walls: [],
-      rooms: [],
-      strokes: [],
-      data: {},
-      userId: 'test-user'
-    });
+    const testFloorPlan = createTestFloorPlan();
 
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
-      fabricCanvasRef: { current: mockCanvas },
-      onFloorPlanUpdate: updateFloorPlan
+      onFloorPlanUpdate: updateFloorPlan,
+      tool: DrawingMode.SELECT,
+      setFloorPlan: vi.fn()
     }));
 
     act(() => {
@@ -138,19 +111,16 @@ describe('useFloorPlanDrawing', () => {
 
   it('should handle adding a room', () => {
     // Arrange
-    const testFloorPlan = adaptFloorPlan({
-      id: 'test-plan',
-      name: 'Test Plan', 
+    const testFloorPlan = createTestFloorPlan({
       rooms: [],
-      walls: [createTestWall()],
-      strokes: [],
-      data: {},
-      userId: 'test-user'
+      walls: [createTestWall()]
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
+      canvas: mockCanvas,
       floorPlan: testFloorPlan,
-      fabricCanvasRef: { current: mockCanvas }
+      tool: DrawingMode.SELECT,
+      setFloorPlan: vi.fn()
     }));
 
     // Act

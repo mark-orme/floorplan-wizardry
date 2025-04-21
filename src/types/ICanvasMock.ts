@@ -18,7 +18,7 @@ export interface ICanvasMock {
   discardActiveObject: Mock;
   contains?: Mock;
   // Fix for withImplementation type - use a simple Mock with no type params
-  withImplementation: Mock<any>;
+  withImplementation: Mock;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;

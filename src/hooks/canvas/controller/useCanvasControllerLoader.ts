@@ -8,8 +8,7 @@
 import { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DebugInfoState } from "@/types/debugTypes";
-import { StrokeTypeLiteral, asStrokeType } from "@/types/floor-plan/unifiedTypes";
-import { Point } from "@/types/core/Point";
+import { StrokeTypeLiteral, asStrokeType, Point } from "@/types/floor-plan/unifiedTypes";
 
 /**
  * Timeout duration for loading operations in milliseconds
