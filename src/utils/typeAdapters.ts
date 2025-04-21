@@ -1,4 +1,3 @@
-
 /**
  * Type adapters for converting between different object types
  * @module utils/typeAdapters
@@ -61,8 +60,7 @@ export function adaptStroke(stroke: Partial<Stroke>): Stroke {
     points: stroke.points || [],
     type: stroke.type || 'line',
     color: stroke.color || '#000000',
-    thickness: stroke.thickness || 1,
-    width: stroke.width || stroke.thickness || 1
+    thickness: stroke.thickness || 1
   };
 }
 
@@ -149,7 +147,6 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     strokes: floorPlan.strokes || [],
     canvasData: floorPlan.canvasData || null,
     canvasJson: floorPlan.canvasJson || null,
-    canvasState: floorPlan.canvasState || null,
     metadata: floorPlan.metadata || createCompleteMetadata() as FloorPlanMetadata,
     data: floorPlan.data || {},
     createdAt: floorPlan.createdAt || now,

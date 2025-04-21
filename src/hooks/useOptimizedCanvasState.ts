@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Canvas as FabricCanvas, Point } from 'fabric';
 import { batchCanvasOperations, debounce } from '@/utils/canvas/renderOptimizer';
@@ -6,11 +5,11 @@ import { useOptimizedObjectManagement } from './useOptimizedObjectManagement';
 import { Point as AppPoint } from '@/types/core/Point';
 import { serializeCanvasState } from '@/utils/canvas/canvasSerializer';
 import { FloorPlan } from '@/types/floorPlanTypes';
-import * as Sentry from '@sentry/browser'; // Add Sentry import if needed
+import * as Sentry from '@sentry/browser';
 
 interface UseOptimizedCanvasStateProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  floorPlans?: FloorPlan[]; // Make these props optional since they may not always be provided
+  floorPlans?: FloorPlan[];
   currentFloor?: number;
   setFloorPlans?: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
   historyRef?: React.MutableRefObject<{past: any[], future: any[]}>;
@@ -237,7 +236,6 @@ export const useOptimizedCanvasState = ({
   }, [fabricCanvasRef, floorPlans, currentFloor, historyRef, setFloorPlans]);
   
   return {
-    canvasState,
     zoom,
     isDirty: canvasState.isDirty,
     

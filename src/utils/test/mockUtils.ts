@@ -1,4 +1,3 @@
-
 /**
  * Mock utilities for testing
  * Provides helper functions for creating mock objects and parameters
@@ -107,8 +106,7 @@ export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
     points: overrides.points || [{ x: 0, y: 0 }, { x: 100, y: 100 }],
     type: overrides.type || 'line',
     color: overrides.color || '#000000',
-    thickness: overrides.thickness || 2,
-    width: overrides.width || (overrides.thickness || 2)
+    thickness: overrides.thickness || 2
   };
 }
 

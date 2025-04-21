@@ -1,4 +1,6 @@
 
+// Fix duplicate export: declare and export createCompleteMetadata only once
+
 /**
  * Type diagnostics utilities
  * Functions for debugging and validating types
@@ -57,8 +59,8 @@ export function createCompleteMetadata(overrides: Record<string, any> = {}): Rec
   const now = new Date().toISOString();
   return {
     version: '1.0',
-    created: now,
-    updated: now,
+    createdAt: now,
+    updatedAt: now,
     author: 'User',
     dateCreated: now,
     lastModified: now,
@@ -66,3 +68,4 @@ export function createCompleteMetadata(overrides: Record<string, any> = {}): Rec
     ...overrides
   };
 }
+

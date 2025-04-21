@@ -42,7 +42,7 @@ export const useFloorPlans = ({
     gia: 0,
     level: 0,
     index: 0,
-    metadata: {
+    metadata: createCompleteMetadata({
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       paperSize: 'A4',
@@ -52,7 +52,7 @@ export const useFloorPlans = ({
       dateCreated: new Date().toISOString(),
       lastModified: new Date().toISOString(),
       notes: ''
-    },
+    }),
     data: {},
     userId: ''
   });
@@ -95,7 +95,7 @@ export const useFloorPlans = ({
       canvasJson: null,
       createdAt: now,
       updatedAt: now,
-      metadata: {
+      metadata: createCompleteMetadata({
         createdAt: now,
         updatedAt: now,
         paperSize: 'A4',
@@ -105,7 +105,7 @@ export const useFloorPlans = ({
         dateCreated: now,
         lastModified: now,
         notes: ''
-      },
+      }),
       data: {},
       userId: 'default-user'
     });

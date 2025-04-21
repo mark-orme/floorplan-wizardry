@@ -205,3 +205,52 @@ function calculateLength(start: Point, end: Point): number {
   const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
+
+const exampleWall: Wall = {
+  id: 'wall-id',
+  floorPlanId: 'floor-plan-id',
+  start: { x: 0, y: 0 },
+  end: { x: 10, y: 10 },
+  thickness: 10,
+  length: 14.1421356237, // Computed length for example
+  angle: 0,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: {
+    type: 'example',
+    material: 'concrete',
+    height: 2.5,
+    notes: '',
+  },
+};
+
+const exampleFloorPlanMetadata = {
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  paperSize: 'A4',
+  level: 0,
+  version: '1.0',
+  author: 'User',
+  dateCreated: new Date().toISOString(),
+  lastModified: new Date().toISOString(),
+  notes: '',
+};
+
+const exampleFloorPlan = {
+  id: 'floor-plan-id',
+  name: 'Example FloorPlan',
+  label: 'Example FloorPlan',
+  index: 0,
+  strokes: [], // etc
+  walls: [exampleWall],
+  rooms: [],
+  gia: 0,
+  level: 0,
+  canvasData: null,
+  canvasJson: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  metadata: exampleFloorPlanMetadata,
+  data: {},  // required property
+  userId: 'test-user', // required property
+};

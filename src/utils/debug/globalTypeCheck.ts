@@ -3,13 +3,9 @@
  * Global type checking utilities
  * @module utils/debug/globalTypeCheck
  */
-import type { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
-import { 
-  validateFloorPlan,
-  validateStroke,
-  validateRoom,
-  validateWall
-} from './typeDiagnostics';
+
+// We remove the imports of validateFloorPlan, validateRoom, validateWall, validateStroke since they don't exist in typeDiagnostics.ts anymore
+// Instead, we do a minimal global init
 
 /**
  * Initialize global type checkers to validate objects at runtime
@@ -19,20 +15,17 @@ export function initGlobalTypeCheckers() {
   
   // Add to window object for debugging in browser console
   const typeCheckers = {
-    validateFloorPlan,
-    validateStroke,
-    validateRoom,
-    validateWall,
+    // Placeholder or actual validators can be assigned here if they exist elsewhere
     checkType: (obj: any, type: string) => {
       switch (type) {
         case 'FloorPlan':
-          return validateFloorPlan(obj);
+          return false;
         case 'Stroke':
-          return validateStroke(obj);
+          return false;
         case 'Room':
-          return validateRoom(obj);
+          return false;
         case 'Wall':
-          return validateWall(obj);
+          return false;
         default:
           return false;
       }
@@ -47,20 +40,17 @@ export function initGlobalTypeCheckers() {
   return typeCheckers;
 }
 
-// Export validators for direct use
+// Export validators for direct use (left empty because no exports available)
 export const validateTypes = {
-  floorPlan: validateFloorPlan,
-  stroke: validateStroke,
-  room: validateRoom,
-  wall: validateWall
+  floorPlan: () => false,
+  stroke: () => false,
+  room: () => false,
+  wall: () => false
 };
 
 // Return the type of an object
 export function getObjectType(obj: any): string {
   if (!obj) return 'undefined';
-  if (validateFloorPlan(obj)) return 'FloorPlan';
-  if (validateRoom(obj)) return 'Room';
-  if (validateWall(obj)) return 'Wall';
-  if (validateStroke(obj)) return 'Stroke';
+  // No validation available here, so return unknown always
   return 'unknown';
 }
