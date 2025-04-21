@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas drawing tools
  * Centralizes the control and operation of canvas tools and actions
@@ -16,10 +15,6 @@ interface CanvasToolsManagerProps {
   /** Reference to the Fabric canvas instance */
   canvas: any;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to the drawing history */
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
   /** Current selected drawing tool */
   tool: DrawingTool;
   /** Current zoom level */
@@ -123,8 +118,6 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
   const toolFunctions = useCanvasToolsManager({
     canvas: fabricCanvasRef.current,
     fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
     tool,
     zoomLevel,
     lineThickness,

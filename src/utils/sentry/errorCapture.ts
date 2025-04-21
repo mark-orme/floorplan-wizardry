@@ -12,6 +12,17 @@ interface CaptureErrorOptions {
 }
 
 /**
+ * Capture an error and send it to Sentry
+ * @param error Error to capture
+ * @param message Optional error message
+ * @param options Capture options
+ */
+export function captureError(error: Error, message?: string, options?: CaptureErrorOptions) {
+  console.error('Error captured:', error, message);
+  captureException(error, options);
+}
+
+/**
  * Capture and report an error
  * @param error Error to capture
  * @param options Capture options

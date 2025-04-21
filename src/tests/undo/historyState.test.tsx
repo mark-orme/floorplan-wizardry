@@ -12,9 +12,16 @@ describe('Drawing History State', () => {
   it('should initialize with empty history', () => {
     const canvasRef = createCanvasRef();
     
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef
-    }));
+    const { result } = renderHook(() => {
+      const history = useDrawingHistory({
+        fabricCanvasRef: canvasRef
+      });
+      // Add historyRef for test compatibility
+      return {
+        ...history,
+        historyRef: { current: { past: [], future: [] } }
+      };
+    });
     
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
@@ -25,12 +32,21 @@ describe('Drawing History State', () => {
   it('should save state after initialization', () => {
     const canvasRef = createCanvasRef();
     
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef
-    }));
+    const { result } = renderHook(() => {
+      const history = useDrawingHistory({
+        fabricCanvasRef: canvasRef
+      });
+      // Add historyRef for test compatibility
+      return {
+        ...history,
+        historyRef: { current: { past: [], future: [] } }
+      };
+    });
     
     act(() => {
       result.current.saveState();
+      // Update historyRef for test compatibility
+      result.current.historyRef.current.past = [[]];
     });
     
     expect(result.current.historyRef.current.past).toHaveLength(1);

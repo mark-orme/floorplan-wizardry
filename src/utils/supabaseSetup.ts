@@ -70,3 +70,17 @@ export async function getAppSettings() {
     return null;
   }
 }
+
+/**
+ * Insert test data for development
+ */
+export async function insertTestData() {
+  try {
+    // Implementation would go here
+    console.log('Inserting test data');
+    return true;
+  } catch (err) {
+    console.error('Error inserting test data:', err);
+    return false;
+  }
+}

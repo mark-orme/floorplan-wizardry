@@ -26,7 +26,8 @@ export interface Tool {
 // Updated interface with fabricCanvasRef
 interface CanvasToolsManagerProps {
   canvas: any;
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef?: React.MutableRefObject<any[]>;
   defaultTool?: DrawingMode;
   onToolChange?: (tool: DrawingMode) => void;
 }

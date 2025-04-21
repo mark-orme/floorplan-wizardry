@@ -1,192 +1,180 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSupabaseFloorPlans } from '@/hooks/useSupabaseFloorPlans';
-import { EnhancedDrawingCanvas } from '@/components/EnhancedDrawingCanvas';
-import { FloorPlan } from '@/types/FloorPlan';
-import { saveEncryptedCanvas, loadEncryptedCanvas } from '@/utils/storage/encryptedCanvasStore';
-import { isRateLimited } from '@/utils/security/rateLimiting';
-
-interface EnhancedDrawingCanvasProps {
-  width: number;
-  height: number;
-  canvasId?: string; // Make canvasId optional
-}
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Edit, Save, XCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { adaptFloorPlan } from '@/utils/typeAdapters';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 export default function FloorplanDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getFloorPlan, updateFloorPlan, deleteFloorPlan } = useSupabaseFloorPlans();
+  const { supabase } = useSupabase();
   const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Rate limiting
-  const saveRateLimitOptions = { windowMs: 30000, maxRequests: 5 }; // 5 saves per 30 seconds
-  
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState('');
+
   useEffect(() => {
-    const loadFloorPlan = async () => {
-      if (!id) return;
-      
+    if (!id) {
+      toast.error('Floor plan ID is missing');
+      navigate('/floorplans');
+      return;
+    }
+
+    const fetchFloorPlan = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const { data, error } = await getFloorPlan(id);
+        if (!supabase) {
+          throw new Error('Supabase client is not initialized');
+        }
+
+        const { data, error } = await supabase
+          .from('floor_plans')
+          .select('*')
+          .eq('id', id)
+          .single();
+
         if (error) {
-          toast.error('Error loading floor plan');
-          navigate('/floorplans');
+          console.error('Error fetching floor plan:', error);
+          toast.error(`Failed to load floor plan: ${error.message}`);
           return;
         }
-        
+
         if (data) {
-          // Correctly set the FloorPlan data
-          setFloorPlan(data as FloorPlan);
-          
-          // Try to load any cached data from encrypted storage
-          try {
-            const cachedData = await loadEncryptedCanvas(`floorplan-${id}`);
-            if (cachedData) {
-              console.log('Loaded cached data from encrypted storage');
-              // Merge cached data with server data if needed
-            }
-          } catch (cacheError) {
-            console.warn('Could not load cached data:', cacheError);
-          }
+          const adaptedFloorPlan = adaptFloorPlan({
+            ...data,
+            metadata: createCompleteMetadata(data.metadata)
+          });
+          setFloorPlan(adaptedFloorPlan);
+          setName(adaptedFloorPlan.name);
         } else {
           toast.error('Floor plan not found');
           navigate('/floorplans');
         }
-      } catch (error) {
-        console.error('Error loading floor plan:', error);
-        toast.error('Failed to load floor plan');
+      } catch (error: any) {
+        console.error('Unexpected error:', error);
+        toast.error(`Unexpected error: ${error.message}`);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    loadFloorPlan();
-  }, [id, getFloorPlan, navigate]);
-  
-  const handleCanvasReady = (canvas: any) => {
-    console.log('Canvas ready:', canvas);
-    // Load floor plan data into canvas
+
+    fetchFloorPlan();
+  }, [id, navigate, supabase]);
+
+  const handleEditClick = () => {
+    setIsEditing(true);
   };
-  
-  const handleGoBack = () => {
-    navigate('/floorplans');
-  };
-  
-  const handleSave = async () => {
-    if (!floorPlan || !id) return;
-    
-    // Check for rate limiting
-    if (isRateLimited(`floorplan_save_${id}`, saveRateLimitOptions)) {
-      toast.warning('You are saving too frequently. Please wait a moment before trying again.');
-      return;
-    }
-    
+
+  const handleSaveClick = async () => {
+    setIsLoading(true);
     try {
-      // Save to server
-      await updateFloorPlan(id, floorPlan);
-      
-      // Also save to encrypted local storage for backup
-      try {
-        await saveEncryptedCanvas(`floorplan-${id}`, floorPlan);
-      } catch (localError) {
-        console.warn('Could not save to local encrypted storage:', localError);
+      if (!supabase || !floorPlan) {
+        throw new Error('Supabase client or floor plan is not initialized');
       }
-      
-      toast.success('Floor plan saved');
-    } catch (error) {
-      console.error('Error saving floor plan:', error);
-      toast.error('Failed to save floor plan');
+
+      const { error } = await supabase
+        .from('floor_plans')
+        .update({ name })
+        .eq('id', floorPlan.id);
+
+      if (error) {
+        console.error('Error updating floor plan:', error);
+        toast.error(`Failed to update floor plan: ${error.message}`);
+        return;
+      }
+
+      // Optimistically update the local state
+      setFloorPlan({ ...floorPlan, name });
+      toast.success('Floor plan updated successfully');
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast.error(`Unexpected error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const handleDelete = async () => {
-    if (!id) return;
-    
-    if (!window.confirm('Are you sure you want to delete this floor plan?')) {
-      return;
-    }
-    
-    try {
-      await deleteFloorPlan(id);
-      toast.success('Floor plan deleted');
-      navigate('/floorplans');
-    } catch (error) {
-      console.error('Error deleting floor plan:', error);
-      toast.error('Failed to delete floor plan');
-    }
+
+  const handleCancelClick = () => {
+    setIsEditing(false);
+    setName(floorPlan?.name || ''); // Revert to original name
   };
-  
+
+  if (isLoading) {
+    return <div>Loading floor plan details...</div>;
+  }
+
+  if (!floorPlan) {
+    return <div>Floor plan not found.</div>;
+  }
+
+  // Ensure walls include color and roomIds to match the Wall type
+  const fixedFloorPlan = {
+    ...floorPlan,
+    walls: floorPlan.walls.map(wall => ({
+      ...wall,
+      color: wall.color || "#000000",  // Default color if not present
+      roomIds: wall.roomIds || []      // Default empty array if not present
+    }))
+  };
+
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleGoBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">
-            {isLoading ? 'Loading...' : floorPlan?.name || 'Floor Plan Details'}
-          </h1>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleSave} disabled={isLoading}>
-            <Save className="h-4 w-4 mr-2" />
-            Save
-          </Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      </div>
-      
-      {isLoading ? (
-        <div className="h-96 flex items-center justify-center bg-gray-100 rounded-lg">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2">Loading floor plan...</p>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <EnhancedDrawingCanvas 
-            width={800} 
-            height={600} 
-            // canvasId is now optional, so no need to provide it
-          />
-        </div>
-      )}
-      
-      {floorPlan && (
-        <div className="mt-6 bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Floor Plan Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Created</p>
-              <p>{new Date(floorPlan.createdAt).toLocaleString()}</p>
+    <div className="container mx-auto py-6 px-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>{isEditing ? 'Edit Floor Plan Name' : floorPlan.name}</CardTitle>
+          {isEditing ? (
+            <div className="space-x-2">
+              <Button
+                variant="ghost"
+                onClick={handleCancelClick}
+                disabled={isLoading}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveClick}
+                disabled={isLoading}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Last Updated</p>
-              <p>{new Date(floorPlan.updatedAt).toLocaleString()}</p>
+          ) : (
+            <Button onClick={handleEditClick} disabled={isLoading}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Name
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          ) : (
+            <div className="space-y-1">
+              <CardDescription>Floor Plan ID: {floorPlan.id}</CardDescription>
+              <CardDescription>Created At: {new Date(floorPlan.createdAt).toLocaleDateString()}</CardDescription>
+              <CardDescription>Last Updated: {new Date(floorPlan.updatedAt).toLocaleDateString()}</CardDescription>
+              <CardDescription>Number of Walls: {fixedFloorPlan.walls.length}</CardDescription>
+              <CardDescription>Number of Rooms: {fixedFloorPlan.rooms.length}</CardDescription>
+              <CardDescription>Gross Internal Area: {floorPlan.gia} m²</CardDescription>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Level</p>
-              <p>{floorPlan.level}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Area</p>
-              <p>{floorPlan.gia} m²</p>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

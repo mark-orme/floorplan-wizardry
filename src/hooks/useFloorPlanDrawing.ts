@@ -10,7 +10,8 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlanDrawingProps {
-  canvas?: FabricCanvas;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  canvas?: FabricCanvas;  // Added for test compatibility
   floorPlan: FloorPlan;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
   tool?: DrawingMode;
@@ -19,25 +20,34 @@ export interface UseFloorPlanDrawingProps {
 export interface UseFloorPlanDrawingResult {
   isDrawing: boolean;
   setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
-  tool: DrawingMode;
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
+  tool: DrawingMode;  // Added for test compatibility
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;  // Added for test compatibility
   addStroke: (stroke: Stroke) => void;
-  addRoom: (room: Room) => void;
+  addRoom: (room: Room) => void;  // Added for test compatibility
   addWall: (wall: Omit<Wall, 'length'>) => void;
 }
 
 export const useFloorPlanDrawing = ({ 
-  canvas, 
+  fabricCanvasRef,
+  canvas,  // Added for test compatibility
   floorPlan,
   onFloorPlanUpdate,
   tool = DrawingMode.SELECT
 }: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentTool, setTool] = useState<DrawingMode>(tool);
+  
+  // Use either fabricCanvasRef or canvas directly
+  const getCanvas = () => {
+    if (canvas) return canvas;
+    if (fabricCanvasRef?.current) return fabricCanvasRef.current;
+    return null;
+  };
 
   // Add a stroke to the floor plan
   const addStroke = useCallback((stroke: Stroke) => {
-    if (!canvas) return;
+    const currentCanvas = getCanvas();
+    if (!currentCanvas) return;
     
     // Ensure stroke has proper type
     const validatedStroke = {
@@ -46,8 +56,8 @@ export const useFloorPlanDrawing = ({
     };
     
     // Add the stroke to the canvas
-    canvas.add(/* stroke visual representation */);
-    canvas.renderAll();
+    currentCanvas.add(/* stroke visual representation */);
+    currentCanvas.renderAll();
     
     // Update the floor plan data
     const updatedFloorPlan = {
@@ -60,11 +70,12 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [canvas, floorPlan, onFloorPlanUpdate]);
+  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
 
   // Add a room to the floor plan
   const addRoom = useCallback((room: Room) => {
-    if (!canvas) return;
+    const currentCanvas = getCanvas();
+    if (!currentCanvas) return;
     
     // Ensure room has proper type
     const validatedRoom = {
@@ -73,8 +84,8 @@ export const useFloorPlanDrawing = ({
     };
     
     // Add the room to the canvas
-    canvas.add(/* room visual representation */);
-    canvas.renderAll();
+    currentCanvas.add(/* room visual representation */);
+    currentCanvas.renderAll();
     
     // Update the floor plan data
     const updatedFloorPlan = {
@@ -87,11 +98,12 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [canvas, floorPlan, onFloorPlanUpdate]);
+  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
 
   // Add a wall to the floor plan
   const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
-    if (!canvas) return;
+    const currentCanvas = getCanvas();
+    if (!currentCanvas) return;
     
     // Calculate length for the wall
     const completeWall: Wall = {
@@ -100,8 +112,8 @@ export const useFloorPlanDrawing = ({
     };
     
     // Add the wall to the canvas
-    canvas.add(/* wall visual representation */);
-    canvas.renderAll();
+    currentCanvas.add(/* wall visual representation */);
+    currentCanvas.renderAll();
     
     // Update the floor plan data
     const updatedFloorPlan = {
@@ -114,15 +126,15 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-  }, [canvas, floorPlan, onFloorPlanUpdate]);
+  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
 
   return {
     isDrawing,
     setIsDrawing,
-    tool: currentTool,
-    setTool,
+    tool: currentTool,  // For test compatibility
+    setTool,  // For test compatibility
     addStroke,
-    addRoom,
+    addRoom,  // For test compatibility
     addWall
   };
 };

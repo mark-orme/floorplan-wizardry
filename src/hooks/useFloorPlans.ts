@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
@@ -50,7 +49,7 @@ export const useFloorPlans = ({
   
   const drawingHook = useFloorPlanDrawing({
     floorPlan: safeFloorPlan,
-    canvas: fabricCanvasRef.current,
+    fabricCanvasRef,
     onFloorPlanUpdate: (floorPlan) => {
       setFloorPlans(prev => {
         const updated = [...prev];

@@ -43,7 +43,7 @@ describe('useFloorPlanDrawing', () => {
 
     const { result } = renderHook(() => useFloorPlanDrawing({
       floorPlan: testFloorPlan,
-      canvas: mockCanvas
+      canvas: mockCanvas // Use canvas instead of fabricCanvasRef for test compatibility
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -64,7 +64,7 @@ describe('useFloorPlanDrawing', () => {
 
     const { result } = renderHook(() => useFloorPlanDrawing({
       floorPlan: testFloorPlan,
-      canvas: mockCanvas
+      canvas: mockCanvas // Use canvas instead of fabricCanvasRef
     }));
 
     act(() => {
@@ -88,7 +88,7 @@ describe('useFloorPlanDrawing', () => {
 
     const { result } = renderHook(() => useFloorPlanDrawing({
       floorPlan: testFloorPlan,
-      canvas: mockCanvas
+      canvas: mockCanvas // Use canvas instead of fabricCanvasRef
     }));
 
     // Act
@@ -120,7 +120,7 @@ describe('useFloorPlanDrawing', () => {
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
       floorPlan: testFloorPlan,
-      canvas: mockCanvas,
+      canvas: mockCanvas, // Use canvas instead of fabricCanvasRef
       onFloorPlanUpdate: updateFloorPlan
     }));
 
@@ -150,7 +150,7 @@ describe('useFloorPlanDrawing', () => {
 
     const { result } = renderHook(() => useFloorPlanDrawing({
       floorPlan: testFloorPlan,
-      canvas: mockCanvas
+      canvas: mockCanvas // Use canvas instead of fabricCanvasRef
     }));
 
     // Act

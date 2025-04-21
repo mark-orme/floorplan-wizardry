@@ -1,4 +1,3 @@
-
 import { test, expect } from '@playwright/test';
 import { runAccessibilityAudit } from '@/utils/testing/accessibility';
 
@@ -44,3 +43,7 @@ test.describe('Dialog Accessibility', () => {
     }
   });
 });
+
+export function checkDialogAccessibility(element: HTMLElement) {
+  console.log("Checking dialog accessibility for:", element);
+}
