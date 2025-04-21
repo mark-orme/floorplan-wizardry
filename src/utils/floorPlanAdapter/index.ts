@@ -1,55 +1,35 @@
 
 /**
- * Floor Plan Adapter index
- * Re-exports all adapter functionality
- * @module utils/floorPlanAdapter
+ * Floor Plan Adapter Index
+ * Re-exports all adapter utilities
  */
 
-// Re-export converters
+// Export converters
 export {
-  adaptFloorPlan,
   appToCoreFloorPlans,
-  appToCoreFloorPlan,
   coreToAppFloorPlans,
-  coreToAppFloorPlan,
-  normalizeDrawingMode,
-  validateStrokeType,
-  asStrokeType,
-  validateRoomType,
-  asRoomType,
-  VALID_STROKE_TYPES,
-  VALID_ROOM_TYPES
+  convertWall,
+  convertRoom,
+  convertStroke,
+  convertMetadata
 } from './converters';
 
-// Re-export validators
+// Export validators
 export {
   validatePoint,
   validateColor,
   validateTimestamp,
-  validateStrokeType as validateStrokeTypeValidator,
-  validateRoomType as validateRoomTypeValidator,
-  mapRoomType,
-  logValidation
+  validateStrokeType
 } from './validators';
 
-// Re-export types 
-export type {
-  FloorPlan,
-  Stroke,
-  Wall,
-  Room,
-  Point,
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
-  FloorPlanMetadata
-} from './types';
+// Export type mappers
+export {
+  mapRoomType,
+  mapStrokeType
+} from './typeMappers';
 
-/**
- * Creates an empty floor plan
- * @param index Index for the new floor plan
- * @returns An empty floor plan
- */
-export function createEmptyFloorPlan(index: number = 0): any {
-  const { createEmptyFloorPlan } = require('../floor-plan/unifiedTypes');
-  return createEmptyFloorPlan(index);
-}
+// Export utility functions
+export {
+  calculateArea,
+  calculatePerimeter
+} from './geometryUtils';

@@ -175,3 +175,13 @@ export function logTypeInfo(obj: any, label: string = 'Object'): void {
   console.log('Value:', obj);
   console.groupEnd();
 }
+
+// Export all validation functions
+export {
+  validateFloorPlanWithReporting,
+  isValidFloorPlan,
+  isValidRoom,
+  isValidWall,
+  isValidStroke,
+  createCompleteMetadata
+};

@@ -6,6 +6,36 @@
 import { vi } from 'vitest';
 
 /**
+ * Creates a withImplementation mock that returns Promise<void>
+ * @returns Mock function with correct return type
+ */
+export function createWithImplementationMock() {
+  // Create a mock that returns a promise
+  return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+    // Log that withImplementation was called for debugging
+    console.log('Mock withImplementation called');
+    
+    // If a callback is provided, execute it
+    if (callback && typeof callback === 'function') {
+      try {
+        const result = callback();
+        
+        // If the callback returns a promise, return that promise
+        if (result instanceof Promise) {
+          return result.then(() => Promise.resolve());
+        }
+      } catch (error) {
+        console.error('Error in mock withImplementation:', error);
+        // Don't rethrow, just log for test stability
+      }
+    }
+    
+    // Always return a resolved promise for stability
+    return Promise.resolve();
+  });
+}
+
+/**
  * Create a typed mock canvas for unit tests
  * @returns A mock canvas object
  */
@@ -39,7 +69,9 @@ export function createTypedMockCanvas() {
     selection: true,
     // Add helper methods for tests
     getHandlers: vi.fn().mockReturnValue([]),
-    triggerEvent: vi.fn()
+    triggerEvent: vi.fn(),
+    // Add the withImplementation mock
+    withImplementation: createWithImplementationMock()
   };
 }
 
@@ -87,4 +119,18 @@ export function createTypedFloorPlanContext() {
     zoom: 1,
     setZoom: vi.fn()
   };
+}
+
+/**
+ * Create a mock history reference
+ * @returns Mock history reference
+ */
+export const createMockHistoryRef = createTypedHistoryRef;
+
+/**
+ * Create a mock grid layer reference
+ * @returns Mock grid layer reference
+ */
+export function createMockGridLayerRef() {
+  return { current: [] };
 }

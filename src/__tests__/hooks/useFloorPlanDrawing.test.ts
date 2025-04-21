@@ -7,16 +7,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import {
-  FloorPlan,
-  Stroke,
-  asStrokeType,
-  asRoomType,
+import { 
   createTestFloorPlan,
   createTestStroke,
   createTestRoom,
-  createTestWall
+  createTestWall,
+  asStrokeType,
+  asRoomType
 } from '@/utils/test/typedTestFixtures';
+import type { FloorPlan, Stroke } from '@/utils/test/typedTestFixtures';
 import { createTypedMockCanvas } from '@/utils/canvasMockUtils';
 
 describe('useFloorPlanDrawing', () => {

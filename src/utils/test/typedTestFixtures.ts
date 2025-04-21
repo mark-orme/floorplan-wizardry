@@ -16,6 +16,33 @@ import {
   RoomTypeLiteral
 } from '@/types/floor-plan/unifiedTypes';
 
+// Re-export these types for use in tests
+export type { FloorPlan, Stroke, Wall, Room, Point, FloorPlanMetadata };
+
+/**
+ * Type assertion for stroke types
+ * @param type The type as string
+ * @returns The validated stroke type
+ */
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  return validTypes.includes(type as StrokeTypeLiteral) 
+    ? (type as StrokeTypeLiteral) 
+    : 'line';
+}
+
+/**
+ * Type assertion for room types
+ * @param type The type as string
+ * @returns The validated room type
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return validTypes.includes(type as RoomTypeLiteral) 
+    ? (type as RoomTypeLiteral) 
+    : 'other';
+}
+
 /**
  * Create a test point for testing
  * @param x X coordinate
@@ -65,7 +92,8 @@ export function createTestWall(props: Partial<Wall> = {}): Wall {
     thickness: props.thickness || 5,
     color: props.color || '#333333',
     roomIds: props.roomIds || [],
-    height: props.height
+    height: props.height,
+    points: props.points || [start, end]
   };
 }
 
@@ -158,3 +186,10 @@ export function createTestFloorPlan(props: Partial<FloorPlan> = {}): FloorPlan {
     userId: props.userId || 'test-user'
   };
 }
+
+// Also create aliases for the typed test fixtures
+export const createTypedTestFloorPlan = createTestFloorPlan;
+export const createTypedTestStroke = createTestStroke;
+export const createTypedTestWall = createTestWall;
+export const createTypedTestRoom = createTestRoom;
+export const createTypedTestPoint = createTestPoint;

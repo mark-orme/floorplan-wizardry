@@ -1,82 +1,61 @@
 
 /**
- * Validators for floor plan data
- * Provides utility functions for validating floor plan properties
+ * Validation utilities for floor plan data
  * @module utils/floorPlanAdapter/validators
  */
 
-import { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/typesBarrel';
-import { asStrokeType, asRoomType } from '@/types/floor-plan/typesBarrel';
+/**
+ * Validate a point object
+ * @param point The point to validate
+ * @returns Whether the point is valid
+ */
+export const validatePoint = (point: any): boolean => {
+  return point && 
+    typeof point.x === 'number' && 
+    typeof point.y === 'number';
+};
 
 /**
- * Validates a point with x and y coordinates
- * @param point Point to validate
- * @returns Valid point with x and y properties
+ * Validate a color string
+ * @param color The color to validate
+ * @returns Whether the color is valid
  */
-export function validatePoint(point: any): { x: number, y: number } {
-  return {
-    x: typeof point?.x === 'number' ? point.x : 0,
-    y: typeof point?.y === 'number' ? point.y : 0
-  };
-}
+export const validateColor = (color: any): boolean => {
+  return typeof color === 'string' && 
+    (color.startsWith('#') || color.startsWith('rgb') || color.startsWith('hsl'));
+};
 
 /**
- * Validates a color string
- * @param color Color to validate
- * @returns Valid color string
+ * Validate a timestamp string
+ * @param timestamp The timestamp to validate
+ * @returns Whether the timestamp is valid
  */
-export function validateColor(color: any): string {
-  return typeof color === 'string' ? color : '#000000';
-}
-
-/**
- * Validates a timestamp string
- * @param timestamp Timestamp to validate
- * @returns Valid timestamp
- */
-export function validateTimestamp(timestamp: any): string {
-  return typeof timestamp === 'string' ? timestamp : new Date().toISOString();
-}
-
-/**
- * Validates a stroke type to ensure it's a valid StrokeTypeLiteral
- * @param type Type to validate
- * @returns Valid StrokeTypeLiteral
- */
-export function validateStrokeType(type: string): StrokeTypeLiteral {
-  return asStrokeType(type);
-}
-
-/**
- * Validates a room type to ensure it's a valid RoomTypeLiteral
- * @param type Type to validate
- * @returns Valid RoomTypeLiteral
- */
-export function validateRoomType(type: string): RoomTypeLiteral {
-  return asRoomType(type);
-}
-
-/**
- * Maps a room type string to a valid RoomTypeLiteral 
- * (Alias for validateRoomType for backward compatibility)
- * @param type Room type to map
- * @returns Properly typed RoomTypeLiteral
- */
-export const mapRoomType = validateRoomType;
-
-/**
- * Enhanced validation logging
- * @param propertyName Name of property being validated
- * @param originalValue Original value
- * @param validatedValue Validated value
- * @param source Source object
- */
-export function logValidation(propertyName: string, originalValue: any, validatedValue: any, source?: any): void {
-  if (originalValue !== validatedValue && process.env.NODE_ENV !== 'production') {
-    console.warn(`Validation modified ${propertyName}:`, { 
-      from: originalValue, 
-      to: validatedValue,
-      source
-    });
+export const validateTimestamp = (timestamp: any): boolean => {
+  if (typeof timestamp !== 'string') return false;
+  try {
+    const date = new Date(timestamp);
+    return !isNaN(date.getTime());
+  } catch (e) {
+    return false;
   }
-}
+};
+
+/**
+ * Validate a stroke type
+ * @param type The type to validate
+ * @returns Whether the type is valid
+ */
+export const validateStrokeType = (type: any): boolean => {
+  const validTypes = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  return typeof type === 'string' && validTypes.includes(type);
+};
+
+/**
+ * Validate a room type
+ * @param type The type to validate
+ * @returns Whether the type is valid
+ */
+export const validateRoomType = (type: any): boolean => {
+  const validTypes = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return typeof type === 'string' && validTypes.includes(type);
+};
