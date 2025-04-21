@@ -1,4 +1,3 @@
-
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
@@ -40,7 +39,8 @@ module.exports = {
     'import',
     'promise',
     'prettier',
-    'jsx-a11y'
+    'jsx-a11y',
+    'filenames'
   ],
   rules: {
     // React rules
@@ -51,6 +51,21 @@ module.exports = {
     'react/jsx-no-target-blank': 'error',
     'react/jsx-no-useless-fragment': 'warn',
     'react/no-array-index-key': 'warn',
+    
+    // File naming convention rules
+    'filenames/match-regex': [
+      'error',
+      '^([A-Z][a-zA-Z0-9]*)$|^([a-z][a-zA-Z0-9]*)$|^([a-z][a-z0-9]*([-][a-z0-9]+)*)$',
+      true
+    ],
+    'filenames/match-exported': [
+      'error', 
+      null, 
+      '\\.tsx?$'
+    ],
+    
+    // Import path case-sensitivity rules
+    'import/no-unresolved': 'error',
     
     // TypeScript rules
     '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -83,6 +98,22 @@ module.exports = {
       {
         selector: 'enum',
         format: ['PascalCase']
+      },
+      {
+        selector: 'function',
+        format: ['camelCase'],
+        filter: {
+          regex: '^use[A-Z]',
+          match: true
+        }
+      },
+      {
+        selector: 'function',
+        format: ['PascalCase'],
+        filter: {
+          regex: '^[A-Z]',
+          match: true
+        }
       }
     ],
     
@@ -148,5 +179,22 @@ module.exports = {
     
     // Grid constants validation rules
     './src/eslint/grid-constant-checker/ensure-valid-properties': 'error',
-  }
+  },
+  overrides: [
+    {
+      files: ['**/*.tsx'],
+      excludedFiles: ['**/hooks/**', '**/utils/**', '**/types/**', '**/context/**'],
+      rules: {
+        'filenames/match-regex': ['error', '^[A-Z][a-zA-Z0-9]*$', true],
+        'filenames/match-exported': 'error'
+      }
+    },
+    {
+      files: ['**/hooks/**/*.ts', '**/hooks/**/*.tsx'],
+      rules: {
+        'filenames/match-regex': ['error', '^use[A-Z][a-zA-Z0-9]*$', true],
+        'filenames/match-exported': 'error'
+      }
+    }
+  ]
 };
