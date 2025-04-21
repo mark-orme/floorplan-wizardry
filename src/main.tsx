@@ -1,8 +1,8 @@
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App' // Fixed casing to match the actual filename
-import './index.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App'; // Fixed casing to match the actual filename
+import './index.css';
 import { initGlobalTypeCheckers } from './utils/debug/globalTypeCheck';
 
 // Initialize global type checkers in development
@@ -14,4 +14,4 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-)
+);

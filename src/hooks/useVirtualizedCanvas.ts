@@ -1,4 +1,3 @@
-
 /**
  * Virtualized Canvas Hook
  * 
@@ -7,7 +6,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useCanvasPerformanceMonitor } from './useCanvasPerformanceMonitor';
+import { useGridPerformanceMonitor } from './useGridPerformanceMonitor';
 import { toast } from 'sonner';
 
 interface UseVirtualizedCanvasProps {
