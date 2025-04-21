@@ -1,83 +1,120 @@
 
-import { 
-  generateCSRFToken, 
-  verifyCSRFToken, 
-  addCSRFToFormData,
-  addCSRFToHeaders
+/**
+ * CSRF Protection Tests
+ */
+import {
+  generateCsrfToken,
+  getCsrfToken,
+  verifyCsrfToken,
+  addCsrfHeader,
+  initializeCsrfProtection,
+  resetCsrfProtection
 } from '../csrfProtection';
 
-// Mock sessionStorage
-const mockSessionStorage = {
-  store: {} as Record<string, string>,
-  getItem: jest.fn((key: string) => mockSessionStorage.store[key] || null),
-  setItem: jest.fn((key: string, value: string) => {
-    mockSessionStorage.store[key] = value;
-  }),
-  clear: jest.fn(() => {
-    mockSessionStorage.store = {};
-  })
-};
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; }
+  };
+})();
 
-// Mock window.crypto.getRandomValues
-const mockGetRandomValues = jest.fn((buffer: Uint8Array) => {
-  for (let i = 0; i < buffer.length; i++) {
-    buffer[i] = i % 256;
-  }
-  return buffer;
-});
-
-// Setup global mocks
-beforeAll(() => {
-  Object.defineProperty(window, 'sessionStorage', {
-    value: mockSessionStorage
-  });
-  
-  Object.defineProperty(window, 'crypto', {
-    value: {
-      getRandomValues: mockGetRandomValues
-    }
-  });
+// Mock window
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
 });
 
 describe('CSRF Protection', () => {
   beforeEach(() => {
-    mockSessionStorage.clear();
-    jest.clearAllMocks();
+    // Reset localStorage
+    window.localStorage.clear();
+    
+    // Reset fetch mock
+    if ('fetch' in window) {
+      // @ts-ignore
+      delete window.fetch;
+    }
+    window.fetch = jest.fn();
   });
   
-  test('generateCSRFToken should create and store a token', () => {
-    const token = generateCSRFToken();
-    expect(token).toBeDefined();
-    expect(token.length).toBeGreaterThan(0);
-    expect(mockSessionStorage.setItem).toHaveBeenCalledWith('csrfToken', token);
+  test('generateCsrfToken should create and store a token', () => {
+    const token = generateCsrfToken();
+    
+    expect(token).toBeTruthy();
+    expect(token.length).toBeGreaterThan(20);
+    expect(window.localStorage.getItem('x-csrf-token')).toBe(token);
   });
   
-  test('verifyCSRFToken should validate a matching token', () => {
-    const token = generateCSRFToken();
-    const isValid = verifyCSRFToken(token);
-    expect(isValid).toBe(true);
+  test('getCsrfToken should return existing token', () => {
+    const token = generateCsrfToken();
+    const retrievedToken = getCsrfToken();
+    
+    expect(retrievedToken).toBe(token);
   });
   
-  test('verifyCSRFToken should reject an invalid token', () => {
-    generateCSRFToken();
-    const isValid = verifyCSRFToken('invalid-token');
-    expect(isValid).toBe(false);
+  test('getCsrfToken should generate new token if none exists', () => {
+    window.localStorage.clear();
+    
+    const token = getCsrfToken();
+    
+    expect(token).toBeTruthy();
+    expect(window.localStorage.getItem('x-csrf-token')).toBe(token);
   });
   
-  test('addCSRFToFormData should add token to form data', () => {
-    const formData = new FormData();
-    const enhancedFormData = addCSRFToFormData(formData);
-    // Cannot directly check formData contents due to FormData API limitations
-    // but we can verify the token was generated
-    expect(mockSessionStorage.setItem).toHaveBeenCalled();
-    expect(mockGetRandomValues).toHaveBeenCalled();
-    expect(enhancedFormData).toBe(formData); // Should be the same instance
+  test('verifyCsrfToken should validate tokens correctly', () => {
+    const token = generateCsrfToken();
+    
+    expect(verifyCsrfToken(token)).toBe(true);
+    expect(verifyCsrfToken('wrong-token')).toBe(false);
   });
   
-  test('addCSRFToHeaders should add token to headers', () => {
-    const headers = { 'Content-Type': 'application/json' };
-    const enhancedHeaders = addCSRFToHeaders(headers);
-    expect(enhancedHeaders['X-CSRF-Token']).toBeDefined();
-    expect(enhancedHeaders['Content-Type']).toBe('application/json');
+  test('addCsrfHeader should add token to headers', () => {
+    const token = generateCsrfToken();
+    const headers = addCsrfHeader({
+      'Content-Type': 'application/json'
+    });
+    
+    expect(headers).toEqual({
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    });
+  });
+  
+  test('initializeCsrfProtection should monkey patch fetch', () => {
+    const originalFetch = window.fetch;
+    initializeCsrfProtection();
+    
+    expect(window.fetch).not.toBe(originalFetch);
+  });
+  
+  test('patched fetch should include CSRF token', () => {
+    const token = generateCsrfToken();
+    initializeCsrfProtection();
+    
+    window.fetch('https://api.example.com', {
+      method: 'POST',
+      body: JSON.stringify({ data: 'test' })
+    });
+    
+    expect(window.fetch).toHaveBeenCalledWith(
+      'https://api.example.com',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ data: 'test' }),
+        headers: expect.objectContaining({
+          'X-CSRF-Token': token
+        })
+      })
+    );
+  });
+  
+  test('resetCsrfProtection should clear the token', () => {
+    generateCsrfToken();
+    resetCsrfProtection();
+    
+    expect(window.localStorage.getItem('x-csrf-token')).toBeNull();
   });
 });

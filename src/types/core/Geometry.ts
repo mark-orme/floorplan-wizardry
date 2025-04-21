@@ -1,11 +1,10 @@
 
 /**
- * Core geometry type definitions
- * @module types/core/Geometry
+ * Core geometry types for the application
  */
 
 /**
- * Point interface representing a 2D coordinate
+ * Basic 2D point
  */
 export interface Point {
   x: number;
@@ -15,7 +14,7 @@ export interface Point {
 /**
  * Line segment defined by two points
  */
-export interface LineSegment {
+export interface Line {
   start: Point;
   end: Point;
 }
@@ -39,50 +38,21 @@ export interface Circle {
 }
 
 /**
- * Polygon defined by an array of points
+ * Polygon defined by array of points
  */
 export interface Polygon {
   points: Point[];
 }
 
 /**
- * Bounding box with position and dimensions
+ * Bounding box defined by min/max points
  */
 export interface BoundingBox {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-  width: number;
-  height: number;
+  min: Point;
+  max: Point;
 }
 
 /**
- * Canvas dimensions with width and height
+ * Transform matrix (3x3 for 2D transforms)
  */
-export interface CanvasDimensions {
-  width: number;
-  height: number;
-}
-
-/**
- * Transform matrix (2D)
- */
-export interface Transform {
-  a: number; // scale x
-  b: number; // shear y
-  c: number; // shear x
-  d: number; // scale y
-  e: number; // translate x
-  f: number; // translate y
-}
-
-/**
- * Paper size definition
- */
-export interface PaperSize {
-  name: string;
-  width: number;
-  height: number;
-  displayName: string;
-}
+export type TransformMatrix = [number, number, number, number, number, number];

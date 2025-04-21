@@ -1,134 +1,122 @@
 
 /**
- * Geometry Worker Hook
- * Provides a worker interface to offload geometry calculations
+ * Hook for using the geometry web worker
  */
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { Point } from '@/types/core/Point';
+import logger from '@/utils/logger';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useWebWorker } from './useWebWorker';
-import { Point, Polygon } from '@/types/core/Geometry';
+interface GeometryWorkerMessage {
+  id: string;
+  success: boolean;
+  result?: any;
+  error?: string;
+}
 
-// Define message types for worker communication
-type GeometryWorkerMessage = 
-  | { type: 'calculateArea'; payload: { points: Point[] } }
-  | { type: 'calculateDistance'; payload: { start: Point; end: Point } }
-  | { type: 'calculateIntersection'; payload: { line1: [Point, Point]; line2: [Point, Point] } };
-
-// Define result types for worker responses
-type GeometryWorkerResult = 
-  | { type: 'areaResult'; payload: { area: number } }
-  | { type: 'distanceResult'; payload: { distance: number } }
-  | { type: 'intersectionResult'; payload: { point: Point | null } };
-
-export function useGeometryWorker() {
-  const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useGeometryWorker = () => {
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const callbacksRef = useRef<Map<string, { resolve: Function; reject: Function }>>(new Map());
   
-  // Create the worker
-  const { worker, postMessage, result, isProcessing } = useWebWorker<
-    GeometryWorkerMessage, 
-    GeometryWorkerResult
-  >('/workers/geometry-worker.js');
-  
-  // Initialize worker
+  // Initialize the worker
   useEffect(() => {
-    if (worker) {
-      setInitialized(true);
-    } else {
-      setError('Failed to initialize geometry worker');
-    }
-  }, [worker]);
-  
-  // Calculate polygon area
-  const calculateArea = useCallback((points: Point[]): Promise<number> => {
-    if (!initialized) {
-      return Promise.reject(new Error('Geometry worker not initialized'));
-    }
-    
-    return new Promise((resolve, reject) => {
-      const messageId = postMessage({ type: 'calculateArea', payload: { points } });
-      
-      // Wait for result
-      const checkResult = () => {
-        if (result && result.messageId === messageId) {
-          if (result.data.type === 'areaResult') {
-            resolve(result.data.payload.area);
-          } else {
-            reject(new Error('Invalid result type'));
-          }
-        } else {
-          setTimeout(checkResult, 10);
-        }
-      };
-      
-      checkResult();
-    });
-  }, [initialized, postMessage, result]);
-  
-  // Calculate distance between two points
-  const calculateDistance = useCallback((start: Point, end: Point): Promise<number> => {
-    if (!initialized) {
-      return Promise.reject(new Error('Geometry worker not initialized'));
-    }
-    
-    return new Promise((resolve, reject) => {
-      const messageId = postMessage({ type: 'calculateDistance', payload: { start, end } });
-      
-      // Wait for result
-      const checkResult = () => {
-        if (result && result.messageId === messageId) {
-          if (result.data.type === 'distanceResult') {
-            resolve(result.data.payload.distance);
-          } else {
-            reject(new Error('Invalid result type'));
-          }
-        } else {
-          setTimeout(checkResult, 10);
-        }
-      };
-      
-      checkResult();
-    });
-  }, [initialized, postMessage, result]);
-  
-  // Calculate intersection of two lines
-  const calculateIntersection = useCallback((
-    line1: [Point, Point], 
-    line2: [Point, Point]
-  ): Promise<Point | null> => {
-    if (!initialized) {
-      return Promise.reject(new Error('Geometry worker not initialized'));
-    }
-    
-    return new Promise((resolve, reject) => {
-      const messageId = postMessage({ 
-        type: 'calculateIntersection', 
-        payload: { line1, line2 } 
+    try {
+      const worker = new Worker(new URL('../workers/geometryWorker.ts', import.meta.url), {
+        type: 'module'
       });
       
-      // Wait for result
-      const checkResult = () => {
-        if (result && result.messageId === messageId) {
-          if (result.data.type === 'intersectionResult') {
-            resolve(result.data.payload.point);
-          } else {
-            reject(new Error('Invalid result type'));
-          }
+      worker.addEventListener('message', (event: MessageEvent<GeometryWorkerMessage>) => {
+        const { id, success, result, error } = event.data;
+        const callbacks = callbacksRef.current.get(id);
+        
+        if (!callbacks) return;
+        
+        if (success) {
+          callbacks.resolve(result);
         } else {
-          setTimeout(checkResult, 10);
+          callbacks.reject(new Error(error || 'Unknown error in geometry worker'));
         }
-      };
+        
+        callbacksRef.current.delete(id);
+      });
       
-      checkResult();
+      workerRef.current = worker;
+      setIsReady(true);
+      logger.info('Geometry worker initialized');
+      
+      return () => {
+        worker.terminate();
+        workerRef.current = null;
+        callbacksRef.current.clear();
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+      logger.error('Failed to initialize geometry worker', { error: err });
+      return () => {};
+    }
+  }, []);
+  
+  // Send a message to the worker
+  const sendMessage = useCallback(<T>(type: string, payload: any): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      if (!workerRef.current) {
+        reject(new Error('Geometry worker not initialized'));
+        return;
+      }
+      
+      if (!isReady) {
+        reject(new Error('Geometry worker not ready'));
+        return;
+      }
+      
+      const id = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      callbacksRef.current.set(id, { resolve, reject });
+      
+      workerRef.current.postMessage({
+        id,
+        type,
+        payload
+      });
     });
-  }, [initialized, postMessage, result]);
+  }, [isReady]);
+  
+  // Calculate area using the worker
+  const calculateArea = useCallback(async (points: Point[]): Promise<number> => {
+    try {
+      return await sendMessage<number>('calculateArea', { points });
+    } catch (err) {
+      logger.error('Error calculating area in worker', { error: err });
+      
+      // Fallback to synchronous calculation if worker fails
+      logger.warn('Falling back to synchronous area calculation');
+      return calculatePolygonAreaSync(points);
+    }
+  }, [sendMessage]);
+  
+  // Synchronous fallback for calculating area
+  const calculatePolygonAreaSync = (points: Point[]): number => {
+    if (points.length < 3) return 0;
+    
+    let total = 0;
+    
+    for (let i = 0, l = points.length; i < l; i++) {
+      const addX = points[i].x;
+      const addY = points[i === points.length - 1 ? 0 : i + 1].y;
+      const subX = points[i === points.length - 1 ? 0 : i + 1].x;
+      const subY = points[i].y;
+      
+      total += (addX * addY * 0.5);
+      total -= (subX * subY * 0.5);
+    }
+    
+    return Math.abs(total);
+  };
   
   return {
-    initialized,
+    isReady,
     error,
-    isProcessing,
-    calculateArea,
-    calculateDistance,
-    calculateIntersection
+    calculateArea
   };
-}
+};

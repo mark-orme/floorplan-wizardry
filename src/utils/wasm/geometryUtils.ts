@@ -7,7 +7,7 @@
 import { Point } from '@/types/core/Geometry';
 import { supportsWasm, wasmStatus, calculateArea } from './index';
 import { 
-  simplifyPath as simplifyPathJs,
+  optimizePoints,
   calculatePolygonArea as calculatePolygonAreaJs,
   calculateDistance as calculateDistanceJs
 } from '../geometry/engine';
@@ -26,16 +26,16 @@ export async function simplifyPolygon(points: Point[], tolerance: number = 1.0):
   
   // If WASM is not supported, use JS implementation
   if (!supportsWasm() || wasmStatus.error) {
-    return simplifyPathJs(points, tolerance);
+    return optimizePoints(points, tolerance);
   }
   
   try {
     // Use WASM implementation for better performance
     // This would call the WASM-backed implementation
-    return simplifyPathJs(points, tolerance); // Temporary fallback
+    return optimizePoints(points, tolerance); // Temporary fallback
   } catch (error) {
     console.error('Error in WASM simplifyPolygon:', error);
-    return simplifyPathJs(points, tolerance);
+    return optimizePoints(points, tolerance);
   }
 }
 
@@ -109,18 +109,20 @@ export function calculatePerimeter(points: Point[]): number {
  * @returns Centroid point
  */
 export function calculateCentroid(points: Point[]): Point {
+  if (points.length === 0) return { x: 0, y: 0 };
+  
   let area = 0;
   let cx = 0;
   let cy = 0;
   
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const xi = points[i].x, yi = points[i].y;
-    const xj = points[j].x, yj = points[j].y;
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
     
-    const f = xi * yj - xj * yi;
+    const f = p1.x * p2.y - p2.x * p1.y;
     area += f;
-    cx += (xi + xj) * f;
-    cy += (yi + yj) * f;
+    cx += (p1.x + p2.x) * f;
+    cy += (p1.y + p2.y) * f;
   }
   
   area /= 2;

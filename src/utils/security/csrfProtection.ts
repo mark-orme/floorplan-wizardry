@@ -1,189 +1,87 @@
 
 /**
- * CSRF Protection Utilities
- * Implements Cross-Site Request Forgery protection
+ * CSRF Protection Module
+ * Provides Cross-Site Request Forgery protection utilities
  */
-import logger from '@/utils/logger';
+import { generateSecureToken } from './SecurityUtils';
 
-/**
- * Generate a CSRF token
- * @returns New CSRF token
- */
-export function generateCSRFToken(): string {
-  // Generate a random token
-  const tokenBytes = new Uint8Array(32);
-  if (typeof window !== 'undefined' && window.crypto) {
-    window.crypto.getRandomValues(tokenBytes);
-  } else {
-    // Fallback for older browsers or SSR
-    for (let i = 0; i < tokenBytes.length; i++) {
-      tokenBytes[i] = Math.floor(Math.random() * 256);
-    }
+const CSRF_TOKEN_KEY = 'x-csrf-token';
+const CSRF_HEADER_KEY = 'X-CSRF-Token';
+
+// Generate a new CSRF token
+export const generateCsrfToken = (): string => {
+  const token = generateSecureToken();
+  
+  // Store in localStorage for persistence
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(CSRF_TOKEN_KEY, token);
   }
   
-  // Convert to base64 string
-  const tokenString = Array.from(tokenBytes)
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join('');
-  
-  return tokenString;
-}
+  return token;
+};
 
-/**
- * Get the current CSRF token, or generate a new one
- * @returns Current CSRF token
- */
-export function getCsrfToken(): string {
+// Get the current CSRF token, generating a new one if needed
+export const getCsrfToken = (): string => {
   if (typeof window === 'undefined') {
-    // Handle server-side rendering
     return '';
   }
   
-  try {
-    // Get token from storage
-    let token = localStorage.getItem('csrf_token');
-    
-    // Generate new token if none exists
-    if (!token) {
-      token = generateCSRFToken();
-      localStorage.setItem('csrf_token', token);
-    }
-    
-    return token;
-  } catch (error) {
-    logger.error('Error accessing CSRF token', { error });
-    
-    // Fallback to generating new token without storage
-    return generateCSRFToken();
+  let token = localStorage.getItem(CSRF_TOKEN_KEY);
+  
+  if (!token) {
+    token = generateCsrfToken();
   }
-}
+  
+  return token;
+};
 
-/**
- * Verify a CSRF token against the stored token
- * @param token Token to verify
- * @returns True if token is valid
- */
-export function verifyCSRFToken(token: string): boolean {
-  try {
-    const storedToken = localStorage.getItem('csrf_token');
-    return storedToken === token;
-  } catch (error) {
-    logger.error('Error verifying CSRF token', { error });
+// Verify a CSRF token
+export const verifyCsrfToken = (token: string): boolean => {
+  if (typeof window === 'undefined') {
     return false;
   }
-}
+  
+  const storedToken = localStorage.getItem(CSRF_TOKEN_KEY);
+  return !!storedToken && token === storedToken;
+};
 
-/**
- * Add CSRF token to form data
- * @param formData Form data to add token to
- * @returns Updated form data
- */
-export function addCSRFToFormData(formData: FormData): FormData {
-  formData.append('csrf_token', getCsrfToken());
-  return formData;
-}
-
-/**
- * Add CSRF token to request headers
- * @param headers Existing request headers
- * @returns Headers with CSRF token added
- */
-export function addCsrfHeader(headers: Record<string, string> = {}): Record<string, string> {
+// Add CSRF token to fetch headers
+export const addCsrfHeader = (headers: HeadersInit = {}): HeadersInit => {
   const token = getCsrfToken();
+  
   return {
     ...headers,
-    'X-CSRF-Token': token
+    [CSRF_HEADER_KEY]: token
   };
-}
+};
 
-/**
- * Wrap fetch with CSRF protection
- * @param url URL to fetch
- * @param options Fetch options
- * @returns Fetch response
- */
-export async function fetchWithCsrf(
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  // Only add token to state-changing requests
-  const method = options.method || 'GET';
-  if (method !== 'GET' && method !== 'HEAD') {
-    const headers = options.headers || {};
-    const newHeaders = addCsrfHeader(headers as Record<string, string>);
-    
-    return fetch(url, {
-      ...options,
-      headers: newHeaders
-    });
+// Initialize CSRF protection
+export const initializeCsrfProtection = (): void => {
+  if (typeof window === 'undefined') {
+    return;
   }
   
-  // Pass through for GET/HEAD requests
-  return fetch(url, options);
-}
-
-/**
- * Apply CSRF protection to forms
- * @param form Form element to protect
- */
-export function protectForm(form: HTMLFormElement): void {
-  try {
-    // Generate token
-    const token = getCsrfToken();
-    
-    // Check if token input already exists
-    let tokenInput = form.querySelector('input[name="csrf_token"]') as HTMLInputElement;
-    
-    if (!tokenInput) {
-      // Create hidden input for token
-      tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'csrf_token';
-      form.appendChild(tokenInput);
-    }
-    
-    // Set current token value
-    tokenInput.value = token;
-  } catch (error) {
-    logger.error('Error protecting form with CSRF token', { error });
-  }
-}
-
-/**
- * Automatically protect all forms on the page
- */
-export function protectAllForms(): void {
-  if (typeof document === 'undefined') return;
-  
-  try {
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-      if (form instanceof HTMLFormElement) {
-        protectForm(form);
-      }
-    });
-    
-    logger.info(`Protected ${forms.length} forms with CSRF tokens`);
-  } catch (error) {
-    logger.error('Error protecting forms with CSRF tokens', { error });
-  }
-}
-
-/**
- * Initialize CSRF protection
- */
-export function initializeCsrfProtection(): void {
-  // Generate initial token
+  // Generate token if it doesn't exist
   getCsrfToken();
   
-  // Protect forms when DOM is ready
-  if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', protectAllForms);
-    } else {
-      protectAllForms();
-    }
+  // Add CSRF token to all fetch requests
+  const originalFetch = window.fetch;
+  
+  window.fetch = function(input, init) {
+    init = init || {};
+    init.headers = addCsrfHeader(init.headers);
+    
+    return originalFetch.call(this, input, init);
+  };
+  
+  console.log('CSRF protection initialized');
+};
+
+// Reset CSRF protection (for testing)
+export const resetCsrfProtection = (): void => {
+  if (typeof window === 'undefined') {
+    return;
   }
   
-  logger.info('CSRF protection initialized');
-}
+  localStorage.removeItem(CSRF_TOKEN_KEY);
+};

@@ -8,7 +8,7 @@ import { Point } from '@/types/core/Geometry';
 import {
   calculatePolygonArea,
   calculateDistance,
-  optimizePoints,
+  simplifyPath,
   snapPointsToGrid,
   perpendicularDistance
 } from '@/utils/geometry/engine';
@@ -39,7 +39,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
         break;
         
       case 'optimizePoints':
-        const optPoints = optimizePoints(
+        const optPoints = simplifyPath(
           payload.points, 
           payload.tolerance || 1
         );
