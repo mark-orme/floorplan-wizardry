@@ -23,7 +23,12 @@ export function createCanvasRef() {
       _objects: [],
       getHandlers: vi.fn().mockReturnValue([]),
       triggerEvent: vi.fn(),
-      withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
+      withImplementation: vi.fn().mockImplementation((fn) => {
+        if (fn) {
+          try { fn(); } catch (e) {}
+        }
+        return Promise.resolve();
+      })
     }
   };
 }

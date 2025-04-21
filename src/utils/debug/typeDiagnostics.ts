@@ -67,23 +67,5 @@ export function createCompleteMetadata(overrides: Record<string, any> = {}): Rec
   };
 }
 
-/**
- * Create metadata specifically for floor plans
- * @param overrides Optional property overrides
- * @returns Complete floor plan metadata
- */
-export function createMetadata(overrides: Record<string, any> = {}): Record<string, any> {
-  return {
-    version: '1.0',
-    created: new Date().toISOString(),
-    updated: new Date().toISOString(),
-    author: 'User',
-    dateCreated: new Date().toISOString(),
-    lastModified: new Date().toISOString(),
-    notes: '',
-    ...overrides
-  };
-}
-
-// Export createCompleteMetadata to fix import errors
-export { createMetadata as createCompleteMetadata };
+// Export createMetadata as an alias, but don't redeclare createCompleteMetadata
+export { createCompleteMetadata };

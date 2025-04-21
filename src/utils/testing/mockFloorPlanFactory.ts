@@ -56,7 +56,7 @@ export function createMockStroke({
     type: validatedType,
     color,
     thickness,
-    width: thickness
+    width: thickness // Adding width property equal to thickness
   };
 }
 
@@ -89,7 +89,7 @@ export function createMockWall({
     thickness,
     color,
     roomIds: [], // Ensuring roomIds is always provided
-    length: length
+    length // Adding required length property
   };
 }
 

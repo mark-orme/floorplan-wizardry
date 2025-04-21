@@ -17,8 +17,8 @@ export interface ICanvasMock {
   getActiveObjects?: Mock;
   discardActiveObject: Mock;
   contains?: Mock;
-  // Fix for withImplementation type - use a simple Mock with no type params
-  withImplementation: Mock<Promise<void>>;
+  // Fix for withImplementation type
+  withImplementation: Mock;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;
@@ -48,8 +48,14 @@ export function createMinimalCanvasMock(): ICanvasMock {
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
     // Properly implement withImplementation to return Promise<void>
-    withImplementation: vi.fn().mockImplementation((): Promise<void> => {
-      console.log('ICanvasMock: withImplementation called');
+    withImplementation: vi.fn().mockImplementation((callback?: Function) => {
+      if (callback) {
+        try {
+          callback();
+        } catch (e) {
+          console.error(e);
+        }
+      }
       return Promise.resolve();
     }),
     // Additional Canvas properties

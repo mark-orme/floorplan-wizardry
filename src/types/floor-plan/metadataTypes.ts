@@ -29,7 +29,7 @@ export interface FloorPlanMetadata {
   paperSize?: PaperSize | string;
   
   /** Floor level (0 = ground floor) */
-  level?: number;
+  level: number;
   
   /** Version (required) */
   version: string;
@@ -60,7 +60,7 @@ export function createDefaultMetadata(level: number = 0): FloorPlanMetadata {
     paperSize: PaperSize.A4,
     level,
     version: '1.0',
-    author: '',
+    author: 'User',
     dateCreated: now,
     lastModified: now,
     notes: ''

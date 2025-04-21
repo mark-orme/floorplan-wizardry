@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
 import { createCanvasRef } from './testUtils';
+import { Canvas } from 'fabric';
 
 describe('Drawing History State', () => {
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe('Drawing History State', () => {
     
     const { result } = renderHook(() => {
       const history = useDrawingHistory({
-        fabricCanvasRef: canvasRef as any
+        fabricCanvasRef: canvasRef as unknown as React.MutableRefObject<Canvas | null>
       });
       // Add historyRef for test compatibility
       return {
@@ -34,7 +35,7 @@ describe('Drawing History State', () => {
     
     const { result } = renderHook(() => {
       const history = useDrawingHistory({
-        fabricCanvasRef: canvasRef as any
+        fabricCanvasRef: canvasRef as unknown as React.MutableRefObject<Canvas | null>
       });
       // Add historyRef for test compatibility
       return {

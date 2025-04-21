@@ -1,6 +1,5 @@
 
 import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 
 /**
  * Create a test floor plan
@@ -9,6 +8,20 @@ import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
  */
 export function createTestFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
+  
+  // Create proper metadata with all required fields
+  const metadata = partialFloorPlan.metadata || {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: 'A4',
+    level: partialFloorPlan.level || 0,
+    version: '1.0',
+    author: 'Test User',
+    dateCreated: now,
+    lastModified: now,
+    notes: 'Test floor plan created for testing purposes'
+  };
+  
   return {
     id: partialFloorPlan.id || 'floor-test',
     name: partialFloorPlan.name || 'Test Floor Plan',
@@ -19,7 +32,7 @@ export function createTestFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): 
     canvasData: partialFloorPlan.canvasData || null,
     canvasJson: partialFloorPlan.canvasJson || null,
     canvasState: partialFloorPlan.canvasState || null,
-    metadata: partialFloorPlan.metadata || createCompleteMetadata(),
+    metadata,
     data: partialFloorPlan.data || {},
     createdAt: partialFloorPlan.createdAt || now,
     updatedAt: partialFloorPlan.updatedAt || now,

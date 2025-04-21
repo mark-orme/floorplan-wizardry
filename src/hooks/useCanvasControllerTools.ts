@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas drawing tools
  * Centralizes the control and operation of canvas tools and actions
@@ -17,7 +18,7 @@ interface CanvasToolsManagerProps {
   /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current selected drawing tool */
-  tool: DrawingTool;
+  tool?: DrawingTool;
   /** Current zoom level */
   zoomLevel: number;
   /** Current line thickness */

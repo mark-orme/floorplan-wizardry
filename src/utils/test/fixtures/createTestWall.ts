@@ -11,6 +11,11 @@ export function createTestWall(partialWall: Partial<Wall> = {}): Wall {
   const start = partialWall.start || createTestPoint(0, 0);
   const end = partialWall.end || createTestPoint(100, 0);
 
+  // Calculate length if not provided
+  const length = partialWall.length || Math.sqrt(
+    Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+  );
+
   return {
     id: partialWall.id || 'wall-test',
     start,
@@ -18,9 +23,7 @@ export function createTestWall(partialWall: Partial<Wall> = {}): Wall {
     thickness: partialWall.thickness || 5,
     color: partialWall.color || '#333333',
     roomIds: partialWall.roomIds || [],
-    length: partialWall.length || Math.sqrt(
-      Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-    ),
+    length,
     height: partialWall.height
   };
 }
