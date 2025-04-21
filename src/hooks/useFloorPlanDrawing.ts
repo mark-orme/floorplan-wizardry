@@ -10,10 +10,20 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlanDrawingProps {
-  canvas: FabricCanvas;
+  canvas?: FabricCanvas;
   floorPlan: FloorPlan;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
   tool?: DrawingMode;
+}
+
+export interface UseFloorPlanDrawingResult {
+  isDrawing: boolean;
+  setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
+  tool: DrawingMode;
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
+  addStroke: (stroke: Stroke) => void;
+  addRoom: (room: Room) => void;
+  addWall: (wall: Omit<Wall, 'length'>) => void;
 }
 
 export const useFloorPlanDrawing = ({ 
@@ -21,7 +31,7 @@ export const useFloorPlanDrawing = ({
   floorPlan,
   onFloorPlanUpdate,
   tool = DrawingMode.SELECT
-}: UseFloorPlanDrawingProps) => {
+}: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentTool, setTool] = useState<DrawingMode>(tool);
 

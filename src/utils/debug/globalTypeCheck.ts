@@ -64,6 +64,3 @@ export function getObjectType(obj: any): string {
   if (validateStroke(obj)) return 'Stroke';
   return 'unknown';
 }
-
-// Export the initialization function directly
-export { initGlobalTypeCheckers };

@@ -1,4 +1,3 @@
-
 /**
  * Room Types
  * Room interface and related types for floor plans
@@ -27,17 +26,29 @@ export interface Room {
   /** Room area in square meters (required) */
   area: number;
   
+  /** Room perimeter */
+  perimeter?: number;
+  
+  /** Room center point */
+  center?: Point;
+  
+  /** Room label position */
+  labelPosition?: Point;
+  
   /** Room boundary points */
-  points: Point[];
+  points?: Point[];
+  
+  /** Room vertices (polygon corners) */
+  vertices?: Point[];
   
   /** Room color (required) */
   color: string;
   
   /** Floor level this room belongs to */
-  level: number;
+  level?: number;
   
   /** Wall IDs associated with this room (required for compatibility) */
-  walls: string[];
+  walls?: string[];
 }
 
 /**

@@ -14,7 +14,7 @@ export interface Wall {
   id: string;
   
   /** Points array (start and end) */
-  points: Point[];
+  points?: Point[];
   
   /** Start point (alias for points[0]) */
   startPoint?: Point;
@@ -41,5 +41,5 @@ export interface Wall {
   roomIds: string[];
   
   /** Length of the wall (calculated property) */
-  length: number;
+  length?: number;
 }

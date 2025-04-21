@@ -20,7 +20,7 @@ export interface FloorPlan {
   name: string;
   
   /** Display label */
-  label: string;
+  label?: string;
   
   /** Walls array */
   walls: Wall[];

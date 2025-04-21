@@ -22,7 +22,7 @@ export interface ICanvasMock {
   discardActiveObject: Mock;
   contains?: Mock;
   // Fix for withImplementation type - MUST return Promise<void>
-  withImplementation: Mock<any[], Promise<void>>;
+  withImplementation: Mock<[], Promise<void>>;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;
@@ -52,18 +52,8 @@ export function createMinimalCanvasMock(): ICanvasMock {
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
     // Properly implement withImplementation to return Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+    withImplementation: vi.fn().mockImplementation((): Promise<void> => {
       console.log('ICanvasMock: withImplementation called');
-      if (callback && typeof callback === 'function') {
-        try {
-          const result = callback();
-          if (result instanceof Promise) {
-            return result.then(() => Promise.resolve());
-          }
-        } catch (error) {
-          console.error('Error in minimal mock withImplementation:', error);
-        }
-      }
       return Promise.resolve();
     }),
     // Additional Canvas properties
@@ -84,12 +74,12 @@ export function createMinimalCanvasMock(): ICanvasMock {
 export function asMockCanvas(canvas: any): FabricCanvas & {
   getHandlers: (eventName: string) => Function[];
   triggerEvent: (eventName: string, eventData: any) => void;
-  withImplementation: (callback?: Function) => Promise<void>;
+  withImplementation: () => Promise<void>;
 } {
   console.log('Converting object to Canvas type with enhanced methods');
   return canvas as unknown as FabricCanvas & {
     getHandlers: (eventName: string) => Function[];
     triggerEvent: (eventName: string, eventData: any) => void;
-    withImplementation: (callback?: Function) => Promise<void>;
+    withImplementation: () => Promise<void>;
   };
 }

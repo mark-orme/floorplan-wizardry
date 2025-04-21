@@ -28,7 +28,7 @@ export type { FloorPlan, Stroke, Wall, Room, Point, StrokeTypeLiteral, RoomTypeL
 export { asStrokeType, asRoomType, createEmptyFloorPlan, createEmptyStroke, createEmptyWall, createEmptyRoom };
 
 // Import the adaptMetadata function from typeAdapters.ts
-import { adaptMetadata as adaptMetadataFunc } from '@/utils/typeAdapters';
+import { adaptMetadata } from '@/utils/typeAdapters';
 
 // Export validator functions directly rather than re-exporting
 // This ensures type-safe exports without circular references
@@ -43,4 +43,4 @@ export function validateRoomType(type: string): RoomTypeLiteral {
 export const mapRoomType = validateRoomType;
 
 // Export adaptMetadata for use in other modules
-export const adaptMetadata = adaptMetadataFunc;
+export { adaptMetadata };

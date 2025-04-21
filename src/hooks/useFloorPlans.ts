@@ -49,9 +49,7 @@ export const useFloorPlans = ({
   });
   
   const drawingHook = useFloorPlanDrawing({
-    canvas: fabricCanvasRef.current,
     floorPlan: safeFloorPlan,
-    tool,
     onFloorPlanUpdate: (floorPlan) => {
       setFloorPlans(prev => {
         const updated = [...prev];

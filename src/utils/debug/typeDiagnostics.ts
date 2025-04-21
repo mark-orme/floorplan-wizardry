@@ -65,11 +65,11 @@ export function validateRoom(room: any): room is Room {
     typeof room.id === 'string' &&
     typeof room.name === 'string' &&
     typeof room.type === 'string' &&
-    Array.isArray(room.vertices) &&
+    (Array.isArray(room.vertices) || Array.isArray(room.points)) &&
     typeof room.area === 'number' &&
-    typeof room.perimeter === 'number' &&
-    room.center !== undefined &&
-    room.labelPosition !== undefined &&
+    (typeof room.perimeter === 'undefined' || typeof room.perimeter === 'number') &&
+    (room.center === undefined || (typeof room.center === 'object')) &&
+    (room.labelPosition === undefined || (typeof room.labelPosition === 'object')) &&
     typeof room.color === 'string'
   );
 }
@@ -88,8 +88,8 @@ export function validateWall(wall: any): wall is Wall {
     wall.end !== undefined &&
     typeof wall.thickness === 'number' &&
     typeof wall.color === 'string' &&
-    Array.isArray(wall.roomIds) &&
-    typeof wall.length === 'number'
+    (Array.isArray(wall.roomIds) || wall.roomIds === undefined) &&
+    (typeof wall.length === 'number' || wall.length === undefined)
   );
 }
 
@@ -122,9 +122,6 @@ export function createCompleteMetadata(partial: Partial<FloorPlanMetadata> = {})
     notes: partial.notes || ''
   };
 }
-
-// Export createCompleteMetadata for convenience
-export { createCompleteMetadata };
 
 // Alias for backward compatibility
 export const isFloorPlan = validateFloorPlan;
