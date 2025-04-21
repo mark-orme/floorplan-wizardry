@@ -20,10 +20,10 @@ export interface UseFloorPlanDrawingProps {
 export interface UseFloorPlanDrawingResult {
   isDrawing: boolean;
   setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
-  tool: DrawingMode;  // Added for test compatibility
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;  // Added for test compatibility
+  tool: DrawingMode;  // For test compatibility
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;  // For test compatibility
   addStroke: (stroke: Stroke) => void;
-  addRoom: (room: Room) => void;  // Added for test compatibility
+  addRoom: (room: Room) => void;  // For test compatibility
   addWall: (wall: Omit<Wall, 'length'>) => void;
 }
 

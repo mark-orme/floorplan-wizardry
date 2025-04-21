@@ -63,14 +63,14 @@ export const useCanvasFloorOperations = ({ canvasRef }: UseCanvasFloorOperations
         createdAt: now,
         updatedAt: now,
         paperSize: PaperSize.A4,
-        level: 0, // Fix: Added required level property
+        level: 0,
+        // Add required metadata fields
         version: '1.0',
-        author: '',
+        author: 'User',
         dateCreated: now,
         lastModified: now,
         notes: ''
       },
-      // Fix: Added required properties
       data: {},
       userId: 'current-user'
     };
