@@ -1,15 +1,16 @@
+
 /**
  * Vitest Setup File
  * Configures the testing environment
  */
 
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
-// Extend vitest's expect with testing-library matchers
-expect.extend(matchers);
+// Note: We avoid importing directly from vitest in this setup file
+// to prevent the "Vitest failed to access its internal state" error
+// Instead, we manually augment expect as needed
 
 // Clean up after each test
 afterEach(() => {
