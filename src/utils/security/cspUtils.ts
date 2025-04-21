@@ -17,7 +17,8 @@ export const DEFAULT_CSP_CONFIG = {
   'form-action': ["'self'"],
   'frame-ancestors': ["'none'"],
   'block-all-mixed-content': [],
-  'upgrade-insecure-requests': []
+  'upgrade-insecure-requests': [],
+  'report-uri': [] // Added for CSP violation reporting
 };
 
 export type CspDirective = keyof typeof DEFAULT_CSP_CONFIG;
@@ -99,7 +100,6 @@ export const setupCspViolationReporting = (reportUri: string): void => {
   
   // Add CSP report-uri directive
   const config: Partial<CspConfig> = {
-    ...DEFAULT_CSP_CONFIG,
     'report-uri': [reportUri]
   };
   
