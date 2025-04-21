@@ -20,7 +20,8 @@ Each ADR file follows this format:
 
 ## ADR List
 
-- [ADR-0001](0001-plugin-system.md): Canvas Plugin System Architecture
+- [ADR-0001](0001-web-workers-for-geometry.md): Web Workers for Geometry Calculations
+- [ADR-0002](0002-viewport-culling.md): Viewport-Based Culling for Canvas Rendering
 
 ## Creating a New ADR
 
