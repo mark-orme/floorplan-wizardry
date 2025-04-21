@@ -1,92 +1,63 @@
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/types/canvasStateTypes";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
-import { useCanvasToolsManager } from "./canvas/controller/useCanvasToolsManager";
-import { useCanvasToolsGIA } from "./canvas/controller/useCanvasToolsGIA";
-import { DrawingMode } from "@/constants/drawingModes";
-
-// Create the proper props interface for the useCanvasToolsManager hook
-interface CanvasToolsManagerProps {
-  /** Reference to the Fabric canvas instance */
-  canvas: any;
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef?: React.MutableRefObject<any[]>;
-  defaultTool?: DrawingMode;
-  onToolChange?: (tool: DrawingMode) => void;
-  /** Current zoom level */
-  zoomLevel?: number; // Added as optional
-  /** Current line thickness */
-  lineThickness: number;
-  /** Current line color */
-  lineColor: string;
-  /** Function to set the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
-  /** Function to set the zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Array of floor plans */
-  floorPlans: FloorPlan[];
-  /** Current floor index */
-  currentFloor: number;
-  /** Function to set floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set the gross internal area */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create grid */
-  createGrid: (canvas: FabricCanvas) => any[];
-  /** Optional function to recalculate GIA */
-  recalculateGIA?: () => void;
-  /** Optional tool property for backward compatibility */
-  tool?: string | DrawingTool;
-  lineThickness?: number; // Added this optional prop here to avoid TS error
-}
 
 /**
- * Props interface for useCanvasControllerTools hook
+ * Hook for managing canvas drawing tools
+ * Centralizes tool operations and state changes
+ * @module useCanvasControllerTools
+ */
+import { useCallback } from "react";
+import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { useDrawingTools } from "@/hooks/useDrawingTools";
+import { DrawingMode } from "@/constants/drawingModes";
+import { FloorPlan } from "@/types/floorPlanTypes";
+import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
+import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
+import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
+import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
+
+/**
+ * Props for useCanvasControllerTools hook
  * @interface UseCanvasControllerToolsProps
  */
 interface UseCanvasControllerToolsProps {
-  /** Reference to the Fabric canvas instance */
+  /** Reference to the fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the grid layer objects */
+  /** Reference to grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to the drawing history */
-  historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
+  /** Reference to history state for undo/redo */
+  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
+  /** Current active drawing tool */
+  tool: DrawingMode;
   /** Current zoom level */
   zoomLevel: number;
-  /** Current line thickness */
-  lineThickness: number;
-  /** Current line color */
+  /** Line thickness for drawing */
+  lineThickness?: number;  // single optional declaration
+  /** Line color for drawing */
   lineColor: string;
   /** Function to set the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingTool>>;
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
   /** Function to set the zoom level */
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   /** Array of floor plans */
   floorPlans: FloorPlan[];
-  /** Current floor index */
+  /** Index of current floor */
   currentFloor: number;
-  /** Function to set floor plans */
+  /** Function to update floor plans */
   setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set the gross internal area */
+  /** Function to set the GIA (Gross Internal Area) */
   setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create grid */
-  createGrid: (canvas: FabricCanvas) => any[];
+  /** Function to create grid objects */
+  createGrid: (canvas: FabricCanvas) => FabricObject[];
 }
 
 /**
  * Hook that manages canvas drawing tools and operations
- * Provides functionality for tool changes, undo/redo, zooming and saving
- * 
- * @param {UseCanvasControllerToolsProps} props - Hook properties
- * @returns Drawing tool functions and handlers
  */
 export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) => {
   const {
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
+    tool,
     zoomLevel,
     lineThickness,
     lineColor,
@@ -105,29 +76,96 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setGia
   });
 
-  // Set up GIA calculation and event listeners
-  useCanvasToolsGIA({
+  // Get drawing tool functions
+  const toolFunctions = useDrawingTools({
     fabricCanvasRef,
-    setGia,
-    recalculateGIA
-  });
-
-  // Get all drawing tool functions from the tool manager
-  const toolFunctions = useCanvasToolsManager({
-    canvas: fabricCanvasRef.current,
-    fabricCanvasRef,
+    gridLayerRef,
+    tool,
+    setTool,
     zoomLevel,
+    setZoomLevel,
     lineThickness,
     lineColor,
-    setTool,
-    setZoomLevel,
+    historyRef,
     floorPlans,
     currentFloor,
     setFloorPlans,
     setGia,
-    createGrid,
-    recalculateGIA
+    createGrid
   });
 
-  return toolFunctions;
+  // Use the tool state hook
+  const toolState = useCanvasToolState({
+    fabricCanvasRef,
+    tool,
+    setTool,
+    lineThickness,
+    lineColor,
+    zoomLevel,
+    setZoomLevel
+  });
+
+  // Use the canvas operations hook
+  const canvasOperations = useCanvasOperations({
+    fabricCanvasRef,
+    gridLayerRef,
+    saveCurrentState: toolFunctions.saveCurrentState
+  });
+
+  // Use the floor plan operations hook
+  const floorPlanOperations = useFloorPlanOperations({
+    floorPlans,
+    currentFloor,
+    setFloorPlans,
+    setGia
+  });
+
+  // Modified handleZoom to accept string direction
+  const handleZoom = useCallback((direction: "in" | "out"): void => {
+    if (direction === "in") {
+      toolFunctions.handleZoom(1.2);
+    } else {
+      toolFunctions.handleZoom(0.8);
+    }
+  }, [toolFunctions]);
+
+  // Tool-related functions
+  const handleLineThicknessChange = useCallback((thickness: number): void => {
+    console.info(`Line thickness changed to ${thickness}`);
+    // Implement line thickness change logic
+  }, []);
+
+  const handleLineColorChange = useCallback((color: string): void => {
+    console.info(`Line color changed to ${color}`);
+    // Implement line color change logic
+  }, []);
+
+  const openMeasurementGuide = useCallback((): void => {
+    console.info('Measurement guide opened');
+    // Implement measurement guide logic
+  }, []);
+
+  return {
+    // From drawing tools
+    handleToolChange: toolState.handleToolChange,
+    handleUndo: toolFunctions.undo,
+    handleRedo: toolFunctions.redo,
+    handleZoom,
+    saveCurrentState: toolFunctions.saveCurrentState,
+    
+    // From canvas operations
+    clearDrawings: canvasOperations.clearDrawings,
+    clearCanvas: canvasOperations.clearCanvas,
+    saveCanvas: canvasOperations.saveCanvas,
+    deleteSelectedObjects: canvasOperations.deleteSelectedObjects,
+    
+    // From floor plan operations
+    handleFloorSelect: floorPlanOperations.handleFloorSelect,
+    handleAddFloor: floorPlanOperations.handleAddFloor,
+    
+    // Additional tools
+    handleLineThicknessChange,
+    handleLineColorChange,
+    openMeasurementGuide
+  };
 };

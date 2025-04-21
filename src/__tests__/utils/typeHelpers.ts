@@ -1,5 +1,5 @@
 
-// Removed the incorrect 'gis' property, replaced with 'gia' in the testFloorPlan fixture.
+// Removed the duplicate 'gia' property in the floorPlan fixture and kept one correct entry.
 
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics'; // This is now exported correctly
 
@@ -27,9 +27,8 @@ const testFloorPlan: Partial<FloorPlan> = {
   walls: [],
   rooms: [],
   strokes: [],
-  gia: 0,
-  level: 0,
   index: 0,
+  level: 0,
   metadata: {
     createdAt: now,
     updatedAt: now,
@@ -49,3 +48,4 @@ const testFloorPlan: Partial<FloorPlan> = {
 export {
   // export test fixtures or utilities here if any
 };
+
