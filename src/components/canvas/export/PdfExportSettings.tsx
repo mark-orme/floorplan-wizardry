@@ -1,434 +1,322 @@
 
-/**
- * PDF Export Settings component
- * @module components/canvas/export/PdfExportSettings
- */
-
 import React, { useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { 
-  Dialog, 
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { 
+import { toast } from 'sonner';
+import { usePdfExport } from '@/hooks/export/usePdfExport';
+import { PdfExportOptions } from '@/utils/wasm/pdfExport';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { useWasmPdfExport } from '@/hooks/useWasmPdfExport';
-import { toast } from 'sonner';
+import { PaperSize } from '@/types/core/floor-plan';
 
 interface PdfExportSettingsProps {
-  /** Canvas to export */
   canvas: FabricCanvas | null;
-  /** Dialog open state */
-  open: boolean;
-  /** Dialog open state change handler */
-  onOpenChange: (open: boolean) => void;
+  onExportComplete?: () => void;
 }
 
-// Define paper size options
-const paperSizes = {
-  'a4': { width: 595, height: 842 },
-  'a3': { width: 842, height: 1191 },
-  'letter': { width: 612, height: 792 },
-  'legal': { width: 612, height: 1008 },
-  'custom': { width: 0, height: 0 } // Placeholder for custom size
-};
+const paperSizes = [
+  { id: 'a4', name: 'A4', width: 595, height: 842 },
+  { id: 'a3', name: 'A3', width: 842, height: 1191 },
+  { id: 'letter', name: 'Letter', width: 612, height: 792 },
+  { id: 'legal', name: 'Legal', width: 612, height: 1008 },
+  { id: 'custom', name: 'Custom', width: 0, height: 0 },
+];
 
-type PaperSizeKey = keyof typeof paperSizes;
+interface PdfFormValues {
+  filename: string;
+  paperSize: string;
+  orientation: 'portrait' | 'landscape';
+  margin: number;
+  customWidth?: number;
+  customHeight?: number;
+  includeGrid: boolean;
+  includeMeasurements: boolean;
+  includeTitleBlock: boolean;
+  title: string;
+  footerText: string;
+}
 
-/**
- * PDF Export Settings Dialog
- */
 export const PdfExportSettings: React.FC<PdfExportSettingsProps> = ({
   canvas,
-  open,
-  onOpenChange
+  onExportComplete
 }) => {
-  // Export options
-  const [options, setOptions] = useState({
-    filename: 'floor-plan.pdf',
-    paperSize: paperSizes['a4'],
-    onlyVisible: true,
-    margin: 20,
-    customWidth: 500,
-    customHeight: 700,
-    orientation: 'portrait' as 'portrait' | 'landscape',
-    scale: 1,
-    footerText: '',
-    includeGrid: false,
-    includeMeasurements: true,
-    includeTitleBlock: false
+  const [loading, setLoading] = useState(false);
+  
+  const pdfExport = usePdfExport();
+  
+  const form = useForm<PdfFormValues>({
+    defaultValues: {
+      filename: 'floor-plan.pdf',
+      paperSize: 'a4',
+      orientation: 'portrait',
+      margin: 20,
+      includeGrid: false,
+      includeMeasurements: true,
+      includeTitleBlock: true,
+      title: 'Floor Plan',
+      footerText: 'Generated with Floor Plan Editor'
+    }
   });
   
-  // Selected paper size key
-  const [selectedSize, setSelectedSize] = useState<PaperSizeKey>('a4');
+  const isCustomPaperSize = form.watch('paperSize') === 'custom';
   
-  // PDF export hook
-  const { 
-    exporting, 
-    error, 
-    isSupported, 
-    downloadPdf 
-  } = useWasmPdfExport();
-  
-  // Handle option change
-  const handleOptionChange = <K extends keyof typeof options>(
-    key: K, 
-    value: typeof options[K]
-  ) => {
-    setOptions(prev => ({ ...prev, [key]: value }));
-  };
-  
-  // Handle paper size change
-  const handlePaperSizeChange = (size: PaperSizeKey) => {
-    setSelectedSize(size);
-    
-    if (size === 'custom') {
-      // Use custom dimensions
-      setOptions(prev => ({
-        ...prev,
-        paperSize: {
-          width: prev.customWidth,
-          height: prev.customHeight
-        }
-      }));
-    } else {
-      // Use predefined dimensions
-      let paperSize = { ...paperSizes[size] };
-      
-      // Swap dimensions for landscape orientation
-      if (options.orientation === 'landscape') {
-        paperSize = {
-          width: paperSize.height,
-          height: paperSize.width
-        };
-      }
-      
-      setOptions(prev => ({
-        ...prev,
-        paperSize
-      }));
-    }
-  };
-  
-  // Handle orientation change
-  const handleOrientationChange = (orientation: 'portrait' | 'landscape') => {
-    const newOrientation = orientation;
-    
-    // Don't swap dimensions for custom size
-    if (selectedSize !== 'custom') {
-      // Swap dimensions
-      const paperSize = {
-        width: options.paperSize.height,
-        height: options.paperSize.width
-      };
-      
-      setOptions(prev => ({
-        ...prev,
-        paperSize,
-        orientation: newOrientation
-      }));
-    } else {
-      setOptions(prev => ({
-        ...prev,
-        orientation: newOrientation
-      }));
-    }
-  };
-  
-  // Handle custom width change
-  const handleCustomWidthChange = (width: number) => {
-    setOptions(prev => ({
-      ...prev,
-      customWidth: width,
-      paperSize: {
-        ...prev.paperSize,
-        width
-      }
-    }));
-  };
-  
-  // Handle custom height change
-  const handleCustomHeightChange = (height: number) => {
-    setOptions(prev => ({
-      ...prev,
-      customHeight: height,
-      paperSize: {
-        ...prev.paperSize,
-        height
-      }
-    }));
-  };
-  
-  // Handle scale change
-  const handleScaleChange = (scale: number) => {
-    setOptions(prev => ({
-      ...prev,
-      scale
-    }));
-  };
-  
-  // Handle footer text change
-  const handleFooterTextChange = (text: string) => {
-    setOptions(prev => ({
-      ...prev,
-      footerText: text
-    }));
-  };
-  
-  // Handle grid toggle
-  const handleGridToggle = (include: boolean) => {
-    setOptions(prev => ({
-      ...prev,
-      includeGrid: include
-    }));
-  };
-  
-  // Handle measurements toggle
-  const handleMeasurementsToggle = (include: boolean) => {
-    setOptions(prev => ({
-      ...prev,
-      includeMeasurements: include
-    }));
-  };
-  
-  // Handle title block toggle
-  const handleTitleBlockToggle = (include: boolean) => {
-    setOptions(prev => ({
-      ...prev,
-      includeTitleBlock: include
-    }));
-  };
-  
-  // Handle export
-  const handleExport = async () => {
+  const handleExport = async (values: PdfFormValues) => {
     if (!canvas) {
       toast.error('Canvas not available');
       return;
     }
     
-    if (!isSupported) {
-      toast.error('WebAssembly support is required for PDF export');
+    if (!pdfExport.initialized) {
+      toast.error('PDF export not initialized');
+      return;
+    }
+    
+    if (!pdfExport.supported) {
+      toast.error('PDF export not supported in this browser');
       return;
     }
     
     try {
-      await downloadPdf(canvas, options);
+      setLoading(true);
+      
+      // Get selected paper size
+      const selectedPaperSize = paperSizes.find(size => size.id === values.paperSize);
+      
+      if (!selectedPaperSize && !isCustomPaperSize) {
+        toast.error('Invalid paper size');
+        return;
+      }
+      
+      // Create export options
+      const options: PdfExportOptions = {
+        filename: values.filename,
+        title: values.title,
+        footerText: values.footerText,
+        orientation: values.orientation,
+        margin: values.margin,
+        includeGrid: values.includeGrid,
+        includeMeasurements: values.includeMeasurements,
+        includeTitleBlock: values.includeTitleBlock
+      };
+      
+      // Set paper size based on selection
+      if (isCustomPaperSize && values.customWidth && values.customHeight) {
+        options.customWidth = values.customWidth;
+        options.customHeight = values.customHeight;
+      } else if (selectedPaperSize) {
+        options.paperSize = {
+          width: selectedPaperSize.width,
+          height: selectedPaperSize.height
+        };
+        
+        // Swap width and height for landscape
+        if (values.orientation === 'landscape') {
+          options.paperSize = {
+            width: selectedPaperSize.height,
+            height: selectedPaperSize.width
+          };
+        }
+      }
+      
+      // Download the PDF
+      await pdfExport.downloadPdf(canvas, options);
+      
       toast.success('PDF exported successfully');
-      onOpenChange(false);
-    } catch (err) {
-      console.error('PDF export error:', err);
-      toast.error('Failed to export PDF');
+      
+      if (onExportComplete) {
+        onExportComplete();
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
     }
   };
   
+  if (pdfExport.error) {
+    return (
+      <div className="p-4 bg-red-50 text-red-800 rounded-md">
+        <h3 className="font-medium text-red-900">PDF Export Error</h3>
+        <p>{pdfExport.error}</p>
+      </div>
+    );
+  }
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Export PDF</DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          {!isSupported && (
-            <div className="p-2 text-red-500 bg-red-50 rounded border border-red-200">
-              WebAssembly support is required for PDF export, but it's not available in your browser.
-            </div>
-          )}
+    <div className="space-y-4 max-w-md mx-auto">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleExport)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Floor Plan" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          {error && (
-            <div className="p-2 text-red-500 bg-red-50 rounded border border-red-200">
-              Error: {error.message}
-            </div>
-          )}
+          <FormField
+            control={form.control}
+            name="filename"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Filename</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="floor-plan.pdf" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          {/* Filename */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="filename" className="text-right">
-              Filename
-            </Label>
-            <Input
-              id="filename"
-              value={options.filename}
-              onChange={(e) => handleOptionChange('filename', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="paperSize"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Paper Size</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a paper size" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {paperSizes.map((size) => (
+                      <SelectItem key={size.id} value={size.id}>{size.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
           
-          {/* Paper size */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="paperSize" className="text-right">
-              Paper Size
-            </Label>
-            <Select
-              value={selectedSize}
-              onValueChange={(value) => handlePaperSizeChange(value as PaperSizeKey)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="a4">A4</SelectItem>
-                <SelectItem value="a3">A3</SelectItem>
-                <SelectItem value="letter">Letter</SelectItem>
-                <SelectItem value="legal">Legal</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Custom dimensions (only shown for custom size) */}
-          {selectedSize === 'custom' && (
-            <>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="customWidth" className="text-right">
-                  Width (pt)
-                </Label>
-                <Input
-                  id="customWidth"
-                  type="number"
-                  value={options.customWidth}
-                  onChange={(e) => handleCustomWidthChange(Number(e.target.value))}
-                  className="col-span-3"
-                />
-              </div>
+          {isCustomPaperSize && (
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="customWidth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Width (pts)</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" min="1" placeholder="Width" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
               
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="customHeight" className="text-right">
-                  Height (pt)
-                </Label>
-                <Input
-                  id="customHeight"
-                  type="number"
-                  value={options.customHeight}
-                  onChange={(e) => handleCustomHeightChange(Number(e.target.value))}
-                  className="col-span-3"
-                />
-              </div>
-            </>
+              <FormField
+                control={form.control}
+                name="customHeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Height (pts)</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" min="1" placeholder="Height" />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           )}
           
-          {/* Orientation */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="orientation" className="text-right">
-              Orientation
-            </Label>
-            <Select
-              value={options.orientation}
-              onValueChange={(value) => handleOrientationChange(value as 'portrait' | 'landscape')}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Orientation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="portrait">Portrait</SelectItem>
-                <SelectItem value="landscape">Landscape</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <FormField
+            control={form.control}
+            name="orientation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Orientation</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select orientation" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="portrait">Portrait</SelectItem>
+                    <SelectItem value="landscape">Landscape</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
           
-          {/* Scale */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="scale" className="text-right">
-              Scale: {options.scale.toFixed(2)}x
-            </Label>
-            <div className="col-span-3">
-              <Slider
-                id="scale"
-                min={0.1}
-                max={2}
-                step={0.05}
-                value={[options.scale]}
-                onValueChange={([value]) => handleScaleChange(value)}
-              />
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="includeGrid"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel>Include Grid</FormLabel>
+                  <FormDescription>
+                    Show the grid in the exported PDF
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          {/* Footer text */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="footerText" className="text-right">
-              Footer Text
-            </Label>
-            <Input
-              id="footerText"
-              value={options.footerText}
-              onChange={(e) => handleFooterTextChange(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="includeMeasurements"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel>Include Measurements</FormLabel>
+                  <FormDescription>
+                    Show measurements in the exported PDF
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           
-          {/* Include grid */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="includeGrid" className="text-right">
-              Include Grid
-            </Label>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="includeGrid"
-                checked={options.includeGrid}
-                onCheckedChange={handleGridToggle}
-              />
-            </div>
-          </div>
-          
-          {/* Include measurements */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="includeMeasurements" className="text-right">
-              Include Measurements
-            </Label>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="includeMeasurements"
-                checked={options.includeMeasurements}
-                onCheckedChange={handleMeasurementsToggle}
-              />
-            </div>
-          </div>
-          
-          {/* Include title block */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="includeTitleBlock" className="text-right">
-              Include Title Block
-            </Label>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="includeTitleBlock"
-                checked={options.includeTitleBlock}
-                onCheckedChange={handleTitleBlockToggle}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
+          <Button type="submit" className="w-full" disabled={pdfExport.loading || loading}>
+            {(pdfExport.loading || loading) ? 'Exporting...' : 'Export PDF'}
           </Button>
-          <Button 
-            type="button" 
-            onClick={handleExport} 
-            disabled={exporting || !isSupported}
-          >
-            {exporting ? 'Exporting...' : 'Export'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </form>
+      </Form>
+    </div>
   );
 };
+
+export default PdfExportSettings;

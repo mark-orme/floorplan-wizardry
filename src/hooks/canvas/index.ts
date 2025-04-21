@@ -1,12 +1,13 @@
 
 /**
- * Canvas hooks index
- * Exports all canvas-related hooks
+ * Canvas Hooks Module
+ * Provides hooks for working with canvas
+ * @module hooks/canvas
  */
 
-export * from './useCanvasPersistence';
-export * from './useCanvasAutoSave';
-export * from './useCanvasRestoreCheck';
-export * from './useCanvasHistory';
-export * from './useCanvasKeyboardShortcuts';
-export * from './useApplePencilSupport';
+export * from './useCanvasInteraction';
+export * from './useCanvasToolManager';
+export * from './useVirtualizationEngine';
+export * from './useOptimizedGridSnapping';
+export * from './useAreaCalculation';
+

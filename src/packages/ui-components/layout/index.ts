@@ -6,6 +6,6 @@
  */
 
 // Re-export layout components
-export { default as FloorPlanEditor } from '@/components/FloorPlanEditor';
+export { FloorPlanEditor } from '@/components/FloorPlanEditor';
 export { default as OptimizedFloorPlanApp } from '@/components/OptimizedFloorPlanApp';
 export { OptimizedCanvasController } from '@/components/OptimizedCanvasController';

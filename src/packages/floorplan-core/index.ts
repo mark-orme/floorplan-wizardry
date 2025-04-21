@@ -7,8 +7,27 @@
 
 // Re-export geometry types from the core domain
 export * from '@/types/core/Geometry';
-export * from '@/types/core/floor-plan';
-export * from '@/types/core/DrawingTool';
+
+// Re-export floor plan types explicitly to avoid ambiguity
+export {
+  PaperSize,
+  FloorPlan,
+  FloorPlanMetadata,
+  Wall,
+  Room,
+  Stroke
+} from '@/types/core/floor-plan';
+
+export type {
+  Point, 
+  LineSegment, 
+  Rectangle, 
+  Circle, 
+  Polygon, 
+  BoundingBox,
+  CanvasDimensions,
+  Transform
+} from '@/types/core/Geometry';
 
 // Re-export core geometry utilities
 export * from '@/utils/geometry/engine';

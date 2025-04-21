@@ -1,150 +1,134 @@
 
-import { useCallback, useEffect, useRef } from 'react';
-
-// Define worker message types
-type GeometryWorkerTaskType = 
-  | 'calculateArea' 
-  | 'calculateDistance' 
-  | 'optimizePoints' 
-  | 'snapToGrid';
-
-interface GeometryWorkerMessage {
-  id: string;
-  type: GeometryWorkerTaskType;
-  payload: any;
-}
-
-interface GeometryWorkerResponse {
-  id: string;
-  success: boolean;
-  result?: any;
-  error?: string;
-}
-
-type TaskCallback = (result: any) => void;
-type ErrorCallback = (error: string) => void;
-
 /**
- * Hook for efficient communication with the geometry web worker
- * Optimizes data transfer with transferable objects
+ * Geometry Worker Hook
+ * Provides a worker interface to offload geometry calculations
  */
-export const useGeometryWorker = () => {
-  // Create a worker instance
-  const workerRef = useRef<Worker | null>(null);
-  const callbacksRef = useRef<Map<string, {
-    resolve: TaskCallback;
-    reject: ErrorCallback;
-    transferables?: Transferable[];
-  }>>(new Map());
+
+import { useCallback, useEffect, useState } from 'react';
+import { useWebWorker } from './useWebWorker';
+import { Point, Polygon } from '@/types/core/Geometry';
+
+// Define message types for worker communication
+type GeometryWorkerMessage = 
+  | { type: 'calculateArea'; payload: { points: Point[] } }
+  | { type: 'calculateDistance'; payload: { start: Point; end: Point } }
+  | { type: 'calculateIntersection'; payload: { line1: [Point, Point]; line2: [Point, Point] } };
+
+// Define result types for worker responses
+type GeometryWorkerResult = 
+  | { type: 'areaResult'; payload: { area: number } }
+  | { type: 'distanceResult'; payload: { distance: number } }
+  | { type: 'intersectionResult'; payload: { point: Point | null } };
+
+export function useGeometryWorker() {
+  const [initialized, setInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Create the worker
+  const { worker, postMessage, result, isProcessing } = useWebWorker<
+    GeometryWorkerMessage, 
+    GeometryWorkerResult
+  >('/workers/geometry-worker.js');
   
   // Initialize worker
   useEffect(() => {
-    try {
-      workerRef.current = new Worker(
-        new URL('../workers/geometryWorker.ts', import.meta.url),
-        { type: 'module' }
-      );
-      
-      // Set up message handler
-      workerRef.current.onmessage = (event: MessageEvent<GeometryWorkerResponse>) => {
-        const { id, success, result, error } = event.data;
-        
-        const callbacks = callbacksRef.current.get(id);
-        if (!callbacks) return;
-        
-        if (success) {
-          callbacks.resolve(result);
-        } else {
-          callbacks.reject(error || 'Unknown error');
-        }
-        
-        callbacksRef.current.delete(id);
-      };
-      
-      return () => {
-        workerRef.current?.terminate();
-        workerRef.current = null;
-        callbacksRef.current.clear();
-      };
-    } catch (error) {
-      console.error('Failed to initialize geometry worker:', error);
+    if (worker) {
+      setInitialized(true);
+    } else {
+      setError('Failed to initialize geometry worker');
     }
-  }, []);
+  }, [worker]);
   
-  // Send tasks to worker with proper transferable object handling
-  const sendTask = useCallback(<T>(
-    type: GeometryWorkerTaskType, 
-    payload: any, 
-    transferables?: Transferable[]
-  ): Promise<T> => {
+  // Calculate polygon area
+  const calculateArea = useCallback((points: Point[]): Promise<number> => {
+    if (!initialized) {
+      return Promise.reject(new Error('Geometry worker not initialized'));
+    }
+    
     return new Promise((resolve, reject) => {
-      if (!workerRef.current) {
-        reject('Worker not initialized');
-        return;
-      }
+      const messageId = postMessage({ type: 'calculateArea', payload: { points } });
       
-      const id = `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      // Wait for result
+      const checkResult = () => {
+        if (result && result.messageId === messageId) {
+          if (result.data.type === 'areaResult') {
+            resolve(result.data.payload.area);
+          } else {
+            reject(new Error('Invalid result type'));
+          }
+        } else {
+          setTimeout(checkResult, 10);
+        }
+      };
       
-      callbacksRef.current.set(id, {
-        resolve: resolve as TaskCallback,
-        reject,
-        transferables
+      checkResult();
+    });
+  }, [initialized, postMessage, result]);
+  
+  // Calculate distance between two points
+  const calculateDistance = useCallback((start: Point, end: Point): Promise<number> => {
+    if (!initialized) {
+      return Promise.reject(new Error('Geometry worker not initialized'));
+    }
+    
+    return new Promise((resolve, reject) => {
+      const messageId = postMessage({ type: 'calculateDistance', payload: { start, end } });
+      
+      // Wait for result
+      const checkResult = () => {
+        if (result && result.messageId === messageId) {
+          if (result.data.type === 'distanceResult') {
+            resolve(result.data.payload.distance);
+          } else {
+            reject(new Error('Invalid result type'));
+          }
+        } else {
+          setTimeout(checkResult, 10);
+        }
+      };
+      
+      checkResult();
+    });
+  }, [initialized, postMessage, result]);
+  
+  // Calculate intersection of two lines
+  const calculateIntersection = useCallback((
+    line1: [Point, Point], 
+    line2: [Point, Point]
+  ): Promise<Point | null> => {
+    if (!initialized) {
+      return Promise.reject(new Error('Geometry worker not initialized'));
+    }
+    
+    return new Promise((resolve, reject) => {
+      const messageId = postMessage({ 
+        type: 'calculateIntersection', 
+        payload: { line1, line2 } 
       });
       
-      const message: GeometryWorkerMessage = {
-        id,
-        type,
-        payload
+      // Wait for result
+      const checkResult = () => {
+        if (result && result.messageId === messageId) {
+          if (result.data.type === 'intersectionResult') {
+            resolve(result.data.payload.point);
+          } else {
+            reject(new Error('Invalid result type'));
+          }
+        } else {
+          setTimeout(checkResult, 10);
+        }
       };
       
-      if (transferables && transferables.length > 0) {
-        workerRef.current.postMessage(message, transferables);
-      } else {
-        workerRef.current.postMessage(message);
-      }
+      checkResult();
     });
-  }, []);
-  
-  // Helper functions for specific geometry tasks
-  const calculateArea = useCallback((points: { x: number, y: number }[] | Float32Array) => {
-    const useTransferable = points instanceof Float32Array;
-    const transferables = useTransferable ? [points.buffer] : undefined;
-    
-    return sendTask<number>('calculateArea', { points, useTransferable }, transferables);
-  }, [sendTask]);
-  
-  const optimizePoints = useCallback((
-    points: { x: number, y: number }[] | Float32Array,
-    tolerance: number = 1
-  ) => {
-    const useTransferable = points instanceof Float32Array;
-    const transferables = useTransferable ? [points.buffer] : undefined;
-    
-    return sendTask<{ x: number, y: number }[] | Float32Array>(
-      'optimizePoints', 
-      { points, tolerance, useTransferable },
-      transferables
-    );
-  }, [sendTask]);
-  
-  const snapToGrid = useCallback((
-    points: { x: number, y: number }[] | Float32Array,
-    gridSize: number
-  ) => {
-    const useTransferable = points instanceof Float32Array;
-    const transferables = useTransferable ? [points.buffer] : undefined;
-    
-    return sendTask<{ x: number, y: number }[] | Float32Array>(
-      'snapToGrid',
-      { points, gridSize, useTransferable },
-      transferables
-    );
-  }, [sendTask]);
+  }, [initialized, postMessage, result]);
   
   return {
+    initialized,
+    error,
+    isProcessing,
     calculateArea,
-    optimizePoints,
-    snapToGrid,
-    sendTask
+    calculateDistance,
+    calculateIntersection
   };
-};
+}

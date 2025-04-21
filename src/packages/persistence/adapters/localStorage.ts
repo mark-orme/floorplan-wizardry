@@ -1,126 +1,101 @@
 
 /**
- * Local Storage Adapter
- * Adapter for browser localStorage
- * @module packages/persistence/adapters/localStorage
+ * LocalStorage Adapter
+ * Implementation of storage adapter using browser localStorage
  */
 
-import { StorageAdapter, StorageResult } from '../interfaces';
-import logger from '@/utils/logger';
+import { StorageAdapter } from '../interfaces/storageAdapter';
+import { StorageResult } from '../interfaces/storageResult';
 
 /**
- * Local storage adapter implementation
+ * LocalStorage adapter implementation
  */
-export class LocalStorageAdapter<T> implements StorageAdapter<T> {
+export class LocalStorageAdapter implements StorageAdapter {
   /**
-   * Namespace for storage keys
+   * Get an item from localStorage
    */
-  private namespace: string;
-  
-  /**
-   * Constructor
-   * @param namespace Namespace for storage keys
-   */
-  constructor(namespace: string = 'app') {
-    this.namespace = namespace;
-  }
-  
-  /**
-   * Get namespaced key
-   * @param key Base key
-   * @returns Namespaced key
-   */
-  private getNamespacedKey(key: string): string {
-    return `${this.namespace}:${key}`;
-  }
-  
-  /**
-   * Save data to localStorage
-   * @param key Storage key
-   * @param data Data to save
-   */
-  async save(key: string, data: T): Promise<StorageResult<void>> {
+  async getItem<T>(key: string): Promise<StorageResult<T>> {
     try {
-      const namespacedKey = this.getNamespacedKey(key);
-      localStorage.setItem(namespacedKey, JSON.stringify(data));
-      return { success: true };
-    } catch (error) {
-      logger.error('Failed to save to localStorage', { error, key });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
-  
-  /**
-   * Load data from localStorage
-   * @param key Storage key
-   */
-  async load(key: string): Promise<StorageResult<T>> {
-    try {
-      const namespacedKey = this.getNamespacedKey(key);
-      const data = localStorage.getItem(namespacedKey);
+      const data = localStorage.getItem(key);
       
       if (data === null) {
-        return { 
-          success: false, 
-          error: `Key not found: ${key}`
-        };
+        return { success: true }; // Item not found but operation successful
       }
       
-      return { 
-        success: true, 
+      return {
+        success: true,
         data: JSON.parse(data) as T
       };
     } catch (error) {
-      logger.error('Failed to load from localStorage', { error, key });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error getting item from localStorage'
       };
     }
   }
   
   /**
-   * Delete data from localStorage
-   * @param key Storage key
+   * Set an item in localStorage
    */
-  async delete(key: string): Promise<StorageResult<void>> {
+  async setItem<T>(key: string, value: T): Promise<StorageResult<void>> {
     try {
-      const namespacedKey = this.getNamespacedKey(key);
-      localStorage.removeItem(namespacedKey);
+      localStorage.setItem(key, JSON.stringify(value));
       return { success: true };
     } catch (error) {
-      logger.error('Failed to delete from localStorage', { error, key });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error setting item in localStorage'
       };
     }
   }
   
   /**
-   * List all keys in localStorage for this namespace
+   * Remove an item from localStorage
    */
-  async listKeys(): Promise<StorageResult<string[]>> {
+  async removeItem(key: string): Promise<StorageResult<void>> {
     try {
-      const keys: string[] = [];
-      const prefix = `${this.namespace}:`;
-      
+      localStorage.removeItem(key);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error removing item from localStorage'
+      };
+    }
+  }
+  
+  /**
+   * Clear all items from localStorage
+   */
+  async clear(): Promise<StorageResult<void>> {
+    try {
+      localStorage.clear();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error clearing localStorage'
+      };
+    }
+  }
+  
+  /**
+   * Get all keys in localStorage
+   */
+  async keys(): Promise<StorageResult<string[]>> {
+    try {
+      const keys = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith(prefix)) {
-          keys.push(key.substring(prefix.length));
+        if (key !== null) {
+          keys.push(key);
         }
       }
-      
       return { success: true, data: keys };
     } catch (error) {
-      logger.error('Failed to list keys from localStorage', { error });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error getting keys from localStorage'
       };
     }
   }

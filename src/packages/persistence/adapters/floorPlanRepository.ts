@@ -1,162 +1,259 @@
 
 /**
  * Floor Plan Repository
- * Repository implementation for floor plans
- * @module packages/persistence/adapters/floorPlanRepository
+ * Implementation of persistence for floor plans using local storage
  */
 
-import { FloorPlan } from '@/types/core/floor-plan/FloorPlan';
-import { FloorPlanRepository, StorageResult } from '../interfaces';
-import { LocalStorageAdapter } from './localStorage';
-import logger from '@/utils/logger';
+import { FloorPlanRepository } from '../interfaces/floorPlanRepository';
+import { StorageAdapter } from '../interfaces/storageAdapter';
+import { StorageResult } from '../interfaces/storageResult';
+import { FloorPlan } from '@/types/core/floor-plan';
 
 /**
  * LocalStorage-based implementation of FloorPlanRepository
  */
 export class LocalStorageFloorPlanRepository implements FloorPlanRepository {
+  private storage: StorageAdapter;
+  private readonly keyPrefix: string = 'floorplan_';
+  private readonly idsKey: string = 'floorplan_ids';
+
   /**
-   * Storage adapter
+   * Create a new LocalStorageFloorPlanRepository
+   * @param storage Storage adapter to use
    */
-  private storage: LocalStorageAdapter<FloorPlan>;
-  
-  /**
-   * List key for floor plan IDs
-   */
-  private readonly FLOOR_PLAN_LIST_KEY = 'floor-plan-list';
-  
-  /**
-   * Constructor
-   * @param namespace Namespace for storage keys
-   */
-  constructor(namespace: string = 'floor-plans') {
-    this.storage = new LocalStorageAdapter<FloorPlan>(namespace);
+  constructor(storage: StorageAdapter) {
+    this.storage = storage;
   }
-  
+
   /**
-   * Save a floor plan
-   * @param floorPlan Floor plan to save
+   * Get all floor plan IDs
+   * @returns Promise resolving to array of floor plan IDs
    */
-  async saveFloorPlan(floorPlan: FloorPlan): Promise<StorageResult<void>> {
+  async getAllIds(): Promise<StorageResult<string[]>> {
     try {
-      // Update the floor plan's updatedAt timestamp
-      floorPlan.updatedAt = new Date().toISOString();
+      const result = await this.storage.getItem<string[]>(this.idsKey);
       
-      // Save the floor plan
-      const saveResult = await this.storage.save(floorPlan.id, floorPlan);
-      if (!saveResult.success) {
-        return saveResult;
+      if (result.success && result.data) {
+        return result;
       }
       
-      // Update the list of floor plan IDs
-      const listResult = await this.getFloorPlanIds();
-      if (!listResult.success) {
-        return listResult;
-      }
-      
-      const ids = listResult.data || [];
-      if (!ids.includes(floorPlan.id)) {
-        ids.push(floorPlan.id);
-        await this.saveFloorPlanIds(ids);
-      }
-      
-      return { success: true };
+      // If no IDs found, initialize with empty array
+      return { success: true, data: [] };
     } catch (error) {
-      logger.error('Failed to save floor plan', { error, floorPlanId: floorPlan.id });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error getting floor plan IDs'
       };
     }
   }
-  
+
   /**
-   * Load a floor plan by ID
-   * @param id Floor plan ID
+   * Save a floor plan ID to the list of IDs
+   * @param id Floor plan ID to save
    */
-  async loadFloorPlan(id: string): Promise<StorageResult<FloorPlan>> {
-    return this.storage.load(id);
-  }
-  
-  /**
-   * Delete a floor plan by ID
-   * @param id Floor plan ID
-   */
-  async deleteFloorPlan(id: string): Promise<StorageResult<void>> {
+  private async saveId(id: string): Promise<StorageResult<void>> {
     try {
-      // Delete the floor plan
-      const deleteResult = await this.storage.delete(id);
-      if (!deleteResult.success) {
-        return deleteResult;
+      // Get current list of IDs
+      const idsResult = await this.getAllIds();
+      
+      if (!idsResult.success) {
+        return { 
+          success: false, 
+          error: idsResult.error 
+        };
       }
       
-      // Update the list of floor plan IDs
-      const listResult = await this.getFloorPlanIds();
-      if (!listResult.success) {
-        return listResult;
-      }
+      const ids = idsResult.data || [];
       
-      const ids = listResult.data || [];
-      const updatedIds = ids.filter(floorPlanId => floorPlanId !== id);
-      await this.saveFloorPlanIds(updatedIds);
-      
-      return { success: true };
-    } catch (error) {
-      logger.error('Failed to delete floor plan', { error, floorPlanId: id });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
-  
-  /**
-   * List all floor plans
-   */
-  async listFloorPlans(): Promise<StorageResult<FloorPlan[]>> {
-    try {
-      // Get the list of floor plan IDs
-      const listResult = await this.getFloorPlanIds();
-      if (!listResult.success) {
-        return { success: false, error: listResult.error };
-      }
-      
-      const ids = listResult.data || [];
-      const floorPlans: FloorPlan[] = [];
-      
-      // Load each floor plan
-      for (const id of ids) {
-        const loadResult = await this.loadFloorPlan(id);
-        if (loadResult.success && loadResult.data) {
-          floorPlans.push(loadResult.data);
+      // Only add ID if it doesn't already exist
+      if (!ids.includes(id)) {
+        ids.push(id);
+        
+        // Save updated list
+        const saveResult = await this.storage.setItem(this.idsKey, ids);
+        
+        if (!saveResult.success) {
+          return { 
+            success: false, 
+            error: saveResult.error 
+          };
         }
       }
       
-      return { success: true, data: floorPlans };
+      return { success: true };
     } catch (error) {
-      logger.error('Failed to list floor plans', { error });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error saving floor plan ID'
       };
     }
   }
-  
+
   /**
-   * Get the list of floor plan IDs
+   * Remove a floor plan ID from the list of IDs
+   * @param id Floor plan ID to remove
    */
-  private async getFloorPlanIds(): Promise<StorageResult<string[]>> {
-    const result = await this.storage.load(this.FLOOR_PLAN_LIST_KEY);
-    if (!result.success) {
-      return { success: true, data: [] };
+  private async removeId(id: string): Promise<StorageResult<void>> {
+    try {
+      // Get current list of IDs
+      const idsResult = await this.getAllIds();
+      
+      if (!idsResult.success) {
+        return { 
+          success: false, 
+          error: idsResult.error 
+        };
+      }
+      
+      const ids = idsResult.data || [];
+      
+      // Filter out the ID to remove
+      const updatedIds = ids.filter(existingId => existingId !== id);
+      
+      // Save updated list
+      const saveResult = await this.storage.setItem(this.idsKey, updatedIds);
+      
+      if (!saveResult.success) {
+        return { 
+          success: false, 
+          error: saveResult.error 
+        };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error removing floor plan ID'
+      };
     }
-    return result as StorageResult<string[]>;
   }
-  
+
   /**
-   * Save the list of floor plan IDs
-   * @param ids List of floor plan IDs
+   * Get a floor plan by ID
+   * @param id Floor plan ID
+   * @returns Promise resolving to floor plan
    */
-  private async saveFloorPlanIds(ids: string[]): Promise<StorageResult<void>> {
-    return this.storage.save(this.FLOOR_PLAN_LIST_KEY, ids as any);
+  async getById(id: string): Promise<StorageResult<FloorPlan>> {
+    try {
+      const key = `${this.keyPrefix}${id}`;
+      return await this.storage.getItem<FloorPlan>(key);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error getting floor plan'
+      };
+    }
+  }
+
+  /**
+   * Get all floor plans
+   * @returns Promise resolving to array of floor plans
+   */
+  async getAll(): Promise<StorageResult<FloorPlan[]>> {
+    try {
+      const idsResult = await this.getAllIds();
+      
+      if (!idsResult.success) {
+        return {
+          success: false,
+          error: idsResult.error
+        };
+      }
+      
+      const ids = idsResult.data || [];
+      const floorPlans: FloorPlan[] = [];
+      
+      // Load each floor plan by ID
+      for (const id of ids) {
+        const result = await this.getById(id);
+        
+        if (result.success && result.data) {
+          floorPlans.push(result.data);
+        }
+      }
+      
+      return {
+        success: true,
+        data: floorPlans
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error getting all floor plans'
+      };
+    }
+  }
+
+  /**
+   * Save a floor plan
+   * @param floorPlan Floor plan to save
+   * @returns Promise resolving to saved floor plan
+   */
+  async save(floorPlan: FloorPlan): Promise<StorageResult<FloorPlan>> {
+    try {
+      const key = `${this.keyPrefix}${floorPlan.id}`;
+      
+      // Update timestamps
+      const now = new Date().toISOString();
+      const updatedFloorPlan = {
+        ...floorPlan,
+        updatedAt: now
+      };
+      
+      // Save floor plan
+      const saveResult = await this.storage.setItem(key, updatedFloorPlan);
+      
+      if (!saveResult.success) {
+        return {
+          success: false,
+          error: saveResult.error
+        };
+      }
+      
+      // Add ID to list of IDs
+      await this.saveId(floorPlan.id);
+      
+      return {
+        success: true,
+        data: updatedFloorPlan
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error saving floor plan'
+      };
+    }
+  }
+
+  /**
+   * Delete a floor plan by ID
+   * @param id Floor plan ID to delete
+   * @returns Promise resolving to success/failure
+   */
+  async delete(id: string): Promise<StorageResult<void>> {
+    try {
+      const key = `${this.keyPrefix}${id}`;
+      
+      // Delete floor plan
+      const deleteResult = await this.storage.removeItem(key);
+      
+      if (!deleteResult.success) {
+        return {
+          success: false,
+          error: deleteResult.error
+        };
+      }
+      
+      // Remove ID from list of IDs
+      await this.removeId(id);
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error deleting floor plan'
+      };
+    }
   }
 }

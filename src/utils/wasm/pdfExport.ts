@@ -159,7 +159,7 @@ export async function exportAndDownloadPdf(
     // Clean up
     setTimeout(() => {
       document.body.removeChild(link);
-      URL.revoObjectURL(url);
+      URL.revokeObjectURL(url);
     }, 100);
   } catch (error) {
     logger.error('Error downloading PDF:', error);

@@ -5,8 +5,8 @@
  * @module packages/floorplan-core/services/validationService
  */
 
-import { Point, Polygon, Wall, Room } from '@/types/core/Geometry';
-import { FloorPlan } from '@/types/core/floor-plan/FloorPlan';
+import { Point, Polygon } from '@/types/core/Geometry';
+import { Wall, Room, FloorPlan } from '@/types/core/floor-plan';
 import { calculatePolygonArea, isPolygonClosed, validatePolygon } from '@/utils/geometry/engine';
 
 /**
