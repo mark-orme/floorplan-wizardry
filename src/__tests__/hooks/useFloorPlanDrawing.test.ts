@@ -15,14 +15,18 @@ import {
   asStrokeType,
   asRoomType
 } from '@/utils/test/typedTestFixtures';
-import type { FloorPlan, Stroke } from '@/utils/test/typedTestFixtures';
-import { createTypedMockCanvas } from '@/utils/canvasMockUtils';
+import { asMockCanvas } from '@/utils/testing/testUtils';
 
 describe('useFloorPlanDrawing', () => {
   let mockCanvas: any;
-  
+
   beforeEach(() => {
-    mockCanvas = createTypedMockCanvas();
+    // Use a generic mock object and wrap it for typing safety in tests, per ESLint/type safety guidelines.
+    mockCanvas = asMockCanvas({
+      add: vi.fn(),
+      renderAll: vi.fn(),
+      // Add additional common canvas methods as needed for compatibility
+    });
   });
 
   it('should initialize with default values', () => {
@@ -30,7 +34,7 @@ describe('useFloorPlanDrawing', () => {
       canvas: mockCanvas,
       floorPlan: createTestFloorPlan()
     }));
-    
+
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.tool).toBe('select');
   });
@@ -40,11 +44,11 @@ describe('useFloorPlanDrawing', () => {
       canvas: mockCanvas,
       floorPlan: createTestFloorPlan()
     }));
-    
+
     act(() => {
       result.current.setTool(DrawingMode.WALL);
     });
-    
+
     expect(result.current.tool).toBe(DrawingMode.WALL);
   });
 
@@ -55,7 +59,7 @@ describe('useFloorPlanDrawing', () => {
       canvas: mockCanvas,
       floorPlan: testFloorPlan
     }));
-    
+
     // Act
     act(() => {
       result.current.setTool(DrawingMode.WALL);
@@ -64,7 +68,7 @@ describe('useFloorPlanDrawing', () => {
       });
       result.current.addStroke(myStroke);
     });
-    
+
     // Assert
     expect(mockCanvas.add).toHaveBeenCalled();
   });
@@ -73,14 +77,14 @@ describe('useFloorPlanDrawing', () => {
     // Arrange
     const updateFloorPlan = vi.fn();
     const testFloorPlan = createTestFloorPlan();
-    
+
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
       canvas: mockCanvas,
       floorPlan: testFloorPlan,
       onFloorPlanUpdate: updateFloorPlan
     }));
-    
+
     act(() => {
       // Adding a stroke with the correct type
       const stroke = createTestStroke({
@@ -88,23 +92,23 @@ describe('useFloorPlanDrawing', () => {
       });
       result.current.addStroke(stroke);
     });
-    
+
     // Assert
     expect(updateFloorPlan).toHaveBeenCalled();
   });
-  
+
   it('should handle adding a room', () => {
     // Arrange
     const testFloorPlan = createTestFloorPlan({
       rooms: [],
       walls: [createTestWall()]
     });
-    
+
     const { result } = renderHook(() => useFloorPlanDrawing({
       canvas: mockCanvas,
       floorPlan: testFloorPlan
     }));
-    
+
     // Act
     act(() => {
       const room = createTestRoom({
@@ -112,8 +116,9 @@ describe('useFloorPlanDrawing', () => {
       });
       result.current.addRoom(room);
     });
-    
+
     // Assert
     expect(mockCanvas.add).toHaveBeenCalled();
   });
 });
+
