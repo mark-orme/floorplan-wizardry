@@ -1,55 +1,49 @@
 
 /**
- * Rollup/Vite plugin to strip debug logs in production
- * 
- * Usage in vite.config.js:
- * import stripLogsPlugin from './src/utils/logger/stripLogsPlugin.js';
- * 
- * export default defineConfig({
- *   plugins: [
- *     react(),
- *     stripLogsPlugin({ include: ['debug', 'dev', 'info'] })
- *   ]
- * });
+ * Vite plugin to strip debug/dev logs in production builds
  */
 
-/**
- * Plugin to strip logger calls from production builds
- * @param {Object} options - Plugin options
- * @param {string[]} options.include - Logger methods to strip (e.g., ['debug', 'dev'])
- * @returns {Object} Rollup plugin
- */
-export default function stripLogsPlugin(options = { include: ['debug', 'dev'] }) {
-  const methodsToStrip = options.include || ['debug', 'dev'];
+function createStripLogsPlugin(options = {}) {
+  const {
+    include = ['debug', 'dev']
+  } = options;
   
   return {
     name: 'strip-logger-calls',
     transform(code, id) {
-      // Only process TypeScript/JavaScript files
-      if (!id.match(/\.[jt]sx?$/)) return null;
+      // Only transform JS/TS files
+      if (!/\.(js|ts|jsx|tsx)$/.test(id)) {
+        return null;
+      }
       
       // Skip node_modules
-      if (id.includes('node_modules')) return null;
+      if (/node_modules/.test(id)) {
+        return null;
+      }
       
       let modified = code;
       
-      // Strip logger method calls
-      methodsToStrip.forEach(method => {
-        // Match both logger.debug() and namespaced loggers
-        const regexes = [
-          new RegExp(`logger\\.${method}\\([^)]*\\);?`, 'g'),
-          new RegExp(`\\w+Logger\\.${method}\\([^)]*\\);?`, 'g')
-        ];
+      // Replace logger.X calls with empty statements for each included level
+      include.forEach(level => {
+        // Match both logger.level and logger.log('level') patterns
+        const directCall = new RegExp(`logger\\.${level}\\([^)]*\\);?`, 'g');
+        const logCall = new RegExp(`logger\\.log\\(['"']${level}['"'][^)]*\\);?`, 'g');
         
-        regexes.forEach(regex => {
-          modified = modified.replace(regex, '/* stripped */');
-        });
+        modified = modified
+          .replace(directCall, '/* stripped */')
+          .replace(logCall, '/* stripped */');
       });
       
-      return {
-        code: modified,
-        map: null
-      };
+      if (modified !== code) {
+        return {
+          code: modified,
+          map: null
+        };
+      }
+      
+      return null;
     }
   };
 }
+
+export default createStripLogsPlugin;

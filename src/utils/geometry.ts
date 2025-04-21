@@ -1,105 +1,113 @@
 
 /**
- * Central exports for geometry utilities
+ * Geometry utility functions
  * @module utils/geometry
  */
-import { Point } from '@/types/core/Point';
-import { calculateArea, calculateGIA } from './geometry/areaCalculation';
-import { rotatePoint, translatePoint, scalePoint } from './geometry/transformations';
-import { validatePolygon, isPolygonClosed } from './geometry/validation';
-import { getBoundingBox, getMidpoint } from './geometry/boundingBox';
-import { pixelsToMeters, metersToPixels } from './geometry/conversion';
-import { simplifyPath, smoothPath } from './geometry/pathProcessing';
-import { 
-  snapPointToGrid as gridSnapPointToGrid, 
-  snapToAngle as gridSnapToAngle 
-} from './grid/snapping';
 
-// Import line operations
-import {
-  calculateDistance,
-  calculateMidpoint,
-  calculateAngle,
-  formatDistance,
-  isExactGridMultiple
-} from './geometry/lineOperations';
-
-// Re-export all geometry functions
-export {
-  // Area calculations
-  calculateArea,
-  calculateGIA,
-  
-  // Transformations
-  rotatePoint,
-  translatePoint,
-  scalePoint,
-  
-  // Validation
-  validatePolygon,
-  isPolygonClosed,
-  
-  // Bounding box operations
-  getBoundingBox,
-  getMidpoint,
-  
-  // Conversion utilities
-  pixelsToMeters,
-  metersToPixels,
-  
-  // Path processing
-  simplifyPath,
-  smoothPath,
-  
-  // Line operations
-  calculateDistance,
-  formatDistance,
-  isExactGridMultiple,
-  calculateMidpoint,
-  calculateAngle,
-  
-  // Grid operations - renamed to avoid ambiguity
-  gridSnapPointToGrid as snapToGrid,
-  gridSnapToAngle
-};
+import { Point } from '@/types/core/Geometry';
 
 /**
- * Calculate straight-line distance between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Distance in pixels
- */
-export const getDistance = (p1: Point, p2: Point): number => {
-  return calculateDistance(p1, p2);
-};
-
-/**
- * Format a distance for display
- * @param pixels Distance in pixels
- * @returns Formatted distance string with units
- */
-export const formatDisplayDistance = (pixels: number): string => {
-  return formatDistance(pixels);
-};
-
-/**
- * JavaScript implementation of area calculation
- * Will be replaced by WASM implementation in the future
+ * Calculate area of a polygon using the Shoelace formula (Gauss's area formula)
+ * Pure JavaScript implementation for fallback when WASM is not available
  * 
  * @param points Array of points defining the polygon
  * @returns Area of the polygon
  */
-export const calculateAreaJs = (points: { x: number, y: number }[]): number => {
-  if (points.length < 3) return 0;
+export function calculateAreaJs(points: Point[]): number {
+  // For empty or invalid polygons
+  if (!points || points.length < 3) {
+    return 0;
+  }
   
   let area = 0;
-  const n = points.length;
+  const numPoints = points.length;
   
-  for (let i = 0; i < n; i++) {
-    const j = (i + 1) % n;
+  for (let i = 0; i < numPoints; i++) {
+    const j = (i + 1) % numPoints;
     area += points[i].x * points[j].y;
     area -= points[j].x * points[i].y;
   }
   
-  return Math.abs(area) / 2;
-};
+  // Take absolute value and divide by 2
+  area = Math.abs(area) / 2;
+  
+  return area;
+}
+
+/**
+ * Calculate distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance between the points
+ */
+export function calculateDistance(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Calculate perimeter of a polygon
+ * @param points Points defining the polygon
+ * @returns Perimeter length
+ */
+export function calculatePerimeter(points: Point[]): number {
+  if (points.length < 2) return 0;
+  
+  let perimeter = 0;
+  
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length]; // Loop back to first point
+    perimeter += calculateDistance(p1, p2);
+  }
+  
+  return perimeter;
+}
+
+/**
+ * Check if a point is inside a polygon using ray-casting algorithm
+ * @param point Point to check
+ * @param polygon Array of points defining the polygon
+ * @returns True if the point is inside the polygon
+ */
+export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
+  // Implementation of the ray-casting algorithm
+  let inside = false;
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+    
+    const intersect = ((yi > point.y) !== (yj > point.y)) && 
+                      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+    
+    if (intersect) inside = !inside;
+  }
+  
+  return inside;
+}
+
+/**
+ * Calculate center point of a polygon
+ * @param points Points defining the polygon
+ * @returns Center point
+ */
+export function calculateCentroid(points: Point[]): Point {
+  if (points.length === 0) return { x: 0, y: 0 };
+  
+  let sumX = 0;
+  let sumY = 0;
+  
+  for (const point of points) {
+    sumX += point.x;
+    sumY += point.y;
+  }
+  
+  return {
+    x: sumX / points.length,
+    y: sumY / points.length
+  };
+}

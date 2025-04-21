@@ -1,119 +1,66 @@
 
 /**
- * Core geometry types
+ * Geometry type definitions
  * @module types/core/Geometry
  */
 
 /**
- * Point interface representing a 2D point
+ * Point interface representing a 2D coordinate
  */
 export interface Point {
-  /** X coordinate */
   x: number;
-  /** Y coordinate */
   y: number;
 }
 
 /**
- * Size interface representing dimensions
+ * Size interface representing width and height
  */
 export interface Size {
-  /** Width */
   width: number;
-  /** Height */
   height: number;
 }
 
 /**
- * Canvas dimensions interface
- */
-export interface CanvasDimensions {
-  /** Width */
-  width: number;
-  /** Height */
-  height: number;
-}
-
-/**
- * Rectangle interface representing a rectangle
+ * Rectangle interface representing a rectangular area
  */
 export interface Rectangle {
-  /** Left position */
-  left: number;
-  /** Top position */
-  top: number;
-  /** Width */
+  x: number;
+  y: number;
   width: number;
-  /** Height */
   height: number;
-}
-
-/**
- * Line interface representing a line between two points
- */
-export interface Line {
-  /** Start point */
-  start: Point;
-  /** End point */
-  end: Point;
-}
-
-/**
- * Path interface representing a series of connected points
- */
-export interface Path {
-  /** Array of points in the path */
-  points: Point[];
-  /** Whether the path is closed (forms a polygon) */
-  closed: boolean;
-}
-
-/**
- * Circle interface representing a circle
- */
-export interface Circle {
-  /** Center point */
-  center: Point;
-  /** Radius */
-  radius: number;
 }
 
 /**
  * Polygon interface representing a closed shape
  */
 export interface Polygon {
-  /** Array of points forming the polygon */
   points: Point[];
 }
 
 /**
- * Transformation matrix
+ * Line interface representing a line segment
  */
-export interface Transform {
-  /** Horizontal scaling */
-  a: number;
-  /** Horizontal skewing */
-  b: number;
-  /** Vertical skewing */
-  c: number;
-  /** Vertical scaling */
-  d: number;
-  /** Horizontal moving */
-  e: number;
-  /** Vertical moving */
-  f: number;
+export interface Line {
+  start: Point;
+  end: Point;
 }
 
 /**
- * Bounding box
+ * Circle interface representing a circle
  */
-export interface BoundingBox {
-  /** Left position */
-  left: number;
-  /** Top position */
-  top: number;
-  /** Width */
-  width: number;
-  /** Height */
-  height: number;
+export interface Circle {
+  center: Point;
+  radius: number;
+}
+
+/**
+ * Area calculation result
+ */
+export interface AreaCalculationResult {
+  /** Area in square pixels */
+  areaPx: number;
+  /** Area in square meters */
+  areaM2: number;
+  /** Scale factor used (pixels per meter) */
+  scale: number;
 }
