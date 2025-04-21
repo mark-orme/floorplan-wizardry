@@ -3,19 +3,20 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { initGlobalTypeCheckers } from './utils/debug/globalTypeCheck';
-import { initNamingIssueDetection } from './utils/debug/preventNamingIssues';
-import { initAppImportChecker } from './utils/debug/appImportChecker';
 
-// Initialize global type checkers and naming checks in development
-if (process.env.NODE_ENV !== 'production') {
-  initGlobalTypeCheckers();
-  initNamingIssueDetection();
-  initAppImportChecker();
+// Initialize the application when not in test mode
+if (import.meta.env.MODE !== 'test') {
+  const rootElement = document.getElementById('root');
+
+  if (rootElement) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+  }
 }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Export App for testing purposes
+export default App;
