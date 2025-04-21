@@ -1,197 +1,107 @@
 
-import React, { useRef, useEffect, useMemo, useCallback } from "react";
-import { EnhancedCanvas } from "@/components/EnhancedCanvas";
-import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
-import { useEnhancedSnapToGrid } from "@/hooks/useEnhancedSnapToGrid";
-import { useTouchGestures } from "@/hooks/useTouchGestures";
-import { usePaperSizeManager } from "@/hooks/usePaperSizeManager";
-import { DrawingLayers } from "@/components/canvas/DrawingLayers";
-import { DrawingMode } from "@/constants/drawingModes";
-import { CanvasDiagnostics } from "@/components/canvas/CanvasDiagnostics";
-import { useFloorPlanCanvas } from "@/hooks/useFloorPlanCanvas";
-import { AreaCalculationDisplay } from "./AreaCalculationDisplay";
-import { MemoizedToolIndicator } from "../canvas/tools/MemoizedToolIndicator";
-import { CalculateAreaButton } from "./CalculateAreaButton";
-import { useRealtimeCanvasSync } from "@/hooks/useRealtimeCanvasSync";
-import { CanvasCollaborationIndicator } from "@/components/canvas/app/CanvasCollaborationIndicator";
-import { EnhancedMemoizedPaperSizeSelector } from "../canvas/paper/EnhancedMemoizedPaperSizeSelector";
+import React, { useRef, useEffect, useState } from "react";
+import { Canvas as FabricCanvas } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
+import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
+import { toast } from "sonner";
 
 interface FloorPlanCanvasEnhancedProps {
-  /** Callback for canvas error */
+  width?: number;
+  height?: number;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
   onCanvasError?: (error: Error) => void;
-  /** Initial tool */
-  initialTool?: DrawingMode;
-  /** Initial line color */
-  initialLineColor?: string;
-  /** Initial line thickness */
-  initialLineThickness?: number;
-  /** Whether to show grid */
-  showGrid?: boolean;
-  /** Whether to enable realtime sync */
-  enableSync?: boolean;
+  showPerformanceMetrics?: boolean;
 }
 
-export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = React.memo(({
+export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = ({
+  width = 800,
+  height = 600,
+  onCanvasReady,
   onCanvasError,
-  initialTool = DrawingMode.SELECT,
-  initialLineColor = "#000000",
-  initialLineThickness = 2,
-  showGrid = true,
-  enableSync = true
+  showPerformanceMetrics = process.env.NODE_ENV === 'development'
 }) => {
-  // Canvas container reference
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
-  // Use our extracted hook for canvas operations
+  const { handleError } = useCanvasErrorHandling({
+    onError: onCanvasError
+  });
+  
+  // Use virtualized canvas for performance
   const {
-    fabricCanvasRef,
-    tool,
-    lineColor,
-    lineThickness,
-    canvasZoom,
-    setCanvasZoom,
-    layers,
-    setLayers,
-    activeLayerId,
-    setActiveLayerId,
-    calculatedArea,
-    handleCanvasReady,
-    handleCanvasError,
-    handleUndo,
-    calculateArea
-  } = useFloorPlanCanvas({
-    initialTool,
-    initialLineColor,
-    initialLineThickness,
-    onCanvasError
+    performanceMetrics,
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization
+  } = useVirtualizedCanvas(fabricCanvasRef, {
+    enabled: true,
+    autoToggle: true
   });
   
-  // Use virtualized canvas for performance optimization
-  const { performanceMetrics, refreshVirtualization } = useVirtualizedCanvas(
-    fabricCanvasRef,
-    { enabled: true }
-  );
-  
-  // Set up real-time sync if enabled - with memoized handlers
-  const syncCanvas = useCallback(() => {
-    // Use transferable objects for better performance
-    if (fabricCanvasRef.current) {
-      refreshVirtualization();
-    }
-  }, [refreshVirtualization]);
-  
-  const { collaborators } = useRealtimeCanvasSync({
-    canvas: fabricCanvasRef.current,
-    enabled: enableSync,
-    onRemoteUpdate: () => {
-      console.log(`Canvas updated at ${new Date().toLocaleString()}`);
-      refreshVirtualization();
-    }
-  });
-  
-  // Use paper size manager hook
-  const { currentPaperSize, paperSizes, infiniteCanvas, changePaperSize, toggleInfiniteCanvas } = 
-    usePaperSizeManager({ fabricCanvasRef });
-  
-  // Memoized handlers
-  const handleZoomChange = useCallback((zoom: number) => {
-    setCanvasZoom(zoom);
-    refreshVirtualization();
-  }, [setCanvasZoom, refreshVirtualization]);
-  
-  const memoizedCalculateArea = useCallback(() => {
-    calculateArea();
-  }, [calculateArea]);
-  
-  // Memoized performance metric display
-  const performanceDisplay = useMemo(() => {
-    if (process.env.NODE_ENV === 'production') return null;
+  // Initialize canvas
+  useEffect(() => {
+    if (!canvasRef.current) return;
     
-    return (
-      <div className="absolute bottom-16 right-4 bg-white/80 text-xs p-2 rounded shadow">
-        <div>FPS: {performanceMetrics.fps}</div>
-        <div>Objects: {performanceMetrics.objectCount}</div>
-        <div>Visible: {performanceMetrics.visibleObjectCount}</div>
-      </div>
-    );
-  }, [performanceMetrics]);
+    try {
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: "#ffffff",
+        renderOnAddRemove: false,
+        enableRetinaScaling: true
+      });
+      
+      fabricCanvasRef.current = canvas;
+      setIsReady(true);
+      
+      // Notify parent
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
+      
+      return () => {
+        canvas.dispose();
+        fabricCanvasRef.current = null;
+      };
+    } catch (error) {
+      handleError(error instanceof Error ? error : new Error('Failed to initialize canvas'));
+      toast.error("Failed to initialize canvas");
+    }
+  }, [width, height, onCanvasReady, handleError]);
   
-  return (
-    <div 
-      ref={canvasContainerRef}
-      className="h-full w-full relative overflow-hidden"
-      data-testid="enhanced-floor-plan-wrapper"
-      data-canvas-ready={!!fabricCanvasRef.current}
-    >
-      <CanvasControllerProvider>
-        <EnhancedCanvas
-          width={currentPaperSize.width}
-          height={currentPaperSize.height}
-          onCanvasReady={handleCanvasReady}
-          onError={handleCanvasError}
-          tool={tool}
-          lineColor={lineColor}
-          lineThickness={lineThickness}
-          snapToGrid={true}
-          autoStraighten={true}
-          onZoomChange={handleZoomChange}
-          onUndo={handleUndo}
-          showGrid={showGrid}
-          infiniteCanvas={infiniteCanvas}
-          paperSize={infiniteCanvas ? undefined : currentPaperSize}
-        />
-        
-        {/* Canvas diagnostics component */}
-        {fabricCanvasRef.current && (
-          <CanvasDiagnostics 
-            canvas={fabricCanvasRef.current}
-            currentTool={tool}
-            runOnMount={true}
-            monitoringInterval={30000}
-          />
-        )}
-        
-        {/* Layer management */}
-        <DrawingLayers
-          fabricCanvasRef={fabricCanvasRef}
-          layers={layers}
-          setLayers={setLayers}
-          activeLayerId={activeLayerId}
-          setActiveLayerId={setActiveLayerId}
-        />
-        
-        {/* Collaboration indicator */}
-        <CanvasCollaborationIndicator 
-          collaborators={collaborators}
-          enabled={enableSync}
-        />
-        
-        {/* Area calculation display - extracted to component */}
-        <AreaCalculationDisplay areaM2={calculatedArea.areaM2} />
-        
-        {/* Paper size controls - using optimized version */}
-        <EnhancedMemoizedPaperSizeSelector
-          currentPaperSize={currentPaperSize}
-          paperSizes={paperSizes}
-          infiniteCanvas={infiniteCanvas}
-          onChangePaperSize={changePaperSize}
-          onToggleInfiniteCanvas={toggleInfiniteCanvas}
-        />
-        
-        {/* Tool selection indicators - using memoized version */}
-        <MemoizedToolIndicator activeTool={tool} />
-        
-        {/* Calculate Area button - extracted to component */}
-        <CalculateAreaButton onClick={memoizedCalculateArea} />
-        
-        {/* Performance metrics display */}
-        {performanceDisplay}
-      </CanvasControllerProvider>
+  // Refresh virtualization on resize
+  useEffect(() => {
+    if (isReady) {
+      refreshVirtualization();
+    }
+  }, [width, height, isReady, refreshVirtualization]);
+  
+  // Display performance metrics
+  const performanceDisplay = showPerformanceMetrics && (
+    <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
+      <div>FPS: {performanceMetrics?.fps || 0}</div>
+      <div>Objects: {performanceMetrics?.objectCount || 0}</div>
+      <div>Visible: {performanceMetrics?.visibleObjectCount || 0}</div>
+      <button
+        onClick={() => toggleVirtualization()}
+        className="mt-1 px-2 py-1 bg-blue-100 rounded text-xs"
+      >
+        {virtualizationEnabled ? 'Disable' : 'Enable'} Virtualization
+      </button>
     </div>
   );
-});
-
-FloorPlanCanvasEnhanced.displayName = 'FloorPlanCanvasEnhanced';
+  
+  return (
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        className="border border-gray-200 rounded"
+        data-testid="floor-plan-canvas"
+      />
+      {performanceDisplay}
+    </div>
+  );
+};
 
 export default FloorPlanCanvasEnhanced;

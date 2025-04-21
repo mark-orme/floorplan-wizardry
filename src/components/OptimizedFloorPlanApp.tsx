@@ -82,9 +82,9 @@ export const OptimizedFloorPlanApp: React.FC<OptimizedFloorPlanAppProps> = React
     
     return (
       <div className="absolute bottom-16 right-4 bg-white/80 text-xs p-2 rounded shadow">
-        <div>FPS: {performanceMetrics.fps}</div>
-        <div>Objects: {performanceMetrics.objectCount}</div>
-        <div>Visible: {performanceMetrics.visibleObjectCount}</div>
+        <div>FPS: {performanceMetrics?.fps || 0}</div>
+        <div>Objects: {performanceMetrics?.objectCount || 0}</div>
+        <div>Visible: {performanceMetrics?.visibleObjectCount || 0}</div>
       </div>
     );
   }, [performanceMetrics]);
