@@ -3,6 +3,27 @@
  * Security Type Definitions
  */
 
+/**
+ * Strict type for user input validation
+ */
+export type SafeUserInput = {
+  readonly value: string;
+  readonly type: 'text' | 'html' | 'url' | 'email';
+  readonly maxLength: number;
+};
+
+/**
+ * Security configuration options
+ */
+export interface SecurityConfig {
+  readonly csrfEnabled: boolean;
+  readonly rateLimitRequests: number;
+  readonly rateLimitWindowMs: number;
+  readonly maxUploadSizeMb: number;
+  readonly allowedFileTypes: readonly string[];
+  readonly allowedOrigins: readonly string[];
+}
+
 // Audit log entry interface
 export interface AuditLogEntry {
   id?: string;
@@ -13,6 +34,17 @@ export interface AuditLogEntry {
   status: 'success' | 'failure';
   details?: Record<string, unknown>;
   ipAddress?: string;
+}
+
+/**
+ * Security violation report
+ */
+export interface SecurityViolation {
+  readonly type: 'csrf' | 'xss' | 'injection' | 'unauthorized';
+  readonly severity: 'low' | 'medium' | 'high' | 'critical';
+  readonly details: string;
+  readonly timestamp: Date;
+  readonly requestData: Record<string, unknown>;
 }
 
 // Security check status
@@ -81,4 +113,3 @@ export interface SecretRotationLog {
   previousExpiry?: Date;
   newExpiry?: Date;
 }
-

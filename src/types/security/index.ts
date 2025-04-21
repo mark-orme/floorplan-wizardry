@@ -20,5 +20,11 @@ export type {
   SafeUserInput,
   SecurityConfig,
   AuditLogEntry,
-  SecurityViolation 
+  SecurityViolation,
+  SecurityCheck,
+  SecurityCheckStatus,
+  Vulnerability,
+  SecurityReport,
+  RateLimitViolation,
+  SecretRotationLog
 } from '../security-types';
