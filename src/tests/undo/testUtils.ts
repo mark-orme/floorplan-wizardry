@@ -14,7 +14,16 @@ export function createCanvasRef() {
       add: vi.fn(),
       renderAll: vi.fn(),
       discardActiveObject: vi.fn(),
-      remove: vi.fn()
+      remove: vi.fn(),
+      // Add required Canvas properties
+      enablePointerEvents: true,
+      _willAddMouseDown: false,
+      _dropTarget: null,
+      _isClick: false,
+      _objects: [],
+      getHandlers: vi.fn().mockReturnValue([]),
+      triggerEvent: vi.fn(),
+      withImplementation: vi.fn().mockImplementation(() => Promise.resolve())
     }
   };
 }

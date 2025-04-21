@@ -50,11 +50,40 @@ export function initTypeCheckers(): void {
 
 /**
  * Create complete metadata with validation
+ * @param overrides Optional property overrides
+ * @returns Complete metadata object
  */
-export function createMetadata(): Record<string, any> {
+export function createCompleteMetadata(overrides: Record<string, any> = {}): Record<string, any> {
+  const now = new Date().toISOString();
+  return {
+    version: '1.0',
+    created: now,
+    updated: now,
+    author: 'User',
+    dateCreated: now,
+    lastModified: now,
+    notes: '',
+    ...overrides
+  };
+}
+
+/**
+ * Create metadata specifically for floor plans
+ * @param overrides Optional property overrides
+ * @returns Complete floor plan metadata
+ */
+export function createMetadata(overrides: Record<string, any> = {}): Record<string, any> {
   return {
     version: '1.0',
     created: new Date().toISOString(),
-    updated: new Date().toISOString()
+    updated: new Date().toISOString(),
+    author: 'User',
+    dateCreated: new Date().toISOString(),
+    lastModified: new Date().toISOString(),
+    notes: '',
+    ...overrides
   };
 }
+
+// Export createCompleteMetadata to fix import errors
+export { createMetadata as createCompleteMetadata };

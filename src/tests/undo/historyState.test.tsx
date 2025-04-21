@@ -14,7 +14,7 @@ describe('Drawing History State', () => {
     
     const { result } = renderHook(() => {
       const history = useDrawingHistory({
-        fabricCanvasRef: canvasRef
+        fabricCanvasRef: canvasRef as any
       });
       // Add historyRef for test compatibility
       return {
@@ -34,7 +34,7 @@ describe('Drawing History State', () => {
     
     const { result } = renderHook(() => {
       const history = useDrawingHistory({
-        fabricCanvasRef: canvasRef
+        fabricCanvasRef: canvasRef as any
       });
       // Add historyRef for test compatibility
       return {

@@ -66,7 +66,6 @@ export const useFloorPlanOperations = ({
         updatedAt: now,
         paperSize: PaperSize.A4,
         level: floorPlans.length,
-        // Add required metadata fields
         version: '1.0',
         author: 'User',
         dateCreated: now,

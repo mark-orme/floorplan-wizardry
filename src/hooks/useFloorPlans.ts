@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,7 +43,9 @@ export const useFloorPlans = ({
     gia: 0,
     level: 0,
     index: 0,
-    metadata: createCompleteMetadata(),
+    metadata: createCompleteMetadata({
+      level: 0
+    }),
     data: {},
     userId: ''
   });
@@ -50,6 +53,7 @@ export const useFloorPlans = ({
   const drawingHook = useFloorPlanDrawing({
     floorPlan: safeFloorPlan,
     fabricCanvasRef,
+    tool,
     onFloorPlanUpdate: (floorPlan) => {
       setFloorPlans(prev => {
         const updated = [...prev];

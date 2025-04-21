@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DebugInfoState } from "@/types/debugTypes";
 import { StrokeTypeLiteral, asStrokeType, Point } from "@/types/floor-plan/unifiedTypes";
+import { calculateWallLength } from "@/utils/debug/typeDiagnostics";
 
 /**
  * Timeout duration for loading operations in milliseconds

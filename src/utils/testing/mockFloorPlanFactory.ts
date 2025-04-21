@@ -75,6 +75,12 @@ export function createMockWall({
   color = '#888888'
 }: Partial<Wall> = {}): Wall {
   const points = [start, end];
+  
+  // Calculate wall length
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
   return {
     id: uuidv4(),
     start,
@@ -83,7 +89,7 @@ export function createMockWall({
     thickness,
     color,
     roomIds: [], // Ensuring roomIds is always provided
-    length: Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2))
+    length: length
   };
 }
 
@@ -115,6 +121,22 @@ export function createMockRoom({
   // Ensure type is a valid RoomTypeLiteral
   const validatedType = typeof type === 'string' ? asRoomType(type) : type;
   
+  // Calculate room perimeter
+  let perimeter = 0;
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % points.length];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    perimeter += Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  // Calculate room center
+  const center = {
+    x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+    y: points.reduce((sum, p) => sum + p.y, 0) / points.length
+  };
+  
   return {
     id: uuidv4(),
     name,
@@ -123,7 +145,12 @@ export function createMockRoom({
     color,
     area,
     level,
-    walls: []
+    walls: [],
+    // Add required fields
+    vertices: points,
+    perimeter,
+    center,
+    labelPosition: center
   };
 }
 
@@ -145,6 +172,8 @@ export function createMockMetadata({
     level,
     version: '1.0',
     author: 'Test Author',
+    dateCreated: now,
+    lastModified: now,
     notes: 'Test notes'
   };
 }

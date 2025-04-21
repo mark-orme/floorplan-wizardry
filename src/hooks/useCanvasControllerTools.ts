@@ -14,6 +14,7 @@ import { useCanvasToolsGIA } from "./canvas/controller/useCanvasToolsGIA";
 interface CanvasToolsManagerProps {
   /** Reference to the Fabric canvas instance */
   canvas: any;
+  /** Reference to the Fabric canvas instance */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Current selected drawing tool */
   tool: DrawingTool;

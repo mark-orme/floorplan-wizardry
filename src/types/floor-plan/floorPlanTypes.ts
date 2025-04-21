@@ -60,6 +60,9 @@ export interface FloorPlan {
   
   /** User ID who owns the floor plan (required) */
   userId: string;
+  
+  /** Canvas state for optimized rendering (optional) */
+  canvasState?: any;
 }
 
 // Export FloorPlanMetadata for use in other modules
