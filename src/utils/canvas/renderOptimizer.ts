@@ -170,3 +170,26 @@ export function createWorkerPool(workerScript: string, count: number = navigator
     }
   };
 }
+
+/**
+ * Optimize canvas performance by configuring rendering options
+ * 
+ * @param canvas Fabric canvas instance to optimize
+ */
+export function optimizeCanvasPerformance(canvas: FabricCanvas): void {
+  if (!canvas) return;
+  
+  // Configure canvas for better performance
+  canvas.renderOnAddRemove = false;
+  canvas.enableRetinaScaling = true;
+  canvas.skipOffscreen = true;
+  
+  // Use requestAnimationFrame for smoother rendering
+  canvas.renderAll = function() {
+    requestAnimationFrame(() => {
+      FabricCanvas.prototype.renderAll.call(canvas);
+    });
+    
+    return canvas;
+  };
+}

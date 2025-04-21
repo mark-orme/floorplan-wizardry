@@ -6,8 +6,11 @@
 
 import { createFormProtection, generateCSRFToken } from './enhancedCsrfProtection';
 import { enableOfflineEncryption } from './offlineEncryption';
-import { isEncryptionSupported } from './dataEncryption';
+import { isEncryptionSupported, generateEncryptionKey } from './dataEncryption';
 import { toast } from 'sonner';
+
+// Store for encryption keys
+let encryptionKey: CryptoKey | null = null;
 
 /**
  * Initialize all security features
@@ -56,6 +59,22 @@ export function initializeSecurity(): void {
       description: 'Some security features may be unavailable.'
     });
   }
+}
+
+/**
+ * Get the current encryption key
+ * @returns The current encryption key or null if not available
+ */
+export function getEncryptionKey(): CryptoKey | null {
+  return encryptionKey;
+}
+
+/**
+ * Set the encryption key
+ * @param key The encryption key to set
+ */
+export function setEncryptionKey(key: CryptoKey): void {
+  encryptionKey = key;
 }
 
 /**

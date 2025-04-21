@@ -1,8 +1,7 @@
-
 /**
  * Hook for managing canvas drawing tools
- * Centralizes tool operations and state changes
- * @module useCanvasControllerTools
+ * Re-exports functionality from the useCanvasControllerTools
+ * @module canvas/controller/useCanvasControllerTools
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
@@ -10,10 +9,10 @@ import { useDrawingTools } from "@/hooks/useDrawingTools";
 import { DrawingMode } from "@/constants/drawingModes";
 import { FloorPlan } from "@/types/floorPlanTypes";
 import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
+import { ZoomDirection } from "@/types/drawingTypes";
 import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
 import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
 import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
-import { fetchWithCSRF } from "@/utils/security";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 
 /**
@@ -107,12 +106,11 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setZoomLevel
   });
 
-  // Use the canvas operations hook with CSRF protection
+  // Use the canvas operations hook without the secureFetch prop
   const canvasOperations = useCanvasOperations({
     fabricCanvasRef,
     gridLayerRef,
-    saveCurrentState: toolFunctions.saveCurrentState,
-    secureFetch: fetchWithCSRF // Use CSRF-protected fetch
+    saveCurrentState: toolFunctions.saveCurrentState
   });
 
   // Use the floor plan operations hook
@@ -131,14 +129,17 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
   });
 
   // Modified handleZoom to accept string direction
-  const handleZoom = useCallback((direction: "in" | "out"): void => {
+  const handleZoom = useCallback((direction: ZoomDirection): void => {
     if (direction === "in") {
       toolFunctions.handleZoom(1.2);
     } else {
       toolFunctions.handleZoom(0.8);
     }
+    
     // After zooming, refresh virtualization for optimal performance
-    refreshVirtualization();
+    if (refreshVirtualization) {
+      refreshVirtualization();
+    }
   }, [toolFunctions, refreshVirtualization]);
 
   // Tool-related functions

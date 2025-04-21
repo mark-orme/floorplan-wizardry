@@ -1,7 +1,7 @@
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import App from './App' // Fixed casing to match the actual filename
 import './index.css'
 import { initGlobalTypeCheckers } from './utils/debug/globalTypeCheck';
 

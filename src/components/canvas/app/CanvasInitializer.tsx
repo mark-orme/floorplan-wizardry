@@ -1,7 +1,6 @@
-
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { optimizeCanvasPerformance, requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
+import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
@@ -32,13 +31,12 @@ export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
     });
     
     // Add zoom event listener for grid scaling
-    canvas.on('zoom:changed', () => {
+    canvas.on('mouse:wheel', () => {
       updateGridWithZoom(canvas);
       requestOptimizedRender(canvas, 'zoom');
     });
     
-    // Apply performance optimizations
-    optimizeCanvasPerformance(canvas);
+    // Apply optimization but removed the non-existent function call
     
     setFabricCanvas(canvas);
     setCanvas(canvas);
