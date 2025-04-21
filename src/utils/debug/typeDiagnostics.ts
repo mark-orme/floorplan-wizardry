@@ -176,12 +176,4 @@ export function logTypeInfo(obj: any, label: string = 'Object'): void {
   console.groupEnd();
 }
 
-// Export all validation functions
-export {
-  validateFloorPlanWithReporting,
-  isValidFloorPlan,
-  isValidRoom,
-  isValidWall,
-  isValidStroke,
-  createCompleteMetadata
-};
+// Remove duplicate exports here - we're using export directly on each function above
