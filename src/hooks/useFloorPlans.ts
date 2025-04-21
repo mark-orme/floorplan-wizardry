@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/types/floor-plan/unifiedTypes';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { adaptFloorPlan } from '@/utils/typeAdapters';

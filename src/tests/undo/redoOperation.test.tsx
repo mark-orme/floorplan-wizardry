@@ -1,104 +1,105 @@
 
-/**
- * Redo functionality tests
- * @module redoOperation.test
- */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Canvas } from "fabric";
-import { 
-  setupFabricMock, 
-  createMockGridLayerRef, 
-  createMockHistoryRef 
-} from "../utils/canvasMocks";
-
-// Mock fabric namespace
-vi.mock('fabric', () => setupFabricMock());
-
-// Import after mocks
+import { renderHook, act } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
+import { createCanvasRef } from './testUtils';
 
 describe('Redo Operation', () => {
-  let canvas: Canvas;
-  let gridLayerRef: { current: any[] };
-  let mockClearDrawings: any;
-  let mockRecalculateGIA: any;
-  let canvasRef: { current: Canvas | null };
-  
   beforeEach(() => {
-    canvas = new Canvas('test-canvas');
-    gridLayerRef = createMockGridLayerRef();
-    canvasRef = { current: canvas };
-    mockClearDrawings = vi.fn();
-    mockRecalculateGIA = vi.fn();
-    
-    // Mock filter to separate grid and drawing objects
-    canvas.getObjects = vi.fn().mockImplementation(() => [
-      { type: 'polyline', id: 'drawing1', toObject: () => ({ type: 'polyline', id: 'drawing1' }) },
-      { type: 'polyline', id: 'drawing2', toObject: () => ({ type: 'polyline', id: 'drawing2' }) },
-      { id: 'grid1' },
-      { id: 'grid2' }
-    ]);
-  });
-  
-  afterEach(() => {
     vi.clearAllMocks();
   });
-  
-  it('handles redo correctly by preserving grid', () => {
-    // Setup mock history reference with future state and a type assertion
-    const mockHistoryRef = createMockHistoryRef(
-      [],
-      [[{ type: 'polyline', id: 'future_drawing', toObject: () => ({ type: 'polyline', id: 'future_drawing' }) }]]
-    ) as unknown as React.MutableRefObject<{
-      past: any[][];
-      future: any[][];
-    }>;
+
+  it('should not redo when future is empty', () => {
+    const canvasRef = createCanvasRef();
     
-    // Setup the hook
-    const { handleRedo } = useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: mockHistoryRef,
-      clearDrawings: mockClearDrawings,
-      recalculateGIA: mockRecalculateGIA
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    act(() => {
+      result.current.redo();
     });
     
-    // Execute redo
-    handleRedo();
-    
-    // Check that only non-grid objects were removed
-    expect(canvas.remove).toHaveBeenCalledTimes(2);
-    
-    // Check that add was called for the future state object
-    expect(canvas.add).toHaveBeenCalled();
-    
-    // Check that past state was updated
-    expect(mockHistoryRef.current.past.length).toBe(1);
-    
-    // Check that GIA was recalculated
-    expect(mockRecalculateGIA).toHaveBeenCalled();
+    expect(result.current.canRedo).toBe(false);
+    expect(canvasRef.current.clear).not.toHaveBeenCalled();
   });
-  
-  it('handles empty future states correctly', () => {
-    // Empty future
-    const mockHistoryRef = createMockHistoryRef() as unknown as React.MutableRefObject<{
-      past: any[][];
-      future: any[][];
-    }>;
+
+  it('should perform redo operation after undo', () => {
+    const canvasRef = createCanvasRef();
     
-    // Setup the hook
-    const { handleRedo } = useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: mockHistoryRef,
-      clearDrawings: mockClearDrawings,
-      recalculateGIA: mockRecalculateGIA
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    // Create history
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([]);
+      result.current.saveState();
     });
     
-    // Execute redo
-    handleRedo();
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([{ id: 'object-1' }]);
+      result.current.saveState();
+    });
     
-    // Check that nothing was added
-    expect(canvas.add).not.toHaveBeenCalled();
+    // Undo
+    act(() => {
+      result.current.undo();
+    });
+    
+    // Now redo should work
+    act(() => {
+      canvasRef.current.clear.mockClear(); // Reset mock
+      result.current.redo();
+    });
+    
+    expect(result.current.canRedo).toBe(false);
+    expect(canvasRef.current.clear).toHaveBeenCalled();
+  });
+
+  it('should keep track of redo state correctly', () => {
+    const canvasRef = createCanvasRef();
+    
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    // Create history with multiple states
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([]);
+      result.current.saveState();
+    });
+    
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([{ id: 'object-1' }]);
+      result.current.saveState();
+    });
+    
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([{ id: 'object-1' }, { id: 'object-2' }]);
+      result.current.saveState();
+    });
+    
+    // Undo twice
+    act(() => {
+      result.current.undo();
+      result.current.undo();
+    });
+    
+    expect(result.current.canRedo).toBe(true);
+    
+    // Redo once
+    act(() => {
+      result.current.redo();
+    });
+    
+    expect(result.current.canRedo).toBe(true);
+    
+    // Redo again
+    act(() => {
+      result.current.redo();
+    });
+    
+    expect(result.current.canRedo).toBe(false);
   });
 });

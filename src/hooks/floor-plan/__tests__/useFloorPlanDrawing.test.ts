@@ -42,8 +42,8 @@ describe('useFloorPlanDrawing', () => {
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: mockCanvas,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      canvas: mockCanvas
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -63,8 +63,8 @@ describe('useFloorPlanDrawing', () => {
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: mockCanvas,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      canvas: mockCanvas
     }));
 
     act(() => {
@@ -87,8 +87,8 @@ describe('useFloorPlanDrawing', () => {
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: mockCanvas,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      canvas: mockCanvas
     }));
 
     // Act
@@ -119,8 +119,8 @@ describe('useFloorPlanDrawing', () => {
 
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: mockCanvas,
       floorPlan: testFloorPlan,
+      canvas: mockCanvas,
       onFloorPlanUpdate: updateFloorPlan
     }));
 
@@ -149,8 +149,8 @@ describe('useFloorPlanDrawing', () => {
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
-      canvas: mockCanvas,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      canvas: mockCanvas
     }));
 
     // Act

@@ -1,5 +1,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
   Square, 
@@ -22,14 +23,17 @@ export interface Tool {
   shortcut?: string;
 }
 
+// Updated interface with fabricCanvasRef
 interface CanvasToolsManagerProps {
   canvas: any;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
   defaultTool?: DrawingMode;
   onToolChange?: (tool: DrawingMode) => void;
 }
 
 export const useCanvasToolsManager = ({
   canvas,
+  fabricCanvasRef,
   defaultTool = DrawingMode.SELECT,
   onToolChange
 }: CanvasToolsManagerProps) => {

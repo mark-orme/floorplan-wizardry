@@ -1,105 +1,84 @@
 
-/**
- * Undo functionality tests
- * @module undoOperation.test
- */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Canvas } from "fabric";
-import { MAX_HISTORY_STATES } from "@/utils/drawing";
-import { 
-  setupFabricMock, 
-  createMockGridLayerRef, 
-  createMockHistoryRef 
-} from "../utils/canvasMocks";
-
-// Mock fabric namespace
-vi.mock('fabric', () => setupFabricMock());
-
-// Import after mocks
+import { renderHook, act } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useDrawingHistory } from '@/hooks/useDrawingHistory';
+import { createCanvasRef } from './testUtils';
 
 describe('Undo Operation', () => {
-  let canvas: Canvas;
-  let gridLayerRef: { current: any[] };
-  let mockClearDrawings: any;
-  let mockRecalculateGIA: any;
-  let canvasRef: { current: Canvas | null };
-  
   beforeEach(() => {
-    canvas = new Canvas('test-canvas');
-    gridLayerRef = createMockGridLayerRef();
-    canvasRef = { current: canvas };
-    mockClearDrawings = vi.fn();
-    mockRecalculateGIA = vi.fn();
-    
-    // Mock filter to separate grid and drawing objects
-    canvas.getObjects = vi.fn().mockImplementation(() => [
-      { type: 'polyline', id: 'drawing1', toObject: () => ({ type: 'polyline', id: 'drawing1' }) },
-      { type: 'polyline', id: 'drawing2', toObject: () => ({ type: 'polyline', id: 'drawing2' }) },
-      { id: 'grid1' },
-      { id: 'grid2' }
-    ]);
-  });
-  
-  afterEach(() => {
     vi.clearAllMocks();
   });
-  
-  it('handles undo correctly by preserving grid', () => {
-    // Setup mock history reference with a type assertion to satisfy TypeScript
-    const mockHistoryRef = createMockHistoryRef(
-      [[{ type: 'polyline', id: 'old_drawing', toObject: () => ({ type: 'polyline', id: 'old_drawing' }) }]],
-      []
-    ) as unknown as React.MutableRefObject<{
-      past: any[][];
-      future: any[][];
-    }>;
+
+  it('should not undo when history is empty', () => {
+    const canvasRef = createCanvasRef();
     
-    // Setup the hook
-    const { handleUndo } = useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: mockHistoryRef,
-      clearDrawings: mockClearDrawings,
-      recalculateGIA: mockRecalculateGIA
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    act(() => {
+      result.current.undo();
     });
     
-    // Execute undo
-    handleUndo();
-    
-    // Check that only non-grid objects were removed
-    expect(canvas.remove).toHaveBeenCalledTimes(2);
-    
-    // Check that grid objects were preserved
-    expect(canvas.getObjects).toHaveBeenCalled();
-    
-    // Check that future state was updated
-    expect(mockHistoryRef.current.future.length).toBe(1);
-    
-    // Check that GIA was recalculated
-    expect(mockRecalculateGIA).toHaveBeenCalled();
+    expect(result.current.canUndo).toBe(false);
+    expect(canvasRef.current.clear).not.toHaveBeenCalled();
   });
-  
-  it('handles empty history states correctly', () => {
-    // Empty past
-    const mockHistoryRef = createMockHistoryRef() as unknown as React.MutableRefObject<{
-      past: any[][];
-      future: any[][];
-    }>;
+
+  it('should perform undo operation when history exists', () => {
+    const canvasRef = createCanvasRef();
     
-    // Setup the hook
-    const { handleUndo } = useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      gridLayerRef,
-      historyRef: mockHistoryRef,
-      clearDrawings: mockClearDrawings,
-      recalculateGIA: mockRecalculateGIA
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    // Save initial state
+    act(() => {
+      result.current.saveState();
     });
     
-    // Execute undo
-    handleUndo();
+    // Save another state
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([{ id: 'object-1' }]);
+      result.current.saveState();
+    });
     
-    // Check that nothing was removed
-    expect(canvas.remove).not.toHaveBeenCalled();
+    // Now undo should work
+    act(() => {
+      result.current.undo();
+    });
+    
+    expect(result.current.canRedo).toBe(true);
+    expect(result.current.historyRef.current.future).toHaveLength(1);
+    expect(canvasRef.current.clear).toHaveBeenCalled();
+  });
+
+  it('should track undo/redo state correctly', () => {
+    const canvasRef = createCanvasRef();
+    
+    const { result } = renderHook(() => useDrawingHistory({
+      fabricCanvasRef: canvasRef
+    }));
+    
+    // Save states
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([]);
+      result.current.saveState();
+    });
+    
+    act(() => {
+      canvasRef.current.getObjects.mockReturnValue([{ id: 'object-1' }]);
+      result.current.saveState();
+    });
+    
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(false);
+    
+    // Perform undo
+    act(() => {
+      result.current.undo();
+    });
+    
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(true);
   });
 });

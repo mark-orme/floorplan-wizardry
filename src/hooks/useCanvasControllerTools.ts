@@ -14,6 +14,7 @@ import { useCanvasToolsGIA } from "./canvas/controller/useCanvasToolsGIA";
 // Create the proper props interface for the useCanvasToolsManager hook
 interface CanvasToolsManagerProps {
   /** Reference to the Fabric canvas instance */
+  canvas: any;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   /** Reference to the grid layer objects */
   gridLayerRef: React.MutableRefObject<FabricObject[]>;
@@ -120,6 +121,7 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
 
   // Get all drawing tool functions from the tool manager
   const toolFunctions = useCanvasToolsManager({
+    canvas: fabricCanvasRef.current,
     fabricCanvasRef,
     gridLayerRef,
     historyRef,

@@ -4,8 +4,8 @@
  * Stroke interface and related types for floor plans
  * @module types/floor-plan/strokeTypes
  */
-// Import the StrokeTypeLiteral from floorPlanTypes for consistency
-import { StrokeTypeLiteral } from '../floorPlanTypes';
+// Update the StrokeTypeLiteral definition to include missing types
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
 import { Point } from '../floorPlanTypes';
 
 /**

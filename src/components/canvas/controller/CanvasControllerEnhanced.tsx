@@ -16,11 +16,22 @@ import { toast } from "sonner";
  * Default debug information state
  * Initialized with all error flags set to false and timestamps to 0
  */
-const DEFAULT_DEBUG_INFO: DebugInfoState = {
+const initialState: DebugInfoState = {
   hasError: false,
-  errorMessage: "",
+  errorMessage: '',
   lastInitTime: 0,
   lastGridCreationTime: 0,
+  currentFps: 0,
+  objectCount: 0,
+  canvasDimensions: {
+    width: 0,
+    height: 0
+  },
+  flags: {
+    gridEnabled: true,
+    snapToGridEnabled: false,
+    debugLoggingEnabled: false
+  },
   eventHandlersSet: false,
   canvasEventsRegistered: false,
   gridRendered: false,
@@ -30,13 +41,6 @@ const DEFAULT_DEBUG_INFO: DebugInfoState = {
   dimensionsSet: false,
   brushInitialized: false,
   canvasReady: false,
-  canvasCreated: false,
-  gridObjectCount: 0,
-  canvasDimensions: {
-    width: 0,
-    height: 0
-  },
-  lastError: null,
   lastRefresh: Date.now()
 };
 
@@ -121,7 +125,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerProviderProps> =
   const [gia, setGia] = useState(0);
   
   // Debugging and error state
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_INFO);
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(initialState);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   
