@@ -45,13 +45,13 @@ export function calculateArea(points: Point[], pixelsPerMeter: number = 100): Ar
  * @returns Combined area calculation result
  */
 export function calculateCombinedArea(
-  polygons: Polygon[], 
+  polygons: Point[][], 
   pixelsPerMeter: number = 100
 ): AreaCalculationResult {
   let totalAreaPixels = 0;
   
   for (const polygon of polygons) {
-    totalAreaPixels += calculatePolygonArea(polygon.points);
+    totalAreaPixels += calculatePolygonArea(polygon);
   }
   
   const areaM2 = Math.pow(pixelsToMeters(1, pixelsPerMeter), 2) * totalAreaPixels;

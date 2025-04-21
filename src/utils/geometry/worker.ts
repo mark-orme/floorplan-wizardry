@@ -10,7 +10,7 @@ import {
   calculateDistance,
   optimizePoints,
   perpendicularDistance,
-  snapPointsToGrid
+  snapPointToGrid
 } from './engine';
 
 // Define a worker function to handle geometry operations
@@ -36,7 +36,7 @@ self.onmessage = (event) => {
         
       case 'snapToGrid':
         // Map over each point individually
-        result = data.points.map((p: Point) => snapPointsToGrid(p, data.gridSize));
+        result = data.points.map((p: Point) => snapPointToGrid(p, data.gridSize));
         break;
         
       default:

@@ -66,6 +66,21 @@ export interface PerformanceStats {
    * Timestamp when these stats were collected
    */
   timestamp: number;
+  
+  /**
+   * Time (ms) per frame
+   */
+  frameTime?: number;
+  
+  /**
+   * Maximum frame time observed
+   */
+  maxFrameTime?: number;
+  
+  /**
+   * Count of frames that took longer than threshold
+   */
+  longFrames?: number;
 }
 
 /**
@@ -81,7 +96,10 @@ export const DEFAULT_PERFORMANCE_STATS: PerformanceStats = {
   eventHandlingTime: 0,
   canvasOperationTime: 0,
   gridRenderTime: 0,
-  timestamp: Date.now()
+  timestamp: Date.now(),
+  frameTime: 0,
+  maxFrameTime: 0,
+  longFrames: 0
 };
 
 /**
