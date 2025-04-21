@@ -1,7 +1,6 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { useVirtualizedCanvas, VirtualizationPerformanceMetrics } from "@/hooks/useVirtualizedCanvas";
+import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { toast } from "sonner";
 

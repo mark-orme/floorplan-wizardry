@@ -4,12 +4,10 @@
  * Provides utilities for calculating areas of polygons, rooms, and floor plans
  */
 import { useCallback, useState } from 'react';
-import { useGeometryEngine } from './useGeometryEngine';
+import { useGeometryEngine } from '../useGeometryEngine';
 import logger from '@/utils/logger';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Geometry';
 
-export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
+export const useAreaCalculation = (fabricCanvas: any) => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [lastCalculatedArea, setLastCalculatedArea] = useState({
     areaM2: 0
@@ -20,7 +18,7 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
   /**
    * Extract points from a fabric object
    */
-  const getObjectPoints = useCallback((obj: any): Point[] => {
+  const getObjectPoints = useCallback((obj: any) => {
     if (!obj) return [];
     
     // Handle different object types
@@ -45,7 +43,7 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
         const path = obj.path;
         if (!Array.isArray(path)) return [];
         
-        const points: Point[] = [];
+        const points = [];
         
         // Extract points from path commands
         path.forEach((cmd: any) => {
@@ -97,7 +95,7 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
   /**
    * Calculate area for a single object
    */
-  const calculateObjectArea = useCallback((obj: any): number => {
+  const calculateObjectArea = useCallback((obj: any) => {
     try {
       const points = getObjectPoints(obj);
       if (points.length < 3) return 0;
@@ -106,8 +104,9 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
       const clockwise = isPolygonClockwise(points);
       const orderedPoints = clockwise ? points : [...points].reverse();
       
-      // Calculate area
-      return calculatePolygonArea(orderedPoints);
+      // Calculate area - making sure we convert any Promise to a synchronous value
+      const area = calculatePolygonArea(orderedPoints);
+      return typeof area === 'number' ? area : 0;
     } catch (error) {
       logger.error('Error calculating object area', { error });
       return 0;
@@ -126,9 +125,9 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
     
     try {
       // Get all objects that could represent rooms
-      const objects = fabricCanvas.getObjects().filter((obj) => {
+      const objects = fabricCanvas.getObjects().filter((obj: any) => {
         // Identify closed shapes that could represent rooms
-        return obj.type === 'polygon' || obj.type === 'path' || obj.type === 'rect' || (obj as any).isRoom === true;
+        return obj.type === 'polygon' || obj.type === 'path' || obj.type === 'rect' || obj.isRoom === true;
       });
       
       let totalArea = 0;
@@ -136,7 +135,7 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
       
       // Calculate area for each object
       for (const obj of objects) {
-        const area = await calculateObjectArea(obj);
+        const area = calculateObjectArea(obj);
         
         if (area > 0) {
           // Convert to square meters (canvas units are assumed to be in cm)
@@ -144,14 +143,10 @@ export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
           totalArea += areaM2;
           
           // Try to get a label for the room
-          const objLabel = (obj as any).type === 'room' 
-            ? (obj as any).label || 'Room' 
-            : (obj as any).id 
-              ? `Shape ${(obj as any).id}` 
-              : 'Shape';
+          const objLabel = obj.type === 'room' ? obj.label || 'Room' : obj.id ? `Shape ${obj.id}` : 'Shape';
           
           rooms.push({
-            id: (obj as any).id || `obj_${obj.type}_${Math.random().toString(36).substr(2, 9)}`,
+            id: obj.id || `obj_${obj.type}_${Math.random().toString(36).substr(2, 9)}`,
             label: objLabel,
             areaM2
           });

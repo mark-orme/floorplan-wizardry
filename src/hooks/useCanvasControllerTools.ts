@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas tools and interactions
  */
@@ -7,7 +8,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
 import { toast } from 'sonner';
-import { useVirtualizedCanvas } from './useVirtualizedCanvas';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 
 interface CanvasControllerToolsOptions {
   enableVirtualization?: boolean;

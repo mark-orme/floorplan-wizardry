@@ -1,3 +1,4 @@
+
 /**
  * Hook for canvas virtualization
  * Provides utilities for only rendering objects in the visible viewport
@@ -6,6 +7,15 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import logger from '@/utils/logger';
 import { debounce } from '@/utils/debounce';
+
+export interface VirtualizationPerformanceMetrics {
+  fps: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  renderTime: number;
+  viewportSize?: { width: number; height: number };
+  tileCount?: number;
+}
 
 interface UseVirtualizationEngineProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -135,5 +145,166 @@ export const useVirtualizationEngine = ({
     visibleObjectCount,
     updateVirtualization: debouncedUpdateVirtualization,
     setVirtualization
+  };
+};
+
+interface UseVirtualizedCanvasOptions {
+  enabled?: boolean;
+  paddingPx?: number;
+  autoToggle?: boolean;
+  objectThreshold?: number;
+}
+
+export const useVirtualizedCanvas = (
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  options: UseVirtualizedCanvasOptions = {}
+) => {
+  const {
+    enabled = true,
+    paddingPx = 200,
+    autoToggle = false,
+    objectThreshold = 100
+  } = options;
+  
+  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+  const [performanceMetrics, setPerformanceMetrics] = useState<VirtualizationPerformanceMetrics>({
+    fps: 60,
+    objectCount: 0,
+    visibleObjectCount: 0,
+    renderTime: 0
+  });
+  
+  const viewportWidth = useRef(800);
+  const viewportHeight = useRef(600);
+  
+  // Update dimensions if canvas changes
+  useEffect(() => {
+    if (canvasRef.current) {
+      viewportWidth.current = canvasRef.current.width || 800;
+      viewportHeight.current = canvasRef.current.height || 600;
+    }
+  }, [canvasRef.current]);
+  
+  const {
+    needsVirtualization,
+    visibleArea,
+    visibleObjectCount,
+    updateVirtualization,
+    setVirtualization
+  } = useVirtualizationEngine({
+    fabricCanvasRef: canvasRef,
+    viewportWidth: viewportWidth.current,
+    viewportHeight: viewportHeight.current,
+    paddingPx
+  });
+  
+  // Set up auto-toggling based on object count
+  useEffect(() => {
+    if (!autoToggle || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const checkObjectCount = () => {
+      const count = canvas.getObjects().length;
+      if (count > objectThreshold && !virtualizationEnabled) {
+        setVirtualizationEnabled(true);
+        setVirtualization(true);
+      } else if (count <= objectThreshold && virtualizationEnabled) {
+        setVirtualizationEnabled(false);
+        setVirtualization(false);
+      }
+    };
+    
+    checkObjectCount();
+    
+    const handleObjectAdded = () => checkObjectCount();
+    const handleObjectRemoved = () => checkObjectCount();
+    
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
+    
+    return () => {
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
+    };
+  }, [autoToggle, canvasRef, objectThreshold, virtualizationEnabled, setVirtualization]);
+  
+  // Update metrics periodically
+  useEffect(() => {
+    if (!canvasRef.current || !virtualizationEnabled) return;
+    
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let animFrameId: number;
+    
+    const updateMetrics = () => {
+      frameCount++;
+      const now = performance.now();
+      const elapsed = now - lastTime;
+      
+      if (elapsed >= 1000) {
+        const fps = Math.round((frameCount * 1000) / elapsed);
+        
+        if (canvasRef.current) {
+          setPerformanceMetrics({
+            fps,
+            objectCount: canvasRef.current.getObjects().length,
+            visibleObjectCount,
+            renderTime: elapsed / frameCount
+          });
+        }
+        
+        frameCount = 0;
+        lastTime = now;
+      }
+      
+      animFrameId = requestAnimationFrame(updateMetrics);
+    };
+    
+    updateMetrics();
+    
+    return () => {
+      cancelAnimationFrame(animFrameId);
+    };
+  }, [canvasRef, virtualizationEnabled, visibleObjectCount]);
+  
+  // Set up event listeners for virtualization
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !virtualizationEnabled) return;
+    
+    const handleViewportChange = () => {
+      updateVirtualization();
+    };
+    
+    canvas.on('mouse:wheel', handleViewportChange);
+    canvas.on('mouse:down', handleViewportChange);
+    canvas.on('mouse:up', handleViewportChange);
+    
+    return () => {
+      canvas.off('mouse:wheel', handleViewportChange);
+      canvas.off('mouse:down', handleViewportChange);
+      canvas.off('mouse:up', handleViewportChange);
+    };
+  }, [canvasRef, virtualizationEnabled, updateVirtualization]);
+  
+  const toggleVirtualization = useCallback(() => {
+    setVirtualizationEnabled(prev => {
+      setVirtualization(!prev);
+      return !prev;
+    });
+  }, [setVirtualization]);
+  
+  const refreshVirtualization = useCallback(() => {
+    if (virtualizationEnabled) {
+      updateVirtualization();
+    }
+  }, [virtualizationEnabled, updateVirtualization]);
+  
+  return {
+    virtualizationEnabled,
+    performanceMetrics,
+    toggleVirtualization,
+    refreshVirtualization,
+    visibleArea
   };
 };

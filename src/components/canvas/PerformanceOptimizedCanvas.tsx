@@ -1,8 +1,10 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
+import { debounce } from '@/utils/debounce';
 
 interface PerformanceOptimizedCanvasProps {
   width: number;

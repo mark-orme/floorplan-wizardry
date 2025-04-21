@@ -1,8 +1,7 @@
-
 import { useCallback, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useVirtualizedCanvas, VirtualizationPerformanceMetrics } from './useVirtualizedCanvas';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 import { useCanvasToolManager } from './canvas/useCanvasToolManager';
 import { useAreaCalculation } from './canvas/useAreaCalculation';
 import { createTransferableCanvasState } from '@/utils/transferableUtils';
