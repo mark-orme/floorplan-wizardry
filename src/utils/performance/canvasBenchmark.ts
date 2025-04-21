@@ -1,9 +1,17 @@
 
-import { Canvas, Point, IObjectOptions } from 'fabric';
+import { Canvas, Point, Object as FabricObject } from 'fabric';
 
-interface BenchmarkOptions extends Partial<IObjectOptions> {
+interface BenchmarkOptions {
   iterations?: number;
   objectCount?: number;
+  left?: number;
+  top?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  selectable?: boolean;
+  evented?: boolean;
+  objectCaching?: boolean;
 }
 
 export function runCanvasBenchmark(canvas: Canvas, options: BenchmarkOptions = {}) {
@@ -30,12 +38,14 @@ export function runCanvasBenchmark(canvas: Canvas, options: BenchmarkOptions = {
     
     // Add test objects
     for (let j = 0; j < objectCount; j++) {
-      canvas.add(new fabric.Circle({
+      const circle = new FabricObject({
         left: point.x + (j * 10),
         top: point.y + (j * 10),
         radius: 5,
-        fill: 'red'
-      }));
+        fill: 'red',
+        type: 'circle'
+      });
+      canvas.add(circle);
     }
     
     // Force render

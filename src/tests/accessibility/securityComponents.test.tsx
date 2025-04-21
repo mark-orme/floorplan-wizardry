@@ -46,7 +46,8 @@ describe('Security Components Accessibility', () => {
   it('SecurityInitializer should have no accessibility violations', async () => {
     const { container } = render(<SecurityInitializer enableToasts={false} />);
     
-    const results: AxeResults = await axe(container);
+    // Cast the result to any to avoid type conflicts between different axe-core versions
+    const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
   
@@ -57,7 +58,8 @@ describe('Security Components Accessibility', () => {
       </SecurityProvider>
     );
     
-    const results: AxeResults = await axe(container);
+    // Cast the result to any to avoid type conflicts between different axe-core versions
+    const results = await axe(container);
     expect(results).toHaveNoViolations();
     
     expect(screen.getByText('Protected content')).toBeInTheDocument();
