@@ -9,7 +9,6 @@ import {
   calculatePolygonArea,
   calculateDistance,
   optimizePoints,
-  snapPointsToGrid,
   perpendicularDistance
 } from './engine';
 
@@ -35,7 +34,13 @@ self.onmessage = (event) => {
         break;
         
       case 'snapToGrid':
-        result = snapPointsToGrid(data.points, data.gridSize);
+        // We need to map over each point individually rather than passing the array
+        result = data.points.map((p: Point) => {
+          return {
+            x: Math.round(p.x / data.gridSize) * data.gridSize,
+            y: Math.round(p.y / data.gridSize) * data.gridSize
+          };
+        });
         break;
         
       default:

@@ -4,7 +4,6 @@
 
 import {
   calculatePolygonArea,
-  snapPointsToGrid,
   perpendicularDistance
 } from "@/utils/geometry/engine";
 import { Point } from "@/types/core/Geometry";
@@ -72,7 +71,10 @@ function calculateArea(points: Point[]): number {
 
 // Snap points to grid
 function snapToGridPoints(points: Point[], gridSize: number): Point[] {
-  return points.map(point => snapPointsToGrid(point, gridSize));
+  return points.map(point => ({
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  }));
 }
 
 // Optimize path by removing redundant points
