@@ -62,7 +62,7 @@ export function adaptStroke(stroke: Partial<Stroke>): Stroke {
     type: stroke.type || 'line',
     color: stroke.color || '#000000',
     thickness: stroke.thickness || 1,
-    width: stroke.width || 1
+    width: stroke.width || stroke.thickness || 1
   };
 }
 
@@ -129,7 +129,7 @@ export function adaptRoom(room: Partial<Room>): Room {
  * @returns Complete metadata
  */
 export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
-  return createCompleteMetadata(metadata);
+  return createCompleteMetadata(metadata) as FloorPlanMetadata;
 }
 
 /**
@@ -150,7 +150,7 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
     canvasData: floorPlan.canvasData || null,
     canvasJson: floorPlan.canvasJson || null,
     canvasState: floorPlan.canvasState || null,
-    metadata: floorPlan.metadata || createCompleteMetadata(),
+    metadata: floorPlan.metadata || createCompleteMetadata() as FloorPlanMetadata,
     data: floorPlan.data || {},
     createdAt: floorPlan.createdAt || now,
     updatedAt: floorPlan.updatedAt || now,
@@ -169,16 +169,3 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan>): FloorPlan {
 export function adaptFloorPlans(floorPlans: Partial<FloorPlan>[]): FloorPlan[] {
   return floorPlans.map(plan => adaptFloorPlan(plan));
 }
-
-// Export all type adapter functions
-export {
-  adaptFloorPlan,
-  adaptRoom,
-  adaptWall,
-  adaptStroke,
-  adaptPoint,
-  adaptMetadata,
-  asStrokeType,
-  asRoomType,
-  calculateWallLength
-};

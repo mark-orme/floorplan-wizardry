@@ -31,7 +31,6 @@ export function createTestFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): 
     strokes: partialFloorPlan.strokes || [],
     canvasData: partialFloorPlan.canvasData || null,
     canvasJson: partialFloorPlan.canvasJson || null,
-    canvasState: partialFloorPlan.canvasState || null,
     metadata,
     data: partialFloorPlan.data || {},
     createdAt: partialFloorPlan.createdAt || now,

@@ -66,6 +66,3 @@ export function createCompleteMetadata(overrides: Record<string, any> = {}): Rec
     ...overrides
   };
 }
-
-// Export createMetadata as an alias, but don't redeclare createCompleteMetadata
-export { createCompleteMetadata };

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,9 +42,17 @@ export const useFloorPlans = ({
     gia: 0,
     level: 0,
     index: 0,
-    metadata: createCompleteMetadata({
-      level: 0
-    }),
+    metadata: {
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paperSize: 'A4',
+      level: 0,
+      version: '1.0',
+      author: 'User',
+      dateCreated: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      notes: ''
+    },
     data: {},
     userId: ''
   });
@@ -88,9 +95,17 @@ export const useFloorPlans = ({
       canvasJson: null,
       createdAt: now,
       updatedAt: now,
-      metadata: createCompleteMetadata({
-        level: floorPlans.length
-      }),
+      metadata: {
+        createdAt: now,
+        updatedAt: now,
+        paperSize: 'A4',
+        level: floorPlans.length,
+        version: '1.0',
+        author: 'User',
+        dateCreated: now,
+        lastModified: now,
+        notes: ''
+      },
       data: {},
       userId: 'default-user'
     });

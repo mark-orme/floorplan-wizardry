@@ -1,4 +1,3 @@
-
 /**
  * Mock floor plan factory
  * Utilities for creating valid floor plan test fixtures

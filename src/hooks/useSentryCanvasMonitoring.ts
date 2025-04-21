@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import * as Sentry from '@sentry/react';
 import { startPerformanceTransaction } from '@/utils/sentry/performance';
-import { captureError } from '@/utils/sentry/errorCapture';
+import { captureError, captureException } from '@/utils/sentry/errorCapture';
 import { isSentryInitialized } from '@/utils/sentry/core';
 import logger from '@/utils/logger';
 
@@ -169,7 +169,12 @@ export const useSentryCanvasMonitoring = ({
         transaction.finish('ok');
       } catch (error) {
         transaction.finish('error');
-        captureError(error as Error, 'canvas-state-capture-error');
+        captureException(error, {
+          tags: {
+            component: 'Canvas',
+            action: 'initialization'
+          }
+        });
       }
     },
   };

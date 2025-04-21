@@ -1,4 +1,3 @@
-
 /**
  * Hook for loading floor plan data in the canvas controller
  * @module useCanvasControllerLoader
@@ -73,16 +72,17 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
           const end = wall.end || { x: 0, y: 0 } as Point;
           
           return {
-            id: wall.id,
+            id: wall.id || `wall-${Date.now()}`,
             points: [start, end],
             startPoint: start,
             endPoint: end,
-            start: start,
-            end: end,
-            thickness: wall.thickness || 1,
+            start,
+            end,
+            thickness: wall.thickness || 5,
             height: wall.height || 0,
-            color: wall.color || '#000000',
-            roomIds: wall.roomIds || []
+            color: wall.color || '#888888',
+            roomIds: wall.roomIds || [],
+            length: wall.length || calculateLength(start, end)
           } as Wall;
         }) || [];
         
@@ -119,12 +119,26 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
               ? plan.metadata.updatedAt 
               : new Date(plan.metadata.updatedAt || Date.now()).toISOString(),
             paperSize: plan.metadata.paperSize || 'A4',
-            level: plan.metadata.level || 0
+            level: plan.metadata.level || 0,
+            version: '1.0',
+            author: 'User',
+            dateCreated: typeof plan.metadata.dateCreated === 'string' 
+              ? plan.metadata.dateCreated 
+              : new Date(plan.metadata.dateCreated || Date.now()).toISOString(),
+            lastModified: typeof plan.metadata.lastModified === 'string' 
+              ? plan.metadata.lastModified 
+              : new Date(plan.metadata.lastModified || Date.now()).toISOString(),
+            notes: plan.metadata.notes || ''
           } : {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             paperSize: plan.paperSize || 'A4',
-            level: plan.level || 0
+            level: plan.level || 0,
+            version: '1.0',
+            author: 'User',
+            dateCreated: new Date().toISOString(),
+            lastModified: new Date().toISOString(),
+            notes: ''
           },
           canvasJson: plan.canvasJson || null,
           gia: plan.gia || 0,
@@ -185,3 +199,9 @@ export const useCanvasControllerLoader = (props: UseCanvasControllerLoaderProps)
     loadFloorPlansData
   };
 };
+
+function calculateLength(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}

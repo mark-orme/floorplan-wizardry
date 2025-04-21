@@ -18,6 +18,6 @@ export function createTestStroke(partialStroke: Partial<Stroke> = {}): Stroke {
     type,
     color: partialStroke.color || '#000000',
     thickness,
-    width: partialStroke.width || thickness
+    width: partialStroke.width || thickness // Width should equal thickness if not provided
   };
 }
