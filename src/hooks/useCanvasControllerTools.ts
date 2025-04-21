@@ -13,6 +13,8 @@ import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
 import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
 import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
 import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
+import { fetchWithCSRF } from "@/utils/security";
+import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 
 /**
  * Props for useCanvasControllerTools hook
@@ -105,11 +107,12 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setZoomLevel
   });
 
-  // Use the canvas operations hook
+  // Use the canvas operations hook with CSRF protection
   const canvasOperations = useCanvasOperations({
     fabricCanvasRef,
     gridLayerRef,
-    saveCurrentState: toolFunctions.saveCurrentState
+    saveCurrentState: toolFunctions.saveCurrentState,
+    secureFetch: fetchWithCSRF // Use CSRF-protected fetch
   });
 
   // Use the floor plan operations hook
@@ -120,6 +123,13 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     setGia
   });
 
+  // Use virtualized canvas for performance optimization
+  const { refreshVirtualization } = useVirtualizedCanvas(fabricCanvasRef, {
+    enabled: true,
+    threshold: 100,
+    autoToggle: true
+  });
+
   // Modified handleZoom to accept string direction
   const handleZoom = useCallback((direction: "in" | "out"): void => {
     if (direction === "in") {
@@ -127,7 +137,9 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     } else {
       toolFunctions.handleZoom(0.8);
     }
-  }, [toolFunctions]);
+    // After zooming, refresh virtualization for optimal performance
+    refreshVirtualization();
+  }, [toolFunctions, refreshVirtualization]);
 
   // Tool-related functions
   const handleLineThicknessChange = useCallback((thickness: number): void => {
@@ -166,6 +178,9 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     // Additional tools
     handleLineThicknessChange,
     handleLineColorChange,
-    openMeasurementGuide
+    openMeasurementGuide,
+    
+    // Performance optimization
+    refreshVirtualization
   };
 };

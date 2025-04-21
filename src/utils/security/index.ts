@@ -1,135 +1,62 @@
 
-import { generateCSRFToken, getCSRFToken, verifyCSRFToken, addCSRFToFormData, addCSRFToHeaders, fetchWithCSRF, createFormProtection, CSRFProtection } from './enhancedCsrfProtection';
-import { rotateApiKeys, checkKeyAge } from './secretRotation';
-import { initializeSecurity } from './securityInit';
-import { scanForVulnerabilities } from './vulnerabilityScanner';
-import { secureLocalStorage } from './secureStorage';
-import { auditAccessAttempt } from './accessAuditing';
-import { enableOfflineEncryption } from './offlineEncryption';
-import { fetchSecurityEvents } from './securityAudit';
-import { sanitizeHtml, stripJavaScriptEvents, sanitizeUrl, sanitizeObject } from './InputSanitizationUtils';
-import { secureForm } from './SecurityUtils';
-import { createSecureFileUploadHandler, sanitizeFileName } from './FileSecurityUtils';
+/**
+ * Centralized Security Module
+ * Exports all security-related utilities from a single entry point
+ */
 
-// Create a Security namespace for consistent access
-export const Security = {
-  CSRF: {
-    generateToken: generateCSRFToken,
-    getToken: getCSRFToken,
-    verifyToken: verifyCSRFToken,
-    addToFormData: addCSRFToFormData,
-    addToHeaders: addCSRFToHeaders,
-    fetchWithCSRF
-  },
-  Files: {
-    createSecureFileUploadHandler,
-    sanitizeFileName
-  },
-  Input: {
-    sanitizeHtml,
-    stripJavaScriptEvents,
-    sanitizeUrl,
-    sanitizeObject
-  },
-  Storage: {
-    secureLocalStorage,
-    enableOfflineEncryption
-  },
-  Form: {
-    secureForm
-  }
-};
-
-// Re-export all security functions
+// CSRF Protection
 export {
-  // CSRF Protection
   generateCSRFToken,
   getCSRFToken,
   verifyCSRFToken,
   addCSRFToFormData,
   addCSRFToHeaders,
   fetchWithCSRF,
-  createFormProtection,
-  CSRFProtection,
-  
-  // Secret Rotation
-  rotateApiKeys,
-  checkKeyAge,
-  
-  // Security Initialization
-  initializeSecurity,
-  
-  // Vulnerability Scanning
-  scanForVulnerabilities,
-  
-  // Secure Storage
-  secureLocalStorage,
-  
-  // Access Auditing
-  auditAccessAttempt,
-  
-  // Offline Encryption
-  enableOfflineEncryption,
-  
-  // Security Events
-  fetchSecurityEvents,
-  
-  // Security Utils
-  secureForm
-};
+  createFormProtection
+} from './enhancedCsrfProtection';
 
-/**
- * Apply rate limiting to a function
- * @param fn Function to rate limit
- * @param limitMs Time window in milliseconds
- * @param maxCalls Maximum number of calls allowed in time window
- */
-export function rateLimit<T extends (...args: any[]) => any>(
-  fn: T,
-  limitMs: number = 1000,
-  maxCalls: number = 5
-): (...args: Parameters<T>) => ReturnType<T> | null {
-  const calls: number[] = [];
-  
-  return (...args: Parameters<T>): ReturnType<T> | null => {
-    const now = Date.now();
-    
-    // Remove calls outside of time window
-    while (calls.length > 0 && calls[0] < now - limitMs) {
-      calls.shift();
-    }
-    
-    // Check if we've exceeded the rate limit
-    if (calls.length >= maxCalls) {
-      console.warn('Rate limit exceeded');
-      return null;
-    }
-    
-    // Add this call to the record
-    calls.push(now);
-    
-    return fn(...args);
-  };
-}
+// Authentication & Authorization
+export {
+  isAuthenticated,
+  redirectUnauthorized,
+  hasRole,
+  hasPermission,
+  validateAuthorization,
+  createAuthGuard
+} from './authGuard';
 
-/**
- * Initialize security features
- */
-export function initializeSecurityFeatures(): void {
-  // Generate initial CSRF token
-  generateCSRFToken();
-  
-  // Initialize offline encryption
-  enableOfflineEncryption();
-  
-  // Set up form protection
-  if (typeof document !== 'undefined') {
-    createFormProtection();
-  }
-  
-  // Check API key age
-  checkKeyAge();
-  
-  // Log security initialization
-  console.info('Security features initialized');
-}
+// Data Protection
+export {
+  isEncryptionSupported,
+  generateEncryptionKey,
+  encryptData,
+  decryptData
+} from './dataEncryption';
+
+// Secure Storage
+export { secureLocalStorage } from './secureStorage';
+
+// Audit & Logging
+export { 
+  logSecurityEvent, 
+  fetchSecurityEvents
+} from './securityAudit';
+
+// Token Management
+export {
+  storeAuthToken,
+  getAuthToken,
+  isTokenExpired,
+  clearAuthToken,
+  refreshAuthToken
+} from './secureTokenStorage';
+
+// HTTP Security
+export {
+  secureFetch,
+  addSecurityHeaders,
+  createSafeRedirect
+} from './HttpSecurityUtils';
+
+// Initialize all security features
+export { initializeSecurity } from './securityInit';

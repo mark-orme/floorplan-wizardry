@@ -1,67 +1,84 @@
 
-import { initializeEncryption } from '@/utils/storage/encryptedCanvasStore';
-import { generateCSRFToken } from '@/utils/security/csrfProtection';
+/**
+ * Centralized Security Initialization
+ * Sets up all security features on application startup
+ */
+
+import { createFormProtection, generateCSRFToken } from './enhancedCsrfProtection';
+import { enableOfflineEncryption } from './offlineEncryption';
+import { isEncryptionSupported } from './dataEncryption';
 import { toast } from 'sonner';
 
-let encryptionKey: CryptoKey | null = null;
-
 /**
- * Initialize all security features for the application
+ * Initialize all security features
+ * Call this during application startup
  */
-export async function initializeSecurity(): Promise<void> {
+export function initializeSecurity(): void {
+  if (typeof window === 'undefined') return;
+
   try {
-    console.info('Initializing security features...');
-    
     // Set up CSRF protection
-    if (typeof document !== 'undefined') {
-      generateCSRFToken();
-      console.info('CSRF protection initialized');
-    }
+    generateCSRFToken();
+    createFormProtection();
+    console.info('CSRF protection initialized');
     
-    // Set up encryption
-    const encryptionSupported = typeof window !== 'undefined' && 
-                              window.crypto && 
-                              window.crypto.subtle;
-    
-    if (encryptionSupported) {
-      console.info('Web Crypto API is supported, initializing encryption...');
-      // Initialization will happen when needed
-    } else {
-      console.warn('Web Crypto API is not supported in this browser');
-      toast.warning('Secure storage not available in your browser', { 
-        duration: 5000 
+    // Initialize encryption for offline data
+    enableOfflineEncryption()
+      .then(success => {
+        if (success) {
+          console.info('Offline encryption initialized');
+        } else {
+          console.warn('Failed to initialize offline encryption');
+        }
+      })
+      .catch(error => {
+        console.error('Error initializing offline encryption:', error);
       });
+    
+    // Check if encryption is supported
+    if (!isEncryptionSupported()) {
+      console.warn('Web Crypto API not supported in this browser. Encrypted storage will not be available.');
+      toast.warning('Secure storage is not supported in this browser.', {
+        description: 'Some security features may be limited.',
+        duration: 5000
+      });
+    } else {
+      console.info('Encryption supported and initialized');
     }
     
     // Apply security-related meta tags
-    if (typeof document !== 'undefined') {
-      // Set referrer policy
-      const metaReferrer = document.createElement('meta');
-      metaReferrer.setAttribute('name', 'referrer');
-      metaReferrer.content = 'no-referrer';
-      document.head.appendChild(metaReferrer);
-      
-      console.info('Security headers initialized');
-    }
+    applySecurityHeaders();
     
+    console.info('Security features initialized');
   } catch (error) {
-    console.error('Error initializing security features:', error);
-    toast.error('Failed to initialize security features');
+    console.error('Failed to initialize security features:', error);
+    toast.error('Failed to initialize security features', {
+      description: 'Some security features may be unavailable.'
+    });
   }
 }
 
 /**
- * Get the encryption key for use in other modules
- * @returns The global encryption key or null if not available
+ * Apply security-related headers via meta tags
  */
-export function getEncryptionKey(): CryptoKey | null {
-  return encryptionKey;
-}
+function applySecurityHeaders(): void {
+  if (typeof document === 'undefined') return;
 
-/**
- * Set the global encryption key
- * @param key CryptoKey to set globally
- */
-export function setEncryptionKey(key: CryptoKey): void {
-  encryptionKey = key;
+  // Set Content-Security-Policy
+  const metaCSP = document.createElement('meta');
+  metaCSP.setAttribute('http-equiv', 'Content-Security-Policy');
+  metaCSP.setAttribute('content', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';");
+  document.head.appendChild(metaCSP);
+  
+  // Set referrer policy
+  const metaReferrer = document.createElement('meta');
+  metaReferrer.setAttribute('name', 'referrer');
+  metaReferrer.setAttribute('content', 'same-origin');
+  document.head.appendChild(metaReferrer);
+
+  // Set X-Content-Type-Options
+  const metaNoSniff = document.createElement('meta');
+  metaNoSniff.setAttribute('http-equiv', 'X-Content-Type-Options');
+  metaNoSniff.setAttribute('content', 'nosniff');
+  document.head.appendChild(metaNoSniff);
 }

@@ -1,180 +1,68 @@
+/**
+ * Canvas Render Optimization Utilities
+ * 
+ * Provides utilities for optimizing canvas rendering performance
+ */
 
 import { Canvas as FabricCanvas } from 'fabric';
 
-/**
- * Safely get clientX from a pointer event
- * @param evt Mouse or Touch event
- * @returns clientX coordinate
- */
-const getClientX = (evt: MouseEvent | TouchEvent): number => {
-  if ('clientX' in evt) {
-    return evt.clientX;
-  } else if (evt.touches && evt.touches.length > 0) {
-    return evt.touches[0].clientX;
-  }
-  return 0;
-};
+// Map to track render requests
+const renderRequestMap = new Map<string, number>();
 
 /**
- * Safely get clientY from a pointer event
- * @param evt Mouse or Touch event
- * @returns clientY coordinate
+ * Request a render with optimization
+ * Debounces render calls to avoid excessive rendering
+ * 
+ * @param canvas Fabric canvas instance
+ * @param source Source of the render request for tracking
+ * @param delay Delay in ms before rendering
  */
-const getClientY = (evt: MouseEvent | TouchEvent): number => {
-  if ('clientY' in evt) {
-    return evt.clientY;
-  } else if (evt.touches && evt.touches.length > 0) {
-    return evt.touches[0].clientY;
-  }
-  return 0;
-};
-
-/**
- * Optimize canvas performance by configuring rendering and caching settings
- * @param canvas Fabric canvas instance to optimize
- */
-export const optimizeCanvasPerformance = (canvas: FabricCanvas): void => {
+export function requestOptimizedRender(
+  canvas: FabricCanvas, 
+  source: string = 'generic', 
+  delay: number = 0
+): void {
   if (!canvas) return;
-
-  // Disable automatic rendering for better performance control
-  canvas.renderOnAddRemove = false;
-
-  // Enable object caching for improved rendering speed
-  canvas.forEachObject(obj => {
-    // Disable caching for path and group objects to prevent potential rendering issues
-    obj.objectCaching = !['path', 'group'].includes(obj.type || '');
-  });
-
-  // Enable retina scaling for crisp rendering on high-DPI displays
-  canvas.enableRetinaScaling = true;
-
-  // Optimize selection and interaction performance
-  canvas.skipTargetFind = false;
-
-  // Set stateful properties for better garbage collection
-  canvas.selection = false; // We'll handle selection manually for better control
   
-  // Set better defaults for interactive objects
-  const defaultObjectProps = {
-    transparentCorners: true,
-    cornerColor: 'rgba(0,0,255,0.5)',
-    cornerSize: 8,
-    cornerStyle: 'circle',
-    borderColor: '#2C8CF4',
-    padding: 5
-  };
-  
-  canvas.getObjects().forEach(obj => {
-    if (obj.selectable) {
-      obj.set(defaultObjectProps);
-    }
-  });
-
-  // Set up event delegation for better performance
-  setupEventDelegation(canvas);
-};
-
-/**
- * Set up event delegation to reduce the number of individual event handlers
- */
-const setupEventDelegation = (canvas: FabricCanvas): void => {
-  // Use event delegation instead of individual object handlers
-  canvas.on('mouse:down', function(opt) {
-    const evt = opt.e;
-    if (evt.altKey === true) {
-      this.isDragging = true;
-      this.selection = false;
-      this.lastPosX = getClientX(evt);
-      this.lastPosY = getClientY(evt);
-    }
-  });
-  
-  canvas.on('mouse:move', function(opt) {
-    if (this.isDragging) {
-      const e = opt.e;
-      const vpt = this.viewportTransform;
-      if (!vpt) return;
-      
-      vpt[4] += getClientX(e) - this.lastPosX;
-      vpt[5] += getClientY(e) - this.lastPosY;
-      
-      this.requestRenderAll();
-      this.lastPosX = getClientX(e);
-      this.lastPosY = getClientY(e);
-    }
-  });
-  
-  canvas.on('mouse:up', function() {
-    this.isDragging = false;
-    this.selection = true;
-  });
-};
-
-/**
- * Request an optimized render using requestAnimationFrame to batch multiple render requests
- * @param canvas Fabric canvas instance
- * @param id Unique identifier for the render request
- */
-const animationFrames = new Map<string, number>();
-
-export const requestOptimizedRender = (
-  canvas: FabricCanvas,
-  id: string = 'default'
-): void => {
-  if (animationFrames.has(id)) {
-    cancelAnimationFrame(animationFrames.get(id)!);
+  // Cancel any pending render request for this source
+  if (renderRequestMap.has(source)) {
+    cancelAnimationFrame(renderRequestMap.get(source)!);
+    renderRequestMap.delete(source);
   }
   
-  const frameId = requestAnimationFrame(() => {
-    canvas.requestRenderAll();
-    animationFrames.delete(id);
-  });
-  
-  animationFrames.set(id, frameId);
-};
-
-/**
- * Cancel a pending optimized render request
- * @param id Unique identifier for the render request
- */
-export const cancelOptimizedRender = (id: string = 'default'): void => {
-  if (animationFrames.has(id)) {
-    cancelAnimationFrame(animationFrames.get(id)!);
-    animationFrames.delete(id);
+  if (delay > 0) {
+    // Delayed render with setTimeout
+    const timeoutId = window.setTimeout(() => {
+      canvas.requestRenderAll();
+      renderRequestMap.delete(source);
+    }, delay);
+    
+    // Store timeout ID as number
+    renderRequestMap.set(source, timeoutId as unknown as number);
+  } else {
+    // Immediate render with requestAnimationFrame
+    const frameId = requestAnimationFrame(() => {
+      canvas.requestRenderAll();
+      renderRequestMap.delete(source);
+    });
+    
+    renderRequestMap.set(source, frameId);
   }
-};
+}
 
 /**
- * Create a throttled event handler for smoother interactions
- * @param callback Function to throttle
- * @param throttleTime Minimum time between function calls in milliseconds
- * @returns Throttled function
- */
-export const createSmoothEventHandler = <T extends (...args: any[]) => void>(
-  callback: T,
-  throttleTime: number = 16
-): T => {
-  let lastRun = 0;
-  
-  return ((...args: Parameters<T>) => {
-    const now = performance.now();
-    if (now - lastRun >= throttleTime) {
-      lastRun = now;
-      return callback(...args);
-    }
-  }) as T;
-};
-
-/**
- * Batch multiple canvas operations for better performance
+ * Batch multiple canvas operations and render only once at the end
+ * 
  * @param canvas Fabric canvas instance
- * @param operations Functions to execute in batch
+ * @param operations Array of operations to perform
  */
-export const batchCanvasOperations = (
+export function batchCanvasOperations(
   canvas: FabricCanvas,
   operations: Array<(canvas: FabricCanvas) => void>
-): void => {
-  // Temporarily disable rendering
+): void {
+  if (!canvas || operations.length === 0) return;
+  
+  // Temporarily disable automatic rendering
   const originalRenderOnAddRemove = canvas.renderOnAddRemove;
   canvas.renderOnAddRemove = false;
   
@@ -182,46 +70,103 @@ export const batchCanvasOperations = (
     // Execute all operations
     operations.forEach(operation => operation(canvas));
     
-    // Request a single render
+    // Render once at the end
     requestOptimizedRender(canvas, 'batch-operations');
   } finally {
-    // Restore original setting
+    // Restore original rendering setting
     canvas.renderOnAddRemove = originalRenderOnAddRemove;
   }
-};
+}
 
 /**
- * Debounce a function to limit execution frequency
- * @param fn Function to debounce
- * @param wait Wait time in milliseconds
- * @param immediate Whether to execute immediately
- * @returns Debounced function
+ * Create a smooth event handler that doesn't block the UI
+ * 
+ * @param handler Event handler function
+ * @param throttleMs Throttle time in ms
+ * @returns Throttled handler
  */
-export const debounce = <T extends (...args: any[]) => any>(
-  fn: T,
-  wait: number = 100,
-  immediate: boolean = false
-): ((...args: Parameters<T>) => void) => {
-  let timeout: number | null = null;
+export function createSmoothEventHandler<T extends (...args: any[]) => void>(
+  handler: T,
+  throttleMs: number = 0
+): T {
+  let lastExecTime = 0;
+  let requestId: number | null = null;
   
-  return function(this: any, ...args: Parameters<T>) {
-    const context = this;
+  return ((...args: Parameters<T>) => {
+    const now = performance.now();
     
-    const later = function() {
-      timeout = null;
-      if (!immediate) fn.apply(context, args);
-    };
-    
-    const callNow = immediate && !timeout;
-    
-    if (timeout !== null) {
-      clearTimeout(timeout);
+    // Clear any pending execution
+    if (requestId !== null) {
+      cancelAnimationFrame(requestId);
+      requestId = null;
     }
     
-    timeout = window.setTimeout(later, wait);
+    // If throttling is enabled and we're within the throttle window, schedule for later
+    if (throttleMs > 0 && now - lastExecTime < throttleMs) {
+      requestId = requestAnimationFrame(() => {
+        handler(...args);
+        lastExecTime = performance.now();
+        requestId = null;
+      });
+      return;
+    }
     
-    if (callNow) {
-      fn.apply(context, args);
+    // Otherwise execute immediately
+    handler(...args);
+    lastExecTime = now;
+  }) as T;
+}
+
+/**
+ * Create a load-balanced set of workers for heavy operations
+ * 
+ * @param workerScript Path to worker script
+ * @param count Number of workers to create
+ * @returns Array of workers
+ */
+export function createWorkerPool(workerScript: string, count: number = navigator.hardwareConcurrency || 4) {
+  const workers: Worker[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const worker = new Worker(workerScript);
+    workers.push(worker);
+  }
+  
+  return {
+    /**
+     * Execute a task on the least busy worker
+     * 
+     * @param task Task data to send to worker
+     * @returns Promise with worker result
+     */
+    execute<T, R>(task: T): Promise<R> {
+      return new Promise((resolve, reject) => {
+        // Simple round-robin for now
+        const worker = workers[Math.floor(Math.random() * workers.length)];
+        
+        const messageHandler = (e: MessageEvent) => {
+          worker.removeEventListener('message', messageHandler);
+          worker.removeEventListener('error', errorHandler);
+          resolve(e.data as R);
+        };
+        
+        const errorHandler = (e: ErrorEvent) => {
+          worker.removeEventListener('message', messageHandler);
+          worker.removeEventListener('error', errorHandler);
+          reject(new Error(`Worker error: ${e.message}`));
+        };
+        
+        worker.addEventListener('message', messageHandler);
+        worker.addEventListener('error', errorHandler);
+        worker.postMessage(task);
+      });
+    },
+    
+    /**
+     * Terminate all workers in the pool
+     */
+    terminate() {
+      workers.forEach(worker => worker.terminate());
     }
   };
-};
+}

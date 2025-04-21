@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useCanvasMetrics } from '@/hooks/useCanvasMetrics';
 import { useSentryCanvasMonitoring } from '@/hooks/useSentryCanvasMonitoring';
 import { useRealtimeCanvasSync } from '@/hooks/useRealtimeCanvasSync';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
+import { fetchWithCSRF } from '@/utils/security';
 
 interface CanvasWithPersistenceProps {
   width: number;
@@ -56,6 +58,17 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     };
   }, [width, height, onCanvasReady]);
   
+  // Add virtualization for canvas
+  const { 
+    performanceMetrics,
+    virtualizationEnabled,
+    toggleVirtualization 
+  } = useVirtualizedCanvas(fabricCanvasRef, {
+    enabled: true,
+    threshold: 100,
+    autoToggle: true
+  });
+  
   const { saveCanvas, loadCanvas, lastSaved, isSaving, isLoading } = useAutoSaveCanvas({
     canvas: fabricCanvasRef.current,
     enabled: isCanvasReady,
@@ -69,7 +82,9 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
       if (success) {
         toast.success('Canvas loaded');
       }
-    }
+    },
+    // Use CSRF-protected fetch for saving
+    customFetch: fetchWithCSRF
   });
 
   useEffect(() => {
@@ -98,11 +113,8 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
     fabricCanvasRef
   });
 
-  // Removed fabricCanvasRef prop here from useSentryCanvasMonitoring to match the known props interface
   useSentryCanvasMonitoring({
-    // fabricCanvasRef, // Removed
     canvas: fabricCanvasRef.current,
-    // debug: false, // optional default false is fine
   });
 
   useEffect(() => {
@@ -159,6 +171,22 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
           >
             {isLoading ? 'Loading...' : 'Load'}
           </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleVirtualization}
+            className={virtualizationEnabled ? 'bg-green-100' : ''}
+          >
+            {virtualizationEnabled ? 'Virtualization On' : 'Virtualization Off'}
+          </Button>
+        </div>
+      )}
+      
+      {/* Performance metrics indicator */}
+      {showControls && performanceMetrics.fps > 0 && (
+        <div className="absolute bottom-2 left-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs">
+          {performanceMetrics.fps} FPS | {performanceMetrics.visibleObjectCount}/{performanceMetrics.objectCount} objects
         </div>
       )}
       

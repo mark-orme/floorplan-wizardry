@@ -1,207 +1,116 @@
 
 /**
- * Hook for virtualized canvas rendering optimization
+ * Virtualized Canvas Hook
+ * 
+ * Provides canvas virtualization to improve performance with large floor plans
+ * Only renders objects visible in the current viewport
  */
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { useCanvasPerformanceMonitor } from './useCanvasPerformanceMonitor';
+import { toast } from 'sonner';
 
-export interface PerformanceMetrics {
-  fps: number;
-  objectCount: number;
-  visibleObjectCount: number;
-  renderTime: number;
+interface UseVirtualizedCanvasProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  options?: {
+    enabled?: boolean;
+    threshold?: number; // Number of objects before virtualization is auto-enabled
+    padding?: number; // Padding area around visible viewport
+    autoToggle?: boolean; // Auto-enable virtualization when object count exceeds threshold
+  };
 }
 
-interface UseVirtualizedCanvasOptions {
-  enabled?: boolean;
-  viewportPadding?: number;
-  maxFps?: number;
-}
-
-/**
- * Hook for optimizing canvas performance through virtualization
- * Only renders objects visible in the viewport
- */
-export const useVirtualizedCanvas = (
-  canvasRef: React.MutableRefObject<FabricCanvas | null>,
-  options: UseVirtualizedCanvasOptions = {}
-) => {
+export function useVirtualizedCanvas(
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
+  {
+    enabled = false,
+    threshold = 100,
+    padding = 200,
+    autoToggle = true
+  }: UseVirtualizedCanvasProps['options'] = {}
+) {
+  const [isAutoEnabled, setIsAutoEnabled] = useState(false);
+  
+  // Get canvas dimensions for viewport calculation
+  const getCanvasDimensions = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    return {
+      width: canvas?.width || window.innerWidth,
+      height: canvas?.height || window.innerHeight
+    };
+  }, [fabricCanvasRef]);
+  
+  const { width, height } = getCanvasDimensions();
+  
+  // Initialize performance monitor with virtualization
   const {
-    enabled = true,
-    viewportPadding = 100,
-    maxFps = 60
-  } = options;
-  
-  // State for performance metrics
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
-    fps: 0,
-    objectCount: 0,
-    visibleObjectCount: 0,
-    renderTime: 0
-  });
-  
-  // Reference for tracking virtualization state
-  const virtualizationRef = useRef({
+    performanceData,
+    virtualizationEnabled,
+    toggleVirtualization,
+    updateVirtualization,
+    resetMetrics
+  } = useCanvasPerformanceMonitor({
+    fabricCanvasRef,
     enabled,
-    lastRefreshTime: 0,
-    objectCount: 0,
-    visibleCount: 0,
-    throttleTimeout: null as NodeJS.Timeout | null,
-    needsVirtualization: false
+    viewportWidth: width,
+    viewportHeight: height,
+    virtualizationPadding: padding
   });
   
-  // Update options when they change
+  // Auto-enable virtualization when object count exceeds threshold
   useEffect(() => {
-    virtualizationRef.current.enabled = enabled;
-  }, [enabled]);
+    if (!autoToggle || !fabricCanvasRef.current) return;
+    
+    const objectCount = performanceData.objectCount;
+    
+    // Enable virtualization if object count exceeds threshold
+    if (objectCount > threshold && !virtualizationEnabled && !isAutoEnabled) {
+      toggleVirtualization();
+      setIsAutoEnabled(true);
+      toast.info(`Performance optimization activated (${objectCount} objects)`, {
+        description: 'Large plan detected - enabling virtualization',
+        duration: 5000,
+        id: 'virtualization-enabled'
+      });
+    }
+  }, [
+    performanceData.objectCount, 
+    threshold, 
+    virtualizationEnabled, 
+    autoToggle, 
+    toggleVirtualization,
+    fabricCanvasRef,
+    isAutoEnabled
+  ]);
   
-  // Calculate which objects are in the viewport
+  // Manual toggle with user notification
+  const toggleVirtualizationWithFeedback = useCallback(() => {
+    toggleVirtualization();
+    toast.info(
+      virtualizationEnabled 
+        ? 'Virtualization disabled' 
+        : 'Virtualization enabled',
+      {
+        description: virtualizationEnabled 
+          ? 'All objects will be rendered' 
+          : 'Only objects in viewport will be rendered',
+        duration: 3000
+      }
+    );
+  }, [toggleVirtualization, virtualizationEnabled]);
+  
+  // Force a refresh of the virtualization
   const refreshVirtualization = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !virtualizationRef.current.enabled) {
-      return {
-        objectCount: 0,
-        visibleCount: 0
-      };
+    if (virtualizationEnabled) {
+      updateVirtualization();
     }
-    
-    try {
-      const startTime = performance.now();
-      
-      // Rate limiting - don't refresh more often than maxFps
-      const now = Date.now();
-      const timeSinceLastRefresh = now - virtualizationRef.current.lastRefreshTime;
-      const minRefreshInterval = 1000 / maxFps;
-      
-      if (timeSinceLastRefresh < minRefreshInterval) {
-        if (virtualizationRef.current.throttleTimeout) {
-          clearTimeout(virtualizationRef.current.throttleTimeout);
-        }
-        
-        virtualizationRef.current.throttleTimeout = setTimeout(() => {
-          refreshVirtualization();
-        }, minRefreshInterval - timeSinceLastRefresh);
-        
-        return {
-          objectCount: virtualizationRef.current.objectCount,
-          visibleCount: virtualizationRef.current.visibleCount
-        };
-      }
-      
-      virtualizationRef.current.lastRefreshTime = now;
-      
-      // Get all objects and viewport boundaries
-      const allObjects = canvas.getObjects();
-      const vpt = canvas.viewportTransform;
-      
-      if (!vpt) {
-        return {
-          objectCount: allObjects.length,
-          visibleCount: allObjects.length
-        };
-      }
-      
-      const zoom = canvas.getZoom();
-      const width = canvas.width || 0;
-      const height = canvas.height || 0;
-      
-      // Calculate viewport boundaries with padding
-      const viewportBounds = {
-        left: -vpt[4] / zoom - viewportPadding,
-        top: -vpt[5] / zoom - viewportPadding,
-        right: (-vpt[4] + width) / zoom + viewportPadding,
-        bottom: (-vpt[5] + height) / zoom + viewportPadding
-      };
-      
-      // Count visible objects and update visibility
-      let visibleCount = 0;
-      
-      allObjects.forEach(obj => {
-        if (!obj.getBoundingRect) return;
-        
-        const rect = obj.getBoundingRect();
-        const isVisible = (
-          rect.left < viewportBounds.right &&
-          rect.left + rect.width > viewportBounds.left &&
-          rect.top < viewportBounds.bottom &&
-          rect.top + rect.height > viewportBounds.top
-        );
-        
-        // Set object visibility based on viewport
-        if (obj.visible !== isVisible) {
-          obj.visible = isVisible;
-          obj.setCoords();
-        }
-        
-        if (isVisible) {
-          visibleCount++;
-        }
-      });
-      
-      const renderTime = performance.now() - startTime;
-      
-      // Update reference values
-      virtualizationRef.current.objectCount = allObjects.length;
-      virtualizationRef.current.visibleCount = visibleCount;
-      
-      // Update performance metrics
-      setPerformanceMetrics({
-        fps: Math.round(1000 / Math.max(1, timeSinceLastRefresh)),
-        objectCount: allObjects.length,
-        visibleObjectCount: visibleCount,
-        renderTime
-      });
-      
-      return {
-        objectCount: allObjects.length,
-        visibleCount
-      };
-    } catch (error) {
-      console.error('Error in virtualization:', error);
-      return {
-        objectCount: 0,
-        visibleCount: 0
-      };
-    }
-  }, [canvasRef, maxFps, viewportPadding]);
-  
-  // Set up event listeners for canvas changes
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !virtualizationRef.current.enabled) return;
-    
-    // Define event handler safely
-    const handleCanvasChange = () => {
-      refreshVirtualization();
-    };
-    
-    // Add event listeners for canvas changes
-    canvas.on('object:added', handleCanvasChange);
-    canvas.on('object:removed', handleCanvasChange);
-    canvas.on('object:modified', handleCanvasChange);
-    canvas.on('zoom:changed', handleCanvasChange);
-    
-    // Support viewport translation - use string literal that works with fabric.js
-    canvas.on('viewport:translate' as any, handleCanvasChange);
-    
-    // Initial refresh
-    refreshVirtualization();
-    
-    // Clean up event listeners
-    return () => {
-      if (!canvas) return;
-      
-      canvas.off('object:added', handleCanvasChange);
-      canvas.off('object:removed', handleCanvasChange);
-      canvas.off('object:modified', handleCanvasChange);
-      canvas.off('zoom:changed', handleCanvasChange);
-      canvas.off('viewport:translate' as any, handleCanvasChange);
-    };
-  }, [canvasRef, refreshVirtualization]);
+  }, [updateVirtualization, virtualizationEnabled]);
   
   return {
-    performanceMetrics,
+    performanceMetrics: performanceData,
+    virtualizationEnabled,
+    toggleVirtualization: toggleVirtualizationWithFeedback,
     refreshVirtualization,
-    needsVirtualization: virtualizationRef.current.needsVirtualization
+    resetMetrics
   };
-};
+}
