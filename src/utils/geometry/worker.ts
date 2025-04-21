@@ -4,7 +4,7 @@
  * @module utils/geometry/worker
  */
 
-import { Point } from './engine';
+import { Point } from '@/types/core/Geometry';
 import { 
   calculatePolygonArea,
   calculateDistance,

@@ -40,57 +40,64 @@ if (typeof window !== 'undefined') {
     writable: true
   });
 
-  // Mock canvas rendering context with proper type annotation
-  // Use a function that checks the contextId parameter to return appropriate context
-  HTMLCanvasElement.prototype.getContext = function(contextId: string, options?: any) {
-    // Mock context based on the requested context type
+  // Create a typed mock context for 2D canvas
+  const mockCanvas2DContext = {
+    fillRect: vi.fn(),
+    clearRect: vi.fn(),
+    getImageData: vi.fn(() => ({
+      data: new Array(4),
+    })),
+    putImageData: vi.fn(),
+    createImageData: vi.fn(() => []),
+    setTransform: vi.fn(),
+    drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    scale: vi.fn(),
+    rotate: vi.fn(),
+    translate: vi.fn(),
+    transform: vi.fn(),
+    fillText: vi.fn(),
+    strokeRect: vi.fn(),
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    arc: vi.fn(),
+    fill: vi.fn(),
+    measureText: vi.fn(() => ({ width: 0 })),
+  } as unknown as CanvasRenderingContext2D;
+
+  // Create a typed mock context for bitmap rendering
+  const mockBitmapContext = {
+    transferFromImageBitmap: vi.fn(),
+  } as unknown as ImageBitmapRenderingContext;
+
+  // Create a typed mock context for WebGL
+  const mockWebGLContext = {
+    canvas: document.createElement('canvas'),
+    drawingBufferWidth: 800,
+    drawingBufferHeight: 600,
+    getExtension: vi.fn(() => null),
+    getParameter: vi.fn(() => null),
+    getShaderPrecisionFormat: vi.fn(() => ({
+      precision: 23,
+      rangeMin: 127,
+      rangeMax: 127,
+    })),
+  } as unknown as WebGLRenderingContext;
+
+  // Mock canvas getContext with proper type overloads
+  HTMLCanvasElement.prototype.getContext = function(contextId, options) {
     if (contextId === '2d') {
-      return {
-        fillRect: vi.fn(),
-        clearRect: vi.fn(),
-        getImageData: vi.fn(() => ({
-          data: new Array(4),
-        })),
-        putImageData: vi.fn(),
-        createImageData: vi.fn(() => []),
-        setTransform: vi.fn(),
-        drawImage: vi.fn(),
-        save: vi.fn(),
-        restore: vi.fn(),
-        scale: vi.fn(),
-        rotate: vi.fn(),
-        translate: vi.fn(),
-        transform: vi.fn(),
-        fillText: vi.fn(),
-        strokeRect: vi.fn(),
-        beginPath: vi.fn(),
-        moveTo: vi.fn(),
-        lineTo: vi.fn(),
-        stroke: vi.fn(),
-        arc: vi.fn(),
-        fill: vi.fn(),
-        measureText: vi.fn(() => ({ width: 0 })),
-      } as unknown as CanvasRenderingContext2D;
-    } else if (contextId === 'bitmaprenderer') {
-      return {
-        transferFromImageBitmap: vi.fn(),
-      } as unknown as ImageBitmapRenderingContext;
-    } else if (contextId === 'webgl' || contextId === 'webgl2') {
-      return {
-        canvas: this,
-        drawingBufferWidth: this.width,
-        drawingBufferHeight: this.height,
-        getExtension: vi.fn(() => null),
-        getParameter: vi.fn(() => null),
-        getShaderPrecisionFormat: vi.fn(() => ({
-          precision: 23,
-          rangeMin: 127,
-          rangeMax: 127,
-        })),
-      } as unknown as WebGLRenderingContext;
+      return mockCanvas2DContext;
     }
-    
-    // Return null for unsupported context types
+    if (contextId === 'bitmaprenderer') {
+      return mockBitmapContext;
+    }
+    if (contextId === 'webgl' || contextId === 'webgl2') {
+      return mockWebGLContext;
+    }
     return null;
   };
 }

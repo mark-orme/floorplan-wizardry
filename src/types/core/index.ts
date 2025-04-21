@@ -5,8 +5,18 @@
  * @module types/core
  */
 
-// Re-export from geometry - fix Point ambiguity
-export * from './Geometry';
+// Re-export from geometry - exclude PaperSize to avoid ambiguity
+import * as GeometryTypes from './Geometry';
+export type {
+  Point,
+  LineSegment,
+  Rectangle,
+  Circle,
+  Polygon,
+  BoundingBox,
+  CanvasDimensions,
+  Transform
+} from './Geometry';
 
 // Re-export from drawing
 export * from './DrawingTool';

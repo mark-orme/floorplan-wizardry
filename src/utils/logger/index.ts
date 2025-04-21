@@ -51,7 +51,7 @@ const logConfig = {
 };
 
 // Map log levels to console methods
-const logMethods: Record<LogLevel, keyof Console> = {
+const logMethods: Record<LogLevel, keyof typeof console> = {
   error: 'error',
   warn: 'warn',
   info: 'info',
@@ -201,7 +201,7 @@ const logger = {
     // Format the log message
     const formattedMessage = formatLogMessage(logData);
     
-    // Log to console - Fixed console method calls by accessing via indexed notation
+    // Log to console - Fix console method calls by using the correct approach
     const methodName = logMethods[level];
     
     if (logData.error) {
