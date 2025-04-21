@@ -7,8 +7,19 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useGridPerformanceMonitor } from './useGridPerformanceMonitor';
+import { useGridPerformanceMonitor } from './useCanvasPerformanceMonitor';
 import { toast } from 'sonner';
+
+// Define the performance metrics interface
+export interface VirtualizationPerformanceMetrics {
+  fps: number;
+  frameTime?: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  maxFrameTime?: number;
+  longFrames?: number;
+  [key: string]: number | undefined;
+}
 
 interface UseVirtualizedCanvasProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -30,6 +41,11 @@ export function useVirtualizedCanvas(
   }: UseVirtualizedCanvasProps['options'] = {}
 ) {
   const [isAutoEnabled, setIsAutoEnabled] = useState(false);
+  const [performanceData, setPerformanceData] = useState<VirtualizationPerformanceMetrics>({
+    fps: 0,
+    objectCount: 0,
+    visibleObjectCount: 0
+  });
   
   // Get canvas dimensions for viewport calculation
   const getCanvasDimensions = useCallback(() => {
@@ -42,18 +58,85 @@ export function useVirtualizedCanvas(
   
   const { width, height } = getCanvasDimensions();
   
-  // Initialize performance monitor with virtualization
-  const {
-    performanceData,
-    virtualizationEnabled,
-    toggleVirtualization,
-    updateVirtualization,
-    resetMetrics
-  } = useGridPerformanceMonitor({
-    canvas: fabricCanvasRef.current,
-    enabled,
-    onPerformanceUpdate: undefined
-  });
+  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+  
+  // Handle performance monitoring
+  const updatePerformanceMetrics = useCallback((stats: any) => {
+    setPerformanceData({
+      fps: stats.fps || 0,
+      objectCount: stats.objectCount || 0,
+      visibleObjectCount: stats.visibleObjectCount || 0,
+      frameTime: stats.frameTime,
+      maxFrameTime: stats.maxFrameTime,
+      longFrames: stats.longFrames
+    });
+  }, []);
+  
+  // Use the grid performance monitor
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    // Track performance
+    const stats = useGridPerformanceMonitor({
+      canvas: fabricCanvasRef.current,
+      enabled: true,
+      onPerformanceUpdate: updatePerformanceMetrics
+    });
+    
+    return () => {
+      // Cleanup if needed
+    };
+  }, [fabricCanvasRef, updatePerformanceMetrics]);
+  
+  // Function to update virtualization
+  const updateVirtualization = useCallback(() => {
+    if (!fabricCanvasRef.current || !virtualizationEnabled) return;
+    
+    // Implementation for virtualization update logic
+    const canvas = fabricCanvasRef.current;
+    const zoom = canvas.getZoom() || 1;
+    const vpt = canvas.viewportTransform;
+    
+    if (!vpt) return;
+    
+    // Calculate visible area with padding
+    const visibleArea = {
+      left: -vpt[4] / zoom - padding,
+      top: -vpt[5] / zoom - padding,
+      right: (-vpt[4] + canvas.width!) / zoom + padding,
+      bottom: (-vpt[5] + canvas.height!) / zoom + padding
+    };
+    
+    let visibleCount = 0;
+    
+    // Update object visibility based on viewport
+    canvas.forEachObject(obj => {
+      if (!obj) return;
+      
+      const bounds = obj.getBoundingRect();
+      const isVisible = !(
+        bounds.left > visibleArea.right ||
+        bounds.top > visibleArea.bottom ||
+        bounds.left + bounds.width < visibleArea.left ||
+        bounds.top + bounds.height < visibleArea.top
+      );
+      
+      if (obj.visible !== isVisible) {
+        obj.visible = isVisible;
+        obj.setCoords();
+      }
+      
+      if (isVisible) visibleCount++;
+    });
+    
+    // Update performance data with visible count
+    setPerformanceData(prev => ({
+      ...prev,
+      visibleObjectCount: visibleCount
+    }));
+    
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, virtualizationEnabled, padding]);
   
   // Auto-enable virtualization when object count exceeds threshold
   useEffect(() => {
@@ -63,7 +146,7 @@ export function useVirtualizedCanvas(
   
     // Enable virtualization if object count exceeds threshold
     if (objectCount > threshold && !virtualizationEnabled && !isAutoEnabled) {
-      toggleVirtualization();
+      setVirtualizationEnabled(true);
       setIsAutoEnabled(true);
       toast.info(`Performance optimization activated (${objectCount} objects)`, {
         description: 'Large plan detected - enabling virtualization',
@@ -74,15 +157,14 @@ export function useVirtualizedCanvas(
   }, [
     threshold, 
     virtualizationEnabled, 
-    autoToggle, 
-    toggleVirtualization,
+    autoToggle,
     fabricCanvasRef,
     isAutoEnabled
   ]);
   
   // Manual toggle with user notification
-  const toggleVirtualizationWithFeedback = useCallback(() => {
-    toggleVirtualization();
+  const toggleVirtualization = useCallback(() => {
+    setVirtualizationEnabled(prev => !prev);
     toast.info(
       virtualizationEnabled 
         ? 'Virtualization disabled' 
@@ -94,7 +176,7 @@ export function useVirtualizedCanvas(
         duration: 3000
       }
     );
-  }, [toggleVirtualization, virtualizationEnabled]);
+  }, [virtualizationEnabled]);
   
   // Force a refresh of the virtualization
   const refreshVirtualization = useCallback(() => {
@@ -103,10 +185,19 @@ export function useVirtualizedCanvas(
     }
   }, [updateVirtualization, virtualizationEnabled]);
   
+  // Reset metrics function
+  const resetMetrics = useCallback(() => {
+    setPerformanceData({
+      fps: 0,
+      objectCount: 0,
+      visibleObjectCount: 0
+    });
+  }, []);
+  
   return {
     performanceMetrics: performanceData,
     virtualizationEnabled,
-    toggleVirtualization: toggleVirtualizationWithFeedback,
+    toggleVirtualization,
     refreshVirtualization,
     resetMetrics
   };

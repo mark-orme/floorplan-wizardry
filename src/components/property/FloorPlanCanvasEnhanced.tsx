@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
+import { useVirtualizedCanvas, VirtualizationPerformanceMetrics } from "@/hooks/useVirtualizedCanvas";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { toast } from "sonner";
 
@@ -25,7 +25,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   const [isReady, setIsReady] = useState(false);
   
   const { handleError } = useCanvasErrorHandling({
-    onError: onCanvasError
+    onErrorCallback: onCanvasError // Using a compatible property name
   });
   
   // Use virtualized canvas for performance
@@ -65,7 +65,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         fabricCanvasRef.current = null;
       };
     } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to initialize canvas'));
+      handleError(error instanceof Error ? error : new Error('Failed to initialize canvas'), 'canvas-initialization');
       toast.error("Failed to initialize canvas");
     }
   }, [width, height, onCanvasReady, handleError]);

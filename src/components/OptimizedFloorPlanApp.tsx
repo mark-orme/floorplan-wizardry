@@ -6,6 +6,7 @@ import { EnhancedMemoizedPaperSizeSelector } from './canvas/paper/EnhancedMemoiz
 import { MemoizedToolIndicator } from './canvas/tools/MemoizedToolIndicator';
 import { DrawingMode } from '@/constants/drawingModes';
 import { usePaperSizeManager } from '@/hooks/usePaperSizeManager';
+import { VirtualizationPerformanceMetrics } from '@/hooks/useVirtualizedCanvas';
 
 interface OptimizedFloorPlanAppProps {
   initialTool?: DrawingMode;
