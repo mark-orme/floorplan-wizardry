@@ -1,15 +1,16 @@
+
 /**
  * WASM module exports
  * @module utils/wasm
  */
+
 import { isWasmSupported, getWasmSupportDetails } from './wasmSupport';
 import { calculateAreaJs } from '../geometry';
 import logger from '@/utils/logger';
 
-// Import our WebAssembly modules
-// Use the correct path to the WASM files in the public directory
-import geometryWasmUrl from '/wasm/geometry.wasm?url';
-import pdfWasmUrl from '/wasm/pdf.wasm?url';
+// WASM modules URLs
+const geometryWasmUrl = '/wasm/geometry.wasm';
+const pdfWasmUrl = '/wasm/pdf.wasm';
 
 /**
  * Check if WebAssembly is available
@@ -23,12 +24,12 @@ export const supportsWasm = isWasmSupported;
 export const wasmStatus = {
   geometryModuleLoaded: false,
   pdfModuleLoaded: false,
-  error: null
+  error: null as Error | null
 };
 
 // Module caches
-let geometryModule = null;
-let pdfModule = null;
+let geometryModule: any = null;
+let pdfModule: any = null;
 
 /**
  * Load a WASM module
@@ -36,7 +37,7 @@ let pdfModule = null;
  * @param imports Import object for the module
  * @returns Promise resolving to the instantiated module
  */
-async function loadWasmModule(url, imports = {}) {
+async function loadWasmModule(url: string, imports = {}): Promise<any> {
   try {
     // Use instantiateStreaming if available for better performance
     if (typeof WebAssembly.instantiateStreaming === 'function') {
@@ -73,14 +74,18 @@ async function initGeometryModule() {
         initial: 10,
         maximum: 100
       }),
-      log: (value) => console.log(value)
+      log: (value: any) => console.log(value)
     };
     
     geometryModule = await loadWasmModule(geometryWasmUrl, imports);
     wasmStatus.geometryModuleLoaded = true;
     logger.info('Geometry WASM module loaded successfully');
   } catch (error) {
-    wasmStatus.error = error;
+    if (error instanceof Error) {
+      wasmStatus.error = error;
+    } else {
+      wasmStatus.error = new Error('Unknown error initializing geometry module');
+    }
     logger.error('Failed to initialize geometry WASM module:', error);
     throw error;
   }
@@ -99,14 +104,18 @@ async function initPdfModule() {
         initial: 20,
         maximum: 200
       }),
-      log: (value) => console.log(value)
+      log: (value: any) => console.log(value)
     };
     
     pdfModule = await loadWasmModule(pdfWasmUrl, imports);
     wasmStatus.pdfModuleLoaded = true;
     logger.info('PDF WASM module loaded successfully');
   } catch (error) {
-    wasmStatus.error = error;
+    if (error instanceof Error) {
+      wasmStatus.error = error;
+    } else {
+      wasmStatus.error = new Error('Unknown error initializing PDF module');
+    }
     logger.error('Failed to initialize PDF WASM module:', error);
     throw error;
   }
@@ -118,7 +127,7 @@ async function initPdfModule() {
  * @param module WASM module
  * @returns Pointer to the points array in WASM memory
  */
-function pointsToWasm(points, module) {
+function pointsToWasm(points: any[], module: any): number {
   const memory = module.memory.buffer;
   const pointsPtr = module.allocatePoints(points.length);
   const pointsArray = new Float64Array(memory, pointsPtr, points.length * 2);
@@ -136,7 +145,7 @@ function pointsToWasm(points, module) {
  * @param points Array of points defining the polygon
  * @returns Area of the polygon
  */
-export const calculateArea = async (points) => {
+export const calculateArea = async (points: any[]): Promise<number> => {
   // For empty or invalid polygons
   if (!points || points.length < 3) {
     return 0;
@@ -175,126 +184,6 @@ export const calculateArea = async (points) => {
 };
 
 /**
- * Simplify a polygon path using Douglas-Peucker algorithm
- * @param points Array of points defining the polygon
- * @param tolerance Distance tolerance for simplification
- * @returns Simplified array of points
- */
-export const simplifyPath = async (points, tolerance = 1.0) => {
-  // For small paths, just return the original
-  if (points.length <= 2) {
-    return [...points];
-  }
-  
-  // If WASM is not supported or there's an error, use JS fallback
-  if (!isWasmSupported() || wasmStatus.error) {
-    // Use a simpler JS-based simplification
-    return simplifyPathJs(points, tolerance);
-  }
-  
-  try {
-        // Initialize geometry module if not already loaded
-        if (!wasmStatus.geometryModuleLoaded) {
-            await initGeometryModule();
-        }
-        // If module failed to load, use JS fallback
-        if (!geometryModule) {
-            return simplifyPathJs(points, tolerance);
-        }
-        // Convert points to WASM memory
-        const pointsPtr = pointsToWasm(points, geometryModule);
-        // Call WASM function to simplify path
-        const resultPtr = geometryModule.simplifyPolygon(pointsPtr, points.length, tolerance);
-        const resultSize = geometryModule.getResultSize();
-        // Read results from WASM memory
-        const memory = geometryModule.memory.buffer;
-        const resultArray = new Float64Array(memory, resultPtr, resultSize * 2);
-        // Convert back to JS points
-        const result = [];
-        for (let i = 0; i < resultSize; i++) {
-            result.push({
-                x: resultArray[i * 2],
-                y: resultArray[i * 2 + 1]
-            });
-        }
-        // Free memory in WASM
-        geometryModule.freePoints(pointsPtr);
-        geometryModule.freeResult(resultPtr);
-        return result;
-    }
-    catch (error) {
-        logger.error('Error in WASM simplifyPath, falling back to JS:', error);
-        return simplifyPathJs(points, tolerance);
-    }
-};
-
-/**
- * JavaScript fallback for path simplification
- * Implements a simple version of the Douglas-Peucker algorithm
- */
-function simplifyPathJs(points, tolerance) {
-    if (points.length <= 2)
-        return [...points];
-    // Find the point with the maximum distance
-    const findFurthestPoint = (start, end, points) => {
-        let maxDistance = 0;
-        let index = 0;
-        for (let i = 1; i < points.length - 1; i++) {
-            const distance = perpendicularDistance(points[i], start, end);
-            if (distance > maxDistance) {
-                maxDistance = distance;
-                index = i;
-            }
-        }
-        return { index, distance: maxDistance };
-    };
-    // Calculate perpendicular distance from a point to a line
-    const perpendicularDistance = (point, lineStart, lineEnd) => {
-        const dx = lineEnd.x - lineStart.x;
-        const dy = lineEnd.y - lineStart.y;
-        // If the line is just a point, return the distance to that point
-        if (dx === 0 && dy === 0) {
-            const xDiff = point.x - lineStart.x;
-            const yDiff = point.y - lineStart.y;
-            return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
-        }
-        // Calculate perpendicular distance
-        const lineLengthSquared = dx * dx + dy * dy;
-        const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
-        if (t < 0) {
-            // Point is beyond the lineStart end of the line
-            return Math.sqrt((point.x - lineStart.x) * (point.x - lineStart.x) + (point.y - lineStart.y) * (point.y - lineStart.y));
-        }
-        if (t > 1) {
-            // Point is beyond the lineEnd end of the line
-            return Math.sqrt((point.x - lineEnd.x) * (point.x - lineEnd.x) + (point.y - lineEnd.y) * (point.y - lineEnd.y));
-        }
-        // Point is between the line endpoints
-        const projectX = lineStart.x + t * dx;
-        const projectY = lineStart.y + t * dy;
-        return Math.sqrt((point.x - projectX) * (point.x - projectX) + (point.y - projectY) * (point.y - projectY));
-    };
-    // Recursive Douglas-Peucker algorithm
-    const douglasPeucker = (points, tolerance) => {
-        if (points.length <= 2)
-            return points;
-        const { index, distance } = findFurthestPoint(points[0], points[points.length - 1], points);
-        if (distance > tolerance) {
-            // Recursive case: split and simplify
-            const firstHalf = douglasPeucker(points.slice(0, index + 1), tolerance);
-            const secondHalf = douglasPeucker(points.slice(index), tolerance);
-            // Combine results (avoiding duplicating the split point)
-            return [...firstHalf.slice(0, -1), ...secondHalf];
-        }
-        else {
-            // Base case: all points are within tolerance, keep only endpoints
-            return [points[0], points[points.length - 1]];
-        }
-    };
-    return douglasPeucker(points, tolerance);
-}
-
-/**
  * Generate a PDF from canvas objects
  * @param objects Array of objects to include in the PDF
  * @param width Width of the PDF in points (72 dpi)
@@ -302,7 +191,12 @@ function simplifyPathJs(points, tolerance) {
  * @param title Title of the PDF
  * @returns ArrayBuffer containing the PDF data
  */
-export const generatePdf = async (objects, width, height, title = 'Canvas Export') => {
+export const generatePdf = async (
+  objects: any[],
+  width: number,
+  height: number,
+  title = 'Canvas Export'
+): Promise<ArrayBuffer> => {
   // If WASM is not supported or there's an error, throw an error
   if (!isWasmSupported() || wasmStatus.error) {
     throw new Error('PDF generation requires WebAssembly support');
@@ -332,44 +226,44 @@ export const generatePdf = async (objects, width, height, title = 'Canvas Export
         if (points && points.length > 0) {
           const pointsPtr = pointsToWasm(points, pdfModule);
           pdfModule.addPath(
-            docPtr, 
-            pointsPtr, 
-            points.length, 
-            obj.fill || '#000000', 
-            obj.stroke || '#000000', 
+            docPtr,
+            pointsPtr,
+            points.length,
+            obj.fill || '#000000',
+            obj.stroke || '#000000',
             obj.strokeWidth || 1
           );
           pdfModule.freePoints(pointsPtr);
         }
       } else if (obj.type === 'rect') {
         pdfModule.addRectangle(
-          docPtr, 
-          obj.left || 0, 
-          obj.top || 0, 
-          obj.width || 10, 
-          obj.height || 10, 
-          obj.fill || '#000000', 
-          obj.stroke || '#000000', 
+          docPtr,
+          obj.left || 0,
+          obj.top || 0,
+          obj.width || 10,
+          obj.height || 10,
+          obj.fill || '#000000',
+          obj.stroke || '#000000',
           obj.strokeWidth || 1
         );
       } else if (obj.type === 'circle') {
         pdfModule.addCircle(
-          docPtr, 
-          obj.left || 0, 
-          obj.top || 0, 
-          obj.radius || 5, 
-          obj.fill || '#000000', 
-          obj.stroke || '#000000', 
+          docPtr,
+          obj.left || 0,
+          obj.top || 0,
+          obj.radius || 5,
+          obj.fill || '#000000',
+          obj.stroke || '#000000',
           obj.strokeWidth || 1
         );
       } else if (obj.type === 'text') {
         const textPtr = pdfModule.allocateString(obj.text || '');
         pdfModule.addText(
-          docPtr, 
-          textPtr, 
-          obj.left || 0, 
-          obj.top || 0, 
-          obj.fontSize || 12, 
+          docPtr,
+          textPtr,
+          obj.left || 0,
+          obj.top || 0,
+          obj.fontSize || 12,
           obj.fill || '#000000'
         );
         pdfModule.freeString(textPtr);
@@ -394,7 +288,7 @@ export const generatePdf = async (objects, width, height, title = 'Canvas Export
     return result;
   } catch (error) {
     logger.error('Error generating PDF:', error);
-    throw new Error(`Failed to generate PDF: ${error}`);
+    throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 
@@ -402,7 +296,7 @@ export const generatePdf = async (objects, width, height, title = 'Canvas Export
  * Initialize WASM modules
  * @returns Promise that resolves when initialization is complete
  */
-export const initWasmModules = async () => {
+export const initWasmModules = async (): Promise<void> => {
   if (!isWasmSupported()) {
     wasmStatus.error = new Error('WebAssembly not supported in this browser');
     logger.warn('WebAssembly not supported in this browser');
@@ -422,7 +316,7 @@ export const initWasmModules = async () => {
     
     logger.info('WASM modules initialized successfully');
   } catch (error) {
-    wasmStatus.error = error;
+    wasmStatus.error = error instanceof Error ? error : new Error('Unknown error initializing WASM modules');
     logger.error('Failed to initialize WASM modules:', error);
   }
 };
@@ -430,7 +324,12 @@ export const initWasmModules = async () => {
 /**
  * Get support status and feature details
  */
-export const getWasmFeatures = () => {
+export const getWasmFeatures = (): {
+  supported: boolean;
+  geometryAvailable: boolean;
+  pdfAvailable: boolean;
+  features: Record<string, boolean>;
+} => {
   return {
     supported: isWasmSupported(),
     geometryAvailable: wasmStatus.geometryModuleLoaded,

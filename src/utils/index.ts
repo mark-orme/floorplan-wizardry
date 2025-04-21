@@ -19,7 +19,7 @@ export * from './fabricPath';
 
 // Re-export from geometry utilities but explicitly rename potentially ambiguous exports
 export { 
-  calculateArea,
+  calculatePolygonArea as calculateArea,
   calculateGIA,
   rotatePoint,
   translatePoint,

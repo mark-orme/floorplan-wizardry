@@ -51,7 +51,7 @@ const logConfig = {
 };
 
 // Map log levels to console methods
-const logMethods: Record<LogLevel, keyof Console> = {
+const logMethods: Record<LogLevel, keyof typeof console> = {
   error: 'error',
   warn: 'warn',
   info: 'info',

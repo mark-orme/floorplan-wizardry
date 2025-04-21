@@ -1,30 +1,16 @@
-
 /**
- * Geometry engine utility functions
+ * Core geometry engine functionality
  * @module utils/geometry/engine
  */
 
 import { Point, Rectangle } from '@/types/core/Geometry';
 
 /**
- * Calculate area of a polygon using the Shoelace formula (Gauss's area formula)
- * 
+ * Calculate polygon area using the Shoelace formula
  * @param points Array of points defining the polygon
  * @returns Area of the polygon
  */
-export function calculateArea(points: Point[]): number {
-  return calculateAreaJs(points);
-}
-
-/**
- * Calculate area of a polygon using the Shoelace formula (Gauss's area formula)
- * Pure JavaScript implementation for fallback when WASM is not available
- * 
- * @param points Array of points defining the polygon
- * @returns Area of the polygon
- */
-export function calculateAreaJs(points: Point[]): number {
-  // For empty or invalid polygons
+export function calculatePolygonArea(points: Point[]): number {
   if (!points || points.length < 3) {
     return 0;
   }
@@ -45,20 +31,102 @@ export function calculateAreaJs(points: Point[]): number {
 }
 
 /**
- * Calculate Gross Internal Area (GIA)
+ * Calculate gross internal area (GIA) - area adjusted for scale
  * @param points Array of points defining the polygon
- * @param pixelsPerMeter Scaling factor to convert pixels to meters
+ * @param pixelsPerMeter Scale factor (pixels per meter)
  * @returns Area in square meters
  */
-export function calculateGIA(points: Point[], pixelsPerMeter: number = 100): number {
-  const areaInPixels = calculateArea(points);
+export function calculateGIA(points: Point[], pixelsPerMeter: number): number {
+  const areaInPixels = calculatePolygonArea(points);
+  
+  if (pixelsPerMeter <= 0) {
+    return areaInPixels; // Return in pixels if scale is invalid
+  }
+  
   return areaInPixels / (pixelsPerMeter * pixelsPerMeter);
+}
+
+/**
+ * Calculate distance between two points
+ * @param start First point
+ * @param end Second point
+ * @returns Distance between points
+ */
+export function calculateDistance(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Get distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
+ */
+export function getDistance(p1: Point, p2: Point): number {
+  return calculateDistance(p1, p2);
+}
+
+/**
+ * Format distance for display
+ * @param distanceInPixels Distance in pixels
+ * @param pixelsPerMeter Conversion factor
+ * @returns Formatted distance string
+ */
+export function formatDistance(distanceInPixels: number, pixelsPerMeter: number): string {
+  if (pixelsPerMeter <= 0) return `${Math.round(distanceInPixels)}px`;
+  
+  const distanceInMeters = distanceInPixels / pixelsPerMeter;
+  return `${distanceInMeters.toFixed(2)}m`;
+}
+
+/**
+ * Format display distance with optional units
+ * @param distanceInPixels Distance in pixels
+ * @param pixelsPerMeter Conversion factor
+ * @param showUnits Whether to include units
+ * @returns Formatted distance string
+ */
+export function formatDisplayDistance(
+  distanceInPixels: number,
+  pixelsPerMeter: number,
+  showUnits = true
+): string {
+  if (pixelsPerMeter <= 0) {
+    return showUnits ? `${Math.round(distanceInPixels)}px` : `${Math.round(distanceInPixels)}`;
+  }
+  
+  const distanceInMeters = distanceInPixels / pixelsPerMeter;
+  return showUnits ? `${distanceInMeters.toFixed(2)}m` : `${distanceInMeters.toFixed(2)}`;
+}
+
+/**
+ * Convert pixels to meters
+ * @param pixels Value in pixels
+ * @param pixelsPerMeter Conversion factor
+ * @returns Value in meters
+ */
+export function pixelsToMeters(pixels: number, pixelsPerMeter: number): number {
+  if (pixelsPerMeter <= 0) return pixels;
+  return pixels / pixelsPerMeter;
+}
+
+/**
+ * Convert meters to pixels
+ * @param meters Value in meters
+ * @param pixelsPerMeter Conversion factor
+ * @returns Value in pixels
+ */
+export function metersToPixels(meters: number, pixelsPerMeter: number): number {
+  if (pixelsPerMeter <= 0) return meters;
+  return meters * pixelsPerMeter;
 }
 
 /**
  * Rotate a point around an origin
  * @param point Point to rotate
- * @param origin Origin point for rotation
+ * @param origin Origin point
  * @param angle Angle in radians
  * @returns Rotated point
  */
@@ -73,10 +141,10 @@ export function rotatePoint(point: Point, origin: Point, angle: number): Point {
 }
 
 /**
- * Translate a point by a vector
+ * Translate a point
  * @param point Point to translate
- * @param dx X translation
- * @param dy Y translation
+ * @param dx X displacement
+ * @param dy Y displacement
  * @returns Translated point
  */
 export function translatePoint(point: Point, dx: number, dy: number): Point {
@@ -89,12 +157,17 @@ export function translatePoint(point: Point, dx: number, dy: number): Point {
 /**
  * Scale a point from an origin
  * @param point Point to scale
- * @param origin Origin point for scaling
- * @param scaleX X scale factor
- * @param scaleY Y scale factor
+ * @param origin Origin point
+ * @param scaleX Scale factor in X
+ * @param scaleY Scale factor in Y
  * @returns Scaled point
  */
-export function scalePoint(point: Point, origin: Point, scaleX: number, scaleY: number = scaleX): Point {
+export function scalePoint(
+  point: Point,
+  origin: Point,
+  scaleX: number,
+  scaleY = scaleX
+): Point {
   return {
     x: origin.x + (point.x - origin.x) * scaleX,
     y: origin.y + (point.y - origin.y) * scaleY
@@ -102,12 +175,33 @@ export function scalePoint(point: Point, origin: Point, scaleX: number, scaleY: 
 }
 
 /**
- * Validate if a polygon is valid
- * @param points Polygon points
- * @returns True if the polygon is valid
+ * Calculate midpoint between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Midpoint
  */
-export function validatePolygon(points: Point[]): boolean {
-  return points.length >= 3;
+export function calculateMidpoint(p1: Point, p2: Point): Point {
+  return {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2
+  };
+}
+
+/**
+ * Alias for calculateMidpoint
+ */
+export function getMidpoint(p1: Point, p2: Point): Point {
+  return calculateMidpoint(p1, p2);
+}
+
+/**
+ * Calculate angle between two points in radians
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Angle in radians
+ */
+export function calculateAngle(p1: Point, p2: Point): number {
+  return Math.atan2(p2.y - p1.y, p2.x - p1.x);
 }
 
 /**
@@ -121,24 +215,38 @@ export function isPolygonClosed(points: Point[]): boolean {
   const first = points[0];
   const last = points[points.length - 1];
   
-  // Check if first and last points are the same
-  return Math.abs(first.x - last.x) < 0.001 && Math.abs(first.y - last.y) < 0.001;
+  // Check if first and last points are the same or very close
+  const distance = calculateDistance(first, last);
+  return distance < 0.001;
 }
 
 /**
- * Get bounding box of points
+ * Validate a polygon
+ * @param points Polygon points
+ * @returns True if the polygon is valid
+ */
+export function validatePolygon(points: Point[]): boolean {
+  return points.length >= 3;
+}
+
+/**
+ * Get bounding box of a set of points
  * @param points Array of points
  * @returns Bounding rectangle
  */
 export function getBoundingBox(points: Point[]): Rectangle {
-  if (!points.length) return { x: 0, y: 0, width: 0, height: 0 };
+  if (!points.length) {
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }
   
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
+  let minX = points[0].x;
+  let minY = points[0].y;
+  let maxX = points[0].x;
+  let maxY = points[0].y;
   
-  for (const point of points) {
+  for (let i = 1; i < points.length; i++) {
+    const point = points[i];
+    
     minX = Math.min(minX, point.x);
     minY = Math.min(minY, point.y);
     maxX = Math.max(maxX, point.x);
@@ -154,72 +262,39 @@ export function getBoundingBox(points: Point[]): Rectangle {
 }
 
 /**
- * Get midpoint between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Midpoint
+ * Check if a value is an exact multiple of the grid size
+ * @param value Value to check
+ * @param gridSize Grid size
+ * @returns True if the value is a multiple of the grid size
  */
-export function getMidpoint(p1: Point, p2: Point): Point {
-  return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  };
+export function isExactGridMultiple(value: number, gridSize: number): boolean {
+  if (gridSize <= 0) return false;
+  return Math.abs(value % gridSize) < 0.001;
 }
 
 /**
- * Convert pixels to meters
- * @param pixels Value in pixels
- * @param pixelsPerMeter Scaling factor
- * @returns Value in meters
+ * Simplify a path using the Douglas-Peucker algorithm
+ * @param points Path points
+ * @param tolerance Simplification tolerance
+ * @returns Simplified path
  */
-export function pixelsToMeters(pixels: number, pixelsPerMeter: number = 100): number {
-  return pixels / pixelsPerMeter;
-}
-
-/**
- * Convert meters to pixels
- * @param meters Value in meters
- * @param pixelsPerMeter Scaling factor
- * @returns Value in pixels
- */
-export function metersToPixels(meters: number, pixelsPerMeter: number = 100): number {
-  return meters * pixelsPerMeter;
-}
-
-/**
- * Simplify a path using Douglas-Peucker algorithm
- * @param points Array of points
- * @param tolerance Distance tolerance
- * @returns Simplified array of points
- */
-export function simplifyPath(points: Point[], tolerance: number = 1): Point[] {
+export function simplifyPath(points: Point[], tolerance = 1): Point[] {
   if (points.length <= 2) return [...points];
   
   // Implementation of Douglas-Peucker algorithm
-  const findPerpendicularDistance = (p: Point, p1: Point, p2: Point): number => {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    
-    // If p1 and p2 are the same point
-    if (dx === 0 && dy === 0) return Math.sqrt((p.x - p1.x) ** 2 + (p.y - p1.y) ** 2);
-    
-    const t = ((p.x - p1.x) * dx + (p.y - p1.y) * dy) / (dx * dx + dy * dy);
-    
-    if (t < 0) return Math.sqrt((p.x - p1.x) ** 2 + (p.y - p1.y) ** 2);
-    if (t > 1) return Math.sqrt((p.x - p2.x) ** 2 + (p.y - p2.y) ** 2);
-    
-    return Math.abs((dy * p.x - dx * p.y + p2.x * p1.y - p2.y * p1.x) / Math.sqrt(dx * dx + dy * dy));
-  };
-  
   const douglasPeucker = (points: Point[], tolerance: number): Point[] => {
     if (points.length <= 2) return points;
     
-    // Find the point with the maximum distance
     let maxDistance = 0;
     let maxIndex = 0;
     
+    const start = points[0];
+    const end = points[points.length - 1];
+    
+    // Find point with maximum distance from line
     for (let i = 1; i < points.length - 1; i++) {
-      const distance = findPerpendicularDistance(points[i], points[0], points[points.length - 1]);
+      const distance = perpendicularDistance(points[i], start, end);
+      
       if (distance > maxDistance) {
         maxDistance = distance;
         maxIndex = i;
@@ -228,14 +303,14 @@ export function simplifyPath(points: Point[], tolerance: number = 1): Point[] {
     
     // If max distance is greater than tolerance, recursively simplify
     if (maxDistance > tolerance) {
-      const firstSegment = douglasPeucker(points.slice(0, maxIndex + 1), tolerance);
-      const secondSegment = douglasPeucker(points.slice(maxIndex), tolerance);
+      const firstHalf = douglasPeucker(points.slice(0, maxIndex + 1), tolerance);
+      const secondHalf = douglasPeucker(points.slice(maxIndex), tolerance);
       
-      // Concatenate the two segments without duplicate points
-      return [...firstSegment.slice(0, -1), ...secondSegment];
+      // Combine the results, avoiding duplicate points
+      return [...firstHalf.slice(0, -1), ...secondHalf];
     } else {
-      // If all points are within tolerance, return just the endpoints
-      return [points[0], points[points.length - 1]];
+      // Otherwise, return just the endpoints
+      return [start, end];
     }
   };
   
@@ -243,137 +318,110 @@ export function simplifyPath(points: Point[], tolerance: number = 1): Point[] {
 }
 
 /**
- * Smooth a path using Bezier curves
- * @param points Array of points
- * @param tension Tension parameter (0-1)
- * @returns Smoothed array of points
+ * Smooth a path using Chaikin's algorithm
+ * @param points Path points
+ * @param iterations Number of smoothing iterations
+ * @returns Smoothed path
  */
-export function smoothPath(points: Point[], tension: number = 0.5): Point[] {
-  if (points.length <= 2) return [...points];
+export function smoothPath(points: Point[], iterations = 1): Point[] {
+  if (points.length <= 2 || iterations <= 0) return [...points];
   
-  const result: Point[] = [];
-  const len = points.length;
+  let result = [...points];
   
-  // Add first point
-  result.push(points[0]);
-  
-  // Add intermediate points with smoothing
-  for (let i = 0; i < len - 2; i++) {
-    const p0 = i > 0 ? points[i - 1] : points[0];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = i < len - 2 ? points[i + 2] : p2;
+  for (let iter = 0; iter < iterations; iter++) {
+    const smoothed: Point[] = [];
     
-    // Add several points for each segment
-    for (let t = 0; t < 1; t += 0.1) {
-      const t2 = t * t;
-      const t3 = t2 * t;
+    // Always keep the first point
+    smoothed.push(result[0]);
+    
+    // Apply Chaikin's algorithm to each pair of points
+    for (let i = 0; i < result.length - 1; i++) {
+      const p0 = result[i];
+      const p1 = result[i + 1];
       
-      // Catmull-Rom to Cubic Bezier conversion
-      const x = 0.5 * (
-        (2 * p1.x) +
-        (-p0.x + p2.x) * t +
-        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
-        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
-      );
+      // Create new points at 1/4 and 3/4 positions
+      const q = {
+        x: p0.x * 0.75 + p1.x * 0.25,
+        y: p0.y * 0.75 + p1.y * 0.25
+      };
       
-      const y = 0.5 * (
-        (2 * p1.y) +
-        (-p0.y + p2.y) * t +
-        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
-        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
-      );
+      const r = {
+        x: p0.x * 0.25 + p1.x * 0.75,
+        y: p0.y * 0.25 + p1.y * 0.75
+      };
       
-      result.push({ x, y });
+      smoothed.push(q, r);
     }
+    
+    // Always keep the last point
+    smoothed.push(result[result.length - 1]);
+    
+    result = smoothed;
   }
-  
-  // Add last point
-  result.push(points[len - 1]);
   
   return result;
 }
 
 /**
- * Calculate distance between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Distance between points
+ * Calculate perpendicular distance from point to line
+ * @param point Point to check
+ * @param lineStart Line start point
+ * @param lineEnd Line end point
+ * @returns Perpendicular distance
  */
-export function calculateDistance(p1: Point, p2: Point): number {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-/**
- * Format distance value for display
- * @param distance Distance value in pixels
- * @param pixelsPerMeter Scaling factor
- * @returns Formatted distance string
- */
-export function formatDistance(distance: number, pixelsPerMeter: number = 100): string {
-  const meters = pixelsToMeters(distance, pixelsPerMeter);
+export function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
   
-  if (meters < 1) {
-    // Show in centimeters if less than 1 meter
-    return `${Math.round(meters * 100)} cm`;
-  } else {
-    // Show in meters with 2 decimal places
-    return `${meters.toFixed(2)} m`;
+  // Line length squared
+  const lineLengthSquared = dx * dx + dy * dy;
+  
+  if (lineLengthSquared === 0) {
+    // Line is a point, return distance to that point
+    return calculateDistance(point, lineStart);
   }
+  
+  // Calculate projection factor
+  const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
+  
+  if (t < 0) {
+    // Point is beyond lineStart
+    return calculateDistance(point, lineStart);
+  }
+  
+  if (t > 1) {
+    // Point is beyond lineEnd
+    return calculateDistance(point, lineEnd);
+  }
+  
+  // Perpendicular point on line
+  const projX = lineStart.x + t * dx;
+  const projY = lineStart.y + t * dy;
+  
+  return calculateDistance(point, { x: projX, y: projY });
 }
 
 /**
- * Check if a value is an exact multiple of the grid size
- * @param value Value to check
+ * Optimize points by removing redundant ones
+ * @param points Array of points
+ * @param tolerance Tolerance for optimization
+ * @returns Optimized array of points
+ */
+export function optimizePoints(points: Point[], tolerance = 1): Point[] {
+  return simplifyPath(points, tolerance);
+}
+
+/**
+ * Snap points to a grid
+ * @param points Array of points
  * @param gridSize Grid size
- * @returns True if value is an exact multiple of grid size
+ * @returns Array of snapped points
  */
-export function isExactGridMultiple(value: number, gridSize: number): boolean {
-  const remainder = Math.abs(value) % gridSize;
-  return remainder < 0.001 || Math.abs(remainder - gridSize) < 0.001;
-}
-
-/**
- * Calculate midpoint between two points
- * @param p1 First point
- * @param p2 Second point
- * @returns Midpoint
- */
-export function calculateMidpoint(p1: Point, p2: Point): Point {
-  return getMidpoint(p1, p2);
-}
-
-/**
- * Calculate angle between three points
- * @param p1 First point
- * @param p2 Center point
- * @param p3 Third point
- * @returns Angle in radians
- */
-export function calculateAngle(p1: Point, p2: Point, p3: Point): number {
-  const angle1 = Math.atan2(p1.y - p2.y, p1.x - p2.x);
-  const angle2 = Math.atan2(p3.y - p2.y, p3.x - p2.x);
-  return angle2 - angle1;
-}
-
-/**
- * Get distance between two points (alias for calculateDistance)
- * @param p1 First point
- * @param p2 Second point
- * @returns Distance between points
- */
-export function getDistance(p1: Point, p2: Point): number {
-  return calculateDistance(p1, p2);
-}
-
-/**
- * Format distance for display with different units
- * @param distance Distance in pixels
- * @param pixelsPerMeter Scaling factor
- * @returns Formatted distance string
- */
-export function formatDisplayDistance(distance: number, pixelsPerMeter: number = 100): string {
-  return formatDistance(distance, pixelsPerMeter);
+export function snapPointsToGrid(points: Point[], gridSize: number): Point[] {
+  if (gridSize <= 0) return [...points];
+  
+  return points.map(point => ({
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
+  }));
 }

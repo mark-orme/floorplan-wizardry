@@ -4,7 +4,14 @@
  * Uses transferable objects for better performance
  */
 
-import { Point, calculatePolygonArea, calculateDistance, optimizePoints, snapPointsToGrid, perpendicularDistance } from '../utils/geometry/engine';
+import { Point } from '@/types/core/Geometry';
+import {
+  calculatePolygonArea,
+  calculateDistance,
+  optimizePoints,
+  snapPointsToGrid,
+  perpendicularDistance
+} from '@/utils/geometry/engine';
 
 // Define types for worker messages
 type WorkerMessageData = {
