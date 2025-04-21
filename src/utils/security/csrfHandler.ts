@@ -41,9 +41,11 @@ export function initializeCSRFProtection(): void {
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList') {
         const forms = document.querySelectorAll('form:not([data-csrf-protected])');
-        // Properly cast the NodeList to the expected type
+        // Only proceed if there are forms to process
         if (forms.length > 0) {
-          applyCSRFToForms(forms as unknown as NodeListOf<HTMLFormElement>);
+          // Explicitly cast the forms NodeList to the expected type
+          const formElements = forms as unknown as NodeListOf<HTMLFormElement>;
+          applyCSRFToForms(formElements);
         }
       }
     });

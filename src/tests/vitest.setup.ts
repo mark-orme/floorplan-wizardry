@@ -7,10 +7,10 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { expect, afterEach, beforeEach, vi } from 'vitest';
 
-// Note: We avoid importing directly from vitest in this setup file
-// to prevent the "Vitest failed to access its internal state" error
-// Instead, we manually augment expect as needed
+// Extend expect with testing-library matchers
+expect.extend(matchers);
 
 // Clean up after each test
 afterEach(() => {
@@ -38,9 +38,8 @@ global.requestAnimationFrame = callback => {
   return 0;
 };
 
-// Mock canvas methods - Fixed the type issue by defining the mock differently
+// Mock canvas methods
 if (typeof window !== 'undefined') {
-  // Fix: We need to use a type assertion to make this work with TypeScript
   HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation(() => {
     return {
       fillRect: vi.fn(),
@@ -74,7 +73,8 @@ if (typeof window !== 'undefined') {
       createRadialGradient: vi.fn(() => ({
         addColorStop: vi.fn(),
       })),
-      canvas: document.createElement('canvas'), // Add missing required properties
-    } as unknown as CanvasRenderingContext2D; // Type assertion to fix the error
+      canvas: document.createElement('canvas'),
+    } as unknown as CanvasRenderingContext2D;
   });
 }
+
