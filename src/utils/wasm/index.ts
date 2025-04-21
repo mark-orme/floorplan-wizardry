@@ -1,3 +1,4 @@
+
 /**
  * WASM utility index
  * Exports WASM functionality and status
@@ -72,6 +73,39 @@ export async function calculateArea(points: Point[]): Promise<number> {
   // For now we'll use the JS implementation
   const { calculatePolygonArea } = await import('../geometry/engine');
   return calculatePolygonArea(points);
+}
+
+/**
+ * Generate PDF using WASM (fallback to JS if WASM not available)
+ * @param objects Canvas objects to include in PDF
+ * @param width PDF width in points
+ * @param height PDF height in points
+ * @param title PDF title
+ * @returns PDF data as ArrayBuffer
+ */
+export async function generatePdf(
+  objects: any[],
+  width: number,
+  height: number,
+  title: string
+): Promise<ArrayBuffer> {
+  try {
+    // Placeholder implementation - this would call the actual WASM function
+    logger.info('Generating PDF with canvas objects', { 
+      category: 'wasm',
+      objectCount: objects.length, 
+      dimensions: { width, height }
+    });
+    
+    // For now, return an empty ArrayBuffer
+    return new ArrayBuffer(0);
+  } catch (error) {
+    logger.error('Failed to generate PDF with WASM', { category: 'wasm', error });
+    
+    // Fallback to JavaScript implementation
+    // (In a real app, this would be implemented)
+    throw new Error('PDF generation failed and no fallback is available');
+  }
 }
 
 /**

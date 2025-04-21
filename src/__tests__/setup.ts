@@ -87,8 +87,8 @@ if (typeof window !== 'undefined') {
     })),
   } as unknown as WebGLRenderingContext;
 
-  // Mock canvas getContext with proper type overloads
-  HTMLCanvasElement.prototype.getContext = function(contextId, options) {
+  // Fix the type issue with getContext by properly typing it
+  HTMLCanvasElement.prototype.getContext = function(contextId: string, options?: any): any {
     if (contextId === '2d') {
       return mockCanvas2DContext;
     }

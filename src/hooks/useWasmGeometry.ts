@@ -1,96 +1,74 @@
 
 /**
- * Hook for using WebAssembly-accelerated geometry calculations
+ * Hook for using WASM geometry operations
  * @module hooks/useWasmGeometry
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  supportsWasm, 
-  wasmStatus, 
-  initWasmModules,
-  getWasmFeatures
-} from '@/utils/wasm';
-import { 
-  calculateAreaInSquareMeters,
-  optimizePolygon,
-  isPointInPolygon,
-  calculatePerimeter,
-  calculateCentroid
-} from '@/utils/wasm/geometryUtils';
 import { Point } from '@/types/core/Geometry';
+import { wasmStatus, initWasm, calculateArea } from '@/utils/wasm';
 import logger from '@/utils/logger';
 
 /**
- * Hook for using WebAssembly-accelerated geometry calculations
- * @returns Geometry utility functions and status information
+ * Hook for WASM-powered geometry calculations
+ * @returns An object with WASM geometry utilities
  */
 export function useWasmGeometry() {
-  const [initialized, setInitialized] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [features, setFeatures] = useState(getWasmFeatures());
-  
-  // Initialize WASM modules
+  const [initialized, setInitialized] = useState(wasmStatus.loaded);
+  const [loading, setLoading] = useState(!wasmStatus.loaded);
+  const [error, setError] = useState<string | null>(wasmStatus.error ? wasmStatus.errorMessage : null);
+
+  // Initialize WASM module
   useEffect(() => {
-    const init = async () => {
-      if (initialized || loading || !supportsWasm()) return;
-      
-      setLoading(true);
-      
+    if (wasmStatus.loaded) {
+      setInitialized(true);
+      setLoading(false);
+      return;
+    }
+
+    async function loadWasm() {
       try {
-        await initWasmModules();
-        setInitialized(true);
-        setFeatures(getWasmFeatures());
-      } catch (err) {
-        logger.error('Failed to initialize WASM modules:', err);
-        setError(err as Error);
-      } finally {
+        setLoading(true);
+        const success = await initWasm();
+        setInitialized(success);
         setLoading(false);
+
+        if (!success) {
+          setError('Failed to initialize WASM module');
+          logger.warn('WASM initialization failed, falling back to JS', { category: 'wasm' });
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
+        logger.error('Error initializing WASM module', { category: 'wasm', error: err });
       }
-    };
-    
-    init();
-  }, [initialized, loading]);
-  
-  // Calculate area in square meters
-  const calculateArea = useCallback(async (points: Point[], pixelsPerMeter?: number) => {
-    return calculateAreaInSquareMeters(points, pixelsPerMeter);
+    }
+
+    loadWasm();
   }, []);
-  
-  // Optimize polygon by removing redundant points
-  const optimizePath = useCallback(async (points: Point[], tolerance?: number) => {
-    return optimizePolygon(points, tolerance);
+
+  /**
+   * Calculate area of a polygon using WASM (or JS fallback)
+   * @param points Polygon points
+   * @returns Calculated area
+   */
+  const calculatePolygonArea = useCallback(async (points: Point[]): Promise<number> => {
+    try {
+      return await calculateArea(points);
+    } catch (err) {
+      logger.error('Error calculating area with WASM', { category: 'wasm', error: err });
+      throw err;
+    }
   }, []);
-  
-  // Check if a point is inside a polygon
-  const pointInPolygon = useCallback((point: Point, polygon: Point[]) => {
-    return isPointInPolygon(point, polygon);
-  }, []);
-  
-  // Calculate perimeter of a polygon
-  const calculatePathLength = useCallback((points: Point[]) => {
-    return calculatePerimeter(points);
-  }, []);
-  
-  // Calculate center point of a polygon
-  const findCenter = useCallback((points: Point[]) => {
-    return calculateCentroid(points);
-  }, []);
-  
+
   return {
-    // Status
     initialized,
     loading,
     error,
-    features,
-    isSupported: supportsWasm(),
-    
-    // Geometry functions
-    calculateArea,
-    optimizePath,
-    pointInPolygon,
-    calculatePathLength,
-    findCenter,
+    supported: wasmStatus.supported,
+    calculatePolygonArea,
+    wasmStatus
   };
 }
+
+export default useWasmGeometry;

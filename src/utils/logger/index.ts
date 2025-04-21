@@ -50,15 +50,6 @@ const logConfig = {
   showTimestamps: true
 };
 
-// Map log levels to console methods
-const logMethods: Record<LogLevel, keyof typeof console> = {
-  error: 'error',
-  warn: 'warn',
-  info: 'info',
-  debug: 'debug',
-  dev: 'log'
-};
-
 // Map log levels to numeric priority (higher = more severe)
 const logLevelPriority: Record<LogLevel, number> = {
   error: 50,
@@ -122,7 +113,7 @@ const logger = {
   /**
    * Log an error message
    * @param message Log message
-   * @param context Additional context data
+   * @param contextOrError Additional context data
    */
   error(message: string, contextOrError?: any, context?: Record<string, any>) {
     // Handle case where contextOrError is an Error
@@ -201,15 +192,13 @@ const logger = {
     // Format the log message
     const formattedMessage = formatLogMessage(logData);
     
-    // Log to console - Fix console method calls by using the correct approach
-    const methodName = logMethods[level];
-    
+    // Fix the console method calls issue by using bracket notation
     if (logData.error) {
-      console[methodName](formattedMessage, logData.error);
+      console[level](formattedMessage, logData.error);
     } else if (context) {
-      console[methodName](formattedMessage, context);
+      console[level](formattedMessage, context);
     } else {
-      console[methodName](formattedMessage);
+      console[level](formattedMessage);
     }
     
     // In production, potentially send to a logging service

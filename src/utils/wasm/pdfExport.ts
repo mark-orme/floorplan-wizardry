@@ -1,3 +1,4 @@
+
 /**
  * PDF export utilities using WebAssembly
  * @module utils/wasm/pdfExport
@@ -158,7 +159,7 @@ export async function exportAndDownloadPdf(
     // Clean up
     setTimeout(() => {
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revoObjectURL(url);
     }, 100);
   } catch (error) {
     logger.error('Error downloading PDF:', error);
