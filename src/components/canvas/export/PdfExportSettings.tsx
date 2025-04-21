@@ -1,321 +1,216 @@
 
-import React, { useState } from 'react';
+/**
+ * PDF Export Settings Component
+ * Allows users to configure PDF export options
+ */
+import React from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { usePdfExport } from '@/hooks/export/usePdfExport';
-import { PdfExportOptions } from '@/utils/wasm/pdfExport';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { PaperSize } from '@/types/core/floor-plan';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { exportCanvasToPdf } from '@/utils/wasm/pdfExport';
 
-interface PdfExportSettingsProps {
-  canvas: FabricCanvas | null;
-  onExportComplete?: () => void;
+export interface PdfExportSettingsProps {
+  canvas: FabricCanvas;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-const paperSizes = [
-  { id: 'a4', name: 'A4', width: 595, height: 842 },
-  { id: 'a3', name: 'A3', width: 842, height: 1191 },
-  { id: 'letter', name: 'Letter', width: 612, height: 792 },
-  { id: 'legal', name: 'Legal', width: 612, height: 1008 },
-  { id: 'custom', name: 'Custom', width: 0, height: 0 },
-];
-
-interface PdfFormValues {
-  filename: string;
-  paperSize: string;
-  orientation: 'portrait' | 'landscape';
-  margin: number;
-  customWidth?: number;
-  customHeight?: number;
-  includeGrid: boolean;
-  includeMeasurements: boolean;
-  includeTitleBlock: boolean;
-  title: string;
-  footerText: string;
-}
-
-export const PdfExportSettings: React.FC<PdfExportSettingsProps> = ({
+export const PdfExportSettings: React.FC<PdfExportSettingsProps> = ({ 
   canvas,
-  onExportComplete
+  open,
+  onOpenChange
 }) => {
-  const [loading, setLoading] = useState(false);
+  const [filename, setFilename] = React.useState('floor-plan.pdf');
+  const [paperSize, setPaperSize] = React.useState('a4');
+  const [orientation, setOrientation] = React.useState('portrait');
+  const [includeGrid, setIncludeGrid] = React.useState(true);
+  const [includeMeasurements, setIncludeMeasurements] = React.useState(true);
+  const [isExporting, setIsExporting] = React.useState(false);
   
-  const pdfExport = usePdfExport();
-  
-  const form = useForm<PdfFormValues>({
-    defaultValues: {
-      filename: 'floor-plan.pdf',
-      paperSize: 'a4',
-      orientation: 'portrait',
-      margin: 20,
-      includeGrid: false,
-      includeMeasurements: true,
-      includeTitleBlock: true,
-      title: 'Floor Plan',
-      footerText: 'Generated with Floor Plan Editor'
-    }
-  });
-  
-  const isCustomPaperSize = form.watch('paperSize') === 'custom';
-  
-  const handleExport = async (values: PdfFormValues) => {
-    if (!canvas) {
-      toast.error('Canvas not available');
-      return;
-    }
-    
-    if (!pdfExport.initialized) {
-      toast.error('PDF export not initialized');
-      return;
-    }
-    
-    if (!pdfExport.supported) {
-      toast.error('PDF export not supported in this browser');
-      return;
-    }
-    
+  const handleExport = async () => {
     try {
-      setLoading(true);
+      setIsExporting(true);
       
-      // Get selected paper size
-      const selectedPaperSize = paperSizes.find(size => size.id === values.paperSize);
-      
-      if (!selectedPaperSize && !isCustomPaperSize) {
-        toast.error('Invalid paper size');
-        return;
+      // Configure paper size dimensions in points (72dpi)
+      let width, height;
+      switch (paperSize) {
+        case 'a3':
+          width = 842;
+          height = 1191;
+          break;
+        case 'a4':
+          width = 595;
+          height = 842;
+          break;
+        case 'letter':
+          width = 612;
+          height = 792;
+          break;
+        default:
+          width = 595;
+          height = 842;
       }
       
-      // Create export options
-      const options: PdfExportOptions = {
-        filename: values.filename,
-        title: values.title,
-        footerText: values.footerText,
-        orientation: values.orientation,
-        margin: values.margin,
-        includeGrid: values.includeGrid,
-        includeMeasurements: values.includeMeasurements,
-        includeTitleBlock: values.includeTitleBlock
-      };
-      
-      // Set paper size based on selection
-      if (isCustomPaperSize && values.customWidth && values.customHeight) {
-        options.customWidth = values.customWidth;
-        options.customHeight = values.customHeight;
-      } else if (selectedPaperSize) {
-        options.paperSize = {
-          width: selectedPaperSize.width,
-          height: selectedPaperSize.height
-        };
-        
-        // Swap width and height for landscape
-        if (values.orientation === 'landscape') {
-          options.paperSize = {
-            width: selectedPaperSize.height,
-            height: selectedPaperSize.width
-          };
-        }
+      // Swap dimensions for landscape orientation
+      if (orientation === 'landscape') {
+        [width, height] = [height, width];
       }
       
-      // Download the PDF
-      await pdfExport.downloadPdf(canvas, options);
+      // Export to PDF
+      const pdfData = await exportCanvasToPdf(canvas, {
+        filename,
+        paperSize: { width, height },
+        includeGrid,
+        includeMeasurements
+      });
       
-      toast.success('PDF exported successfully');
+      // Create blob and URL
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       
-      if (onExportComplete) {
-        onExportComplete();
-      }
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      // Close dialog
+      onOpenChange(false);
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      toast.error(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setLoading(false);
+      setIsExporting(false);
     }
   };
   
-  if (pdfExport.error) {
-    return (
-      <div className="p-4 bg-red-50 text-red-800 rounded-md">
-        <h3 className="font-medium text-red-900">PDF Export Error</h3>
-        <p>{pdfExport.error}</p>
-      </div>
-    );
-  }
-  
   return (
-    <div className="space-y-4 max-w-md mx-auto">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleExport)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Floor Plan" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Export to PDF</DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="filename" className="text-right">
+              Filename
+            </Label>
+            <Input
+              id="filename"
+              value={filename}
+              onChange={(e) => setFilename(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
           
-          <FormField
-            control={form.control}
-            name="filename"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Filename</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="floor-plan.pdf" />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="paperSize" className="text-right">
+              Paper Size
+            </Label>
+            <Select
+              value={paperSize}
+              onValueChange={setPaperSize}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select paper size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="a4">A4</SelectItem>
+                <SelectItem value="a3">A3</SelectItem>
+                <SelectItem value="letter">Letter</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <FormField
-            control={form.control}
-            name="paperSize"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Paper Size</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a paper size" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {paperSizes.map((size) => (
-                      <SelectItem key={size.id} value={size.id}>{size.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="orientation" className="text-right">
+              Orientation
+            </Label>
+            <Select
+              value={orientation}
+              onValueChange={setOrientation}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select orientation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="portrait">Portrait</SelectItem>
+                <SelectItem value="landscape">Landscape</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          {isCustomPaperSize && (
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="customWidth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Width (pts)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" min="1" placeholder="Width" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="customHeight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Height (pts)</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" min="1" placeholder="Height" />
-                    </FormControl>
-                  </FormItem>
-                )}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="includeGrid" className="text-right">
+              Include Grid
+            </Label>
+            <div className="flex items-center space-x-2 col-span-3">
+              <Checkbox
+                id="includeGrid"
+                checked={includeGrid}
+                onCheckedChange={(checked) => 
+                  setIncludeGrid(checked === true)
+                }
               />
             </div>
-          )}
+          </div>
           
-          <FormField
-            control={form.control}
-            name="orientation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Orientation</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select orientation" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="portrait">Portrait</SelectItem>
-                    <SelectItem value="landscape">Landscape</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="includeGrid"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <FormLabel>Include Grid</FormLabel>
-                  <FormDescription>
-                    Show the grid in the exported PDF
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="includeMeasurements"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <FormLabel>Include Measurements</FormLabel>
-                  <FormDescription>
-                    Show measurements in the exported PDF
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          <Button type="submit" className="w-full" disabled={pdfExport.loading || loading}>
-            {(pdfExport.loading || loading) ? 'Exporting...' : 'Export PDF'}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="includeMeasurements" className="text-right">
+              Include Measurements
+            </Label>
+            <div className="flex items-center space-x-2 col-span-3">
+              <Checkbox
+                id="includeMeasurements"
+                checked={includeMeasurements}
+                onCheckedChange={(checked) => 
+                  setIncludeMeasurements(checked === true)
+                }
+              />
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
           </Button>
-        </form>
-      </Form>
-    </div>
+          <Button 
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? 'Exporting...' : 'Export'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -5,9 +5,8 @@
  * @module hooks/canvas
  */
 
-export * from './useCanvasInteraction';
 export * from './useCanvasToolManager';
 export * from './useVirtualizationEngine';
 export * from './useOptimizedGridSnapping';
 export * from './useAreaCalculation';
-
+export * from './useCanvasInteraction';

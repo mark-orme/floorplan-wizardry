@@ -1,43 +1,25 @@
 
 /**
  * Hooks Package
- * Reusable React hooks for application functionality
- * @module packages/hooks
+ * Exports all hooks from the application
  */
 
-// Export canvas interaction hooks
-export * from '@/hooks/canvas/useCanvasInteraction';
+// Canvas hooks
 export * from '@/hooks/canvas/useCanvasToolManager';
 export * from '@/hooks/canvas/useVirtualizationEngine';
 export * from '@/hooks/canvas/useOptimizedGridSnapping';
-
-// Export drawing hooks
-export * from '@/hooks/useDrawingTool';
-export * from '@/hooks/useDrawingState';
-export * from '@/hooks/useFloorPlanDrawing';
-
-// Export canvas state hooks
-export * from '@/hooks/useFloorPlans';
-export * from '@/hooks/useSyncedFloorPlans';
-export * from '@/hooks/useRestorePrompt';
-
-// Export measurement and calculation hooks
-export * from '@/hooks/useFloorPlanGIA';
-export * from '@/hooks/useMeasurementGuide';
 export * from '@/hooks/canvas/useAreaCalculation';
+export * from '@/hooks/canvas/useCanvasInteraction';
 
-// Export UI state hooks
-export * from '@/hooks/use-mobile';
-export * from '@/hooks/useMediaQuery';
-export * from '@/hooks/canvas-resizing';
-
-// Export web worker hooks
-export * from '@/hooks/useWebWorker';
+// General hooks
+export * from '@/hooks/useCanvasPerformance';
+export * from '@/hooks/useCanvasResizing';
 export * from '@/hooks/useGeometryWorker';
+export * from '@/hooks/useOptimizedFloorPlanCanvas';
+export * from '@/hooks/useWebWorker';
+export * from '@/hooks/useCanvasInitialization';
+export * from '@/hooks/useMediaQuery';
 
-// Export WebGL hooks
-export * from '@/hooks/useWebGLCanvas';
-
-// Export export hooks
-export * from '@/hooks/export/usePdfExport';
-
+// Performance hooks
+export * from '@/hooks/performance/useFrameMetrics';
+export * from '@/hooks/performance/useLoadTimeTracker';

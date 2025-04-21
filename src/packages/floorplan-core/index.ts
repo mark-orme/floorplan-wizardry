@@ -1,39 +1,32 @@
 
 /**
  * Floor Plan Core Package
- * Core domain logic for floor plans, independent of UI
- * @module packages/floorplan-core
+ * Core domain types and logic for floor plan functionality
  */
 
-// Re-export geometry types from the core domain
-export * from '@/types/core/Geometry';
+// Core types - using export type for types
+export { FloorPlan } from './models/FloorPlan';
+export { Wall } from './models/Wall';
+export { Room } from './models/Room';
+export { Furniture } from './models/Furniture';
 
-// Re-export floor plan types explicitly to avoid ambiguity
-export {
-  PaperSize,
-  FloorPlan,
-  FloorPlanMetadata,
-  Wall,
-  Room,
-  Stroke
-} from '@/types/core/floor-plan';
+// Use "export type" syntax for types when isolatedModules is enabled
+export type { Point } from './types/Point';
+export type { Dimensions } from './types/Dimensions';
+export type { FloorPlanMetadata } from './types/FloorPlanMetadata';
+export type { RoomProperties } from './types/RoomProperties';
+export type { WallProperties } from './types/WallProperties';
 
-export type {
-  Point, 
-  LineSegment, 
-  Rectangle, 
-  Circle, 
-  Polygon, 
-  BoundingBox,
-  CanvasDimensions,
-  Transform
-} from '@/types/core/Geometry';
+// Core services
+export { FloorPlanEngine } from './services/FloorPlanEngine';
+export { WallDrawingService } from './services/WallDrawingService';
+export { AreaCalculationService } from './services/AreaCalculationService';
+export { RoomDetectionService } from './services/RoomDetectionService';
 
-// Re-export core geometry utilities
-export * from '@/utils/geometry/engine';
+// Utilities
+export { floorPlanValidator } from './utils/floorPlanValidator';
+export { dimensionsCalculator } from './utils/dimensionsCalculator';
+export { coordinateConverter } from './utils/coordinateConverter';
 
-// The floor plan domain model
-export { calculatePolygonArea, calculateGIA } from '@/utils/geometry/engine';
-
-// Export domain services
-export * from './services';
+// Constants
+export { FLOOR_PLAN_CONSTANTS } from './constants';

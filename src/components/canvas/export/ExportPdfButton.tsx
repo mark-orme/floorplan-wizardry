@@ -1,55 +1,46 @@
 
-/**
- * Export PDF Button Component
- * @module components/canvas/export/ExportPdfButton
- */
-
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Canvas as FabricCanvas } from 'fabric';
-import { PdfExportSettings } from './PdfExportSettings';
+import { Button } from '@/components/ui/button';
 import { FileDown } from 'lucide-react';
+import PdfExportSettings from './PdfExportSettings';
 
 interface ExportPdfButtonProps {
-  /** Canvas to export */
-  canvas: FabricCanvas | null;
-  /** Button variant */
-  variant?: 'default' | 'outline' | 'secondary';
-  /** Button size */
+  canvas: FabricCanvas;
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   size?: 'default' | 'sm' | 'lg' | 'icon';
-  /** Additional CSS classes */
   className?: string;
+  label?: string;
 }
 
-/**
- * Button to export canvas as PDF
- */
 export const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({
   canvas,
   variant = 'default',
   size = 'default',
-  className = ''
+  className = '',
+  label = 'Export PDF'
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   
   return (
     <>
       <Button
-        onClick={() => setShowSettings(true)}
         variant={variant}
         size={size}
         className={className}
-        disabled={!canvas}
+        onClick={() => setShowSettings(true)}
       >
-        <FileDown className="mr-2 h-4 w-4" />
-        Export PDF
+        <FileDown className="w-4 h-4 mr-2" />
+        {label}
       </Button>
       
-      <PdfExportSettings
+      <PdfExportSettings 
+        canvas={canvas}
         open={showSettings}
         onOpenChange={setShowSettings}
-        canvas={canvas}
       />
     </>
   );
 };
+
+export default ExportPdfButton;

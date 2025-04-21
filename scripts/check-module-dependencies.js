@@ -1,105 +1,227 @@
 
-#!/usr/bin/env node
-
 /**
  * Module Dependency Checker
- * 
- * This script verifies that imports follow the approved module dependency graph.
- * It prevents cyclic dependencies and enforces architectural boundaries.
+ * Enforces module dependency rules and prevents cyclic dependencies
+ * Run in CI to ensure architectural boundaries are respected
  */
-
 const fs = require('fs');
 const path = require('path');
 const glob = require('glob');
 
-// Define allowed dependencies between packages
-const allowedDependencies = {
-  'packages/floorplan-core': ['utils', 'types/core'],
-  'packages/persistence': ['packages/floorplan-core', 'utils', 'types/core', 'types'],
-  'packages/hooks': ['packages/floorplan-core', 'packages/persistence', 'utils', 'types', 'components'],
-  'packages/ui-components': ['packages/hooks', 'packages/floorplan-core', 'utils', 'types', 'components'],
-  'packages/plugin-api': ['packages/floorplan-core', 'utils', 'types']
+// Define module boundaries and allowed dependencies
+const MODULE_RULES = {
+  'packages/floorplan-core': {
+    allowedDependencies: [],
+    description: 'Core domain logic with no external dependencies'
+  },
+  'packages/ui-components': {
+    allowedDependencies: ['packages/floorplan-core', 'packages/hooks'],
+    description: 'UI components that can depend on core and hooks'
+  },
+  'packages/hooks': {
+    allowedDependencies: ['packages/floorplan-core'],
+    description: 'Hooks that can depend on core domain'
+  },
+  'packages/persistence': {
+    allowedDependencies: ['packages/floorplan-core'],
+    description: 'Persistence layer that can depend on core domain'
+  },
+  'packages/plugins': {
+    allowedDependencies: ['packages/floorplan-core', 'packages/hooks'],
+    description: 'Plugins that can depend on core and hooks'
+  }
 };
 
-// Define specific banned dependencies (cyclic)
-const bannedDependencies = {
-  'packages/floorplan-core': ['packages/ui-components', 'packages/hooks', 'packages/persistence', 'packages/plugin-api'],
-  'packages/persistence': ['packages/ui-components', 'packages/hooks', 'packages/plugin-api'],
-  'packages/plugin-api': ['packages/ui-components', 'packages/hooks', 'packages/persistence']
-};
+// File patterns to check
+const FILE_PATTERNS = [
+  'src/packages/**/*.ts',
+  'src/packages/**/*.tsx'
+];
 
-// Track errors
-const errors = [];
+// Regular expressions to detect imports
+const IMPORT_REGEX = /import\s+(?:{[^}]*}|\*\s+as\s+[^;]+|[^;{]*)\s+from\s+['"]([^'"]+)['"]/g;
+const DYNAMIC_IMPORT_REGEX = /import\(['"]([^'"]+)['"]\)/g;
 
-// Process all TypeScript files
-glob.sync('src/**/*.{ts,tsx}', { ignore: ['**/*.d.ts', '**/node_modules/**'] }).forEach(file => {
-  const content = fs.readFileSync(file, 'utf8');
-  const packagePath = getPackagePath(file);
+/**
+ * Extract imports from a file
+ * @param {string} fileContent File content
+ * @returns {string[]} Array of imported modules
+ */
+function extractImports(fileContent) {
+  const imports = [];
+  let match;
   
-  if (!packagePath) return; // Not in a package
+  // Extract static imports
+  while ((match = IMPORT_REGEX.exec(fileContent)) !== null) {
+    imports.push(match[1]);
+  }
   
-  // Extract imports
-  const importLines = content.match(/import\s+.*from\s+['"]([^'"]+)['"]/g) || [];
+  // Extract dynamic imports
+  while ((match = DYNAMIC_IMPORT_REGEX.exec(fileContent)) !== null) {
+    imports.push(match[1]);
+  }
   
-  importLines.forEach(importLine => {
-    const match = importLine.match(/from\s+['"]([^'"]+)['"]/);
-    if (!match) return;
-    
-    const importPath = match[1];
-    
-    // Skip relative imports within the same package and node modules
-    if (importPath.startsWith('.') || !importPath.startsWith('@/')) return;
-    
-    // Convert @/ imports to our standard format
-    const normalizedImport = importPath.replace('@/', '');
-    
-    // Check if import is allowed
-    if (!isImportAllowed(packagePath, normalizedImport)) {
-      errors.push(`DEPENDENCY ERROR in ${file}:\n  ${importLine.trim()}\n  ${packagePath} is not allowed to import from ${normalizedImport}\n`);
+  return imports;
+}
+
+/**
+ * Map import path to module
+ * @param {string} importPath Import path
+ * @returns {string|null} Module name or null if not a module
+ */
+function getModuleFromImport(importPath) {
+  for (const module of Object.keys(MODULE_RULES)) {
+    if (importPath.includes(module)) {
+      return module;
     }
-  });
-});
-
-// Output results
-if (errors.length > 0) {
-  console.error('Module dependency violations found:');
-  errors.forEach(err => console.error(err));
-  console.error(`Found ${errors.length} dependency violations`);
-  process.exit(1);
-} else {
-  console.log('Module dependency check passed ✓');
+  }
+  return null;
 }
 
 /**
- * Get the package path for a file
+ * Get module from file path
+ * @param {string} filePath File path
+ * @returns {string|null} Module name or null if not in a module
  */
-function getPackagePath(filePath) {
-  const packageMatch = filePath.match(/src\/(packages\/[^/]+)/);
-  return packageMatch ? packageMatch[1] : null;
+function getModuleFromFile(filePath) {
+  for (const module of Object.keys(MODULE_RULES)) {
+    if (filePath.includes(module)) {
+      return module;
+    }
+  }
+  return null;
 }
 
 /**
- * Check if an import is allowed for a given package
+ * Check module dependencies
+ * @returns {boolean} True if all dependencies follow rules
  */
-function isImportAllowed(packagePath, importPath) {
-  // If we don't have rules for this package, allow the import
-  if (!allowedDependencies[packagePath]) return true;
+function checkModuleDependencies() {
+  const files = FILE_PATTERNS.flatMap(pattern => glob.sync(pattern));
+  let hasErrors = false;
   
-  // Check for explicitly banned dependencies
-  if (bannedDependencies[packagePath]) {
-    for (const banned of bannedDependencies[packagePath]) {
-      if (importPath.startsWith(banned)) {
-        return false;
+  // Collect all dependencies
+  const moduleDependencies = {};
+  
+  files.forEach(file => {
+    const fileContent = fs.readFileSync(file, 'utf-8');
+    const imports = extractImports(fileContent);
+    const sourceModule = getModuleFromFile(file);
+    
+    if (!sourceModule) {
+      return; // Skip files not in a module
+    }
+    
+    if (!moduleDependencies[sourceModule]) {
+      moduleDependencies[sourceModule] = new Set();
+    }
+    
+    imports.forEach(importPath => {
+      const importModule = getModuleFromImport(importPath);
+      if (importModule && importModule !== sourceModule) {
+        moduleDependencies[sourceModule].add(importModule);
+      }
+    });
+  });
+  
+  // Check for rule violations
+  console.log('Checking module dependency rules...');
+  console.log('----------------------------------');
+  
+  Object.keys(moduleDependencies).forEach(module => {
+    const dependencies = Array.from(moduleDependencies[module]);
+    const rules = MODULE_RULES[module];
+    
+    if (!rules) {
+      console.log(`⚠️ Warning: Module ${module} not defined in rules`);
+      return;
+    }
+    
+    console.log(`Module: ${module}`);
+    console.log(`- Description: ${rules.description}`);
+    console.log(`- Dependencies: ${dependencies.length > 0 ? dependencies.join(', ') : 'None'}`);
+    
+    const illegalDependencies = dependencies.filter(dep => !rules.allowedDependencies.includes(dep));
+    
+    if (illegalDependencies.length > 0) {
+      hasErrors = true;
+      console.log(`❌ Error: Illegal dependencies: ${illegalDependencies.join(', ')}`);
+      console.log(`   Allowed dependencies: ${rules.allowedDependencies.length > 0 ? rules.allowedDependencies.join(', ') : 'None'}`);
+    } else {
+      console.log('✅ All dependencies are allowed');
+    }
+    
+    console.log('----------------------------------');
+  });
+  
+  // Check for cyclic dependencies
+  const cycles = findCycles(moduleDependencies);
+  if (cycles.length > 0) {
+    hasErrors = true;
+    console.log('❌ Error: Cyclic dependencies detected:');
+    cycles.forEach(cycle => {
+      console.log(`   ${cycle.join(' -> ')} -> ${cycle[0]}`);
+    });
+    console.log('----------------------------------');
+  } else {
+    console.log('✅ No cyclic dependencies detected');
+    console.log('----------------------------------');
+  }
+  
+  if (hasErrors) {
+    console.log('❌ Module dependency check failed');
+    return false;
+  } else {
+    console.log('✅ Module dependency check passed');
+    return true;
+  }
+}
+
+/**
+ * Find cyclic dependencies
+ * @param {Object} dependencies Dependency graph
+ * @returns {Array} Array of cycles
+ */
+function findCycles(dependencies) {
+  const cycles = [];
+  const temporaryMarks = new Set();
+  const permanentMarks = new Set();
+  
+  function visit(node, path = []) {
+    if (permanentMarks.has(node)) {
+      return;
+    }
+    
+    if (temporaryMarks.has(node)) {
+      const cycleStart = path.indexOf(node);
+      if (cycleStart !== -1) {
+        cycles.push(path.slice(cycleStart));
+      }
+      return;
+    }
+    
+    temporaryMarks.add(node);
+    path.push(node);
+    
+    if (dependencies[node]) {
+      for (const dependency of dependencies[node]) {
+        visit(dependency, [...path]);
       }
     }
+    
+    temporaryMarks.delete(node);
+    permanentMarks.add(node);
   }
   
-  // Check against allowed dependencies
-  for (const allowed of allowedDependencies[packagePath]) {
-    if (importPath.startsWith(allowed)) {
-      return true;
+  for (const node of Object.keys(dependencies)) {
+    if (!permanentMarks.has(node)) {
+      visit(node);
     }
   }
   
-  return false;
+  return cycles;
 }
+
+// Run the check
+const success = checkModuleDependencies();
+process.exit(success ? 0 : 1);

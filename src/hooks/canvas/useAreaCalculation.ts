@@ -1,150 +1,181 @@
 
 /**
- * Hook for calculating areas of canvas objects
- * Uses web workers for performance
+ * Hook for calculating area of shapes on canvas
+ * Provides utilities for calculating areas of polygons, rooms, and floor plans
  */
-
 import { useCallback, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { useGeometryWorker } from '@/hooks/useGeometryWorker';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { Point } from '@/types/core/Geometry';
+import { useGeometryEngine } from './useGeometryEngine';
+import logger from '@/utils/logger';
 
-interface AreaCalculationOptions {
-  includeRooms?: boolean;
-  includeWalls?: boolean;
-  unit?: 'metric' | 'imperial';
+interface UseAreaCalculationProps {
+  fabricCanvas: FabricCanvas | null;
 }
 
-interface AreaCalculationResult {
+interface AreaResult {
   areaM2: number;
-  areaSqFt?: number;
-  rooms?: {
+  rooms?: Array<{
     id: string;
-    name: string;
+    label?: string;
     areaM2: number;
-    areaSqFt?: number;
-  }[];
+  }>;
 }
 
-export function useAreaCalculation(canvas: FabricCanvas | null) {
-  const [calculating, setCalculating] = useState(false);
-  const [lastResult, setLastResult] = useState<AreaCalculationResult | null>(null);
+export const useAreaCalculation = (fabricCanvas: FabricCanvas | null) => {
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [lastCalculatedArea, setLastCalculatedArea] = useState<AreaResult>({ areaM2: 0 });
   
-  // Use the geometry worker for calculations
   const { 
-    initialized: workerInitialized,
-    calculateArea,
-    isProcessing
-  } = useGeometryWorker();
+    calculatePolygonArea,
+    isPolygonClockwise
+  } = useGeometryEngine();
   
   /**
-   * Extract points from object
+   * Extract points from a fabric object
    */
-  const getObjectPoints = useCallback((obj: any): Point[] => {
-    // For polygon/polyline objects
-    if (obj.points) {
-      return obj.points.map((p: any) => ({
-        x: p.x + obj.left,
-        y: p.y + obj.top
-      }));
-    }
+  const getObjectPoints = useCallback((obj: FabricObject): Point[] => {
+    if (!obj) return [];
     
-    // For path objects
-    if (obj.path) {
-      return obj.path.map((cmd: any) => {
-        if (Array.isArray(cmd)) {
-          return { x: cmd[1] + obj.left, y: cmd[2] + obj.top };
-        }
-        return { x: cmd.x + obj.left, y: cmd.y + obj.top };
-      });
-    }
-    
-    // For rectangle objects
-    if (obj.type === 'rect') {
-      const width = obj.width * obj.scaleX;
-      const height = obj.height * obj.scaleY;
+    // Handle different object types
+    if (obj.type === 'polygon' && 'points' in obj) {
+      // Polygon objects
+      const points = (obj as any).points as { x: number, y: number }[];
+      return points.map(p => ({ x: p.x, y: p.y }));
+    } else if (obj.type === 'polyline' && 'points' in obj) {
+      // Polyline objects
+      const points = (obj as any).points as { x: number, y: number }[];
+      return points.map(p => ({ x: p.x, y: p.y }));
+    } else if (obj.type === 'path' && 'path' in obj) {
+      // Path objects - more complex
+      try {
+        // Convert SVG path to points
+        const path = (obj as any).path;
+        if (!Array.isArray(path)) return [];
+        
+        const points: Point[] = [];
+        
+        // Extract points from path commands
+        path.forEach(cmd => {
+          if (Array.isArray(cmd) && cmd.length >= 3) {
+            if (cmd[0] === 'L' || cmd[0] === 'M') {
+              points.push({ x: cmd[1], y: cmd[2] });
+            } else if (cmd[0] === 'Q' && cmd.length >= 5) {
+              // For quadratic curves, add both control point and end point
+              points.push({ x: cmd[3], y: cmd[4] });
+            } else if (cmd[0] === 'C' && cmd.length >= 7) {
+              // For cubic curves, add end point
+              points.push({ x: cmd[5], y: cmd[6] });
+            }
+          }
+        });
+        
+        return points;
+      } catch (error) {
+        logger.error('Error extracting points from path', { error });
+        return [];
+      }
+    } else if ('left' in obj && 'top' in obj && 'width' in obj && 'height' in obj) {
+      // Rectangle objects
+      const left = obj.left || 0;
+      const top = obj.top || 0;
+      const width = (obj as any).width || 0;
+      const height = (obj as any).height || 0;
+      
       return [
-        { x: obj.left, y: obj.top },
-        { x: obj.left + width, y: obj.top },
-        { x: obj.left + width, y: obj.top + height },
-        { x: obj.left, y: obj.top + height }
+        { x: left, y: top },
+        { x: left + width, y: top },
+        { x: left + width, y: top + height },
+        { x: left, y: top + height }
       ];
     }
     
-    // Default empty array
     return [];
   }, []);
   
   /**
-   * Convert meters to square feet
+   * Calculate area for a single object
    */
-  const metersToSquareFeet = useCallback((meters: number) => {
-    return meters * 10.7639;
-  }, []);
+  const calculateObjectArea = useCallback((obj: FabricObject): number => {
+    try {
+      const points = getObjectPoints(obj);
+      if (points.length < 3) return 0;
+      
+      // Make sure points are in the right order (clockwise)
+      const clockwise = isPolygonClockwise(points);
+      const orderedPoints = clockwise ? points : [...points].reverse();
+      
+      // Calculate area
+      return calculatePolygonArea(orderedPoints);
+    } catch (error) {
+      logger.error('Error calculating object area', { error });
+      return 0;
+    }
+  }, [getObjectPoints, isPolygonClockwise, calculatePolygonArea]);
   
   /**
-   * Calculate room areas
+   * Calculate area for all qualifying objects on canvas
    */
-  const calculateRoomAreas = useCallback(async (options: AreaCalculationOptions = {}) => {
-    if (!canvas || !workerInitialized) {
-      console.warn('Canvas or worker not initialized');
-      return null;
+  const calculateArea = useCallback(async (): Promise<AreaResult> => {
+    if (!fabricCanvas) {
+      return { areaM2: 0 };
     }
     
+    setIsCalculating(true);
+    
     try {
-      setCalculating(true);
+      // Get all objects that could represent rooms
+      const objects = fabricCanvas.getObjects().filter(obj => {
+        // Identify closed shapes that could represent rooms
+        return (
+          obj.type === 'polygon' || 
+          obj.type === 'path' || 
+          obj.type === 'rect' ||
+          (obj as any).isRoom === true
+        );
+      });
       
-      // Get all objects that are rooms
-      const rooms = canvas.getObjects().filter(obj => 
-        obj.type === 'polygon' || 
-        (obj.objectType === 'room' || obj.type === 'path')
-      );
-      
-      // Calculate individual room areas
-      const roomAreas = [];
       let totalArea = 0;
+      const rooms: AreaResult['rooms'] = [];
       
-      for (const room of rooms) {
-        const points = getObjectPoints(room);
+      // Calculate area for each object
+      for (const obj of objects) {
+        const area = calculateObjectArea(obj);
         
-        if (points.length >= 3) {
-          const areaM2 = await calculateArea(points);
+        if (area > 0) {
+          // Convert to square meters (canvas units are assumed to be in cm)
+          const areaM2 = area / 10000; // cm² to m²
+          
           totalArea += areaM2;
           
-          roomAreas.push({
-            id: room.id || `room-${roomAreas.length}`,
-            name: room.name || `Room ${roomAreas.length + 1}`,
-            areaM2,
-            areaSqFt: options.unit === 'imperial' ? metersToSquareFeet(areaM2) : undefined
+          // Try to get a label for the room
+          const objLabel = (obj as any).type === 'room' ? 
+                          (obj as any).label || 'Room' : 
+                          (obj as any).id ? `Shape ${(obj as any).id}` : 'Shape';
+          
+          rooms.push({
+            id: (obj as any).id || `obj_${obj.type}_${Math.random().toString(36).substr(2, 9)}`,
+            label: objLabel,
+            areaM2
           });
         }
       }
       
-      // Create result
-      const result: AreaCalculationResult = {
-        areaM2: totalArea,
-        areaSqFt: options.unit === 'imperial' ? metersToSquareFeet(totalArea) : undefined
-      };
+      const result = { areaM2: totalArea, rooms };
+      setLastCalculatedArea(result);
       
-      // Add rooms if requested
-      if (options.includeRooms && roomAreas.length > 0) {
-        result.rooms = roomAreas;
-      }
-      
-      setLastResult(result);
       return result;
     } catch (error) {
-      console.error('Error calculating areas:', error);
-      throw error;
+      logger.error('Error calculating area', { error });
+      return { areaM2: 0 };
     } finally {
-      setCalculating(false);
+      setIsCalculating(false);
     }
-  }, [canvas, workerInitialized, getObjectPoints, calculateArea, metersToSquareFeet]);
+  }, [fabricCanvas, calculateObjectArea]);
   
   return {
-    calculateArea: calculateRoomAreas,
-    calculating: calculating || isProcessing,
-    lastResult,
-    workerReady: workerInitialized
+    calculateArea,
+    isCalculating,
+    lastCalculatedArea
   };
-}
+};

@@ -1,204 +1,500 @@
-
 /**
- * Virtualized Canvas Hook
- * 
- * Provides canvas virtualization to improve performance with large floor plans
- * Only renders objects visible in the current viewport
+ * Enhanced Canvas Virtualization Hook
+ * Provides true object culling with tiled viewport for optimal performance
  */
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { useGridPerformanceMonitor } from './useCanvasPerformanceMonitor';
-import { toast } from 'sonner';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { debounce } from '@/utils/debounce';
+import logger from '@/utils/logger';
 
-// Define the performance metrics interface
 export interface VirtualizationPerformanceMetrics {
   fps: number;
-  frameTime?: number;
   objectCount: number;
   visibleObjectCount: number;
-  maxFrameTime?: number;
-  longFrames?: number;
-  [key: string]: number | undefined;
+  renderTime: number;
+  viewportSize: { width: number; height: number };
+  tileCount: number;
 }
 
-interface UseVirtualizedCanvasProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  options?: {
-    enabled?: boolean;
-    threshold?: number; // Number of objects before virtualization is auto-enabled
-    padding?: number; // Padding area around visible viewport
-    autoToggle?: boolean; // Auto-enable virtualization when object count exceeds threshold
-  };
+interface TileData {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  objects: Set<FabricObject>;
 }
 
-export function useVirtualizedCanvas(
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  {
-    enabled = false,
-    threshold = 100,
-    padding = 200,
-    autoToggle = true
-  }: UseVirtualizedCanvasProps['options'] = {}
-) {
-  const [isAutoEnabled, setIsAutoEnabled] = useState(false);
-  const [performanceData, setPerformanceData] = useState<VirtualizationPerformanceMetrics>({
-    fps: 0,
-    objectCount: 0,
-    visibleObjectCount: 0
-  });
-  
-  // Get canvas dimensions for viewport calculation
-  const getCanvasDimensions = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    return {
-      width: canvas?.width || window.innerWidth,
-      height: canvas?.height || window.innerHeight
-    };
-  }, [fabricCanvasRef]);
-  
-  const { width, height } = getCanvasDimensions();
+interface UseVirtualizedCanvasOptions {
+  enabled?: boolean;
+  paddingPx?: number;
+  tileSize?: number;
+  autoToggle?: boolean;
+  objectThreshold?: number;
+}
+
+export const useVirtualizedCanvas = (
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  options: UseVirtualizedCanvasOptions = {}
+) => {
+  const {
+    enabled = true,
+    paddingPx = 200,
+    tileSize = 500,
+    autoToggle = true,
+    objectThreshold = 100
+  } = options;
   
   const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+  const [performanceMetrics, setPerformanceMetrics] = useState<VirtualizationPerformanceMetrics>({
+    fps: 60,
+    objectCount: 0,
+    visibleObjectCount: 0,
+    renderTime: 0,
+    viewportSize: { width: 0, height: 0 },
+    tileCount: 0
+  });
   
-  // Handle performance monitoring
-  const updatePerformanceMetrics = useCallback((stats: any) => {
-    setPerformanceData({
-      fps: stats.fps || 0,
-      objectCount: stats.objectCount || 0,
-      visibleObjectCount: stats.visibleObjectCount || 0,
-      frameTime: stats.frameTime,
-      maxFrameTime: stats.maxFrameTime,
-      longFrames: stats.longFrames
+  // Keep track of visible area
+  const visibleAreaRef = useRef({
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0
+  });
+  
+  // Store tiles for spatial partitioning
+  const tilesRef = useRef<Map<string, TileData>>(new Map());
+  
+  // FPS tracking
+  const fpsRef = useRef({
+    frameCount: 0,
+    lastTime: performance.now(),
+    fps: 0
+  });
+  
+  // Create a tile key from coordinates
+  const getTileKey = useCallback((x: number, y: number): string => {
+    const tileX = Math.floor(x / tileSize);
+    const tileY = Math.floor(y / tileSize);
+    return `${tileX}:${tileY}`;
+  }, [tileSize]);
+  
+  // Initialize the tile system
+  const initializeTiles = useCallback(() => {
+    tilesRef.current.clear();
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Get all objects
+    const objects = canvas.getObjects();
+    
+    // Add each object to appropriate tiles
+    objects.forEach(obj => {
+      try {
+        const bounds = obj.getBoundingRect();
+        
+        // Get tiles that this object spans
+        const startTileX = Math.floor(bounds.left / tileSize);
+        const startTileY = Math.floor(bounds.top / tileSize);
+        const endTileX = Math.floor((bounds.left + bounds.width) / tileSize);
+        const endTileY = Math.floor((bounds.top + bounds.height) / tileSize);
+        
+        // Add to each overlapping tile
+        for (let tileX = startTileX; tileX <= endTileX; tileX++) {
+          for (let tileY = startTileY; tileY <= endTileY; tileY++) {
+            const tileKey = `${tileX}:${tileY}`;
+            
+            // Create tile if it doesn't exist
+            if (!tilesRef.current.has(tileKey)) {
+              tilesRef.current.set(tileKey, {
+                left: tileX * tileSize,
+                top: tileY * tileSize,
+                right: (tileX + 1) * tileSize,
+                bottom: (tileY + 1) * tileSize,
+                objects: new Set()
+              });
+            }
+            
+            // Add object to tile
+            tilesRef.current.get(tileKey)?.objects.add(obj);
+          }
+        }
+      } catch (error) {
+        logger.error('Error adding object to tile', { error });
+      }
     });
+    
+    logger.debug('Initialized virtualization tiles', { 
+      tileCount: tilesRef.current.size,
+      objectCount: objects.length
+    });
+    
+    return tilesRef.current.size;
+  }, [canvasRef, tileSize]);
+  
+  // Add an object to tiles
+  const addObjectToTiles = useCallback((obj: FabricObject) => {
+    try {
+      const bounds = obj.getBoundingRect();
+      
+      // Get tiles that this object spans
+      const startTileX = Math.floor(bounds.left / tileSize);
+      const startTileY = Math.floor(bounds.top / tileSize);
+      const endTileX = Math.floor((bounds.left + bounds.width) / tileSize);
+      const endTileY = Math.floor((bounds.top + bounds.height) / tileSize);
+      
+      // Add to each overlapping tile
+      for (let tileX = startTileX; tileX <= endTileX; tileX++) {
+        for (let tileY = startTileY; tileY <= endTileY; tileY++) {
+          const tileKey = `${tileX}:${tileY}`;
+          
+          // Create tile if it doesn't exist
+          if (!tilesRef.current.has(tileKey)) {
+            tilesRef.current.set(tileKey, {
+              left: tileX * tileSize,
+              top: tileY * tileSize,
+              right: (tileX + 1) * tileSize,
+              bottom: (tileY + 1) * tileSize,
+              objects: new Set()
+            });
+          }
+          
+          // Add object to tile
+          tilesRef.current.get(tileKey)?.objects.add(obj);
+        }
+      }
+    } catch (error) {
+      logger.error('Error adding object to tiles', { error });
+    }
+  }, [tileSize]);
+  
+  // Remove an object from tiles
+  const removeObjectFromTiles = useCallback((obj: FabricObject) => {
+    try {
+      // Remove from all tiles
+      tilesRef.current.forEach(tile => {
+        tile.objects.delete(obj);
+      });
+      
+      // Clean up empty tiles
+      for (const [key, tile] of tilesRef.current.entries()) {
+        if (tile.objects.size === 0) {
+          tilesRef.current.delete(key);
+        }
+      }
+    } catch (error) {
+      logger.error('Error removing object from tiles', { error });
+    }
   }, []);
   
-  // Use the grid performance monitor
-  useEffect(() => {
-    if (!fabricCanvasRef.current) return;
+  // Update object in tiles (remove and re-add)
+  const updateObjectInTiles = useCallback((obj: FabricObject) => {
+    removeObjectFromTiles(obj);
+    addObjectToTiles(obj);
+  }, [removeObjectFromTiles, addObjectToTiles]);
+  
+  // Calculate visible tiles
+  const getVisibleTiles = useCallback(() => {
+    const visibleTiles: TileData[] = [];
     
-    // Track performance
-    const stats = useGridPerformanceMonitor({
-      canvas: fabricCanvasRef.current,
-      enabled: true,
-      onPerformanceUpdate: updatePerformanceMetrics
-    });
+    if (tilesRef.current.size === 0) return visibleTiles;
+    
+    // Get visible area
+    const { left, top, right, bottom } = visibleAreaRef.current;
+    
+    // Find visible tiles
+    const startTileX = Math.floor((left - paddingPx) / tileSize);
+    const startTileY = Math.floor((top - paddingPx) / tileSize);
+    const endTileX = Math.floor((right + paddingPx) / tileSize);
+    const endTileY = Math.floor((bottom + paddingPx) / tileSize);
+    
+    // Collect tiles in visible area
+    for (let tileX = startTileX; tileX <= endTileX; tileX++) {
+      for (let tileY = startTileY; tileY <= endTileY; tileY++) {
+        const tileKey = `${tileX}:${tileY}`;
+        const tile = tilesRef.current.get(tileKey);
+        
+        if (tile) {
+          visibleTiles.push(tile);
+        }
+      }
+    }
+    
+    return visibleTiles;
+  }, [paddingPx, tileSize]);
+  
+  // Update visible objects
+  const updateVisibleObjects = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !virtualizationEnabled) return;
+    
+    const startTime = performance.now();
+    
+    try {
+      // Get canvas viewport transform
+      const vpt = canvas.viewportTransform;
+      if (!vpt) return;
+      
+      // Calculate visible area
+      const zoom = canvas.getZoom();
+      const visibleArea = {
+        left: -vpt[4] / zoom,
+        top: -vpt[5] / zoom,
+        right: (-vpt[4] + canvas.width!) / zoom,
+        bottom: (-vpt[5] + canvas.height!) / zoom
+      };
+      
+      // Update visible area ref
+      visibleAreaRef.current = visibleArea;
+      
+      // Get tiles in visible area
+      const visibleTiles = getVisibleTiles();
+      
+      // Collect all objects in visible tiles
+      const visibleObjects = new Set<FabricObject>();
+      visibleTiles.forEach(tile => {
+        tile.objects.forEach(obj => {
+          visibleObjects.add(obj);
+        });
+      });
+      
+      // Update object visibility
+      let visibleCount = 0;
+      canvas.forEachObject(obj => {
+        // Skip grid objects (always visible)
+        if ((obj as any).isGrid) return;
+        
+        const isVisible = visibleObjects.has(obj);
+        
+        if (isVisible !== obj.visible) {
+          obj.visible = isVisible;
+          // Only call setCoords on visibility change
+          obj.setCoords();
+        }
+        
+        if (isVisible) visibleCount++;
+      });
+      
+      // Update performance metrics
+      const endTime = performance.now();
+      
+      // Update FPS
+      fpsRef.current.frameCount++;
+      const now = performance.now();
+      const elapsed = now - fpsRef.current.lastTime;
+      
+      if (elapsed > 1000) {
+        fpsRef.current.fps = Math.round((fpsRef.current.frameCount * 1000) / elapsed);
+        fpsRef.current.frameCount = 0;
+        fpsRef.current.lastTime = now;
+        
+        // Update metrics
+        setPerformanceMetrics({
+          fps: fpsRef.current.fps,
+          objectCount: canvas.getObjects().length,
+          visibleObjectCount: visibleCount,
+          renderTime: endTime - startTime,
+          viewportSize: { 
+            width: canvas.width || 0, 
+            height: canvas.height || 0 
+          },
+          tileCount: tilesRef.current.size
+        });
+      }
+      
+      canvas.requestRenderAll();
+    } catch (error) {
+      logger.error('Error updating visible objects', { error });
+    }
+  }, [canvasRef, virtualizationEnabled, getVisibleTiles]);
+  
+  // Debounced version of updateVisibleObjects
+  const debouncedUpdateVisibleObjects = useCallback(
+    debounce(updateVisibleObjects, 16), // ~60fps
+    [updateVisibleObjects]
+  );
+  
+  // Toggle virtualization on/off
+  const toggleVirtualization = useCallback(() => {
+    const newState = !virtualizationEnabled;
+    setVirtualizationEnabled(newState);
+    
+    // If turning off, make all objects visible
+    if (!newState) {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.getObjects().forEach(obj => {
+          obj.visible = true;
+        });
+        canvas.requestRenderAll();
+      }
+    } else {
+      // If turning on, initialize tiles and update visibility
+      initializeTiles();
+      updateVisibleObjects();
+    }
+    
+    logger.info(`Canvas virtualization ${newState ? 'enabled' : 'disabled'}`);
+  }, [virtualizationEnabled, canvasRef, initializeTiles, updateVisibleObjects]);
+  
+  // Force refresh virtualization
+  const refreshVirtualization = useCallback(() => {
+    if (!virtualizationEnabled) return;
+    
+    initializeTiles();
+    updateVisibleObjects();
+  }, [virtualizationEnabled, initializeTiles, updateVisibleObjects]);
+  
+  // Initialize virtualization
+  useEffect(() => {
+    if (!virtualizationEnabled) return;
+    
+    initializeTiles();
+    updateVisibleObjects();
+  }, [virtualizationEnabled, initializeTiles, updateVisibleObjects]);
+  
+  // Auto-toggle virtualization based on object count
+  useEffect(() => {
+    if (!autoToggle) return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const checkObjectCount = () => {
+      const objectCount = canvas.getObjects().length;
+      
+      // Enable virtualization if object count exceeds threshold
+      if (objectCount > objectThreshold && !virtualizationEnabled) {
+        setVirtualizationEnabled(true);
+        logger.info('Auto-enabling virtualization due to high object count', { objectCount });
+      } 
+      // Disable virtualization if object count is low
+      else if (objectCount <= objectThreshold && virtualizationEnabled) {
+        setVirtualizationEnabled(false);
+        logger.info('Auto-disabling virtualization due to low object count', { objectCount });
+      }
+    };
+    
+    // Check initial object count
+    checkObjectCount();
+    
+    // Set up event listeners for object changes
+    const handleObjectAdded = () => {
+      checkObjectCount();
+    };
+    
+    const handleObjectRemoved = () => {
+      checkObjectCount();
+    };
+    
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
     
     return () => {
-      // Cleanup if needed
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
     };
-  }, [fabricCanvasRef, updatePerformanceMetrics]);
+  }, [canvasRef, autoToggle, objectThreshold, virtualizationEnabled]);
   
-  // Function to update virtualization
-  const updateVirtualization = useCallback(() => {
-    if (!fabricCanvasRef.current || !virtualizationEnabled) return;
-    
-    // Implementation for virtualization update logic
-    const canvas = fabricCanvasRef.current;
-    const zoom = canvas.getZoom() || 1;
-    const vpt = canvas.viewportTransform;
-    
-    if (!vpt) return;
-    
-    // Calculate visible area with padding
-    const visibleArea = {
-      left: -vpt[4] / zoom - padding,
-      top: -vpt[5] / zoom - padding,
-      right: (-vpt[4] + canvas.width!) / zoom + padding,
-      bottom: (-vpt[5] + canvas.height!) / zoom + padding
-    };
-    
-    let visibleCount = 0;
-    
-    // Update object visibility based on viewport
-    canvas.forEachObject(obj => {
-      if (!obj) return;
-      
-      const bounds = obj.getBoundingRect();
-      const isVisible = !(
-        bounds.left > visibleArea.right ||
-        bounds.top > visibleArea.bottom ||
-        bounds.left + bounds.width < visibleArea.left ||
-        bounds.top + bounds.height < visibleArea.top
-      );
-      
-      if (obj.visible !== isVisible) {
-        obj.visible = isVisible;
-        obj.setCoords();
-      }
-      
-      if (isVisible) visibleCount++;
-    });
-    
-    // Update performance data with visible count
-    setPerformanceData(prev => ({
-      ...prev,
-      visibleObjectCount: visibleCount
-    }));
-    
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef, virtualizationEnabled, padding]);
-  
-  // Auto-enable virtualization when object count exceeds threshold
+  // Set up event listeners
   useEffect(() => {
-    if (!autoToggle || !fabricCanvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    const objectCount = fabricCanvasRef.current.getObjects().length;
-  
-    // Enable virtualization if object count exceeds threshold
-    if (objectCount > threshold && !virtualizationEnabled && !isAutoEnabled) {
-      setVirtualizationEnabled(true);
-      setIsAutoEnabled(true);
-      toast.info(`Performance optimization activated (${objectCount} objects)`, {
-        description: 'Large plan detected - enabling virtualization',
-        duration: 5000,
-        id: 'virtualization-enabled'
-      });
-    }
+    // Handle viewport changes for virtualization
+    const handleViewportChange = () => {
+      if (virtualizationEnabled) {
+        debouncedUpdateVisibleObjects();
+      }
+    };
+    
+    // Handle object modification
+    const handleObjectModified = (e: any) => {
+      if (virtualizationEnabled && e.target) {
+        updateObjectInTiles(e.target);
+        debouncedUpdateVisibleObjects();
+      }
+    };
+    
+    // Handle object added
+    const handleObjectAdded = (e: any) => {
+      if (virtualizationEnabled && e.target) {
+        addObjectToTiles(e.target);
+        debouncedUpdateVisibleObjects();
+      }
+    };
+    
+    // Handle object removed
+    const handleObjectRemoved = (e: any) => {
+      if (virtualizationEnabled && e.target) {
+        removeObjectFromTiles(e.target);
+        debouncedUpdateVisibleObjects();
+      }
+    };
+    
+    // Register event handlers
+    canvas.on('mouse:wheel', handleViewportChange);
+    canvas.on('mouse:down', handleViewportChange);
+    canvas.on('mouse:up', handleViewportChange);
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
+    
+    // Handle resize
+    const handleResize = () => {
+      if (virtualizationEnabled) {
+        refreshVirtualization();
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up event handlers
+    return () => {
+      canvas.off('mouse:wheel', handleViewportChange);
+      canvas.off('mouse:down', handleViewportChange);
+      canvas.off('mouse:up', handleViewportChange);
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [
-    threshold, 
-    virtualizationEnabled, 
-    autoToggle,
-    fabricCanvasRef,
-    isAutoEnabled
+    canvasRef,
+    virtualizationEnabled,
+    debouncedUpdateVisibleObjects,
+    refreshVirtualization,
+    addObjectToTiles,
+    removeObjectFromTiles,
+    updateObjectInTiles
   ]);
   
-  // Manual toggle with user notification
-  const toggleVirtualization = useCallback(() => {
-    setVirtualizationEnabled(prev => !prev);
-    toast.info(
-      virtualizationEnabled 
-        ? 'Virtualization disabled' 
-        : 'Virtualization enabled',
-      {
-        description: virtualizationEnabled 
-          ? 'All objects will be rendered' 
-          : 'Only objects in viewport will be rendered',
-        duration: 3000
-      }
-    );
-  }, [virtualizationEnabled]);
-  
-  // Force a refresh of the virtualization
-  const refreshVirtualization = useCallback(() => {
-    if (virtualizationEnabled) {
-      updateVirtualization();
-    }
-  }, [updateVirtualization, virtualizationEnabled]);
-  
-  // Reset metrics function
-  const resetMetrics = useCallback(() => {
-    setPerformanceData({
-      fps: 0,
-      objectCount: 0,
-      visibleObjectCount: 0
-    });
-  }, []);
-  
   return {
-    performanceMetrics: performanceData,
     virtualizationEnabled,
+    performanceMetrics,
     toggleVirtualization,
     refreshVirtualization,
-    resetMetrics
+    visibleArea: visibleAreaRef.current
+  };
+};
+
+// Utility for debouncing function calls
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  
+  return function(...args: Parameters<T>) {
+    const later = () => {
+      timeout = null;
+      func(...args);
+    };
+    
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(later, wait);
   };
 }
