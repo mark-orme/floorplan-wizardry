@@ -1,129 +1,129 @@
 
-/**
- * Web worker for optimized geometry calculations
- * Uses transferable objects for better performance
- */
+// Geometry Web Worker
+// Handles intensive geometry calculations off the main thread
 
-import { Point } from '@/types/core/Geometry';
 import {
   calculatePolygonArea,
-  calculateDistance,
-  simplifyPath,
   snapPointsToGrid,
   perpendicularDistance
-} from '@/utils/geometry/engine';
+} from "@/utils/geometry/engine";
+import { Point } from "@/types/core/Geometry";
 
-// Define types for worker messages
-type WorkerMessageData = {
+// Types for messages
+type WorkerRequest = {
   id: string;
-  type: 'calculateArea' | 'calculateDistance' | 'optimizePoints' | 'snapToGrid';
+  type: string;
   payload: any;
 };
 
-// Listen for messages from the main thread
-self.addEventListener('message', (event: MessageEvent<WorkerMessageData>) => {
-  const { id, type, payload } = event.data;
+type WorkerResponse = {
+  id: string;
+  success: boolean;
+  result?: any;
+  error?: string;
+};
+
+// Handle messages from the main thread
+self.onmessage = function(e: MessageEvent<WorkerRequest>) {
+  const { id, type, payload } = e.data;
   
   try {
-    let result;
-    let transferables: Transferable[] = [];
+    let result: any;
     
-    // Process different calculation types
+    // Process based on request type
     switch (type) {
       case 'calculateArea':
-        result = calculatePolygonArea(payload.points);
-        break;
-        
-      case 'calculateDistance':
-        result = calculateDistance(payload.start, payload.end);
-        break;
-        
-      case 'optimizePoints':
-        const optPoints = simplifyPath(
-          payload.points, 
-          payload.tolerance || 1
-        );
-        
-        if (payload.useTransferable) {
-          const typedArray = pointsToTypedArray(optPoints);
-          result = {
-            points: typedArray,
-            buffer: typedArray.buffer
-          };
-          transferables.push(typedArray.buffer);
-        } else {
-          result = { points: optPoints };
-        }
+        result = calculateArea(payload.points);
         break;
         
       case 'snapToGrid':
-        const snappedPoints = snapPointsToGrid(
-          payload.points, 
-          payload.gridSize
-        );
+        result = snapToGridPoints(payload.points, payload.gridSize);
+        break;
         
-        if (payload.useTransferable) {
-          const typedArray = pointsToTypedArray(snappedPoints);
-          result = {
-            points: typedArray,
-            buffer: typedArray.buffer
-          };
-          transferables.push(typedArray.buffer);
-        } else {
-          result = { points: snappedPoints };
-        }
+      case 'optimizePath':
+        result = optimizePath(payload.points, payload.tolerance);
         break;
         
       default:
-        throw new Error(`Unknown calculation type: ${type}`);
+        throw new Error(`Unknown operation type: ${type}`);
     }
     
-    // Send result back to main thread with proper transferable format
-    if (transferables.length > 0) {
-      self.postMessage({
-        id,
-        success: true,
-        result
-      }, { transfer: transferables });
-    } else {
-      self.postMessage({
-        id,
-        success: true,
-        result
-      });
-    }
+    // Send successful response back to main thread
+    self.postMessage({
+      id,
+      success: true,
+      result
+    } as WorkerResponse);
+    
   } catch (error) {
+    // Send error response back to main thread
     self.postMessage({
       id,
       success: false,
       error: error instanceof Error ? error.message : String(error)
-    });
+    } as WorkerResponse);
   }
-});
+};
 
-/**
- * Convert between array formats
- */
-function pointsToTypedArray(points: Point[]): Float32Array {
-  const result = new Float32Array(points.length * 2);
+// Calculate area of polygon
+function calculateArea(points: Point[]): number {
+  return calculatePolygonArea(points);
+}
+
+// Snap points to grid
+function snapToGridPoints(points: Point[], gridSize: number): Point[] {
+  return points.map(point => snapPointsToGrid(point, gridSize));
+}
+
+// Optimize path by removing redundant points
+function optimizePath(points: Point[], tolerance: number): Point[] {
+  // Use Douglas-Peucker algorithm
+  if (points.length <= 2) return points;
   
+  const result: Point[] = [];
+  const markers = new Array(points.length).fill(false);
+  
+  // Mark start and end points
+  markers[0] = markers[points.length - 1] = true;
+  
+  // Apply the algorithm recursively
+  douglasPeucker(points, 0, points.length - 1, tolerance, markers);
+  
+  // Collect the marked points
   for (let i = 0; i < points.length; i++) {
-    result[i * 2] = points[i].x;
-    result[i * 2 + 1] = points[i].y;
+    if (markers[i]) result.push(points[i]);
   }
   
   return result;
 }
 
-function typedArrayToPoints(array: Float32Array): Point[] {
-  const points = [];
+// Douglas-Peucker algorithm for path simplification
+function douglasPeucker(points: Point[], start: number, end: number, tolerance: number, markers: boolean[]): void {
+  if (end <= start + 1) return;
   
-  for (let i = 0; i < array.length; i += 2) {
-    points.push({
-      x: array[i],
-      y: array[i + 1]
-    });
+  let maxDistance = 0;
+  let maxIndex = 0;
+  
+  // Find the point with the maximum distance
+  for (let i = start + 1; i < end; i++) {
+    const distance = perpendicularDistance(points[i], points[start], points[end]);
+    if (distance > maxDistance) {
+      maxDistance = distance;
+      maxIndex = i;
+    }
   }
   
-  return points;
+  // If max distance is greater than tolerance, recursively simplify
+  if (maxDistance > tolerance) {
+    markers[maxIndex] = true;
+    douglasPeucker(points, start, maxIndex, tolerance, markers);
+    douglasPeucker(points, maxIndex, end, tolerance, markers);
+  }
 }
+
+// Notify the main thread that the worker is ready
+self.postMessage({
+  id: 'init',
+  success: true,
+  result: { initialized: true }
+} as WorkerResponse);

@@ -4,34 +4,33 @@ import { Canvas as FabricCanvas } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
-import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
+import { getCSRFToken } from "@/utils/security/csrfHandler";
 
-interface FloorPlanCanvasEnhancedProps {
+interface FloorPlanCanvasEnhancedMainProps {
   width?: number;
   height?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
   onCanvasError?: (error: Error) => void;
   showPerformanceMetrics?: boolean;
+  showSecurityInfo?: boolean;
 }
 
-export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = ({
+export const FloorPlanCanvasEnhancedMain: React.FC<FloorPlanCanvasEnhancedMainProps> = ({
   width = 800,
   height = 600,
   onCanvasReady,
   onCanvasError,
-  showPerformanceMetrics = process.env.NODE_ENV === 'development'
+  showPerformanceMetrics = process.env.NODE_ENV === 'development',
+  showSecurityInfo = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
   
   const { handleError } = useCanvasErrorHandling({
-    onErrorCallback: onCanvasError // Using a compatible property name
+    onErrorCallback: onCanvasError
   });
-  
-  // Use geometry worker for offloading calculations
-  const { isReady: workerReady } = useGeometryWorker();
   
   // Use virtualized canvas for performance
   const {
@@ -43,6 +42,9 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     enabled: true,
     autoToggle: true
   });
+  
+  // Use web worker for geometry calculations
+  const { isReady: workerReady, calculateArea } = useGeometryWorker();
   
   // Initialize canvas
   useEffect(() => {
@@ -57,8 +59,9 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         enableRetinaScaling: true
       });
       
-      // Apply performance optimizations
+      // Apply optimizations
       canvas.skipOffscreen = true;
+      canvas.skipTargetFind = false;
       
       fabricCanvasRef.current = canvas;
       setIsReady(true);
@@ -68,14 +71,9 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         onCanvasReady(canvas);
       }
       
-      // Add CSRF token to canvas for security
-      const csrfToken = getCSRFToken();
-      if (csrfToken) {
-        console.log("CSRF protection active");
-      }
-      
-      // Accessibility enhancement
-      canvasRef.current.setAttribute('aria-label', 'Floor plan canvas');
+      // Accessibility enhancement: add ARIA role and label
+      canvasRef.current.setAttribute('role', 'img');
+      canvasRef.current.setAttribute('aria-label', 'Floor plan editor canvas');
       
       return () => {
         canvas.dispose();
@@ -94,7 +92,25 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     }
   }, [width, height, isReady, refreshVirtualization]);
   
-  // Display performance metrics
+  // Handle when the object count changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    const handleObjectAdded = () => refreshVirtualization();
+    const handleObjectRemoved = () => refreshVirtualization();
+    
+    fabricCanvasRef.current.on('object:added', handleObjectAdded);
+    fabricCanvasRef.current.on('object:removed', handleObjectRemoved);
+    
+    return () => {
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.off('object:added', handleObjectAdded);
+        fabricCanvasRef.current.off('object:removed', handleObjectRemoved);
+      }
+    };
+  }, [refreshVirtualization]);
+  
+  // Performance metrics display
   const performanceDisplay = showPerformanceMetrics && (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
       <div>FPS: {performanceMetrics?.fps || 0}</div>
@@ -111,16 +127,25 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     </div>
   );
   
+  // Security info display
+  const securityDisplay = showSecurityInfo && (
+    <div className="absolute top-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
+      <div>CSRF Token: {getCSRFToken() ? '✅ Active' : '❌ Missing'}</div>
+      <div>CSP: {document.querySelector('meta[http-equiv="Content-Security-Policy"]') ? '✅ Active' : '❌ Missing'}</div>
+    </div>
+  );
+  
   return (
-    <div className="relative">
+    <div className="relative" data-testid="enhanced-floor-plan-canvas">
       <canvas
         ref={canvasRef}
         className="border border-gray-200 rounded"
-        data-testid="floor-plan-canvas"
+        aria-label="Floor plan canvas"
       />
       {performanceDisplay}
+      {securityDisplay}
     </div>
   );
 };
 
-export default FloorPlanCanvasEnhanced;
+export default FloorPlanCanvasEnhancedMain;

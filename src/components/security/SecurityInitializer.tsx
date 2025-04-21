@@ -1,66 +1,51 @@
 
-import { useEffect } from 'react';
-import { initializeSecurity } from '@/utils/security/securityInit';
-import { isEncryptionSupported } from '@/utils/security/dataEncryption';
-import { generateCsrfToken } from '@/utils/security/csrfProtection';
-import { enableOfflineEncryption } from '@/utils/security/offlineEncryption';
+import React, { useEffect } from 'react';
+import { initializeCSRFProtection } from '@/utils/security/csrfHandler';
 import { toast } from 'sonner';
 
 /**
- * Component to initialize security features on application startup
+ * Component to initialize security features
+ * Include this component at the top level of your application
  */
-export default function SecurityInitializer() {
+export const SecurityInitializer: React.FC = () => {
   useEffect(() => {
-    // Initialize all security features
-    initializeSecurity();
-    
-    // Set up CSRF protection
-    generateCsrfToken();
-    console.info('CSRF protection initialized');
-    
-    // Initialize encryption for offline data
-    enableOfflineEncryption()
-      .then(success => {
-        if (success) {
-          console.info('Offline encryption initialized');
-        } else {
-          console.warn('Failed to initialize offline encryption');
-        }
-      })
-      .catch(error => {
-        console.error('Error initializing offline encryption:', error);
-      });
-    
-    // Check if encryption is supported
-    if (!isEncryptionSupported()) {
-      console.warn('Web Crypto API not supported in this browser. Encrypted storage will not be available.');
-      toast.warning('Secure storage is not supported in this browser.', {
-        description: 'Some security features may be limited.',
-        duration: 5000
-      });
-    } else {
-      console.info('Encryption supported and initialized');
-    }
-    
-    // Apply security-related meta tags
-    if (typeof document !== 'undefined') {
-      // Set Content-Security-Policy
-      const metaCSP = document.createElement('meta');
-      metaCSP.setAttribute('http-equiv', 'Content-Security-Policy');
-      metaCSP.setAttribute('content', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';");
-      document.head.appendChild(metaCSP);
+    try {
+      // Initialize CSRF protection
+      initializeCSRFProtection();
       
-      // Set referrer policy
-      const metaReferrer = document.createElement('meta');
-      metaReferrer.setAttribute('name', 'referrer');
-      metaReferrer.content = 'same-origin'; // Stricter referrer policy
-      document.head.appendChild(metaReferrer);
+      // Add CSP header (as a meta tag since we can't modify HTTP headers directly)
+      if (typeof document !== 'undefined' && !document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+        const cspMeta = document.createElement('meta');
+        cspMeta.httpEquiv = 'Content-Security-Policy';
+        cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'";
+        document.head.appendChild(cspMeta);
+        
+        // Also add other security headers
+        const nosniffMeta = document.createElement('meta');
+        nosniffMeta.httpEquiv = 'X-Content-Type-Options';
+        nosniffMeta.content = 'nosniff';
+        document.head.appendChild(nosniffMeta);
+        
+        const xssMeta = document.createElement('meta');
+        xssMeta.httpEquiv = 'X-XSS-Protection';
+        xssMeta.content = '1; mode=block';
+        document.head.appendChild(xssMeta);
+        
+        const frameMeta = document.createElement('meta');
+        frameMeta.httpEquiv = 'X-Frame-Options';
+        frameMeta.content = 'DENY';
+        document.head.appendChild(frameMeta);
+      }
+      
+      console.log('Security features initialized');
+    } catch (error) {
+      console.error('Failed to initialize security features:', error);
+      toast.error('Security initialization failed');
     }
-    
-    // Log security initialization
-    console.info('Security features initialized');
   }, []);
   
   // This component doesn't render anything
   return null;
-}
+};
+
+export default SecurityInitializer;

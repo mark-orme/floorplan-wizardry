@@ -3,8 +3,8 @@
  * Hook for using the geometry web worker
  */
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { Point } from '@/types/core/Point';
-import logger from '@/utils/logger';
+import { Point } from '@/types/core/Geometry';
+import { calculatePolygonArea } from '@/utils/geometry/engine';
 
 interface GeometryWorkerMessage {
   id: string;
@@ -22,12 +22,21 @@ export const useGeometryWorker = () => {
   // Initialize the worker
   useEffect(() => {
     try {
+      // Create a worker
       const worker = new Worker(new URL('../workers/geometryWorker.ts', import.meta.url), {
         type: 'module'
       });
       
+      // Set up message handler
       worker.addEventListener('message', (event: MessageEvent<GeometryWorkerMessage>) => {
         const { id, success, result, error } = event.data;
+        
+        // Handle initialization message
+        if (id === 'init' && success) {
+          setIsReady(true);
+          return;
+        }
+        
         const callbacks = callbacksRef.current.get(id);
         
         if (!callbacks) return;
@@ -41,10 +50,15 @@ export const useGeometryWorker = () => {
         callbacksRef.current.delete(id);
       });
       
-      workerRef.current = worker;
-      setIsReady(true);
-      logger.info('Geometry worker initialized');
+      // Handle worker errors
+      worker.addEventListener('error', (event) => {
+        console.error('Worker error:', event);
+        setError(new Error('Worker error: ' + event.message));
+      });
       
+      workerRef.current = worker;
+      
+      // Clean up worker on unmount
       return () => {
         worker.terminate();
         workerRef.current = null;
@@ -52,7 +66,6 @@ export const useGeometryWorker = () => {
       };
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
-      logger.error('Failed to initialize geometry worker', { error: err });
       return () => {};
     }
   }, []);
@@ -62,11 +75,6 @@ export const useGeometryWorker = () => {
     return new Promise((resolve, reject) => {
       if (!workerRef.current) {
         reject(new Error('Geometry worker not initialized'));
-        return;
-      }
-      
-      if (!isReady) {
-        reject(new Error('Geometry worker not ready'));
         return;
       }
       
@@ -80,43 +88,58 @@ export const useGeometryWorker = () => {
         payload
       });
     });
-  }, [isReady]);
+  }, []);
   
   // Calculate area using the worker
   const calculateArea = useCallback(async (points: Point[]): Promise<number> => {
     try {
+      if (!isReady || !workerRef.current) {
+        // Fallback to synchronous calculation
+        return calculatePolygonArea(points);
+      }
+      
       return await sendMessage<number>('calculateArea', { points });
     } catch (err) {
-      logger.error('Error calculating area in worker', { error: err });
-      
-      // Fallback to synchronous calculation if worker fails
-      logger.warn('Falling back to synchronous area calculation');
-      return calculatePolygonAreaSync(points);
+      console.error('Error calculating area in worker, falling back to sync calculation');
+      return calculatePolygonArea(points);
     }
-  }, [sendMessage]);
+  }, [isReady, sendMessage]);
   
-  // Synchronous fallback for calculating area
-  const calculatePolygonAreaSync = (points: Point[]): number => {
-    if (points.length < 3) return 0;
-    
-    let total = 0;
-    
-    for (let i = 0, l = points.length; i < l; i++) {
-      const addX = points[i].x;
-      const addY = points[i === points.length - 1 ? 0 : i + 1].y;
-      const subX = points[i === points.length - 1 ? 0 : i + 1].x;
-      const subY = points[i].y;
+  // Snap points to grid using the worker
+  const snapToGrid = useCallback(async (points: Point[], gridSize: number): Promise<Point[]> => {
+    try {
+      if (!isReady || !workerRef.current) {
+        // Return original points if worker not available
+        return points;
+      }
       
-      total += (addX * addY * 0.5);
-      total -= (subX * subY * 0.5);
+      return await sendMessage<Point[]>('snapToGrid', { points, gridSize });
+    } catch (err) {
+      console.error('Error snapping to grid in worker');
+      return points;
     }
-    
-    return Math.abs(total);
-  };
+  }, [isReady, sendMessage]);
+  
+  // Optimize a path using the worker
+  const optimizePath = useCallback(async (points: Point[], tolerance = 1): Promise<Point[]> => {
+    try {
+      if (!isReady || !workerRef.current) {
+        // Return original points if worker not available
+        return points;
+      }
+      
+      return await sendMessage<Point[]>('optimizePath', { points, tolerance });
+    } catch (err) {
+      console.error('Error optimizing path in worker');
+      return points;
+    }
+  }, [isReady, sendMessage]);
   
   return {
     isReady,
     error,
-    calculateArea
+    calculateArea,
+    snapToGrid,
+    optimizePath
   };
 };
