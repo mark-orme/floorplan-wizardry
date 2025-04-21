@@ -1,50 +1,57 @@
 
 import React, { useEffect } from 'react';
-import { initializeCSRFProtection } from '@/utils/security/csrfHandler';
+import { initializeCsrfProtection, getCsrfToken } from '@/utils/security/csrfProtection';
+import { initializeCSP } from '@/utils/security/cspUtils';
 import { toast } from 'sonner';
+
+interface SecurityInitializerProps {
+  enableToasts?: boolean;
+}
 
 /**
  * Component to initialize security features
  * Include this component at the top level of your application
  */
-export const SecurityInitializer: React.FC = () => {
+export const SecurityInitializer: React.FC<SecurityInitializerProps> = ({ 
+  enableToasts = true 
+}) => {
   useEffect(() => {
     try {
-      // Initialize CSRF protection
-      initializeCSRFProtection();
+      // Initialize CSRF protection with double-submit cookie verification
+      initializeCsrfProtection();
       
-      // Add CSP header (as a meta tag since we can't modify HTTP headers directly)
-      if (typeof document !== 'undefined' && !document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
-        const cspMeta = document.createElement('meta');
-        cspMeta.httpEquiv = 'Content-Security-Policy';
-        cspMeta.content = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'";
-        document.head.appendChild(cspMeta);
-        
-        // Also add other security headers
-        const nosniffMeta = document.createElement('meta');
-        nosniffMeta.httpEquiv = 'X-Content-Type-Options';
-        nosniffMeta.content = 'nosniff';
-        document.head.appendChild(nosniffMeta);
-        
-        const xssMeta = document.createElement('meta');
-        xssMeta.httpEquiv = 'X-XSS-Protection';
-        xssMeta.content = '1; mode=block';
-        document.head.appendChild(xssMeta);
-        
-        const frameMeta = document.createElement('meta');
-        frameMeta.httpEquiv = 'X-Frame-Options';
-        frameMeta.content = 'DENY';
-        document.head.appendChild(frameMeta);
+      // Initialize Content Security Policy with secure defaults
+      initializeCSP();
+      
+      // Generate CSRF meta tag for forms
+      if (typeof document !== 'undefined' && !document.querySelector('meta[name="csrf-token"]')) {
+        const token = getCsrfToken();
+        const csrfMeta = document.createElement('meta');
+        csrfMeta.name = 'csrf-token';
+        csrfMeta.content = token;
+        document.head.appendChild(csrfMeta);
       }
       
-      console.log('Security features initialized');
+      // Log success and notify user
+      console.log('Enhanced security features initialized');
+      if (enableToasts) {
+        toast.success('Security protections active', {
+          description: 'CSRF and CSP protections enabled',
+          duration: 3000
+        });
+      }
     } catch (error) {
       console.error('Failed to initialize security features:', error);
-      toast.error('Security initialization failed');
+      if (enableToasts) {
+        toast.error('Security initialization failed', {
+          description: 'Please refresh the page',
+          duration: 5000
+        });
+      }
     }
-  }, []);
+  }, [enableToasts]);
   
-  // This component doesn't render anything
+  // This component doesn't render anything visible
   return null;
 };
 
