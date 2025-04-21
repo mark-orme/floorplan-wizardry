@@ -31,9 +31,10 @@ export function useDrawingModeValidator({
    */
   const toDrawingMode = (modeStr: string): DrawingMode | null => {
     // Check if the string is a valid DrawingMode
-    return Object.values(DrawingMode).includes(modeStr as DrawingMode) 
-      ? modeStr as DrawingMode 
-      : null;
+    if (Object.values(DrawingMode).includes(modeStr as DrawingMode)) {
+      return modeStr as DrawingMode;
+    }
+    return null;
   };
   
   /**

@@ -6,7 +6,6 @@
  */
 import { FloorPlan, Room, Wall, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 import { Point } from '@/types/core/Point';
-import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 /**
  * Calculate wall length between two points

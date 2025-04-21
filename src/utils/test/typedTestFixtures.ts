@@ -1,59 +1,51 @@
 
 /**
- * Typed Test Fixtures
- * Provides test fixtures that ensure type compatibility
+ * Typed test fixtures
+ * Provides test fixtures with proper type checking
  * @module utils/test/typedTestFixtures
  */
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  FloorPlan, 
-  Room, 
-  Wall, 
-  Stroke, 
-  Point,
-  FloorPlanMetadata,
-  StrokeTypeLiteral,
-  RoomTypeLiteral,
-  PaperSize
-} from '@/types/floor-plan/unifiedTypes';
-import { adaptFloorPlan, adaptRoom, adaptWall, adaptMetadata } from '@/utils/typeAdapters';
+import { FloorPlan, Wall, Room, Stroke, Point } from '@/types/floor-plan/unifiedTypes';
+import { PaperSize } from '@/types/floor-plan/unifiedTypes';
+import { adaptWall, adaptRoom, adaptFloorPlan } from '@/utils/typeAdapters';
 
 /**
- * Create a test point for unit tests
- * @param x X coordinate (default 0)
- * @param y Y coordinate (default 0)
- * @returns A Point object
+ * Create a test point
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns Test point
  */
 export function createTestPoint(x: number = 0, y: number = 0): Point {
   return { x, y };
 }
 
 /**
- * Create a test wall with specified properties and all required fields
- * @param options Wall properties
- * @returns A valid Wall object
+ * Create a test wall with all required properties
+ * @param overrides Properties to override
+ * @returns Test wall
  */
-export function createTestWall(options: Partial<Wall> = {}): Wall {
-  const start = options.start ?? createTestPoint(0, 0);
-  const end = options.end ?? createTestPoint(100, 0);
+export function createTestWall(overrides: Partial<Wall> = {}): Wall {
+  const start = overrides.start ?? createTestPoint(0, 0);
+  const end = overrides.end ?? createTestPoint(100, 0);
   
   return adaptWall({
-    id: options.id ?? uuidv4(),
+    id: overrides.id ?? `test-wall-${uuidv4()}`,
     start,
     end,
-    thickness: options.thickness ?? 5,
-    color: options.color ?? '#000000',
-    ...options
+    thickness: overrides.thickness ?? 2,
+    color: overrides.color ?? '#000000',
+    roomIds: overrides.roomIds ?? [],
+    ...overrides
   });
 }
 
 /**
- * Create a test room with specified properties and all required fields
- * @param options Room properties
- * @returns A valid Room object
+ * Create a test room with all required properties
+ * @param overrides Properties to override
+ * @returns Test room
  */
-export function createTestRoom(options: Partial<Room> = {}): Room {
-  const points = options.points ?? [
+export function createTestRoom(overrides: Partial<Room> = {}): Room {
+  const vertices = overrides.vertices ?? [
     createTestPoint(0, 0),
     createTestPoint(100, 0),
     createTestPoint(100, 100),
@@ -61,101 +53,78 @@ export function createTestRoom(options: Partial<Room> = {}): Room {
   ];
   
   return adaptRoom({
-    id: options.id ?? uuidv4(),
-    name: options.name ?? 'Test Room',
-    type: options.type ?? 'other',
-    area: options.area ?? 10000,
-    points,
-    color: options.color ?? '#ffffff',
-    level: options.level ?? 0,
-    walls: options.walls ?? [],
-    ...options
+    id: overrides.id ?? `test-room-${uuidv4()}`,
+    name: overrides.name ?? 'Test Room',
+    type: overrides.type ?? 'other',
+    area: overrides.area ?? 10000,
+    perimeter: overrides.perimeter ?? 400,
+    vertices,
+    center: overrides.center ?? createTestPoint(50, 50),
+    labelPosition: overrides.labelPosition ?? createTestPoint(50, 50),
+    color: overrides.color ?? '#ffffff',
+    level: overrides.level ?? 0,
+    walls: overrides.walls ?? [],
+    ...overrides
   });
 }
 
 /**
- * Create a test stroke with specified properties and all required fields
- * @param options Stroke properties
- * @returns A valid Stroke object
+ * Create a test stroke with all required properties
+ * @param overrides Properties to override
+ * @returns Test stroke
  */
-export function createTestStroke(options: Partial<Stroke> = {}): Stroke {
-  const points = options.points ?? [
+export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
+  const points = overrides.points ?? [
     createTestPoint(0, 0),
     createTestPoint(100, 100)
   ];
   
   return {
-    id: options.id ?? uuidv4(),
+    id: overrides.id ?? `test-stroke-${uuidv4()}`,
     points,
-    type: options.type ?? 'line',
-    color: options.color ?? '#000000',
-    thickness: options.thickness ?? 2,
-    width: options.width ?? options.thickness ?? 2,
-    ...options
+    type: overrides.type ?? 'line',
+    color: overrides.color ?? '#000000',
+    thickness: overrides.thickness ?? 2,
+    width: overrides.width ?? 2,
+    ...overrides
   };
 }
 
 /**
- * Create a test floor plan with complete metadata and required fields
- * @param options Floor plan properties
- * @returns A valid FloorPlan object
+ * Create a test floor plan with all required properties
+ * @param overrides Properties to override
+ * @returns Test floor plan
  */
-export function createTestFloorPlan(options: Partial<FloorPlan> = {}): FloorPlan {
+export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
-  const metadata = adaptMetadata({
-    createdAt: options.createdAt ?? now,
-    updatedAt: options.updatedAt ?? now,
-    paperSize: PaperSize.A4,
-    level: options.level ?? 0,
-    version: '1.0',
-    author: 'Test Author',
-    dateCreated: now,
-    lastModified: now,
-    notes: 'Test floor plan for unit tests',
-    ...options.metadata
-  });
-
+  
   return adaptFloorPlan({
-    id: options.id ?? uuidv4(),
-    name: options.name ?? 'Test Floor Plan',
-    label: options.label ?? options.name ?? 'Test Floor Plan',
-    walls: options.walls ?? [],
-    rooms: options.rooms ?? [],
-    strokes: options.strokes ?? [],
-    createdAt: options.createdAt ?? now,
-    updatedAt: options.updatedAt ?? now,
-    gia: options.gia ?? 0,
-    level: options.level ?? 0,
-    index: options.index ?? options.level ?? 0,
-    canvasData: options.canvasData ?? null,
-    canvasJson: options.canvasJson ?? null,
-    metadata,
-    data: options.data ?? {},
-    userId: options.userId ?? 'test-user',
-    ...options
+    id: overrides.id ?? `test-floorplan-${uuidv4()}`,
+    name: overrides.name ?? 'Test Floor Plan',
+    label: overrides.label ?? 'Test Floor Plan',
+    walls: overrides.walls ?? [],
+    rooms: overrides.rooms ?? [],
+    strokes: overrides.strokes ?? [],
+    canvasData: overrides.canvasData ?? null,
+    canvasJson: overrides.canvasJson ?? null,
+    createdAt: overrides.createdAt ?? now,
+    updatedAt: overrides.updatedAt ?? now,
+    gia: overrides.gia ?? 0,
+    level: overrides.level ?? 0,
+    index: overrides.index ?? 0,
+    metadata: overrides.metadata ?? {
+      version: '1.0',
+      author: 'Test User',
+      dateCreated: now,
+      lastModified: now,
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+      paperSize: PaperSize.A4,
+      level: 0
+    },
+    data: overrides.data ?? {},
+    userId: overrides.userId ?? 'test-user',
+    ...overrides
   });
 }
-
-/**
- * Type safe way to cast a string to StrokeTypeLiteral
- * @param type String to cast
- * @returns Valid StrokeTypeLiteral
- */
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
-  return (validTypes.includes(type as StrokeTypeLiteral) ? type : 'line') as StrokeTypeLiteral;
-}
-
-/**
- * Type safe way to cast a string to RoomTypeLiteral
- * @param type String to cast
- * @returns Valid RoomTypeLiteral
- */
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  return (validTypes.includes(type as RoomTypeLiteral) ? type : 'other') as RoomTypeLiteral;
-}
-
-// Re-export types for convenience
-export type { FloorPlan, Room, Wall, Stroke, Point, FloorPlanMetadata, StrokeTypeLiteral, RoomTypeLiteral };
-export { PaperSize };

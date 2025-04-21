@@ -5,24 +5,19 @@
  */
 
 import { Canvas, Object as FabricObject } from 'fabric';
-import { Mock } from 'vitest';
-
-/**
- * Type for mock functions to ensure type safety
- */
-export type MockFunction<T extends (...args: any[]) => any> = Mock<Parameters<T>, ReturnType<T>>;
+import type { Mock } from 'vitest';
 
 /**
  * Strongly typed mock canvas for testing with comprehensive properties
  */
 export interface IMockCanvas extends Partial<Canvas> {
-  on: MockFunction<(eventName: string, handler: Function) => any>;
-  off: MockFunction<(eventName: string, handler?: Function) => any>;
-  add: MockFunction<(objects: any) => any>;
-  remove: MockFunction<(objects: any) => any>;
-  getPointer?: MockFunction<(event: any) => { x: number; y: number }>;
-  requestRenderAll: MockFunction<() => void>;
-  getObjects: MockFunction<() => any[]>;
+  on: Mock;
+  off: Mock;
+  add: Mock;
+  remove: Mock;
+  getPointer?: Mock;
+  requestRenderAll: Mock;
+  getObjects: Mock;
   
   // Add properties required by Fabric.js Canvas
   enablePointerEvents?: boolean;
@@ -30,7 +25,7 @@ export interface IMockCanvas extends Partial<Canvas> {
   _dropTarget?: any;
   _isClick?: boolean;
   _objects?: any[];
-  withImplementation: MockFunction<(callback?: Function) => Promise<void>>;
+  withImplementation: Mock<[callback?: Function], Promise<void>>;
   
   // Add methods for testing event handling
   getHandlers?: (eventName: string) => Function[];
@@ -41,9 +36,9 @@ export interface IMockCanvas extends Partial<Canvas> {
  * Strongly typed mock object for testing
  */
 export interface IMockObject extends Partial<FabricObject> {
-  set: MockFunction<(options: any) => any>;
-  setCoords: MockFunction<() => void>;
-  get: MockFunction<(property: string) => any>;
+  set: Mock;
+  setCoords: Mock;
+  get: Mock;
 }
 
 /**
@@ -52,7 +47,7 @@ export interface IMockObject extends Partial<FabricObject> {
 export function asMockCanvas(mockCanvas: any): Canvas & {
   getHandlers?: (eventName: string) => Function[];
   triggerEvent?: (eventName: string, eventData: any) => void;
-  withImplementation: MockFunction<(callback?: Function) => Promise<void>>;
+  withImplementation: Mock<[callback?: Function], Promise<void>>;
 };
 
 /**

@@ -60,6 +60,14 @@ export function createTestMockCanvas() {
 }
 
 /**
+ * Creates a typed mock canvas - alias for createTestMockCanvas to maintain API
+ * @returns Type-compatible mock canvas
+ */
+export function createTypedMockCanvas() {
+  return createTestMockCanvas();
+}
+
+/**
  * Create a mock with fixed type issues
  * This is compatible with test expectations
  * @returns Type-compatible mock canvas

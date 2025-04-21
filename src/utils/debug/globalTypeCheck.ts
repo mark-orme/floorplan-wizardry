@@ -1,38 +1,56 @@
 
 /**
- * Global Type Checking Utilities
- * Provides debug helpers that can be called from anywhere
+ * Global type check utility
+ * @module utils/debug/globalTypeCheck
  */
+import { FloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
 import { 
-  isValidFloorPlan, 
-  isValidStroke, 
-  isValidRoom, 
-  logTypeInfo 
+  validateFloorPlan,
+  validateWall, 
+  validateRoom, 
+  validateStroke 
 } from './typeDiagnostics';
 
-// Make these functions available globally for debugging
-declare global {
-  interface Window {
-    __DEBUG_validateFloorPlan: (floorPlan: any) => boolean;
-    __DEBUG_validateStroke: (stroke: any) => boolean;
-    __DEBUG_validateRoom: (room: any) => boolean;
-    __DEBUG_logTypeInfo: (obj: any, label?: string) => void;
+/**
+ * Type validation registry
+ * Contains functions to validate different types
+ */
+export const TypeValidationRegistry = {
+  FloorPlan: validateFloorPlan,
+  Wall: validateWall,
+  Room: validateRoom,
+  Stroke: validateStroke,
+};
+
+/**
+ * Run all type validations on an object
+ * @param obj Object to validate
+ * @returns Results of validation
+ */
+export function validateObjectType(obj: any): Record<string, boolean> {
+  const results: Record<string, boolean> = {};
+  
+  for (const [typeName, validator] of Object.entries(TypeValidationRegistry)) {
+    results[typeName] = validator(obj);
   }
+  
+  return results;
 }
 
-// Initialize global debug helpers
-export function initGlobalTypeCheckers(): void {
-  if (typeof window !== 'undefined') {
-    window.__DEBUG_validateFloorPlan = isValidFloorPlan;
-    window.__DEBUG_validateStroke = isValidStroke;
-    window.__DEBUG_validateRoom = isValidRoom;
-    window.__DEBUG_logTypeInfo = logTypeInfo;
-    
-    console.log('Global type checkers initialized. Use window.__DEBUG_validateFloorPlan(), etc.');
+/**
+ * Get a human-readable description of an object's type
+ * @param obj Object to describe
+ * @returns Human-readable type description
+ */
+export function getObjectType(obj: any): string {
+  const validationResults = validateObjectType(obj);
+  const validTypes = Object.entries(validationResults)
+    .filter(([_, isValid]) => isValid)
+    .map(([typeName]) => typeName);
+  
+  if (validTypes.length > 0) {
+    return `${validTypes.join(', ')}`;
   }
-}
-
-// Auto-initialize in development
-if (process.env.NODE_ENV !== 'production') {
-  initGlobalTypeCheckers();
+  
+  return typeof obj;
 }

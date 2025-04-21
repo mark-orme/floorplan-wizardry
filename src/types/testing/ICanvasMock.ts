@@ -4,7 +4,7 @@
  * @module types/testing/ICanvasMock
  */
 import { Canvas as FabricCanvas } from 'fabric';
-import { Mock } from 'vitest';
+import type { Mock } from 'vitest';
 
 /**
  * Minimal Canvas mock interface for tests
@@ -41,18 +41,18 @@ export function createMinimalCanvasMock(): ICanvasMock {
   console.log('Creating minimal canvas mock with correct withImplementation return type');
   
   return {
-    add: jest.fn(),
-    remove: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    renderAll: jest.fn(),
-    requestRenderAll: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    getActiveObjects: jest.fn().mockReturnValue([]),
-    discardActiveObject: jest.fn(),
-    contains: jest.fn().mockReturnValue(false),
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
     // Properly implement withImplementation to return Promise<void>
-    withImplementation: jest.fn().mockImplementation((callback?: Function): Promise<void> => {
+    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
       console.log('ICanvasMock: withImplementation called');
       if (callback && typeof callback === 'function') {
         try {
