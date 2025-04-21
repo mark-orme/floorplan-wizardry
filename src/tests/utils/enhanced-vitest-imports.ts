@@ -1,80 +1,51 @@
 
 /**
  * Enhanced centralized import file for Vitest utilities
- * Include this file at the top of test files for better type safety
+ * Include this file at the top of test files ONLY
+ * 
+ * ⚠️ IMPORTANT: Do not import this file in non-test code!
  */
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react-hooks';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import { createWithImplementationMock } from '@/utils/canvasMockUtils';
 
-// Type augmentations for better mock typings
-type MockFabricObject = {
-  set: ReturnType<typeof vi.fn>;
-  setCoords: ReturnType<typeof vi.fn>;
-  get: ReturnType<typeof vi.fn>;
-  type?: string;
-  objectType?: string;
-  id?: string;
-};
-
-// Create properly typed mocks
-const createCanvasMock = (): Canvas => {
+// Export these functions only when in a test environment
+// This prevents errors when the app is running in development/production
+export const enhancedTestUtilities = () => {
+  // Only try to import vitest in a testing environment
+  if (import.meta.env.MODE === 'test') {
+    const vitest = require('vitest');
+    const testingLibrary = require('@testing-library/react');
+    
+    return {
+      vi: vitest.vi,
+      describe: vitest.describe,
+      it: vitest.it,
+      expect: vitest.expect,
+      beforeEach: vitest.beforeEach,
+      afterEach: vitest.afterEach,
+      renderHook: testingLibrary.renderHook,
+      act: testingLibrary.act,
+      render: testingLibrary.render,
+      screen: testingLibrary.screen,
+      fireEvent: testingLibrary.fireEvent,
+      waitFor: testingLibrary.waitFor
+    };
+  }
+  
+  // Return mock functions when not in test mode
   return {
-    on: vi.fn(),
-    off: vi.fn(),
-    add: vi.fn(),
-    remove: vi.fn(),
-    getObjects: vi.fn().mockReturnValue([]),
-    dispose: vi.fn(),
-    renderAll: vi.fn(),
-    requestRenderAll: vi.fn(),
-    getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-    isDrawingMode: false,
-    freeDrawingBrush: {
-      color: "#000000",
-      width: 2
-    },
-    getWidth: vi.fn().mockReturnValue(800),
-    getHeight: vi.fn().mockReturnValue(600),
-    selection: true,
-    setActiveObject: vi.fn(),
-    discardActiveObject: vi.fn(),
-    contains: vi.fn().mockReturnValue(false),
-    clear: vi.fn(),
-    // Standardized implementation that correctly returns Promise<void>
-    withImplementation: createWithImplementationMock()
-  } as unknown as Canvas;
+    vi: () => {},
+    describe: () => {},
+    it: () => {},
+    expect: () => {},
+    beforeEach: () => {},
+    afterEach: () => {},
+    renderHook: () => {},
+    act: () => {},
+    render: () => {},
+    screen: () => {},
+    fireEvent: () => {},
+    waitFor: () => {}
+  };
 };
 
-// Create properly typed mock objects
-const createMockObject = (props: Partial<MockFabricObject> = {}): FabricObject => {
-  return {
-    set: vi.fn(),
-    setCoords: vi.fn(),
-    get: vi.fn((prop) => props[prop as keyof typeof props] || null),
-    ...props
-  } as unknown as FabricObject;
-};
-
-// Export everything
-export {
-  vi,
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  renderHook,
-  act,
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  createCanvasMock,
-  createMockObject,
-  DrawingMode
-};
+// Don't export mock utilities for Canvas and other objects directly
+// They will be imported only in test files as needed

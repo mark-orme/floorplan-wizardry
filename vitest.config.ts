@@ -5,6 +5,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Explicitly define that we're in test mode when running via Vitest
+    'import.meta.env.MODE': JSON.stringify('test'),
+  },
   test: {
     environment: 'jsdom',
     globals: true,
