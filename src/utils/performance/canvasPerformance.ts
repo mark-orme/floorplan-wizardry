@@ -1,73 +1,65 @@
 
+/**
+ * Canvas performance monitoring utilities
+ * @module utils/performance/canvasPerformance
+ */
 import { Canvas as FabricCanvas } from 'fabric';
-import { PerformanceMetrics } from '@/types/core/PerformanceMetrics';
+import { asExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 
 /**
- * Collect performance metrics for a canvas
- * @param canvas Fabric canvas instance
- * @returns Performance metrics object
+ * Record rendering time for performance metrics
+ * @param canvas Fabric Canvas instance
  */
-export function collectCanvasPerformanceMetrics(canvas: FabricCanvas): PerformanceMetrics {
+export function recordRenderTime(canvas: FabricCanvas): void {
+  if (!canvas) return;
+  
+  const extCanvas = asExtendedCanvas(canvas);
   const now = performance.now();
-  let renderTime = 0;
+  const lastRenderTime = extCanvas.__lastRenderTime || 0;
+  const elapsed = now - lastRenderTime;
   
-  // Get render time if available
-  if (canvas.__lastRenderTime) {
-    renderTime = now - canvas.__lastRenderTime;
+  // Store rendering metrics
+  extCanvas.__lastRenderTime = now;
+  extCanvas.__frameCount = (extCanvas.__frameCount || 0) + 1;
+  
+  // Update performance metrics every second
+  if (!extCanvas.__performanceMetrics) {
+    extCanvas.__performanceMetrics = {
+      fps: 0,
+      renderTime: 0,
+      objectCount: 0,
+      lastUpdate: now
+    };
   }
   
-  // Calculate frame rate (inverse of render time)
-  const frameRate = renderTime > 0 ? 1000 / renderTime : 60;
-  
-  // Count canvas objects
-  const objectCount = canvas.getObjects().length;
-  
-  // Get memory usage if available
-  let memoryUsage: number | undefined;
-  if (window.performance && 'memory' in window.performance) {
-    memoryUsage = (window.performance as any).memory.usedJSHeapSize;
+  if (now - extCanvas.__performanceMetrics.lastUpdate > 1000) {
+    // Calculate FPS
+    const fps = extCanvas.__frameCount || 0;
+    extCanvas.__frameCount = 0;
+    
+    // Update metrics
+    extCanvas.__performanceMetrics = {
+      fps,
+      renderTime: elapsed,
+      objectCount: canvas.getObjects()?.length || 0,
+      lastUpdate: now
+    };
   }
-  
-  // Create metrics object
-  const metrics: PerformanceMetrics = {
-    frameRate,
-    renderTime,
-    objectCount,
-    memoryUsage,
-    timestamp: now
-  };
-  
-  return metrics;
 }
 
 /**
- * Track canvas render performance
- * @param canvas Fabric canvas instance
- * @param callback Function to call with metrics after render
- * @returns Cleanup function
+ * Get current performance metrics from canvas
+ * @param canvas Fabric Canvas instance
+ * @returns Performance metrics object
  */
-export function trackCanvasPerformance(
-  canvas: FabricCanvas,
-  callback: (metrics: PerformanceMetrics) => void
-): () => void {
-  // Before render handler
-  const handleBeforeRender = () => {
-    canvas.__lastRenderTime = performance.now();
-  };
+export function getPerformanceMetrics(canvas: FabricCanvas) {
+  if (!canvas) return null;
   
-  // After render handler
-  const handleAfterRender = () => {
-    const metrics = collectCanvasPerformanceMetrics(canvas);
-    callback(metrics);
-  };
-  
-  // Add event listeners
-  canvas.on('before:render', handleBeforeRender);
-  canvas.on('after:render', handleAfterRender);
-  
-  // Return cleanup function
-  return () => {
-    canvas.off('before:render', handleBeforeRender);
-    canvas.off('after:render', handleAfterRender);
+  const extCanvas = asExtendedCanvas(canvas);
+  return extCanvas.__performanceMetrics || {
+    fps: 0,
+    renderTime: 0,
+    objectCount: 0,
+    lastUpdate: 0
   };
 }

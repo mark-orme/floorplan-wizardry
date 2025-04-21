@@ -41,5 +41,5 @@ export interface Wall {
   roomIds: string[];
   
   /** Length of the wall (calculated property) */
-  length?: number;
+  length: number;
 }

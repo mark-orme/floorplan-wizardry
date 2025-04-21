@@ -1,249 +1,142 @@
+
 /**
- * Resource Ownership Utilities
- * Functions for verifying ownership of resources
+ * Resource ownership utilities
+ * Provides functions to check if a user owns a resource
  */
-import { supabase } from '@/lib/supabase';
-import { AuditEventType, AuditEventSeverity, logAuditEvent } from '@/utils/audit/auditLogger';
-import { safeQuery, safeFilterQuery } from '@/utils/supabase/supabaseApiWrapper';
+import { supabaseClient } from '../supabase/supabaseClient';
+import { checkAuthorization } from './authorization';
+import { log } from '../logging';
 
-// Define resource types
-export enum ResourceType {
-  FLOOR_PLAN = 'floor_plan',
-  PROPERTY = 'property',
-  DOCUMENT = 'document',
-  USER_PROFILE = 'user_profile',
-  CONFIGURATION = 'configuration'
-}
-
-interface ResourceOwnershipCheck {
-  resourceType: ResourceType;
-  resourceId: string;
-  userId: string;
+/**
+ * Get the owner ID of a resource
+ * @param table Database table name
+ * @param resourceId Resource ID
+ * @returns Owner user ID or null if not found
+ */
+export async function getResourceOwner(
+  table: string, 
+  resourceId: string
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabaseClient
+      .from(table)
+      .select('user_id')
+      .eq('id', resourceId)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data?.user_id || null;
+  } catch (err) {
+    log.error(`Error getting resource owner: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
 }
 
 /**
- * Check if user owns a resource
- * @param resourceType Type of resource to check
- * @param resourceId ID of the resource
- * @param userId ID of the user
- * @returns Boolean indicating ownership
+ * Check if a user owns a resource
+ * @param userId User ID
+ * @param table Database table name
+ * @param resourceId Resource ID
+ * @returns True if the user owns the resource
  */
 export async function isResourceOwner(
-  resourceType: ResourceType,
-  resourceId: string,
-  userId: string
+  userId: string, 
+  table: string, 
+  resourceId: string
 ): Promise<boolean> {
-  if (!userId || !resourceId) return false;
-  
   try {
-    let isOwner = false;
+    const { data, error } = await supabaseClient
+      .from(table)
+      .select('user_id')
+      .eq('id', resourceId)
+      .single();
     
-    switch (resourceType) {
-      case ResourceType.FLOOR_PLAN:
-        const { data: floorPlanData, error: floorPlanError } = await supabase
-          .from('floor_plans')
-          .select('*')
-          .eq('id', resourceId)
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        isOwner = !!floorPlanData && !floorPlanError;
-        break;
-        
-      case ResourceType.PROPERTY:
-        const { data: propertyData, error: propertyError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('id', resourceId)
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        isOwner = !!propertyData && !propertyError;
-        break;
-        
-      case ResourceType.USER_PROFILE:
-        // For user profile, the resourceId should be the userId
-        isOwner = resourceId === userId;
-        break;
-        
-      default:
-        // For other resource types, implement specific checks
-        isOwner = false;
+    if (error) {
+      throw error;
     }
     
-    // Log the ownership check
-    await logAuditEvent({
-      type: AuditEventType.API_ACCESS,
-      userId,
-      resourceId,
-      description: `Ownership check: user ${userId} ${isOwner ? 'owns' : 'does not own'} ${resourceType} ${resourceId}`,
-      severity: isOwner ? AuditEventSeverity.INFO : AuditEventSeverity.WARNING,
-      metadata: {
-        resourceType,
-        isOwner
-      }
-    });
-    
-    return isOwner;
-  } catch (error) {
-    console.error(`Error checking ownership of ${resourceType} ${resourceId}:`, error);
+    return data?.user_id === userId;
+  } catch (err) {
+    log.error(`Error checking resource ownership: ${err instanceof Error ? err.message : String(err)}`);
     return false;
   }
 }
 
 /**
- * Check if a user has access to a resource (either as owner or through sharing)
- * @param resourceType Type of resource to check
- * @param resourceId ID of the resource
- * @param userId ID of the user
- * @returns Boolean indicating access
+ * Check if user is authorized to access a resource
+ * @param userId User ID
+ * @param table Database table name
+ * @param resourceId Resource ID
+ * @param requiredRole Required role level
+ * @returns True if user is authorized
  */
-export async function hasResourceAccess(
-  resourceType: ResourceType,
-  resourceId: string,
-  userId: string
+export async function canAccessResource(
+  userId: string, 
+  table: string, 
+  resourceId: string, 
+  requiredRole: string = 'user'
 ): Promise<boolean> {
-  // First check ownership
-  const isOwner = await isResourceOwner(resourceType, resourceId, userId);
-  if (isOwner) return true;
-  
-  // If not owner, check if resource is shared with user
-  try {
-    let hasAccess = false;
-    
-    switch (resourceType) {
-      case ResourceType.FLOOR_PLAN:
-        // Check shared floor plans
-        const { data: sharedFloorPlanData, error: sharedFloorPlanError } = await supabase
-          .from('shared_floor_plans')
-          .select('*')
-          .eq('floor_plan_id', resourceId)
-          .eq('user_id', userId);
-        
-        hasAccess = !!sharedFloorPlanData?.length && !sharedFloorPlanError;
-        break;
-        
-      case ResourceType.PROPERTY:
-        // Check shared properties
-        const { data: sharedPropertyData, error: sharedPropertyError } = await supabase
-          .from('shared_properties')
-          .select('*')
-          .eq('property_id', resourceId)
-          .eq('user_id', userId);
-        
-        hasAccess = !!sharedPropertyData?.length && !sharedPropertyError;
-        break;
-        
-      default:
-        // For other resource types, implement specific sharing checks
-        hasAccess = false;
-    }
-    
-    // Log the access check
-    await logAuditEvent({
-      type: AuditEventType.API_ACCESS,
-      userId,
-      resourceId,
-      description: `Access check: user ${userId} ${hasAccess ? 'has access to' : 'does not have access to'} ${resourceType} ${resourceId}`,
-      severity: hasAccess ? AuditEventSeverity.INFO : AuditEventSeverity.WARNING,
-      metadata: {
-        resourceType,
-        hasAccess,
-        accessType: 'shared'
-      }
-    });
-    
-    return hasAccess;
-  } catch (error) {
-    console.error(`Error checking access to ${resourceType} ${resourceId}:`, error);
-    return false;
-  }
-}
-
-/**
- * Get IDs of all resources owned by a user
- * @param resourceType Type of resources to get
- * @param userId ID of the user
- * @returns Array of resource IDs
- */
-export async function getOwnedResourceIds(
-  resourceType: ResourceType,
-  userId: string
-): Promise<string[]> {
-  if (!userId) return [];
-  
-  try {
-    let resourceIds: string[] = [];
-    
-    switch (resourceType) {
-      case ResourceType.FLOOR_PLAN:
-        const { data: floorPlanData, error: floorPlanError } = await supabase
-          .from('floor_plans')
-          .select('id')
-          .eq('user_id', userId);
-        
-        if (floorPlanData && !floorPlanError) {
-          resourceIds = floorPlanData.map(item => item.id);
-        }
-        break;
-        
-      case ResourceType.PROPERTY:
-        const { data: propertyData, error: propertyError } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('user_id', userId);
-        
-        if (propertyData && !propertyError) {
-          resourceIds = propertyData.map(item => item.id);
-        }
-        break;
-        
-      default:
-        // For other resource types, implement specific queries
-        resourceIds = [];
-    }
-    
-    return resourceIds;
-  } catch (error) {
-    console.error(`Error getting owned ${resourceType} IDs for user ${userId}:`, error);
-    return [];
-  }
-}
-
-/**
- * Checks if a user owns a resource
- * @param resourceId Resource ID to check
- * @param resourceType Type of resource (table name)
- * @param userId User ID to check ownership for
- * @returns Promise resolving to boolean
- */
-export async function checkResourceOwnership(
-  resourceId: string,
-  resourceType: string,
-  userId: string
-): Promise<boolean> {
-  if (!supabase) {
-    console.error('Supabase client not initialized');
+  if (!userId || !table || !resourceId) {
     return false;
   }
   
   try {
-    // Use the safe filter query
-    const { data, error } = await safeFilterQuery(
-      supabase.from(resourceType),
-      'id',
-      resourceId
-    );
-    
-    if (error || !data || data.length === 0) {
-      console.error(`Error checking ${resourceType} ownership:`, error);
+    // First check if user has the required role
+    const hasRole = await checkAuthorization(userId, requiredRole);
+    if (!hasRole) {
       return false;
     }
     
-    const resource = data[0];
-    return resource.user_id === userId || resource.userId === userId;
-  } catch (error) {
-    console.error(`Error checking ${resourceType} ownership:`, error);
+    // For admin role, allow access without ownership check
+    if (requiredRole === 'admin') {
+      return true;
+    }
+    
+    // Check if user is the owner of the resource
+    const { data, error } = await supabaseClient
+      .from(table)
+      .select('user_id')
+      .eq('id', resourceId)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data?.user_id === userId;
+  } catch (err) {
+    log.error(`Error checking resource access: ${err instanceof Error ? err.message : String(err)}`);
     return false;
+  }
+}
+
+/**
+ * Get all resources owned by a user
+ * @param userId User ID
+ * @param table Database table name
+ * @returns Array of resources
+ */
+export async function getUserResources(
+  userId: string, 
+  table: string
+): Promise<any[]> {
+  try {
+    const { data, error } = await supabaseClient
+      .from(table)
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data || [];
+  } catch (err) {
+    log.error(`Error getting user resources: ${err instanceof Error ? err.message : String(err)}`);
+    return [];
   }
 }

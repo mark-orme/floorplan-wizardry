@@ -1,4 +1,3 @@
-
 /**
  * Unified Types for Floor Plans
  * Central source of truth for all floor plan related types
@@ -27,7 +26,7 @@ export function createPoint(x: number, y: number): Point {
 /**
  * Stroke type enum as string literals
  */
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation';
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
 
 /**
  * Room type enum as string literals
@@ -229,7 +228,7 @@ export interface FloorPlan {
  * Type-safe conversions for string literals
  */
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'];
   return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }
 

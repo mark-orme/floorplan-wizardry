@@ -31,20 +31,20 @@ export interface FloorPlanMetadata {
   /** Floor level (0 = ground floor) */
   level?: number;
   
-  /** Version (optional) */
-  version?: string;
+  /** Version (required) */
+  version: string;
   
-  /** Author (optional) */
-  author?: string;
+  /** Author (required) */
+  author: string;
   
-  /** Date created formatted (optional) */
-  dateCreated?: string;
+  /** Date created formatted (required) */
+  dateCreated: string;
   
-  /** Last modified formatted (optional) */
-  lastModified?: string;
+  /** Last modified formatted (required) */
+  lastModified: string;
   
-  /** Notes (optional) */
-  notes?: string;
+  /** Notes (required) */
+  notes: string;
 }
 
 /**

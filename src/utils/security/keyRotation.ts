@@ -1,11 +1,50 @@
 /**
- * Security Key Rotation Utility
- * Handles rotation of security keys and secrets
+ * Key rotation utilities
+ * Provides functions to rotate API keys and secrets
  */
-import { generateCSRFToken } from './enhancedCsrfProtection';
-import { toast } from 'sonner';
-import { logAuditEvent, AuditEventType, AuditEventSeverity } from '@/utils/audit/auditLogger';
-import { safeQuery, safeFilterQuery } from '@/utils/supabase/supabaseApiWrapper';
+import { supabaseClient } from '../supabase/supabaseClient';
+import { log } from '../logging';
+import { encryptData } from './encryption';
+
+/**
+ * Update API key for a user
+ * @param userId User ID
+ * @param newKey New API key
+ * @returns Success status
+ */
+export async function updateApiKey(
+  userId: string, 
+  newKey: string
+): Promise<boolean> {
+  try {
+    if (!userId || !newKey) {
+      throw new Error('User ID and new key are required');
+    }
+    
+    // Encrypt the API key before storing
+    const encryptedKey = await encryptData(newKey);
+    
+    // Update the key in the database
+    const { error } = await supabaseClient
+      .from('user_api_keys')
+      .update({ 
+        api_key: encryptedKey,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    log.info(`API key updated for user ${userId}`);
+    return true;
+  } catch (err) {
+    log.error(`Error updating API key: ${err instanceof Error ? err.message : String(err)}`);
+    return false;
+  }
+}
 
 /**
  * Generate a secure random key

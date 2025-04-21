@@ -1,3 +1,4 @@
+
 /**
  * Room Types
  * Room interface and related types for floor plans
@@ -27,19 +28,19 @@ export interface Room {
   area: number;
   
   /** Room perimeter */
-  perimeter?: number;
+  perimeter: number;
   
   /** Room center point */
-  center?: Point;
+  center: Point;
   
   /** Room label position */
-  labelPosition?: Point;
+  labelPosition: Point;
   
   /** Room boundary points */
   points?: Point[];
   
   /** Room vertices (polygon corners) */
-  vertices?: Point[];
+  vertices: Point[];
   
   /** Room color (required) */
   color: string;

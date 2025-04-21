@@ -50,6 +50,7 @@ export const useFloorPlans = ({
   
   const drawingHook = useFloorPlanDrawing({
     floorPlan: safeFloorPlan,
+    canvas: fabricCanvasRef.current,
     onFloorPlanUpdate: (floorPlan) => {
       setFloorPlans(prev => {
         const updated = [...prev];
