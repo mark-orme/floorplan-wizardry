@@ -1,3 +1,4 @@
+
 /**
  * Tests for useDrawingTool hook
  * @module hooks/__tests__/useDrawingTool
@@ -7,6 +8,7 @@ import { useDrawingTool } from '@/hooks/useDrawingTool';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
 vi.mock('sonner', () => ({

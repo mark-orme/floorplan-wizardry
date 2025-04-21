@@ -1,7 +1,7 @@
-
 /**
  * CSRF Protection Tests
  */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   generateCsrfToken,
   getCsrfToken,
@@ -37,7 +37,7 @@ describe('CSRF Protection', () => {
       // @ts-ignore
       delete window.fetch;
     }
-    window.fetch = jest.fn();
+    window.fetch = vi.fn();
   });
   
   test('generateCsrfToken should create and store a token', () => {
