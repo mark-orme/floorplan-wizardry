@@ -24,4 +24,3 @@ if (import.meta.env.MODE !== "test") {
 
 // Export App for testing purposes
 export default App;
-
