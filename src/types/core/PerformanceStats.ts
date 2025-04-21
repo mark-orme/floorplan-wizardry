@@ -70,17 +70,17 @@ export interface PerformanceStats {
   /**
    * Time (ms) per frame
    */
-  frameTime?: number;
+  frameTime: number;
   
   /**
    * Maximum frame time observed
    */
-  maxFrameTime?: number;
+  maxFrameTime: number;
   
   /**
    * Count of frames that took longer than threshold
    */
-  longFrames?: number;
+  longFrames: number;
 }
 
 /**

@@ -31,3 +31,24 @@ export const DEFAULT_GRID_SIZE = GRID_SIZE.DEFAULT;
  * Default tolerance for geometry operations
  */
 export const DEFAULT_TOLERANCE = TOLERANCE.MEDIUM;
+
+/**
+ * Precision for area calculations (decimal places)
+ */
+export const AREA_PRECISION = 2;
+
+/**
+ * Default threshold for straightening lines (in degrees)
+ */
+export const DEFAULT_STRAIGHTENING_THRESHOLD = 5;
+
+/**
+ * Threshold for wall alignment (in pixels)
+ */
+export const WALL_ALIGNMENT_THRESHOLD = 10;
+
+/**
+ * Default pixels per meter conversion
+ */
+export const PIXELS_PER_METER = 100;
+

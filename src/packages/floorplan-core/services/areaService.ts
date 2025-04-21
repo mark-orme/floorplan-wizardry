@@ -28,7 +28,7 @@ export interface AreaCalculationResult {
  */
 export function calculateArea(points: Point[], pixelsPerMeter: number = 100): AreaCalculationResult {
   const areaPixels = calculatePolygonArea(points);
-  const areaM2 = Math.pow(pixelsToMeters(1, pixelsPerMeter), 2) * areaPixels;
+  const areaM2 = pixelsToMeters(areaPixels, pixelsPerMeter);
   const areaSqFt = areaM2 * 10.764; // Convert square meters to square feet
   
   return {
@@ -54,7 +54,7 @@ export function calculateCombinedArea(
     totalAreaPixels += calculatePolygonArea(polygon);
   }
   
-  const areaM2 = Math.pow(pixelsToMeters(1, pixelsPerMeter), 2) * totalAreaPixels;
+  const areaM2 = pixelsToMeters(totalAreaPixels, pixelsPerMeter);
   const areaSqFt = areaM2 * 10.764;
   
   return {

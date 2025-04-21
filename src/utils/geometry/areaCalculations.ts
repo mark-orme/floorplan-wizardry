@@ -83,19 +83,3 @@ export const isConvexPolygon = (points: Point[]): boolean => {
   
   return true;
 };
-
-/**
- * Calculate Gross Internal Area (GIA) from room polygons
- * @param {Array<Point[]>} rooms - Array of room polygons
- * @returns {number} Total area in square meters
- */
-export const calculateGIA = (rooms: Array<Point[]>): number => {
-  if (!rooms || rooms.length === 0) return 0;
-  
-  // Sum areas of all rooms
-  const totalArea = rooms.reduce((sum, room) => {
-    return sum + calculatePolygonArea(room);
-  }, 0);
-  
-  return totalArea;
-};
