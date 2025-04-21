@@ -1,195 +1,161 @@
 
 /**
- * Type-safe test fixtures for unit tests
+ * Typed Test Fixtures
+ * Provides test fixtures that ensure type compatibility
  * @module utils/test/typedTestFixtures
  */
 import { v4 as uuidv4 } from 'uuid';
-import {
-  FloorPlan,
-  FloorPlanMetadata,
-  Wall,
-  Room,
-  Stroke,
+import { 
+  FloorPlan, 
+  Room, 
+  Wall, 
+  Stroke, 
   Point,
-  PaperSize,
+  FloorPlanMetadata,
   StrokeTypeLiteral,
-  RoomTypeLiteral
+  RoomTypeLiteral,
+  PaperSize
 } from '@/types/floor-plan/unifiedTypes';
-
-// Re-export these types for use in tests
-export type { FloorPlan, Stroke, Wall, Room, Point, FloorPlanMetadata };
+import { adaptFloorPlan, adaptRoom, adaptWall, adaptMetadata } from '@/utils/typeAdapters';
 
 /**
- * Type assertion for stroke types
- * @param type The type as string
- * @returns The validated stroke type
- */
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
-  return validTypes.includes(type as StrokeTypeLiteral) 
-    ? (type as StrokeTypeLiteral) 
-    : 'line';
-}
-
-/**
- * Type assertion for room types
- * @param type The type as string
- * @returns The validated room type
- */
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  return validTypes.includes(type as RoomTypeLiteral) 
-    ? (type as RoomTypeLiteral) 
-    : 'other';
-}
-
-/**
- * Create a test point for testing
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A point object
+ * Create a test point for unit tests
+ * @param x X coordinate (default 0)
+ * @param y Y coordinate (default 0)
+ * @returns A Point object
  */
 export function createTestPoint(x: number = 0, y: number = 0): Point {
   return { x, y };
 }
 
 /**
- * Create a test stroke for testing
- * @param props Optional properties
- * @returns A stroke object
+ * Create a test wall with specified properties and all required fields
+ * @param options Wall properties
+ * @returns A valid Wall object
  */
-export function createTestStroke(props: Partial<Stroke> = {}): Stroke {
-  return {
-    id: props.id || `stroke-${uuidv4()}`,
-    points: props.points || [
-      createTestPoint(0, 0),
-      createTestPoint(100, 100)
-    ],
-    type: props.type || 'line',
-    color: props.color || '#000000',
-    thickness: props.thickness || 2,
-    width: props.width || 2
-  };
-}
-
-/**
- * Create a test wall for testing
- * @param props Optional properties
- * @returns A wall object
- */
-export function createTestWall(props: Partial<Wall> = {}): Wall {
-  const start = props.start || createTestPoint(0, 0);
-  const end = props.end || createTestPoint(100, 0);
-  const length = props.length || Math.sqrt(
-    Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-  );
+export function createTestWall(options: Partial<Wall> = {}): Wall {
+  const start = options.start ?? createTestPoint(0, 0);
+  const end = options.end ?? createTestPoint(100, 0);
   
-  return {
-    id: props.id || `wall-${uuidv4()}`,
+  return adaptWall({
+    id: options.id ?? uuidv4(),
     start,
     end,
-    length,
-    thickness: props.thickness || 5,
-    color: props.color || '#333333',
-    roomIds: props.roomIds || [],
-    height: props.height,
-    points: props.points || [start, end]
-  };
+    thickness: options.thickness ?? 5,
+    color: options.color ?? '#000000',
+    ...options
+  });
 }
 
 /**
- * Create a test room for testing
- * @param props Optional properties
- * @returns A room object
+ * Create a test room with specified properties and all required fields
+ * @param options Room properties
+ * @returns A valid Room object
  */
-export function createTestRoom(props: Partial<Room> = {}): Room {
-  const vertices = props.vertices || [
+export function createTestRoom(options: Partial<Room> = {}): Room {
+  const points = options.points ?? [
     createTestPoint(0, 0),
     createTestPoint(100, 0),
     createTestPoint(100, 100),
     createTestPoint(0, 100)
   ];
   
-  // Calculate center point
-  const center = props.center || {
-    x: vertices.reduce((sum, v) => sum + v.x, 0) / vertices.length,
-    y: vertices.reduce((sum, v) => sum + v.y, 0) / vertices.length
-  };
-  
-  // Calculate perimeter
-  let perimeter = 0;
-  for (let i = 0; i < vertices.length; i++) {
-    const j = (i + 1) % vertices.length;
-    const dx = vertices[j].x - vertices[i].x;
-    const dy = vertices[j].y - vertices[i].y;
-    perimeter += Math.sqrt(dx * dx + dy * dy);
-  }
+  return adaptRoom({
+    id: options.id ?? uuidv4(),
+    name: options.name ?? 'Test Room',
+    type: options.type ?? 'other',
+    area: options.area ?? 10000,
+    points,
+    color: options.color ?? '#ffffff',
+    level: options.level ?? 0,
+    walls: options.walls ?? [],
+    ...options
+  });
+}
+
+/**
+ * Create a test stroke with specified properties and all required fields
+ * @param options Stroke properties
+ * @returns A valid Stroke object
+ */
+export function createTestStroke(options: Partial<Stroke> = {}): Stroke {
+  const points = options.points ?? [
+    createTestPoint(0, 0),
+    createTestPoint(100, 100)
+  ];
   
   return {
-    id: props.id || `room-${uuidv4()}`,
-    name: props.name || 'Test Room',
-    type: props.type || 'other',
-    vertices,
-    area: props.area || 10000,
-    perimeter: props.perimeter || perimeter,
-    labelPosition: props.labelPosition || center,
-    center,
-    color: props.color || '#f5f5f5'
+    id: options.id ?? uuidv4(),
+    points,
+    type: options.type ?? 'line',
+    color: options.color ?? '#000000',
+    thickness: options.thickness ?? 2,
+    width: options.width ?? options.thickness ?? 2,
+    ...options
   };
 }
 
 /**
- * Create a complete metadata object with required fields
- * @param overrides Optional overrides
- * @returns Floor plan metadata
+ * Create a test floor plan with complete metadata and required fields
+ * @param options Floor plan properties
+ * @returns A valid FloorPlan object
  */
-export function createTestMetadata(overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+export function createTestFloorPlan(options: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
-  return {
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    paperSize: overrides.paperSize || PaperSize.A4,
-    level: overrides.level ?? 0,
-    version: overrides.version || '1.0',
-    author: overrides.author || 'Test Author',
-    dateCreated: overrides.dateCreated || now,
-    lastModified: overrides.lastModified || now,
-    notes: overrides.notes || ''
-  };
+  const metadata = adaptMetadata({
+    createdAt: options.createdAt ?? now,
+    updatedAt: options.updatedAt ?? now,
+    paperSize: PaperSize.A4,
+    level: options.level ?? 0,
+    version: '1.0',
+    author: 'Test Author',
+    dateCreated: now,
+    lastModified: now,
+    notes: 'Test floor plan for unit tests',
+    ...options.metadata
+  });
+
+  return adaptFloorPlan({
+    id: options.id ?? uuidv4(),
+    name: options.name ?? 'Test Floor Plan',
+    label: options.label ?? options.name ?? 'Test Floor Plan',
+    walls: options.walls ?? [],
+    rooms: options.rooms ?? [],
+    strokes: options.strokes ?? [],
+    createdAt: options.createdAt ?? now,
+    updatedAt: options.updatedAt ?? now,
+    gia: options.gia ?? 0,
+    level: options.level ?? 0,
+    index: options.index ?? options.level ?? 0,
+    canvasData: options.canvasData ?? null,
+    canvasJson: options.canvasJson ?? null,
+    metadata,
+    data: options.data ?? {},
+    userId: options.userId ?? 'test-user',
+    ...options
+  });
 }
 
 /**
- * Create a test floor plan for testing
- * @param props Optional properties
- * @returns A floor plan object
+ * Type safe way to cast a string to StrokeTypeLiteral
+ * @param type String to cast
+ * @returns Valid StrokeTypeLiteral
  */
-export function createTestFloorPlan(props: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
-  
-  return {
-    id: props.id || `floorplan-${uuidv4()}`,
-    name: props.name || 'Test Floor Plan',
-    label: props.label || 'Test Floor Plan',
-    walls: props.walls || [],
-    rooms: props.rooms || [],
-    strokes: props.strokes || [],
-    canvasData: props.canvasData || null,
-    canvasJson: props.canvasJson || null,
-    canvasState: props.canvasState || null,
-    createdAt: props.createdAt || now,
-    updatedAt: props.updatedAt || now,
-    gia: props.gia ?? 0,
-    level: props.level ?? 0,
-    index: props.index ?? 0,
-    metadata: props.metadata || createTestMetadata({ level: props.level }),
-    data: props.data || {},
-    userId: props.userId || 'test-user'
-  };
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation'];
+  return (validTypes.includes(type as StrokeTypeLiteral) ? type : 'line') as StrokeTypeLiteral;
 }
 
-// Also create aliases for the typed test fixtures
-export const createTypedTestFloorPlan = createTestFloorPlan;
-export const createTypedTestStroke = createTestStroke;
-export const createTypedTestWall = createTestWall;
-export const createTypedTestRoom = createTestRoom;
-export const createTypedTestPoint = createTestPoint;
+/**
+ * Type safe way to cast a string to RoomTypeLiteral
+ * @param type String to cast
+ * @returns Valid RoomTypeLiteral
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
+  return (validTypes.includes(type as RoomTypeLiteral) ? type : 'other') as RoomTypeLiteral;
+}
+
+// Re-export types for convenience
+export type { FloorPlan, Room, Wall, Stroke, Point, FloorPlanMetadata, StrokeTypeLiteral, RoomTypeLiteral };
+export { PaperSize };

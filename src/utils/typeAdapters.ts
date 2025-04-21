@@ -9,13 +9,25 @@ import { Point } from '@/types/core/Point';
 import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 /**
+ * Calculate wall length between two points
+ * @param start Start point
+ * @param end End point 
+ * @returns Wall length
+ */
+function calculateLength(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
  * Adapts a Wall-like object to ensure it has all required properties
  * @param wall Wall-like object that may be missing properties
  * @returns Complete Wall object with all required properties
  */
 export function adaptWall(wall: Partial<Wall> & { start: Point; end: Point }): Wall {
   // Calculate length if it's missing
-  const length = wall.length ?? calculateWallLength(wall.start, wall.end);
+  const length = wall.length ?? calculateLength(wall.start, wall.end);
   
   // Add roomIds if missing
   const roomIds = wall.roomIds ?? [];
@@ -46,6 +58,9 @@ export function adaptWall(wall: Partial<Wall> & { start: Point; end: Point }): W
 export function adaptRoom(room: Partial<Room> & { id: string; name: string }): Room {
   // Ensure vertices exists (using points if available)
   const vertices = room.vertices ?? (room.points ? [...room.points] : []);
+  const center = room.center ?? { x: 0, y: 0 };
+  const labelPosition = room.labelPosition ?? { x: 0, y: 0 };
+  const perimeter = room.perimeter ?? 0;
   
   // Ensure other required properties exist
   return {
@@ -53,13 +68,13 @@ export function adaptRoom(room: Partial<Room> & { id: string; name: string }): R
     name: room.name,
     type: room.type ?? 'other',
     area: room.area ?? 0,
-    perimeter: room.perimeter ?? 0,
+    perimeter,
     color: room.color ?? '#ffffff',
     level: room.level ?? 0,
     vertices,
-    labelPosition: room.labelPosition ?? { x: 0, y: 0 },
-    center: room.center ?? { x: 0, y: 0 },
-    ...(room.points ? { points: room.points } : {}),
+    labelPosition,
+    center,
+    ...(room.points ? { points: room.points } : { points: vertices }),
     ...(room.walls ? { walls: room.walls } : { walls: [] }),
     // Include any other properties from the original room
     ...room
@@ -71,7 +86,7 @@ export function adaptRoom(room: Partial<Room> & { id: string; name: string }): R
  * @param metadata Metadata-like object that may be missing properties
  * @returns Complete FloorPlanMetadata object with all required properties
  */
-export function adaptMetadata(metadata: Partial<FloorPlanMetadata>): FloorPlanMetadata {
+export function adaptMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
   const now = new Date().toISOString();
   return {
     createdAt: metadata.createdAt ?? now,
@@ -82,7 +97,8 @@ export function adaptMetadata(metadata: Partial<FloorPlanMetadata>): FloorPlanMe
     author: metadata.author ?? '',
     dateCreated: metadata.dateCreated ?? now,
     lastModified: metadata.lastModified ?? now,
-    notes: metadata.notes ?? ''
+    notes: metadata.notes ?? '',
+    ...metadata
   };
 }
 
@@ -121,8 +137,17 @@ export function adaptFloorPlan(floorPlan: Partial<FloorPlan> & { id: string; nam
     level: floorPlan.level ?? 0,
     index: floorPlan.index ?? floorPlan.level ?? 0,
     metadata,
-    // Add required properties that might be missing
     data: floorPlan.data ?? {},
-    userId: floorPlan.userId ?? 'default-user'
+    userId: floorPlan.userId ?? 'default-user',
+    ...floorPlan
   } as FloorPlan;
+}
+
+/**
+ * Adapts an array of FloorPlan-like objects to ensure they all have required properties
+ * @param floorPlans Array of partial floor plan objects
+ * @returns Array of complete FloorPlan objects
+ */
+export function adaptFloorPlans(floorPlans: (Partial<FloorPlan> & { id: string; name: string })[]): FloorPlan[] {
+  return floorPlans.map(fp => adaptFloorPlan(fp));
 }

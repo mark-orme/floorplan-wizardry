@@ -25,20 +25,31 @@ export function useDrawingModeValidator({
   const [mode, setMode] = useState<DrawingMode>(initialMode);
   
   /**
+   * Convert string to DrawingMode if possible
+   * @param modeStr Mode string to convert
+   * @returns DrawingMode or null if invalid
+   */
+  const toDrawingMode = (modeStr: string): DrawingMode | null => {
+    // Check if the string is a valid DrawingMode
+    return Object.values(DrawingMode).includes(modeStr as DrawingMode) 
+      ? modeStr as DrawingMode 
+      : null;
+  };
+  
+  /**
    * Validate and set drawing mode
    * @param newMode The new drawing mode to set
    * @returns Whether the mode was successfully set
    */
   const validateAndSetMode = useCallback((newMode: DrawingMode | string): boolean => {
-    // If newMode is a string, convert it to DrawingMode if valid
     let validatedMode: DrawingMode;
     
     if (typeof newMode === 'string') {
-      // Check if the string matches a valid DrawingMode value
-      const isValidMode = Object.values(DrawingMode).includes(newMode as DrawingMode);
+      // Try to convert the string to a DrawingMode
+      const convertedMode = toDrawingMode(newMode);
       
-      if (isValidMode) {
-        validatedMode = newMode as DrawingMode;
+      if (convertedMode !== null) {
+        validatedMode = convertedMode;
       } else {
         console.error(`Invalid drawing mode: ${newMode}`);
         toast.error(`Invalid drawing mode: ${newMode}`);

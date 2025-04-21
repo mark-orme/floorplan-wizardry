@@ -4,24 +4,25 @@
  * @module types/testing/ICanvasMock
  */
 import { Canvas as FabricCanvas } from 'fabric';
+import { Mock } from 'vitest';
 
 /**
  * Minimal Canvas mock interface for tests
  * Contains only the methods and properties commonly used in tests
  */
 export interface ICanvasMock {
-  add: jest.Mock;
-  remove: jest.Mock;
-  getObjects: jest.Mock;
-  renderAll: jest.Mock;
-  requestRenderAll: jest.Mock;
-  on: jest.Mock;
-  off: jest.Mock;
-  getActiveObjects?: jest.Mock;
-  discardActiveObject: jest.Mock;
-  contains?: jest.Mock;
+  add: Mock;
+  remove: Mock;
+  getObjects: Mock;
+  renderAll: Mock;
+  requestRenderAll: Mock;
+  on: Mock;
+  off: Mock;
+  getActiveObjects?: Mock;
+  discardActiveObject: Mock;
+  contains?: Mock;
   // Fix for withImplementation type - MUST return Promise<void>
-  withImplementation: jest.Mock<Promise<void>, [callback?: Function]>;
+  withImplementation: Mock<[callback?: Function], Promise<void>>;
   // Additional properties to match expected Canvas structure
   enablePointerEvents?: boolean;
   _willAddMouseDown?: boolean;
@@ -80,13 +81,15 @@ export function createMinimalCanvasMock(): ICanvasMock {
  * Convert any canvas-like object to ICanvasMock type
  * Useful when you have an object that's structurally compatible but types don't match
  */
-export function asMockCanvas(canvas: any): ICanvasMock & {
+export function asMockCanvas(canvas: any): FabricCanvas & {
   getHandlers: (eventName: string) => Function[];
   triggerEvent: (eventName: string, eventData: any) => void;
+  withImplementation: (callback?: Function) => Promise<void>;
 } {
-  console.log('Converting object to ICanvasMock type');
-  return canvas as ICanvasMock & {
+  console.log('Converting object to Canvas type with enhanced methods');
+  return canvas as unknown as FabricCanvas & {
     getHandlers: (eventName: string) => Function[];
     triggerEvent: (eventName: string, eventData: any) => void;
+    withImplementation: (callback?: Function) => Promise<void>;
   };
 }

@@ -6,6 +6,27 @@
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { ICanvasMock } from '@/types/testing/ICanvasMock';
+import { vi } from 'vitest';
+
+/**
+ * Create a proper withImplementation mock function
+ * @returns Mock function that returns a Promise<void>
+ */
+function createProperWithImplementationMock() {
+  return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+    if (callback && typeof callback === 'function') {
+      try {
+        const result = callback();
+        if (result instanceof Promise) {
+          return result.then(() => Promise.resolve());
+        }
+      } catch (error) {
+        console.error('Error in mock withImplementation:', error);
+      }
+    }
+    return Promise.resolve();
+  });
+}
 
 /**
  * Create a typed mock canvas for testing
@@ -23,21 +44,7 @@ export function createTypedMockCanvas(): ICanvasMock {
     getActiveObjects: vi.fn().mockReturnValue([]),
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
-    // Properly implement withImplementation to return Promise<void>
-    withImplementation: vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-      console.log('ICanvasMock: withImplementation called');
-      if (callback && typeof callback === 'function') {
-        try {
-          const result = callback();
-          if (result instanceof Promise) {
-            return result.then(() => Promise.resolve());
-          }
-        } catch (error) {
-          console.error('Error in mock withImplementation:', error);
-        }
-      }
-      return Promise.resolve();
-    }),
+    withImplementation: createProperWithImplementationMock(),
     // Additional Canvas properties
     enablePointerEvents: true,
     _willAddMouseDown: false,
@@ -54,19 +61,7 @@ export function createTypedMockCanvas(): ICanvasMock {
  * @returns A mock implementation that returns a Promise<void>
  */
 export function createWithImplementationMock() {
-  return vi.fn().mockImplementation((callback?: Function): Promise<void> => {
-    if (callback && typeof callback === 'function') {
-      try {
-        const result = callback();
-        if (result instanceof Promise) {
-          return result.then(() => Promise.resolve());
-        }
-      } catch (error) {
-        console.error('Error in withImplementation mock:', error);
-      }
-    }
-    return Promise.resolve();
-  });
+  return createProperWithImplementationMock();
 }
 
 /**
@@ -98,5 +93,19 @@ export function assertMockCanvas(canvas: any): FabricCanvas & {
   return canvas as unknown as FabricCanvas & {
     getHandlers: (eventName: string) => Function[];
     triggerEvent: (eventName: string, eventData: any) => void;
+  };
+}
+
+/**
+ * Create a fixed mock canvas that properly implements all required interfaces
+ * Resolves TypeScript compatibility issues between Canvas and ICanvasMock
+ * @returns A canvas object that's safe to use in tests 
+ */
+export function createFixedMockCanvas() {
+  const mockCanvas = createTypedMockCanvas();
+  return mockCanvas as unknown as FabricCanvas & {
+    getHandlers: (eventName: string) => Function[];
+    triggerEvent: (eventName: string, eventData: any) => void;
+    withImplementation: (callback?: Function) => Promise<void>;
   };
 }

@@ -6,8 +6,10 @@
  */
 import { vi } from 'vitest';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
-import { adaptFloorPlan, adaptRoom, adaptWall } from '@/utils/typeAdapters';
+import type { FloorPlan, Stroke, Room, Wall } from '@/types/floor-plan/unifiedTypes';
+import { adaptFloorPlan, adaptRoom, adaptWall, adaptMetadata } from '@/utils/typeAdapters';
+import { createFixedTypeMockCanvas } from './fixMockCanvas';
+import { createTestFloorPlan } from './typedTestFixtures';
 
 /**
  * Create a mock handler function that returns a promise
@@ -49,5 +51,60 @@ export function completeTestFloorPlan(floorPlan: Partial<FloorPlan> & { id: stri
  * @returns Type-compatible canvas mock
  */
 export function fixCanvasTyping(mockCanvas: any) {
-  return mockCanvas as unknown;
+  if (!mockCanvas.withImplementation || typeof mockCanvas.withImplementation !== 'function') {
+    mockCanvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
+      if (callback && typeof callback === 'function') {
+        try {
+          const result = callback();
+          if (result instanceof Promise) {
+            return result.then(() => Promise.resolve());
+          }
+        } catch (error) {
+          console.error('Error in canvas mock withImplementation:', error);
+        }
+      }
+      return Promise.resolve();
+    });
+  }
+  
+  return mockCanvas;
+}
+
+/**
+ * Create a properly typed test environment for canvas tests
+ * @returns Test environment with mocked canvas
+ */
+export function createCanvasTestEnvironment() {
+  const mockCanvas = createFixedTypeMockCanvas();
+  const testFloorPlan = createTestFloorPlan();
+  
+  return {
+    canvas: mockCanvas,
+    floorPlan: testFloorPlan,
+    updateFloorPlan: vi.fn()
+  };
+}
+
+/**
+ * Create a mock DebugInfoState for tests
+ * @returns Mock debug info state
+ */
+export function createMockDebugInfo() {
+  return {
+    hasError: false,
+    errorMessage: '',
+    lastInitTime: Date.now(),
+    lastGridCreationTime: 0,
+    currentFps: 60,
+    objectCount: 0,
+    canvasDimensions: {
+      width: 800,
+      height: 600
+    },
+    flags: {
+      gridEnabled: true,
+      snapToGridEnabled: false,
+      debugLoggingEnabled: false
+    }
+  };
 }

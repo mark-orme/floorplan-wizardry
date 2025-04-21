@@ -1,179 +1,195 @@
 
 /**
- * Type diagnostics utility
+ * Type diagnostics utilities
+ * Provides utilities for validating and diagnosing types
  * @module utils/debug/typeDiagnostics
  */
-import { PaperSize, FloorPlanMetadata, FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
+import { 
+  FloorPlan, 
+  Wall, 
+  Room, 
+  Stroke, 
+  FloorPlanMetadata 
+} from '@/types/floor-plan/unifiedTypes';
+import { Point } from '@/types/core/Point';
 
 /**
- * Calculate wall length based on start and end points
+ * Calculate wall length between start and end points
  * @param start Start point
  * @param end End point
- * @returns Length of wall
+ * @returns Wall length
  */
-export function calculateWallLength(start: {x: number, y: number}, end: {x: number, y: number}): number {
+export function calculateWallLength(start: Point, end: Point): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
+ * Calculate perimeter of a polygon defined by points
+ * @param points Array of points forming a polygon
+ * @returns Perimeter length
+ */
+export function calculatePerimeter(points: Point[]): number {
+  if (points.length < 3) return 0;
+  
+  let perimeter = 0;
+  for (let i = 0; i < points.length; i++) {
+    const nextIndex = (i + 1) % points.length;
+    perimeter += calculateWallLength(points[i], points[nextIndex]);
+  }
+  
+  return perimeter;
+}
+
+/**
+ * Calculate centroid (center point) of a polygon
+ * @param points Array of points forming a polygon
+ * @returns Centroid point
+ */
+export function calculateCentroid(points: Point[]): Point {
+  if (points.length === 0) return { x: 0, y: 0 };
+  
+  let sumX = 0;
+  let sumY = 0;
+  
+  points.forEach(point => {
+    sumX += point.x;
+    sumY += point.y;
+  });
+  
+  return {
+    x: sumX / points.length,
+    y: sumY / points.length
+  };
+}
+
+/**
  * Create a complete metadata object with all required fields
- * @param overrides Properties to override defaults
+ * @param metadata Partial metadata object
  * @returns Complete metadata object
  */
-export function createCompleteMetadata(overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+export function createCompleteMetadata(metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
   const now = new Date().toISOString();
+  
   return {
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    paperSize: overrides.paperSize || PaperSize.A4,
-    level: overrides.level ?? 0,
-    // Add the missing fields required by FloorPlanMetadata
-    version: overrides.version || '1.0',
-    author: overrides.author || '',
-    dateCreated: overrides.dateCreated || now,
-    lastModified: overrides.lastModified || now,
-    notes: overrides.notes || ''
+    createdAt: metadata.createdAt ?? now,
+    updatedAt: metadata.updatedAt ?? now,
+    paperSize: metadata.paperSize ?? 'A4',
+    level: metadata.level ?? 0,
+    version: metadata.version ?? '1.0',
+    author: metadata.author ?? '',
+    dateCreated: metadata.dateCreated ?? now,
+    lastModified: metadata.lastModified ?? now,
+    notes: metadata.notes ?? '',
+    ...metadata
   };
 }
 
 /**
- * Validates a floor plan and reports any issues
- * @param floorPlan The floor plan to validate
- * @returns Validation result with issues if any
+ * Validate a floor plan and report any issues
+ * @param floorPlan Floor plan to validate
+ * @returns Array of validation issues found
  */
-export function validateFloorPlanWithReporting(floorPlan: FloorPlan): { valid: boolean; issues: string[] } {
+export function validateFloorPlanWithReporting(floorPlan: Partial<FloorPlan>): string[] {
   const issues: string[] = [];
   
-  if (!floorPlan) {
-    return { valid: false, issues: ['Floor plan is null or undefined'] };
-  }
+  // Check required fields
+  if (!floorPlan.id) issues.push('Missing ID');
+  if (!floorPlan.name) issues.push('Missing name');
+  if (!floorPlan.walls) issues.push('Missing walls array');
+  if (!floorPlan.rooms) issues.push('Missing rooms array');
+  if (!floorPlan.strokes) issues.push('Missing strokes array');
+  if (!floorPlan.data) issues.push('Missing data object');
+  if (!floorPlan.userId) issues.push('Missing userId');
   
-  if (!floorPlan.id) {
-    issues.push('Missing floor plan ID');
-  }
-  
-  if (!floorPlan.name) {
-    issues.push('Missing floor plan name');
-  }
-  
+  // Check metadata
   if (!floorPlan.metadata) {
-    issues.push('Missing floor plan metadata');
+    issues.push('Missing metadata');
   } else {
-    if (!floorPlan.metadata.version) {
-      issues.push('Missing metadata version');
-    }
-    if (!floorPlan.metadata.author) {
-      issues.push('Missing metadata author');
-    }
-    // More metadata validations if needed
+    const metadata = floorPlan.metadata;
+    if (!metadata.version) issues.push('Missing metadata.version');
+    if (!metadata.author) issues.push('Missing metadata.author');
+    if (!metadata.dateCreated) issues.push('Missing metadata.dateCreated');
+    if (!metadata.lastModified) issues.push('Missing metadata.lastModified');
+    if (!metadata.notes) issues.push('Missing metadata.notes');
   }
   
-  // Validate walls
-  if (!Array.isArray(floorPlan.walls)) {
-    issues.push('Walls property is not an array');
-  } else {
-    floorPlan.walls.forEach((wall, index) => {
-      if (!wall.id) {
-        issues.push(`Wall at index ${index} is missing an ID`);
-      }
-      if (!wall.start || typeof wall.start.x !== 'number' || typeof wall.start.y !== 'number') {
-        issues.push(`Wall at index ${index} has invalid start point`);
-      }
-      if (!wall.end || typeof wall.end.x !== 'number' || typeof wall.end.y !== 'number') {
-        issues.push(`Wall at index ${index} has invalid end point`);
-      }
-    });
-  }
+  return issues;
+}
+
+/**
+ * Validate a wall and report any issues
+ * @param wall Wall to validate
+ * @returns Array of validation issues found
+ */
+export function validateWallWithReporting(wall: Partial<Wall>): string[] {
+  const issues: string[] = [];
   
-  // Validate rooms
-  if (!Array.isArray(floorPlan.rooms)) {
-    issues.push('Rooms property is not an array');
-  } else {
-    floorPlan.rooms.forEach((room, index) => {
-      if (!room.id) {
-        issues.push(`Room at index ${index} is missing an ID`);
-      }
-      if (!room.name) {
-        issues.push(`Room at index ${index} is missing a name`);
-      }
-      if (!Array.isArray(room.vertices) || room.vertices.length < 3) {
-        issues.push(`Room at index ${index} has invalid vertices (less than 3 points)`);
-      }
-    });
-  }
+  if (!wall.id) issues.push('Missing ID');
+  if (!wall.start) issues.push('Missing start point');
+  if (!wall.end) issues.push('Missing end point');
+  if (wall.thickness === undefined) issues.push('Missing thickness');
+  if (!wall.color) issues.push('Missing color');
+  if (!wall.roomIds) issues.push('Missing roomIds array');
+  if (wall.length === undefined) issues.push('Missing length');
+  
+  return issues;
+}
+
+/**
+ * Fix a partial wall by adding any missing required properties
+ * @param wall Partial wall object
+ * @returns Complete wall with all properties
+ */
+export function fixWall(wall: Partial<Wall> & { start: Point; end: Point }): Wall {
+  const id = wall.id ?? `wall-${Date.now()}`;
+  const thickness = wall.thickness ?? 2;
+  const color = wall.color ?? '#000000';
+  const roomIds = wall.roomIds ?? [];
+  const length = wall.length ?? calculateWallLength(wall.start, wall.end);
   
   return {
-    valid: issues.length === 0,
-    issues
-  };
+    id,
+    start: wall.start,
+    end: wall.end,
+    thickness,
+    color,
+    roomIds,
+    length,
+    ...(wall.height ? { height: wall.height } : {}),
+    ...(wall.points ? { points: wall.points } : { points: [wall.start, wall.end] })
+  } as Wall;
 }
 
 /**
- * Validate if a floor plan is valid
- * @param floorPlan Floor plan to validate
- * @returns Whether the floor plan is valid
+ * Fix a partial room by adding any missing required properties
+ * @param room Partial room object
+ * @returns Complete room with all properties
  */
-export function isValidFloorPlan(floorPlan: FloorPlan): boolean {
-  return floorPlan && 
-         typeof floorPlan.id === 'string' && 
-         typeof floorPlan.name === 'string';
+export function fixRoom(room: Partial<Room> & { id: string; name: string; points: Point[] }): Room {
+  const type = room.type ?? 'other';
+  const color = room.color ?? '#ffffff';
+  const level = room.level ?? 0;
+  const walls = room.walls ?? [];
+  const area = room.area ?? 0;
+  const perimeter = room.perimeter ?? calculatePerimeter(room.points);
+  const center = room.center ?? calculateCentroid(room.points);
+  const labelPosition = room.labelPosition ?? center;
+  const vertices = room.vertices ?? [...room.points];
+  
+  return {
+    id: room.id,
+    name: room.name,
+    type,
+    points: room.points,
+    color,
+    level,
+    walls,
+    area,
+    perimeter,
+    center,
+    labelPosition,
+    vertices
+  } as Room;
 }
-
-/**
- * Validate if a room is valid
- * @param room Room to validate
- * @returns Whether the room is valid
- */
-export function isValidRoom(room: Room): boolean {
-  return room && 
-         typeof room.id === 'string' && 
-         typeof room.name === 'string' && 
-         Array.isArray(room.vertices) && 
-         room.vertices.length >= 3;
-}
-
-/**
- * Validate if a wall is valid
- * @param wall Wall to validate
- * @returns Whether the wall is valid
- */
-export function isValidWall(wall: Wall): boolean {
-  return wall && 
-         typeof wall.id === 'string' && 
-         wall.start && 
-         typeof wall.start.x === 'number' && 
-         typeof wall.start.y === 'number' && 
-         wall.end && 
-         typeof wall.end.x === 'number' && 
-         typeof wall.end.y === 'number';
-}
-
-/**
- * Validate if a stroke is valid
- * @param stroke Stroke to validate
- * @returns Whether the stroke is valid
- */
-export function isValidStroke(stroke: Stroke): boolean {
-  return stroke && 
-         typeof stroke.id === 'string' && 
-         Array.isArray(stroke.points) && 
-         stroke.points.length > 0;
-}
-
-/**
- * Log type information for debugging
- * @param obj Object to log
- * @param label Optional label
- */
-export function logTypeInfo(obj: any, label: string = 'Object'): void {
-  console.group(`Type Info: ${label}`);
-  console.log('Type:', typeof obj);
-  console.log('Constructor:', obj?.constructor?.name);
-  console.log('Keys:', Object.keys(obj || {}));
-  console.log('Value:', obj);
-  console.groupEnd();
-}
-
-// Remove duplicate exports here - we're using export directly on each function above
