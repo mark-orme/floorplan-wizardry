@@ -59,6 +59,31 @@ export function getCsrfToken(): string {
 }
 
 /**
+ * Verify a CSRF token against the stored token
+ * @param token Token to verify
+ * @returns True if token is valid
+ */
+export function verifyCSRFToken(token: string): boolean {
+  try {
+    const storedToken = localStorage.getItem('csrf_token');
+    return storedToken === token;
+  } catch (error) {
+    logger.error('Error verifying CSRF token', { error });
+    return false;
+  }
+}
+
+/**
+ * Add CSRF token to form data
+ * @param formData Form data to add token to
+ * @returns Updated form data
+ */
+export function addCSRFToFormData(formData: FormData): FormData {
+  formData.append('csrf_token', getCsrfToken());
+  return formData;
+}
+
+/**
  * Add CSRF token to request headers
  * @param headers Existing request headers
  * @returns Headers with CSRF token added
@@ -107,7 +132,7 @@ export function protectForm(form: HTMLFormElement): void {
     const token = getCsrfToken();
     
     // Check if token input already exists
-    let tokenInput = form.querySelector('input[name="csrf_token"]');
+    let tokenInput = form.querySelector('input[name="csrf_token"]') as HTMLInputElement;
     
     if (!tokenInput) {
       // Create hidden input for token
@@ -118,7 +143,7 @@ export function protectForm(form: HTMLFormElement): void {
     }
     
     // Set current token value
-    (tokenInput as HTMLInputElement).value = token;
+    tokenInput.value = token;
   } catch (error) {
     logger.error('Error protecting form with CSRF token', { error });
   }
@@ -132,7 +157,11 @@ export function protectAllForms(): void {
   
   try {
     const forms = document.querySelectorAll('form');
-    forms.forEach(protectForm);
+    forms.forEach(form => {
+      if (form instanceof HTMLFormElement) {
+        protectForm(form);
+      }
+    });
     
     logger.info(`Protected ${forms.length} forms with CSRF tokens`);
   } catch (error) {

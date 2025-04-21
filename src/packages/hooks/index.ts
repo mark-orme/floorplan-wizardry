@@ -17,7 +17,6 @@ export * from '@/hooks/useCanvasResizing';
 export * from '@/hooks/useGeometryWorker';
 export * from '@/hooks/useOptimizedFloorPlanCanvas';
 export * from '@/hooks/useWebWorker';
-export * from '@/hooks/useCanvasInitialization';
 export * from '@/hooks/useMediaQuery';
 
 // Performance hooks

@@ -1,187 +1,166 @@
 /**
- * Hook for managing canvas drawing tools
- * Re-exports functionality from the useCanvasControllerTools
- * @module canvas/controller/useCanvasControllerTools
+ * Hook to manage canvas tools and optimizations
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useDrawingTools } from "@/hooks/useDrawingTools";
-import { DrawingMode } from "@/constants/drawingModes";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
-import { ZoomDirection } from "@/types/drawingTypes";
-import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
-import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
-import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
-import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
+import { useCallback, useState, useEffect, useMemo } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { useVirtualizedCanvas } from './useVirtualizedCanvas';
+import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
-/**
- * Props for useCanvasControllerTools hook
- * @interface UseCanvasControllerToolsProps
- */
 interface UseCanvasControllerToolsProps {
-  /** Reference to the fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current active drawing tool */
-  tool: DrawingMode;
-  /** Current zoom level */
-  zoomLevel: number;
-  /** Line thickness for drawing */
-  lineThickness?: number;  // single optional declaration
-  /** Line color for drawing */
-  lineColor: string;
-  /** Function to set the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  /** Function to set the zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Array of floor plans */
-  floorPlans: FloorPlan[];
-  /** Index of current floor */
-  currentFloor: number;
-  /** Function to update floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set the GIA (Gross Internal Area) */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create grid objects */
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
+  canvasRef: React.MutableRefObject<FabricCanvas | null>;
+  initialTool?: DrawingMode;
 }
 
-/**
- * Hook that manages canvas drawing tools and operations
- */
-export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) => {
+export function useCanvasControllerTools({
+  canvasRef,
+  initialTool = DrawingMode.SELECT
+}: UseCanvasControllerToolsProps) {
+  const [currentTool, setCurrentTool] = useState<DrawingMode>(initialTool);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const [gridEnabled, setGridEnabled] = useState<boolean>(true);
+  const [showPerformanceMetrics, setShowPerformanceMetrics] = useState<boolean>(false);
+  
+  // Use virtualized canvas for performance
   const {
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
-    setTool,
-    setZoomLevel,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid
-  } = props;
-
-  // Initialize GIA calculation hook
-  const { recalculateGIA } = useFloorPlanGIA({
-    fabricCanvasRef,
-    setGia
-  });
-
-  // Get drawing tool functions
-  const toolFunctions = useDrawingTools({
-    fabricCanvasRef,
-    gridLayerRef,
-    tool,
-    setTool,
-    zoomLevel,
-    setZoomLevel,
-    lineThickness,
-    lineColor,
-    historyRef,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid
-  });
-
-  // Use the tool state hook
-  const toolState = useCanvasToolState({
-    fabricCanvasRef,
-    tool,
-    setTool,
-    lineThickness,
-    lineColor,
-    zoomLevel,
-    setZoomLevel
-  });
-
-  // Use the canvas operations hook without the secureFetch prop
-  const canvasOperations = useCanvasOperations({
-    fabricCanvasRef,
-    gridLayerRef,
-    saveCurrentState: toolFunctions.saveCurrentState
-  });
-
-  // Use the floor plan operations hook
-  const floorPlanOperations = useFloorPlanOperations({
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia
-  });
-
-  // Use virtualized canvas for performance optimization
-  const { refreshVirtualization } = useVirtualizedCanvas(fabricCanvasRef, {
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
+  } = useVirtualizedCanvas(canvasRef, {
     enabled: true,
-    threshold: 100,
-    autoToggle: true
+    autoToggle: true,
+    autoToggleThreshold: 100,
+    paddingPx: 300
   });
-
-  // Modified handleZoom to accept string direction
-  const handleZoom = useCallback((direction: ZoomDirection): void => {
-    if (direction === "in") {
-      toolFunctions.handleZoom(1.2);
-    } else {
-      toolFunctions.handleZoom(0.8);
+  
+  // Configure the canvas based on the current tool
+  const configureTool = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Configure canvas properties based on tool
+    switch (currentTool) {
+      case DrawingMode.SELECT:
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        canvas.hoverCursor = 'move';
+        
+        // Make objects selectable
+        canvas.forEachObject(obj => {
+          if (!(obj as any).isGrid) {
+            obj.selectable = true;
+          }
+        });
+        break;
+        
+      case DrawingMode.DRAW:
+        canvas.isDrawingMode = true;
+        canvas.selection = false;
+        
+        // Configure brush
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = lineColor;
+          canvas.freeDrawingBrush.width = lineThickness;
+        }
+        break;
+        
+      case DrawingMode.HAND:
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'grab';
+        canvas.hoverCursor = 'grab';
+        
+        // Make objects non-selectable
+        canvas.forEachObject(obj => {
+          obj.selectable = false;
+        });
+        break;
+        
+      default:
+        // Other tools
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
     }
     
-    // After zooming, refresh virtualization for optimal performance
-    if (refreshVirtualization) {
+    // Refresh canvas
+    canvas.requestRenderAll();
+    
+    // Log tool change
+    logger.info(`Tool changed to ${currentTool}`);
+    
+  }, [canvasRef, currentTool, lineColor, lineThickness]);
+  
+  // Update tool when it changes
+  useEffect(() => {
+    configureTool();
+  }, [currentTool, lineColor, lineThickness, configureTool]);
+  
+  // Handle tool change
+  const changeTool = useCallback((tool: DrawingMode) => {
+    setCurrentTool(tool);
+    
+    // Refresh virtualization when tool changes
+    if (canvasRef.current) {
       refreshVirtualization();
     }
-  }, [toolFunctions, refreshVirtualization]);
-
-  // Tool-related functions
-  const handleLineThicknessChange = useCallback((thickness: number): void => {
-    console.info(`Line thickness changed to ${thickness}`);
-    // Implement line thickness change logic
+    
+    // Notify user of tool change
+    toast.info(`Tool: ${tool}`);
+  }, [canvasRef, refreshVirtualization]);
+  
+  // Toggle grid visibility
+  const toggleGrid = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    setGridEnabled(prev => {
+      const newState = !prev;
+      
+      // Update grid objects visibility
+      canvas.forEachObject(obj => {
+        if ((obj as any).isGrid) {
+          obj.visible = newState;
+        }
+      });
+      
+      canvas.requestRenderAll();
+      return newState;
+    });
+  }, [canvasRef]);
+  
+  // Toggle performance metrics display
+  const togglePerformanceMetrics = useCallback(() => {
+    setShowPerformanceMetrics(prev => !prev);
   }, []);
-
-  const handleLineColorChange = useCallback((color: string): void => {
-    console.info(`Line color changed to ${color}`);
-    // Implement line color change logic
-  }, []);
-
-  const openMeasurementGuide = useCallback((): void => {
-    console.info('Measurement guide opened');
-    // Implement measurement guide logic
-  }, []);
-
+  
+  // Prepare performance data for display
+  const performanceData = useMemo(() => ({
+    fps: performanceMetrics?.fps || 0,
+    objectCount: performanceMetrics?.objectCount || 0,
+    visibleObjects: performanceMetrics?.visibleObjectCount || 0,
+    virtualizationEnabled
+  }), [performanceMetrics, virtualizationEnabled]);
+  
   return {
-    // From drawing tools
-    handleToolChange: toolState.handleToolChange,
-    handleUndo: toolFunctions.undo,
-    handleRedo: toolFunctions.redo,
-    handleZoom,
-    saveCurrentState: toolFunctions.saveCurrentState,
-    
-    // From canvas operations
-    clearDrawings: canvasOperations.clearDrawings,
-    clearCanvas: canvasOperations.clearCanvas,
-    saveCanvas: canvasOperations.saveCanvas,
-    deleteSelectedObjects: canvasOperations.deleteSelectedObjects,
-    
-    // From floor plan operations
-    handleFloorSelect: floorPlanOperations.handleFloorSelect,
-    handleAddFloor: floorPlanOperations.handleAddFloor,
-    
-    // Additional tools
-    handleLineThicknessChange,
-    handleLineColorChange,
-    openMeasurementGuide,
-    
-    // Performance optimization
-    refreshVirtualization
+    currentTool,
+    changeTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    gridEnabled,
+    toggleGrid,
+    virtualizationEnabled,
+    toggleVirtualization,
+    showPerformanceMetrics,
+    togglePerformanceMetrics,
+    performanceData,
+    configureTool
   };
-};
+}

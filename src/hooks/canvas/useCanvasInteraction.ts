@@ -1,237 +1,302 @@
-
 /**
- * Canvas interaction hook
- * Provides utilities for handling canvas interactions like panning, zooming, and tool selection
+ * Canvas Interaction Hook
+ * Manages user interactions with the canvas (pan, zoom, select)
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 import logger from '@/utils/logger';
 
 interface UseCanvasInteractionProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  initialTool?: DrawingMode;
-  onToolChange?: (tool: DrawingMode) => void;
-  enableTouch?: boolean;
+  tool: DrawingMode;
+  onZoomChange?: (zoom: number) => void;
+  onPanChange?: (x: number, y: number) => void;
+  maxZoom?: number;
+  minZoom?: number;
 }
 
 export const useCanvasInteraction = ({
   fabricCanvasRef,
-  initialTool = DrawingMode.SELECT,
-  onToolChange,
-  enableTouch = true
+  tool,
+  onZoomChange,
+  onPanChange,
+  maxZoom = 10,
+  minZoom = 0.1
 }: UseCanvasInteractionProps) => {
-  const [currentTool, setCurrentTool] = useState<DrawingMode>(initialTool);
-  const [isInteracting, setIsInteracting] = useState(false);
-  const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
-  const interactionStartRef = useRef<{ x: number, y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
+  const currentZoomRef = useRef(1);
   
-  // Change the current tool
-  const changeTool = useCallback((tool: DrawingMode) => {
+  // Update canvas based on tool
+  useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    try {
-      // Update drawing mode based on tool
-      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    // Configure canvas based on tool
+    if (tool === DrawingMode.HAND) {
+      canvas.selection = false;
+      canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
       
-      // Enable selection for select tool
-      canvas.selection = tool === DrawingMode.SELECT;
+      // Disable selection for all objects
+      canvas.forEachObject(obj => {
+        obj.selectable = false;
+        (obj as any).evented = false;
+      });
+    } else if (tool === DrawingMode.SELECT) {
+      canvas.selection = true;
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
       
-      // Update cursor based on tool
-      switch (tool) {
-        case DrawingMode.SELECT:
-          canvas.defaultCursor = 'default';
-          break;
-        case DrawingMode.DRAW:
-          canvas.defaultCursor = 'crosshair';
-          break;
-        case DrawingMode.HAND:
-          canvas.defaultCursor = 'grab';
-          break;
-        default:
-          canvas.defaultCursor = 'default';
-      }
+      // Enable selection for all non-grid objects
+      canvas.forEachObject(obj => {
+        if (!(obj as any).isGrid) {
+          obj.selectable = true;
+          (obj as any).evented = true;
+        }
+      });
+    } else {
+      // Other tools
+      canvas.selection = false;
+      canvas.defaultCursor = 'crosshair';
       
-      // Update state
-      setCurrentTool(tool);
-      
-      // Notify parent
-      if (onToolChange) {
-        onToolChange(tool);
-      }
-      
-      logger.debug('Tool changed', { tool });
-    } catch (error) {
-      logger.error('Error changing tool', { error, tool });
+      // Disable selection for all objects
+      canvas.forEachObject(obj => {
+        obj.selectable = false;
+        (obj as any).evented = false;
+      });
     }
-  }, [fabricCanvasRef, onToolChange]);
+    
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, tool]);
   
-  // Pan the canvas (hand tool)
-  const startPanning = useCallback((event: MouseEvent) => {
+  // Handle mouse wheel for zooming
+  const handleMouseWheel = useCallback((e: WheelEvent) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || currentTool !== DrawingMode.HAND) return;
+    if (!canvas) return;
     
-    interactionStartRef.current = { x: event.clientX, y: event.clientY };
-    setIsInteracting(true);
+    const delta = e.deltaY;
+    let zoom = canvas.getZoom();
+    zoom *= 0.999 ** delta;
     
-    // Change cursor to indicate active panning
-    canvas.defaultCursor = 'grabbing';
+    // Clamp zoom level
+    zoom = Math.min(Math.max(minZoom, zoom), maxZoom);
     
-    // Disable object selection while panning
-    canvas.selection = false;
-  }, [fabricCanvasRef, currentTool]);
+    // Get mouse position in canvas coordinates
+    const pointer = canvas.getPointer(e);
+    
+    // Zoom to point
+    canvas.zoomToPoint({ x: pointer.x, y: pointer.y }, zoom);
+    
+    // Update zoom reference
+    currentZoomRef.current = zoom;
+    
+    // Notify listeners
+    if (onZoomChange) {
+      onZoomChange(zoom);
+    }
+    
+    // Optimize rendering
+    requestOptimizedRender(canvas, 'zoom');
+    
+    e.preventDefault();
+    e.stopPropagation();
+  }, [fabricCanvasRef, maxZoom, minZoom, onZoomChange]);
   
-  // Pan the canvas as the mouse moves
-  const doPanning = useCallback((event: MouseEvent) => {
+  // Handle mouse down for panning
+  const handleMouseDown = useCallback((e: MouseEvent) => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !isInteracting || !interactionStartRef.current) return;
+    if (!canvas) return;
     
-    const delta = {
-      x: event.clientX - interactionStartRef.current.x,
-      y: event.clientY - interactionStartRef.current.y
+    // Only enable panning in HAND mode
+    if (tool !== DrawingMode.HAND) return;
+    
+    // Store initial position
+    isDraggingRef.current = true;
+    lastPosRef.current = {
+      x: e.clientX,
+      y: e.clientY
     };
     
-    // Update pan position
+    canvas.defaultCursor = 'grabbing';
+    canvas.hoverCursor = 'grabbing';
+  }, [fabricCanvasRef, tool]);
+  
+  // Handle mouse move for panning
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isDraggingRef.current) return;
+    
+    // Calculate delta
+    const dx = e.clientX - lastPosRef.current.x;
+    const dy = e.clientY - lastPosRef.current.y;
+    
+    // Update last position
+    lastPosRef.current = {
+      x: e.clientX,
+      y: e.clientY
+    };
+    
+    // Pan viewport
     const vpt = canvas.viewportTransform;
     if (!vpt) return;
     
-    vpt[4] += delta.x;
-    vpt[5] += delta.y;
+    vpt[4] += dx;
+    vpt[5] += dy;
     
-    // Update interaction start for continuous panning
-    interactionStartRef.current = { x: event.clientX, y: event.clientY };
-    
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef, isInteracting]);
-  
-  // Stop panning
-  const stopPanning = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || currentTool !== DrawingMode.HAND) return;
-    
-    interactionStartRef.current = null;
-    setIsInteracting(false);
-    
-    // Reset cursor
-    canvas.defaultCursor = 'grab';
-    
-    // Handle tool-specific cleanup
-    if (currentTool === DrawingMode.SELECT) {
-      canvas.selection = true;
+    // Notify listeners
+    if (onPanChange) {
+      onPanChange(vpt[4], vpt[5]);
     }
-  }, [fabricCanvasRef, currentTool]);
+    
+    // Optimize rendering
+    requestOptimizedRender(canvas, 'pan');
+  }, [fabricCanvasRef, onPanChange]);
   
-  // Set up event listeners for canvas interaction
+  // Handle mouse up for panning
+  const handleMouseUp = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Reset dragging state
+    isDraggingRef.current = false;
+    
+    // Reset cursor if in HAND mode
+    if (tool === DrawingMode.HAND) {
+      canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
+    }
+  }, [fabricCanvasRef, tool]);
+  
+  // Attach event listeners
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const handleMouseDown = (e: MouseEvent) => {
-      if (currentTool === DrawingMode.HAND) {
-        startPanning(e);
-      }
+    // Function to get canvas element
+    const getCanvasElement = (): HTMLElement | null => {
+      return canvas.wrapperEl;
     };
     
-    const handleMouseMove = (e: MouseEvent) => {
-      // Track pointer position for UI and hooks
-      setPointerPosition({
-        x: e.clientX,
-        y: e.clientY
-      });
-      
-      // Handle panning
-      if (currentTool === DrawingMode.HAND && isInteracting) {
-        doPanning(e);
-      }
-    };
-    
-    const handleMouseUp = () => {
-      if (currentTool === DrawingMode.HAND) {
-        stopPanning();
-      }
-    };
+    // Get canvas element
+    const canvasElement = getCanvasElement();
+    if (!canvasElement) {
+      logger.warn('Canvas wrapper element not found');
+      return;
+    }
     
     // Add event listeners
-    canvas.wrapperEl.addEventListener('mousedown', handleMouseDown);
+    canvasElement.addEventListener('wheel', handleMouseWheel, { passive: false });
+    canvasElement.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     
+    // Clean up event listeners
     return () => {
-      // Remove event listeners
-      canvas.wrapperEl.removeEventListener('mousedown', handleMouseDown);
+      canvasElement.removeEventListener('wheel', handleMouseWheel);
+      canvasElement.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [fabricCanvasRef, currentTool, isInteracting, startPanning, doPanning, stopPanning]);
+  }, [fabricCanvasRef, handleMouseWheel, handleMouseDown, handleMouseMove, handleMouseUp]);
   
-  // Set up touch event handlers
-  useEffect(() => {
-    if (!enableTouch) return;
-    
+  // Reset zoom and pan
+  const resetView = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Helper to get touch position
-    const getTouchPos = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      return { x: touch.clientX, y: touch.clientY };
-    };
+    // Reset zoom and pan
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     
-    const handleTouchStart = (e: TouchEvent) => {
-      if (currentTool === DrawingMode.HAND) {
-        interactionStartRef.current = getTouchPos(e);
-        setIsInteracting(true);
-      }
-    };
+    // Update zoom reference
+    currentZoomRef.current = 1;
     
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isInteracting || !interactionStartRef.current) return;
-      
-      const currentPos = getTouchPos(e);
-      
-      if (currentTool === DrawingMode.HAND) {
-        const delta = {
-          x: currentPos.x - interactionStartRef.current.x,
-          y: currentPos.y - interactionStartRef.current.y
-        };
-        
-        // Update pan position
-        const vpt = canvas.viewportTransform;
-        if (!vpt) return;
-        
-        vpt[4] += delta.x;
-        vpt[5] += delta.y;
-        
-        // Update interaction start for continuous panning
-        interactionStartRef.current = currentPos;
-        
-        canvas.requestRenderAll();
-      }
-    };
+    // Notify listeners
+    if (onZoomChange) {
+      onZoomChange(1);
+    }
     
-    const handleTouchEnd = () => {
-      interactionStartRef.current = null;
-      setIsInteracting(false);
-    };
+    if (onPanChange) {
+      onPanChange(0, 0);
+    }
     
-    // Add touch event listeners
-    canvas.wrapperEl.addEventListener('touchstart', handleTouchStart);
-    canvas.wrapperEl.addEventListener('touchmove', handleTouchMove);
-    canvas.wrapperEl.addEventListener('touchend', handleTouchEnd);
+    // Render canvas
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, onZoomChange, onPanChange]);
+  
+  // Zoom to fit content
+  const zoomToFit = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
-    return () => {
-      // Remove touch event listeners
-      canvas.wrapperEl.removeEventListener('touchstart', handleTouchStart);
-      canvas.wrapperEl.removeEventListener('touchmove', handleTouchMove);
-      canvas.wrapperEl.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [fabricCanvasRef, currentTool, isInteracting, enableTouch]);
+    // Get all non-grid objects
+    const objects = canvas.getObjects().filter(obj => !(obj as any).isGrid);
+    if (objects.length === 0) return;
+    
+    // Calculate bounding box
+    const bounds = objects.reduce((acc, obj) => {
+      const objBounds = obj.getBoundingRect();
+      return {
+        left: Math.min(acc.left, objBounds.left),
+        top: Math.min(acc.top, objBounds.top),
+        right: Math.max(acc.right, objBounds.left + objBounds.width),
+        bottom: Math.max(acc.bottom, objBounds.top + objBounds.height)
+      };
+    }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+    
+    // Calculate required zoom
+    const boundsWidth = bounds.right - bounds.left;
+    const boundsHeight = bounds.bottom - bounds.top;
+    
+    const canvasWidth = canvas.width || 1;
+    const canvasHeight = canvas.height || 1;
+    
+    // Add padding
+    const padding = 50;
+    const zoomX = (canvasWidth - padding * 2) / boundsWidth;
+    const zoomY = (canvasHeight - padding * 2) / boundsHeight;
+    
+    // Use minimum zoom to ensure all content is visible
+    const zoom = Math.min(zoomX, zoomY);
+    
+    // Clamp zoom level
+    const clampedZoom = Math.min(Math.max(minZoom, zoom), maxZoom);
+    
+    // Set zoom and center content
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); // Reset first
+    
+    // Calculate center of bounds
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.top + bounds.bottom) / 2;
+    
+    // Calculate center of canvas
+    const canvasCenterX = canvasWidth / 2;
+    const canvasCenterY = canvasHeight / 2;
+    
+    // Set zoom and pan
+    canvas.setZoom(clampedZoom);
+    canvas.absolutePan({
+      x: centerX * clampedZoom - canvasCenterX,
+      y: centerY * clampedZoom - canvasCenterY
+    });
+    
+    // Update zoom reference
+    currentZoomRef.current = clampedZoom;
+    
+    // Notify listeners
+    if (onZoomChange) {
+      onZoomChange(clampedZoom);
+    }
+    
+    // Render canvas
+    canvas.requestRenderAll();
+  }, [fabricCanvasRef, minZoom, maxZoom, onZoomChange]);
   
   return {
-    currentTool,
-    changeTool,
-    isInteracting,
-    pointerPosition
+    resetView,
+    zoomToFit,
+    currentZoom: currentZoomRef.current
   };
 };

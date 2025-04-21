@@ -150,9 +150,9 @@ export function applySecurityMeta(): void {
 }
 
 /**
- * Initialize all security features
+ * Initialize CSP and security meta tags
  */
-export function initializeSecurity(): void {
+export function initializeCSP(): void {
   applyCSPMeta();
   applySecurityMeta();
 }

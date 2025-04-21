@@ -3,7 +3,7 @@
  * Security Module
  * Initializes all security features
  */
-import { initializeSecurity } from './cspUtils';
+import { initializeCSP } from './cspUtils';
 import { initializeCsrfProtection } from './csrfProtection';
 import logger from '@/utils/logger';
 
@@ -13,7 +13,7 @@ import logger from '@/utils/logger';
 export function initializeAllSecurity(): void {
   try {
     // Initialize Content Security Policy
-    initializeSecurity();
+    initializeCSP();
     
     // Initialize CSRF protection
     initializeCsrfProtection();
