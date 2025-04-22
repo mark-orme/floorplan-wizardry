@@ -1,6 +1,6 @@
+
 import * as z from 'zod';
 
-// Email validation
 export const validateEmail = (email: string): boolean => {
   const emailSchema = z.string().email();
   try {

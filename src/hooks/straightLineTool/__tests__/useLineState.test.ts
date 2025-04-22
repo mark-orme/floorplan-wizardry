@@ -1,10 +1,19 @@
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
 import { Point } from '@/types/core/Point';
+import { Canvas } from 'fabric';
 
 describe('useLineState', () => {
+  const mockCanvasRef = { current: null } as React.RefObject<Canvas>;
+
   it('should toggle snap state', () => {
-    const { result } = renderHook(() => useLineState());
+    const { result } = renderHook(() => useLineState({ 
+      fabricCanvasRef: mockCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 1,
+      saveCurrentState: () => {}
+    }));
     
     act(() => {
       result.current.toggleSnap();
@@ -13,9 +22,13 @@ describe('useLineState', () => {
     expect(result.current.snapEnabled).toBe(true);
   });
 
-  // Update tests to use current API
   it('should handle drawing state', () => {
-    const { result } = renderHook(() => useLineState());
+    const { result } = renderHook(() => useLineState({ 
+      fabricCanvasRef: mockCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 1,
+      saveCurrentState: () => {}
+    }));
     const point: Point = { x: 100, y: 100 };
     
     act(() => {
@@ -26,28 +39,38 @@ describe('useLineState', () => {
     expect(result.current.currentPoint).toEqual(point);
   });
 
-  it('should update current point', () => {
-    const { result } = renderHook(() => useLineState());
+  it('should update drawing position', () => {
+    const { result } = renderHook(() => useLineState({ 
+      fabricCanvasRef: mockCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 1,
+      saveCurrentState: () => {}
+    }));
     const startPoint: Point = { x: 50, y: 50 };
     const newPoint: Point = { x: 150, y: 150 };
     
     act(() => {
       result.current.startDrawing(startPoint);
-      result.current.updateCurrentPoint(newPoint);
+      result.current.continueDrawing(newPoint);
     });
     
     expect(result.current.currentPoint).toEqual(newPoint);
   });
 
-  it('should reset state', () => {
-    const { result } = renderHook(() => useLineState());
+  it('should clear state', () => {
+    const { result } = renderHook(() => useLineState({ 
+      fabricCanvasRef: mockCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 1,
+      saveCurrentState: () => {}
+    }));
     const startPoint: Point = { x: 20, y: 20 };
     const currentPoint: Point = { x: 80, y: 80 };
     
     act(() => {
       result.current.startDrawing(startPoint);
-      result.current.updateCurrentPoint(currentPoint);
-      result.current.reset();
+      result.current.continueDrawing(currentPoint);
+      result.current.completeDrawing();
     });
     
     expect(result.current.startPoint).toBeNull();
