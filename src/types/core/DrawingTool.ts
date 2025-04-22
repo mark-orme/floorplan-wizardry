@@ -45,3 +45,17 @@ export const DrawingToolShortcuts: Record<DrawingMode, string> = {
   [DrawingMode.RECTANGLE]: 'R',
   [DrawingMode.ROOM_LABEL]: 'K'
 };
+
+/**
+ * Type compatibility for DrawingMode
+ * This allows us to use DrawingMode where DrawingTool is expected
+ */
+export type DrawingTool = DrawingMode | DrawingTool;
+
+/**
+ * Valid DrawingTool check
+ */
+export function isValidDrawingTool(tool: any): tool is DrawingTool {
+  return Object.values(DrawingMode).includes(tool as DrawingMode) || 
+         (typeof tool === 'object' && tool !== null && 'mode' in tool);
+}
