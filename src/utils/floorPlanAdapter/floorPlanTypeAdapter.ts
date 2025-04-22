@@ -8,7 +8,9 @@ import {
   FloorPlan as UnifiedFloorPlan, 
   Wall, 
   Room, 
-  Stroke
+  Stroke,
+  asStrokeType,
+  asRoomType
 } from '@/types/floor-plan/unifiedTypes';
 import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 import { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
@@ -36,6 +38,8 @@ export const convertToAppFloorPlan = (unifiedPlan: UnifiedFloorPlan): AppFloorPl
     })),
     rooms: unifiedPlan.rooms,
     strokes: unifiedPlan.strokes,
+    createdAt: unifiedPlan.createdAt || now,
+    updatedAt: unifiedPlan.updatedAt || now,
     metadata: {
       createdAt: unifiedPlan.metadata?.createdAt || now,
       updatedAt: unifiedPlan.metadata?.updatedAt || now,
@@ -44,9 +48,7 @@ export const convertToAppFloorPlan = (unifiedPlan: UnifiedFloorPlan): AppFloorPl
       paperSize: unifiedPlan.metadata?.paperSize,
       level: unifiedPlan.metadata?.level,
       notes: unifiedPlan.metadata?.notes || ''
-    },
-    createdAt: unifiedPlan.createdAt || now,
-    updatedAt: unifiedPlan.updatedAt || now
+    }
   };
 };
 
@@ -71,15 +73,25 @@ export const convertToUnifiedFloorPlan = (appPlan: AppFloorPlan): UnifiedFloorPl
     id: appPlan.id,
     name: appPlan.name,
     label: appPlan.label || appPlan.name,
-    walls: appPlan.walls,
-    rooms: appPlan.rooms,
-    strokes: appPlan.strokes,
-    createdAt: appPlan.createdAt,
-    updatedAt: appPlan.updatedAt,
+    walls: appPlan.walls || [],
+    rooms: appPlan.rooms || [],
+    strokes: appPlan.strokes || [],
+    createdAt: appPlan.createdAt || now,
+    updatedAt: appPlan.updatedAt || now,
     gia: 0,
     level: appPlan.metadata?.level || 0,
     index: 0,
-    metadata: appPlan.metadata,
+    metadata: {
+      createdAt: appPlan.metadata?.createdAt || now,
+      updatedAt: appPlan.metadata?.updatedAt || now,
+      paperSize: appPlan.metadata?.paperSize || 'A4',
+      level: appPlan.metadata?.level || 0,
+      version: appPlan.metadata?.version || '1.0',
+      author: appPlan.metadata?.author || 'User',
+      notes: appPlan.metadata?.notes || '',
+      dateCreated: appPlan.metadata?.dateCreated || now,
+      lastModified: appPlan.metadata?.lastModified || now
+    },
     data: {},
     userId: ''
   };
@@ -101,20 +113,31 @@ export const convertToUnifiedFloorPlans = (appPlans: AppFloorPlan[]): UnifiedFlo
  * @returns Unified floor plan
  */
 export const convertCanvasToUnifiedFloorPlan = (canvasPlan: CanvasFloorPlan): UnifiedFloorPlan => {
+  const now = new Date().toISOString();
   // Ensure proper conversion with all required fields
   return {
-    id: canvasPlan.id,
-    name: canvasPlan.name,
-    label: canvasPlan.label || canvasPlan.name,
+    id: canvasPlan.id || '',
+    name: canvasPlan.name || '',
+    label: canvasPlan.label || canvasPlan.name || '',
     walls: canvasPlan.walls || [],
     rooms: canvasPlan.rooms || [],
     strokes: canvasPlan.strokes || [],
-    createdAt: canvasPlan.createdAt,
-    updatedAt: canvasPlan.updatedAt,
+    createdAt: canvasPlan.createdAt || now,
+    updatedAt: canvasPlan.updatedAt || now,
     gia: canvasPlan.gia || 0,
     level: canvasPlan.level || 0,
     index: canvasPlan.index || 0,
-    metadata: canvasPlan.metadata,
+    metadata: canvasPlan.metadata || {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0,
+      version: '1.0',
+      author: 'User',
+      notes: '',
+      dateCreated: now,
+      lastModified: now
+    },
     data: canvasPlan.data || {},
     userId: canvasPlan.userId || '',
     canvasData: canvasPlan.canvasData,
@@ -129,6 +152,7 @@ export const convertCanvasToUnifiedFloorPlan = (canvasPlan: CanvasFloorPlan): Un
  * @returns Canvas floor plan
  */
 export const convertUnifiedToCanvasFloorPlan = (unifiedPlan: UnifiedFloorPlan): CanvasFloorPlan => {
+  const now = new Date().toISOString();
   return {
     id: unifiedPlan.id,
     name: unifiedPlan.name,
@@ -141,11 +165,70 @@ export const convertUnifiedToCanvasFloorPlan = (unifiedPlan: UnifiedFloorPlan): 
     canvasData: unifiedPlan.canvasData || null,
     canvasJson: unifiedPlan.canvasJson || null,
     gia: unifiedPlan.gia || 0,
-    createdAt: unifiedPlan.createdAt,
-    updatedAt: unifiedPlan.updatedAt,
+    createdAt: unifiedPlan.createdAt || now,
+    updatedAt: unifiedPlan.updatedAt || now,
     metadata: unifiedPlan.metadata,
     data: unifiedPlan.data || {},
     userId: unifiedPlan.userId || '',
     propertyId: unifiedPlan.propertyId || unifiedPlan.userId || ''
   };
 };
+
+/**
+ * Convert any floor plan to the unified format
+ * Smart function that detects the format and converts appropriately
+ * @param floorPlan Any floor plan object
+ * @returns Unified floor plan
+ */
+export const toUnifiedFloorPlan = (floorPlan: any): UnifiedFloorPlan => {
+  // Detect if this is already a unified floor plan
+  if (floorPlan && floorPlan.data !== undefined && floorPlan.userId !== undefined) {
+    // Already appears to be in unified format
+    return ensureUnifiedFloorPlanIntegrity(floorPlan);
+  }
+  
+  // Try to convert from canvas or app format
+  if (floorPlan.propertyId) {
+    // Likely a canvas floor plan
+    return convertCanvasToUnifiedFloorPlan(floorPlan);
+  }
+  
+  // Attempt conversion from app format
+  return convertToUnifiedFloorPlan(floorPlan as any);
+};
+
+/**
+ * Ensure a floor plan has all required unified format properties
+ * @param floorPlan Potentially incomplete floor plan
+ * @returns Complete unified floor plan
+ */
+function ensureUnifiedFloorPlanIntegrity(floorPlan: Partial<UnifiedFloorPlan>): UnifiedFloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: floorPlan.id || `floor-plan-${Date.now()}`,
+    name: floorPlan.name || 'Untitled Floor Plan',
+    label: floorPlan.label || floorPlan.name || 'Untitled',
+    walls: floorPlan.walls || [],
+    rooms: floorPlan.rooms || [],
+    strokes: floorPlan.strokes || [],
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    index: floorPlan.index || 0,
+    metadata: floorPlan.metadata || {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0,
+      version: '1.0',
+      author: 'User',
+      notes: '',
+      dateCreated: now,
+      lastModified: now
+    },
+    data: floorPlan.data || {},
+    userId: floorPlan.userId || ''
+  };
+}

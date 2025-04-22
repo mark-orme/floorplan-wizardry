@@ -6,8 +6,8 @@ import { vi } from 'vitest';
 const useFloorPlanDrawingMock = {
   startDrawing: vi.fn<[SimplePoint], void>(),
   continueDrawing: vi.fn<[SimplePoint], void>(),
-  endDrawing: vi.fn<[], void>(),
-  cancelDrawing: vi.fn<[], void>(),
+  endDrawing: vi.fn(),
+  cancelDrawing: vi.fn(),
   isDrawing: false,
 };
 

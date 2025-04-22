@@ -34,12 +34,15 @@ const testFloorPlan: Partial<FloorPlan> = {
     level: 0,
     version: '1.0',
     author: 'User',
-    notes: ''
+    notes: '',
+    dateCreated: now,
+    lastModified: now
   },
   data: {}, // required property
   userId: '', // required property
 };
 
 export {
-  // export test fixtures or utilities here if any
+  testStroke,
+  testFloorPlan
 };

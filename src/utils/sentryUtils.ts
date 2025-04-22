@@ -1,113 +1,106 @@
 
 /**
- * Sentry utility functions
- * Provides standardized wrappers for Sentry reporting
+ * Sentry utilities
+ * Provides helper functions for capturing errors and messages in Sentry
  */
 import * as Sentry from '@sentry/react';
 
-export interface CaptureMessageOptions {
-  level?: 'info' | 'warning' | 'error';
+/**
+ * Error capture options interface
+ */
+export interface ErrorCaptureOptions {
   tags?: Record<string, string>;
   extra?: Record<string, any>;
-  context?: string;
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-  };
+  level?: Sentry.SeverityLevel;
 }
 
 /**
- * Captures a message in Sentry with additional context
- * @param message Message to capture
- * @param options Optional configuration or context string
- */
-export function captureMessage(message: string, options?: CaptureMessageOptions): void;
-export function captureMessage(message: string, context?: string, options?: CaptureMessageOptions): void;
-export function captureMessage(message: string, contextOrOptions?: string | CaptureMessageOptions, optionsArg?: CaptureMessageOptions): void {
-  let options: CaptureMessageOptions | undefined;
-  
-  if (typeof contextOrOptions === 'string') {
-    // Old-style call with context string
-    options = {
-      ...(optionsArg || {}),
-      context: contextOrOptions
-    };
-  } else {
-    // New-style call with options object
-    options = contextOrOptions;
-  }
-
-  // Set tags from options
-  if (options?.tags) {
-    Object.entries(options.tags).forEach(([key, value]) => {
-      Sentry.setTag(key, value);
-    });
-  }
-
-  // Set extra context from options
-  if (options?.extra) {
-    Sentry.setContext('extra', options.extra);
-  }
-
-  // Set context as a tag if provided
-  if (options?.context) {
-    Sentry.setTag('context', options.context);
-  }
-
-  // Determine Sentry severity level
-  const sentryLevel = options?.level === 'info' ? 'info' : 
-                      options?.level === 'warning' ? 'warning' : 'error';
-  
-  // Capture the message
-  Sentry.captureMessage(message, sentryLevel);
-}
-
-/**
- * Captures an exception in Sentry with additional context
+ * Capture error in Sentry
  * @param error Error to capture
- * @param options Optional configuration or error type string
+ * @param options Capture options
  */
-export function captureError(error: Error, options?: CaptureMessageOptions): void;
-export function captureError(error: Error, errorType?: string, options?: CaptureMessageOptions): void;
-export function captureError(error: Error, errorTypeOrOptions?: string | CaptureMessageOptions, optionsArg?: CaptureMessageOptions): void {
-  let options: CaptureMessageOptions | undefined;
-  
-  if (typeof errorTypeOrOptions === 'string') {
-    // Old-style call with errorType string
-    options = {
-      ...(optionsArg || {}),
-      tags: {
-        ...(optionsArg?.tags || {}),
-        error_type: errorTypeOrOptions
-      }
-    };
-  } else {
-    // New-style call with options object
-    options = errorTypeOrOptions;
-  }
+export function captureError(error: Error, options?: ErrorCaptureOptions): void;
 
-  // Set tags from options
-  if (options?.tags) {
-    Object.entries(options.tags).forEach(([key, value]) => {
-      Sentry.setTag(key, value);
+/**
+ * Capture error in Sentry (legacy signature)
+ * @param error Error to capture
+ * @param context Context string (deprecated)
+ * @param extraData Extra data (deprecated)
+ * @deprecated Use the options object signature instead
+ */
+export function captureError(error: Error, context?: string, extraData?: Record<string, any>): void;
+
+/**
+ * Implementation of captureError
+ */
+export function captureError(
+  error: Error, 
+  contextOrOptions?: string | ErrorCaptureOptions, 
+  extraData?: Record<string, any>
+): void {
+  if (typeof contextOrOptions === 'string') {
+    // Legacy implementation with 3 args
+    console.warn('Using deprecated captureError signature. Please update to options object.');
+    Sentry.captureException(error, {
+      tags: { context: contextOrOptions },
+      extra: extraData
+    });
+  } else {
+    // New implementation with options object
+    Sentry.captureException(error, {
+      tags: contextOrOptions?.tags,
+      extra: contextOrOptions?.extra,
+      level: contextOrOptions?.level
     });
   }
-
-  // Set extra context from options
-  if (options?.extra) {
-    Sentry.setContext('extra', options.extra);
-  }
-
-  // Set context as a tag if provided
-  if (options?.context) {
-    Sentry.setTag('context', options.context);
-  }
-
-  // Capture the exception
-  Sentry.captureException(error);
 }
 
-// Export Sentry types to maintain compatibility with legacy code
-export type { CaptureMessageOptions as SentryOptions };
-export { Sentry };
+/**
+ * Message capture options interface
+ */
+export interface MessageCaptureOptions {
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+  level?: Sentry.SeverityLevel;
+}
+
+/**
+ * Capture message in Sentry
+ * @param message Message to capture
+ * @param options Capture options
+ */
+export function captureMessage(message: string, options?: MessageCaptureOptions): void;
+
+/**
+ * Capture message in Sentry (legacy signature)
+ * @param message Message to capture
+ * @param context Context string (deprecated)
+ * @param extraData Extra data (deprecated)
+ * @deprecated Use the options object signature instead
+ */
+export function captureMessage(message: string, context?: string, extraData?: Record<string, any>): void;
+
+/**
+ * Implementation of captureMessage
+ */
+export function captureMessage(
+  message: string, 
+  contextOrOptions?: string | MessageCaptureOptions, 
+  extraData?: Record<string, any>
+): void {
+  if (typeof contextOrOptions === 'string') {
+    // Legacy implementation with 3 args
+    console.warn('Using deprecated captureMessage signature. Please update to options object.');
+    Sentry.captureMessage(message, {
+      tags: { context: contextOrOptions },
+      extra: extraData
+    });
+  } else {
+    // New implementation with options object
+    Sentry.captureMessage(message, {
+      tags: contextOrOptions?.tags,
+      extra: contextOrOptions?.extra,
+      level: contextOrOptions?.level
+    });
+  }
+}

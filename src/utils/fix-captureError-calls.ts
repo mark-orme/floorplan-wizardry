@@ -1,59 +1,71 @@
 
-// This is a utility to document the fixed captureError calls across the application
-// The following files were updated to use the new captureError and captureMessage API format:
+/**
+ * This file provides documentation on how to fix all the captureMessage 
+ * and captureError calls that pass three arguments.
+ */
 
-/*
-- src/components/BasicGrid.tsx
-- src/components/auth/AuthSection.tsx
-- src/components/canvas/CanvasApp.tsx
-- src/components/canvas/CanvasDiagnostics.tsx
-- src/components/canvas/CanvasDrawingEnhancer.tsx
-- src/components/canvas/Toolbar.tsx
-- src/components/canvas/grid/GridLayer.tsx
-- src/components/canvas/grid/MobileGridLayer.tsx
-- src/components/forms/ValidationDemoForm.tsx
-- src/features/drawing/hooks/useToolMonitoring.ts
-- src/features/grid/state/gridMonitoring.ts
-- src/hooks/canvas-operations/useColorOperations.ts
-- src/hooks/canvas-operations/useFileOperations.ts
-- src/hooks/canvas-operations/useHistoryOperations.ts
-- src/hooks/canvas-operations/useToolOperations.ts
-- src/hooks/canvas-operations/useZoomOperations.ts
-- src/hooks/canvas/useCanvasObservability.ts
-- src/utils/diagnostics/lineToolDiagnostics.ts
-- src/utils/diagnostics/straightLineValidator.ts
-- src/utils/diagnostics/toolbar/toolbarMonitoring.ts
-- src/utils/diagnostics/toolbar/toolbarRunDiagnostics.ts
-- src/utils/grid/gridErrorHandling.ts
-- src/utils/grid/gridVisibilityManager.ts
-- src/utils/logging/toolbar/toolActionLogger.ts
-- src/utils/logging/toolbar/toolActivationLogger.ts
-- src/utils/logging/toolbar/toolMonitoring.ts
-- src/utils/validation/validatorService.ts
-*/
+/**
+ * HOW TO FIX THREE-ARGUMENT SENTRY CALLS
+ * 
+ * 1. Find all calls to captureMessage and captureError with 3 arguments:
+ *    captureMessage(message, context, extraData)
+ *    captureError(error, context, extraData)
+ * 
+ * 2. Replace them with the new two-argument signatures:
+ *    captureMessage(message, { tags: { context: context }, extra: extraData })
+ *    captureError(error, { tags: { context: context }, extra: extraData })
+ * 
+ * Examples:
+ * 
+ * Old:
+ *    captureMessage("Grid created", "grid-layer", { count: 10 });
+ * 
+ * New:
+ *    captureMessage("Grid created", { 
+ *      tags: { context: "grid-layer" },
+ *      extra: { count: 10 }
+ *    });
+ * 
+ * Old:
+ *    captureError(error, "canvas-operation", { tool: currentTool });
+ * 
+ * New:
+ *    captureError(error, {
+ *      tags: { context: "canvas-operation" },
+ *      extra: { tool: currentTool }
+ *    });
+ */
 
-// Example of how calls should be updated:
-// 
-// OLD:
-// captureError(error, 'context', extraData);
-// 
-// NEW:
-// captureError(error, { context: 'context', extra: extraData });
-// 
-// OR:
-// captureError(error, { 
-//   context: 'context',
-//   tags: { component: 'ComponentName' },
-//   extra: { 
-//     userId: user.id,
-//     additionalData: someData 
-//   }
-// });
+// Example function with three arguments (deprecated)
+export function oldCaptureMessage(message: string, context: string, extraData: object) {
+  // No implementation, just a reference
+  console.log("Deprecated - Don't use this function");
+}
 
-// We have created a utility function in src/utils/sentryUtils.ts that handles 
-// both old and new call patterns for backward compatibility.
+// Example function with options object (current)
+export function newCaptureMessage(message: string, options: { tags?: Record<string, string>, extra?: object }) {
+  // No implementation, just a reference
+  console.log("Correct pattern - Use this format");
+}
 
-// To import and use in components:
-// import { captureError, captureMessage } from '@/utils/sentryUtils';
-
-// This file serves as documentation only and has no runtime impact.
+// Example of a one-by-one update method for each file
+export function updateExamples() {
+  // Find:
+  // captureMessage("Canvas error", "canvas-component", { error: err.message });
+  
+  // Replace with:
+  // captureMessage("Canvas error", { 
+  //   tags: { context: "canvas-component" },
+  //   extra: { error: err.message }
+  // });
+  
+  
+  // Find:
+  // captureError(error, "grid-layer", { dimensions: canvasDimensions });
+  
+  // Replace with:
+  // captureError(error, {
+  //   tags: { context: "grid-layer" },
+  //   extra: { dimensions: canvasDimensions }
+  // });
+}

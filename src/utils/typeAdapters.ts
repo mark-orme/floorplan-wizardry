@@ -3,13 +3,14 @@
  * Type adapters for converting between different object formats
  * @module utils/typeAdapters
  */
-import { Point } from 'fabric';
 import {
   FloorPlan,
   Wall,
   Room,
   Stroke,
-  FloorPlanMetadata
+  FloorPlanMetadata,
+  asStrokeType,
+  asRoomType
 } from '@/types/floor-plan/unifiedTypes';
 
 /**
@@ -41,7 +42,7 @@ export const adaptRoom = (room: any): Room => {
   return {
     id: room.id || `room-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     name: room.name || 'Unnamed Room',
-    type: room.type || 'other',
+    type: asRoomType(room.type || 'other'),
     vertices: room.vertices || room.points || [],
     area: room.area || 0,
     color: room.color || '#f0f0f0'
@@ -59,7 +60,7 @@ export const adaptStroke = (stroke: any): Stroke => {
     points: stroke.points || [],
     color: stroke.color || '#000000',
     width: stroke.width || stroke.thickness || 1,
-    type: stroke.type || 'annotation'
+    type: asStrokeType(stroke.type || 'line')
   };
 };
 
@@ -68,7 +69,7 @@ export const adaptStroke = (stroke: any): Stroke => {
  * @param metadata Metadata object to convert
  * @returns Unified metadata format
  */
-export const adaptMetadata = (metadata: any): FloorPlanMetadata => {
+export const adaptMetadata = (metadata: any = {}): FloorPlanMetadata => {
   const now = new Date().toISOString();
   return {
     createdAt: metadata?.createdAt || now,
@@ -107,3 +108,4 @@ export const adaptFloorPlan = (floorPlan: any): FloorPlan => {
     userId: floorPlan.userId || floorPlan.propertyId || 'default-user'
   };
 };
+
