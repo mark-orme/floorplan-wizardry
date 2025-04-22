@@ -4,33 +4,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 /**
- * Base hook for property management operations
- * Provides shared state and authentication handling
- * @returns {Object} Authentication state and validation helpers
+ * Base hook for property operations
+ * Provides common functionality for property hooks
  */
 export const usePropertyBase = () => {
-  const [authContextError, setAuthContextError] = useState(false);
+  const { user, userRole } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
-  // IMPORTANT: Always call hooks unconditionally at the top level
-  const authData = useAuth();
-  const { user, userRole } = authData;
-  
   /**
-   * Check if user has valid authentication
-   * @returns {boolean} Indicates if user can perform operations
+   * Check if the user is authenticated
+   * @returns {boolean} True if user is authenticated
    */
-  const checkAuthentication = () => {
-    if (authContextError) {
-      toast.error('Authentication error. Please refresh the page and try again.');
-      return false;
-    }
-    
+  const checkAuthentication = (): boolean => {
     if (!user) {
-      toast.error('You must be logged in to perform this action');
+      toast.error('User must be authenticated');
       return false;
     }
-    
     return true;
   };
   
@@ -39,7 +28,6 @@ export const usePropertyBase = () => {
     userRole,
     isLoading,
     setIsLoading,
-    authContextError,
     checkAuthentication
   };
 };

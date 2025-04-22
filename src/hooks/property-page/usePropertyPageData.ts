@@ -13,10 +13,11 @@ export const usePropertyPageData = (user: any) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
   
   // Initialize property management hook once at the top level
   const propertyManagement = usePropertyManagement();
-  const { properties, isLoading: propertiesLoading, listProperties } = propertyManagement;
+  const { isLoading: propertiesLoading, listProperties } = propertyManagement;
 
   /**
    * Load properties when user is authenticated
@@ -26,7 +27,8 @@ export const usePropertyPageData = (user: any) => {
       if (!user) return;
       
       try {
-        await listProperties();
+        const result = await listProperties();
+        setProperties(result || []);
       } catch (error) {
         console.error("Error loading properties:", error);
         setHasError(true);
@@ -59,11 +61,15 @@ export const usePropertyPageData = (user: any) => {
     setHasError(false);
     setErrorMessage('');
     if (user && listProperties) {
-      listProperties().catch(error => {
-        console.error("Error retrying property load:", error);
-        setHasError(true);
-        setErrorMessage("Failed to reload properties");
-      });
+      listProperties()
+        .then(result => {
+          setProperties(result || []);
+        })
+        .catch(error => {
+          console.error("Error retrying property load:", error);
+          setHasError(true);
+          setErrorMessage("Failed to reload properties");
+        });
     }
   }, [user, listProperties]);
 
