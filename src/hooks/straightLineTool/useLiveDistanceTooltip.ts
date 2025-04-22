@@ -21,13 +21,11 @@ export const useLiveDistanceTooltip = ({ measurementData }: UseLiveDistanceToolt
       ? `(Snapped${measurementData.snapType ? ` to ${measurementData.snapType}` : ''})`
       : '';
     
-    return (
-      <div className="absolute p-2 bg-white border rounded shadow text-xs">
-        <div>Distance: {distanceDisplay}</div>
-        {angleDisplay && <div>Angle: {angleDisplay}</div>}
-        {snappedInfo && <div className="text-gray-500">{snappedInfo}</div>}
-      </div>
-    );
+    return {
+      distanceDisplay,
+      angleDisplay,
+      snappedInfo
+    };
   }, [measurementData]);
   
   return {
