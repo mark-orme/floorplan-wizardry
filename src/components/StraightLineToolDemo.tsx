@@ -28,7 +28,10 @@ export const StraightLineToolDemo: React.FC = () => {
     inputMethod: InputMethod.MOUSE,
     isPencilMode: false,
     canvas: fabricCanvas,
-    setInputMethod: () => {}  // no-op function for demo
+    setInputMethod: () => {},  // no-op function for demo
+    enabled: true,
+    lineColor: '#000000',
+    lineThickness: 2
   });
   
   return (

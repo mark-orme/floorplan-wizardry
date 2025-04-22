@@ -1,7 +1,4 @@
-
 import * as z from 'zod';
-import { ZodError } from 'zod';
-import { useForm } from 'react-hook-form';
 import {
   Form,
   FormField,
@@ -25,7 +22,6 @@ interface PropertyFormFieldsProps {
   form: UseFormReturnType;
 }
 
-// Define a type for UseFormReturn since we don't have access to react-hook-form directly
 interface UseFormReturnType {
   control: any;
   [key: string]: any;

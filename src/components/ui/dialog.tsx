@@ -81,23 +81,31 @@ const DialogFooter = ({
 DialogFooter.displayName = "DialogFooter";
 export { DialogFooter };
 
-export type DialogTitleProps = React.ComponentPropsWithRef<typeof DialogPrimitive.Title>;
+export type DialogTitleProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>;
 export const DialogTitle = forwardRef<
   ElementRef<typeof DialogPrimitive.Title>, 
   DialogTitleProps
->(({ children, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} {...props}>
+>(({ children, className, ...props }, ref) => (
+  <DialogPrimitive.Title 
+    ref={ref} 
+    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    {...props}
+  >
     {children}
   </DialogPrimitive.Title>
 ));
 DialogTitle.displayName = "DialogTitle";
 
-export type DialogDescriptionProps = React.ComponentPropsWithRef<typeof DialogPrimitive.Description>;
+export type DialogDescriptionProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>;
 export const DialogDescription = forwardRef<
   ElementRef<typeof DialogPrimitive.Description>, 
   DialogDescriptionProps
->(({ children, ...props }, ref) => (
-  <DialogPrimitive.Description ref={ref} {...props}>
+>(({ children, className, ...props }, ref) => (
+  <DialogPrimitive.Description 
+    ref={ref} 
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  >
     {children}
   </DialogPrimitive.Description>
 ));

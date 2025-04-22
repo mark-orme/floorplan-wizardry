@@ -14,6 +14,7 @@ export interface UseStraightLineToolOptions {
   canvas?: Canvas | null;
   enabled?: boolean;
   lineColor?: string;
+  lineThickness?: number;
 }
 
 export interface UseStraightLineToolResult {
@@ -52,7 +53,8 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     setInputMethod: externalSetInputMethod,
     canvas = null,
     enabled = true,
-    lineColor = '#000000'
+    lineColor = '#000000',
+    lineThickness = 2
   } = options;
   
   const [isEnabled, setIsEnabled] = useState<boolean>(enabled);

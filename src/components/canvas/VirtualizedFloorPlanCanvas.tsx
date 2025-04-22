@@ -7,7 +7,7 @@ import { FloorPlan } from '@/types/core/FloorPlan';
 interface VirtualizedFloorPlanCanvasProps {
   floorPlan: FloorPlan;
   onFloorPlanUpdate: (floorPlan: FloorPlan) => void;
-  handleCanvasError: (err: Error) => void; // Renamed from onErrorCallback to match expected API
+  handleCanvasError: (err: Error) => void;
   resetCanvasError: () => void;
   hasError: boolean;
   errorMessage: string;

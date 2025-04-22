@@ -42,7 +42,9 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isActive: enabled,
     inputMethod: InputMethod.MOUSE,
     isPencilMode: false,
-    canvas: canvas
+    canvas: canvas,
+    lineColor: lineColor,
+    lineThickness: lineThickness
   });
   
   // Hide measurement after some time of inactivity
