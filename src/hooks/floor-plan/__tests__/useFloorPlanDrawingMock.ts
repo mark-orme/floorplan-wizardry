@@ -4,8 +4,8 @@ import { vi } from 'vitest';
 
 // Mock the useFloorPlanDrawing hook
 const useFloorPlanDrawingMock = {
-  startDrawing: vi.fn<[SimplePoint], void>(),
-  continueDrawing: vi.fn<[SimplePoint], void>(),
+  startDrawing: vi.fn(),
+  continueDrawing: vi.fn(),
   endDrawing: vi.fn(),
   cancelDrawing: vi.fn(),
   isDrawing: false,

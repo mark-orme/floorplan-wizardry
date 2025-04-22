@@ -20,8 +20,8 @@ export const LoadingError = ({
   useEffect(() => {
     if (hasError && errorMessage) {
       captureError(new Error(errorMessage), {
-        context: 'loading-error',
-        tags: {
+        tags: { 
+          context: 'loading-error',
           component: 'LoadingError'
         },
         extra: {
