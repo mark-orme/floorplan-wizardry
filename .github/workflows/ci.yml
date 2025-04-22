@@ -161,10 +161,20 @@ jobs:
       
       - name: Check for accessibility violations
         run: |
-          if [ -f "playwright-report/accessibility-violations.json" ]; then
-            VIOLATIONS=$(cat playwright-report/accessibility-violations.json | jq length)
+          if [ -f "test-results/a11y-violations.json" ]; then
+            VIOLATIONS=$(cat test-results/a11y-violations.json | jq length)
             if [ "$VIOLATIONS" -gt 0 ]; then
               echo "Found $VIOLATIONS accessibility violations"
               exit 1
             fi
           fi
+
+      - name: Upload accessibility reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: accessibility-reports
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

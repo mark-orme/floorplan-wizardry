@@ -1,9 +1,18 @@
 
 import { test, expect } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const violationsFilePath = path.join(process.cwd(), 'test-results', 'a11y-violations.json');
 
 test.describe('Application Accessibility Tests', () => {
   test.beforeAll(async () => {
+    // Create directory if it doesn't exist
+    const dir = path.dirname(violationsFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     // Create/clear the violations file at the start of the test run
     fs.writeFileSync(violationsFilePath, JSON.stringify([]));
   });

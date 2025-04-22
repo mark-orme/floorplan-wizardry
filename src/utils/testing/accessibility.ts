@@ -1,5 +1,6 @@
 
 import { Page } from '@playwright/test';
+import { AxeBuilder } from '@axe-core/playwright';
 
 // Define accessibility audit options
 export interface AccessibilityAuditOptions {
@@ -19,17 +20,29 @@ export interface AccessibilityAuditOptions {
  * @param options Audit options
  * @returns Array of violations
  */
-export async function runAccessibilityAudit(page: Page, options: AccessibilityAuditOptions = {}) {
-  // Implement axe-core checks
-  const results = await page.evaluate((opts) => {
-    // In a real implementation, this would use axe-core
-    console.log('Running accessibility audit with options:', opts);
-    
-    // For now, return an empty array indicating no violations
-    return [];
-  }, options);
-  
-  return results;
+export async function runAccessibilityAudit(
+  page: Page, 
+  options: AccessibilityAuditOptions = {}
+) {
+  const builder = new AxeBuilder({ page });
+
+  if (options.includeSelectors) {
+    builder.include(options.includeSelectors);
+  }
+
+  if (options.excludeSelectors) {
+    builder.exclude(options.excludeSelectors);
+  }
+
+  if (options.rules?.enable) {
+    builder.options({ rules: options.rules.enable.reduce((acc, rule) => {
+      acc[rule] = { enabled: true };
+      return acc;
+    }, {} as Record<string, { enabled: boolean }>) });
+  }
+
+  const results = await builder.analyze();
+  return results.violations;
 }
 
 /**
@@ -37,5 +50,19 @@ export async function runAccessibilityAudit(page: Page, options: AccessibilityAu
  * @param element Element to check
  */
 export function checkDialogAccessibility(element: HTMLElement) {
-  console.log("Checking dialog accessibility for:", element);
+  const hasRole = element.hasAttribute('role') && element.getAttribute('role') === 'dialog';
+  const hasLabel = element.hasAttribute('aria-label') || element.hasAttribute('aria-labelledby');
+  const hasDescription = element.hasAttribute('aria-describedby');
+  
+  if (!hasRole) {
+    console.warn('Dialog missing role="dialog" attribute');
+  }
+  
+  if (!hasLabel) {
+    console.warn('Dialog missing aria-label or aria-labelledby attribute');
+  }
+  
+  if (!hasDescription) {
+    console.warn('Dialog missing aria-describedby attribute');
+  }
 }
