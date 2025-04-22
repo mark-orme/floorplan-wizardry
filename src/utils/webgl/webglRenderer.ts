@@ -1,254 +1,216 @@
 
 /**
- * WebGL renderer for optimized canvas rendering
+ * WebGL renderer for optimized canvas operations
  */
-import { Point } from '@/types/core/Geometry';
-
 export class WebGLRenderer {
   private gl: WebGLRenderingContext | null = null;
+  private canvas: HTMLCanvasElement;
   private program: WebGLProgram | null = null;
-  private vertexBuffer: WebGLBuffer | null = null;
-  
+  private width: number;
+  private height: number;
+  private isWebGL2: boolean = false;
+
   constructor(canvas: HTMLCanvasElement) {
-    // Try to get WebGL context with optimized settings
-    const contextOptions = {
-      alpha: true,
-      antialias: true,
-      depth: false,
-      preserveDrawingBuffer: true,
-      powerPreference: 'high-performance',
-      desynchronized: true
-    };
-    
-    this.gl = canvas.getContext('webgl', contextOptions) || 
-              canvas.getContext('experimental-webgl', contextOptions) as WebGLRenderingContext;
-              
-    if (!this.gl) {
-      throw new Error('WebGL not supported');
-    }
-    
+    this.canvas = canvas;
+    this.width = canvas.width;
+    this.height = canvas.height;
+    this.initContext();
     this.initShaders();
-    this.initBuffers();
-    
-    // Configure WebGL
-    this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.gl.viewport(0, 0, canvas.width, canvas.height);
   }
-  
-  /**
-   * Initialize WebGL shaders
-   */
+
+  private initContext(): void {
+    // First try to get WebGL2 context, then fall back to WebGL1
+    try {
+      const ctx = this.canvas.getContext('webgl2');
+      if (ctx) {
+        this.gl = ctx;
+        this.isWebGL2 = true;
+        console.log('Using WebGL2 renderer');
+        return;
+      }
+    } catch (e) {
+      console.warn('WebGL2 not supported, falling back to WebGL1');
+    }
+
+    // Fall back to WebGL1
+    try {
+      const ctx = this.canvas.getContext('webgl') || 
+                  this.canvas.getContext('experimental-webgl');
+      if (ctx) {
+        this.gl = ctx as WebGLRenderingContext;
+        console.log('Using WebGL1 renderer');
+        return;
+      }
+    } catch (e) {
+      console.error('WebGL not supported', e);
+    }
+
+    console.error('Could not initialize WebGL context');
+  }
+
   private initShaders(): void {
-    const gl = this.gl;
-    if (!gl) return;
-    
-    // Vertex shader
-    const vertexShaderSource = `
+    if (!this.gl) return;
+
+    // Create shader program
+    const vertexShader = this.createShader(this.gl.VERTEX_SHADER, `
       attribute vec2 a_position;
       uniform vec2 u_resolution;
-      
       void main() {
-        // Convert pixel space to clip space
-        vec2 clipSpace = (a_position / u_resolution) * 2.0 - 1.0;
+        // Convert from pixels to 0.0 to 1.0
+        vec2 zeroToOne = a_position / u_resolution;
+        // Convert from 0->1 to 0->2
+        vec2 zeroToTwo = zeroToOne * 2.0;
+        // Convert from 0->2 to -1->1 (clipspace)
+        vec2 clipSpace = zeroToTwo - 1.0;
+        // Flip Y axis
         gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-        gl_PointSize = 2.0;
       }
-    `;
-    
-    // Fragment shader
-    const fragmentShaderSource = `
+    `);
+
+    const fragmentShader = this.createShader(this.gl.FRAGMENT_SHADER, `
       precision mediump float;
       uniform vec4 u_color;
-      
       void main() {
         gl_FragColor = u_color;
       }
-    `;
-    
-    // Create shaders
-    const vertexShader = this.createShader(gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = this.createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-    
+    `);
+
     if (!vertexShader || !fragmentShader) {
-      throw new Error('Failed to create shaders');
+      console.error('Failed to create shaders');
+      return;
     }
-    
-    // Create program and link shaders
-    this.program = gl.createProgram();
-    if (!this.program) {
-      throw new Error('Failed to create shader program');
+
+    // Create the program
+    const program = this.gl.createProgram();
+    if (!program) {
+      console.error('Failed to create shader program');
+      return;
     }
-    
-    gl.attachShader(this.program, vertexShader);
-    gl.attachShader(this.program, fragmentShader);
-    gl.linkProgram(this.program);
-    
-    // Check if linking succeeded
-    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(this.program);
-      throw new Error('Failed to link program: ' + info);
+
+    this.gl.attachShader(program, vertexShader);
+    this.gl.attachShader(program, fragmentShader);
+    this.gl.linkProgram(program);
+
+    const success = this.gl.getProgramParameter(program, this.gl.LINK_STATUS);
+    if (!success) {
+      console.error('Failed to link program:', this.gl.getProgramInfoLog(program));
+      this.gl.deleteProgram(program);
+      return;
     }
-    
-    gl.useProgram(this.program);
+
+    this.program = program;
   }
-  
-  /**
-   * Create a shader from source
-   * @param type Shader type
-   * @param source Shader source code
-   * @returns Shader object
-   */
+
   private createShader(type: number, source: string): WebGLShader | null {
-    const gl = this.gl;
-    if (!gl) return null;
+    if (!this.gl) return null;
     
-    const shader = gl.createShader(type);
+    const shader = this.gl.createShader(type);
     if (!shader) {
       console.error('Failed to create shader');
       return null;
     }
-    
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      const info = gl.getShaderInfoLog(shader);
-      console.error('Failed to compile shader:', info);
-      gl.deleteShader(shader);
+
+    this.gl.shaderSource(shader, source);
+    this.gl.compileShader(shader);
+
+    const success = this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS);
+    if (!success) {
+      console.error('Failed to compile shader:', this.gl.getShaderInfoLog(shader));
+      this.gl.deleteShader(shader);
       return null;
     }
-    
+
     return shader;
   }
-  
+
   /**
-   * Initialize WebGL buffers
+   * Clear the canvas with a specific color
    */
-  private initBuffers(): void {
-    const gl = this.gl;
-    if (!gl || !this.program) return;
+  clear(r: number = 0, g: number = 0, b: number = 0, a: number = 0): void {
+    if (!this.gl) return;
     
-    this.vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    
-    // Get attribute location
-    const positionAttribLocation = gl.getAttribLocation(this.program, 'a_position');
-    gl.enableVertexAttribArray(positionAttribLocation);
-    gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
+    this.gl.clearColor(r, g, b, a);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
   }
-  
+
   /**
    * Draw a line between two points
-   * @param start Start point
-   * @param end End point
-   * @param color Color as [r, g, b, a]
-   * @param lineWidth Line width in pixels
    */
-  drawLine(start: Point, end: Point, color: [number, number, number, number], lineWidth: number = 1): void {
-    const gl = this.gl;
-    if (!gl || !this.program) return;
+  drawLine(x1: number, y1: number, x2: number, y2: number, color: [number, number, number, number], thickness: number = 1): void {
+    if (!this.gl || !this.program) return;
+
+    this.gl.useProgram(this.program);
+
+    // Set up position attribute
+    const positionAttributeLocation = this.gl.getAttribLocation(this.program, "a_position");
+    const positionBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
     
-    // Use program
-    gl.useProgram(this.program);
+    // Calculate line vertices 
+    const vertices = this.calculateLineVertices(x1, y1, x2, y2, thickness);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
     
-    // Set resolution uniform
-    const resolutionUniformLocation = gl.getUniformLocation(this.program, 'u_resolution');
-    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    // Set up the position attribute
+    this.gl.enableVertexAttribArray(positionAttributeLocation);
+    this.gl.vertexAttribPointer(positionAttributeLocation, 2, this.gl.FLOAT, false, 0, 0);
     
-    // Set color uniform
-    const colorUniformLocation = gl.getUniformLocation(this.program, 'u_color');
-    gl.uniform4fv(colorUniformLocation, color);
+    // Set up resolution uniform
+    const resolutionUniformLocation = this.gl.getUniformLocation(this.program, "u_resolution");
+    this.gl.uniform2f(resolutionUniformLocation, this.width, this.height);
     
-    // Prepare vertices
-    const vertices = new Float32Array([
-      start.x, start.y,
-      end.x, end.y
-    ]);
+    // Set up color uniform
+    const colorUniformLocation = this.gl.getUniformLocation(this.program, "u_color");
+    this.gl.uniform4fv(colorUniformLocation, color);
     
-    // Upload vertices
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    
-    // Set line width
-    gl.lineWidth(lineWidth);
-    
-    // Draw line
-    gl.drawArrays(gl.LINES, 0, 2);
+    // Draw the line
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, vertices.length / 2);
   }
-  
+
   /**
-   * Draw a polyline (series of connected lines)
-   * @param points Array of points
-   * @param color Color as [r, g, b, a]
-   * @param lineWidth Line width in pixels
+   * Calculate vertices for a line with thickness
    */
-  drawPolyline(points: Point[], color: [number, number, number, number], lineWidth: number = 1): void {
-    const gl = this.gl;
-    if (!gl || !this.program || points.length < 2) return;
+  private calculateLineVertices(x1: number, y1: number, x2: number, y2: number, thickness: number): number[] {
+    // Calculate line direction
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
     
-    // Use program
-    gl.useProgram(this.program);
+    // Normalize and scale by half thickness
+    const halfThickness = thickness / 2;
+    const nx = dy / len * halfThickness;
+    const ny = -dx / len * halfThickness;
     
-    // Set resolution uniform
-    const resolutionUniformLocation = gl.getUniformLocation(this.program, 'u_resolution');
-    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-    
-    // Set color uniform
-    const colorUniformLocation = gl.getUniformLocation(this.program, 'u_color');
-    gl.uniform4fv(colorUniformLocation, color);
-    
-    // Prepare vertices
-    const vertices = new Float32Array(points.length * 2);
-    for (let i = 0; i < points.length; i++) {
-      vertices[i * 2] = points[i].x;
-      vertices[i * 2 + 1] = points[i].y;
-    }
-    
-    // Upload vertices
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    
-    // Set line width
-    gl.lineWidth(lineWidth);
-    
-    // Draw line strip
-    gl.drawArrays(gl.LINE_STRIP, 0, points.length);
+    // Return vertices for two triangles forming a quad
+    return [
+      x1 + nx, y1 + ny,
+      x1 - nx, y1 - ny,
+      x2 + nx, y2 + ny,
+      x2 - nx, y2 - ny
+    ];
   }
-  
+
   /**
-   * Clear the canvas
-   * @param color Clear color as [r, g, b, a]
-   */
-  clear(color: [number, number, number, number] = [0, 0, 0, 0]): void {
-    const gl = this.gl;
-    if (!gl) return;
-    
-    gl.clearColor(color[0], color[1], color[2], color[3]);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }
-  
-  /**
-   * Dispose of WebGL resources
+   * Clean up resources
    */
   dispose(): void {
-    const gl = this.gl;
-    if (!gl) return;
-    
-    // Delete buffers
-    if (this.vertexBuffer) {
-      gl.deleteBuffer(this.vertexBuffer);
+    // Clean up buffers, shaders, etc.
+    if (this.gl && this.program) {
+      this.gl.deleteProgram(this.program);
+      this.program = null;
     }
-    
-    // Delete program and shaders
-    if (this.program) {
-      gl.deleteProgram(this.program);
-    }
-    
-    // Lose context (cleanest way to release resources)
-    const extension = gl.getExtension('WEBGL_lose_context');
-    if (extension) {
-      extension.loseContext();
-    }
+  }
+
+  /**
+   * Return the WebGL context
+   */
+  getContext(): WebGLRenderingContext | null {
+    return this.gl;
+  }
+
+  /**
+   * Check if context is WebGL2
+   */
+  isWebGL2Context(): boolean {
+    return this.isWebGL2;
   }
 }

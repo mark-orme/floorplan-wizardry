@@ -1,3 +1,4 @@
+
 /**
  * Canvas render optimization utilities
  * Provides utilities for optimizing canvas rendering
@@ -68,6 +69,38 @@ export function createSmoothEventHandler<T extends (...args: any[]) => void>(
   };
   
   return smoothHandler as T;
+}
+
+/**
+ * Batch multiple canvas operations to run in a single render cycle
+ * @param canvas The Fabric.js canvas
+ * @param operations Array of operations to perform
+ * @param renderAfter Whether to render after all operations
+ */
+export function batchCanvasOperations(
+  canvas: FabricCanvas,
+  operations: Array<(canvas: FabricCanvas) => void>,
+  renderAfter: boolean = true
+): void {
+  // Start rendering mode that prevents automatic render calls
+  canvas.renderOnAddRemove = false;
+  
+  // Execute all operations
+  operations.forEach(operation => {
+    try {
+      operation(canvas);
+    } catch (error) {
+      console.error('Error in batch canvas operation:', error);
+    }
+  });
+  
+  // Restore rendering mode
+  canvas.renderOnAddRemove = true;
+  
+  // Render once after all operations if requested
+  if (renderAfter) {
+    requestOptimizedRender(canvas, 'batch-operations');
+  }
 }
 
 /**
