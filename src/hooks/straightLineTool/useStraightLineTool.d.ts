@@ -65,9 +65,6 @@ export interface UseStraightLineToolProps {
   /** Function to save current state */
   saveCurrentState?: () => void;
   
-  /** Input method */
-  inputMethod?: InputMethod;
-  
   /** Whether pencil mode is enabled */
   isPencilMode?: boolean;
 }

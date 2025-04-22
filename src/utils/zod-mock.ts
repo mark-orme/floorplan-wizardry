@@ -1,6 +1,6 @@
 
 // Create a mock version of Zod for components that need it
-export const z = {
+const z = {
   string: () => ({
     min: (length: number, message?: { message: string }) => ({ 
       message: (msg: string) => ({}) 
@@ -45,4 +45,5 @@ export interface ZodType<T> {
 }
 
 // Export as default and named export for flexibility
+export { z };
 export default z;
