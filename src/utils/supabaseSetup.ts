@@ -1,10 +1,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Create a supabase client with appropriate configuration
+// Create a supabase client with appropriate configuration using Vite's environment variables
 const supabaseClient = createClient(
-  process.env.SUPABASE_URL || 'https://example.supabase.co',
-  process.env.SUPABASE_KEY || 'public-anon-key'
+  import.meta.env.VITE_SUPABASE_URL || 'https://example.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'public-anon-key'
 );
 
 /**

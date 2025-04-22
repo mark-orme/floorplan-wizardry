@@ -1,60 +1,51 @@
+import { Point } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Test utilities for Straight Line Tool
- * Provides helper functions for testing the line tool hooks
+ * Helper functions for testing line drawing functionality
  */
-import { Point } from 'fabric';
-import { LineState } from './lineState';
 
 /**
- * Create an initial line state for testing
- * @returns Initial line state
+ * Create a mock line state for testing
  */
-export function createInitialLineState(): LineState {
+export function createMockLineState(options: { 
+  isDrawing?: boolean;
+  points?: Point[];
+} = {}) {
   return {
-    startPoint: null,
-    endPoint: null,
+    isDrawing: options.isDrawing || false,
+    startPoint: options.points?.[0] || null,
+    endPoint: options.points?.[1] || null,
+    // Add any other required properties for LineState
+  };
+}
+
+/**
+ * Create a mock line drawing in progress state
+ */
+export function createDrawingInProgressState(startPoint: Point, currentPoint: Point) {
+  return {
+    isDrawing: true,
+    startPoint,
+    endPoint: currentPoint,
+    // Add any other required properties
+  };
+}
+
+/**
+ * Create a completed line drawing state
+ */
+export function createCompletedDrawingState(startPoint: Point, endPoint: Point) {
+  return {
     isDrawing: false,
-    tempLine: null,
-    lastPosition: null
+    startPoint,
+    endPoint,
+    // Add any other required properties
   };
 }
 
 /**
- * Create a line state with a start point
- * @param x X coordinate
- * @param y Y coordinate
- * @returns Line state with start point
+ * Create a mock point
  */
-export function createLineStateWithStart(x: number = 100, y: number = 100): LineState {
-  return {
-    startPoint: new Point(x, y),
-    endPoint: null,
-    isDrawing: true,
-    tempLine: null,
-    lastPosition: new Point(x, y)
-  };
-}
-
-/**
- * Create a line state with start and end points
- * @param startX Start X coordinate
- * @param startY Start Y coordinate
- * @param endX End X coordinate
- * @param endY End Y coordinate
- * @returns Complete line state
- */
-export function createCompleteLineState(
-  startX: number = 100, 
-  startY: number = 100,
-  endX: number = 200,
-  endY: number = 200
-): LineState {
-  return {
-    startPoint: new Point(startX, startY),
-    endPoint: new Point(endX, endY),
-    isDrawing: true,
-    tempLine: null, // In a real scenario this would be a Line object
-    lastPosition: new Point(endX, endY)
-  };
+export function createMockPoint(x: number, y: number): Point {
+  return { x, y };
 }

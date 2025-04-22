@@ -4,7 +4,7 @@
  * Utility functions for debugging and validating types
  */
 
-import { FloorPlan, Wall } from '@/types/floor-plan';
+import { FloorPlan, Wall } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Calculate the length of a wall
