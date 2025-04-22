@@ -4,7 +4,6 @@ import { ComponentPropsWithRef, ElementRef, forwardRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type DialogProps = ComponentPropsWithRef<typeof DialogPrimitive.Root>;
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogPortal = DialogPrimitive.Portal;
@@ -81,10 +80,9 @@ const DialogFooter = ({
 DialogFooter.displayName = "DialogFooter";
 export { DialogFooter };
 
-export type DialogTitleProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>;
-export const DialogTitle = forwardRef<
+const DialogTitle = forwardRef<
   ElementRef<typeof DialogPrimitive.Title>, 
-  DialogTitleProps
+  ComponentPropsWithRef<typeof DialogPrimitive.Title>
 >(({ children, className, ...props }, ref) => (
   <DialogPrimitive.Title 
     ref={ref} 
@@ -95,11 +93,11 @@ export const DialogTitle = forwardRef<
   </DialogPrimitive.Title>
 ));
 DialogTitle.displayName = "DialogTitle";
+export { DialogTitle };
 
-export type DialogDescriptionProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>;
-export const DialogDescription = forwardRef<
+const DialogDescription = forwardRef<
   ElementRef<typeof DialogPrimitive.Description>, 
-  DialogDescriptionProps
+  ComponentPropsWithRef<typeof DialogPrimitive.Description>
 >(({ children, className, ...props }, ref) => (
   <DialogPrimitive.Description 
     ref={ref} 
@@ -110,3 +108,4 @@ export const DialogDescription = forwardRef<
   </DialogPrimitive.Description>
 ));
 DialogDescription.displayName = "DialogDescription";
+export { DialogDescription };

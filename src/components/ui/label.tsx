@@ -3,9 +3,7 @@ import * as React from "react";
 import { Label as RadixLabel } from "@radix-ui/react-label";
 import { cn } from "@/lib/utils";
 
-export type LabelProps = React.ComponentProps<typeof RadixLabel>;
-
-export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
+const Label = React.forwardRef<HTMLLabelElement, React.ComponentPropsWithRef<typeof RadixLabel>>(
   ({ children, className, ...props }, ref) => (
     <RadixLabel 
       ref={ref} 
@@ -17,3 +15,4 @@ export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
   )
 );
 Label.displayName = "Label";
+export { Label };

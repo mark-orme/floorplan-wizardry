@@ -3,11 +3,9 @@ import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export type DropdownMenuProps = React.ComponentProps<typeof DropdownMenuPrimitive.Root>;
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 
-export type DropdownMenuTriggerProps = React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>;
-export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTriggerProps>(
+const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithRef<typeof DropdownMenuPrimitive.Trigger>>(
   ({ children, ...props }, ref) => (
     <DropdownMenuPrimitive.Trigger ref={ref} {...props}>
       {children}
@@ -15,9 +13,9 @@ export const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownM
   )
 );
 DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
+export { DropdownMenuTrigger };
 
-export type DropdownMenuContentProps = React.ComponentProps<typeof DropdownMenuPrimitive.Content>;
-export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
+export const DropdownMenuContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof DropdownMenuPrimitive.Content>>(
   ({ children, className, ...props }, ref) => (
     <DropdownMenuPrimitive.Content
       ref={ref}
@@ -33,8 +31,7 @@ export const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenu
 );
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
-export type DropdownMenuItemProps = React.ComponentProps<typeof DropdownMenuPrimitive.Item>;
-export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuItemProps>(
+const DropdownMenuItem = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof DropdownMenuPrimitive.Item>>(
   ({ children, className, ...props }, ref) => (
     <DropdownMenuPrimitive.Item
       ref={ref}
@@ -49,6 +46,7 @@ export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuIte
   )
 );
 DropdownMenuItem.displayName = "DropdownMenuItem";
+export { DropdownMenuItem };
 
 // Adding the missing components
 export const DropdownMenuLabel = React.forwardRef<

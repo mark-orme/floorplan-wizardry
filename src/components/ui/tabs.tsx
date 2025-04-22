@@ -3,8 +3,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export type TabsProps = React.ComponentProps<typeof TabsPrimitive.Root>;
-export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
+const Tabs = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof TabsPrimitive.Root>>(
   ({ children, ...props }, ref) => (
     <TabsPrimitive.Root ref={ref} {...props}>
       {children}
@@ -12,9 +11,9 @@ export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
   )
 );
 Tabs.displayName = "Tabs";
+export { Tabs };
 
-export type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List>;
-export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
+const TabsList = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof TabsPrimitive.List>>(
   ({ children, className, ...props }, ref) => (
     <TabsPrimitive.List 
       ref={ref} 
@@ -26,9 +25,9 @@ export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
   )
 );
 TabsList.displayName = "TabsList";
+export { TabsList };
 
-export type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Trigger>;
-export const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
+const TabsTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithRef<typeof TabsPrimitive.Trigger>>(
   ({ children, className, ...props }, ref) => (
     <TabsPrimitive.Trigger 
       ref={ref} 
@@ -40,9 +39,9 @@ export const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>
   )
 );
 TabsTrigger.displayName = "TabsTrigger";
+export { TabsTrigger };
 
-export type TabsContentProps = React.ComponentProps<typeof TabsPrimitive.Content>;
-export const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
+const TabsContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof TabsPrimitive.Content>>(
   ({ children, className, ...props }, ref) => (
     <TabsPrimitive.Content 
       ref={ref} 
@@ -54,3 +53,4 @@ export const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
   )
 );
 TabsContent.displayName = "TabsContent";
+export { TabsContent };
