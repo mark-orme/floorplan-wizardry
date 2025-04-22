@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>; // Add login method
 }
 
 const defaultAuthContext: AuthContextType = {
@@ -15,7 +16,8 @@ const defaultAuthContext: AuthContextType = {
   userRole: null,
   loading: true,
   signIn: async () => {},
-  signOut: async () => {}
+  signOut: async () => {},
+  login: async () => {} // Add login method to default context
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -39,6 +41,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     // This would normally connect to your auth service
     console.log('Sign in with:', email, password);
+    // Simulate successful login
+    setUser({ id: '1', email });
+    setUserRole(UserRole.PHOTOGRAPHER);
+  };
+
+  // Add login method as an alias to signIn for backward compatibility
+  const login = async (email: string, password: string) => {
+    return signIn(email, password);
   };
 
   const signOut = async () => {
@@ -48,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userRole, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, userRole, loading, signIn, signOut, login }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Properties from './pages/Properties';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './contexts/AuthContext';
+import Login from './pages/Login';
 
 /**
  * Main App component
@@ -16,6 +17,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<Navigate to="/properties" replace />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/login" element={<Login />} />
           {/* Add other routes as needed */}
         </Routes>
         <Toaster />
