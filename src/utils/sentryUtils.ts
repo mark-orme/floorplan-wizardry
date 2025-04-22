@@ -27,7 +27,7 @@ export interface CaptureErrorOptions {
 export interface CaptureMessageOptions {
   context?: Record<string, any>;
   tags?: Record<string, string>;
-  level?: 'info' | 'warning' | 'error' | 'fatal';
+  level?: Sentry.SeverityLevel;
   user?: {
     id?: string;
     email?: string;
@@ -38,35 +38,21 @@ export interface CaptureMessageOptions {
 
 /**
  * Capture an error with context information
- * Supports both legacy and new call signatures:
- * - captureError(error)
- * - captureError(error, 'contextName')
- * - captureError(error, { tags, extra })
- * - captureError(error, 'contextName', extraData) (legacy)
- * 
  * @param error The error to capture
- * @param contextOrOptions Context string or options object
- * @param extraData Additional context data (legacy parameter)
+ * @param contextOrOptions Context string or options object (optional)
  */
 export function captureError(
   error: Error | any,
-  contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any> // Legacy parameter
+  contextOrOptions?: string | Record<string, any>
 ) {
-  // Handle all different call signatures to provide backward compatibility
-  if (extraData && typeof contextOrOptions === 'string') {
-    // Handle 3-argument legacy case: captureError(error, 'name', { extra: data })
-    Sentry.captureException(error, {
-      tags: { context: contextOrOptions },
-      extra: extraData
-    });
-  } else if (typeof contextOrOptions === 'string') {
+  // Handle different call signatures to provide backward compatibility
+  if (typeof contextOrOptions === 'string') {
     // String context only: captureError(error, 'name')
     Sentry.captureException(error, {
       tags: { context: contextOrOptions }
     });
   } else if (contextOrOptions && typeof contextOrOptions === 'object') {
-    // New format: captureError(error, { tags: {}, context: 'data', extra: 'data' })
+    // Object context: captureError(error, { tags: {}, context: 'data', extra: 'data' })
     Sentry.captureException(error, {
       tags: contextOrOptions.tags || { context: contextOrOptions.context || 'unknown' },
       extra: contextOrOptions.extra || contextOrOptions
@@ -79,30 +65,15 @@ export function captureError(
 
 /**
  * Capture a message with context information
- * Supports both legacy and new call signatures:
- * - captureMessage(message)
- * - captureMessage(message, 'contextName')
- * - captureMessage(message, { tags, extra })
- * - captureMessage(message, 'contextName', extraData) (legacy)
- * 
  * @param message The message to capture
- * @param contextOrOptions Context string or options object
- * @param extraData Additional context data (legacy parameter)
+ * @param contextOrOptions Context string or options object (optional)
  */
 export function captureMessage(
   message: string,
-  contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any> // Legacy parameter
+  contextOrOptions?: string | Record<string, any>
 ) {
-  // Handle all different call signatures to provide backward compatibility
-  if (extraData && typeof contextOrOptions === 'string') {
-    // Handle 3-argument legacy case: captureMessage('message', 'name', { extra: data })
-    Sentry.captureMessage(message, {
-      level: (extraData.level as Sentry.SeverityLevel) || 'info',
-      tags: { context: contextOrOptions },
-      extra: extraData
-    });
-  } else if (typeof contextOrOptions === 'string') {
+  // Handle different call signatures to provide backward compatibility
+  if (typeof contextOrOptions === 'string') {
     // String context only: captureMessage('message', 'name')
     Sentry.captureMessage(message, {
       level: 'info',
@@ -122,8 +93,8 @@ export function captureMessage(
 }
 
 /**
- * Capture error with enhanced monitoring data
- * Used for critical error paths that need additional context
+ * Legacy function for backward compatibility
+ * @deprecated Use captureErrorWithMonitoring instead
  */
 export function captureErrorWithMonitoring(
   error: Error | any,
@@ -131,16 +102,15 @@ export function captureErrorWithMonitoring(
   monitoringTag: string,
   additionalContext?: Record<string, any>
 ) {
-  // Map to three-parameter signature for backward compatibility
-  captureError(error, contextName, {
-    monitoring: monitoringTag,
-    ...(additionalContext || {})
+  captureError(error, {
+    tags: { context: contextName, monitoring: monitoringTag },
+    extra: additionalContext
   });
 }
 
 /**
- * Capture message with enhanced monitoring data
- * Used for critical message paths that need additional context
+ * Legacy function for backward compatibility
+ * @deprecated Use captureMessage with options object instead
  */
 export function captureMessageWithMonitoring(
   message: string,
@@ -148,9 +118,8 @@ export function captureMessageWithMonitoring(
   monitoringTag: string,
   additionalContext?: Record<string, any>
 ) {
-  // Map to three-parameter signature for backward compatibility
-  captureMessage(message, contextName, {
-    monitoring: monitoringTag,
-    ...(additionalContext || {})
+  captureMessage(message, {
+    tags: { context: contextName, monitoring: monitoringTag },
+    extra: additionalContext
   });
 }

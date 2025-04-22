@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -11,6 +12,7 @@ export enum UserRole {
   MANAGER = 'manager',
   PHOTOGRAPHER = 'photographer',
   USER = 'user',
+  PROCESSING_MANAGER = 'processing_manager',
 }
 
 // Define a function to get the user role from claims
@@ -33,6 +35,17 @@ export const getUserRole = async (): Promise<UserRole | null> => {
 
 // Fixing the getConfig issue
 export const getStorageConfig = () => {
-  // Replace getConfig with correct API
+  // Use the correct API instead of getConfig
   return supabase.storage.from('assets').getPublicUrl('');
 };
+
+// Add missing exports that lib/index.ts expects
+export const mockSupabase = supabase;
+export enum PropertyStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+export const isSecureConnection = () => window.location.protocol === 'https:';
+export const isSupabaseConfigured = () => !!supabaseUrl && !!supabaseKey;

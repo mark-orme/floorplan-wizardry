@@ -47,6 +47,7 @@ export function createMockWall(partial: Partial<Wall> = {}): Wall {
     angle: 0,
     roomIds: [],
     floorPlanId: 'floor-test-1',
+    color: '#000000',
     ...partial
   };
 }
@@ -70,6 +71,7 @@ export function createMockRoom(partial: Partial<Room> = {}): Room {
     ],
     labelPosition: { x: 50, y: 50 },
     floorPlanId: 'floor-test-1',
+    color: '#ffffff',
     ...partial
   };
 }
@@ -121,10 +123,7 @@ export function createMockFloorPlan(partial: Partial<FloorPlan> = {}): FloorPlan
       author: 'Test User',
       dateCreated: now,
       lastModified: now,
-      notes: '',
-      scale: 1,
-      unit: 'mm',
-      gridSize: 10
+      notes: ''
     },
     data: {},
     userId: 'user-test-1',

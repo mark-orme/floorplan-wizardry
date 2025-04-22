@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { runToolbarDiagnostics, setupToolbarMonitoring } from "@/utils/diagnostics/toolbar";
-import { captureMessage } from "@/utils/sentry";
+import { captureMessage } from "@/utils/sentryUtils";
 import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";
 
@@ -34,7 +33,6 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
     success: false
   });
   
-  // Run diagnostics once on mount if specified
   useEffect(() => {
     if (runOnMount && canvas) {
       const result = runToolbarDiagnostics(canvas, currentTool);
@@ -45,7 +43,6 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
         success: result.success
       });
       
-      // Set up Sentry context
       Sentry.setTag("component", "CanvasDiagnostics");
       Sentry.setContext("canvasDiagnostics", {
         initialRun: {
@@ -59,10 +56,8 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
         }
       });
       
-      // Report initial diagnostics
       captureMessage(
         result.success ? "Canvas diagnostics passed" : "Canvas diagnostics found issues",
-        "canvas-diagnostics",
         {
           tags: { 
             component: "CanvasDiagnostics", 
@@ -76,14 +71,12 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
       );
     }
     
-    // Set up periodic monitoring
     const getCanvas = () => canvas;
     const getTool = () => currentTool;
     
     const cleanup = setupToolbarMonitoring(getCanvas, getTool, monitoringInterval);
     
-    // Report monitoring setup
-    captureMessage("Canvas diagnostics monitoring started", "canvas-monitoring-start", {
+    captureMessage("Canvas diagnostics monitoring started", {
       tags: { component: "CanvasDiagnostics" },
       extra: { monitoringInterval }
     });
@@ -96,7 +89,6 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
     };
   }, [canvas, currentTool, runOnMount, monitoringInterval]);
   
-  // Run diagnostics when tool changes
   useEffect(() => {
     if (canvas) {
       const result = runToolbarDiagnostics(canvas, currentTool);
@@ -107,7 +99,6 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
         success: result.success
       });
       
-      // Update Sentry context
       Sentry.setContext("canvasDiagnostics", {
         toolChange: {
           timestamp: new Date().toISOString(),
@@ -117,9 +108,8 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
         }
       });
       
-      // Only report if there are issues
       if (!result.success) {
-        captureMessage("Tool change diagnostics found issues", "tool-change-diagnostics", {
+        captureMessage("Tool change diagnostics found issues", {
           tags: { 
             component: "CanvasDiagnostics", 
             status: "warning",
@@ -131,6 +121,5 @@ export const CanvasDiagnostics: React.FC<CanvasDiagnosticsProps> = ({
     }
   }, [canvas, currentTool]);
   
-  // This component doesn't render anything visible
   return null;
 };

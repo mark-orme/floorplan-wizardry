@@ -8,7 +8,7 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { convertToUnifiedFloorPlans } from '@/utils/floorPlanTypeAdapter';
+import { convertToUnifiedFloorPlans } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
 import { saveFloorPlans } from "@/utils/drawing";
 import logger from "@/utils/logger";
 
@@ -120,7 +120,7 @@ export const useCanvasActions = ({
     if (!fabricCanvasRef.current) return;
     
     try {
-      // Convert app floor plans to unified format for storage
+      // Convert app floor plans to unified format for storage using the proper adapter
       const unifiedPlans = convertToUnifiedFloorPlans(floorPlans);
       
       // First save to storage

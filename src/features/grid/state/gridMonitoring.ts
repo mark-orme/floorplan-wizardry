@@ -1,6 +1,5 @@
-
 import { Canvas as FabricCanvas } from 'fabric';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
 interface GridStatus {
@@ -71,7 +70,6 @@ export function checkGridHealth(canvas: FabricCanvas | null): GridStatus {
         // Report to Sentry after multiple failures
         captureMessage(
           'Grid health check failed repeatedly',
-          'grid-health-failure',
           {
             level: 'warning',
             tags: {
@@ -126,7 +124,6 @@ export function registerGridRecoveryAttempt(): void {
   if (gridStatus.recoveryAttempts === 3 || gridStatus.recoveryAttempts === 10) {
     captureMessage(
       `Grid recovery attempted ${gridStatus.recoveryAttempts} times`,
-      'grid-recovery-attempts',
       {
         level: gridStatus.recoveryAttempts >= 10 ? 'error' : 'warning',
         tags: {

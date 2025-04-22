@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 
 interface CanvasAppProps {
   setCanvas: (canvas: FabricCanvas | null) => void;
@@ -28,7 +27,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
   
   // Register app start with Sentry
   useEffect(() => {
-    captureMessage('Canvas app initialized', 'canvas-initialization', {
+    captureMessage('Canvas app initialized', {
       level: 'info',
       tags: { component: 'CanvasApp' },
       extra: { 
@@ -60,7 +59,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     }
     
     // Report success to Sentry
-    captureMessage('Canvas loaded successfully', 'canvas-ready', {
+    captureMessage('Canvas loaded successfully', {
       level: 'info',
       tags: { component: 'CanvasApp' }
     });
@@ -72,7 +71,7 @@ export const CanvasApp: React.FC<CanvasAppProps> = ({
     setHasError(true);
     
     // Report error to Sentry
-    captureMessage(`Canvas error: ${error.message}`, 'canvas-error', {
+    captureMessage(`Canvas error: ${error.message}`, {
       level: 'error',
       tags: { component: 'CanvasApp' },
       extra: { error: error.message, stack: error.stack }

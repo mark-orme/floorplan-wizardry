@@ -1,157 +1,115 @@
-import { Wall } from '@/types/floor-plan/unifiedTypes';
+
+// Importing the types from floor-plan/unifiedTypes
+import { FloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
 import { Point } from '@/types/core/Point';
 
 /**
- * Create a mock wall object for testing
- */
-export function createMockWall(partial: Partial<Wall> = {}): Wall {
-  return {
-    id: partial.id || 'wall-test-1',
-    start: partial.start || { x: 0, y: 0 },
-    end: partial.end || { x: 100, y: 0 },
-    thickness: partial.thickness || 5,
-    length: partial.length || 100,
-    angle: partial.angle || 0,
-    color: partial.color || '#000000',
-    height: partial.height || 240,
-    roomIds: partial.roomIds || [],
-    floorPlanId: partial.floorPlanId || 'test-floor-plan',
-    metadata: partial.metadata || {}
-  };
-}
-
-/**
- * Create a mock floor plan for testing
+ * Create a mock floor plan
+ * @param overrides Properties to override defaults
+ * @returns A mock floor plan
  */
 export function createMockFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
-  
   return {
-    id: 'test-floor-plan',
-    name: 'Test Floor Plan',
-    label: 'Test Floor Plan',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
+    id: overrides.id || `floor-${Date.now()}`,
+    name: overrides.name || 'Mock Floor Plan',
+    label: overrides.label || 'Mock Floor',
+    walls: overrides.walls || [],
+    rooms: overrides.rooms || [],
+    strokes: overrides.strokes || [],
+    canvasData: overrides.canvasData || null,
+    canvasJson: overrides.canvasJson || null,
+    createdAt: overrides.createdAt || now,
+    updatedAt: overrides.updatedAt || now,
+    gia: overrides.gia || 0,
+    level: overrides.level || 0,
+    index: overrides.index || 0,
     metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: 0,
       version: '1.0',
       author: 'Test User',
       dateCreated: now,
       lastModified: now,
-      notes: 'Test floor plan'
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0
     },
-    data: {},
-    userId: 'test-user',
-    ...overrides
+    data: overrides.data || {},
+    userId: overrides.userId || 'test-user'
   };
 }
 
 /**
- * Create a mock room for testing
+ * Create a mock room
+ * @param overrides Properties to override defaults
+ * @returns A mock room
  */
 export function createMockRoom(overrides: Partial<Room> = {}): Room {
   return {
-    id: 'test-room',
-    name: 'Test Room',
-    type: 'living',
-    vertices: [
+    id: overrides.id || `room-${Date.now()}`,
+    name: overrides.name || 'Mock Room',
+    type: overrides.type || 'living',
+    area: overrides.area || 100,
+    perimeter: overrides.perimeter || 40,
+    center: overrides.center || { x: 50, y: 50 },
+    vertices: overrides.vertices || [
       { x: 0, y: 0 },
       { x: 100, y: 0 },
       { x: 100, y: 100 },
       { x: 0, y: 100 }
     ],
-    area: 10000,
-    perimeter: 400,
-    center: { x: 50, y: 50 },
-    labelPosition: { x: 50, y: 50 },
-    color: '#f5f5f5',
-    ...overrides
+    labelPosition: overrides.labelPosition || { x: 50, y: 50 },
+    floorPlanId: overrides.floorPlanId || 'test-floor-plan',
+    color: overrides.color || '#ffffff'
   };
 }
 
 /**
- * Create a mock stroke for testing
+ * Create a mock wall
+ * @param overrides Properties to override defaults
+ * @returns A mock wall
+ */
+export function createMockWall(overrides: Partial<Wall> = {}): Wall {
+  return {
+    id: overrides.id || `wall-${Date.now()}`,
+    start: overrides.start || { x: 0, y: 0 },
+    end: overrides.end || { x: 100, y: 0 },
+    thickness: overrides.thickness || 5,
+    length: overrides.length || 100,
+    angle: overrides.angle || 0, // Required property
+    color: overrides.color || '#000000',
+    height: overrides.height || 240,
+    roomIds: overrides.roomIds || [],
+    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
+  };
+}
+
+/**
+ * Create a mock stroke
+ * @param overrides Properties to override defaults
+ * @returns A mock stroke
  */
 export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
   return {
-    id: 'test-stroke',
-    points: [
+    id: overrides.id || `stroke-${Date.now()}`,
+    type: overrides.type || 'line',
+    points: overrides.points || [
       { x: 0, y: 0 },
       { x: 100, y: 100 }
     ],
-    type: 'line',
-    color: '#000000',
-    thickness: 2,
-    ...overrides
+    color: overrides.color || '#000000',
+    thickness: overrides.thickness || 1,
+    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
   };
 }
 
 /**
- * Create a mock canvas for testing
+ * Create a mock point
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns A point object
  */
-export function createMockCanvas() {
-  return {
-    add: jest.fn(),
-    remove: jest.fn(),
-    clear: jest.fn(),
-    renderAll: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    setActiveObject: jest.fn(),
-    discardActiveObject: jest.fn(),
-    getActiveObject: jest.fn(),
-    getContext: jest.fn(),
-    getWidth: jest.fn().mockReturnValue(800),
-    getHeight: jest.fn().mockReturnValue(600),
-    setWidth: jest.fn(),
-    setHeight: jest.fn(),
-    setZoom: jest.fn(),
-    getZoom: jest.fn().mockReturnValue(1),
-    on: jest.fn(),
-    off: jest.fn(),
-    toJSON: jest.fn().mockReturnValue({}),
-    loadFromJSON: jest.fn().mockImplementation((json, callback) => {
-      if (callback) callback();
-      return true;
-    })
-  };
-}
-
-/**
- * Create a mock event for testing
- */
-export function createMockEvent(overrides = {}) {
-  return {
-    preventDefault: jest.fn(),
-    stopPropagation: jest.fn(),
-    target: {},
-    currentTarget: {},
-    ...overrides
-  };
-}
-
-/**
- * Create a mock function with proper typing
- */
-export function createMock<TReturn = any, TArgs extends any[] = any[]>(): jest.Mock<TReturn, TArgs> {
-  return jest.fn() as jest.Mock<TReturn, TArgs>;
-}
-
-// Add missing test utilities
-export function createMockFunctionParams() {
-  return jest.fn();
-}
-
-export function createTestPoint(x = 0, y = 0) {
+export function createMockPoint(x: number = 0, y: number = 0): Point {
   return { x, y };
 }

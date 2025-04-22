@@ -16,7 +16,7 @@ export function createTestWall(overrides: Partial<Wall> = {}): Wall {
     thickness: overrides.thickness || 5,
     roomIds: overrides.roomIds || [],
     length: overrides.length || 100,
-    angle: overrides.angle || 0,  // Required property
+    angle: overrides.angle || 0,  // Required property added
     color: overrides.color || '#000000',
     height: overrides.height || 240,
     floorPlanId: overrides.floorPlanId || 'test-floor-plan'
