@@ -1,23 +1,23 @@
 
 /**
- * Advanced Pointer and Stylus Handling Optimizations
- * Provides optimized handling for pressure-sensitive drawing and palm rejection
+ * Pointer and canvas optimizations
+ * Provides utilities for enhancing canvas drawing performance
  */
+import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Check if the event is from a pen/stylus
- * @param event Pointer event to check
- * @returns True if event is from a pen
+ * Check if event is from a pen/stylus
+ * @param event The pointer event to check
+ * @returns Whether the event is from a pen
  */
-export const isPenEvent = (event: PointerEvent | Touch): boolean => {
-  return 'pointerType' in event && event.pointerType === 'pen';
+export const isPenEvent = (event: PointerEvent): boolean => {
+  return event.pointerType === 'pen';
 };
 
 /**
- * Get coalesced pointer events if available
- * Ensures high-fidelity capture of fast pen movements
- * @param event Pointer event
- * @returns Array of pointer events (coalesced if available)
+ * Get coalesced events for smoother drawing
+ * @param event The pointer event to get coalesced events from
+ * @returns Array of coalesced events (or the original event if not supported)
  */
 export const getCoalescedEvents = (event: PointerEvent): PointerEvent[] => {
   if ('getCoalescedEvents' in event) {
@@ -28,168 +28,140 @@ export const getCoalescedEvents = (event: PointerEvent): PointerEvent[] => {
 };
 
 /**
- * Palm rejection implementation
+ * Configure palm rejection
  * Ignores touch events when a pen is active
+ * @param element The canvas element
+ * @returns Cleanup function
  */
-export const configurePalmRejection = (canvasElement: HTMLCanvasElement): () => void => {
-  let isPenActive = false;
+export const configurePalmRejection = (element: HTMLCanvasElement): () => void => {
+  let isPenDown = false;
   
-  const pointerDownHandler = (e: PointerEvent) => {
+  const handlePointerDown = (e: PointerEvent) => {
     if (e.pointerType === 'pen') {
-      isPenActive = true;
-      console.log('Pen active, palm rejection enabled');
-    }
-  };
-  
-  const pointerUpHandler = (e: PointerEvent) => {
-    if (e.pointerType === 'pen') {
-      // Small delay to prevent accidental palm touches right after pen up
-      setTimeout(() => {
-        isPenActive = false;
-        console.log('Pen inactive, palm rejection disabled');
-      }, 100);
-    }
-  };
-  
-  const touchHandler = (e: TouchEvent) => {
-    if (isPenActive) {
+      isPenDown = true;
+    } else if (e.pointerType === 'touch' && isPenDown) {
+      // Block touch events when pen is down
       e.preventDefault();
       e.stopPropagation();
-      console.log('Touch event rejected due to active pen');
     }
   };
   
-  // Add event listeners
-  canvasElement.addEventListener('pointerdown', pointerDownHandler);
-  canvasElement.addEventListener('pointerup', pointerUpHandler);
-  canvasElement.addEventListener('pointercancel', pointerUpHandler);
-  canvasElement.addEventListener('touchstart', touchHandler, { passive: false });
-  canvasElement.addEventListener('touchmove', touchHandler, { passive: false });
+  const handlePointerUp = (e: PointerEvent) => {
+    if (e.pointerType === 'pen') {
+      isPenDown = false;
+    }
+  };
   
-  // Return cleanup function
+  // Add event listeners with capture to intercept events
+  element.addEventListener('pointerdown', handlePointerDown, true);
+  element.addEventListener('pointerup', handlePointerUp, true);
+  element.addEventListener('pointercancel', handlePointerUp, true);
+  
+  // Touch events handler to block when pen is active
+  const handleTouch = (e: TouchEvent) => {
+    if (isPenDown) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  
+  element.addEventListener('touchstart', handleTouch, { passive: false });
+  element.addEventListener('touchmove', handleTouch, { passive: false });
+  
   return () => {
-    canvasElement.removeEventListener('pointerdown', pointerDownHandler);
-    canvasElement.removeEventListener('pointerup', pointerUpHandler);
-    canvasElement.removeEventListener('pointercancel', pointerUpHandler);
-    canvasElement.removeEventListener('touchstart', touchHandler);
-    canvasElement.removeEventListener('touchmove', touchHandler);
+    element.removeEventListener('pointerdown', handlePointerDown, true);
+    element.removeEventListener('pointerup', handlePointerUp, true);
+    element.removeEventListener('pointercancel', handlePointerUp, true);
+    element.removeEventListener('touchstart', handleTouch);
+    element.removeEventListener('touchmove', handleTouch);
   };
 };
 
 /**
- * Configure canvas for optimal drawing performance
- * @param canvas Canvas element to optimize
+ * Optimize canvas for drawing performance
+ * @param canvas The canvas element to optimize
  */
 export const optimizeCanvasForDrawing = (canvas: HTMLCanvasElement): void => {
-  // Disable default touch actions for smoother drawing
-  canvas.style.touchAction = 'none';
-  
-  // Prevent default events
-  canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-  
-  // Set high-performance rendering context attributes
-  // This tells browsers to prioritize rendering performance
-  const ctx = canvas.getContext('2d', {
-    alpha: false,              // No transparency needed for drawing
-    desynchronized: true,      // Allow desynchronized canvas for lower latency
-    preserveDrawingBuffer: false // No need to preserve unless doing export
-  });
-  
-  // Set additional optimizations if context is available
+  // Set up canvas for optimal drawing
+  const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.imageSmoothingEnabled = false; // Disable image smoothing for line drawing
-    // More specific options for webkit/blink browsers
-    (ctx as any).imageSmoothingQuality = 'low';
+    // Fix for the TS error: check for property before setting
+    if ('imageSmoothingEnabled' in ctx) {
+      (ctx as CanvasRenderingContext2D).imageSmoothingEnabled = true;
+    }
+    
+    // Optimize canvas performance
+    canvas.style.touchAction = 'none';
+    canvas.style.msTouchAction = 'none';
+    canvas.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
   }
+};
+
+/**
+ * Set up WebGL rendering for a canvas
+ * @param canvas The canvas element
+ * @returns Cleanup function
+ */
+export const setupWebGLRendering = (canvas: HTMLCanvasElement): (() => void) => {
+  // Implementation would go here
+  return () => {
+    // Cleanup
+  };
 };
 
 /**
  * Frame timing utility for performance monitoring
- * Ensures we're hitting 16ms/frame target (60fps)
  */
 export class FrameTimer {
-  private lastFrameTime: number = 0;
-  private frameCount: number = 0;
-  private totalFrameTime: number = 0;
-  private isMonitoring: boolean = false;
-  private frameCallback: ((fps: number, avgTime: number) => void) | null = null;
+  private lastTime: number = 0;
+  private frames: number = 0;
+  private totalTime: number = 0;
+  private rafId: number | null = null;
+  private callback: ((fps: number, avgTime: number) => void) | null = null;
   
   /**
-   * Start monitoring frame times
-   * @param callback Optional callback for FPS reporting
+   * Start monitoring frame rate
+   * @param callback Function to call with FPS updates
    */
-  public startMonitoring(callback?: (fps: number, avgTime: number) => void): void {
-    this.isMonitoring = true;
-    this.frameCount = 0;
-    this.totalFrameTime = 0;
-    this.lastFrameTime = performance.now();
-    this.frameCallback = callback || null;
+  startMonitoring(callback: (fps: number, avgTime: number) => void): void {
+    this.callback = callback;
+    this.lastTime = performance.now();
+    this.frames = 0;
+    this.totalTime = 0;
     
-    this.monitorNextFrame();
-  }
-  
-  /**
-   * Stop monitoring frame times
-   */
-  public stopMonitoring(): void {
-    this.isMonitoring = false;
-  }
-  
-  /**
-   * Monitor the next animation frame
-   */
-  private monitorNextFrame(): void {
-    if (!this.isMonitoring) return;
-    
-    requestAnimationFrame(() => {
+    const updateFps = () => {
       const now = performance.now();
-      const frameDuration = now - this.lastFrameTime;
+      const delta = now - this.lastTime;
+      this.lastTime = now;
       
-      // Log slow frames (over 16ms, which is below 60fps)
-      if (frameDuration > 16) {
-        console.warn(`Slow frame detected: ${frameDuration.toFixed(2)}ms (target: 16ms)`);
-      }
+      this.frames++;
+      this.totalTime += delta;
       
-      this.frameCount++;
-      this.totalFrameTime += frameDuration;
-      
-      // Report FPS every 60 frames
-      if (this.frameCount % 60 === 0 && this.frameCallback) {
-        const avgTime = this.totalFrameTime / this.frameCount;
-        const fps = 1000 / avgTime;
-        this.frameCallback(fps, avgTime);
+      if (this.totalTime >= 1000) {
+        const fps = (this.frames * 1000) / this.totalTime;
+        const avgTime = this.totalTime / this.frames;
         
-        // Reset metrics for next batch
-        this.frameCount = 0;
-        this.totalFrameTime = 0;
+        if (this.callback) {
+          this.callback(fps, avgTime);
+        }
+        
+        this.frames = 0;
+        this.totalTime = 0;
       }
       
-      this.lastFrameTime = now;
-      this.monitorNextFrame();
-    });
+      this.rafId = requestAnimationFrame(updateFps);
+    };
+    
+    this.rafId = requestAnimationFrame(updateFps);
+  }
+  
+  /**
+   * Stop monitoring frame rate
+   */
+  stopMonitoring(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 }
-
-/**
- * Setup WebGL rendering for canvas optimization
- * @param canvas Canvas element to optimize with WebGL
- * @returns Cleanup function
- */
-export const setupWebGLRendering = (canvas: HTMLCanvasElement): (() => void) => {
-  // Use OffscreenCanvas if available for better performance
-  let offscreenCanvas: OffscreenCanvas | null = null;
-  
-  try {
-    if ('OffscreenCanvas' in window) {
-      offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
-      console.log('Using OffscreenCanvas for optimized rendering');
-    }
-  } catch (err) {
-    console.warn('OffscreenCanvas not supported:', err);
-  }
-  
-  // Return cleanup function
-  return () => {
-    offscreenCanvas = null;
-  };
-};

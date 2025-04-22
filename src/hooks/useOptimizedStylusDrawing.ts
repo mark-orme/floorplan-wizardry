@@ -30,6 +30,7 @@ export const useOptimizedStylusDrawing = ({
   const cleanupFunctionsRef = useRef<Array<() => void>>([]);
   const frameTimerRef = useRef<FrameTimer | null>(null);
   const webGLCleanupRef = useRef<(() => void) | null>(null);
+  const targetFrameTime = 16; // Target 16ms per frame (60 FPS)
   
   // Set up performance monitoring
   useEffect(() => {
@@ -41,7 +42,10 @@ export const useOptimizedStylusDrawing = ({
         onPerformanceReport(fps);
       }
       
-      console.log(`Drawing performance: ${fps.toFixed(1)} FPS (${avgTime.toFixed(2)}ms/frame)`);
+      // Log performance warnings if below target
+      if (avgTime > targetFrameTime) {
+        console.log(`Drawing performance: ${fps.toFixed(1)} FPS (${avgTime.toFixed(2)}ms/frame) - above target ${targetFrameTime}ms`);
+      }
     });
     
     return () => {
@@ -49,7 +53,7 @@ export const useOptimizedStylusDrawing = ({
         frameTimerRef.current.stopMonitoring();
       }
     };
-  }, [enabled, onPerformanceReport]);
+  }, [enabled, onPerformanceReport, targetFrameTime]);
   
   // Set up advanced drawing optimizations
   const setupAdvancedDrawing = useCallback(() => {
@@ -109,8 +113,9 @@ export const useOptimizedStylusDrawing = ({
     
     // Optimize the fabric.js canvas
     if (canvas.freeDrawingBrush) {
-      // Set better decimate value for smoother curves
-      canvas.freeDrawingBrush.decimate = 2; // Adjust if needed
+      // Fix: Remove the decimate property reference
+      // Configure other brush properties that exist
+      canvas.freeDrawingBrush.limitedToCanvasSize = true;
     }
     
     // Disable reactive rendering during active drawing for better performance

@@ -25,6 +25,7 @@ export const useCRDTCanvas = ({
   const [isConnected, setIsConnected] = useState(false);
   const frameTimerRef = useRef<FrameTimer | null>(null);
   const geometryModuleRef = useRef<any>(null);
+  const targetFPS = 60; // Target 60 FPS (16.66ms per frame)
   
   // Performance-optimized sync function
   const syncLocalChanges = useRef(
@@ -51,11 +52,11 @@ export const useCRDTCanvas = ({
         });
     }
     
-    // Set up performance monitoring
+    // Set up performance monitoring with 16ms/frame target
     frameTimerRef.current = new FrameTimer();
     frameTimerRef.current.startMonitoring((fps, avgTime) => {
-      if (fps < 45) {
-        console.warn(`Performance warning: ${fps.toFixed(1)} FPS is below target 60 FPS`);
+      if (fps < targetFPS) {
+        console.warn(`Performance warning: ${fps.toFixed(1)} FPS (${avgTime.toFixed(2)}ms) is below target ${targetFPS} FPS (16.66ms)`);
       }
     });
     
@@ -64,7 +65,7 @@ export const useCRDTCanvas = ({
         frameTimerRef.current.stopMonitoring();
       }
     };
-  }, [enabled]);
+  }, [enabled, targetFPS]);
   
   // Set up canvas event handlers with optimized performance
   useEffect(() => {

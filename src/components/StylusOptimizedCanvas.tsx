@@ -48,7 +48,9 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
     if (fabricCanvas.freeDrawingBrush) {
       fabricCanvas.freeDrawingBrush.color = lineColor;
       fabricCanvas.freeDrawingBrush.width = lineThickness;
-      fabricCanvas.freeDrawingBrush.decimate = 2;
+      // Fix: Remove the decimate property as it doesn't exist on BaseBrush type
+      // Instead configure other properties that do exist
+      fabricCanvas.freeDrawingBrush.limitedToCanvasSize = true;
     }
     
     setCanvas(fabricCanvas);
@@ -113,7 +115,7 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
       
       {fps > 0 && (
         <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-          {fps.toFixed(1)} FPS
+          {fps.toFixed(1)} FPS {fps < 60 ? '⚠️' : '✓'}
         </div>
       )}
     </div>

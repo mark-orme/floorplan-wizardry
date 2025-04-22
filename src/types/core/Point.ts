@@ -1,7 +1,7 @@
 
 /**
  * Point interface
- * Represents a 2D point in the application
+ * Represents a 2D point with x and y coordinates
  */
 export interface Point {
   x: number;

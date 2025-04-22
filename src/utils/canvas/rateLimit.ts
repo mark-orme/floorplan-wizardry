@@ -1,107 +1,139 @@
+
 /**
- * Rate Limiting Utilities for Canvas Operations
- * Provides debounce and throttle functions to limit the frequency of expensive operations
+ * Utilities for rate limiting operations
+ * Used for optimizing performance-sensitive canvas operations
  */
 
 /**
- * Debounce function to delay execution until after a period of inactivity
- * @param fn Function to debounce
- * @param delay Delay in milliseconds
- * @returns Debounced function
- */
-export function debounce<T extends (...args: any[]) => any>(
-  fn: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  
-  return function(this: any, ...args: Parameters<T>): void {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    
-    timeoutId = setTimeout(() => {
-      fn.apply(this, args);
-      timeoutId = null;
-    }, delay);
-  };
-}
-
-/**
- * Throttle function to limit execution frequency
- * @param fn Function to throttle
- * @param limit Minimum time between executions in milliseconds
+ * Creates a throttled function that only invokes the provided function 
+ * at most once per every `wait` milliseconds
+ * 
+ * @param func The function to throttle
+ * @param wait The number of milliseconds to throttle invocations to
+ * @param options Options object
  * @returns Throttled function
  */
 export function throttle<T extends (...args: any[]) => any>(
-  fn: T,
-  limit: number
-): (...args: Parameters<T>) => void {
-  let lastCall = 0;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  func: T,
+  wait: number,
+  options: { leading?: boolean; trailing?: boolean } = {}
+): (...funcArgs: Parameters<T>) => ReturnType<T> | undefined {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let previous = 0;
+  const { leading = true, trailing = true } = options;
   
-  return function(this: any, ...args: Parameters<T>): void {
+  return function(this: any, ...args: Parameters<T>): ReturnType<T> | undefined {
     const now = Date.now();
-    const timeSinceLastCall = now - lastCall;
+    if (!previous && !leading) previous = now;
+    const remaining = wait - (now - previous);
     
-    if (timeSinceLastCall >= limit) {
-      // If enough time has passed, execute immediately
-      lastCall = now;
-      fn.apply(this, args);
-    } else if (!timeoutId) {
-      // Otherwise, schedule to run after the remaining time
-      const remaining = limit - timeSinceLastCall;
-      timeoutId = setTimeout(() => {
-        lastCall = Date.now();
-        timeoutId = null;
-        fn.apply(this, args);
+    if (remaining <= 0 || remaining > wait) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+      previous = now;
+      return func.apply(this, args);
+    } else if (!timeout && trailing) {
+      timeout = setTimeout(() => {
+        previous = leading ? Date.now() : 0;
+        timeout = null;
+        func.apply(this, args);
       }, remaining);
     }
+    
+    return undefined;
   };
 }
 
 /**
- * Canvas rate limiting configuration
- * Default values for different canvas operations
+ * Creates a debounced function that delays invoking the provided function
+ * until after `wait` milliseconds have elapsed since the last time it was invoked
+ * 
+ * @param func The function to debounce
+ * @param wait The number of milliseconds to delay
+ * @param options Options object
+ * @returns Debounced function
  */
-export const canvasRateLimits = {
-  // Update frequency for real-time drawing operations (pencil, brush)
-  drawingUpdate: 16, // ~60fps
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number,
+  options: { leading?: boolean; maxWait?: number; trailing?: boolean } = {}
+): (...funcArgs: Parameters<T>) => ReturnType<T> | undefined {
+  let lastArgs: Parameters<T> | null = null;
+  let lastThis: any = null;
+  let result: ReturnType<T> | undefined;
+  let timerId: ReturnType<typeof setTimeout> | null = null;
+  let lastCallTime: number | null = null;
   
-  // Update frequency for shape manipulations
-  shapeManipulation: 50, // ~20fps
+  const { leading = false, maxWait = 0, trailing = true } = options;
   
-  // Delay for more expensive operations (object selection, group actions)
-  expensiveOperation: 100,
-  
-  // Delay for very expensive operations (filters, effects, serialization)
-  veryExpensiveOperation: 250,
-  
-  // Delay for auto-save operations
-  autoSave: 2000,
-  
-  // Delay for history state creation
-  historyUpdate: 500
-};
-
-/**
- * Create a rate-limited function for canvas operations
- * @param operation Function to rate-limit
- * @param type Type of operation to determine appropriate rate limit
- * @returns Rate-limited function
- */
-export function createRateLimitedCanvasOperation<T extends (...args: any[]) => any>(
-  operation: T,
-  type: keyof typeof canvasRateLimits = 'drawingUpdate'
-): (...args: Parameters<T>) => void {
-  // Use the appropriate rate limit based on operation type
-  const limit = canvasRateLimits[type];
-  
-  // For drawing and shape manipulation, use throttle
-  if (type === 'drawingUpdate' || type === 'shapeManipulation') {
-    return throttle(operation, limit);
+  function invokeFunc(time: number): ReturnType<T> | undefined {
+    const args = lastArgs!;
+    const thisArg = lastThis;
+    
+    lastArgs = lastThis = null;
+    lastCallTime = time;
+    result = func.apply(thisArg, args);
+    return result;
   }
   
-  // For everything else, use debounce
-  return debounce(operation, limit);
+  function shouldInvoke(time: number): boolean {
+    if (lastCallTime === null) return true;
+    
+    const timeSinceLastCall = time - lastCallTime;
+    const timeExceeded = timeSinceLastCall >= wait;
+    
+    return timeExceeded || (maxWait > 0 && timeSinceLastCall >= maxWait);
+  }
+  
+  function trailingEdge(time: number): ReturnType<T> | undefined {
+    timerId = null;
+    
+    if (trailing && lastArgs) {
+      return invokeFunc(time);
+    }
+    
+    lastArgs = lastThis = null;
+    return result;
+  }
+  
+  function remainingWait(time: number): number {
+    const timeSinceLastCall = time - (lastCallTime || 0);
+    const waitLength = wait - timeSinceLastCall;
+    
+    return maxWait > 0
+      ? Math.min(waitLength, maxWait - timeSinceLastCall)
+      : waitLength;
+  }
+  
+  function debounced(this: any, ...args: Parameters<T>): ReturnType<T> | undefined {
+    const time = Date.now();
+    const isInvoking = shouldInvoke(time);
+    
+    lastArgs = args;
+    lastThis = this;
+    
+    if (isInvoking) {
+      if (timerId === null) {
+        lastCallTime = time;
+        
+        if (leading) {
+          return invokeFunc(lastCallTime);
+        }
+      }
+      
+      if (maxWait > 0) {
+        timerId = setTimeout(() => trailingEdge(Date.now()), maxWait);
+      }
+    }
+    
+    if (timerId === null) {
+      timerId = setTimeout(() => trailingEdge(Date.now()), remainingWait(time));
+    }
+    
+    return result;
+  }
+  
+  return debounced;
 }
