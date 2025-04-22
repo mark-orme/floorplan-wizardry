@@ -4,7 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { GridLayer } from './canvas/grid/GridLayer';
 import { toast } from 'sonner';
 
-interface CanvasProps {
+export interface CanvasProps {
   width: number;
   height: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;

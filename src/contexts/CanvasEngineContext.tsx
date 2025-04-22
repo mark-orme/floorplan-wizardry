@@ -1,17 +1,35 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
-import { FabricCanvasEngine } from '@/implementations/canvas-engine/FabricCanvasEngine';
+import { Canvas } from 'fabric';
 
-interface CanvasEngineContextType {
-  engine: ICanvasEngine | null;
-  setEngine: (engine: ICanvasEngine) => void;
+// Define a minimal Canvas Engine interface
+export interface CanvasEngine {
+  canvas: Canvas | null;
+  getCanvas: () => Canvas | null;
+  dispose: () => void;
 }
 
-const CanvasEngineContext = createContext<CanvasEngineContextType | undefined>(undefined);
+// Create context with default values
+interface CanvasEngineContextType {
+  engine: CanvasEngine | null;
+  setEngine: React.Dispatch<React.SetStateAction<CanvasEngine | null>>;
+}
 
+const defaultContext: CanvasEngineContextType = {
+  engine: {
+    canvas: null,
+    getCanvas: () => null,
+    dispose: () => {}
+  },
+  setEngine: () => {}
+};
+
+// Create context
+const CanvasEngineContext = createContext<CanvasEngineContextType>(defaultContext);
+
+// Create provider
 export const CanvasEngineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [engine, setEngine] = useState<ICanvasEngine | null>(null);
+  const [engine, setEngine] = useState<CanvasEngine | null>(defaultContext.engine);
 
   return (
     <CanvasEngineContext.Provider value={{ engine, setEngine }}>
@@ -20,10 +38,14 @@ export const CanvasEngineProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
+// Create hook
 export const useCanvasEngine = () => {
   const context = useContext(CanvasEngineContext);
+  
   if (!context) {
-    throw new Error('useCanvasEngine must be used within a CanvasEngineProvider');
+    console.warn("useCanvasEngine must be used within a CanvasEngineProvider");
+    return defaultContext;
   }
+  
   return context;
 };

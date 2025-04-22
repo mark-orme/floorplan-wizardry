@@ -1,9 +1,7 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvasEngine } from '@/contexts/CanvasEngineContext';
-import { FabricCanvasEngine } from '@/implementations/canvas-engine/FabricCanvasEngine';
-import { useWebGLCanvas } from '@/hooks/useWebGLCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
@@ -25,31 +23,48 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
   className = ''
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { setEngine } = useCanvasEngine();
-  const [fabricCanvas, setFabricCanvas] = React.useState<FabricCanvas | null>(null);
+  const { engine, setEngine } = useCanvasEngine();
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
 
-  // Initialize WebGL canvas
-  const { webglRenderer } = useWebGLCanvas({
-    canvasRef,
-    fabricCanvas
-  });
-
+  // Initialize canvas when component mounts
   useEffect(() => {
     if (!canvasRef.current) return;
 
     try {
-      const engine = new FabricCanvasEngine(canvasRef.current);
-      setEngine(engine);
-      // Access the canvas property through a getter or public method
-      const canvas = engine.getCanvas();
+      // Create a new FabricCanvas directly when CanvasEngine is not available
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        selection: true,
+        renderOnAddRemove: true
+      });
+      
       setFabricCanvas(canvas);
       
+      if (setEngine) {
+        // If we have access to the engine context, use it
+        setEngine({ 
+          canvas,
+          getCanvas: () => canvas,
+          dispose: () => canvas.dispose()
+        });
+      }
+      
       if (onCanvasReady) {
-        onCanvasReady(engine);
+        onCanvasReady({ 
+          canvas,
+          getCanvas: () => canvas,
+          dispose: () => canvas.dispose()
+        });
       }
 
       return () => {
-        engine.dispose();
+        canvas.dispose();
+        setFabricCanvas(null);
+        if (setEngine) {
+          setEngine(null);
+        }
       };
     } catch (error) {
       console.error('Error initializing canvas:', error);
@@ -59,7 +74,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
         toast.error(`Canvas error: ${error.message}`);
       }
     }
-  }, [setEngine, onCanvasReady, onError]);
+  }, [width, height, onCanvasReady, onError, setEngine]);
 
   return (
     <canvas

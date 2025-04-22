@@ -34,13 +34,26 @@ export interface Stroke {
 export interface FloorPlanMetadata {
   createdAt: string;
   updatedAt: string;
-  paperSize: 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'Letter' | 'Legal' | 'Tabloid' | 'Custom';
+  paperSize: PaperSize;
   level: number;
   version: string;
   author: string;
   notes?: string;
   dateCreated?: string;
   lastModified?: string;
+}
+
+export enum PaperSize {
+  A0 = 'A0',
+  A1 = 'A1',
+  A2 = 'A2',
+  A3 = 'A3',
+  A4 = 'A4',
+  A5 = 'A5',
+  Letter = 'Letter',
+  Legal = 'Legal',
+  Tabloid = 'Tabloid',
+  Custom = 'Custom'
 }
 
 export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'line';
@@ -52,6 +65,13 @@ export function asStrokeType(type: string): StrokeType {
   return validTypes.includes(type as StrokeTypeLiteral) 
     ? type as StrokeTypeLiteral 
     : 'freehand';
+}
+
+export function asRoomType(type: string): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'bathroom', 'kitchen', 'dining', 'office', 'other'];
+  return validTypes.includes(type as RoomTypeLiteral)
+    ? type as RoomTypeLiteral
+    : 'other';
 }
 
 export interface FloorPlan {
@@ -91,7 +111,7 @@ export function createEmptyFloorPlan(): FloorPlan {
     metadata: {
       createdAt: now,
       updatedAt: now,
-      paperSize: 'A4',
+      paperSize: PaperSize.A4,
       level: 0,
       version: '1.0',
       author: 'System',
@@ -103,6 +123,9 @@ export function createEmptyFloorPlan(): FloorPlan {
     userId: ''
   };
 }
+
+// Alias for createTestFloorPlan to maintain compatibility with tests
+export const createTestFloorPlan = createEmptyFloorPlan;
 
 // Add a utility type to allow partial wall creation
 export type WallInput = Omit<Wall, 'length'>;
@@ -117,4 +140,11 @@ export function createWall(input: WallInput): Wall {
     ...input,
     length
   };
+}
+
+// Utility function to calculate wall length
+export function calculateWallLength(wall: WallInput): number {
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }

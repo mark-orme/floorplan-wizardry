@@ -11,7 +11,9 @@ interface FloorPlanEditorProps {
 export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({ onCanvasReady }) => {
   const { setCanvas } = useCanvasContext();
   
-  const handleCanvasReady = (canvas: FabricCanvas) => {
+  const handleCanvasReady = (engineOrCanvas: any) => {
+    const canvas = engineOrCanvas.canvas || engineOrCanvas;
+    
     if (setCanvas) {
       setCanvas(canvas);
     }

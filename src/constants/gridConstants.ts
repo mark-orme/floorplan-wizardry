@@ -1,44 +1,51 @@
 
 /**
- * Grid and measurement constants
+ * Grid Constants
+ * Defines constants used for grid rendering and behavior
  */
+
 export const GRID_CONSTANTS = {
   // Grid sizes
   SMALL_GRID_SIZE: 10,
   LARGE_GRID_SIZE: 50,
-  GRID_SIZE: 20, // Default grid size for snapping
+  GRID_SIZE: 50,
   
-  // Grid appearance
-  SMALL_GRID_COLOR: '#EEEEEE',
-  LARGE_GRID_COLOR: '#DDDDDD',
+  // Grid colors
+  SMALL_GRID_COLOR: '#f0f0f0',
+  LARGE_GRID_COLOR: '#e0e0e0',
+  
+  // Grid line widths
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,
   
-  // Grid configuration
+  // Grid appearance
   DEFAULT_VISIBLE: true,
-  GRID_Z_INDEX: 1,
+  DEFAULT_GRID_SIZE: 50,
+  DEFAULT_GRID_COLOR: '#e0e0e0',
+  DEFAULT_GRID_OPACITY: 0.5,
   
-  // Grid snap settings
+  // Grid interactions
+  ENABLE_SNAPPING: true,
   SNAP_THRESHOLD: 10,
-  SNAP_TO_GRID: true,
-  SNAP_ANGLE: 15, // Snap angles in degrees
+  SNAP_DISTANCE: 5,
   
-  // Measurement settings
-  PIXELS_PER_METER: 50, // Scale factor for converting pixels to meters
-  SHOW_MEASUREMENTS: true,
-  MEASURE_UNIT: 'm', // Meters
-  MEASURE_PRECISION: 2,
+  // Grid performance
+  CANVAS_MARGIN: 100,
+  RENDER_VISIBLE_ONLY: true,
+  MAX_GRID_LINES: 1000,
+  GRID_BATCH_SIZE: 100,
+  GRID_RENDER_DELAY: 50,
   
-  // Grid behavior
-  GRID_AUTO_RESIZE: true,
-  GRID_MAX_ZOOM: 3,
-  GRID_MIN_ZOOM: 0.5,
-  GRID_AUTO_FIX: true,
+  // Grid debugging
+  SHOW_GRID_DEBUG: false,
+  SHOW_GRID_BOUNDARIES: false,
+  SHOW_GRID_STATS: false,
+  SHOW_GRID_SNAPLINES: false,
   
-  // Additional grid constants needed for stability
-  MIN_GRID_OBJECTS: 10,
-  AUTO_RECREATE_ON_EMPTY: true,
-  GRID_CHECK_INTERVAL: 10000, // 10 seconds
-  GRID_RECREATION_ATTEMPTS: 3,
-  GRID_RECREATION_DELAY: 1000 // 1 second
+  // Grid reliability
+  CHECK_INTERVAL: 5000,
+  MAX_CHECK_COUNT: 10,
+  GRID_RECREATION_DELAY: 500
 };
+
+export default GRID_CONSTANTS;

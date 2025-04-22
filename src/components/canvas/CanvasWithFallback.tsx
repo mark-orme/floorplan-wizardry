@@ -27,7 +27,12 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   showDiagnostics = true,
   maxRetries = 3,
   onCanvasInitialized,
-  ...canvasProps
+  width,
+  height,
+  onCanvasReady,
+  onError,
+  showGridDebug,
+  ...otherProps
 }) => {
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -44,11 +49,11 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   
   // Reset error state when dimensions change
   useEffect(() => {
-    if (canvasProps.width && canvasProps.height) {
+    if (width && height) {
       setError(null);
       setShowFallback(false);
     }
-  }, [canvasProps.width, canvasProps.height]);
+  }, [width, height]);
   
   // Handle canvas error
   const handleCanvasError = (err: Error) => {
@@ -62,8 +67,8 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     }
     
     // Pass to original error handler if provided
-    if (canvasProps.onError) {
-      canvasProps.onError(err);
+    if (onError) {
+      onError(err);
     }
   };
   
@@ -72,8 +77,9 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     // Check if we've exceeded max retries
     if (retryCount >= maxRetries * 2) {
       logger.warn("Too many retry attempts, suggesting page refresh", { retryCount });
-      captureMessage("User attempted too many canvas retries", "canvas-retry-limit", {
+      captureMessage("User attempted too many canvas retries", {
         level: "warning",
+        tags: { component: "canvas-retry-limit" },
         extra: {
           retryCount,
           error: error?.message,
@@ -96,8 +102,8 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   // Handle canvas ready
   const handleCanvasReady = (canvas: FabricCanvas) => {
     // Call original onCanvasReady if provided
-    if (canvasProps.onCanvasReady) {
-      canvasProps.onCanvasReady(canvas);
+    if (onCanvasReady) {
+      onCanvasReady(canvas);
     }
     
     // Call onCanvasInitialized if provided
@@ -112,8 +118,8 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
       <CanvasFallback
         error={error}
         onRetry={handleRetry}
-        width={canvasProps.width}
-        height={canvasProps.height}
+        width={width}
+        height={height}
         showDiagnostics={showDiagnostics}
       />
     );
@@ -123,10 +129,13 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   return (
     <div className={className} data-testid="canvas-with-fallback" data-retry-count={retryCount}>
       <Canvas 
-        {...canvasProps}
+        width={width}
+        height={height}
         onCanvasReady={handleCanvasReady}
         onError={handleCanvasError}
+        showGridDebug={showGridDebug}
         key={`canvas-instance-${retryCount}`}
+        {...otherProps}
       />
     </div>
   );

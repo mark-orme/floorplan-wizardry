@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { GridRendererComponent } from "./GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
 
 interface GridLayerProps {
   fabricCanvas: FabricCanvas;
@@ -71,7 +72,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     };
     
     // Check grid visibility periodically
-    const intervalId = setInterval(checkGridVisibility, 5000);
+    const intervalId = setInterval(checkGridVisibility, GRID_CONSTANTS.CHECK_INTERVAL);
     
     return () => {
       clearInterval(intervalId);

@@ -1,13 +1,23 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryProvider } from './providers/QueryProvider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CanvasEngineProvider } from './contexts/CanvasEngineContext';
 import PropertyDetail from './pages/PropertyDetail';
 import Index from './pages/Index';
 
+// Create a query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
 export function App() {
   return (
-    <QueryProvider>
+    <QueryClientProvider client={queryClient}>
       <CanvasEngineProvider>
         <Router>
           <Routes>
@@ -18,7 +28,7 @@ export function App() {
           </Routes>
         </Router>
       </CanvasEngineProvider>
-    </QueryProvider>
+    </QueryClientProvider>
   );
 }
 
