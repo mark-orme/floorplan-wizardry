@@ -1,5 +1,8 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { provideFeedback } from '@/utils/feedback/drawingFeedback';
+import { TOUCH } from '@/constants/gestureConstants';
 
 interface CalibrationCanvasProps {
   onPressureSample: (pressure: number, thickness: number) => void;
@@ -22,15 +25,21 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
       backgroundColor: '#f8f9fa'
     });
 
+    let lastTapTime = 0;
+    let touchCount = 0;
+
     const handlePointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'pen') {
         setIsDrawing(true);
+        provideFeedback('start');
       }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
       if (isDrawing && e.pointerType === 'pen') {
-        onPressureSample(e.pressure, e.pressure * 10); // Scale thickness for visualization
+        onPressureSample(e.pressure, e.pressure * 10);
+        provideFeedback('stroke');
+        
         if (onTiltSample && (e.tiltX !== undefined || e.tiltY !== undefined)) {
           onTiltSample(e.tiltX || 0, e.tiltY || 0);
         }
@@ -38,12 +47,31 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
     };
 
     const handlePointerUp = () => {
+      if (isDrawing) {
+        provideFeedback('end');
+      }
       setIsDrawing(false);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const now = Date.now();
+        if (now - lastTapTime < TOUCH.DEBOUNCE) {
+          // Double tap with two fingers detected
+          provideFeedback([20, 50, 20]);
+          if (window.history.state?.lastStroke) {
+            window.history.back(); // Undo last stroke
+          }
+        }
+        lastTapTime = now;
+      }
+      touchCount = e.touches.length;
     };
 
     canvasRef.current.addEventListener('pointerdown', handlePointerDown);
     canvasRef.current.addEventListener('pointermove', handlePointerMove);
     canvasRef.current.addEventListener('pointerup', handlePointerUp);
+    canvasRef.current.addEventListener('touchstart', handleTouchStart);
 
     return () => {
       canvas.dispose();
@@ -51,6 +79,7 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
         canvasRef.current.removeEventListener('pointerdown', handlePointerDown);
         canvasRef.current.removeEventListener('pointermove', handlePointerMove);
         canvasRef.current.removeEventListener('pointerup', handlePointerUp);
+        canvasRef.current.removeEventListener('touchstart', handleTouchStart);
       }
     };
   }, [onPressureSample, onTiltSample, isDrawing]);
