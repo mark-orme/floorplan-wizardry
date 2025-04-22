@@ -1,7 +1,7 @@
 
 import { useEffect, useRef } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
 /**
@@ -39,7 +39,6 @@ export const useToolMonitoring = (tool: DrawingMode) => {
     if (duration > 30000) { // Only report if used for more than 30 seconds
       captureMessage(
         'Extended tool usage detected',
-        'tool-usage-extended',
         {
           tags: {
             tool: prevTool,

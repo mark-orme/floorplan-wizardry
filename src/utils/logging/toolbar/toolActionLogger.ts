@@ -1,6 +1,6 @@
 
 import * as Sentry from '@sentry/react';
-import { captureMessage, captureError } from '@/utils/sentry';
+import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
 /**
@@ -33,7 +33,7 @@ export const logToolbarAction = (
   
   // Capture as an event for analytics
   if (successful) {
-    captureMessage(`Toolbar action: ${actionName}`, "toolbar-action", {
+    captureMessage(`Toolbar action: ${actionName}`, {
       tags: { component: "Toolbar", action: actionName },
       extra: {
         timestamp: new Date().toISOString(),
@@ -43,7 +43,6 @@ export const logToolbarAction = (
   } else {
     captureError(
       new Error(`Toolbar action failed: ${actionName}`),
-      "toolbar-action-failed",
       {
         tags: { 
           component: "Toolbar", 

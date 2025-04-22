@@ -1,3 +1,4 @@
+
 /**
  * Grid error handling utilities
  * @module grid/gridErrorHandling
@@ -8,7 +9,7 @@ import logger from "../logger";
 
 // Import from gridManager directly
 import { resetGridProgress } from "../gridManager";
-import { captureError } from "../sentry";
+import { captureError } from "../sentryUtils";
 
 /**
  * Handle grid creation error
@@ -39,7 +40,7 @@ export const handleGridCreationError = (
   resetGridProgress();
   
   // Report to Sentry
-  captureError(error, 'grid-creation-error', {
+  captureError(error, {
     level: 'error',
     tags: {
       component: 'grid',
