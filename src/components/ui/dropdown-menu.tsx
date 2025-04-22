@@ -10,19 +10,19 @@ export type DropdownMenuTriggerProps = ComponentPropsWithRef<typeof DropdownMenu
 export const DropdownMenuTrigger = forwardRef<
   ElementRef<typeof DropdownMenuPrimitive.Trigger>,
   DropdownMenuTriggerProps
->((props, ref) => <DropdownMenuPrimitive.Trigger ref={ref} {...props} />);
+>(({ ...props }, ref) => <DropdownMenuPrimitive.Trigger ref={ref} {...props} />);
 DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
 
 export type DropdownMenuContentProps = ComponentPropsWithRef<typeof DropdownMenuPrimitive.Content>;
 export const DropdownMenuContent = forwardRef<
   ElementRef<typeof DropdownMenuPrimitive.Content>,
   DropdownMenuContentProps
->((props, ref) => <DropdownMenuPrimitive.Content ref={ref} {...props} />);
+>(({ ...props }, ref) => <DropdownMenuPrimitive.Content ref={ref} {...props} />);
 DropdownMenuContent.displayName = "DropdownMenuContent";
 
 export type DropdownMenuItemProps = ComponentPropsWithRef<typeof DropdownMenuPrimitive.Item>;
 export const DropdownMenuItem = forwardRef<
   ElementRef<typeof DropdownMenuPrimitive.Item>,
   DropdownMenuItemProps
->((props, ref) => <DropdownMenuPrimitive.Item ref={ref} {...props} />);
+>(({ ...props }, ref) => <DropdownMenuPrimitive.Item ref={ref} {...props} />);
 DropdownMenuItem.displayName = "DropdownMenuItem";
