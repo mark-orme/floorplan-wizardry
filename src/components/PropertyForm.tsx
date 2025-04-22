@@ -1,6 +1,7 @@
 
-import { z, ZodError } from 'zod';
-import { useForm } from 'react-hook-form';
+// Fix import for Zod and type usage
+import { z, ZodError } from "zod";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
