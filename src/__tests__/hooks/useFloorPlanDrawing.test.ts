@@ -34,7 +34,7 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan: createEmptyFloorPlan(),
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate: jest.fn()
+      onFloorPlanUpdate: vi.fn()
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -46,7 +46,7 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan: createEmptyFloorPlan(),
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate: jest.fn()
+      onFloorPlanUpdate: vi.fn()
     }));
 
     // Just test isDrawing since tool is no longer exposed
@@ -66,7 +66,7 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan: testFloorPlan,
       tool: DrawingMode.DRAW,
-      onFloorPlanUpdate: jest.fn()
+      onFloorPlanUpdate: vi.fn()
     }));
 
     // Act
@@ -108,7 +108,7 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan: testFloorPlan,
       tool: DrawingMode.WALL,
-      onFloorPlanUpdate: jest.fn()
+      onFloorPlanUpdate: vi.fn()
     }));
 
     // Act

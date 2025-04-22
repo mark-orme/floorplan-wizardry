@@ -2,12 +2,9 @@ import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
 import { 
-  Controller, 
-  type ControllerProps,
-  type FieldValues,
-  type Path,
-  useFormContext as useRHFFormContext, 
-  FormProvider as RHFFormProvider
+  Controller,
+  useFormContext,
+  FormProvider,
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
@@ -143,7 +140,7 @@ FormMessage.displayName = "FormMessage";
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useRHFFormContext();
+  const { getFieldState, formState } = useFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
@@ -164,8 +161,8 @@ const useFormField = () => {
 };
 
 // Re-export with proper names to maintain compatibility
-const useFormContext = useRHFFormContext;
-const FormProvider = RHFFormProvider;
+const useFormContext = useFormContext;
+const FormProvider = FormProvider;
 
 export {
   useFormField,

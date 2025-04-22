@@ -2,15 +2,12 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
 import { Canvas as FabricCanvas } from 'fabric';
 
-// Mock the Canvas
 jest.mock('fabric', () => ({
   Canvas: jest.fn()
 }));
 
 describe('useLineState', () => {
-  const fabricCanvasRef = { 
-    current: {} as FabricCanvas 
-  };
+  const fabricCanvasRef = { current: {} as any } as React.MutableRefObject<FabricCanvas>;
 
   const mockOptions = {
     fabricCanvasRef,
