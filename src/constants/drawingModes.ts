@@ -10,6 +10,7 @@ export enum DrawingMode {
   WINDOW = 'WINDOW',
   ROOM = 'ROOM',
   MEASUREMENT = 'MEASUREMENT',
+  MEASURE = 'MEASURE', // Add this for compatibility with existing code
   // Add missing values that are used in the codebase
   STRAIGHT_LINE = 'STRAIGHT_LINE',
   HAND = 'HAND',
