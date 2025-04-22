@@ -21,6 +21,8 @@ export const z = {
     url: (message = {}) => z.string(),
     optional: () => z.string(),
     nullable: () => z.string(),
+    regex: () => z.string(),
+    transform: () => z.string(),
   }),
   boolean: () => ({
     optional: () => z.boolean(),
@@ -30,14 +32,30 @@ export const z = {
     min: (min: number, message = {}) => z.number(),
     max: (max: number, message = {}) => z.number(),
     int: (message = {}) => z.number(),
+    positive: () => z.number(),
+    nonnegative: () => z.number(),
     optional: () => z.number(),
     nullable: () => z.number(),
   }),
   enum: (values: any) => ({
     optional: () => z.enum(values),
   }),
+  nativeEnum: (enumObj: any) => ({}),
   infer: (schema: any) => ({}),
-  nativeEnum: (enumObj: any) => ({})
+  array: (schema: any) => ({
+    min: () => z.array(schema),
+    max: () => z.array(schema),
+    optional: () => z.array(schema),
+  }),
+  record: (keySchema: any, valueSchema: any) => ({}),
+  any: () => ({}),
+  ZodError: class ZodError extends Error {
+    errors: Array<{path: string[], message: string}> = [];
+    constructor() {
+      super('Validation error');
+      this.name = 'ZodError';
+    }
+  }
 };
 
 export default z;

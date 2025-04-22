@@ -10,10 +10,10 @@ jest.mock('fabric', () => ({
 }));
 
 describe('useLineState', () => {
-  // Create a mock Canvas ref
-  const fabricCanvasRef = createRef<FabricCanvas | null>();
-  // Mock as non-readonly for testing purposes
-  fabricCanvasRef.current = {} as FabricCanvas;
+  // Create a mock Canvas ref with a properly typed mock
+  const fabricCanvasRef = {
+    current: {} as FabricCanvas
+  };
 
   // Create mock options with required fields
   const mockOptions = {

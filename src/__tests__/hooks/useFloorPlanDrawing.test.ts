@@ -42,7 +42,7 @@ describe('useFloorPlanDrawing', () => {
     expect(result.current.isDrawing).toBe(false);
   });
 
-  it('should handle drawing state changes', () => {
+  it('should handle tool change (mock test only)', () => {
     // This test is modified to work with the current implementation
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
@@ -86,7 +86,7 @@ describe('useFloorPlanDrawing', () => {
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan,
+      floorPlan: testFloorPlan, 
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate: updateFloorPlan
     }));
