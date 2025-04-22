@@ -34,7 +34,6 @@ export const usePropertyManagement = () => {
       return [
         {
           id: 'property-1',
-          name: 'Sample Property',
           address: '123 Main St, Anytown, USA',
           status: 'completed' as any,
           updatedAt: new Date().toISOString(),
@@ -43,7 +42,6 @@ export const usePropertyManagement = () => {
         },
         {
           id: 'property-2',
-          name: 'Another Property',
           address: '456 Oak Ave, Somewhere, USA',
           status: 'draft' as any,
           updatedAt: new Date().toISOString(),
@@ -75,10 +73,10 @@ export const usePropertyManagement = () => {
         return null;
       }
       
-      // In a real implementation, this would call Supabase
+      // In a real implementation, this would use supabase client to fetch floor plans
+      // For demonstration, return mock data
       return {
         id: propertyId,
-        name: 'Sample Property',
         address: '123 Main St, Anytown, USA',
         status: 'completed' as any,
         updatedAt: new Date().toISOString(),

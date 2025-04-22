@@ -10,13 +10,13 @@ export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, userRole } = useAuth();
 
-  // Updated to return void to match the expected type
+  // Fixed to return void as expected
   const handleStatusChange = async (propertyId: string, status: PropertyStatus): Promise<void> => {
     try {
       console.log(`Updating property ${propertyId} status to ${status}`);
       // In a real implementation, this would call a Supabase function
       toast.success(`Property status updated to ${status}`);
-      // Return value removed to match void return type
+      // No return value to match void return type
     } catch (error) {
       console.error('Error updating property status:', error);
       toast.error('Failed to update property status');

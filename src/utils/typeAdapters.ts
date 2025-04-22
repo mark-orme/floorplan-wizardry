@@ -5,6 +5,7 @@
  */
 import { type FloorPlan as CoreFloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { type FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
+import { RoomTypeLiteral, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 
 /**
  * Adapt any FloorPlan object to a consistent format
@@ -105,4 +106,20 @@ export function coreToAppFloorPlan(floorPlan: CoreFloorPlan): AppFloorPlan {
  */
 export function appToCoreFloorPlans(appFloorPlans: AppFloorPlan[]): CoreFloorPlan[] {
   return appFloorPlans.map(plan => adaptFloorPlan(plan));
+}
+
+/**
+ * Safely convert string to RoomTypeLiteral
+ */
+export function asRoomType(type: string): RoomTypeLiteral {
+  return (['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'] as RoomTypeLiteral[])
+    .includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
+}
+
+/**
+ * Safely convert string to StrokeTypeLiteral
+ */
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  return (['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'] as StrokeTypeLiteral[])
+    .includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }

@@ -6,7 +6,7 @@
  */
 import { FloorPlan as UnifiedFloorPlan, Stroke as UnifiedStroke, Room as UnifiedRoom } from '@/types/floor-plan/unifiedTypes';
 import { FloorPlan as LegacyFloorPlan, Stroke as LegacyStroke, Room as LegacyRoom } from '@/types/floorPlanTypes';
-import { asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
+import { asStrokeType, asRoomType } from '@/utils/typeAdapters';
 
 /**
  * Convert a unified floor plan to a legacy floor plan
@@ -17,6 +17,7 @@ export function toCompatFloorPlan(floorPlan: UnifiedFloorPlan): LegacyFloorPlan 
   // Ensure all required properties are present
   const result: LegacyFloorPlan = {
     id: floorPlan.id,
+    propertyId: floorPlan.userId || 'default-property-id', // Ensure propertyId is present
     name: floorPlan.name,
     label: floorPlan.label,
     data: floorPlan.data || {}, // Ensure data is present
@@ -48,7 +49,8 @@ export function toCompatStroke(stroke: UnifiedStroke): LegacyStroke {
   
   return {
     ...stroke,
-    type: typeValue
+    type: typeValue,
+    floorPlanId: stroke.floorPlanId || `floor-${Date.now()}` // Add required floorPlanId
   };
 }
 
@@ -63,7 +65,8 @@ export function toCompatRoom(room: UnifiedRoom): LegacyRoom {
   
   return {
     ...room,
-    type: typeValue
+    type: typeValue,
+    floorPlanId: room.floorPlanId || `floor-${Date.now()}` // Add required floorPlanId
   };
 }
 

@@ -29,6 +29,7 @@ export interface Property extends PropertyListItem {
   assigned_user?: string;
   createdAt?: string;
   created_at?: string;
+  branch_name?: string;  // Add branch_name to support PropertyDetailContent
 }
 
 // Floorplan interface for property details
@@ -49,6 +50,39 @@ export interface AccessCheck {
   canDelete: boolean;
 }
 
+/**
+ * Check if a user can edit a property based on role and ownership
+ * @param property Property to check
+ * @param userRole User role
+ * @param userId User ID
+ * @returns Whether the user can edit the property
+ */
+export const canEditProperty = (
+  property: Property,
+  userRole: UserRole,
+  userId: string
+): boolean => {
+  // Admins and managers can edit any property
+  if (userRole === UserRole.ADMIN || userRole === UserRole.MANAGER) {
+    return true;
+  }
+  
+  // Processing managers can edit properties in certain status
+  if (userRole === UserRole.PROCESSING_MANAGER) {
+    return property.status !== SupabasePropertyStatus.ARCHIVED;
+  }
+  
+  // Photographers can only edit their own properties in draft or pending status
+  if (userRole === UserRole.PHOTOGRAPHER) {
+    const isOwner = property.assignedUser === userId || property.assigned_user === userId;
+    const canEdit = [SupabasePropertyStatus.DRAFT, SupabasePropertyStatus.PENDING_REVIEW].includes(property.status);
+    return isOwner && canEdit;
+  }
+  
+  // Regular users can't edit properties
+  return false;
+};
+
 // Helper to standardize property object with both camelCase and snake_case props
 export const normalizeProperty = (property: any): Property => {
   return {
@@ -66,6 +100,7 @@ export const normalizeProperty = (property: any): Property => {
     assignedUser: property.assignedUser || property.assigned_user,
     assigned_user: property.assigned_user || property.assignedUser,
     createdAt: property.createdAt || property.created_at,
-    created_at: property.created_at || property.createdAt
+    created_at: property.created_at || property.createdAt,
+    branch_name: property.branch_name
   };
 };
