@@ -5,7 +5,7 @@
  */
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType, createWall } from '@/types/core';
+import { FloorPlan, Stroke, Room, Wall, StrokeTypeLiteral, RoomTypeLiteral, createWall } from '@/types/core';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseFloorPlanDrawingProps {
@@ -53,7 +53,7 @@ export const useFloorPlanDrawing = ({
     // Ensure stroke has proper type
     const validatedStroke = {
       ...stroke,
-      type: asStrokeType(stroke.type)
+      type: stroke.type as StrokeTypeLiteral
     };
     
     // Add the stroke to the canvas
@@ -86,7 +86,7 @@ export const useFloorPlanDrawing = ({
     // Ensure room has proper type
     const validatedRoom = {
       ...room,
-      type: asRoomType(room.type)
+      type: room.type as RoomTypeLiteral
     };
     
     // Add the room to the canvas
@@ -117,7 +117,7 @@ export const useFloorPlanDrawing = ({
     if (!currentCanvas) return;
     
     // Calculate length for the wall
-    const completeWall = createWall(wallInput);
+    const completeWall = createWall(wallInput.start, wallInput.end, wallInput.thickness, wallInput.color);
     
     // Add the wall to the canvas
     currentCanvas.add(/* wall visual representation */);

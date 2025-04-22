@@ -1,9 +1,12 @@
 
 /**
- * Drawing hooks module
- * Re-exports all drawing-related hooks
- * @module hooks/drawing
+ * Drawing hooks index
+ * Export all drawing-related hooks
  */
 
-export { useDrawingActions } from './useDrawingActions';
-export { useDrawingHistory } from './useDrawingHistory';
+export * from './useDrawingTool';
+export * from './useDrawingActions';
+export * from './useDrawingOperations';
+export * from './useDrawingState';
+export * from './useDrawingHistory';
+export * from './useDrawingGestures';

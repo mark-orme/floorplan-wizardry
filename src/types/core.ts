@@ -75,7 +75,7 @@ export interface CanvasData {
 
 // Update RoomTypeLiteral to include all possible room types
 export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'office' | 'other';
-export type StrokeTypeLiteral = 'line' | 'curve' | 'freehand' | 'rect' | 'circle';
+export type StrokeTypeLiteral = 'line' | 'curve' | 'freehand' | 'rect' | 'circle' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room';
 
 // Helper functions
 export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {

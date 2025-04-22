@@ -3,10 +3,11 @@ import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
-  useFormContext as useHookFormContext,
   FormProvider as HookFormProvider,
-  type FieldPath as FormFieldPath,
-  type FieldValues as FormFieldValues,
+  useFormContext as useHookFormContext,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
   type UseFormReturn
 } from "react-hook-form"
 
@@ -16,9 +17,6 @@ import { Label } from "@/components/ui/label"
 // Export renamed React Hook Form types/components
 const Form = HookFormProvider
 const useFormContext = useHookFormContext
-type FieldValues = FormFieldValues
-type FieldPath<T extends FieldValues> = FormFieldPath<T>
-
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
