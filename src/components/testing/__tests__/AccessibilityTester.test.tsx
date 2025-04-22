@@ -4,8 +4,8 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { AccessibilityTester } from '../AccessibilityTester';
 
-// Instead of directly importing axe, we'll use our helper
-import { testComponentA11y } from '@/tests/helpers/accessibility';
+// Import the helpers we'll need
+import { runAccessibilityAudit, loadAccessibilityTester } from '@/utils/testing/accessibilityTester';
 
 // Mock the accessibility testing utility
 vi.mock('@/utils/testing/accessibilityTester', () => ({
@@ -18,6 +18,13 @@ vi.mock('@/utils/testing/accessibilityTester', () => ({
   }),
   AccessibilityIssue: vi.fn()
 }));
+
+// Helper function for accessibility testing
+const testComponentA11y = async (component: React.ReactElement) => {
+  const tester = await loadAccessibilityTester();
+  const result = await tester.runTest(component);
+  return result;
+};
 
 describe('AccessibilityTester', () => {
   it('should render without accessibility violations', async () => {

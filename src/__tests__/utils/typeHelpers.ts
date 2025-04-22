@@ -2,7 +2,7 @@
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { SimplePoint, toFabricPoint } from '@/utils/fabric/pointAdapter';
 
-import type { Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import type { Stroke, FloorPlan, PaperSize } from '@/types/floor-plan/unifiedTypes';
 
 // Example test data with correct Stroke type
 const testStroke: Partial<Stroke> = {
@@ -30,7 +30,7 @@ const testFloorPlan: Partial<FloorPlan> = {
   metadata: {
     createdAt: now,
     updatedAt: now,
-    paperSize: 'A4',
+    paperSize: 'A4' as PaperSize,
     level: 0,
     version: '1.0',
     author: 'User',

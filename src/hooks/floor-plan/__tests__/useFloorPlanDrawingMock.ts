@@ -1,12 +1,13 @@
+
 import { SimplePoint, toFabricPoint } from '@/utils/fabric/pointAdapter';
-import { mock } from 'vitest';
+import { vi } from 'vitest';
 
 // Mock the useFloorPlanDrawing hook
 const useFloorPlanDrawingMock = {
-  startDrawing: mock<(point: SimplePoint) => void>(),
-  continueDrawing: mock<(point: SimplePoint) => void>(),
-  endDrawing: mock<() => void>(),
-  cancelDrawing: mock<() => void>(),
+  startDrawing: vi.fn<[SimplePoint], void>(),
+  continueDrawing: vi.fn<[SimplePoint], void>(),
+  endDrawing: vi.fn<[], void>(),
+  cancelDrawing: vi.fn<[], void>(),
   isDrawing: false,
 };
 

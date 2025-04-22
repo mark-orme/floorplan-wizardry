@@ -1,80 +1,73 @@
 
 /**
- * Type diagnostics utilities
- * Functions for debugging and validating types
- * @module utils/debug/typeDiagnostics
+ * Type Diagnostics Utilities
+ * Provides functions to check and debug typescript types
  */
-
-import { Canvas as FabricCanvas } from 'fabric';
-import { Wall, Point } from '@/types/floor-plan/unifiedTypes';
-import { ICanvasMock } from '@/types/ICanvasMock';
+import { FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Calculate wall length between points
- * @param start Start point
- * @param end End point
- * @returns Wall length
+ * Create a complete metadata object with all required fields
+ * @param partial Partial metadata to merge
+ * @returns Complete metadata object
  */
-export function calculateWallLength(start: Point, end: Point): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  return Math.sqrt(dx * dx + dy * dy);
+export function createCompleteMetadata(partial: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  
+  return {
+    createdAt: partial.createdAt || now,
+    updatedAt: partial.updatedAt || now,
+    paperSize: partial.paperSize || 'A4',
+    level: partial.level || 0,
+    version: partial.version || '1.0',
+    author: partial.author || 'System',
+    notes: partial.notes || '',
+    dateCreated: partial.dateCreated || now,
+    lastModified: partial.lastModified || now
+  };
 }
 
 /**
- * Validate a canvas mock object
- * @param canvas Canvas object to validate
- * @returns True if valid, false otherwise
+ * Type checker for debugging purposes
+ * @param value Value to check
+ * @param expectedType Expected type name
+ * @returns True if value matches expected type
  */
-export function validateCanvasMock(canvas: any): boolean {
-  if (!canvas) return false;
+export function checkTypeMatch<T>(value: any, expectedType: string): boolean {
+  const actualType = typeof value;
+  const isMatch = actualType === expectedType;
   
-  // Check for required methods
-  const requiredMethods = ['add', 'remove', 'getObjects', 'renderAll'];
-  for (const method of requiredMethods) {
-    if (typeof canvas[method] !== 'function') {
-      console.error(`Canvas mock is missing required method: ${method}`);
-      return false;
-    }
+  if (!isMatch) {
+    console.warn(`Type mismatch: Expected ${expectedType}, got ${actualType}`);
+  }
+  
+  return isMatch;
+}
+
+/**
+ * Validate object against interface properties
+ * @param obj Object to validate
+ * @param requiredKeys Array of required property names
+ * @returns True if all required properties exist
+ */
+export function validateRequiredProperties(obj: any, requiredKeys: string[]): boolean {
+  const missingKeys = requiredKeys.filter(key => !(key in obj));
+  
+  if (missingKeys.length > 0) {
+    console.warn(`Missing required properties: ${missingKeys.join(', ')}`);
+    return false;
   }
   
   return true;
 }
 
 /**
- * Initialize type checkers globally
+ * Utility to check if an object conforms to a FloorPlan shape
+ * @param obj Object to check
+ * @returns True if object has FloorPlan shape
  */
-export function initTypeCheckers(): void {
-  console.log('Initializing global type checkers');
+export function isFloorPlanShape(obj: any): boolean {
+  return validateRequiredProperties(obj, [
+    'id', 'name', 'walls', 'rooms', 'strokes', 
+    'createdAt', 'updatedAt', 'metadata', 'data', 'userId'
+  ]);
 }
-
-/**
- * Create complete metadata with validation
- * @param overrides Optional property overrides
- * @returns Complete metadata object
- */
-export function createCompleteMetadata(overrides: Record<string, any> = {}): Record<string, any> {
-  const now = new Date().toISOString();
-  return {
-    version: '1.0',
-    createdAt: now,
-    updatedAt: now,
-    author: 'User',
-    dateCreated: now,
-    lastModified: now,
-    notes: '',
-    paperSize: 'A4',
-    level: 0,
-    ...overrides
-  };
-}
-
-// Export placeholder validators for backward compatibility
-export const isFloorPlan = (obj: any): boolean => false;
-export const isWall = (obj: any): boolean => false;
-export const isRoom = (obj: any): boolean => false;
-export const isStroke = (obj: any): boolean => false;
-export const validateFloorPlan = (obj: any): boolean => false;
-export const validateWall = (obj: any): boolean => false;
-export const validateRoom = (obj: any): boolean => false;
-export const validateStroke = (obj: any): boolean => false;

@@ -43,11 +43,8 @@ export const adaptRoom = (room: any): Room => {
     name: room.name || 'Unnamed Room',
     type: room.type || 'other',
     vertices: room.vertices || room.points || [],
-    points: room.points || room.vertices || [],
     area: room.area || 0,
-    color: room.color || '#f0f0f0',
-    level: room.level || 0,
-    walls: room.walls || room.wallIds || []
+    color: room.color || '#f0f0f0'
   };
 };
 
@@ -61,9 +58,8 @@ export const adaptStroke = (stroke: any): Stroke => {
     id: stroke.id || `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     points: stroke.points || [],
     color: stroke.color || '#000000',
-    width: stroke.width || 1,
-    type: stroke.type || 'annotation',
-    metadata: stroke.metadata || {}
+    width: stroke.width || stroke.thickness || 1,
+    type: stroke.type || 'annotation'
   };
 };
 
@@ -73,11 +69,17 @@ export const adaptStroke = (stroke: any): Stroke => {
  * @returns Unified metadata format
  */
 export const adaptMetadata = (metadata: any): FloorPlanMetadata => {
+  const now = new Date().toISOString();
   return {
-    createdAt: metadata.createdAt || new Date().toISOString(),
-    updatedAt: metadata.updatedAt || new Date().toISOString(),
-    author: metadata.author || 'system',
-    version: metadata.version || '1.0.0'
+    createdAt: metadata?.createdAt || now,
+    updatedAt: metadata?.updatedAt || now,
+    author: metadata?.author || 'system',
+    version: metadata?.version || '1.0.0',
+    notes: metadata?.notes || '',
+    paperSize: metadata?.paperSize || 'A4',
+    level: metadata?.level || 0,
+    dateCreated: metadata?.dateCreated || now,
+    lastModified: metadata?.lastModified || now
   };
 };
 
@@ -87,6 +89,7 @@ export const adaptMetadata = (metadata: any): FloorPlanMetadata => {
  * @returns Unified floor plan format
  */
 export const adaptFloorPlan = (floorPlan: any): FloorPlan => {
+  const now = new Date().toISOString();
   return {
     id: floorPlan.id || `floor-plan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     name: floorPlan.name || 'Untitled Floor Plan',
@@ -94,6 +97,13 @@ export const adaptFloorPlan = (floorPlan: any): FloorPlan => {
     walls: (floorPlan.walls || []).map(adaptWall),
     rooms: (floorPlan.rooms || []).map(adaptRoom),
     strokes: (floorPlan.strokes || []).map(adaptStroke),
-    metadata: adaptMetadata(floorPlan.metadata || {})
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    index: floorPlan.index || floorPlan.level || 0,
+    metadata: adaptMetadata(floorPlan.metadata || {}),
+    data: floorPlan.data || {},
+    userId: floorPlan.userId || floorPlan.propertyId || 'default-user'
   };
 };
