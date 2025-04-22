@@ -41,4 +41,7 @@ export interface UseStraightLineToolResult {
   handleKeyDown: (event: KeyboardEvent) => void;
   handleKeyUp: (event: KeyboardEvent) => void;
   renderTooltip: () => ReactNode;
+  setInputMethod: (method: InputMethod) => void;
+  shiftKeyPressed: boolean;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
