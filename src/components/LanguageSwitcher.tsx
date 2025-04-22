@@ -61,7 +61,7 @@ export const LanguageSwitcher: React.FC = () => {
           <DropdownMenuItem
             key={language.code}
             onClick={() => changeLanguage(language.code)}
-            className={`${i18n.language === language.code ? "bg-muted font-medium" : ""} justify-between`}
+            className={i18n.language === language.code ? "bg-muted font-medium" : ""}
           >
             <span className="inline-flex gap-2 items-center">
               <span>{language.nativeName}</span>

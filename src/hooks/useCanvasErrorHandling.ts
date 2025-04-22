@@ -1,31 +1,39 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
-export interface UseCanvasErrorHandlingProps {
-  onErrorCallback?: (error: Error) => void;
+interface CanvasErrorHandlingOptions {
+  showToast?: boolean;
+  logToConsole?: boolean;
 }
 
-/**
- * Hook for handling canvas errors consistently
- */
-export const useCanvasErrorHandling = ({ onErrorCallback }: UseCanvasErrorHandlingProps) => {
-  const handleError = useCallback((error: Error, source: string = 'unknown') => {
-    console.error(`Canvas error (${source}):`, error);
+export const useCanvasErrorHandling = (options: CanvasErrorHandlingOptions = {}) => {
+  const { showToast = true, logToConsole = true } = options;
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleCanvasError = useCallback((error: Error) => {
+    setHasError(true);
+    setErrorMessage(error.message || 'An error occurred with the canvas');
     
-    // Show toast notification
-    toast.error(`Canvas error: ${error.message}`, {
-      description: 'Please try reloading if problems persist',
-      duration: 5000
-    });
-    
-    // Call error callback if provided
-    if (onErrorCallback) {
-      onErrorCallback(error);
+    if (logToConsole) {
+      console.error('Canvas error:', error);
     }
     
-    return error;
-  }, [onErrorCallback]);
-  
-  return { handleError };
+    if (showToast) {
+      toast.error('There was an error loading the canvas. Please try again.');
+    }
+  }, [showToast, logToConsole]);
+
+  const resetCanvasError = useCallback(() => {
+    setHasError(false);
+    setErrorMessage(null);
+  }, []);
+
+  return {
+    hasError,
+    errorMessage,
+    handleCanvasError,
+    resetCanvasError
+  };
 };

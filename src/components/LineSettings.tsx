@@ -37,7 +37,6 @@ export const LineSettings: React.FC<LineSettingsProps> = ({
           step={1}
           value={[thickness]}
           onValueChange={handleThicknessChange}
-          className="w-full"
         />
       </div>
       

@@ -2,7 +2,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter
@@ -29,9 +28,6 @@ export const MeasurementGuideModal = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Drawing Guide</DialogTitle>
-          <DialogDescription>
-            Learn how to use the drawing tools effectively
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

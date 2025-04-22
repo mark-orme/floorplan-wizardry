@@ -19,7 +19,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Floor Plan Measurement Guide</DialogTitle>
+          <DialogTitle>Floor Plan Measurement Guide</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">

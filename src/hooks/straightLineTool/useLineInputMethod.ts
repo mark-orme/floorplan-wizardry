@@ -1,24 +1,17 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
-export enum InputMethod {
-  MOUSE = 'mouse',
-  TOUCH = 'touch',
-  PENCIL = 'pencil',
-}
+export type InputMethod = 'mouse' | 'touch' | 'pencil';
 
 export const useLineInputMethod = () => {
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const [isPencilMode, setIsPencilMode] = useState<boolean>(false);
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
 
-  // Detect input method changes
-  useEffect(() => {
-    setIsPencilMode(inputMethod === InputMethod.PENCIL);
-  }, [inputMethod]);
+  const handleInputMethodChange = useCallback((method: InputMethod) => {
+    setInputMethod(method);
+  }, []);
 
   return {
     inputMethod,
-    setInputMethod,
-    isPencilMode
+    setInputMethod: handleInputMethodChange
   };
 };
