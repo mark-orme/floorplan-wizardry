@@ -3,11 +3,12 @@ import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
 import {
+  useFormContext,
+  FormProvider,
   Controller,
-  useForm,
-  type FieldPath,
-  type FieldValues,
-  type UseFormReturn
+  Path,
+  FieldValues,
+  UseFormReturn,
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -37,7 +38,7 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
 const FormField = ({
   control,
   name,
-  render
+  render,
 }: {
   control: any;
   name: string;
@@ -142,7 +143,7 @@ FormMessage.displayName = "FormMessage";
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useForm();
+  const { getFieldState, formState } = useFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
@@ -171,5 +172,6 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  useForm,
+  useFormContext,
+  FormProvider,
 };

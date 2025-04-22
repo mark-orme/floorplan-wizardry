@@ -23,10 +23,10 @@ const propertySchema = z.object({
   isActive: z.boolean()
 });
 
-type PropertyData = z.infer<typeof propertySchema>;
+type PropertyFormValues = z.infer<typeof propertySchema>;
 
 export function PropertyForm() {
-  const form = useForm<PropertyData>({
+  const form = useForm<PropertyFormValues>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       orderId: "",
@@ -39,7 +39,7 @@ export function PropertyForm() {
     },
   });
 
-  function onSubmit(values: PropertyData) {
+  function onSubmit(values: PropertyFormValues) {
     console.log("Form values:", values);
   }
 
