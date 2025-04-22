@@ -1,13 +1,14 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface CalibrationCanvasProps {
   onPressureSample: (pressure: number, thickness: number) => void;
+  onTiltSample?: (tiltX: number, tiltY: number) => void;
 }
 
 export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
-  onPressureSample
+  onPressureSample,
+  onTiltSample
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -30,6 +31,9 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
     const handlePointerMove = (e: PointerEvent) => {
       if (isDrawing && e.pointerType === 'pen') {
         onPressureSample(e.pressure, e.pressure * 10); // Scale thickness for visualization
+        if (onTiltSample && (e.tiltX !== undefined || e.tiltY !== undefined)) {
+          onTiltSample(e.tiltX || 0, e.tiltY || 0);
+        }
       }
     };
 
@@ -49,13 +53,13 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
         canvasRef.current.removeEventListener('pointerup', handlePointerUp);
       }
     };
-  }, [onPressureSample]);
+  }, [onPressureSample, onTiltSample, isDrawing]);
 
   return (
     <div className="border rounded-md p-4 bg-background">
       <canvas ref={canvasRef} className="w-full touch-none" />
       <p className="text-sm text-muted-foreground mt-2">
-        Draw a line while gradually increasing pressure
+        Draw a line while gradually increasing pressure and varying tilt angle
       </p>
     </div>
   );
