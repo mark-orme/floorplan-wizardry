@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface AccessibilityTesterProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   showResults: boolean;
   autoRun?: boolean;
 }

@@ -14,6 +14,50 @@ export interface CanvasAction {
   data?: Record<string, any>;
 }
 
+// Point interface for use in canvas operations
+export interface Point {
+  x: number;
+  y: number;
+}
+
+// DrawOptions for canvas operations
+export interface DrawOptions {
+  color?: string;
+  width?: number;
+  opacity?: number;
+  strokeLineCap?: 'butt' | 'round' | 'square';
+  strokeLineJoin?: 'bevel' | 'round' | 'miter';
+}
+
+// Canvas object representation
+export interface CanvasObject {
+  id: string;
+  type: string;
+  points?: Point[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  angle?: number;
+  properties?: Record<string, any>;
+}
+
+// Stroke styling options
+export interface StrokeStyle {
+  color: string;
+  width: number;
+  opacity?: number;
+}
+
+// Add from Fabric point conversion helpers
+export function fromFabricPoint(point: any): Point {
+  return { x: point.x, y: point.y };
+}
+
+export function toFabricPoint(point: Point): any {
+  return { x: point.x, y: point.y };
+}
+
 /**
  * Add floor plan action
  */

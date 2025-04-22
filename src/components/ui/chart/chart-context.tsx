@@ -5,6 +5,8 @@ export interface ChartConfig {
   config?: Record<string, {
     label: string;
     icon?: React.ComponentType;
+    theme?: string;
+    color?: string;
   }>;
 }
 

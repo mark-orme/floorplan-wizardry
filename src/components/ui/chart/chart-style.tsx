@@ -1,20 +1,23 @@
 
 import React from "react";
 import { useMemo } from "react";
-import { ChartConfig, THEMES } from "./chart-context";
+import { useChart, THEMES } from "./chart-context";
 
 interface ChartStyleProps {
-  config?: ChartConfig;
+  config?: any;
   children: React.ReactNode;
 }
 
 export const ChartStyle: React.FC<ChartStyleProps> = ({ config, children }) => {
+  const { config: contextConfig } = useChart();
+  
   const style = useMemo(() => {
-    if (!config || !config.config) return {};
+    const configToUse = config?.config || contextConfig?.config;
+    if (!configToUse) return {};
     
     const styles: Record<string, any> = {};
     
-    Object.entries(config.config).forEach(([key, value]) => {
+    Object.entries(configToUse).forEach(([key, value]: [string, any]) => {
       if (value.theme && THEMES[value.theme as keyof typeof THEMES]) {
         styles[`.${key}`] = { 
           fill: THEMES[value.theme as keyof typeof THEMES].primaryColor 
@@ -30,7 +33,7 @@ export const ChartStyle: React.FC<ChartStyleProps> = ({ config, children }) => {
     });
     
     return styles;
-  }, [config]);
+  }, [config, contextConfig]);
   
   if (Object.keys(style).length === 0) {
     return <>{children}</>;

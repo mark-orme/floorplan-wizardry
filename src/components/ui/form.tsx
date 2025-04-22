@@ -1,16 +1,12 @@
-
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
   useForm,
-  useFormContext,
-  FormProvider,
-  type Control,
-  type FieldPath,
+  type ControllerProps,
   type FieldValues,
-  type FormState,
+  type FieldPath,
   type UseFormReturn,
 } from "react-hook-form"
 
@@ -42,11 +38,11 @@ type FormFieldProps<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = {
   name: TName
-  control?: Control<TFieldValues>
+  control?: any
   render: React.ComponentType<{
     field: any;
     fieldState: any;
-    formState: FormState<TFieldValues>;
+    formState: any;
   }>
 }
 
