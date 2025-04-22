@@ -46,7 +46,7 @@ export async function runAccessibilityTest(
   component: React.ReactElement,
   options: AccessibilityTestOptions = {}
 ): Promise<{
-  results: ReturnType<typeof axe>;
+  results: Awaited<ReturnType<typeof axe>>;
   violations: AccessibilityIssue[];
   passes: boolean;
 }> {
