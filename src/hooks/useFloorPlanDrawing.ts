@@ -3,9 +3,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
+import type { MutableRefObject } from 'react';
 
 interface UseFloorPlanDrawingProps {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef?: MutableRefObject<FabricCanvas | null>;
   floorPlan?: FloorPlan;
   tool?: DrawingMode;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;

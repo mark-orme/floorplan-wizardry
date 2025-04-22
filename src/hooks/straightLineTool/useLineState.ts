@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback } from 'react';
+import { useRef } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod } from './useLineInputMethod';

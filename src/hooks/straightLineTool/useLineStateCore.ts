@@ -1,70 +1,41 @@
 
-import { useState, useCallback } from 'react';
-import { Line } from 'fabric';
+import { useState, useRef } from 'react';
 import { Point } from '@/types/core/Point';
-import { InputMethod } from './useLineInputMethod';
+import { Line } from 'fabric';
+
+export interface LineStateCore {
+  isDrawing: boolean;
+  setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
+  startPoint: Point | null;
+  setStartPoint: React.Dispatch<React.SetStateAction<Point | null>>;
+  currentPoint: Point | null;
+  setCurrentPoint: React.Dispatch<React.SetStateAction<Point | null>>;
+  currentLine: Line | null;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+}
 
 /**
- * Core state for line tool operations
+ * Hook for managing the core state of the line tool
  */
-export const useLineStateCore = () => {
-  // Active state
-  const [isActive, setIsActive] = useState(false);
-  const [isToolInitialized, setIsToolInitialized] = useState(false);
-  
+export const useLineStateCore = (): LineStateCore => {
   // Drawing state
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [isDrawing, setIsDrawing] = useState<boolean>(false);
+  
+  // Point coordinates
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
+  
+  // Current line being drawn
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
   
-  // Input method state
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const [isPencilMode, setIsPencilMode] = useState(false);
-  const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
-  
-  /**
-   * Initialize the tool
-   */
-  const initializeTool = useCallback(() => {
-    setIsToolInitialized(true);
-    setIsActive(true);
-  }, []);
-  
-  /**
-   * Reset drawing state
-   */
-  const resetDrawingState = useCallback(() => {
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    setCurrentLine(null);
-  }, []);
-  
   return {
-    // Active state
-    isActive,
-    isToolInitialized,
-    setIsActive,
-    initializeTool,
-    
-    // Drawing state
     isDrawing,
-    startPoint,
-    currentPoint,
-    currentLine,
     setIsDrawing,
+    startPoint,
     setStartPoint,
+    currentPoint,
     setCurrentPoint,
-    setCurrentLine,
-    resetDrawingState,
-    
-    // Input method state
-    inputMethod,
-    isPencilMode,
-    shiftKeyPressed,
-    setInputMethod,
-    setIsPencilMode,
-    setShiftKeyPressed
+    currentLine,
+    setCurrentLine
   };
 };
