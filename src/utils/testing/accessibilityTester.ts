@@ -10,7 +10,7 @@ export interface AccessibilityIssue {
   id: string;
   impact: 'minor' | 'moderate' | 'serious' | 'critical';
   description: string;
-  helpUrl: string; // Added helpUrl property
+  helpUrl: string;
   nodes: Array<{
     html: string;
     target: string[];
