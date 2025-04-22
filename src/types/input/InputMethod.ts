@@ -6,5 +6,6 @@
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
-  PENCIL = 'pencil'
+  PENCIL = 'pencil',
+  KEYBOARD = 'keyboard'
 }

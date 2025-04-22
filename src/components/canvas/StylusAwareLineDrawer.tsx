@@ -10,7 +10,7 @@ interface StylusAwareLineDrawerProps {
   enabled: boolean;
   lineColor: string;
   lineThickness: number;
-  saveCurrentState?: () => void; // Make this optional to match the hook interface
+  saveCurrentState?: () => void;
 }
 
 /**
@@ -25,7 +25,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
 }) => {
   const [showMeasurement, setShowMeasurement] = useState(true);
   
-  // Don't pass inputMethod—it is not expected by the hook as a prop
+  // Don't pass inputMethod prop
   const {
     snapEnabled,
     anglesEnabled,
@@ -38,7 +38,8 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isEnabled: enabled,
     canvas: canvas,
     lineColor: lineColor,
-    lineThickness: lineThickness
+    lineThickness: lineThickness,
+    saveCurrentState
   });
   
   useEffect(() => {

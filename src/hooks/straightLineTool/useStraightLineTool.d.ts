@@ -1,6 +1,8 @@
 
 import { Point } from '@/types/core/Geometry';
 import { Line } from 'fabric';
+import { InputMethod } from '@/types/input/InputMethod';
+import React from 'react';
 
 /**
  * Result interface for the useStraightLineTool hook
@@ -41,6 +43,12 @@ export interface UseStraightLineToolResult {
   
   /** Toggle angle snapping */
   toggleAngles: () => void;
+  
+  /** Measurement data */
+  measurementData?: any;
+  
+  /** Render tooltip function */
+  renderTooltip?: () => React.ReactNode;
 }
 
 /**
@@ -68,6 +76,3 @@ export interface UseStraightLineToolProps {
   /** Whether pencil mode is enabled */
   isPencilMode?: boolean;
 }
-
-// Import InputMethod enum for use in this interface
-import { InputMethod } from '@/types/input/InputMethod';

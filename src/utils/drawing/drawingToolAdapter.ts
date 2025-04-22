@@ -10,14 +10,14 @@ import { DrawingTool } from '@/types/core/DrawingTool';
  * Helper function to adapt DrawingMode to DrawingTool
  */
 export const asDrawingTool = (mode: DrawingMode): DrawingTool => {
-  return mode as unknown as DrawingTool;
+  return mode;
 };
 
 /**
  * Helper function to adapt DrawingTool to DrawingMode 
  */
 export const asDrawingMode = (tool: DrawingTool): DrawingMode => {
-  return tool as unknown as DrawingMode;
+  return tool;
 };
 
 /**

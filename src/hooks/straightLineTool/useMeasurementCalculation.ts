@@ -1,20 +1,28 @@
 
-import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
 
 export const useMeasurementCalculation = () => {
-  const calculateMeasurements = useCallback((startPoint: Point, endPoint: Point) => {
-    const distance = calculateDistance(startPoint, endPoint);
-    const angle = calculateAngle(startPoint, endPoint);
+  /**
+   * Calculate distance and angle between two points
+   */
+  const calculateMeasurements = (startPoint: Point, endPoint: Point) => {
+    // Calculate distance using Pythagorean theorem
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    return {
-      distance,
-      angle
-    };
-  }, []);
+    // Calculate angle in degrees
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (angle < 0) angle += 360; // Convert to 0-360 range
+    
+    return { distance, angle };
+  };
+
+  // Alias for backward compatibility
+  const calculateMeasurement = calculateMeasurements;
   
   return {
-    calculateMeasurements
+    calculateMeasurements,
+    calculateMeasurement
   };
 };

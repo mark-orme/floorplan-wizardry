@@ -2,7 +2,7 @@
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Canonical DrawingTool type is now DrawingMode
+ * Canonical DrawingTool type is DrawingMode
  */
 export type DrawingTool = DrawingMode;
 
@@ -40,4 +40,11 @@ export const DrawingToolShortcuts: Record<DrawingMode, string> = {
  */
 export function isValidDrawingTool(tool: any): tool is DrawingTool {
   return Object.values(DrawingMode).includes(tool as DrawingMode);
+}
+
+/**
+ * Helper for comparing DrawingTools and DrawingModes
+ */
+export function isSameDrawingTool(tool1: DrawingTool, tool2: DrawingMode): boolean {
+  return String(tool1) === String(tool2);
 }
