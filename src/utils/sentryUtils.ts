@@ -6,15 +6,52 @@
 import * as Sentry from '@sentry/react';
 
 /**
+ * Interface for capture error options
+ */
+export interface CaptureErrorOptions {
+  context?: Record<string, any>;
+  tags?: Record<string, string>;
+  level?: 'info' | 'warning' | 'error' | 'fatal';
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
+  };
+  extra?: Record<string, any>;
+  showDialog?: boolean;
+}
+
+/**
+ * Interface for capture message options
+ */
+export interface CaptureMessageOptions {
+  context?: Record<string, any>;
+  tags?: Record<string, string>;
+  level?: 'info' | 'warning' | 'error' | 'fatal';
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
+  };
+  extra?: Record<string, any>;
+}
+
+/**
  * Capture an error with context information
+ * Supports both legacy and new call signatures:
+ * - captureError(error)
+ * - captureError(error, 'contextName')
+ * - captureError(error, { tags, extra })
+ * - captureError(error, 'contextName', extraData) (legacy)
+ * 
  * @param error The error to capture
- * @param contextOrOptions Context object, name string, or options
- * @param extraData Additional context data (optional, for backward compatibility)
+ * @param contextOrOptions Context string or options object
+ * @param extraData Additional context data (legacy parameter)
  */
 export function captureError(
   error: Error | any,
   contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any> // Added third parameter to support legacy calls
+  extraData?: Record<string, any> // Legacy parameter
 ) {
   // Handle all different call signatures to provide backward compatibility
   if (extraData && typeof contextOrOptions === 'string') {
@@ -42,19 +79,26 @@ export function captureError(
 
 /**
  * Capture a message with context information
+ * Supports both legacy and new call signatures:
+ * - captureMessage(message)
+ * - captureMessage(message, 'contextName')
+ * - captureMessage(message, { tags, extra })
+ * - captureMessage(message, 'contextName', extraData) (legacy)
+ * 
  * @param message The message to capture
- * @param contextOrOptions Name, context identifier, or options object
- * @param extraData Additional context data (optional, for backward compatibility)
+ * @param contextOrOptions Context string or options object
+ * @param extraData Additional context data (legacy parameter)
  */
 export function captureMessage(
   message: string,
   contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any> // Added third parameter to support legacy calls
+  extraData?: Record<string, any> // Legacy parameter
 ) {
+  // Handle all different call signatures to provide backward compatibility
   if (extraData && typeof contextOrOptions === 'string') {
     // Handle 3-argument legacy case: captureMessage('message', 'name', { extra: data })
     Sentry.captureMessage(message, {
-      level: extraData.level || 'info',
+      level: (extraData.level as Sentry.SeverityLevel) || 'info',
       tags: { context: contextOrOptions },
       extra: extraData
     });
@@ -67,7 +111,7 @@ export function captureMessage(
   } else if (contextOrOptions && typeof contextOrOptions === 'object') {
     // Object context: captureMessage('message', { level: 'info', context: 'data', extra: 'data' })
     Sentry.captureMessage(message, {
-      level: contextOrOptions.level || 'info',
+      level: (contextOrOptions.level as Sentry.SeverityLevel) || 'info',
       tags: contextOrOptions.tags || { context: contextOrOptions.context || 'unknown' },
       extra: contextOrOptions.extra || contextOrOptions
     });

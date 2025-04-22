@@ -6,8 +6,7 @@ import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { adaptFloorPlan } from '@/utils/typeAdapters';
-import { convertToUnifiedFloorPlan, convertToAppFloorPlan } from '@/utils/floorPlanTypeAdapter';
+import { convertToUnifiedFloorPlan, convertToAppFloorPlan, convertToAppFloorPlans } from '@/utils/floorPlanTypeAdapter';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: any[]; // Accept any FloorPlan types
@@ -27,10 +26,10 @@ export const useFloorPlans = ({
   // Convert any initialFloorPlans to unified type
   const unifiedInitialFloorPlans: FloorPlan[] = initialFloorPlans.map(plan => {
     // Ensure the plan has a userId if it's from floorPlanTypes.ts
-    if (!plan.userId && plan.propertyId) {
+    if ('propertyId' in plan && !plan.userId) {
       return convertToUnifiedFloorPlan(plan);
     }
-    return adaptFloorPlan(plan);
+    return plan as FloorPlan;
   });
   
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(unifiedInitialFloorPlans);
@@ -40,9 +39,10 @@ export const useFloorPlans = ({
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
   const now = new Date().toISOString();
-  const safeFloorPlan: FloorPlan = currentFloorPlan || adaptFloorPlan({
+  const safeFloorPlan: FloorPlan = currentFloorPlan || {
     id: 'empty',
     name: 'Empty Floor Plan',
+    label: 'Empty Floor Plan',
     walls: [],
     rooms: [],
     strokes: [],
@@ -66,7 +66,7 @@ export const useFloorPlans = ({
     },
     data: {},
     userId: ''
-  });
+  };
   
   const drawingHook = useFloorPlanDrawing({
     floorPlan: safeFloorPlan,
@@ -92,7 +92,7 @@ export const useFloorPlans = ({
   
   const addFloorPlan = useCallback(() => {
     const now = new Date().toISOString();
-    const newFloorPlan = adaptFloorPlan({
+    const newFloorPlan: FloorPlan = {
       id: uuidv4(),
       name: `Floor ${floorPlans.length + 1}`,
       label: `Floor ${floorPlans.length + 1}`,
@@ -119,7 +119,7 @@ export const useFloorPlans = ({
       },
       data: {},
       userId: 'default-user'
-    });
+    };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
     setCurrentFloorIndex(floorPlans.length);
@@ -144,10 +144,8 @@ export const useFloorPlans = ({
   
   // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
   const getCompatibleFloorPlans = useCallback((): AppFloorPlan[] => {
-    return floorPlans.map(plan => {
-      // Convert unified plan to app plan format
-      return convertToAppFloorPlan(plan);
-    });
+    // Convert unified plan to app plan format
+    return convertToAppFloorPlans(floorPlans);
   }, [floorPlans]);
   
   return {
