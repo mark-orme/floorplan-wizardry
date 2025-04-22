@@ -9,19 +9,26 @@ interface TooltipData {
 }
 
 export const useLiveDistanceTooltip = () => {
-  // Format measurement data for display
+  /**
+   * Formats measurement data for display in the tooltip
+   */
   const formatTooltipData = useCallback((data: MeasurementData): TooltipData | null => {
     if (!data || data.distance === null) return null;
     
-    // Format distance with 1 decimal place
-    const distanceDisplay = `${data.distance.toFixed(1)}${data.unit}`;
+    // Format distance with units
+    const distanceDisplay = `${data.distance.toFixed(2)} ${data.unit}`;
     
     // Format angle if available
-    const angleDisplay = data.angle !== null ? ` / ${Math.round(data.angle)}°` : '';
+    const angleDisplay = data.angle !== null ? `${Math.round(data.angle)}°` : '';
     
-    // Show if snapped to grid or angle
-    const snappedInfo = data.snapped ? 
-      ` (${data.snapType === 'angle' ? 'Angled' : data.snapType === 'grid' ? 'Snapped' : 'Snapped'})` : '';
+    // Show snapping information if relevant
+    let snappedInfo = '';
+    if (data.snapped) {
+      if (data.snapType === 'grid') snappedInfo = ' (grid)';
+      else if (data.snapType === 'angle') snappedInfo = ' (angle)';
+      else if (data.snapType === 'both') snappedInfo = ' (grid+angle)';
+      else snappedInfo = ' (snapped)';
+    }
     
     return {
       distanceDisplay,
@@ -29,7 +36,7 @@ export const useLiveDistanceTooltip = () => {
       snappedInfo
     };
   }, []);
-
+  
   return {
     formatTooltipData
   };
