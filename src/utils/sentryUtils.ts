@@ -1,42 +1,71 @@
 
 /**
- * Sentry utilities
- * Provides backward compatible error reporting functions
+ * Utility functions for Sentry error reporting
+ * Provides backwards compatibility for different captureError signatures
  */
-
-import { captureError as newCaptureError, captureMessage as newCaptureMessage } from '@/utils/sentry';
+import * as Sentry from '@sentry/react';
 
 /**
- * Backward compatible captureError function
- * Converts old-style 3-argument calls to the new 2-argument format
+ * Capture an error with context information
+ * @param error The error to capture
+ * @param contextOrName Context object or name string
+ * @param extraData Optional extra data (legacy format)
  */
-export function captureError(error: Error | unknown, contextOrType?: string | any, optionsOrData?: any) {
-  // If using the old 3-arg pattern (error, type, data)
-  if (typeof contextOrType === 'string' && optionsOrData !== undefined) {
-    return newCaptureError(error, {
-      context: { type: contextOrType, ...optionsOrData }
+export function captureError(
+  error: Error | any,
+  contextOrName?: string | Record<string, any>,
+  extraData?: Record<string, any>
+) {
+  // Handle all different call signatures to provide backward compatibility
+  if (typeof contextOrName === 'string' && extraData) {
+    // Legacy format: captureError(error, 'name', { extra: 'data' })
+    Sentry.captureException(error, {
+      tags: { context: contextOrName },
+      extra: extraData
     });
+  } else if (typeof contextOrName === 'string') {
+    // String context only: captureError(error, 'name')
+    Sentry.captureException(error, {
+      tags: { context: contextOrName }
+    });
+  } else if (contextOrName) {
+    // New format: captureError(error, { context: 'data', extra: 'data' })
+    Sentry.captureException(error, {
+      tags: contextOrName.tags || { context: contextOrName.context || 'unknown' },
+      extra: contextOrName.extra || contextOrName
+    });
+  } else {
+    // Just the error: captureError(error)
+    Sentry.captureException(error);
   }
-  
-  // If using the new 2-arg pattern (error, context)
-  return newCaptureError(error, contextOrType);
 }
 
 /**
- * Backward compatible captureMessage function
- * Converts old-style 3-argument calls to the new 2-argument format
+ * Capture a message with context information
+ * @param message The message to capture
+ * @param name Name or context identifier
+ * @param data Optional extra data
  */
-export function captureMessage(message: string, categoryOrLevel?: string | any, optionsOrData?: any) {
-  // If using the old 3-arg pattern (message, category, data)
-  if (typeof categoryOrLevel === 'string' && optionsOrData !== undefined) {
-    return newCaptureMessage(message, {
-      context: { category: categoryOrLevel, ...optionsOrData }
+export function captureMessage(
+  message: string,
+  name?: string,
+  data?: Record<string, any>
+) {
+  if (name && data) {
+    // Legacy format: captureMessage('message', 'name', { extra: 'data' })
+    Sentry.captureMessage(message, {
+      level: data.level || 'info',
+      tags: { context: name },
+      extra: data
     });
+  } else if (name) {
+    // String context only: captureMessage('message', 'name')
+    Sentry.captureMessage(message, {
+      level: 'info',
+      tags: { context: name }
+    });
+  } else {
+    // Just the message: captureMessage('message')
+    Sentry.captureMessage(message);
   }
-  
-  // If using the new 2-arg pattern (message, context)
-  return newCaptureMessage(message, categoryOrLevel);
 }
-
-// Re-export original functions for direct access
-export { newCaptureError, newCaptureMessage };

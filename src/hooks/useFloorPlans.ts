@@ -143,7 +143,13 @@ export const useFloorPlans = ({
   
   // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
   const getCompatibleFloorPlans = useCallback(() => {
-    return floorPlans.map(plan => convertToAppFloorPlan(plan));
+    return floorPlans.map(plan => {
+      // Add propertyId field for compatibility
+      return {
+        ...convertToAppFloorPlan(plan),
+        propertyId: plan.userId || 'default-property'
+      };
+    });
   }, [floorPlans]);
   
   return {

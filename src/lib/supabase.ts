@@ -32,11 +32,10 @@ export const isSupabaseConfigured = () => {
   // Fix for protected property access - use string comparison instead
   const configuredUrl = 'https://your-project-url.supabase.co';
   
-  // Access supabase URL safely using any type assertion
-  const client = supabase as any;
-  const currentUrl = client.supabaseUrl || configuredUrl;
+  // Safely check the URL without accessing the protected property
+  const isConfiguredProperly = supabase.getUrl() !== configuredUrl;
   
-  return currentUrl !== configuredUrl;
+  return isConfiguredProperly;
 };
 
 // This is a mock for development environment

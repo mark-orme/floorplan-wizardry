@@ -44,23 +44,21 @@ export interface PropertyUpdateInput {
 
 /**
  * Check if a property can be edited based on its status
- * @param status Property status
+ * @param statusOrProperty Property status or property object
+ * @param userRole The user's role (optional)
+ * @param userId The user's ID (optional)
  * @returns Whether the property can be edited
  */
-export function canEditProperty(status: PropertyStatus): boolean {
-  return status !== PropertyStatus.ARCHIVED;
-}
-
-/**
- * Extended canEditProperty function that takes a property, user role, and user ID
- * @param property The property to check
- * @param userRole The user's role
- * @param userId The user's ID
- * @returns Whether the property can be edited
- */
-export function canEditProperty(property: Property, userRole: string, userId: string): boolean {
-  // Default implementation just checks status
-  return property.status !== PropertyStatus.ARCHIVED;
+export function canEditProperty(statusOrProperty: PropertyStatus | Property, userRole?: string, userId?: string): boolean {
+  // If a property object is passed
+  if (typeof statusOrProperty !== 'string') {
+    const property = statusOrProperty;
+    // Default implementation just checks status
+    return property.status !== PropertyStatus.ARCHIVED;
+  }
+  
+  // If just a status is passed
+  return statusOrProperty !== PropertyStatus.ARCHIVED;
 }
 
 /**
