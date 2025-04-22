@@ -4,8 +4,35 @@ import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod, useLineInputMethod } from './useLineInputMethod';
 import { useLineToolHandlers } from './useLineToolHandlers';
-import { UseStraightLineToolResult } from '@/types/hooks';
 import { MeasurementData } from '@/types/measurement/MeasurementData';
+
+export interface UseStraightLineToolResult {
+  isActive: boolean;
+  isEnabled: boolean;
+  currentLine: Line | null;
+  isToolInitialized: boolean;
+  isDrawing: boolean;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  measurementData: MeasurementData;
+  toggleGridSnapping: () => void;
+  toggleAngles: () => void;
+  startDrawing: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  endDrawing: () => void;
+  cancelDrawing: () => void;
+  handlePointerDown: (event: any) => void;
+  handlePointerMove: (event: any) => void;
+  handlePointerUp: (event: any) => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  handleKeyUp: (event: KeyboardEvent) => void;
+  renderTooltip: () => React.ReactNode;
+  setInputMethod: (method: InputMethod) => void;
+  shiftKeyPressed: boolean;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+}
 
 export const useStraightLineTool = (): UseStraightLineToolResult => {
   const [isActive, setIsActive] = useState<boolean>(false);

@@ -1,38 +1,61 @@
 
 import { vi } from 'vitest';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Point';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
 
 /**
  * Creates a mock straight line tool for testing
- * @returns Mock straight line tool with key methods
  */
 export function createMockStraightLineTool() {
   return {
-    startDrawing: vi.fn((canvas: FabricCanvas, point: Point) => {
-      // Mock implementation
-      return { x: point.x, y: point.y };
-    }),
-    
-    continueDrawing: vi.fn((canvas: FabricCanvas, point: Point) => {
-      // Mock implementation
-      return { x: point.x, y: point.y };
-    }),
-    
-    endDrawing: vi.fn((canvas: FabricCanvas) => {
-      // Mock implementation
-      return true;
-    }),
-    
-    cancelDrawing: vi.fn((canvas: FabricCanvas) => {
-      // Mock implementation
-      return true;
-    })
+    isActive: true,
+    isEnabled: true,
+    isToolInitialized: true,
+    isDrawing: false,
+    currentLine: null,
+    snapEnabled: true,
+    anglesEnabled: true,
+    inputMethod: 'mouse' as InputMethod,
+    isPencilMode: false,
+    shiftKeyPressed: false,
+    measurementData: {
+      distance: null,
+      angle: null,
+      snapped: false,
+      unit: 'm'
+    },
+    toggleGridSnapping: vi.fn(),
+    toggleAngles: vi.fn(),
+    startDrawing: vi.fn(),
+    continueDrawing: vi.fn(),
+    endDrawing: vi.fn(),
+    cancelDrawing: vi.fn(),
+    handlePointerDown: vi.fn(),
+    handlePointerMove: vi.fn(),
+    handlePointerUp: vi.fn(),
+    handleKeyDown: vi.fn(),
+    handleKeyUp: vi.fn(),
+    renderTooltip: vi.fn(),
+    setInputMethod: vi.fn(),
+    setCurrentLine: vi.fn()
   };
 }
 
 /**
- * Creates the types required for straight line tool tests
- * These should match your actual types if possible
+ * Creates a mock floor plan for testing
  */
-export type MockStraightLineTool = ReturnType<typeof createMockStraightLineTool>;
+export function createMockFloorPlan() {
+  return {
+    id: 'mock-floor-plan-1',
+    name: 'Mock Floor Plan',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    width: 800,
+    height: 600,
+    data: {}
+  };
+}
+
+// Alias for backward compatibility
+export const createEmptyFloorPlan = createMockFloorPlan;
