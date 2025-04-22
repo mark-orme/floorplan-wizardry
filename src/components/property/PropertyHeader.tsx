@@ -4,7 +4,8 @@ import { PropertyStatus } from '@/types/propertyTypes';
 
 interface PropertyHeaderProps {
   property: {
-    order_id: string;
+    order_id?: string;
+    orderId?: string;
     status: PropertyStatus;
     address: string;
   };
@@ -24,10 +25,12 @@ export const PropertyHeader = ({ property }: PropertyHeaderProps) => {
     }
   };
 
+  const orderId = property.order_id || property.orderId || "";
+
   return (
     <div>
       <h1 className="text-2xl font-bold flex items-center gap-2">
-        {property.order_id}
+        {orderId}
         <span className="text-base font-normal ml-2">
           {getStatusBadge(property.status)}
         </span>

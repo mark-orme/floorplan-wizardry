@@ -70,7 +70,7 @@ export const PropertyList = ({
       <div className="truncate">{property.address}</div>
       <div className="truncate">{property.client_name}</div>
       <div>{getStatusBadge(property.status)}</div>
-      <div>{formatDate(property.updated_at)}</div>
+      <div>{formatDate(property.updated_at || property.updatedAt)}</div>
     </div>
   );
 

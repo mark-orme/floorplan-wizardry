@@ -1,5 +1,13 @@
 
-// Define user roles for the application
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase client setup
+export const supabase = createClient(
+  'https://your-project-url.supabase.co',
+  'your-anon-key'
+);
+
+// Enums for database values
 export enum UserRole {
   USER = 'user',
   PHOTOGRAPHER = 'photographer',
@@ -8,7 +16,6 @@ export enum UserRole {
   ADMIN = 'admin'
 }
 
-// Define property statuses for the application
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING_REVIEW = 'pending_review',
@@ -16,42 +23,36 @@ export enum PropertyStatus {
   ARCHIVED = 'archived'
 }
 
-// Create a basic supabase client (placeholder)
-export const supabase = {
+// This is a mock for development environment
+export const mockSupabase = {
   auth: {
-    getUser: async () => ({ data: { user: null }, error: null }),
-    signIn: async () => ({ data: null, error: null }),
-    signOut: async () => ({ error: null })
-  },
-  from: (table: string) => ({
-    select: () => ({
-      eq: () => ({
-        single: async () => ({ data: null, error: null }),
-        order: () => ({
-          ascending: false,
-          descending: false
-        })
-      }),
-      order: () => ({
-        ascending: false,
-        descending: false
-      }),
-      in: () => ({
-        order: () => ({
-          ascending: false,
-          descending: false
-        })
-      })
-    }),
-    insert: () => ({
-      select: async () => ({ data: null, error: null })
-    }),
-    update: () => ({
-      eq: async () => ({ data: null, error: null })
-    })
-  })
+    getUser: async () => {
+      return {
+        data: {
+          user: {
+            id: 'mock-user-id',
+            email: 'user@example.com'
+          }
+        },
+        error: null
+      };
+    },
+    signInWithPassword: async (credentials: { email: string; password: string }) => {
+      return {
+        data: {
+          user: {
+            id: 'mock-user-id',
+            email: credentials.email
+          },
+          session: {
+            access_token: 'mock-token'
+          }
+        },
+        error: null
+      };
+    },
+    signOut: async () => {
+      return { error: null };
+    }
+  }
 };
-
-// Add these utilities for the lib/index.ts exports
-export const isSecureConnection = () => window.location.protocol === 'https:';
-export const isSupabaseConfigured = true;

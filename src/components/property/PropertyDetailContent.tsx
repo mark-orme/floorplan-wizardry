@@ -1,6 +1,6 @@
 
 import { useProperty } from '@/hooks/query/usePropertyQuery';
-import { Property, PropertyStatus } from '@/types/propertyTypes';
+import { Property, PropertyStatus, canEditProperty } from '@/types/propertyTypes';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
 import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
 import { PropertyHeader } from './PropertyHeader';
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Grid, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/lib/supabase';
-import { canEditProperty } from '@/types/propertyTypes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
@@ -85,17 +84,17 @@ export function PropertyDetailContent({
     
     // Property header expects these specific props
     const headerProps = {
-      order_id: property.order_id || property.id,
+      order_id: property.order_id || property.orderId,
       status: property.status,
       address: property.address
     };
     
     // Property details tab expects these specific props
     const detailsProps = {
-      order_id: property.order_id || property.id,
-      client_name: property.client_name || 'Unknown',
+      order_id: property.order_id || property.orderId || property.id,
+      client_name: property.client_name || property.clientName || 'Unknown',
       address: property.address,
-      branch_name: property.branch_name || undefined,
+      branch_name: property.branch_name,
       created_at: property.created_at || property.createdAt,
       updated_at: property.updated_at || property.updatedAt,
       notes: property.notes,

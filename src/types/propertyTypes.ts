@@ -1,5 +1,5 @@
 
-import { PropertyStatus } from '@/lib/supabase';
+import { PropertyStatus, UserRole } from '@/lib/supabase';
 
 /**
  * Property interface
@@ -15,6 +15,13 @@ export interface Property {
   clientName?: string;
   orderId?: string;
   metadata?: any;
+  // For compatibility with existing code (snake_case)
+  client_name?: string; 
+  order_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  branch_name?: string;
+  notes?: string;
 }
 
 /**
@@ -28,6 +35,7 @@ export interface PropertyListItem {
   updatedAt: string;
   client_name?: string; // DB field name format
   order_id?: string; // DB field name format
+  updated_at?: string; // For compatibility
 }
 
 /**
@@ -88,3 +96,28 @@ export function getPropertyStatusColorClass(status: PropertyStatus): string {
       return 'bg-gray-200 text-gray-800';
   }
 }
+
+/**
+ * Check if user can edit property based on role and ownership
+ */
+export function canEditProperty(property: Property, userRole: UserRole, userId: string): boolean {
+  // Admins and managers can edit all properties
+  if (userRole === UserRole.ADMIN || userRole === UserRole.MANAGER) {
+    return true;
+  }
+  
+  // Processing managers can edit pending_review properties
+  if (userRole === UserRole.PROCESSING_MANAGER && property.status === PropertyStatus.PENDING_REVIEW) {
+    return true;
+  }
+  
+  // Users/photographers can only edit their own properties in draft status
+  if (property.userId === userId && property.status === PropertyStatus.DRAFT) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Re-export PropertyStatus for convenience
+export { PropertyStatus };

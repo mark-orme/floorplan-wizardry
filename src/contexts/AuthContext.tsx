@@ -6,15 +6,17 @@ import { UserRole } from '@/lib/supabase';
 interface User {
   id: string;
   email: string;
+  name?: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   userRole: UserRole;
   login: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>; // Alias for login
   logout: () => Promise<void>;
   isLoading: boolean;
+  loading: boolean; // Added for compatibility
 }
 
 // Create context with default values
@@ -24,7 +26,8 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   signIn: async () => {},
   logout: async () => {},
-  isLoading: false
+  isLoading: false,
+  loading: false
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -44,7 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // In a real app, we'd fetch the user's profile to get their role
           setUser({
             id: 'mock-user-id',
-            email: 'user@example.com'
+            email: 'user@example.com',
+            name: 'Test User'
           });
           setUserRole(UserRole.USER);
         }
@@ -65,7 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // For now, simulating a successful login
       setUser({
         id: 'mock-user-id',
-        email: email
+        email: email,
+        name: 'Test User'
       });
       setUserRole(UserRole.USER);
     } catch (error) {
@@ -95,7 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     signIn: login, // Alias for login
     logout,
-    isLoading
+    isLoading,
+    loading: isLoading // Added for compatibility
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
