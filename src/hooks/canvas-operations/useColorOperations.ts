@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";
 
@@ -54,7 +54,7 @@ export const useColorOperations = ({
       setLineThickness(thickness);
       toast.success(`Changed line thickness to ${thickness}`);
       
-      captureMessage("Line thickness changed", "thickness-change", {
+      captureMessage("Line thickness changed", {
         tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
       });
@@ -75,7 +75,7 @@ export const useColorOperations = ({
         timestamp: new Date().toISOString()
       });
       
-      captureError(error as Error, "thickness-change-error", {
+      captureError(error as Error, {
         tags: { component: "CanvasApp", action: "thicknessChange" },
         extra: { previousThickness: lineThickness, newThickness: thickness }
       });
@@ -102,7 +102,7 @@ export const useColorOperations = ({
       setLineColor(color);
       toast.success(`Changed line color`);
       
-      captureMessage("Line color changed", "color-change", {
+      captureMessage("Line color changed", {
         tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }
       });
@@ -123,7 +123,7 @@ export const useColorOperations = ({
         timestamp: new Date().toISOString()
       });
       
-      captureError(error as Error, "color-change-error", {
+      captureError(error as Error, {
         tags: { component: "CanvasApp", action: "colorChange" },
         extra: { previousColor: lineColor, newColor: color }
       });

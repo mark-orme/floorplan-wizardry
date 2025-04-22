@@ -1,6 +1,6 @@
 
 import * as Sentry from '@sentry/react';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 
 /**
  * Types for monitoring data
@@ -79,7 +79,7 @@ export const startToolbarMonitoring = (
     };
     
     // Send report to Sentry
-    captureMessage("Toolbar usage report", "toolbar-monitoring", {
+    captureMessage("Toolbar usage report", {
       tags: { component: "ToolbarMonitor" },
       extra: report
     });

@@ -27,6 +27,8 @@
 - src/utils/diagnostics/toolbar/toolbarRunDiagnostics.ts
 - src/utils/grid/gridErrorHandling.ts
 - src/utils/logging/toolbar/toolActionLogger.ts
+- src/utils/logging/toolbar/toolActivationLogger.ts
+- src/utils/logging/toolbar/toolMonitoring.ts
 - src/utils/validation/validatorService.ts
 */
 

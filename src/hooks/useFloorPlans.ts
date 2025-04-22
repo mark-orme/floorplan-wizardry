@@ -7,7 +7,7 @@ import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { adaptFloorPlan } from '@/utils/typeAdapters';
-import { convertToUnifiedFloorPlan, convertToAppFloorPlan } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
+import { convertToUnifiedFloorPlan, convertToAppFloorPlan } from '@/utils/floorPlanTypeAdapter';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: any[]; // Accept any FloorPlan types
@@ -143,7 +143,7 @@ export const useFloorPlans = ({
   }, []);
   
   // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
-  const getCompatibleFloorPlans = useCallback(() => {
+  const getCompatibleFloorPlans = useCallback((): AppFloorPlan[] => {
     return floorPlans.map(plan => {
       // Convert unified plan to app plan format
       return convertToAppFloorPlan(plan);

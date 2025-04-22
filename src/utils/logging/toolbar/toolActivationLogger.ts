@@ -1,6 +1,6 @@
 
 import * as Sentry from '@sentry/react';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 import { DrawingMode } from '@/constants/drawingModes';
 
@@ -33,7 +33,7 @@ export const logToolActivation = (
   });
   
   // Capture as an event for analytics
-  captureMessage(`Tool activated: ${toolName}`, "tool-activation", {
+  captureMessage(`Tool activated: ${toolName}`, {
     tags: { component: "Toolbar", tool: toolName },
     extra: {
       previousTool,

@@ -8,7 +8,7 @@ import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { DrawingMode } from "@/constants/drawingModes";
 import { DrawingTool } from "@/types/core/DrawingTool";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 import * as Sentry from '@sentry/react';
 import logger from "@/utils/logger";
 
@@ -85,7 +85,7 @@ export const useToolOperations = ({
       setTool(newTool);
       toast.success(`Changed to ${newTool} tool`);
       
-      captureMessage("Drawing tool changed", "tool-change", {
+      captureMessage("Drawing tool changed", {
         tags: { component: "CanvasApp", action: "toolChange" },
         extra: { previousTool: tool, newTool }
       });
@@ -106,7 +106,7 @@ export const useToolOperations = ({
         timestamp: new Date().toISOString()
       });
       
-      captureError(error as Error, "tool-change-error", {
+      captureError(error as Error, {
         tags: { component: "CanvasApp", action: "toolChange" },
         extra: { previousTool: tool, newTool }
       });
