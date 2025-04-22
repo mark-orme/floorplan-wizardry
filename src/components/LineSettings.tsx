@@ -32,7 +32,6 @@ export const LineSettings: React.FC<LineSettingsProps> = ({
       <div className="flex flex-col space-y-1 min-w-[120px]">
         <Label htmlFor="line-thickness" className="text-xs">Thickness: {thickness}px</Label>
         <Slider
-          id="line-thickness"
           min={1}
           max={20}
           step={1}
