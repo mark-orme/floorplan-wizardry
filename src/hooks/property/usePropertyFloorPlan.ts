@@ -29,6 +29,8 @@ export const usePropertyFloorPlan = () => {
           level: 0,
           updatedAt: new Date().toISOString(),
           strokes: [],
+          walls: [],
+          rooms: [],
           width: 1000,
           height: 800,
           backgroundColor: '#ffffff'
@@ -39,6 +41,8 @@ export const usePropertyFloorPlan = () => {
           level: 1,
           updatedAt: new Date().toISOString(),
           strokes: [],
+          walls: [],
+          rooms: [],
           width: 1000,
           height: 800,
           backgroundColor: '#ffffff'

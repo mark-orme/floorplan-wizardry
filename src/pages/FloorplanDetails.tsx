@@ -1,99 +1,100 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { toast } from 'sonner';
-import { FloorPlan } from '@/types/floorPlan';
-import { Spinner } from '@/components/ui/spinner';
+import { FloorPlan, createEmptyFloorPlan } from '@/types/floorPlan';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-// Mock function to fetch a floor plan
 const fetchFloorPlan = async (id: string): Promise<FloorPlan> => {
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // Mock API call
+  await new Promise(resolve => setTimeout(resolve, 800));
   
+  // Return a mock floor plan
   return {
+    ...createEmptyFloorPlan(),
     id,
     name: `Floor Plan ${id}`,
     level: 1,
     updatedAt: new Date().toISOString(),
-    strokes: [],
-    width: 1000,
-    height: 800,
-    backgroundColor: '#ffffff'
+    walls: [],
+    rooms: [],
   };
 };
 
-// Mock FloorPlanViewer component
 const FloorPlanViewer: React.FC<{ floorPlan: FloorPlan }> = ({ floorPlan }) => {
   return (
-    <div className="border border-gray-200 p-4 rounded-lg">
-      <h3 className="text-lg font-medium">Floor Plan Viewer</h3>
-      <p>Name: {floorPlan.name}</p>
-      <p>Level: {floorPlan.level}</p>
-      <p>Last Updated: {new Date(floorPlan.updatedAt).toLocaleString()}</p>
-      <div className="mt-4 bg-gray-100 h-[400px] flex items-center justify-center">
-        <p className="text-gray-500">Floor plan canvas would render here</p>
+    <div className="bg-gray-100 p-4 rounded-md">
+      <h2 className="text-xl font-bold mb-4">Floor Plan Viewer</h2>
+      <div className="bg-white border border-gray-200 rounded-md p-4">
+        <p><strong>ID:</strong> {floorPlan.id}</p>
+        <p><strong>Name:</strong> {floorPlan.name}</p>
+        <p><strong>Level:</strong> {floorPlan.level}</p>
+        <p><strong>Last Updated:</strong> {new Date(floorPlan.updatedAt).toLocaleDateString()}</p>
+        <p><strong>Dimensions:</strong> {floorPlan.width}×{floorPlan.height}</p>
+        <p><strong>Walls:</strong> {floorPlan.walls.length}</p>
+        <p><strong>Rooms:</strong> {floorPlan.rooms.length}</p>
+        <p><strong>Strokes:</strong> {floorPlan.strokes.length}</p>
       </div>
     </div>
   );
 };
 
-export const FloorplanDetails: React.FC = () => {
+export function FloorplanDetails() {
   const { id } = useParams<{ id: string }>();
   const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!id) return;
-    
-    setLoading(true);
-    fetchFloorPlan(id)
-      .then((data) => {
+    if (!id) {
+      setError('Floor plan ID is required');
+      setLoading(false);
+      return;
+    }
+
+    const loadFloorPlan = async () => {
+      try {
+        const data = await fetchFloorPlan(id);
         setFloorPlan(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load floor plan');
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err : new Error('Failed to fetch floor plan'));
-        setLoading(false);
-        toast.error('Failed to load floor plan details');
-      });
+      }
+    };
+
+    loadFloorPlan();
   }, [id]);
-  
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner />
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner />
       </div>
     );
   }
-  
+
   if (error) {
     return (
-      <div className="p-4 bg-red-50 text-red-600 rounded-lg">
-        <h3 className="font-medium">Error</h3>
-        <p>{error.message}</p>
+      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
+        <h3 className="text-lg font-semibold mb-2">Error</h3>
+        <p>{error}</p>
       </div>
     );
   }
-  
+
   if (!floorPlan) {
     return (
-      <div className="p-4 bg-amber-50 text-amber-600 rounded-lg">
-        <h3 className="font-medium">Not Found</h3>
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 p-4 rounded-md">
+        <h3 className="text-lg font-semibold mb-2">Not Found</h3>
         <p>The requested floor plan could not be found.</p>
       </div>
     );
   }
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{floorPlan.name}</h1>
-      </div>
-      
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">{floorPlan.name}</h1>
       <FloorPlanViewer floorPlan={floorPlan} />
     </div>
   );
-};
-
-export default FloorplanDetails;
+}

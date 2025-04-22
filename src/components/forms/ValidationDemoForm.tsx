@@ -1,7 +1,8 @@
+
 import React from "react";
 import * as z from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -41,7 +42,7 @@ export function ValidationDemoForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
+        <Controller
           control={form.control}
           name="email"
           render={({ field }) => (
@@ -54,7 +55,7 @@ export function ValidationDemoForm() {
             </FormItem>
           )}
         />
-        <FormField
+        <Controller
           control={form.control}
           name="password"
           render={({ field }) => (
@@ -67,7 +68,7 @@ export function ValidationDemoForm() {
             </FormItem>
           )}
         />
-        <FormField
+        <Controller
           control={form.control}
           name="confirmPassword"
           render={({ field }) => (

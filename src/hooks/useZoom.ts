@@ -14,12 +14,21 @@ interface UseZoomResult {
   updateZoomState: (zoom: number) => void;
 }
 
-export const useZoom = (): UseZoomResult => {
-  const [currentZoom, setCurrentZoom] = useState(1);
+export const useZoom = (options: ZoomOptions = {}): UseZoomResult => {
+  const {
+    defaultZoom = 1,
+    minZoom = 0.1,
+    maxZoom = 5,
+    step = 0.1
+  } = options;
+  
+  const [currentZoom, setCurrentZoom] = useState(defaultZoom);
 
   const updateZoomState = useCallback((zoom: number) => {
-    setCurrentZoom(zoom);
-  }, []);
+    // Ensure zoom is within bounds
+    const clampedZoom = Math.min(Math.max(zoom, minZoom), maxZoom);
+    setCurrentZoom(clampedZoom);
+  }, [minZoom, maxZoom]);
 
   return {
     currentZoom,

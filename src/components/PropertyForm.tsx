@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Form,
@@ -11,9 +12,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from '@/utils/zod-mock';
+import * as z from 'zod';
 
 interface PropertyFormProps {
   onSubmit: (values: any) => void;
@@ -29,6 +30,8 @@ const formSchema = z.object({
   country: z.string(),
   isCommercial: z.boolean()
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitting }) => {
   const form = useForm({
@@ -53,7 +56,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+            <Controller
               control={form.control}
               name="name"
               render={({ field }) => (
@@ -67,7 +70,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                 </FormItem>
               )}
             />
-            <FormField
+            <Controller
               control={form.control}
               name="address"
               render={({ field }) => (
@@ -80,7 +83,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                 </FormItem>
               )}
             />
-            <FormField
+            <Controller
               control={form.control}
               name="city"
               render={({ field }) => (
@@ -93,7 +96,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                 </FormItem>
               )}
             />
-            <FormField
+            <Controller
               control={form.control}
               name="state"
               render={({ field }) => (
@@ -106,7 +109,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                 </FormItem>
               )}
             />
-            <FormField
+            <Controller
               control={form.control}
               name="country"
               render={({ field }) => (
@@ -119,7 +122,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                 </FormItem>
               )}
             />
-            <FormField
+            <Controller
               control={form.control}
               name="isCommercial"
               render={({ field }) => (
@@ -129,7 +132,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
                     <FormDescription>Check if this is a commercial property.</FormDescription>
                   </div>
                   <FormControl>
-                    <Input type="checkbox" checked={field.value} {...field} />
+                    <Input type="checkbox" checked={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
