@@ -1,5 +1,5 @@
 
-import z from "@/utils/zod-mock";
+import { z } from "@/utils/zod-mock";
 import {
   Form,
   FormField,

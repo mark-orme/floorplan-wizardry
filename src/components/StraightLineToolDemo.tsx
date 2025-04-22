@@ -1,10 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useStraightLineTool } from '@/hooks/straightLineTool';
+import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { InputMethodEnum } from '@/types/core/DrawingToolAdapter';
+import { InputMethod } from '@/types/input/InputMethod';
 import { Canvas } from 'fabric';
 
 export const StraightLineToolDemo: React.FC = () => {
@@ -28,7 +28,8 @@ export const StraightLineToolDemo: React.FC = () => {
     canvas: fabricCanvas,
     lineColor: '#000000',
     lineThickness: 2,
-    saveCurrentState: () => {}  // no-op function for demo
+    inputMethod: InputMethod.MOUSE
+    // saveCurrentState is removed as it's not in the interface
   });
   
   return (

@@ -29,6 +29,18 @@ export interface UseStraightLineToolResult {
   
   /** Cancel the current drawing operation */
   cancelDrawing: () => void;
+  
+  /** Grid snapping state and controls */
+  snapEnabled: boolean;
+  
+  /** Toggle grid snapping */
+  toggleGridSnapping: () => void;
+  
+  /** Angle snapping state and controls */
+  anglesEnabled: boolean;
+  
+  /** Toggle angle snapping */
+  toggleAngles: () => void;
 }
 
 /**
@@ -54,8 +66,11 @@ export interface UseStraightLineToolProps {
   saveCurrentState?: () => void;
   
   /** Input method */
-  inputMethod?: string;
+  inputMethod?: InputMethod;
   
   /** Whether pencil mode is enabled */
   isPencilMode?: boolean;
 }
+
+// Import InputMethod enum for use in this interface
+import { InputMethod } from '@/types/input/InputMethod';

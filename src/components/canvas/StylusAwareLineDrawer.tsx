@@ -1,16 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useStraightLineTool } from '@/hooks/straightLineTool';
+import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
+import { InputMethod } from '@/types/input/InputMethod';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
   enabled: boolean;
   lineColor: string;
   lineThickness: number;
-  saveCurrentState: () => void;
+  saveCurrentState?: () => void; // Make this optional to match the hook interface
 }
 
 /**
@@ -39,34 +40,35 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     canvas: canvas,
     lineColor: lineColor,
     lineThickness: lineThickness,
-    saveCurrentState: saveCurrentState
+    inputMethod: InputMethod.PENCIL
+    // saveCurrentState is removed as it's optional in the hook
   });
   
   // Hide measurement after some time of inactivity
   useEffect(() => {
     if (isDrawing) {
       setShowMeasurement(true);
-    } else if (measurementData.distance !== null) {
+    } else if (measurementData?.distance !== null) {
       const timer = setTimeout(() => {
         setShowMeasurement(false);
       }, 3000);
       
       return () => clearTimeout(timer);
     }
-  }, [isDrawing, measurementData.distance]);
+  }, [isDrawing, measurementData?.distance]);
   
   return (
     <>
       {/* Render the dynamic tooltip through portal */}
-      {enabled && renderTooltip()}
+      {enabled && renderTooltip && renderTooltip()}
       
       {/* Enhanced measurement overlay */}
       <LineToolMeasurementOverlay
         visible={showMeasurement && !enabled}
-        distance={measurementData.distance}
-        angle={measurementData.angle}
-        isSnapped={measurementData.snapped}
-        unit={measurementData.unit}
+        distance={measurementData?.distance}
+        angle={measurementData?.angle}
+        isSnapped={measurementData?.snapped}
+        unit={measurementData?.unit}
       />
       
       {/* Controls */}
