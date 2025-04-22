@@ -1,4 +1,3 @@
-
 /**
  * Tests for useFloorPlanDrawing hook
  * @module hooks/useFloorPlanDrawing/__tests__/useFloorPlanDrawing.test
@@ -35,7 +34,8 @@ describe('useFloorPlanDrawing', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
       floorPlan: createEmptyFloorPlan(),
-      tool: DrawingMode.SELECT
+      tool: DrawingMode.SELECT,
+      onFloorPlanUpdate: vi.fn()
     }));
 
     expect(result.current.isDrawing).toBe(false);

@@ -33,7 +33,7 @@ export const useInputValidation = <T>(schema: z.ZodType<T>) => {
     },
     [validate]
   );
-
+  
   return {
     validationResult,
     validateInput,
@@ -41,4 +41,3 @@ export const useInputValidation = <T>(schema: z.ZodType<T>) => {
     errorMessage: validationResult.error,
   };
 };
-
