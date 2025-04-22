@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
 import { GRID_CONSTANTS } from "@/constants/gridConstants";
 import logger from "@/utils/logger";
 import { toast } from "sonner";
+import { captureMessage } from "@/utils/sentryUtils";
 import { ensureGridIsPresent } from "@/utils/grid/gridVisibilityManager";
 
 interface GridRendererProps {
@@ -78,6 +79,12 @@ export class GridRenderer {
       logger.error("Error creating grid:", error);
       console.error("[CRITICAL] Grid creation failed:", error);
       
+      captureMessage("Grid creation failed", {
+        level: 'error',
+        tags: { component: "GridRenderer" },
+        extra: { error: String(error) }
+      });
+      
       // Only show toast if this is not a follow-up attempt
       if (!this.initialized) {
         toast.error("Grid creation failed. Please refresh the page.");
@@ -124,7 +131,7 @@ export class GridRenderer {
 }
 
 // React component wrapper for class-based implementation
-export const GridRendererComponent = React.memo<GridRendererProps>(({
+export const GridRendererComponent: React.FC<GridRendererProps> = React.memo(({
   canvas,
   onGridCreated,
   showGrid = true
@@ -152,10 +159,8 @@ export const GridRendererComponent = React.memo<GridRendererProps>(({
   }, [canvas, showGrid, onGridCreated]);
   
   return null; // This component doesn't render anything
-}, (prevProps, nextProps) => {
-  // Only re-render if canvas reference changes or showGrid changes
-  return prevProps.canvas === nextProps.canvas && 
-         prevProps.showGrid === nextProps.showGrid;
 });
 
 GridRendererComponent.displayName = 'GridRendererComponent';
+
+export default GridRendererComponent;

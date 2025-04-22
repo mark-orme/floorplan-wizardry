@@ -1,13 +1,16 @@
-
 /**
- * Contexts module
- * Re-exports all context providers and hooks
- * @module contexts
+ * Re-export all context providers and hooks
  */
 
-export { useCanvas, useCanvasContext, CanvasProvider } from './CanvasContext';
-export { useDrawing, useDrawingContext, DrawingProvider } from './DrawingContext';
-export { useAuth, AuthProvider } from './AuthContext';
+// Re-export auth context
+export * from './AuthContext';
 
-// ThemeContext is referenced but doesn't exist in the codebase
-// Removing this export to fix the build error
+// Re-export drawing context
+export { 
+  DrawingProvider, 
+  useDrawingContext,
+  useDrawing 
+} from './DrawingContext';
+
+// Re-export any other contexts
+// export * from './OtherContext';

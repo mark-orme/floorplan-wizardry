@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
-import { Tooltip } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LineThicknessSliderProps {
   currentValue: number;
@@ -25,17 +25,24 @@ export const LineThicknessSlider: React.FC<LineThicknessSliderProps> = ({
   };
 
   return (
-    <Tooltip content="Line Thickness">
-      <div className="flex items-center space-x-2 w-24">
-        <Slider
-          value={[currentValue]}
-          min={min}
-          max={max}
-          step={step}
-          onValueChange={handleValueChange}
-          aria-label="Line Thickness"
-        />
-      </div>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-2 w-24">
+            <Slider
+              value={[currentValue]}
+              min={min}
+              max={max}
+              step={step}
+              onValueChange={handleValueChange}
+              aria-label="Line Thickness"
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Line Thickness</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

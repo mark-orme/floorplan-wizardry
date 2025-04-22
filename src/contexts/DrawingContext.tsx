@@ -11,6 +11,9 @@ interface DrawingContextType {
   undo: () => void;
   redo: () => void;
   resetHistory: () => void;
+  // Add the missing methods
+  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
+  setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const DrawingContext = createContext<DrawingContextType>({
@@ -21,7 +24,9 @@ const DrawingContext = createContext<DrawingContextType>({
   addToHistory: () => {},
   undo: () => {},
   redo: () => {},
-  resetHistory: () => {}
+  resetHistory: () => {},
+  setCanUndo: () => {},
+  setCanRedo: () => {}
 });
 
 interface DrawingProviderProps {
@@ -35,9 +40,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 }) => {
   const [history, setHistory] = useState<any[]>([]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
-  
-  const canUndo = currentHistoryIndex > 0;
-  const canRedo = history.length > 0 && currentHistoryIndex < history.length - 1;
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
   const saveCanvasState = useCallback(() => {
     if (!canvas) return;
@@ -60,6 +64,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     });
     
     setCurrentHistoryIndex(prev => prev + 1);
+    setCanUndo(true);
+    setCanRedo(false);
   }, [canvas, currentHistoryIndex, saveCanvasState]);
   
   const undo = useCallback(() => {
@@ -69,6 +75,8 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     canvas.loadFromJSON(previousState, () => {
       canvas.renderAll();
       setCurrentHistoryIndex(prev => prev - 1);
+      setCanUndo(currentHistoryIndex - 1 > 0);
+      setCanRedo(true);
     });
   }, [canvas, canUndo, history, currentHistoryIndex]);
   
@@ -79,12 +87,16 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     canvas.loadFromJSON(nextState, () => {
       canvas.renderAll();
       setCurrentHistoryIndex(prev => prev + 1);
+      setCanUndo(true);
+      setCanRedo(currentHistoryIndex + 1 < history.length - 1);
     });
   }, [canvas, canRedo, history, currentHistoryIndex]);
   
   const resetHistory = useCallback(() => {
     setHistory([]);
     setCurrentHistoryIndex(-1);
+    setCanUndo(false);
+    setCanRedo(false);
   }, []);
   
   const value = {
@@ -95,7 +107,9 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     addToHistory,
     undo,
     redo,
-    resetHistory
+    resetHistory,
+    setCanUndo,
+    setCanRedo
   };
   
   return (
@@ -106,3 +120,6 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
 };
 
 export const useDrawingContext = () => useContext(DrawingContext);
+
+// Add the useDrawing alias for backward compatibility
+export const useDrawing = useDrawingContext;

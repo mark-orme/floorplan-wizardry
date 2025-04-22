@@ -55,6 +55,15 @@ export const useSyncedFloorPlans = ({
     const newFloorPlan = createEmptyFloorPlan();
     setFloorPlans(prev => [...prev, newFloorPlan]);
   }, []);
+  
+  // Alias for createFloorPlan to maintain compatibility with tests
+  const createFloorPlan = useCallback((data: Partial<FloorPlan> = {}) => {
+    const newFloorPlan = createEmptyFloorPlan();
+    // Apply any custom data
+    const customizedFloorPlan = { ...newFloorPlan, ...data };
+    setFloorPlans(prev => [...prev, customizedFloorPlan]);
+    return customizedFloorPlan;
+  }, []);
 
   const updateFloorPlan = useCallback((index: number, updatedFloorPlan: FloorPlan) => {
     setFloorPlans(prev => {
@@ -64,8 +73,13 @@ export const useSyncedFloorPlans = ({
     });
   }, []);
 
-  const deleteFloorPlan = useCallback((index: number) => {
-    setFloorPlans(prev => prev.filter((_, i) => i !== index));
+  // Support for both index-based and id-based deletion
+  const deleteFloorPlan = useCallback((indexOrId: number | string) => {
+    if (typeof indexOrId === 'number') {
+      setFloorPlans(prev => prev.filter((_, i) => i !== indexOrId));
+    } else {
+      setFloorPlans(prev => prev.filter(plan => plan.id !== indexOrId));
+    }
   }, []);
 
   return {
@@ -75,6 +89,7 @@ export const useSyncedFloorPlans = ({
     error,
     syncFloorPlans,
     addFloorPlan,
+    createFloorPlan,
     updateFloorPlan,
     deleteFloorPlan,
   };

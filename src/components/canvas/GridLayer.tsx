@@ -1,7 +1,8 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { GridRendererComponent } from "./GridRenderer";
-import { captureMessage } from "@/utils/sentry";
+import GridRenderer from "./GridRenderer";
+import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
@@ -32,7 +33,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       setGridObjects(objects);
       gridInitializedRef.current = true;
       
-      // Replace the captureMessage call with the new format
       captureMessage("Grid layer created", {
         level: 'info',
         tags: { component: "GridLayer" },
@@ -79,10 +79,10 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [fabricCanvas, gridObjects]);
   
   return (
-    <GridRendererComponent 
+    <GridRenderer 
       canvas={fabricCanvas}
-      onGridCreated={handleGridCreated}
-      showGrid={true}
+      gridSize={50}
+      visible={true}
     />
   );
 };
