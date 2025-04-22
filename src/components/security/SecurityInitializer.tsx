@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { getCSRFToken } from '@/utils/security/csrfHandler';
-import { initializeXSSProtection } from '@/utils/security/xssProtection';
+import { initXssProtection } from '@/utils/security/xssProtection';
 
 interface SecurityInitializerProps {
   enableCSRF?: boolean;
@@ -19,7 +19,7 @@ export const SecurityInitializer: React.FC<SecurityInitializerProps> = ({
     }
     
     if (enableXSSProtection) {
-      initializeXSSProtection();
+      initXssProtection();
       console.log('XSS protection initialized');
     }
   }, [enableCSRF, enableXSSProtection]);

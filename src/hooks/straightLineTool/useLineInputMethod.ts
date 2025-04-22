@@ -1,18 +1,17 @@
 
 import { useState } from 'react';
+import { InputMethodEnum } from '@/types/core/DrawingToolAdapter';
 
-export enum InputMethod {
-  MOUSE = 'mouse',
-  PENCIL = 'pencil',
-  TOUCH = 'touch',
-  KEYBOARD = 'keyboard'
-}
+export type InputMethod = InputMethodEnum;
 
 export const useLineInputMethod = () => {
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethodEnum.MOUSE);
   
   return {
     inputMethod,
     setInputMethod
   };
 };
+
+// Re-export InputMethodEnum for compatibility
+export { InputMethodEnum };

@@ -11,9 +11,9 @@ import {
 import { Input } from '@/components/ui/input';
 
 export const PropertyFormSchema = z.object({
-  order_id: z.string().min(1, { message: 'Order ID is required' }),
-  address: z.string().min(5, { message: 'Address must be at least 5 characters' }),
-  client_name: z.string().min(2, { message: 'Client name is required' }),
+  order_id: z.string(),
+  address: z.string(),
+  client_name: z.string(),
   branch_name: z.string().optional()
 });
 

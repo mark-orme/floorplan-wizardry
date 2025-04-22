@@ -4,7 +4,7 @@ import { useStraightLineTool } from '@/hooks/straightLineTool';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
+import { InputMethodEnum } from '@/types/core/DrawingToolAdapter';
 import { Canvas } from 'fabric';
 
 export const StraightLineToolDemo: React.FC = () => {
@@ -24,14 +24,13 @@ export const StraightLineToolDemo: React.FC = () => {
   
   // Call the hook with required options
   const straightLineTool = useStraightLineTool({
-    isActive: true,
-    inputMethod: InputMethod.MOUSE,
+    isEnabled: true,
+    inputMethod: InputMethodEnum.MOUSE,
     isPencilMode: false,
     canvas: fabricCanvas,
-    setInputMethod: () => {},  // no-op function for demo
-    enabled: true,
     lineColor: '#000000',
-    lineThickness: 2
+    lineThickness: 2,
+    saveCurrentState: () => {}  // no-op function for demo
   });
   
   return (

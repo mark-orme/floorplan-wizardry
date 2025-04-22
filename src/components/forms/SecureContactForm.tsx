@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from '@/components/ui/textarea';
 
 const contactSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  subject: z.string().min(5, { message: 'Subject must be at least 5 characters' }),
-  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
+  name: z.string(),
+  email: z.string(),
+  subject: z.string(),
+  message: z.string()
 });
 
 type FormValues = z.infer<typeof contactSchema>;

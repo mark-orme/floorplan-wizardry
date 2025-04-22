@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import z from "@/utils/zod-mock";
 
 const propertySchema = z.object({
-  orderId: z.string().min(1),
-  address: z.string().min(3),
-  clientName: z.string().min(2),
+  orderId: z.string(),
+  address: z.string(),
+  clientName: z.string(),
   price: z.string(),
   status: z.string(),
   location: z.string(),
