@@ -1,5 +1,9 @@
 
 import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Properties from './pages/Properties';
+import { Toaster } from './components/ui/toaster';
+import { AuthProvider } from './contexts/AuthContext';
 
 /**
  * Main App component
@@ -7,10 +11,16 @@ import React from 'react';
  */
 const App: React.FC = () => {
   return (
-    <div className="app-container">
-      <h1>Floor Plan Application</h1>
-      <p>Welcome to the floor plan application.</p>
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path="/" element={<Navigate to="/properties" replace />} />
+          <Route path="/properties" element={<Properties />} />
+          {/* Add other routes as needed */}
+        </Routes>
+        <Toaster />
+      </div>
+    </AuthProvider>
   );
 };
 
