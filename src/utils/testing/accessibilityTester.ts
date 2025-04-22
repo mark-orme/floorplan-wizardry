@@ -3,7 +3,8 @@
  * Accessibility Testing Utilities
  * Provides functions to test components for accessibility issues
  */
-import { axe, toHaveNoViolations, AxeResults } from 'jest-axe';
+import { axe, toHaveNoViolations } from 'jest-axe';
+import type { AxeResults as JestAxeResults } from 'jest-axe';
 import React from 'react';
 import { render, RenderResult } from '@testing-library/react';
 
@@ -45,7 +46,7 @@ export async function runAccessibilityTest(
   component: React.ReactElement,
   options: AccessibilityTestOptions = {}
 ): Promise<{
-  results: AxeResults;
+  results: JestAxeResults;
   violations: AccessibilityIssue[];
   passes: boolean;
 }> {

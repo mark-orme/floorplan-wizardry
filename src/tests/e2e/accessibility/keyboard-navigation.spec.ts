@@ -97,7 +97,7 @@ test.describe('Keyboard Navigation Tests', () => {
     
     const hasModalTrigger = await page.$(modalTriggerSelector).then(Boolean);
     if (!hasModalTrigger) {
-      test.skip('No modal trigger found on this page');
+      test.skip();
       return;
     }
     
