@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { provideFeedback } from '@/utils/feedback/drawingFeedback';
+import { provideFeedback, initializeAudio } from '@/utils/feedback/drawingFeedback';
 import { TOUCH } from '@/constants/gestureConstants';
 
 interface CalibrationCanvasProps {
@@ -18,6 +18,9 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
 
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    // Initialize audio context
+    initializeAudio();
 
     const canvas = new FabricCanvas(canvasRef.current, {
       width: 400,
