@@ -18,10 +18,17 @@ export type {
   Room, 
   Wall, 
   Stroke, 
-  Point, 
   RoomTypeLiteral,
   StrokeTypeLiteral
 } from '@/types/core';
 
 // Export PaperSize enum
 export { PaperSize } from '@/types/floor-plan/PaperSize';
+
+// Re-export helper functions
+export { 
+  createEmptyFloorPlan,
+  createWall,
+  createRoom,
+  createStroke
+} from '@/types/core';

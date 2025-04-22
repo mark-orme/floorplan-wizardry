@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -95,16 +94,14 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     }
   };
   
-  const containerStyle = {
-    width: width ? `${width}px` : '100%',
-    height: height ? `${height}px` : '300px',
-    minHeight: '300px'
-  };
-  
   return (
     <div 
       className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-center"
-      style={containerStyle}
+      style={width || height ? {
+        width: width ? `${width}px` : '100%',
+        height: height ? `${height}px` : '300px',
+        minHeight: '300px'
+      } : { minHeight: '300px' }}
     >
       <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
       <h3 className="text-lg font-medium mb-2">Canvas Failed to Load</h3>
