@@ -1,73 +1,60 @@
 
 /**
- * Type Diagnostics Utilities
- * Provides functions to check and debug typescript types
+ * Type diagnostics utility functions
+ * Utility functions for debugging and validating types
  */
-import { FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+
+import { FloorPlan, Wall } from '@/types/floor-plan';
 
 /**
- * Create a complete metadata object with all required fields
- * @param partial Partial metadata to merge
- * @returns Complete metadata object
+ * Calculate the length of a wall
+ * @param wall The wall to measure
+ * @returns The length of the wall
  */
-export function createCompleteMetadata(partial: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
-  const now = new Date().toISOString();
+export function calculateWallLength(wall: Wall): number {
+  if (!wall || !wall.start || !wall.end) {
+    return 0;
+  }
   
+  const dx = wall.end.x - wall.start.x;
+  const dy = wall.end.y - wall.start.y;
+  
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Create complete metadata for a floor plan
+ * @returns Complete floor plan metadata
+ */
+export function createCompleteMetadata() {
+  const now = new Date().toISOString();
   return {
-    createdAt: partial.createdAt || now,
-    updatedAt: partial.updatedAt || now,
-    paperSize: partial.paperSize || 'A4',
-    level: partial.level || 0,
-    version: partial.version || '1.0',
-    author: partial.author || 'System',
-    notes: partial.notes || '',
-    dateCreated: partial.dateCreated || now,
-    lastModified: partial.lastModified || now
+    createdAt: now,
+    updatedAt: now,
+    paperSize: 'A4',
+    level: 0,
+    version: '1.0',
+    author: 'System',
+    notes: '',
+    dateCreated: now,
+    lastModified: now
   };
 }
 
 /**
- * Type checker for debugging purposes
- * @param value Value to check
- * @param expectedType Expected type name
- * @returns True if value matches expected type
+ * Validate floor plan completeness
+ * @param floorPlan Floor plan to validate
+ * @returns True if floor plan is complete
  */
-export function checkTypeMatch<T>(value: any, expectedType: string): boolean {
-  const actualType = typeof value;
-  const isMatch = actualType === expectedType;
+export function validateFloorPlanCompleteness(floorPlan: FloorPlan): boolean {
+  // Check for required fields
+  if (!floorPlan) return false;
+  if (!floorPlan.id) return false;
+  if (!floorPlan.name) return false;
+  if (!floorPlan.createdAt) return false;
+  if (!floorPlan.updatedAt) return false;
+  if (!floorPlan.metadata) return false;
   
-  if (!isMatch) {
-    console.warn(`Type mismatch: Expected ${expectedType}, got ${actualType}`);
-  }
-  
-  return isMatch;
-}
-
-/**
- * Validate object against interface properties
- * @param obj Object to validate
- * @param requiredKeys Array of required property names
- * @returns True if all required properties exist
- */
-export function validateRequiredProperties(obj: any, requiredKeys: string[]): boolean {
-  const missingKeys = requiredKeys.filter(key => !(key in obj));
-  
-  if (missingKeys.length > 0) {
-    console.warn(`Missing required properties: ${missingKeys.join(', ')}`);
-    return false;
-  }
-  
+  // All checks passed
   return true;
-}
-
-/**
- * Utility to check if an object conforms to a FloorPlan shape
- * @param obj Object to check
- * @returns True if object has FloorPlan shape
- */
-export function isFloorPlanShape(obj: any): boolean {
-  return validateRequiredProperties(obj, [
-    'id', 'name', 'walls', 'rooms', 'strokes', 
-    'createdAt', 'updatedAt', 'metadata', 'data', 'userId'
-  ]);
 }

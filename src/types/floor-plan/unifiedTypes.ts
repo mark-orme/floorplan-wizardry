@@ -48,6 +48,7 @@ export interface Wall {
   color: string;
   roomIds: string[];
   length: number;
+  angle?: number; // Added angle property to match usage
   floorPlanId?: string;
 }
 
@@ -157,7 +158,8 @@ export function createEmptyWall(): Wall {
     thickness: 5,
     color: '#000000',
     roomIds: [],
-    length: 100
+    length: 100,
+    angle: 0 // Add default angle
   };
 }
 
@@ -192,4 +194,3 @@ export function createTestWall(): Wall {
 export function createTestRoom(): Room {
   return createEmptyRoom();
 }
-
