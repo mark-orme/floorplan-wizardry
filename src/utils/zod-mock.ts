@@ -39,6 +39,7 @@ export class ZodError extends Error {
 export interface ZodType<T> {
   _input: T;
   _output: T;
+  parse: (value: unknown) => T;
 }
 
 // Export as default and named export for flexibility

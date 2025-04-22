@@ -25,8 +25,6 @@ export const StraightLineToolDemo: React.FC = () => {
   // Call the hook with required options
   const straightLineTool = useStraightLineTool({
     isEnabled: true,
-    inputMethod: InputMethodEnum.MOUSE,
-    isPencilMode: false,
     canvas: fabricCanvas,
     lineColor: '#000000',
     lineThickness: 2,
