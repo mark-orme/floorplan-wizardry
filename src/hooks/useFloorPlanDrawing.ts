@@ -5,42 +5,38 @@
  */
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, StrokeTypeLiteral, RoomTypeLiteral, createWall } from '@/types/core';
+import { FloorPlan, Stroke, Room, Wall, StrokeTypeLiteral, RoomTypeLiteral, createWall } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: FabricCanvas;  // For test compatibility
   floorPlan: FloorPlan;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
-  tool?: DrawingMode;
-  setFloorPlan?: React.Dispatch<React.SetStateAction<FloorPlan>>;  // For test compatibility
 }
 
 export interface UseFloorPlanDrawingResult {
   isDrawing: boolean;
   setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
-  tool: DrawingMode;  // For test compatibility
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;  // For test compatibility
   addStroke: (stroke: Stroke) => void;
-  addRoom: (room: Room) => void;  // For test compatibility
   addWall: (wall: Omit<Wall, 'length'>) => void;
+  handleDrawingEvent: () => void;
+  drawFloorPlan: (canvas: FabricCanvas, floorPlan: FloorPlan) => void;
+  saveState: () => void;
+  restoreState: () => void;
+  snapPoint: (point: any) => any;
+  updateObject: (object: any) => void;
+  deleteObject: (object: any) => void;
 }
 
 export const useFloorPlanDrawing = ({ 
   fabricCanvasRef,
-  canvas,  // For test compatibility
   floorPlan,
-  onFloorPlanUpdate,
-  tool = DrawingMode.SELECT,
-  setFloorPlan  // For test compatibility
+  onFloorPlanUpdate
 }: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentTool, setTool] = useState<DrawingMode>(tool);
   
-  // Use either fabricCanvasRef or canvas directly
+  // Use either fabricCanvasRef directly
   const getCanvas = () => {
-    if (canvas) return canvas;
     if (fabricCanvasRef?.current) return fabricCanvasRef.current;
     return null;
   };
@@ -71,45 +67,7 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-    
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
-
-  // Add a room to the floor plan
-  const addRoom = useCallback((room: Room) => {
-    const currentCanvas = getCanvas();
-    if (!currentCanvas) return;
-    
-    // Ensure room has proper type
-    const validatedRoom = {
-      ...room,
-      type: room.type as RoomTypeLiteral
-    };
-    
-    // Add the room to the canvas
-    currentCanvas.add(/* room visual representation */);
-    currentCanvas.renderAll();
-    
-    // Update the floor plan data
-    const updatedFloorPlan = {
-      ...floorPlan,
-      rooms: [...floorPlan.rooms, validatedRoom],
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Notify parent if callback exists
-    if (onFloorPlanUpdate) {
-      onFloorPlanUpdate(updatedFloorPlan);
-    }
-    
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
+  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
 
   // Add a wall to the floor plan
   const addWall = useCallback((wallInput: Omit<Wall, 'length'>) => {
@@ -134,20 +92,55 @@ export const useFloorPlanDrawing = ({
     if (onFloorPlanUpdate) {
       onFloorPlanUpdate(updatedFloorPlan);
     }
-    
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
+  }, [getCanvas, floorPlan, onFloorPlanUpdate]);
+
+  // For compatibility with the expected API
+  const handleDrawingEvent = useCallback(() => {
+    // Empty implementation for API compatibility
+    console.log("Drawing event handled");
+  }, []);
+
+  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
+    // Empty implementation for API compatibility
+    console.log("Draw floor plan called");
+  }, []);
+
+  const saveState = useCallback(() => {
+    // Empty implementation for API compatibility
+    console.log("Save state called");
+  }, []);
+
+  const restoreState = useCallback(() => {
+    // Empty implementation for API compatibility
+    console.log("Restore state called");
+  }, []);
+
+  const snapPoint = useCallback((point: any) => {
+    // Empty implementation for API compatibility
+    return point;
+  }, []);
+
+  const updateObject = useCallback((object: any) => {
+    // Empty implementation for API compatibility
+    console.log("Update object called");
+  }, []);
+
+  const deleteObject = useCallback((object: any) => {
+    // Empty implementation for API compatibility
+    console.log("Delete object called");
+  }, []);
 
   return {
     isDrawing,
     setIsDrawing,
-    tool: currentTool,  // For test compatibility
-    setTool,  // For test compatibility
     addStroke,
-    addRoom,  // For test compatibility
-    addWall
+    addWall,
+    handleDrawingEvent,
+    drawFloorPlan,
+    saveState,
+    restoreState, 
+    snapPoint,
+    updateObject,
+    deleteObject
   };
 };

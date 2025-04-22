@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/floorPlan';
@@ -51,7 +52,7 @@ export const useDrawingGestures = ({
       const newZoom = Math.min(Math.max(initialZoom * zoomFactor, 0.5), 5);
       
       // Calculate the zoom point (midpoint between touches)
-      const midpoint = {
+      const midpoint: Point = {
         x: (touch1.clientX + touch2.clientX) / 2,
         y: (touch1.clientY + touch2.clientY) / 2
       };
@@ -59,13 +60,13 @@ export const useDrawingGestures = ({
       // Convert point from screen coordinates to canvas coordinates
       const canvasElement = canvas.getElement();
       const rect = canvasElement.getBoundingClientRect();
-      const canvasPoint = {
+      const canvasPoint: Point = {
         x: (midpoint.x - rect.left) / canvas.getZoom(),
         y: (midpoint.y - rect.top) / canvas.getZoom()
       };
       
       // Apply zoom
-      canvas.zoomToPoint(canvasPoint, newZoom);
+      canvas.zoomToPoint(canvasPoint as any, newZoom);
       
       // Prevent default to avoid browser zooming
       event.preventDefault();

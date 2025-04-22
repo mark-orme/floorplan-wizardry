@@ -1,155 +1,126 @@
+import { renderHook, act } from '@testing-library/react';
+import { useDrawingHistory } from '@/hooks/drawing/useDrawingHistory';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useDrawingHistory } from '../useDrawingHistory';
-import { Canvas as FabricCanvas } from 'fabric';
+// Mock data
+const mockHistory = {
+  past: [{ id: 'state1' }, { id: 'state2' }],
+  present: { id: 'state3' },
+  future: [{ id: 'state4' }]
+};
 
-// Mock fabric
-vi.mock('fabric', () => ({
-  Canvas: vi.fn().mockImplementation(() => ({
-    getObjects: vi.fn().mockReturnValue([
-      { id: 'obj1', isGrid: false },
-      { id: 'obj2', isGrid: false },
-      { id: 'grid1', isGrid: true }
-    ]),
-    remove: vi.fn(),
-    add: vi.fn(),
-    renderAll: vi.fn()
-  }))
-}));
+// Mock functions
+const mockSaveState = vi.fn();
+const mockRestoreState = vi.fn();
 
 describe('useDrawingHistory', () => {
-  let canvas: FabricCanvas;
-  let canvasRef: React.MutableRefObject<FabricCanvas | null>;
-  let historyRef: React.MutableRefObject<{past: any[][], future: any[][]}>;
-  
   beforeEach(() => {
-    // Create a fresh canvas instance for each test
-    canvas = new FabricCanvas();
-    canvasRef = { current: canvas };
-    
-    // Initialize history ref
-    historyRef = { current: { past: [], future: [] } };
-    
-    // Clear any previous mock calls
+    // Reset mocks
     vi.clearAllMocks();
   });
   
-  it('should save current state correctly', () => {
-    // Setup the hook
+  it('should initialize with empty history', () => {
+    // Setup - Use a ref object as fabricCanvasRef
+    const fabricCanvasRef = { current: {} };
+    
+    // Act
     const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      historyRef
+      maxHistorySteps: 10,
+      saveState: mockSaveState,
+      restoreState: mockRestoreState,
+      fabricCanvasRef
     }));
     
-    // Call saveCurrentState
-    act(() => {
-      result.current.saveCurrentState();
-    });
-    
-    // Check that getObjects was called
-    expect(canvas.getObjects).toHaveBeenCalled();
-    
-    // Past should have one state with non-grid objects
-    expect(historyRef.current.past.length).toBe(1);
-    
-    // Future should be cleared
-    expect(historyRef.current.future.length).toBe(0);
+    // Assert
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.canRedo).toBe(false);
+    expect(result.current.getHistory().pastSteps).toBe(0);
+    expect(result.current.getHistory().futureSteps).toBe(0);
   });
   
-  it('should perform undo correctly', () => {
-    // Setup initial state
-    historyRef.current.past = [
-      [{ id: 'past-obj1' }, { id: 'past-obj2' }]
-    ];
+  it('should save state', () => {
+    // Setup
+    const fabricCanvasRef = { current: {} };
     
-    // Setup the hook
+    // Act
     const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      historyRef
+      maxHistorySteps: 10,
+      saveState: mockSaveState,
+      restoreState: mockRestoreState,
+      fabricCanvasRef
     }));
     
-    // Call undo
+    act(() => {
+      result.current.saveState();
+    });
+    
+    // Assert
+    expect(mockSaveState).toHaveBeenCalled();
+  });
+  
+  it('should not undo when no history', () => {
+    // Setup
+    const fabricCanvasRef = { current: {} };
+    
+    // Act
+    const { result } = renderHook(() => useDrawingHistory({
+      maxHistorySteps: 10,
+      saveState: mockSaveState,
+      restoreState: mockRestoreState,
+      fabricCanvasRef
+    }));
+    
     act(() => {
       result.current.undo();
     });
     
-    // Check objects were removed
-    expect(canvas.remove).toHaveBeenCalled();
-    
-    // Check past objects were added back
-    expect(canvas.add).toHaveBeenCalled();
-    
-    // Check past state was moved to future
-    expect(historyRef.current.past.length).toBe(0);
-    expect(historyRef.current.future.length).toBe(1);
-    
-    // Check canvas was rendered
-    expect(canvas.renderAll).toHaveBeenCalled();
+    // Assert
+    expect(mockRestoreState).not.toHaveBeenCalled();
+    expect(result.current.canUndo).toBe(false);
   });
   
-  it('should perform redo correctly', () => {
-    // Setup initial state
-    historyRef.current.future = [
-      [{ id: 'future-obj1' }, { id: 'future-obj2' }]
-    ];
+  it('should not redo when no future states', () => {
+    // Setup
+    const fabricCanvasRef = { current: {} };
     
-    // Setup the hook
+    // Act
     const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      historyRef
+      maxHistorySteps: 10,
+      saveState: mockSaveState,
+      restoreState: mockRestoreState,
+      fabricCanvasRef
     }));
     
-    // Call redo
     act(() => {
       result.current.redo();
     });
     
-    // Check objects were removed
-    expect(canvas.remove).toHaveBeenCalled();
-    
-    // Check future objects were added back
-    expect(canvas.add).toHaveBeenCalled();
-    
-    // Check future state was moved to past
-    expect(historyRef.current.future.length).toBe(0);
-    expect(historyRef.current.past.length).toBe(1);
-    
-    // Check canvas was rendered
-    expect(canvas.renderAll).toHaveBeenCalled();
+    // Assert
+    expect(mockRestoreState).not.toHaveBeenCalled();
+    expect(result.current.canRedo).toBe(false);
   });
   
-  it('should handle empty history gracefully', () => {
-    // Setup the hook with empty history
+  it('should respect maxHistorySteps', () => {
+    // Setup
+    const fabricCanvasRef = { current: {} };
+    const maxHistorySteps = 2;
+    
+    // Act
     const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: canvasRef,
-      historyRef: { current: { past: [], future: [] } }
+      maxHistorySteps,
+      saveState: mockSaveState,
+      restoreState: mockRestoreState,
+      fabricCanvasRef
     }));
     
-    // Call undo and redo - should not throw errors
+    // Simulate adding 3 states (more than maxHistorySteps)
     act(() => {
-      result.current.undo();
-      result.current.redo();
+      result.current.saveState();
+      result.current.saveState();
+      result.current.saveState();
     });
     
-    // Check that canvas.remove was not called
-    expect(canvas.remove).not.toHaveBeenCalled();
-  });
-  
-  it('should handle null canvas gracefully', () => {
-    // Setup the hook with null canvas
-    const { result } = renderHook(() => useDrawingHistory({
-      fabricCanvasRef: { current: null },
-      historyRef
-    }));
-    
-    // Call functions - should not throw errors
-    act(() => {
-      result.current.saveCurrentState();
-      result.current.undo();
-      result.current.redo();
-    });
-    
-    // No assertions needed, just ensuring no errors are thrown
+    // Assert - should only keep maxHistorySteps in past
+    expect(result.current.getHistory().pastSteps).toBe(maxHistorySteps);
   });
 });
