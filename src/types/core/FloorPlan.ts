@@ -8,3 +8,6 @@
 
 // Re-export everything from the new modular structure
 export * from '../core';
+
+// Add createFloorPlan for backwards compatibility
+export const createFloorPlan = createEmptyFloorPlan;

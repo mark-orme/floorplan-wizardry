@@ -58,8 +58,7 @@ export function createMockRoom(overrides?: Partial<Room>): Room {
       createMockPoint(0, 100)
     ],
     area: 10000,
-    color: '#ffffff',
-    walls: []
+    color: '#ffffff'
   };
 
   return { ...defaultRoom, ...overrides };

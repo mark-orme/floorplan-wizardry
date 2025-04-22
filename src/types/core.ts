@@ -27,7 +27,7 @@ export enum PaperSize {
   Custom = 'Custom'
 }
 
-export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'line';
+export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'line' | 'polyline' | 'room';
 export type RoomTypeLiteral = 'living' | 'bedroom' | 'bathroom' | 'kitchen' | 'dining' | 'office' | 'other';
 
 // ----- Core entity types -----
@@ -42,6 +42,7 @@ export interface Wall {
   roomIds: string[];
   height?: number;
   type?: string;
+  angle?: number;
 }
 
 export interface Room {
@@ -57,6 +58,7 @@ export interface Room {
   center?: Point;
   perimeter?: number;
   labelPosition?: Point;
+  floorPlanId?: string;
 }
 
 export interface Stroke {
@@ -64,8 +66,9 @@ export interface Stroke {
   points: Point[];
   color: string;
   width: number;
-  thickness?: number;
+  thickness: number;
   type: StrokeTypeLiteral;
+  floorPlanId?: string;
 }
 
 export interface FloorPlanMetadata {
@@ -103,7 +106,7 @@ export interface FloorPlan {
 // ----- Helper functions -----
 
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'straight', 'wall', 'door', 'window', 'furniture', 'annotation', 'line'];
+  const validTypes: StrokeTypeLiteral[] = ['freehand', 'straight', 'wall', 'door', 'window', 'furniture', 'annotation', 'line', 'polyline', 'room'];
   return validTypes.includes(type as StrokeTypeLiteral) 
     ? type as StrokeTypeLiteral 
     : 'freehand';
@@ -116,38 +119,42 @@ export function asRoomType(type: string): RoomTypeLiteral {
     : 'other';
 }
 
-export function createEmptyFloorPlan(): FloorPlan {
+export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
   return {
-    id: uuidv4(),
-    name: 'Untitled Floor Plan',
-    label: 'Untitled Floor Plan',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: PaperSize.A4,
-      level: 0,
-      version: '1.0',
-      author: 'System',
-      notes: '',
-      dateCreated: now,
-      lastModified: now
-    },
-    data: {},
-    userId: ''
+    id: partialFloorPlan.id || uuidv4(),
+    name: partialFloorPlan.name || 'Untitled Floor Plan',
+    label: partialFloorPlan.label || '',
+    walls: partialFloorPlan.walls || [],
+    rooms: partialFloorPlan.rooms || [],
+    strokes: partialFloorPlan.strokes || [],
+    canvasData: partialFloorPlan.canvasData || null,
+    canvasJson: partialFloorPlan.canvasJson || null,
+    createdAt: partialFloorPlan.createdAt || now,
+    updatedAt: partialFloorPlan.updatedAt || now,
+    gia: partialFloorPlan.gia || 0,
+    level: partialFloorPlan.level || 0,
+    index: partialFloorPlan.index || 0,
+    metadata: partialFloorPlan.metadata || createEmptyFloorPlanMetadata(),
+    data: partialFloorPlan.data || {},
+    userId: partialFloorPlan.userId || ''
   };
 }
 
-// Alias for createTestFloorPlan to maintain compatibility with tests
-export const createTestFloorPlan = createEmptyFloorPlan;
+export function createEmptyFloorPlanMetadata(): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  return {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: PaperSize.A4,
+    level: 0,
+    version: '1.0',
+    author: 'System',
+    notes: '',
+    dateCreated: now,
+    lastModified: now
+  };
+}
 
 export function calculateWallLength(wall: Pick<Wall, 'start' | 'end'>): number {
   const dx = wall.end.x - wall.start.x;
@@ -165,6 +172,9 @@ export function createWall(wallData: Omit<Wall, 'length'>): Wall {
 export function createPoint(x: number, y: number): Point {
   return { x, y };
 }
+
+// For backward compatibility
+export const createTestFloorPlan = createEmptyFloorPlan;
 
 export const GRID_CONSTANTS = {
   // Grid sizes

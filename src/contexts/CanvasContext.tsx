@@ -28,3 +28,6 @@ export const useCanvasContext = (): CanvasContextType => {
   
   return context;
 };
+
+// Add alias for compatibility
+export const useCanvas = useCanvasContext;

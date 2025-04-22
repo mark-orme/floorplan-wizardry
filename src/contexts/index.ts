@@ -1,3 +1,4 @@
+
 /**
  * Re-export all context providers and hooks
  */
@@ -9,8 +10,15 @@ export * from './AuthContext';
 export { 
   DrawingProvider, 
   useDrawingContext,
-  useDrawing 
+  useDrawing
 } from './DrawingContext';
+
+// Re-export canvas context
+export {
+  CanvasProvider,
+  useCanvasContext,
+  useCanvas
+} from './CanvasContext';
 
 // Re-export any other contexts
 // export * from './OtherContext';

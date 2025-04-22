@@ -5,11 +5,7 @@
  */
 
 import { Point as FabricPoint } from 'fabric';
-
-export interface Point {
-  x: number;
-  y: number;
-}
+import { Point } from '@/types/core';
 
 export interface DrawOptions {
   color?: string;
@@ -34,6 +30,9 @@ export interface StrokeStyle {
   width: number;
   opacity?: number;
 }
+
+// Re-export Point from core
+export { Point };
 
 // Adapter function to convert between Fabric Point and our Point type
 export function fromFabricPoint(point: FabricPoint): Point {

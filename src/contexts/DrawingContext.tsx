@@ -16,6 +16,11 @@ interface DrawingContextType {
   addToUndoStack: (state: any) => void;
   undo: () => void;
   redo: () => void;
+  // Add missing properties
+  canUndo: boolean;
+  canRedo: boolean;
+  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
+  setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   // Additional properties needed for other components
   activeTool?: DrawingMode; // Alias for tool for compatibility
   setActiveTool?: React.Dispatch<React.SetStateAction<DrawingMode>>; // Alias for setTool for compatibility
@@ -33,10 +38,14 @@ export const DrawingProvider: React.FC<{
   const [lineThickness, setLineThickness] = useState(2);
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [redoStack, setRedoStack] = useState<any[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const addToUndoStack = (state: any) => {
     setUndoStack(prev => [...prev, state]);
     setRedoStack([]);
+    setCanUndo(true);
+    setCanRedo(false);
   };
 
   const undo = () => {
@@ -47,6 +56,8 @@ export const DrawingProvider: React.FC<{
     
     setRedoStack(prev => [...prev, currentState]);
     setUndoStack(prev => prev.slice(0, prev.length - 1));
+    setCanRedo(true);
+    setCanUndo(undoStack.length > 1);
     
     canvas.loadFromJSON(prevState, canvas.renderAll.bind(canvas));
   };
@@ -59,6 +70,8 @@ export const DrawingProvider: React.FC<{
     
     setUndoStack(prev => [...prev, currentState]);
     setRedoStack(prev => prev.slice(0, prev.length - 1));
+    setCanUndo(true);
+    setCanRedo(redoStack.length > 1);
     
     canvas.loadFromJSON(nextState, canvas.renderAll.bind(canvas));
   };
@@ -78,6 +91,10 @@ export const DrawingProvider: React.FC<{
         addToUndoStack,
         undo,
         redo,
+        canUndo,
+        canRedo,
+        setCanUndo,
+        setCanRedo,
         // Aliases for compatibility
         activeTool: tool,
         setActiveTool: setTool,
@@ -98,3 +115,6 @@ export const useDrawingContext = () => {
   
   return context;
 };
+
+// Add alias for compatibility
+export const useDrawing = useDrawingContext;
