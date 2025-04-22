@@ -11,9 +11,15 @@ import {
 
 interface AccessibilityTesterProps {
   selector?: string;
+  autoRun?: boolean;
+  showResults?: boolean;
 }
 
-export function AccessibilityTester({ selector = 'body' }: AccessibilityTesterProps) {
+export function AccessibilityTester({ 
+  selector = 'body', 
+  autoRun = false,
+  showResults = true 
+}: AccessibilityTesterProps) {
   const [issues, setIssues] = useState<AccessibilityIssue[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +54,28 @@ export function AccessibilityTester({ selector = 'body' }: AccessibilityTesterPr
       setLoading(false);
     }
   };
+
+  // Run the test automatically if autoRun is true
+  React.useEffect(() => {
+    if (autoRun) {
+      runTest();
+    }
+  }, [autoRun]);
+
+  // If showResults is false, only return the button to run the test
+  if (!showResults) {
+    return (
+      <div className="p-4 border rounded-md">
+        <h2 className="text-xl font-semibold mb-4">Accessibility Tester</h2>
+        <Button 
+          onClick={runTest}
+          disabled={loading}
+        >
+          {loading ? 'Running Tests...' : 'Run A11y Tests'}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 border rounded-md">
