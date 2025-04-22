@@ -1,9 +1,9 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useOptimizedStylusDrawing } from '@/hooks/useOptimizedStylusDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
+import { useEnhancedStylusInput } from '@/hooks/useEnhancedStylusInput';
 
 interface StylusOptimizedCanvasProps {
   width: number;
@@ -26,36 +26,30 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [fps, setFps] = useState(0);
   
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
     console.log('Initializing stylus-optimized canvas');
     
-    // Create Fabric canvas with optimized settings
     const fabricCanvas = new FabricCanvas(canvasRef.current, {
       width,
       height,
       selection: tool === DrawingMode.SELECT,
       isDrawingMode: tool === DrawingMode.DRAW,
-      renderOnAddRemove: false, // Reduce renders
-      enableRetinaScaling: false, // Better performance
-      fireMiddleClick: false, // No need for this
-      stopContextMenu: true, // Prevent right-click menu
+      renderOnAddRemove: false,
+      enableRetinaScaling: false,
+      fireMiddleClick: false,
+      stopContextMenu: true
     });
     
-    // Optimize initial brush
     if (fabricCanvas.freeDrawingBrush) {
       fabricCanvas.freeDrawingBrush.color = lineColor;
       fabricCanvas.freeDrawingBrush.width = lineThickness;
-      // Fix: Remove the decimate property as it doesn't exist on BaseBrush type
-      // Instead configure other properties that do exist
       fabricCanvas.freeDrawingBrush.limitedToCanvasSize = true;
     }
     
     setCanvas(fabricCanvas);
     
-    // Notify parent
     if (onCanvasReady) {
       onCanvasReady(fabricCanvas);
       toast.success('Stylus-optimized canvas ready', {
@@ -64,7 +58,6 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
       });
     }
     
-    // Load WASM modules if needed
     fetch('/wasm/geometry.wasm')
       .then(response => response.arrayBuffer())
       .then(bytes => WebAssembly.instantiate(bytes))
@@ -81,8 +74,15 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
     };
   }, [width, height, lineColor, lineThickness, tool, onCanvasReady]);
   
-  // Use optimized stylus drawing
-  const { isPenMode, pressure } = useOptimizedStylusDrawing({
+  const { 
+    isPenMode, 
+    pressure, 
+    tiltX, 
+    tiltY, 
+    activeProfile, 
+    adjustedThickness, 
+    smoothedPoints 
+  } = useEnhancedStylusInput({
     canvas,
     enabled: tool === DrawingMode.DRAW,
     lineColor,
@@ -90,7 +90,6 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
     onPerformanceReport: setFps
   });
   
-  // Update canvas options when tool changes
   useEffect(() => {
     if (!canvas) return;
     
@@ -109,7 +108,11 @@ export const StylusOptimizedCanvas: React.FC<StylusOptimizedCanvasProps> = ({
       
       {isPenMode && (
         <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
-          Pen Mode (Pressure: {Math.round(pressure * 100)}%)
+          <span>Pen Mode</span>
+          <div className="text-xs opacity-80">
+            {activeProfile.name} • Pressure: {Math.round(pressure * 100)}%
+            {(tiltX !== 0 || tiltY !== 0) && ` • Tilt: ${Math.round(Math.sqrt(tiltX * tiltX + tiltY * tiltY))}°`}
+          </div>
         </div>
       )}
       
