@@ -1,6 +1,13 @@
 
 import { useState, useCallback } from "react";
-import { ZoomOptions } from "@/types";
+
+// Define ZoomOptions interface directly here
+export interface ZoomOptions {
+  minZoom?: number;
+  maxZoom?: number;
+  defaultZoom?: number;
+  step?: number;
+}
 
 interface UseZoomResult {
   currentZoom: number;

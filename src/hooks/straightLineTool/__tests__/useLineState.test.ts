@@ -50,8 +50,8 @@ describe('useLineState', () => {
     
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.startPoint).toBe(null);
-    expect(result.current.endPoint).toBe(null);
-    expect(result.current.startPointFixed).toBe(false);
+    expect(result.current.currentPoint).toBe(null); // Changed from endPoint to currentPoint
+    expect(result.current.isLocked).toBe(false);    // Changed from startPointFixed to isLocked
     expect(result.current.snapEnabled).toBe(true);
     expect(result.current.anglesEnabled).toBe(true);
     expect(result.current.shiftKeyPressed).toBe(false);
@@ -66,10 +66,10 @@ describe('useLineState', () => {
     
     expect(result.current.isDrawing).toBe(true);
     expect(result.current.startPoint).toEqual({ x: 100, y: 100 });
-    expect(result.current.endPoint).toEqual({ x: 100, y: 100 });
+    expect(result.current.currentPoint).toEqual({ x: 100, y: 100 }); // Changed from endPoint
   });
   
-  it('should update end point on continueDrawing call', () => {
+  it('should update current point on continueDrawing call', () => {
     const { result } = renderHook(() => useLineState(defaultProps));
     
     act(() => {
@@ -79,7 +79,7 @@ describe('useLineState', () => {
     
     expect(result.current.isDrawing).toBe(true);
     expect(result.current.startPoint).toEqual({ x: 100, y: 100 });
-    expect(result.current.endPoint).toEqual({ x: 200, y: 200 });
+    expect(result.current.currentPoint).toEqual({ x: 200, y: 200 }); // Changed from endPoint
   });
   
   it('should complete drawing on completeDrawing call', () => {
@@ -133,7 +133,7 @@ describe('useLineState', () => {
     
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.startPoint).toBe(null);
-    expect(result.current.endPoint).toBe(null);
+    expect(result.current.currentPoint).toBe(null); // Changed from endPoint
   });
   
   it('should set shift key pressed state', () => {

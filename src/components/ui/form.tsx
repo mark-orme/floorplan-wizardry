@@ -2,7 +2,14 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
-import { Controller, useForm, useFormContext, type ControllerProps, type ControllerRenderProps, type FieldPath, type FieldValues, type FormProvider as FormProviderType } from "react-hook-form";
+import { 
+  Controller, 
+  useForm, 
+  useFormContext, 
+  type FieldValues,
+  type Path,
+  type UseFormReturn
+} from "react-hook-form";
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -23,7 +30,7 @@ Form.displayName = "Form";
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+  TName extends Path<TFieldValues> = Path<TFieldValues>
 > = {
   name: TName;
 };
@@ -34,10 +41,10 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+  TName extends Path<TFieldValues> = Path<TFieldValues>
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: React.ComponentPropsWithoutRef<typeof Controller<TFieldValues, TName>>) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
