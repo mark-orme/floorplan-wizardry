@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -15,7 +16,7 @@ export const useStraightLineTool = (): UseStraightLineToolResult => {
   const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
   const [anglesEnabled, setAnglesEnabled] = useState<boolean>(true);
   const [shiftKeyPressed, setShiftKeyPressed] = useState<boolean>(false);
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const { inputMethod, setInputMethod } = useLineInputMethod();
   const [isPencilMode, setIsPencilMode] = useState<boolean>(false);
   
   const [measurementData, setMeasurementData] = useState<MeasurementData>({

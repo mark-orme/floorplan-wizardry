@@ -1,25 +1,11 @@
 
 /**
- * Interface representing measurement data for displaying distance and angle
+ * Measurement data interface for line tools
  */
 export interface MeasurementData {
-  /**
-   * Distance in pixels or meters
-   */
-  distance: number;
-  
-  /**
-   * Angle in degrees
-   */
-  angle: number;
-  
-  /**
-   * Whether the measurement is snapped to grid
-   */
+  distance: number | null;
+  angle: number | null;
   snapped: boolean;
-  
-  /**
-   * Unit of measurement (px, m, etc.)
-   */
   unit: string;
+  snapType?: 'grid' | 'angle' | 'both';
 }

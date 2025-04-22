@@ -1,10 +1,37 @@
 
-/**
- * Hook type definitions index
- * Re-exports all hook interface types for easy consumption
- * @module types/hooks
- */
+import { Point } from '@/types/core/Point';
+import { Line } from 'fabric';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
+import { ReactNode } from 'react';
+import { MeasurementData } from '@/types/measurement/MeasurementData';
 
-export * from './useCanvasProps';
-export * from './useGridProps';
-export * from './useZoomProps';
+/**
+ * Result type for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolResult {
+  isActive: boolean;
+  isEnabled: boolean;
+  currentLine: Line | null;
+  isToolInitialized: boolean;
+  isDrawing: boolean;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  measurementData: MeasurementData;
+  toggleGridSnapping: () => void;
+  toggleAngles: () => void;
+  startDrawing: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  endDrawing: () => void;
+  cancelDrawing: () => void;
+  handlePointerDown: (event: any) => void;
+  handlePointerMove: (event: any) => void;
+  handlePointerUp: (event: any) => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  handleKeyUp: (event: KeyboardEvent) => void;
+  renderTooltip: () => ReactNode;
+  setInputMethod: (method: InputMethod) => void;
+  shiftKeyPressed: boolean;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+}

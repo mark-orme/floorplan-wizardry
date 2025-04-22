@@ -7,8 +7,8 @@ import {
   FormProvider,
   useFormContext,
   Controller,
-  Path,
   FieldValues,
+  FieldPath as Path,
   UseFormReturn
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
