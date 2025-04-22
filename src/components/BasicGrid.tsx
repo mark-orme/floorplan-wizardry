@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { createCompleteGrid, setGridVisibility } from '@/utils/gridUtils';
 import { GridCreationState, DEFAULT_GRID_CREATION_STATE } from '@/types/core/GridTypes';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
 /**
@@ -80,11 +80,9 @@ export const BasicGrid = ({
       }
       
       // Log to error monitoring system for tracking grid creation success
-      captureMessage(
-        'Grid created successfully', 
-        'grid-creation', 
-        { extra: { objectCount: gridResult.gridObjects.length } }
-      );
+      captureMessage('Grid created successfully', {
+        extra: { objectCount: gridResult.gridObjects.length }
+      });
     } catch (error) {
       logger.error('Error creating grid:', error);
       
@@ -99,11 +97,9 @@ export const BasicGrid = ({
       });
       
       // Log to error monitoring system
-      captureMessage(
-        'Grid creation failed', 
-        'grid-creation-error', 
-        { extra: { error: String(error) } }
-      );
+      captureMessage('Grid creation failed', {
+        extra: { error: String(error) }
+      });
     }
   }, [canvas, onGridCreated, initialVisibility, gridState.isCreated]);
   

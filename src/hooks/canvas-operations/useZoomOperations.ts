@@ -4,7 +4,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface UseZoomOperationsProps {
@@ -20,7 +20,7 @@ export const useZoomOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.zoom) {
         canvasComponentRef.current.zoom(direction);
-        captureMessage("Zoom action triggered", "zoom-action", {
+        captureMessage("Zoom action triggered", {
           tags: { component: "CanvasApp", action: "zoom" },
           extra: { direction }
         });

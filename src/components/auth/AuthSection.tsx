@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 
 export const AuthSection = () => {
   const { user, login } = useAuth();
@@ -13,7 +13,7 @@ export const AuthSection = () => {
       login('photographer@example.com', 'password123')
         .then(() => {
           toast.success('Logged in as test user');
-          captureMessage('Test user login successful', 'auth-success', {
+          captureMessage('Test user login successful', {
             level: 'info',
             tags: {
               operation: 'login'

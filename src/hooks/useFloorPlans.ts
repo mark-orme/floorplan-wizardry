@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { adaptFloorPlan } from '@/utils/typeAdapters';
@@ -144,12 +145,8 @@ export const useFloorPlans = ({
   // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
   const getCompatibleFloorPlans = useCallback(() => {
     return floorPlans.map(plan => {
-      // Add propertyId field for compatibility
-      const appPlan = convertToAppFloorPlan(plan);
-      return {
-        ...appPlan,
-        propertyId: plan.userId || 'default-property'
-      };
+      // Convert unified plan to app plan format
+      return convertToAppFloorPlan(plan);
     });
   }, [floorPlans]);
   

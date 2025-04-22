@@ -19,7 +19,8 @@ export const LoadingError = ({
   // Report error to Sentry when an error occurs
   useEffect(() => {
     if (hasError && errorMessage) {
-      captureError(new Error(errorMessage), 'loading-error', {
+      captureError(new Error(errorMessage), {
+        context: 'loading-error',
         tags: {
           component: 'LoadingError'
         },
@@ -62,4 +63,3 @@ export const LoadingError = ({
 
   return null;
 };
-

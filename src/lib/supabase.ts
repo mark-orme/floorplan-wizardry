@@ -29,15 +29,18 @@ export const isSecureConnection = () => {
 };
 
 export const isSupabaseConfigured = () => {
-  // Fix for protected property access - use constructor comparison instead
-  const configuredUrl = 'https://your-project-url.supabase.co';
+  // Fix for protected property access
+  const defaultUrl = 'https://your-project-url.supabase.co';
   
-  // Since getUrl() is not available, we'll use a different approach
-  // Check if the URL used for initialization isn't the default placeholder URL
-  const currentUrl = supabase.supabaseUrl || 'https://your-project-url.supabase.co';
-  const isConfiguredProperly = currentUrl !== configuredUrl;
-  
-  return isConfiguredProperly;
+  // Check client configuration by examining the config
+  try {
+    // Use a safer way to check if Supabase is configured with a real URL
+    const config = supabase.storage.getConfig();
+    return !!config && config.url !== defaultUrl;
+  } catch (e) {
+    console.error('Error checking Supabase configuration:', e);
+    return false;
+  }
 };
 
 // This is a mock for development environment
