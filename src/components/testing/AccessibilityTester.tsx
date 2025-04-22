@@ -41,11 +41,19 @@ export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
         return;
       }
 
-      // Using axe-core directly in the browser
+      // Load the accessibility tester
       const { runTest } = await loadAccessibilityTester();
-      // @ts-ignore - we're running in browser context
-      const result = await runTest(element);
-      setIssues(result.violations);
+      
+      // Run the audit on the DOM element
+      if (element instanceof HTMLElement) {
+        // Use direct DOM audit when possible
+        const results = await runAccessibilityAudit(element);
+        setIssues(results);
+      } else {
+        console.warn('AccessibilityTester: Selected element is not an HTMLElement');
+        setIssues([]);
+      }
+      
       setTested(true);
     } catch (error) {
       console.error('AccessibilityTester error:', error);
@@ -119,5 +127,8 @@ export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
     </div>
   );
 };
+
+// Import the runtime accessibility audit function for browser use
+import { runAccessibilityAudit } from '@/utils/testing/accessibilityTester';
 
 export default AccessibilityTester;
