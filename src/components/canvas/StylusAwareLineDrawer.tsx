@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool';
@@ -44,7 +43,8 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isPencilMode: false,
     canvas: canvas,
     lineColor: lineColor,
-    lineThickness: lineThickness
+    lineThickness: lineThickness,
+    saveCurrentState: saveCurrentState
   });
   
   // Hide measurement after some time of inactivity

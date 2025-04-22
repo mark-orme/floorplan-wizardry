@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing drawing state in the canvas controller
  * @module useCanvasControllerDrawingState
@@ -9,6 +8,8 @@ import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlan";
 import { DrawingState } from "@/types/drawingTypes";
+import { asDrawingTool } from "@/types/core/DrawingToolAdapter";
+import { DrawingMode } from "@/constants/drawingModes";
 
 /**
  * Props for useCanvasControllerDrawingState hook
@@ -72,12 +73,12 @@ export const useCanvasControllerDrawingState = (
     recalculateGIA
   } = props;
   
-  // Use the canvas drawing hook
+  // Use the canvas drawing hook - convert DrawingMode to DrawingTool with the adapter
   const { drawingState } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
-    tool,
+    tool: asDrawingTool(tool as unknown as DrawingMode),
     currentFloor,
     setFloorPlans,
     setGia,

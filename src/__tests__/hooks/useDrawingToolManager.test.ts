@@ -1,4 +1,3 @@
-
 /**
  * Tests for the drawing tool manager hook
  * @module __tests__/hooks/useDrawingToolManager.test
@@ -7,6 +6,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useDrawingToolManager } from '@/hooks/drawing/useDrawingToolManager';
 import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { asDrawingTool } from '@/types/core/DrawingToolAdapter';
 
 // Mock fabric.js
 jest.mock('fabric');
@@ -33,7 +33,7 @@ describe('useDrawingToolManager', () => {
   it('should initialize with default drawing state', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.SELECT,
+      tool: asDrawingTool(DrawingMode.SELECT),
       saveCurrentState
     }));
     
@@ -49,7 +49,7 @@ describe('useDrawingToolManager', () => {
   it('should start drawing when startDrawing is called', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      tool: asDrawingTool(DrawingMode.STRAIGHT_LINE),
       saveCurrentState
     }));
     
@@ -69,7 +69,7 @@ describe('useDrawingToolManager', () => {
   it('should update points when continueDrawing is called', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      tool: asDrawingTool(DrawingMode.STRAIGHT_LINE),
       saveCurrentState
     }));
     
@@ -92,7 +92,7 @@ describe('useDrawingToolManager', () => {
   it('should end drawing when endDrawing is called', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      tool: asDrawingTool(DrawingMode.STRAIGHT_LINE),
       saveCurrentState
     }));
     
@@ -116,7 +116,7 @@ describe('useDrawingToolManager', () => {
   it('should cancel drawing when cancelDrawing is called', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      tool: asDrawingTool(DrawingMode.STRAIGHT_LINE),
       saveCurrentState
     }));
     
@@ -139,7 +139,7 @@ describe('useDrawingToolManager', () => {
   it('should provide mouse event handlers', () => {
     const { result } = renderHook(() => useDrawingToolManager({
       fabricCanvasRef: canvasRef,
-      tool: DrawingMode.STRAIGHT_LINE,
+      tool: asDrawingTool(DrawingMode.STRAIGHT_LINE),
       saveCurrentState
     }));
     

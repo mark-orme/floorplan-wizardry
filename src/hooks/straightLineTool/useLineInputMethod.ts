@@ -1,10 +1,15 @@
 
 import { useState } from 'react';
 
-export type InputMethod = 'mouse' | 'pencil' | 'keyboard';
+export enum InputMethod {
+  MOUSE = 'mouse',
+  PENCIL = 'pencil',
+  TOUCH = 'touch',
+  KEYBOARD = 'keyboard'
+}
 
 export const useLineInputMethod = () => {
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
   
   return {
     inputMethod,

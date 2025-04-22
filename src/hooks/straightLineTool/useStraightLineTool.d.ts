@@ -35,5 +35,27 @@ export interface UseStraightLineToolResult {
  * Props for the useStraightLineTool hook
  */
 export interface UseStraightLineToolProps {
-  // Add necessary props
+  /** Whether the tool is active */
+  isActive?: boolean;
+  
+  /** Whether the tool is enabled */
+  isEnabled?: boolean;
+  
+  /** Canvas reference */
+  canvas?: any;
+  
+  /** Line color */
+  lineColor?: string;
+  
+  /** Line thickness */
+  lineThickness?: number;
+  
+  /** Function to save current state */
+  saveCurrentState?: () => void;
+  
+  /** Input method */
+  inputMethod?: string;
+  
+  /** Whether pencil mode is enabled */
+  isPencilMode?: boolean;
 }
