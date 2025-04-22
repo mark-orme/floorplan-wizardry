@@ -1,6 +1,6 @@
 
 import { test, expect } from '@playwright/test';
-import { AxeBuilder } from '@axe-core/playwright';
+import { runAccessibilityAudit } from '@/utils/testing/accessibility';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,13 +22,13 @@ test.describe('Application Accessibility Tests', () => {
     await page.goto('/');
     await page.waitForSelector('[data-testid="floor-plan-wrapper"]', { timeout: 10000 });
     
-    // Run axe on the page
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .exclude('.fabric-canvas') // Exclude canvas as it's handled by fabric.js
-      .analyze();
+    // Run accessibility audit on the page
+    const violations = await runAccessibilityAudit(page, {
+      excludeSelectors: ['.fabric-canvas'] // Exclude canvas as it's handled by fabric.js
+    });
     
     // Log violations for reporting
-    if (accessibilityScanResults.violations.length > 0) {
+    if (violations.length > 0) {
       const existingViolations = JSON.parse(fs.readFileSync(violationsFilePath, 'utf8'));
       const updatedViolations = [
         ...existingViolations,
@@ -36,14 +36,14 @@ test.describe('Application Accessibility Tests', () => {
           page: 'Canvas Editor',
           url: page.url(),
           timestamp: new Date().toISOString(),
-          violations: accessibilityScanResults.violations,
+          violations: violations,
         }
       ];
       
       fs.writeFileSync(violationsFilePath, JSON.stringify(updatedViolations, null, 2));
       
       // Check for critical violations
-      const criticalViolations = accessibilityScanResults.violations.filter(
+      const criticalViolations = violations.filter(
         v => v.impact === 'critical'
       );
       
@@ -53,7 +53,7 @@ test.describe('Application Accessibility Tests', () => {
     }
     
     // Expect no violations - will show detailed errors if there are any
-    expect(accessibilityScanResults.violations).toEqual([]);
+    expect(violations).toEqual([]);
   });
   
   // Test the layer panel accessibility
