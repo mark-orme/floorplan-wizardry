@@ -1,5 +1,5 @@
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
