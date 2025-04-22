@@ -1,62 +1,36 @@
 
-import * as Sentry from '@sentry/react';
-
 /**
- * Options for captureError function
+ * Type definitions for Sentry utility functions
  */
+import type { User } from '@sentry/react';
+
+// Options for captureError function
 export interface CaptureErrorOptions {
-  /** Severity level */
-  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
-  /** Tags for filtering */
+  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   tags?: Record<string, string>;
-  /** Extra context data */
   extra?: Record<string, any>;
-  /** Context about where the error occurred */
   context?: Record<string, any>;
-  /** User information */
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-    [key: string]: any;
+  user?: User;
+  security?: {
+    csp?: string;
+    hpkp?: string;
+    expectCt?: string;
+    expectStaple?: string;
   };
-  /** Security related context */
-  security?: Record<string, any>;
 }
 
-/**
- * Options for captureMessage function
- */
+// Options for captureMessage function
 export interface CaptureMessageOptions {
-  /** Severity level */
-  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
-  /** Tags for filtering */
+  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
   tags?: Record<string, string>;
-  /** Extra context data */
   extra?: Record<string, any>;
-  /** Context about where the error occurred */
   context?: Record<string, any>;
-  /** User information */
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-    [key: string]: any;
-  };
+  user?: User;
 }
 
-/**
- * Result of input validation
- */
+// Result of input validation
 export interface InputValidationResult {
-  /** Whether validation passed */
   valid: boolean;
-  /** Error message if validation failed */
-  message?: string;
-  /** Validation errors */
-  errors?: Record<string, string>;
-  /** Sanitized data if validation passed */
-  sanitizedData?: any;
-  /** Validation errors by field */
-  fields?: Record<string, string[]>;
+  error?: string;
+  value?: any;
 }

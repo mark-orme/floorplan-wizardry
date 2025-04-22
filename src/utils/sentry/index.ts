@@ -1,3 +1,4 @@
+
 /**
  * Sentry Utilities
  * Provides enhanced error tracking with Sentry

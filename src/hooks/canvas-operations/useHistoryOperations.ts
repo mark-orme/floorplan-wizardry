@@ -4,7 +4,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface UseHistoryOperationsProps {
@@ -24,7 +24,7 @@ export const useHistoryOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.undo) {
         canvasComponentRef.current.undo();
-        captureMessage("Undo action triggered", "undo-action", {
+        captureMessage("Undo action triggered", {
           tags: { component: "CanvasApp", action: "undo" }
         });
       } else {
@@ -34,7 +34,9 @@ export const useHistoryOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform undo", { error: errorMsg });
-      captureError(error as Error, "undo-action-error");
+      captureError(error as Error, {
+        tags: { context: "undo-action-error" }
+      });
       toast.error(`Failed to undo: ${errorMsg}`);
     }
   }, [canvasComponentRef, canUndo]);
@@ -45,7 +47,7 @@ export const useHistoryOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.redo) {
         canvasComponentRef.current.redo();
-        captureMessage("Redo action triggered", "redo-action", {
+        captureMessage("Redo action triggered", {
           tags: { component: "CanvasApp", action: "redo" }
         });
       } else {
@@ -55,7 +57,9 @@ export const useHistoryOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform redo", { error: errorMsg });
-      captureError(error as Error, "redo-action-error");
+      captureError(error as Error, {
+        tags: { context: "redo-action-error" }
+      });
       toast.error(`Failed to redo: ${errorMsg}`);
     }
   }, [canvasComponentRef, canRedo]);

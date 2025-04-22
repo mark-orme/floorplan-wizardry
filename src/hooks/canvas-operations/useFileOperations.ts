@@ -4,7 +4,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentry";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface UseFileOperationsProps {
@@ -20,7 +20,7 @@ export const useFileOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.clear) {
         canvasComponentRef.current.clear();
-        captureMessage("Canvas cleared", "clear-canvas", {
+        captureMessage("Canvas cleared", {
           tags: { component: "CanvasApp", action: "clear" }
         });
         toast.success("Canvas cleared");
@@ -31,7 +31,9 @@ export const useFileOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to clear canvas", { error: errorMsg });
-      captureError(error as Error, "clear-canvas-error");
+      captureError(error as Error, {
+        tags: { context: "clear-canvas-error" }
+      });
       toast.error(`Failed to clear canvas: ${errorMsg}`);
     }
   }, [canvasComponentRef]);
@@ -42,7 +44,7 @@ export const useFileOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.save) {
         canvasComponentRef.current.save();
-        captureMessage("Canvas saved", "save-canvas", {
+        captureMessage("Canvas saved", {
           tags: { component: "CanvasApp", action: "save" }
         });
         toast.success("Canvas saved");
@@ -53,7 +55,9 @@ export const useFileOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to save canvas", { error: errorMsg });
-      captureError(error as Error, "save-canvas-error");
+      captureError(error as Error, {
+        tags: { context: "save-canvas-error" }
+      });
       toast.error(`Failed to save canvas: ${errorMsg}`);
     }
   }, [canvasComponentRef]);
@@ -64,7 +68,7 @@ export const useFileOperations = ({
     try {
       if (canvasComponentRef.current && canvasComponentRef.current.deleteSelected) {
         canvasComponentRef.current.deleteSelected();
-        captureMessage("Objects deleted", "delete-objects", {
+        captureMessage("Objects deleted", {
           tags: { component: "CanvasApp", action: "delete" }
         });
       } else {
@@ -74,7 +78,9 @@ export const useFileOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to delete objects", { error: errorMsg });
-      captureError(error as Error, "delete-objects-error");
+      captureError(error as Error, {
+        tags: { context: "delete-objects-error" }
+      });
       toast.error(`Failed to delete objects: ${errorMsg}`);
     }
   }, [canvasComponentRef]);

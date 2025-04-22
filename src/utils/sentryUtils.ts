@@ -9,11 +9,12 @@ import * as Sentry from '@sentry/react';
  * Capture an error with context information
  * @param error The error to capture
  * @param contextOrName Context object or name string
+ * @param extraData Additional context data (optional)
  */
 export function captureError(
   error: Error | any,
   contextOrName?: string | Record<string, any>,
-  extraData?: Record<string, any> // Added third parameter that will be merged with contextOrName
+  extraData?: Record<string, any> // Added third parameter to support legacy calls
 ) {
   // Handle all different call signatures to provide backward compatibility
   if (extraData && typeof contextOrName === 'string') {
