@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -12,6 +11,7 @@ export interface UseStraightLineToolOptions {
   isPencilMode?: boolean;
   setInputMethod?: (method: InputMethod) => void;
   canvas?: Canvas | null;
+  enabled?: boolean;
 }
 
 export interface UseStraightLineToolResult {
@@ -48,10 +48,11 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     inputMethod: initialInputMethod = InputMethod.MOUSE, 
     isPencilMode = false, 
     setInputMethod: externalSetInputMethod,
-    canvas = null
+    canvas = null,
+    enabled = true
   } = options;
   
-  const [isEnabled, setIsEnabled] = useState<boolean>(true);
+  const [isEnabled, setIsEnabled] = useState<boolean>(enabled);
   const [isToolInitialized, setIsToolInitialized] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);

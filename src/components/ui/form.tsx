@@ -1,13 +1,7 @@
-
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
-import {
-  Controller,
-  useForm as useReactHookForm,
-  useFormContext as useHookFormContext,
-  FormProvider as RHFFormProvider
-} from "react-hook-form";
+import { Controller, useForm as useReactHookForm } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
@@ -143,7 +137,7 @@ FormMessage.displayName = "FormMessage";
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useHookFormContext();
+  const { getFieldState, formState } = useReactHookFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
@@ -173,7 +167,7 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  useHookFormContext as useFormContext,
-  RHFFormProvider as FormProvider,
+  useReactHookFormContext as useFormContext,
+  useReactHookFormProvider as FormProvider,
   useReactHookForm as useForm
 };
