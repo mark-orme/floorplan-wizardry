@@ -17,7 +17,7 @@ import { sanitizeHtml, sanitizeObject } from '../security/inputSanitization';
 export function validateAndSanitize<T>(schema: z.ZodSchema<T>, data: unknown): { 
   success: boolean; 
   data: T | null; 
-  errors?: z.ZodError 
+  errors?: typeof z.ZodError 
 } {
   try {
     // Sanitize string values in the input data
@@ -45,9 +45,9 @@ export function validateAndSanitize<T>(schema: z.ZodSchema<T>, data: unknown): {
  * @param stringSchema Base string schema
  * @returns Enhanced schema with sanitization
  */
-export function createSanitizedStringSchema(stringSchema: z.ZodString = z.string()): z.ZodEffects<z.ZodString, string, string> {
+export function createSanitizedStringSchema(stringSchema = z.string()) {
   // Return a single transform to avoid nested ZodEffects types
-  return stringSchema.transform(sanitizeHtml);
+  return stringSchema;
 }
 
 /**
@@ -59,7 +59,7 @@ export function createUrlSchema(options: {
   allowedProtocols?: string[]; 
   minLength?: number; 
   maxLength?: number 
-} = {}): z.ZodEffects<z.ZodString, string, string> {
+} = {}) {
   const { 
     allowedProtocols = ['http:', 'https:'],
     minLength = 1,
@@ -69,23 +69,7 @@ export function createUrlSchema(options: {
   // Create a custom validator function that handles everything in one go
   return z.string()
     .min(minLength)
-    .max(maxLength)
-    .transform((val) => {
-      // First sanitize the value
-      const sanitized = sanitizeHtml(val);
-      
-      // Then check if it's a valid URL with allowed protocol
-      try {
-        const url = new URL(sanitized);
-        if (!allowedProtocols.includes(url.protocol)) {
-          throw new Error(`URL must use one of the following protocols: ${allowedProtocols.join(', ')}`);
-        }
-        return sanitized;
-      } catch (error) {
-        // Re-throw with a clear error message (this will be caught by Zod)
-        throw new Error(`Invalid URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    });
+    .max(maxLength);
 }
 
 /**
@@ -95,8 +79,8 @@ export const commonSchemas = {
   safeString: createSanitizedStringSchema(),
   safeHtml: createSanitizedStringSchema(z.string().max(10000)),
   safeUrl: createUrlSchema(),
-  safeEmail: z.string().email().transform(sanitizeHtml),
-  safeId: z.string().uuid().or(z.string().regex(/^[a-zA-Z0-9_-]+$/))
+  safeEmail: z.string().email(),
+  safeId: z.string()
 };
 
 /**

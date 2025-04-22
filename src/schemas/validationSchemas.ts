@@ -7,13 +7,13 @@ import { DrawingMode } from '@/constants/drawingModes';
  */
 export const drawingToolSchema = z.object({
   tool: z.nativeEnum(DrawingMode),
-  lineThickness: z.number().positive().optional(),
-  lineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/).optional(),
-  fillColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/).optional(),
-  opacity: z.number().min(0).max(1).optional(),
-  fontSize: z.number().positive().optional(),
-  fontFamily: z.string().optional(),
-  objectType: z.string().optional()
+  lineThickness: z.number().positive(),
+  lineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
+  fillColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
+  opacity: z.number().min(0).max(1),
+  fontSize: z.number().positive(),
+  fontFamily: z.string(),
+  objectType: z.string()
 });
 
 /**
@@ -23,9 +23,9 @@ export const canvasConfigSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
   zoom: z.number().positive(),
-  gridSize: z.number().positive().optional(),
-  snapToGrid: z.boolean().optional(),
-  backgroundColor: z.string().optional()
+  gridSize: z.number().positive(),
+  snapToGrid: z.boolean(),
+  backgroundColor: z.string()
 });
 
 /**
@@ -40,38 +40,38 @@ export const pointSchema = z.object({
  * Schema for validating drawing objects
  */
 export const drawingObjectSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   type: z.string(),
-  left: z.number().optional(),
-  top: z.number().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-  points: z.array(pointSchema).optional(),
-  path: z.array(z.any()).optional(),
-  fill: z.string().optional(),
-  stroke: z.string().optional(),
-  strokeWidth: z.number().optional(),
-  opacity: z.number().min(0).max(1).optional(),
-  angle: z.number().optional(),
-  scaleX: z.number().optional(),
-  scaleY: z.number().optional(),
-  metadata: z.record(z.any()).optional()
+  left: z.number(),
+  top: z.number(),
+  width: z.number(),
+  height: z.number(),
+  points: z.array(pointSchema),
+  path: z.array(z.any()),
+  fill: z.string(),
+  stroke: z.string(),
+  strokeWidth: z.number(),
+  opacity: z.number().min(0).max(1),
+  angle: z.number(),
+  scaleX: z.number(),
+  scaleY: z.number(),
+  metadata: z.record(z.any())
 });
 
 /**
  * Schema for validating user settings
  */
 export const userSettingsSchema = z.object({
-  id: z.string().optional(),
-  defaultTool: z.nativeEnum(DrawingMode).optional(),
-  defaultLineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/).optional(),
-  defaultLineThickness: z.number().positive().optional(),
-  gridVisible: z.boolean().optional(),
-  snapToGrid: z.boolean().optional(),
-  darkMode: z.boolean().optional(),
-  autosaveInterval: z.number().min(0).optional(),
-  measurementUnit: z.enum(['mm', 'cm', 'm', 'in', 'ft']).optional(),
-  notifications: z.boolean().optional()
+  id: z.string(),
+  defaultTool: z.nativeEnum(DrawingMode),
+  defaultLineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
+  defaultLineThickness: z.number().positive(),
+  gridVisible: z.boolean(),
+  snapToGrid: z.boolean(),
+  darkMode: z.boolean(),
+  autosaveInterval: z.number().min(0),
+  measurementUnit: z.enum(['mm', 'cm', 'm', 'in', 'ft']),
+  notifications: z.boolean()
 });
 
 /**
@@ -83,8 +83,8 @@ export const savedDrawingSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   canvasJson: z.string(),
-  preview: z.string().optional(),
-  metadata: z.record(z.any()).optional()
+  preview: z.string(),
+  metadata: z.record(z.any())
 });
 
 /**
@@ -92,17 +92,17 @@ export const savedDrawingSchema = z.object({
  */
 export const apiResponseSchema = z.object({
   success: z.boolean(),
-  data: z.any().optional(),
-  error: z.string().optional()
+  data: z.any(),
+  error: z.string()
 });
 
 /**
  * Schema for validating URL query parameters
  */
 export const urlParamsSchema = z.object({
-  drawingId: z.string().optional(),
-  tool: z.nativeEnum(DrawingMode).optional(),
-  zoom: z.number().positive().optional(),
-  page: z.number().nonnegative().optional(),
-  grid: z.boolean().optional()
+  drawingId: z.string(),
+  tool: z.nativeEnum(DrawingMode),
+  zoom: z.number().positive(),
+  page: z.number().nonnegative(),
+  grid: z.boolean()
 });
