@@ -1,43 +1,42 @@
 
 /**
- * Utility functions for Sentry error reporting
- * @module utils/sentryUtils
+ * Sentry utilities
+ * Provides backward compatible error reporting functions
  */
 
-/**
- * Capture an error in Sentry
- * @param error The error to capture
- * @param contextId Optional identifier for the error context
- * @param additionalData Optional additional context data
- */
-export const captureError = (
-  error: Error, 
-  contextId?: string,
-  additionalData?: Record<string, any>
-): void => {
-  console.error('Error captured:', error, contextId, additionalData);
-  // In a real implementation, this would send the error to Sentry
-};
+import { captureError as newCaptureError, captureMessage as newCaptureMessage } from '@/utils/sentry';
 
 /**
- * Capture a message in Sentry
- * @param message The message to capture
- * @param levelOrId The severity level or a context identifier
- * @param contextData Optional additional context data
+ * Backward compatible captureError function
+ * Converts old-style 3-argument calls to the new 2-argument format
  */
-export const captureMessage = (
-  message: string,
-  levelOrId: 'info' | 'warning' | 'error' | string = 'info',
-  contextData?: Record<string, any>
-): void => {
-  // Determine if the second parameter is a severity level or an identifier
-  const isLevel = ['info', 'warning', 'error'].includes(levelOrId);
-  
-  if (isLevel) {
-    console[levelOrId as 'info' | 'warning' | 'error']('Message captured:', message, contextData);
-  } else {
-    // If it's an identifier, use info level by default
-    console.info('Message captured:', message, levelOrId, contextData);
+export function captureError(error: Error | unknown, contextOrType?: string | any, optionsOrData?: any) {
+  // If using the old 3-arg pattern (error, type, data)
+  if (typeof contextOrType === 'string' && optionsOrData !== undefined) {
+    return newCaptureError(error, {
+      context: { type: contextOrType, ...optionsOrData }
+    });
   }
-  // In a real implementation, this would send the message to Sentry
-};
+  
+  // If using the new 2-arg pattern (error, context)
+  return newCaptureError(error, contextOrType);
+}
+
+/**
+ * Backward compatible captureMessage function
+ * Converts old-style 3-argument calls to the new 2-argument format
+ */
+export function captureMessage(message: string, categoryOrLevel?: string | any, optionsOrData?: any) {
+  // If using the old 3-arg pattern (message, category, data)
+  if (typeof categoryOrLevel === 'string' && optionsOrData !== undefined) {
+    return newCaptureMessage(message, {
+      context: { category: categoryOrLevel, ...optionsOrData }
+    });
+  }
+  
+  // If using the new 2-arg pattern (message, context)
+  return newCaptureMessage(message, categoryOrLevel);
+}
+
+// Re-export original functions for direct access
+export { newCaptureError, newCaptureMessage };

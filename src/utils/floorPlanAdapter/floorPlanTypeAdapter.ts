@@ -10,6 +10,8 @@ import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
  * Convert a unified floor plan to a compatible app floor plan
  */
 export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPlan {
+  const now = new Date().toISOString();
+  
   return {
     id: unifiedPlan.id,
     propertyId: unifiedPlan.userId || 'default-property',
@@ -33,7 +35,17 @@ export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPl
     gia: unifiedPlan.gia,
     canvasData: unifiedPlan.canvasData,
     canvasJson: unifiedPlan.canvasJson,
-    metadata: unifiedPlan.metadata,
+    metadata: {
+      version: unifiedPlan.metadata?.version || '1.0',
+      author: unifiedPlan.metadata?.author || 'User',
+      dateCreated: unifiedPlan.metadata?.dateCreated || now,
+      lastModified: unifiedPlan.metadata?.lastModified || now,
+      notes: unifiedPlan.metadata?.notes || '',
+      paperSize: unifiedPlan.metadata?.paperSize || 'A4',
+      level: unifiedPlan.metadata?.level || unifiedPlan.level || 0,
+      createdAt: unifiedPlan.metadata?.createdAt || unifiedPlan.createdAt || now,
+      updatedAt: unifiedPlan.metadata?.updatedAt || unifiedPlan.updatedAt || now
+    },
     userId: unifiedPlan.userId
   };
 }
@@ -42,6 +54,8 @@ export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPl
  * Convert an app floor plan to a unified floor plan
  */
 export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPlan {
+  const now = new Date().toISOString();
+
   return {
     id: appPlan.id || `floor-${Date.now()}`,
     name: appPlan.name || 'Untitled Floor Plan',
@@ -57,21 +71,21 @@ export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPl
     })),
     canvasData: appPlan.canvasData,
     canvasJson: appPlan.canvasJson,
-    createdAt: appPlan.createdAt || new Date().toISOString(),
-    updatedAt: appPlan.updatedAt || new Date().toISOString(),
+    createdAt: appPlan.createdAt || now,
+    updatedAt: appPlan.updatedAt || now,
     gia: appPlan.gia || 0,
     level: appPlan.level || 0,
     index: appPlan.index || appPlan.level || 0,
-    metadata: appPlan.metadata || {
-      version: '1.0',
-      author: 'User',
-      dateCreated: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      notes: '',
-      paperSize: 'A4',
-      level: appPlan.level || 0,
-      createdAt: appPlan.createdAt || new Date().toISOString(),
-      updatedAt: appPlan.updatedAt || new Date().toISOString()
+    metadata: {
+      version: appPlan.metadata?.version || '1.0',
+      author: appPlan.metadata?.author || 'User',
+      dateCreated: appPlan.metadata?.dateCreated || now,
+      lastModified: appPlan.metadata?.lastModified || now,
+      notes: appPlan.metadata?.notes || '',
+      paperSize: appPlan.metadata?.paperSize || 'A4',
+      level: appPlan.metadata?.level || appPlan.level || 0,
+      createdAt: appPlan.metadata?.createdAt || appPlan.createdAt || now,
+      updatedAt: appPlan.metadata?.updatedAt || appPlan.updatedAt || now
     },
     data: appPlan.data || {},
     userId: appPlan.userId || appPlan.propertyId || 'default-user'

@@ -1,187 +1,190 @@
-
 /**
- * Hook for managing canvas drawing tools
- * Centralizes tool operations and state changes
- * @module useCanvasControllerTools
+ * Hook for canvas controller tools
+ * This file needs to be created to match the import from useCanvasControllerTools.ts
  */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useDrawingTools } from "@/hooks/useDrawingTools";
-import { DrawingMode } from "@/constants/drawingModes";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { useFloorPlanGIA } from "@/hooks/useFloorPlanGIA";
-import { ZoomDirection } from "@/types/drawingTypes";
-import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
-import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
-import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
-import { convertToUnifiedFloorPlan, convertToUnifiedFloorPlans } from "@/utils/floorPlanAdapter/floorPlanTypeAdapter";
+import { useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
+import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
+import { toast } from 'sonner';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
+import { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan as LegacyFloorPlan } from '@/types/floorPlanTypes';
+import { convertToUnifiedFloorPlan, convertToUnifiedFloorPlans, convertToAppFloorPlan, convertToAppFloorPlans } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
 
-/**
- * Props for useCanvasControllerTools hook
- * @interface UseCanvasControllerToolsProps
- */
-interface UseCanvasControllerToolsProps {
-  /** Reference to the fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current active drawing tool */
-  tool: DrawingMode;
-  /** Current zoom level */
-  zoomLevel: number;
-  /** Line thickness for drawing */
-  lineThickness: number;
-  /** Line color for drawing */
-  lineColor: string;
-  /** Function to set the current tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  /** Function to set the zoom level */
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  /** Array of floor plans */
-  floorPlans: FloorPlan[];
-  /** Index of current floor */
-  currentFloor: number;
-  /** Function to update floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to set the GIA (Gross Internal Area) */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Function to create grid objects */
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
+interface CanvasControllerToolsOptions {
+  enableVirtualization?: boolean;
 }
 
-/**
- * Hook that manages canvas drawing tools and operations
- */
-export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) => {
-  const {
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    zoomLevel,
-    lineThickness,
-    lineColor,
-    setTool,
-    setZoomLevel,
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    createGrid
-  } = props;
+export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: CanvasControllerToolsOptions = {}) => {
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>("#000000");
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const gridObjectsRef = useRef<any[]>([]);
+  const canvasRef = useRef<FabricCanvas | null>(canvas);
+  
+  // State for floor plans - using any[] type to avoid type conflicts
+  const [floorPlans, setFloorPlans] = useState<any[]>([]);
 
-  // Convert floor plans types for compatibility with hooks expecting unified types
-  const unifiedFloorPlans = convertToUnifiedFloorPlans(floorPlans);
-  const setUnifiedFloorPlans = (plans: any) => {
-    // This function will handle both direct state updates and function updates
+  // Initialize canvas virtualization
+  const {
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
+  } = useVirtualizedCanvas(canvasRef, {
+    enabled: options.enableVirtualization ?? true,
+    objectThreshold: 100
+  });
+
+  // Get unified floor plans (convert from legacy if needed)
+  const getUnifiedFloorPlans = useCallback(() => {
+    // Check if we're already working with UnifiedFloorPlan[]
+    if (floorPlans.length > 0 && 'userId' in floorPlans[0] && !('propertyId' in floorPlans[0])) {
+      return floorPlans as UnifiedFloorPlan[];
+    }
+    
+    // Otherwise, convert from legacy format
+    return convertToUnifiedFloorPlans(floorPlans as LegacyFloorPlan[]);
+  }, [floorPlans]);
+
+  // Get legacy floor plans (convert from unified if needed)
+  const getLegacyFloorPlans = useCallback(() => {
+    // Check if we're already working with LegacyFloorPlan[]
+    if (floorPlans.length > 0 && 'propertyId' in floorPlans[0]) {
+      return floorPlans as LegacyFloorPlan[];
+    }
+    
+    // Otherwise, convert from unified format
+    return convertToAppFloorPlans(floorPlans as UnifiedFloorPlan[]);
+  }, [floorPlans]);
+
+  // Safe setter that handles both types
+  const setUnifiedFloorPlans = useCallback((plans: UnifiedFloorPlan[] | ((prev: UnifiedFloorPlan[]) => UnifiedFloorPlan[])) => {
     if (typeof plans === 'function') {
-      setFloorPlans((prev: FloorPlan[]) => {
-        const newPlans = plans(convertToUnifiedFloorPlans(prev));
-        return newPlans.map((p: any) => p);  // Keep as-is, assuming convertToUnifiedFloorPlans made them compatible
+      setFloorPlans((prevPlans) => {
+        const unified = prevPlans.length > 0 && 'propertyId' in prevPlans[0] 
+          ? convertToUnifiedFloorPlans(prevPlans as LegacyFloorPlan[])
+          : prevPlans as UnifiedFloorPlan[];
+        return plans(unified);
       });
     } else {
       setFloorPlans(plans);
     }
-  };
+  }, []);
 
-  // Initialize GIA calculation hook
-  const { recalculateGIA } = useFloorPlanGIA({
-    fabricCanvasRef,
-    setGia
-  });
-
-  // Get drawing tool functions
-  const toolFunctions = useDrawingTools({
-    fabricCanvasRef,
-    gridLayerRef,
-    tool,
-    setTool,
-    zoomLevel,
-    setZoomLevel,
-    lineThickness,
-    lineColor,
-    historyRef,
-    floorPlans: unifiedFloorPlans,
-    currentFloor,
-    setFloorPlans: setUnifiedFloorPlans,
-    setGia,
-    createGrid
-  });
-
-  // Use the tool state hook
-  const toolState = useCanvasToolState({
-    fabricCanvasRef,
-    tool,
-    setTool,
-    lineThickness,
-    lineColor,
-    zoomLevel,
-    setZoomLevel
-  });
-
-  // Use the canvas operations hook
-  const canvasOperations = useCanvasOperations({
-    fabricCanvasRef,
-    gridLayerRef,
-    saveCurrentState: toolFunctions.saveCurrentState
-  });
-
-  // Use the floor plan operations hook
-  const floorPlanOperations = useFloorPlanOperations({
-    floorPlans,
-    currentFloor,
-    setFloorPlans,
-    setGia
-  });
-
-  // Modified handleZoom to accept string direction
-  const handleZoom = useCallback((direction: ZoomDirection): void => {
-    if (direction === "in") {
-      toolFunctions.handleZoom(1.2);
+  // Safe setter that handles both types
+  const setLegacyFloorPlans = useCallback((plans: LegacyFloorPlan[] | ((prev: LegacyFloorPlan[]) => LegacyFloorPlan[])) => {
+    if (typeof plans === 'function') {
+      setFloorPlans((prevPlans) => {
+        const legacy = prevPlans.length > 0 && !('propertyId' in prevPlans[0])
+          ? convertToAppFloorPlans(prevPlans as UnifiedFloorPlan[])
+          : prevPlans as LegacyFloorPlan[];
+        return plans(legacy);
+      });
     } else {
-      toolFunctions.handleZoom(0.8);
+      setFloorPlans(plans);
     }
-  }, [toolFunctions]);
-
-  // Tool-related functions
-  const handleLineThicknessChange = useCallback((thickness: number): void => {
-    console.info(`Line thickness changed to ${thickness}`);
-    // Implement line thickness change logic
   }, []);
 
-  const handleLineColorChange = useCallback((color: string): void => {
-    console.info(`Line color changed to ${color}`);
-    // Implement line color change logic
+  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
+    try {
+      // Set fabricCanvasRef for external use
+      canvasRef.current = canvas;
+
+      // Set up proper tool based on the current drawing mode
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
+
+      if (canvas.isDrawingMode) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+
+        // Check for enhanced input capabilities
+        const hasAdvancedInput = isPressureSupported() || isTiltSupported();
+
+        // Set brush to respond to pressure
+        if (hasAdvancedInput) {
+          console.log('Enhanced input capabilities detected');
+          toast.success('Enhanced drawing capabilities enabled', {
+            id: 'enhanced-drawing',
+            duration: 3000
+          });
+        }
+      }
+
+      // Create grid for the canvas
+      if (true) {
+        console.log("Creating grid for canvas");
+        const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
+        gridObjectsRef.current = gridObjects;
+      }
+
+      // Make sure touch events work well on mobile
+      canvas.allowTouchScrolling = tool === DrawingMode.HAND;
+
+      // Apply custom CSS to the canvas container to make it touch-friendly
+      if (canvas.wrapperEl) {
+        canvas.wrapperEl.classList.add('touch-manipulation');
+        canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
+      }
+    } catch (error) {
+      console.error("Error in canvas initialization:", error);
+    }
+  }, [tool, lineColor, lineThickness]);
+
+  // Update grid visibility when showGrid changes
+  const updateGridVisibility = useCallback((showGrid: boolean) => {
+    const canvas = canvasRef.current;
+    if (canvas && gridObjectsRef.current.length > 0) {
+      gridObjectsRef.current.forEach(obj => {
+        obj.set('visible', showGrid);
+      });
+      canvas.requestRenderAll();
+    } else if (canvas && showGrid && gridObjectsRef.current.length === 0) {
+      // Create grid if it doesn't exist and should be shown
+      const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
+      gridObjectsRef.current = gridObjects;
+    }
   }, []);
 
-  const openMeasurementGuide = useCallback((): void => {
-    console.info('Measurement guide opened');
-    // Implement measurement guide logic
-  }, []);
+  // Update tool settings when they change
+  const updateToolSettings = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+
+    if (canvas.isDrawingMode) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+
+    canvas.requestRenderAll();
+  }, [tool, lineColor, lineThickness]);
 
   return {
-    // From drawing tools
-    handleToolChange: toolState.handleToolChange,
-    handleUndo: toolFunctions.undo,
-    handleRedo: toolFunctions.redo,
-    handleZoom,
-    saveCurrentState: toolFunctions.saveCurrentState,
-    
-    // From canvas operations
-    clearDrawings: canvasOperations.clearDrawings,
-    clearCanvas: canvasOperations.clearCanvas,
-    saveCanvas: canvasOperations.saveCanvas,
-    deleteSelectedObjects: canvasOperations.deleteSelectedObjects,
-    
-    // From floor plan operations
-    handleFloorSelect: floorPlanOperations.handleFloorSelect,
-    handleAddFloor: floorPlanOperations.handleAddFloor,
-    
-    // Additional tools
-    handleLineThicknessChange,
-    handleLineColorChange,
-    openMeasurementGuide
+    tool,
+    setTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    handleCanvasReady,
+    updateGridVisibility,
+    updateToolSettings,
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics,
+    // Floor plan converters
+    floorPlans,
+    setFloorPlans,
+    getUnifiedFloorPlans,
+    getLegacyFloorPlans,
+    setUnifiedFloorPlans,
+    setLegacyFloorPlans
   };
 };

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { PropertyListItem } from '@/types/propertyTypes';
+import { PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
 import { toast } from 'sonner';
 
 /**
@@ -35,7 +35,7 @@ export const usePropertyManagement = () => {
         {
           id: 'property-1',
           address: '123 Main St, Anytown, USA',
-          status: 'completed' as any,
+          status: 'completed' as PropertyStatus,
           updatedAt: new Date().toISOString(),
           client_name: 'John Doe',
           order_id: 'ORD-12345',
@@ -44,7 +44,7 @@ export const usePropertyManagement = () => {
         {
           id: 'property-2',
           address: '456 Oak Ave, Somewhere, USA',
-          status: 'draft' as any,
+          status: 'draft' as PropertyStatus,
           updatedAt: new Date().toISOString(),
           client_name: 'Jane Smith',
           order_id: 'ORD-67890',
@@ -80,7 +80,7 @@ export const usePropertyManagement = () => {
       return {
         id: propertyId,
         address: '123 Main St, Anytown, USA',
-        status: 'completed' as any,
+        status: 'completed' as PropertyStatus,
         updatedAt: new Date().toISOString(),
         client_name: 'John Doe',
         order_id: 'ORD-12345',
