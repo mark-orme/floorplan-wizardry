@@ -32,37 +32,22 @@ export const createEmptyWall = () => ({
 });
 export const createEmptyRoom = () => ({
   id: '', name: 'Room', type: 'other', points: [], vertices: [], 
-  area: 0, color: '#ffffff'
+  area: 0, perimeter: 0, center: { x: 0, y: 0 }, labelPosition: { x: 0, y: 0 }, 
+  color: '#ffffff'
 });
+
+// Add test helpers
+export const createTestFloorPlan = createEmptyFloorPlan;
 export const createTestStroke = createEmptyStroke;
 export const createTestWall = createEmptyWall;
 export const createTestRoom = createEmptyRoom;
 export const createTestPoint = (x = 0, y = 0) => ({ x, y });
-export const createTestFloorPlan = () => ({
-  id: 'test-floorplan',
-  name: 'Test FloorPlan',
-  label: 'Test FloorPlan',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  gia: 0,
-  walls: [],
-  rooms: [],
-  strokes: [],
-  index: 0,
-  level: 0,
-  metadata: {
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    paperSize: PaperSize.A4,
-    level: 0,
-    version: '1.0',
-    author: 'User',
-    notes: '',
-    dateCreated: new Date().toISOString(),
-    lastModified: new Date().toISOString()
-  },
-  data: {},
-  userId: '',
-  propertyId: ''
-});
-export const createEmptyFloorPlan = createTestFloorPlan;
+
+// Add string to enum helper functions
+export function asStrokeType(type: string) {
+  return type as any;
+}
+
+export function asRoomType(type: string) {
+  return type as any;
+}

@@ -1,204 +1,150 @@
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { 
+import React from 'react';
+import {
   Form,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
-  FormLabel, 
+  FormLabel,
   FormMessage
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { InputValidationResult } from "@/utils/validation/inputValidation";
-import { toast } from "sonner";
-import { z } from 'zod';
-import { zodResolver } from "@hookform/resolvers/zod";
-
-const propertyFormSchema = z.object({
-  name: z.string().min(3, { message: "Name is required (min 3 characters)" }),
-  address: z.string().min(5, { message: "Address is required (min 5 characters)" }),
-  city: z.string().min(2, { message: "City is required" }),
-  description: z.string().optional(),
-  isCommercial: z.boolean().default(false)
-});
-
-type PropertyFormValues = z.infer<typeof propertyFormSchema>;
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import z from '@/utils/zod-mock';
 
 interface PropertyFormProps {
-  initialValues?: Partial<PropertyFormValues>;
-  onSubmit?: (values: PropertyFormValues) => void;
-  onCancel?: () => void;
+  onSubmit: (values: any) => void;
+  isSubmitting: boolean;
 }
 
-export const PropertyForm: React.FC<PropertyFormProps> = ({
-  initialValues = {},
-  onSubmit,
-  onCancel
-}) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const form = useForm<PropertyFormValues>({
-    resolver: zodResolver(propertyFormSchema),
+export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitting }) => {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialValues.name || "",
-      address: initialValues.address || "",
-      city: initialValues.city || "",
-      description: initialValues.description || "",
-      isCommercial: initialValues.isCommercial || false,
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      country: '',
+      isCommercial: false
     },
+    mode: 'onChange'
   });
 
-  const handleSubmit = async (values: PropertyFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      const validationResult: InputValidationResult = {
-        valid: true,
-        errors: []
-      };
-      
-      if (!values.name.trim()) {
-        validationResult.valid = false;
-        validationResult.errors = validationResult.errors || [];
-        validationResult.errors.push("Name is required");
-      }
-      
-      if (!values.address.trim()) {
-        validationResult.valid = false;
-        validationResult.errors = validationResult.errors || [];
-        validationResult.errors.push("Address is required");
-      }
-      
-      if (!values.city.trim()) {
-        validationResult.valid = false;
-        validationResult.errors = validationResult.errors || [];
-        validationResult.errors.push("City is required");
-      }
-      
-      if (!validationResult.valid) {
-        if (validationResult.errors && validationResult.errors.length > 0) {
-          toast.error(validationResult.errors[0]);
-        } else {
-          toast.error("Please check form for errors");
-        }
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (onSubmit) {
-        onSubmit(values);
-        toast.success("Property saved successfully");
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-      toast.error("An error occurred while saving the property");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const formSchema = z.object({
+    name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+    address: z.string().min(5, { message: "Address is required" }),
+    city: z.string(),
+    state: z.string(),
+    country: z.string(),
+    isCommercial: z.boolean()
+  });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Property Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter property name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="address"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Address</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter address" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>City</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter city" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Describe the property" 
-                  {...field} 
-                  className="min-h-32"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="isCommercial"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Commercial Property</FormLabel>
-                <FormDescription>
-                  Check if this is a commercial property
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-        
-        <div className="flex justify-end space-x-2 pt-4">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Property"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+    <Card>
+      <CardHeader>
+        <CardTitle>Create New Property</CardTitle>
+        <CardDescription>Enter property details to create a new listing.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Property Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Lakeside Villa" {...field} />
+                  </FormControl>
+                  <FormDescription>A descriptive name for the property.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 123 Main St" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>City</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Anytown" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="state"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>State</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. CA" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. USA" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isCommercial"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel>Commercial Property?</FormLabel>
+                    <FormDescription>Check if this is a commercial property.</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Input type="checkbox" checked={field.value} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <CardFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={() => form.reset()}>
+                Reset
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create'}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
-
-export default PropertyForm;

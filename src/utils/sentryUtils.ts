@@ -14,7 +14,8 @@ export function captureException(error: Error, options: any = {}) {
 }
 
 export function captureError(error: Error, options: any = {}) {
-  console.error('[Sentry]', error, options);
+  console.error('[Sentry] Error captured:', error);
+  console.error('[Sentry] Options:', options);
   return 'fake-event-id';
 }
 

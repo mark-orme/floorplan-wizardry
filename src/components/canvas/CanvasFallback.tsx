@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Info, Bug } from 'lucide-react';
@@ -25,7 +24,8 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
   showDiagnostics = false
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
-  
+  const [errorText, setError] = React.useState('');
+
   // Capture the fallback render in analytics
   React.useEffect(() => {
     captureError(
@@ -93,7 +93,47 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     );
     window.location.reload();
   };
-  
+
+  const handleCanvasError = (error: Error) => {
+    console.error("Canvas error:", error);
+    setError(error.message);
+    
+    // Use correct parameter count
+    captureError(error, {
+      context: 'canvas-fallback'
+    });
+  };
+
+  try {
+    // Capture the initialization error in analytics
+    captureError(
+      error || new Error('Canvas initialization failed'), 
+      'canvas-fallback-init', 
+      {
+        level: 'warning',
+        tags: {
+          component: 'CanvasFallback',
+          errorType: error?.message?.includes('elements.lower.el') ? 'lower-el-error' : 'other-error'
+        },
+        extra: {
+          errorMessage: error?.message,
+          errorStack: error?.stack,
+          dimensions: { width, height },
+          domState: {
+            readyState: document.readyState,
+            canvasCount: document.querySelectorAll('canvas').length
+          }
+        }
+      }
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      captureError(error, {
+        context: 'canvas-fallback-init'
+      });
+    }
+  }
+
   return (
     <div 
       className="flex flex-col items-center justify-center border border-gray-200 rounded-lg p-6 bg-gray-50"

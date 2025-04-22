@@ -33,6 +33,7 @@ export interface DebugInfoState {
     maxFrameTime: number;
     longFrames: number;
   };
+  fps: number; // Direct fps property for backward compatibility
   currentFps: number;
   objectCount: number;
   gridObjectCount: number;
@@ -81,6 +82,7 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
     maxFrameTime: 0,
     longFrames: 0
   },
+  fps: 0,
   currentFps: 0,
   objectCount: 0,
   gridObjectCount: 0,

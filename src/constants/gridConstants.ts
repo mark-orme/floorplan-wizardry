@@ -1,73 +1,63 @@
 
 /**
- * Grid constants for canvas
+ * Grid related constants
  */
 
-export const SMALL_GRID_SIZE = 10;
-export const LARGE_GRID_SIZE = 50;
-export const GRID_SIZE = 25;
-
-export const SMALL_GRID_COLOR = '#e0e0e0';
-export const LARGE_GRID_COLOR = '#c0c0c0';
-
-export const SMALL_GRID_WIDTH = 0.5;
-export const LARGE_GRID_WIDTH = 1;
-
-export const DEFAULT_VISIBLE = true;
-export const DEFAULT_SNAP_TO_GRID = true;
-export const DEFAULT_GRID_OPACITY = 0.6;
-
-export const PIXELS_PER_METER = 50;
-export const GRID_UNIT_SIZE = 10;
-export const GRID_UNIT_LABEL = 'cm';
-
-export const GRID_MAX_ZOOM = 5;
-export const GRID_MIN_ZOOM = 0.2;
-
-export const GRID_RENDER_DELAY = 500;
-export const GRID_DEBOUNCE_TIME = 100;
-export const GRID_AUTO_FIX = true;
-export const GRID_LABEL_FONT = '12px Arial';
-export const GRID_LABEL_COLOR = '#606060';
-
-export const SHOW_GRID_LABELS = true;
-export const SHOW_GRID_AXES = true;
-
-export const GRID_BORDER_COLOR = '#e0e0e0';
-export const GRID_BACKGROUND_COLOR = '#ffffff';
-
-export const GRID_ZOOM_SENSITIVITY = 0.1;
-export const GRID_PAN_SENSITIVITY = 1;
-
-export const GRID_RECREATION_DELAY = 250;
-
-// Export a GRID_CONSTANTS object for compatibility with components expecting it
 export const GRID_CONSTANTS = {
-  SMALL_GRID_SIZE,
-  LARGE_GRID_SIZE,
-  GRID_SIZE,
-  SMALL_GRID_COLOR,
-  LARGE_GRID_COLOR,
-  SMALL_GRID_WIDTH,
-  LARGE_GRID_WIDTH,
-  DEFAULT_VISIBLE,
-  DEFAULT_SNAP_TO_GRID,
-  DEFAULT_GRID_OPACITY,
-  PIXELS_PER_METER,
-  GRID_UNIT_SIZE,
-  GRID_UNIT_LABEL,
-  GRID_MAX_ZOOM,
-  GRID_MIN_ZOOM,
-  GRID_RENDER_DELAY,
-  GRID_DEBOUNCE_TIME,
-  GRID_AUTO_FIX,
-  GRID_LABEL_FONT,
-  GRID_LABEL_COLOR,
-  SHOW_GRID_LABELS,
-  SHOW_GRID_AXES,
-  GRID_BORDER_COLOR,
-  GRID_BACKGROUND_COLOR,
-  GRID_ZOOM_SENSITIVITY,
-  GRID_PAN_SENSITIVITY,
-  GRID_RECREATION_DELAY
+  // Small grid settings
+  SMALL_GRID_SIZE: 10,
+  SMALL_GRID_COLOR: '#e0e0e0',
+  SMALL_GRID_WIDTH: 0.5,
+  
+  // Large grid settings
+  LARGE_GRID_SIZE: 50,
+  LARGE_GRID_COLOR: '#d0d0d0',
+  LARGE_GRID_WIDTH: 1,
+  
+  // Default grid settings (for backward compatibility)
+  GRID_SIZE: 50,
+  DEFAULT_GRID_SIZE: 50,
+  DEFAULT_GRID_COLOR: '#e0e0e0',
+  DEFAULT_LINE_WIDTH: 1,
+  DEFAULT_VISIBLE: true,
+  
+  // Grid visibility
+  GRID_VISIBLE: true,
+  SHOW_GRID: true,
+  
+  // Grid performance settings
+  GRID_BATCH_SIZE: 50,
+  GRID_LAYER_NAME: 'grid-layer',
+  GRID_VIRTUALIZATION: true,
+  
+  // Grid behavior
+  SNAP_TO_GRID: false,
+  SNAP_THRESHOLD: 10,
+  
+  // Grid debug settings
+  GRID_DEBUG: false,
+  GRID_DEBUG_COLOR: '#ff0000',
+  GRID_AUTO_FIX: true,
+  
+  // Grid render settings
+  GRID_Z_INDEX: -1,
+  GRID_SELECTABLE: false,
+  GRID_EVENTED: false,
+  
+  // Grid performance
+  GRID_RENDER_BUFFER: 100,
+  GRID_RECREATION_DELAY: 500
 };
+
+// Re-export constants for backward compatibility
+export const {
+  SMALL_GRID_SIZE,
+  SMALL_GRID_COLOR,
+  LARGE_GRID_SIZE,
+  LARGE_GRID_COLOR,
+  GRID_SIZE,
+  DEFAULT_GRID_SIZE,
+  DEFAULT_GRID_COLOR,
+  GRID_VISIBLE,
+  SNAP_TO_GRID
+} = GRID_CONSTANTS;

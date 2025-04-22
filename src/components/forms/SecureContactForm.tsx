@@ -1,4 +1,3 @@
-
 /**
  * SecureContactForm Component
  * Example form using security and validation features
@@ -12,14 +11,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 // Define form schema using Zod
-const contactFormSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
-  email: z.string().email('Please enter a valid email address'),
-  subject: z.string().min(3, 'Subject must be at least 3 characters').max(100),
-  message: z.string().min(10, 'Message must be at least 10 characters').max(1000)
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  phone: z.string().min(10, { message: "Phone number must be at least 10 digits" }),
+  message: z.string().min(10, { message: "Message must be at least 10 characters" })
 });
 
-type ContactFormValues = z.infer<typeof contactFormSchema>;
+type ContactFormValues = z.infer<typeof formSchema>;
 
 interface SecureContactFormProps {
   onSubmitSuccess?: () => void;
@@ -39,11 +38,11 @@ export const SecureContactForm: React.FC<SecureContactFormProps> = ({
     setField,
     handleSubmit,
     resetForm
-  } = useSecureForm<ContactFormValues>(contactFormSchema, {
+  } = useSecureForm<ContactFormValues>(formSchema, {
     initialValues: {
       name: '',
       email: '',
-      subject: '',
+      phone: '',
       message: ''
     },
     onSubmit: async (data) => {
@@ -100,16 +99,16 @@ export const SecureContactForm: React.FC<SecureContactFormProps> = ({
       </div>
       
       <div className="space-y-2">
-        <label htmlFor="subject" className="text-sm font-medium">Subject</label>
+        <label htmlFor="phone" className="text-sm font-medium">Phone</label>
         <Input
-          id="subject"
-          value={data.subject || ''}
-          onChange={(e) => setField('subject', e.target.value)}
-          aria-invalid={touched.subject && !!errors.subject}
-          aria-describedby="subject-error"
+          id="phone"
+          value={data.phone || ''}
+          onChange={(e) => setField('phone', e.target.value)}
+          aria-invalid={touched.phone && !!errors.phone}
+          aria-describedby="phone-error"
         />
-        {touched.subject && errors.subject && (
-          <p id="subject-error" className="text-sm text-red-500">{errors.subject[0]}</p>
+        {touched.phone && errors.phone && (
+          <p id="phone-error" className="text-sm text-red-500">{errors.phone[0]}</p>
         )}
       </div>
       

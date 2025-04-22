@@ -30,7 +30,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [floorPlans, setFloorPlans] = useState<any[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
   const [gia, setGia] = useState(0);
   const [lineThickness, setLineThickness] = useState(2);

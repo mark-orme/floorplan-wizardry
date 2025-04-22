@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Canvas as FabricCanvas, Line, Point } from "fabric";
 import { captureMessage, captureError } from "@/utils/sentryUtils";
@@ -8,7 +7,7 @@ import logger from "@/utils/logger";
 interface MobileGridLayerProps {
   canvas: FabricCanvas;
   gridSize?: number;
-  color?: string;
+  gridColor?: string;
   opacity?: number;
   visible?: boolean;
   onGridCreated?: (objects: any[]) => void;
@@ -17,7 +16,7 @@ interface MobileGridLayerProps {
 export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
   canvas,
   gridSize = GRID_CONSTANTS.DEFAULT_GRID_SIZE,
-  color = GRID_CONSTANTS.DEFAULT_GRID_COLOR,
+  gridColor = GRID_CONSTANTS.DEFAULT_GRID_COLOR,
   opacity = GRID_CONSTANTS.DEFAULT_GRID_OPACITY,
   visible = true,
   onGridCreated
@@ -42,7 +41,7 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
       // Create vertical lines
       for (let x = 0; x <= canvasWidth; x += gridSize) {
         const line = new Line([x, 0, x, canvasHeight], {
-          stroke: color,
+          stroke: gridColor,
           opacity: opacity,
           selectable: false,
           evented: false,
@@ -57,7 +56,7 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
       // Create horizontal lines
       for (let y = 0; y <= canvasHeight; y += gridSize) {
         const line = new Line([0, y, canvasWidth, y], {
-          stroke: color,
+          stroke: gridColor,
           opacity: opacity,
           selectable: false,
           evented: false,
@@ -117,7 +116,7 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
         });
       }
     };
-  }, [canvas, gridSize, color, opacity]);
+  }, [canvas, gridSize, gridColor, opacity]);
   
   // Update grid visibility when the visible prop changes
   useEffect(() => {

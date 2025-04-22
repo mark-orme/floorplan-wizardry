@@ -33,6 +33,10 @@ export interface Room {
   vertices: Point[];
   area: number;
   color: string;
+  // Add missing properties required by floorPlanTypes.Room
+  perimeter: number;
+  center: Point;
+  labelPosition: Point;
 }
 
 export interface Stroke {
@@ -112,14 +116,26 @@ export function createWall(start: Point, end: Point, thickness = 10, color = '#0
 }
 
 export function createRoom(name: string, vertices: Point[], type: RoomTypeLiteral = 'other', color = '#ffffff'): Room {
+  const area = calculatePolygonArea(vertices);
+  
+  // Calculate center point
+  const center = {
+    x: vertices.reduce((sum, p) => sum + p.x, 0) / vertices.length,
+    y: vertices.reduce((sum, p) => sum + p.y, 0) / vertices.length
+  };
+  
   return {
     id: uuidv4(),
     name,
     type,
     points: [...vertices],
     vertices,
-    area: calculatePolygonArea(vertices),
-    color
+    area,
+    color,
+    // Add new required properties
+    perimeter: calculatePolygonPerimeter(vertices),
+    center,
+    labelPosition: { ...center } // Default label position to center
   };
 }
 
@@ -146,4 +162,19 @@ function calculatePolygonArea(vertices: Point[]): number {
   }
   
   return Math.abs(area / 2);
+}
+
+// Helper function to calculate polygon perimeter
+function calculatePolygonPerimeter(vertices: Point[]): number {
+  if (vertices.length < 2) return 0;
+  
+  let perimeter = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    const dx = vertices[j].x - vertices[i].x;
+    const dy = vertices[j].y - vertices[i].y;
+    perimeter += Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  return perimeter;
 }
