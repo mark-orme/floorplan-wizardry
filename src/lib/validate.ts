@@ -1,15 +1,11 @@
 
-import z from '@/utils/zod-mock';
+import { z } from "zod";
 import { sanitizeHtml, sanitizeObject } from '../utils/security/inputSanitization';
 
 export const validateEmail = (email: string): boolean => {
   const emailSchema = z.string().email();
-  try {
-    emailSchema.parse(email);
-    return true;
-  } catch (error) {
-    return false;
-  }
+  const result = emailSchema.safeParse(email);
+  return result.success;
 };
 
 // Password strength validation
@@ -60,89 +56,65 @@ export const validatePasswordStrength = (password: string): {
 // URL validation
 export const validateURL = (url: string): boolean => {
   const urlSchema = z.string().url();
-  try {
-    urlSchema.parse(url);
-    return true;
-  } catch (error) {
-    return false;
-  }
+  const result = urlSchema.safeParse(url);
+  return result.success;
 };
 
 // Phone number validation (simple version)
 export const validatePhoneNumber = (phone: string): boolean => {
-  // Remove all non-digit characters for comparison
   const digitsOnly = phone.replace(/\D/g, '');
   return digitsOnly.length >= 10 && digitsOnly.length <= 15;
 };
 
 // Credit card validation
 export const validateCreditCard = (cardNumber: string): boolean => {
-  // Remove spaces and hyphens
   const digits = cardNumber.replace(/[\s-]/g, '');
-  
-  // Check if contains only digits and has a valid length
   if (!/^\d+$/.test(digits) || digits.length < 13 || digits.length > 19) {
     return false;
   }
-  
-  // Luhn algorithm (checksum)
   let sum = 0;
   let double = false;
-  
-  // Start from the rightmost digit and process each digit
   for (let i = digits.length - 1; i >= 0; i--) {
     let digit = parseInt(digits.charAt(i));
-    
     if (double) {
       digit *= 2;
       if (digit > 9) {
         digit -= 9;
       }
     }
-    
     sum += digit;
     double = !double;
   }
-  
   return sum % 10 === 0;
 };
 
 // Date validation with format checking
 export const validateDate = (dateStr: string, format: string = 'YYYY-MM-DD'): boolean => {
-  // For simplicity, we'll just validate ISO format dates
   try {
-    // Check if the date is valid
     return !isNaN(Date.parse(dateStr));
   } catch (error) {
     return false;
   }
 };
 
-// Alpha-numeric validation
 export const validateAlphaNumeric = (value: string): boolean => {
   return /^[a-zA-Z0-9]+$/.test(value);
 };
 
-// Username validation
 export const validateUsername = (username: string): { isValid: boolean; message?: string } => {
   if (username.length < 3) {
     return { isValid: false, message: 'Username must be at least 3 characters' };
   }
-  
   if (username.length > 30) {
     return { isValid: false, message: 'Username must be less than 30 characters' };
   }
-  
   if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
     return { isValid: false, message: 'Username can only contain letters, numbers, underscores, dots, and hyphens' };
   }
-  
   return { isValid: true };
 };
 
-// IP address validation
 export const validateIPAddress = (ip: string): boolean => {
-  // IP address validation with regex
   return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
 };
 

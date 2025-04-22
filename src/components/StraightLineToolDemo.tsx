@@ -4,7 +4,7 @@ import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineToo
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { InputMethod } from '@/types/input/InputMethod';
+// Remove InputMethod import, we no longer need it as a value here
 import { Canvas } from 'fabric';
 
 export const StraightLineToolDemo: React.FC = () => {
@@ -22,14 +22,12 @@ export const StraightLineToolDemo: React.FC = () => {
     }
   }, []);
   
-  // Call the hook with required options
+  // Remove the inputMethod prop, as it's not declared in the hook
   const straightLineTool = useStraightLineTool({
     isEnabled: true,
     canvas: fabricCanvas,
     lineColor: '#000000',
-    lineThickness: 2,
-    inputMethod: InputMethod.MOUSE
-    // saveCurrentState is removed as it's not in the interface
+    lineThickness: 2
   });
   
   return (

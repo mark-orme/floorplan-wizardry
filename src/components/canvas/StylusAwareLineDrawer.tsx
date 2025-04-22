@@ -4,7 +4,6 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
-import { InputMethod } from '@/types/input/InputMethod';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
@@ -26,7 +25,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
 }) => {
   const [showMeasurement, setShowMeasurement] = useState(true);
   
-  // Initialize the straight line tool with stylus support
+  // Don't pass inputMethod—it is not expected by the hook as a prop
   const {
     snapEnabled,
     anglesEnabled,
@@ -39,12 +38,9 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isEnabled: enabled,
     canvas: canvas,
     lineColor: lineColor,
-    lineThickness: lineThickness,
-    inputMethod: InputMethod.PENCIL
-    // saveCurrentState is removed as it's optional in the hook
+    lineThickness: lineThickness
   });
   
-  // Hide measurement after some time of inactivity
   useEffect(() => {
     if (isDrawing) {
       setShowMeasurement(true);

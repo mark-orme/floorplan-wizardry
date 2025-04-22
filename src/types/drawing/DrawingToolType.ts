@@ -2,11 +2,8 @@
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Unify DrawingTool and DrawingMode types
- * This is the canonical type definition to use throughout the application
+ * Canonical DrawingTool type is DrawingMode (alias)
  */
-
-// Make DrawingTool compatible with DrawingMode
 export type DrawingTool = DrawingMode;
 
 /**
@@ -17,25 +14,9 @@ export function isValidDrawingTool(value: any): value is DrawingTool {
 }
 
 /**
- * Convert DrawingMode to DrawingTool
- */
-export function toDrawingTool(mode: DrawingMode): DrawingTool {
-  return mode as DrawingTool;
-}
-
-/**
- * Convert DrawingTool to DrawingMode
- */
-export function toDrawingMode(tool: DrawingTool): DrawingMode {
-  return tool as DrawingMode;
-}
-
-/**
  * Compare DrawingTool and DrawingMode values
  */
 export function compareDrawingTools(tool1: DrawingTool, tool2: DrawingMode): boolean {
   return String(tool1) === String(tool2);
 }
-
-// Re-export DrawingMode for convenience
 export { DrawingMode };

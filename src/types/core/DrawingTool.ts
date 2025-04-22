@@ -2,22 +2,11 @@
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Drawing tool configuration interface
+ * Canonical DrawingTool type is now DrawingMode
  */
-export interface DrawingTool {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  mode: DrawingMode;
-  shortcut?: string;
-  tooltip?: string;
-  color?: string;
-  active?: boolean;
-}
+export type DrawingTool = DrawingMode;
 
-/**
- * Drawing tool keyboard shortcuts
- */
+// Shortcut map
 export const DrawingToolShortcuts: Record<DrawingMode, string> = {
   [DrawingMode.SELECT]: 'V',
   [DrawingMode.DRAW]: 'D',
@@ -47,15 +36,8 @@ export const DrawingToolShortcuts: Record<DrawingMode, string> = {
 };
 
 /**
- * Type compatibility for DrawingMode
- * This allows us to use DrawingMode where DrawingTool is expected
- */
-export type DrawingTool = DrawingMode | DrawingTool;
-
-/**
  * Valid DrawingTool check
  */
 export function isValidDrawingTool(tool: any): tool is DrawingTool {
-  return Object.values(DrawingMode).includes(tool as DrawingMode) || 
-         (typeof tool === 'object' && tool !== null && 'mode' in tool);
+  return Object.values(DrawingMode).includes(tool as DrawingMode);
 }

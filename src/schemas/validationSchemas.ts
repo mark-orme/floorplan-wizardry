@@ -1,5 +1,5 @@
 
-import z from '@/utils/zod-mock';
+import { z } from "zod";
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**

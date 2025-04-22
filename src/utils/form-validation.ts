@@ -1,20 +1,16 @@
 
-import * as z from 'zod';
+import { z } from "zod";
 
 export const validateField = <T>(
   schema: z.ZodType<T>,
   value: unknown
 ): { isValid: boolean; error?: string } => {
-  try {
-    schema.parse(value);
+  const result = schema.safeParse(value);
+  if (result.success) {
     return { isValid: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        isValid: false,
-        error: error.errors[0]?.message || 'Invalid value'
-      };
-    }
-    return { isValid: false, error: 'Validation failed' };
   }
+  return {
+    isValid: false,
+    error: result.error.errors[0]?.message || 'Invalid value'
+  };
 };
