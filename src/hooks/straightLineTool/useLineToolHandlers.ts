@@ -92,14 +92,27 @@ export const useLineToolHandlers = (props: UseLineToolHandlersProps) => {
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!isActive) return;
     console.log('Key down', event.key);
-    // Handle key down implementation with shift detection
-  }, [isActive]);
+    
+    // Handle shift key for angle constraints
+    if (event.key === 'Shift') {
+      setShiftKeyPressed(true);
+    }
+    
+    // Handle key down implementation with escape for cancellation
+    if (event.key === 'Escape') {
+      cancelDrawing();
+    }
+  }, [isActive, setShiftKeyPressed, cancelDrawing]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (!isActive) return;
     console.log('Key up', event.key);
-    // Handle key up implementation
-  }, [isActive]);
+    
+    // Handle shift key release
+    if (event.key === 'Shift') {
+      setShiftKeyPressed(false);
+    }
+  }, [isActive, setShiftKeyPressed]);
 
   const renderTooltip = useCallback(() => {
     return <div>Line tool tooltip</div>;
