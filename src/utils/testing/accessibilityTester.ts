@@ -3,7 +3,7 @@
  * Provides functions to test components for accessibility issues
  */
 import { axe, toHaveNoViolations } from 'jest-axe';
-import type { AxeResults } from 'jest-axe';
+import type { Results as AxeResults } from 'axe-core';
 import React from 'react';
 import { render, RenderResult } from '@testing-library/react';
 
