@@ -6,6 +6,13 @@ import { InputMethod, useLineInputMethod } from './useLineInputMethod';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { MeasurementData } from '@/types/measurement/MeasurementData';
 
+export interface UseStraightLineToolOptions {
+  isActive: boolean;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  setInputMethod: (method: InputMethod) => void;
+}
+
 export interface UseStraightLineToolResult {
   isActive: boolean;
   isEnabled: boolean;
@@ -34,8 +41,8 @@ export interface UseStraightLineToolResult {
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
 
-export const useStraightLineTool = (): UseStraightLineToolResult => {
-  const [isActive, setIsActive] = useState<boolean>(false);
+export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStraightLineToolResult => {
+  const { isActive, inputMethod, isPencilMode, setInputMethod } = options;
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
   const [isToolInitialized, setIsToolInitialized] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -43,8 +50,6 @@ export const useStraightLineTool = (): UseStraightLineToolResult => {
   const [snapEnabled, setSnapEnabled] = useState<boolean>(true);
   const [anglesEnabled, setAnglesEnabled] = useState<boolean>(true);
   const [shiftKeyPressed, setShiftKeyPressed] = useState<boolean>(false);
-  const { inputMethod, setInputMethod } = useLineInputMethod();
-  const [isPencilMode, setIsPencilMode] = useState<boolean>(false);
   
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
     distance: null,

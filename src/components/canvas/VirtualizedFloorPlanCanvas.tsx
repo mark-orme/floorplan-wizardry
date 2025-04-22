@@ -25,8 +25,8 @@ export const VirtualizedFloorPlanCanvas: React.FC<VirtualizedFloorPlanCanvasProp
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
   
-  const { handleError } = useCanvasErrorHandling({
-    onErrorCallback: onCanvasError
+  const { handleCanvasError, resetCanvasError } = useCanvasErrorHandling({
+    onCanvasError
   });
   
   // Initialize geometry worker for offloading calculations
@@ -87,10 +87,10 @@ export const VirtualizedFloorPlanCanvas: React.FC<VirtualizedFloorPlanCanvasProp
         fabricCanvasRef.current = null;
       };
     } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to initialize canvas'), 'canvas-initialization');
+      handleCanvasError(error instanceof Error ? error : new Error('Failed to initialize canvas'));
       toast.error("Failed to initialize canvas");
     }
-  }, [width, height, onCanvasReady, handleError, workerReady]);
+  }, [width, height, onCanvasReady, handleCanvasError, workerReady]);
   
   // Refresh virtualization on resize
   useEffect(() => {

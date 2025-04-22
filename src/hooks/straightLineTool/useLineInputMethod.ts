@@ -1,10 +1,14 @@
 
 import { useState, useCallback } from 'react';
 
-export type InputMethod = 'mouse' | 'touch' | 'pencil';
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  PENCIL = 'pencil'
+}
 
 export const useLineInputMethod = () => {
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
 
   const handleInputMethodChange = useCallback((method: InputMethod) => {
     setInputMethod(method);

@@ -1,3 +1,4 @@
+
 // Export UI components from their respective files
 export * from './button';
 export * from './form';
@@ -13,3 +14,4 @@ export * from './badge';
 export * from './switch';
 export * from './toggle';
 export * from './aspect-ratio';
+export * from './separator';

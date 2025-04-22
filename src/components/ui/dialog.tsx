@@ -82,13 +82,23 @@ DialogFooter.displayName = "DialogFooter";
 export { DialogFooter };
 
 export type DialogTitleProps = ComponentPropsWithRef<typeof DialogPrimitive.Title>;
-export const DialogTitle = forwardRef<ElementRef<typeof DialogPrimitive.Title>, DialogTitleProps>(
-  ({ children, ...props }, ref) => <DialogPrimitive.Title ref={ref} {...props}>{children}</DialogPrimitive.Title>
-);
+export const DialogTitle = forwardRef<
+  ElementRef<typeof DialogPrimitive.Title>, 
+  DialogTitleProps
+>(({ children, ...props }, ref) => (
+  <DialogPrimitive.Title ref={ref} {...props}>
+    {children}
+  </DialogPrimitive.Title>
+));
 DialogTitle.displayName = "DialogTitle";
 
 export type DialogDescriptionProps = ComponentPropsWithRef<typeof DialogPrimitive.Description>;
-export const DialogDescription = forwardRef<ElementRef<typeof DialogPrimitive.Description>, DialogDescriptionProps>(
-  ({ children, ...props }, ref) => <DialogPrimitive.Description ref={ref} {...props}>{children}</DialogPrimitive.Description>
-);
+export const DialogDescription = forwardRef<
+  ElementRef<typeof DialogPrimitive.Description>, 
+  DialogDescriptionProps
+>(({ children, ...props }, ref) => (
+  <DialogPrimitive.Description ref={ref} {...props}>
+    {children}
+  </DialogPrimitive.Description>
+));
 DialogDescription.displayName = "DialogDescription";

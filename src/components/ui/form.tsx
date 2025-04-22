@@ -5,8 +5,8 @@ import { Slot } from "@radix-ui/react-slot";
 import {
   Controller,
   useForm as useReactHookForm,
-  useFormContext,
-  FormProvider
+  useFormContext as useRHFFormContext,
+  FormProvider as RHFFormProvider
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -143,7 +143,7 @@ FormMessage.displayName = "FormMessage";
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useFormContext();
+  const { getFieldState, formState } = useRHFFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
@@ -163,6 +163,7 @@ const useFormField = () => {
   };
 };
 
+// Re-export with aliases to prevent naming conflicts
 export {
   useFormField,
   Form,
@@ -172,7 +173,7 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  useFormContext,
-  FormProvider,
+  useRHFFormContext as useFormContext,
+  RHFFormProvider as FormProvider,
   useReactHookForm as useForm
 };
