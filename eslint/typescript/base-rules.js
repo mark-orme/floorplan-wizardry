@@ -18,37 +18,53 @@ export const baseTypeScriptRules = {
     }
   },
   plugins: ["@typescript-eslint"],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/strict'
+  ],
   rules: {
+    // Prevent wrong number of arguments
+    "@typescript-eslint/no-extra-args": "error",
+    
     // Strict TypeScript validation
-    "@typescript-eslint/no-non-null-assertion": "error",
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
+    "@typescript-eslint/no-unsafe-argument": "error",
+    
+    // Function signatures and return types
     "@typescript-eslint/explicit-function-return-type": ["error", {
       allowExpressions: true,
       allowHigherOrderFunctions: true,
       allowTypedFunctionExpressions: true
     }],
     "@typescript-eslint/explicit-module-boundary-types": "error",
-    "@typescript-eslint/ban-ts-comment": "warn",
-    "@typescript-eslint/no-unused-vars": ["warn"],
     
-    // Enforce consistent type imports
+    // Type imports and exports
     "@typescript-eslint/consistent-type-imports": ["error", {
       prefer: "type-imports",
-      disallowTypeAnnotations: true
+      fixStyle: "separate-type-imports"
+    }],
+    "@typescript-eslint/consistent-type-exports": ["error", {
+      fixMixedExportsWithInlineTypeSpecifier: true
     }],
     
-    // Object literal type improvements
-    "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
+    // Strict null checks
+    "@typescript-eslint/strict-boolean-expressions": "error",
+    "@typescript-eslint/no-non-null-assertion": "error",
     
-    // Better error messages
-    "@typescript-eslint/unified-signatures": "error",
+    // Ban problematic patterns
+    "@typescript-eslint/ban-ts-comment": "error",
+    "@typescript-eslint/ban-types": "error",
     
-    // Function overloads
-    "@typescript-eslint/adjacent-overload-signatures": "error",
-    
-    // Prevent common mistakes
-    "@typescript-eslint/no-namespace": "error",
-    "@typescript-eslint/no-this-alias": "error",
-    "@typescript-eslint/prefer-optional-chain": "warn"
+    // Enforce better typing
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/prefer-as-const": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "@typescript-eslint/no-unnecessary-condition": "error"
   }
 };

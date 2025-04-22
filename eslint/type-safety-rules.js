@@ -1,42 +1,54 @@
 
 /**
- * TypeScript ESLint strict type safety rules
+ * TypeScript safety rules
+ * Prevents common errors with type safety
  * @module eslint/type-safety-rules
  */
 
 export const typeSafetyRules = {
-  plugins: ['@typescript-eslint'],
+  plugins: ["@typescript-eslint"],
   rules: {
-    // Enforce explicit property access
-    '@typescript-eslint/no-unsafe-assignment': 'error',
-    '@typescript-eslint/no-unsafe-member-access': 'error',
-    '@typescript-eslint/no-unsafe-call': 'error',
-    '@typescript-eslint/no-unsafe-return': 'error',
+    // Function argument validation
+    "@typescript-eslint/no-extra-args": "error",
+    "@typescript-eslint/no-unsafe-argument": "error",
+    
+    // Enforce correct function signatures
+    "@typescript-eslint/explicit-function-return-type": ["error", {
+      allowExpressions: true,
+      allowTypedFunctionExpressions: true,
+      allowHigherOrderFunctions: true
+    }],
     
     // Prevent accessing non-existent properties
-    '@typescript-eslint/no-unsafe-argument': 'error',
+    "@typescript-eslint/no-unsafe-member-access": "error",
+    "@typescript-eslint/no-unsafe-call": "error",
+    "@typescript-eslint/no-unsafe-assignment": "error",
+    "@typescript-eslint/no-unsafe-return": "error",
     
-    // Enforce consistent exports
-    '@typescript-eslint/consistent-type-exports': 'error',
-    '@typescript-eslint/consistent-type-imports': 'error',
+    // Strict null checks
+    "@typescript-eslint/strict-boolean-expressions": ["error", {
+      allowString: true,
+      allowNumber: true,
+      allowNullableObject: false,
+      allowNullableBoolean: false
+    }],
     
-    // Require explicit types
-    '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/explicit-module-boundary-types': 'warn',
+    // Enforce better typing
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
     
-    // Prevent type widening and unnecessary type assertions
-    '@typescript-eslint/no-unnecessary-type-assertion': 'error',
-    '@typescript-eslint/prefer-as-const': 'error',
+    // Prevent type widening
+    "@typescript-eslint/no-unnecessary-type-arguments": "error",
+    "@typescript-eslint/prefer-as-const": "error",
     
-    // Ensure proper property definitions
-    '@typescript-eslint/no-extra-non-null-assertion': 'error',
-    '@typescript-eslint/no-non-null-asserted-optional-chain': 'error',
-    
-    // Prevent missing properties and methods
-    '@typescript-eslint/method-signature-style': 'error',
-    '@typescript-eslint/class-literal-property-style': 'error',
-    
-    // Ensure completeness when adding object properties
-    '@typescript-eslint/no-object-literal-type-assertion': 'error'
+    // Enforce consistent imports/exports
+    "@typescript-eslint/consistent-type-imports": ["error", {
+      prefer: "type-imports",
+      disallowTypeAnnotations: true
+    }],
+    "@typescript-eslint/consistent-type-exports": ["error", {
+      fixMixedExportsWithInlineTypeSpecifier: true
+    }]
   }
 };
