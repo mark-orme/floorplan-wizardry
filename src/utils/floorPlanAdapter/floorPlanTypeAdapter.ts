@@ -54,7 +54,7 @@ export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPl
   const now = new Date().toISOString();
 
   return adaptFloorPlan({
-    id: appPlan.id || `floor-${Date.now()}`,
+    id: appPlan.id || `floor-${Date.now()}`, // Ensure ID is present for unified type
     name: appPlan.name || 'Untitled Floor Plan',
     label: appPlan.label || appPlan.name || 'Untitled',
     walls: appPlan.walls || [],

@@ -1,146 +1,140 @@
 
-/**
- * Mock implementation for useFloorPlanDrawing tests
- * Provides consistent behavior for tests
- * @module hooks/floor-plan/__tests__/useFloorPlanDrawingMock
- */
-import { FloorPlan, Stroke, Point, createTestFloorPlan, createTestStroke } from '@/types/floor-plan/unifiedTypes';
-import { DrawingTool } from '@/types/core/DrawingTool';
+import { vi } from 'vitest';
 import { DrawingMode } from '@/constants/drawingModes';
+import { Point } from '@/types/core/Point';
+import { Room, Wall, Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Mock props for useFloorPlanDrawing tests
- * Allows tests to pass either floorPlan or floorPlans
+ * Create a mock useFloorPlanDrawing hook result
  */
-export interface MockFloorPlanDrawingProps {
-  // Single floor plan props
-  floorPlan?: FloorPlan;
-  setFloorPlan?: React.Dispatch<React.SetStateAction<FloorPlan>>;
-  
-  // Multiple floor plans props
-  floorPlans?: FloorPlan[];
-  currentFloor?: number;
-  setFloorPlans?: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  
-  // Common props
-  fabricCanvasRef: { current: any };
-  tool?: DrawingTool;
-  setGia?: React.Dispatch<React.SetStateAction<number>>;
-}
-
-/**
- * Mock result for useFloorPlanDrawing tests
- */
-export interface MockFloorPlanDrawingResult {
-  isDrawing: boolean;
-  drawingPoints: Point[];
-  currentPoint: Point | null;
-  startDrawing: (point: Point) => void;
-  continueDrawing: (point: Point) => void;
-  endDrawing: (point: Point) => void;
-  cancelDrawing: () => void;
-  addStroke: (stroke: Stroke) => void;
-  calculateAreas: () => { id: string; area: number }[];
-}
-
-/**
- * Creates a mock implementation of useFloorPlanDrawing result
- * 
- * @param {MockFloorPlanDrawingProps} props - Mock props
- * @returns {MockFloorPlanDrawingResult} Mock result
- */
-export function createMockFloorPlanDrawingResult(
-  props: MockFloorPlanDrawingProps
-): MockFloorPlanDrawingResult {
-  console.log('Creating mock floor plan drawing result');
-  
+export function createMockUseFloorPlanDrawingResult() {
   return {
     isDrawing: false,
-    drawingPoints: [],
-    currentPoint: null,
-    
-    startDrawing: (point: Point) => {
-      console.log('Mock startDrawing called with point:', point);
-    },
-    
-    continueDrawing: (point: Point) => {
-      console.log('Mock continueDrawing called with point:', point);
-    },
-    
-    endDrawing: (point: Point) => {
-      console.log('Mock endDrawing called with point:', point);
-      
-      // Call the appropriate setter based on provided props
-      if (props.floorPlan && props.setFloorPlan) {
-        props.setFloorPlan((prevFloorPlan) => {
-          // Create a fully valid floor plan object
-          const validFloorPlan = {
-            ...createTestFloorPlan({}),  // Start with a complete valid floor plan
-            ...prevFloorPlan,            // Apply previous properties
-            strokes: [...(prevFloorPlan.strokes || [])]
-          };
-          
-          return validFloorPlan;
-        });
-      } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
-        props.setFloorPlans((prevFloorPlans) => {
-          const updatedFloorPlans = [...prevFloorPlans];
-          if (updatedFloorPlans[props.currentFloor!]) {
-            // Create a fully valid floor plan object
-            updatedFloorPlans[props.currentFloor!] = {
-              ...createTestFloorPlan({}),  // Start with a complete valid floor plan
-              ...updatedFloorPlans[props.currentFloor!],
-              strokes: [...(updatedFloorPlans[props.currentFloor!].strokes || [])]
-            };
-          }
-          return updatedFloorPlans;
-        });
-      }
-    },
-    
-    cancelDrawing: () => {
-      console.log('Mock cancelDrawing called');
-    },
-    
-    addStroke: (stroke: Stroke) => {
-      console.log('Mock addStroke called with stroke:', stroke);
-      
-      // Ensure the stroke has all required properties
-      const validStroke = createTestStroke(stroke);
-      
-      // Call the appropriate setter based on provided props
-      if (props.floorPlan && props.setFloorPlan) {
-        props.setFloorPlan((prevFloorPlan) => {
-          // Create a fully valid floor plan object
-          const validFloorPlan = {
-            ...createTestFloorPlan({}),  // Start with a complete valid floor plan
-            ...prevFloorPlan,            // Apply previous properties
-            strokes: [...(prevFloorPlan.strokes || []), validStroke]
-          };
-          
-          return validFloorPlan;
-        });
-      } else if (props.floorPlans && props.setFloorPlans && typeof props.currentFloor === 'number') {
-        props.setFloorPlans((prevFloorPlans) => {
-          const updatedFloorPlans = [...prevFloorPlans];
-          if (props.currentFloor !== undefined && updatedFloorPlans[props.currentFloor]) {
-            // Create a fully valid floor plan object
-            const currentFloorPlan = {
-              ...createTestFloorPlan({}),  // Start with a complete valid floor plan
-              ...updatedFloorPlans[props.currentFloor!],
-              strokes: [...(updatedFloorPlans[props.currentFloor!].strokes || []), validStroke]
-            };
-            
-            updatedFloorPlans[props.currentFloor!] = currentFloorPlan;
-          }
-          return updatedFloorPlans;
-        });
-      }
-    },
-    
-    calculateAreas: () => {
-      console.log('Mock calculateAreas called');
-      return [{ id: 'mock-area-1', area: 100 }];
-    }
+    tool: DrawingMode.SELECT,
+    setTool: vi.fn(),
+    startDrawing: vi.fn(),
+    continueDrawing: vi.fn(),
+    endDrawing: vi.fn(),
+    cancelDrawing: vi.fn(),
+    drawFloorPlan: vi.fn(),
+    addRoom: vi.fn(),
+    addWall: vi.fn(),
+    addStroke: vi.fn(),
+    deleteObject: vi.fn(),
+    clearCanvas: vi.fn(),
+    selectedObjects: [],
+    setSelectedObjects: vi.fn(),
+    canUndo: false,
+    canRedo: false,
+    undo: vi.fn(),
+    redo: vi.fn(),
+    setFloorPlan: vi.fn(),
+    updateFloorPlan: vi.fn(),
+    calculateRoomArea: vi.fn()
   };
+}
+
+/**
+ * Create a mock wall object for testing
+ */
+export function createMockWall(partial: Partial<Wall> = {}): Wall {
+  return {
+    id: 'wall-test-1',
+    start: { x: 0, y: 0 },
+    end: { x: 100, y: 0 },
+    thickness: 5,
+    length: 100,
+    angle: 0,
+    roomIds: [],
+    floorPlanId: 'floor-test-1',
+    ...partial
+  };
+}
+
+/**
+ * Create a mock room object for testing
+ */
+export function createMockRoom(partial: Partial<Room> = {}): Room {
+  return {
+    id: 'room-test-1',
+    name: 'Test Room',
+    type: 'living',
+    area: 100,
+    perimeter: 40,
+    center: { x: 50, y: 50 },
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 }
+    ],
+    labelPosition: { x: 50, y: 50 },
+    floorPlanId: 'floor-test-1',
+    ...partial
+  };
+}
+
+/**
+ * Create a mock stroke object for testing
+ */
+export function createMockStroke(partial: Partial<Stroke> = {}): Stroke {
+  return {
+    id: 'stroke-test-1',
+    type: 'line',
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 100 }
+    ],
+    color: '#000000',
+    thickness: 1,
+    floorPlanId: 'floor-test-1',
+    ...partial
+  };
+}
+
+/**
+ * Create a mock floor plan object for testing
+ */
+export function createMockFloorPlan(partial: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: 'floor-test-1',
+    name: 'Test Floor Plan',
+    label: 'Test Floor',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    canvasJson: null,
+    createdAt: now,
+    updatedAt: now,
+    gia: 0,
+    level: 0,
+    index: 0,
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      version: '1.0',
+      paperSize: 'A4',
+      level: 0,
+      author: 'Test User',
+      dateCreated: now,
+      lastModified: now,
+      notes: '',
+      scale: 1,
+      unit: 'mm',
+      gridSize: 10
+    },
+    data: {},
+    userId: 'user-test-1',
+    ...partial
+  };
+}
+
+/**
+ * Create a mock point object for testing
+ */
+export function createMockPoint(x: number = 0, y: number = 0): Point {
+  return { x, y };
 }

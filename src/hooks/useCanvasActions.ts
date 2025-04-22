@@ -1,3 +1,4 @@
+
 /**
  * Custom hook for canvas actions (clear, save)
  * Provides high-level operations for canvas management
@@ -6,8 +7,8 @@
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
-import { FloorPlan } from '@/types/floorPlanTypes';
-import { appToCoreFloorPlans } from '@/utils/floorPlanAdapter';
+import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { convertToUnifiedFloorPlans } from '@/utils/floorPlanTypeAdapter';
 import { saveFloorPlans } from "@/utils/drawing";
 import logger from "@/utils/logger";
 
@@ -29,13 +30,13 @@ interface UseCanvasActionsProps {
   clearDrawings: () => void;
   
   /** Array of floor plans */
-  floorPlans: FloorPlan[];
+  floorPlans: any[]; // Accept any floor plan type
   
   /** Current floor index */
   currentFloor: number;
   
   /** State setter for floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;
   
   /** State setter for gross internal area */
   setGia: React.Dispatch<React.SetStateAction<number>>;
@@ -119,11 +120,11 @@ export const useCanvasActions = ({
     if (!fabricCanvasRef.current) return;
     
     try {
-      // Convert app floor plans to core format for storage
-      const corePlans = appToCoreFloorPlans(floorPlans);
+      // Convert app floor plans to unified format for storage
+      const unifiedPlans = convertToUnifiedFloorPlans(floorPlans);
       
       // First save to storage
-      saveFloorPlans(corePlans)
+      saveFloorPlans(unifiedPlans)
         .then(() => {
           toast.success("Floor plans saved to offline storage");
           

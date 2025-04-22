@@ -62,9 +62,7 @@ describe('useFloorPlanDrawing', () => {
     // Act
     act(() => {
       result.current.setTool(DrawingMode.WALL);
-      const myStroke = createTestStroke({
-        type: 'wall' as StrokeTypeLiteral
-      });
+      const myStroke = createTestStroke();
       result.current.addStroke(myStroke);
     });
 
@@ -86,9 +84,7 @@ describe('useFloorPlanDrawing', () => {
 
     act(() => {
       // Adding a stroke with the correct type
-      const stroke = createTestStroke({
-        type: 'line' as StrokeTypeLiteral
-      });
+      const stroke = createTestStroke();
       result.current.addStroke(stroke);
     });
 
@@ -110,9 +106,7 @@ describe('useFloorPlanDrawing', () => {
 
     // Act
     act(() => {
-      const room = createTestRoom({
-        type: 'living' as RoomTypeLiteral
-      });
+      const room = createTestRoom();
       result.current.addRoom(room);
     });
 

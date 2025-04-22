@@ -1,29 +1,24 @@
 
+import { Point } from '@/types/core/Point';
 import { Wall } from '@/types/floor-plan/unifiedTypes';
-import { createTestPoint } from './createTestPoint';
+import { asRoomType, asStrokeType } from '@/utils/typeAdapters';
 
 /**
- * Create a test wall
- * @param partialWall Partial wall data
- * @returns Test wall
+ * Create a test wall for testing.
+ * @param overrides Partial wall properties to override defaults
+ * @returns Wall object for testing
  */
-export function createTestWall(partialWall: Partial<Wall> = {}): Wall {
-  const start = partialWall.start || createTestPoint(0, 0);
-  const end = partialWall.end || createTestPoint(100, 0);
-
-  // Calculate length if not provided
-  const length = partialWall.length || Math.sqrt(
-    Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-  );
-
+export function createTestWall(overrides: Partial<Wall> = {}): Wall {
   return {
-    id: partialWall.id || 'wall-test',
-    start,
-    end,
-    thickness: partialWall.thickness || 5,
-    color: partialWall.color || '#333333',
-    roomIds: partialWall.roomIds || [],
-    length,
-    height: partialWall.height
+    id: overrides.id || `wall-${Date.now()}`,
+    start: overrides.start || { x: 0, y: 0 },
+    end: overrides.end || { x: 100, y: 0 },
+    thickness: overrides.thickness || 5,
+    roomIds: overrides.roomIds || [],
+    length: overrides.length || 100,
+    angle: overrides.angle || 0,  // Required property
+    color: overrides.color || '#000000',
+    height: overrides.height || 240,
+    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
   };
 }

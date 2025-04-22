@@ -124,3 +124,6 @@ export function adaptMetadata(metadata: any): FloorPlanMetadata {
 export function coreToAppFloorPlan(plan: any): FloorPlan {
   return adaptFloorPlan(plan);
 }
+
+// Export helper functions for type conversion
+export { asStrokeType, asRoomType };

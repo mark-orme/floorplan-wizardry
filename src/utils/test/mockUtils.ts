@@ -1,21 +1,23 @@
-
-// Replace @jest/globals import with proper mock functions
-import { FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
+import { Wall } from '@/types/floor-plan/unifiedTypes';
+import { Point } from '@/types/core/Point';
 
 /**
- * Create a mock function with proper typing
+ * Create a mock wall object for testing
  */
-export function createMock<TReturn = any, TArgs extends any[] = any[]>(): jest.Mock<TReturn, TArgs> {
-  return jest.fn() as jest.Mock<TReturn, TArgs>;
-}
-
-// Add missing test utilities
-export function createMockFunctionParams() {
-  return jest.fn();
-}
-
-export function createTestPoint(x = 0, y = 0) {
-  return { x, y };
+export function createMockWall(partial: Partial<Wall> = {}): Wall {
+  return {
+    id: partial.id || 'wall-test-1',
+    start: partial.start || { x: 0, y: 0 },
+    end: partial.end || { x: 100, y: 0 },
+    thickness: partial.thickness || 5,
+    length: partial.length || 100,
+    angle: partial.angle || 0,
+    color: partial.color || '#000000',
+    height: partial.height || 240,
+    roomIds: partial.roomIds || [],
+    floorPlanId: partial.floorPlanId || 'test-floor-plan',
+    metadata: partial.metadata || {}
+  };
 }
 
 /**
@@ -79,22 +81,6 @@ export function createMockRoom(overrides: Partial<Room> = {}): Room {
 }
 
 /**
- * Create a mock wall for testing
- */
-export function createMockWall(overrides: Partial<Wall> = {}): Wall {
-  return {
-    id: 'test-wall',
-    start: { x: 0, y: 0 },
-    end: { x: 100, y: 0 },
-    thickness: 5,
-    length: 100,
-    color: '#000000',
-    roomIds: [],
-    ...overrides
-  };
-}
-
-/**
  * Create a mock stroke for testing
  */
 export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
@@ -152,4 +138,20 @@ export function createMockEvent(overrides = {}) {
     currentTarget: {},
     ...overrides
   };
+}
+
+/**
+ * Create a mock function with proper typing
+ */
+export function createMock<TReturn = any, TArgs extends any[] = any[]>(): jest.Mock<TReturn, TArgs> {
+  return jest.fn() as jest.Mock<TReturn, TArgs>;
+}
+
+// Add missing test utilities
+export function createMockFunctionParams() {
+  return jest.fn();
+}
+
+export function createTestPoint(x = 0, y = 0) {
+  return { x, y };
 }

@@ -131,15 +131,26 @@ export function captureErrorWithMonitoring(
   monitoringTag: string,
   additionalContext?: Record<string, any>
 ) {
-  // Map to two-parameter signature for backward compatibility
-  const context = {
-    context: contextName,
-    tags: {
-      monitoring: monitoringTag,
-      ...(additionalContext?.tags || {})
-    },
-    extra: additionalContext?.extra || additionalContext
-  };
-  
-  captureError(error, context);
+  // Map to three-parameter signature for backward compatibility
+  captureError(error, contextName, {
+    monitoring: monitoringTag,
+    ...(additionalContext || {})
+  });
+}
+
+/**
+ * Capture message with enhanced monitoring data
+ * Used for critical message paths that need additional context
+ */
+export function captureMessageWithMonitoring(
+  message: string,
+  contextName: string,
+  monitoringTag: string,
+  additionalContext?: Record<string, any>
+) {
+  // Map to three-parameter signature for backward compatibility
+  captureMessage(message, contextName, {
+    monitoring: monitoringTag,
+    ...(additionalContext || {})
+  });
 }
