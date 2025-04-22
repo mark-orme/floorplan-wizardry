@@ -12,10 +12,19 @@ jest.mock('fabric', () => ({
 describe('useLineState', () => {
   // Create a mock Canvas ref
   const fabricCanvasRef = createRef<FabricCanvas | null>();
+  // Mock as non-readonly for testing purposes
   fabricCanvasRef.current = {} as FabricCanvas;
 
+  // Create mock options with required fields
+  const mockOptions = {
+    fabricCanvasRef,
+    lineColor: '#000000',
+    lineThickness: 2,
+    saveCurrentState: jest.fn()
+  };
+
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useLineState({ fabricCanvasRef }));
+    const { result } = renderHook(() => useLineState(mockOptions));
     
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.startPoint).toBeNull();
@@ -23,7 +32,7 @@ describe('useLineState', () => {
   });
 
   it('should update drawing state on startDrawing', () => {
-    const { result } = renderHook(() => useLineState({ fabricCanvasRef }));
+    const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });
@@ -34,7 +43,7 @@ describe('useLineState', () => {
   });
 
   it('should update current point on continueDrawing', () => {
-    const { result } = renderHook(() => useLineState({ fabricCanvasRef }));
+    const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });
@@ -45,7 +54,7 @@ describe('useLineState', () => {
   });
 
   it('should reset state on completeDrawing', () => {
-    const { result } = renderHook(() => useLineState({ fabricCanvasRef }));
+    const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });

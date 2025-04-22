@@ -71,8 +71,7 @@ describe('useFloorPlanDrawing', () => {
 
     // Act
     act(() => {
-      const myStroke = createMockStroke();
-      result.current.addStroke(myStroke);
+      result.current.addStroke();
     });
 
     // Assert
@@ -94,8 +93,7 @@ describe('useFloorPlanDrawing', () => {
 
     act(() => {
       // Adding a stroke with the correct type
-      const stroke = createMockStroke();
-      result.current.addStroke(stroke);
+      result.current.addStroke();
     });
 
     // Assert
@@ -114,15 +112,7 @@ describe('useFloorPlanDrawing', () => {
 
     // Act
     act(() => {
-      const wall = {
-        id: '1',
-        start: { x: 0, y: 0 },
-        end: { x: 100, y: 0 },
-        thickness: 5,
-        color: '#000',
-        roomIds: []
-      };
-      result.current.addWall(wall);
+      result.current.addWall();
     });
 
     // Assert
