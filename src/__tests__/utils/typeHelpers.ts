@@ -2,13 +2,14 @@
 // Removed the duplicate 'gia' property in the floorPlan fixture and kept one correct entry.
 
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics'; // This is now exported correctly
+import { toFabricPoint } from '@/utils/fabric/pointAdapter';
 
 import type { Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
 
 // Example test data with correct Stroke type (no width)
 const testStroke: Partial<Stroke> = {
   id: 'test-stroke',
-  points: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+  points: [toFabricPoint({ x: 0, y: 0 }), toFabricPoint({ x: 1, y: 1 })],
   type: 'line',
   color: '#000000',
   thickness: 2,
@@ -36,7 +37,6 @@ const testFloorPlan: Partial<FloorPlan> = {
     level: 0,
     version: '1.0',
     author: 'User',
-    dateCreated: now,
     lastModified: now,
     notes: ''
   },
@@ -48,4 +48,3 @@ const testFloorPlan: Partial<FloorPlan> = {
 export {
   // export test fixtures or utilities here if any
 };
-

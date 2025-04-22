@@ -1,9 +1,14 @@
 
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { convertToCoreFloorPlans, convertToUnifiedFloorPlans } from '@/utils/floorPlanAdapter';
-import { CanvasAction } from '@/types/canvas';
 import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { 
+  CanvasAction, 
+  createCanvasAction,
+  AddFloorPlanAction,
+  UpdateFloorPlanAction,
+  DeleteFloorPlanAction
+} from '@/types/canvas';
 import { createTestFloorPlan } from '@/utils/test/typedTestFixtures';
 
 interface UseCanvasActionsProps {
@@ -28,11 +33,15 @@ export const useCanvasActions = ({
   const addFloorPlan = useCallback(() => {
     const newFloorPlan = createTestFloorPlan();
     setFloorPlans(prev => [...prev, newFloorPlan]);
-    setHistory(prev => [...prev, { 
-      type: 'add_floor_plan', 
-      floorPlanId: newFloorPlan.id,
-      timestamp: Date.now() 
-    }]);
+    
+    // Use the createCanvasAction helper to ensure timestamp is added
+    setHistory(prev => [
+      ...prev, 
+      createCanvasAction({
+        type: 'add_floor_plan',
+        floorPlanId: newFloorPlan.id
+      }) as AddFloorPlanAction
+    ]);
   }, []);
 
   // Update floor plan action
@@ -42,12 +51,16 @@ export const useCanvasActions = ({
       updated[index] = floorPlan;
       return updated;
     });
-    setHistory(prev => [...prev, { 
-      type: 'update_floor_plan', 
-      floorPlanId: floorPlan.id,
-      data: { index },
-      timestamp: Date.now()
-    }]);
+    
+    // Use the createCanvasAction helper to ensure timestamp is added
+    setHistory(prev => [
+      ...prev, 
+      createCanvasAction({
+        type: 'update_floor_plan',
+        floorPlanId: floorPlan.id,
+        data: { index }
+      }) as UpdateFloorPlanAction
+    ]);
   }, []);
 
   // Delete floor plan action
@@ -56,11 +69,15 @@ export const useCanvasActions = ({
     if (!floorPlanId) return;
 
     setFloorPlans(prev => prev.filter((_, i) => i !== index));
-    setHistory(prev => [...prev, { 
-      type: 'delete_floor_plan', 
-      floorPlanId,
-      timestamp: Date.now()
-    }]);
+    
+    // Use the createCanvasAction helper to ensure timestamp is added
+    setHistory(prev => [
+      ...prev, 
+      createCanvasAction({
+        type: 'delete_floor_plan',
+        floorPlanId
+      }) as DeleteFloorPlanAction
+    ]);
 
     // Update current floor plan index if needed
     if (currentFloorPlanIndex >= index) {
@@ -68,39 +85,17 @@ export const useCanvasActions = ({
     }
   }, [floorPlans, currentFloorPlanIndex]);
 
-  // Custom converter function for core floor plans
+  // Custom converter function for compatible floor plans
   const getCompatibleFloorPlans = useCallback(() => {
-    // Instead of direct conversion using a type that might be incompatible,
-    // we create a temp object that ensures all required properties are present
-    const tempCorePlans = floorPlans.map(plan => ({
-      id: plan.id,
-      name: plan.name,
-      label: plan.label,
-      walls: plan.walls.map(wall => ({
-        id: wall.id,
-        start: wall.start,
-        end: wall.end,
-        thickness: wall.thickness,
-        color: wall.color,
-        roomIds: wall.roomIds || []
-      })),
-      rooms: plan.rooms,
-      strokes: [],
-      canvasData: plan.canvasData,
-      canvasJson: plan.canvasJson,
-      createdAt: plan.createdAt,
-      updatedAt: plan.updatedAt,
-      gia: plan.gia,
-      level: plan.level,
-      index: plan.index,
-      metadata: {
-        createdAt: plan.metadata.createdAt,
-        updatedAt: plan.metadata.updatedAt,
-        paperSize: plan.metadata.paperSize,
-        level: plan.metadata.level
-      }
+    // Create new objects with all required properties to ensure compatibility
+    return floorPlans.map(plan => ({
+      ...plan,
+      // Ensure these properties exist
+      createdAt: plan.createdAt || new Date().toISOString(),
+      updatedAt: plan.updatedAt || new Date().toISOString(),
+      data: plan.data || {},
+      userId: plan.userId || ''
     }));
-    return tempCorePlans;
   }, [floorPlans]);
 
   return {

@@ -7,7 +7,7 @@
 import { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 import { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
-import { convertToCoreFloorPlans, convertToUnifiedFloorPlans } from './converters';
+import { FloorPlan as CanvasFloorPlan } from '@/types/floorPlanTypes';
 
 /**
  * Convert a unified floor plan to app format
@@ -15,20 +15,34 @@ import { convertToCoreFloorPlans, convertToUnifiedFloorPlans } from './converter
  * @returns App floor plan
  */
 export const convertToAppFloorPlan = (unifiedPlan: UnifiedFloorPlan): AppFloorPlan => {
-  // First convert to core format
-  const corePlan = convertToCoreFloorPlans([unifiedPlan])[0];
+  const now = new Date().toISOString();
   
-  // Then convert to app format
   return {
-    id: corePlan.id,
-    name: corePlan.name,
-    label: corePlan.label,
-    walls: corePlan.walls,
-    rooms: corePlan.rooms,
-    strokes: corePlan.strokes,
-    metadata: corePlan.metadata,
-    createdAt: corePlan.metadata.createdAt,
-    updatedAt: corePlan.metadata.updatedAt
+    id: unifiedPlan.id,
+    name: unifiedPlan.name,
+    label: unifiedPlan.label || '',
+    walls: unifiedPlan.walls.map(wall => ({
+      id: wall.id,
+      start: wall.start,
+      end: wall.end,
+      thickness: wall.thickness,
+      color: wall.color,
+      roomIds: wall.roomIds || []
+    })),
+    rooms: unifiedPlan.rooms,
+    strokes: unifiedPlan.strokes,
+    metadata: {
+      createdAt: unifiedPlan.metadata?.createdAt || now,
+      updatedAt: unifiedPlan.metadata?.updatedAt || now,
+      paperSize: unifiedPlan.metadata?.paperSize,
+      level: unifiedPlan.metadata?.level,
+      version: unifiedPlan.metadata?.version,
+      author: unifiedPlan.metadata?.author,
+      lastModified: unifiedPlan.metadata?.lastModified || now,
+      notes: unifiedPlan.metadata?.notes || ''
+    },
+    createdAt: unifiedPlan.createdAt || now,
+    updatedAt: unifiedPlan.updatedAt || now
   };
 };
 
@@ -47,19 +61,24 @@ export const convertToAppFloorPlans = (unifiedPlans: UnifiedFloorPlan[]): AppFlo
  * @returns Unified floor plan
  */
 export const convertToUnifiedFloorPlan = (appPlan: AppFloorPlan): UnifiedFloorPlan => {
-  // First convert to core format
-  const corePlan: CoreFloorPlan = {
+  const now = new Date().toISOString();
+  
+  return {
     id: appPlan.id,
     name: appPlan.name,
-    label: appPlan.label,
+    label: appPlan.label || appPlan.name,
     walls: appPlan.walls,
     rooms: appPlan.rooms,
     strokes: appPlan.strokes,
-    metadata: appPlan.metadata
+    createdAt: appPlan.createdAt,
+    updatedAt: appPlan.updatedAt,
+    gia: 0,
+    level: appPlan.metadata?.level || 0,
+    index: 0,
+    metadata: appPlan.metadata,
+    data: {},
+    userId: ''
   };
-  
-  // Then convert to unified format
-  return convertToUnifiedFloorPlans([corePlan])[0];
 };
 
 /**
@@ -69,4 +88,55 @@ export const convertToUnifiedFloorPlan = (appPlan: AppFloorPlan): UnifiedFloorPl
  */
 export const convertToUnifiedFloorPlans = (appPlans: AppFloorPlan[]): UnifiedFloorPlan[] => {
   return appPlans.map(convertToUnifiedFloorPlan);
+};
+
+/**
+ * Convert standard FloorPlan to canvas compatible FloorPlan
+ */
+export const convertToCanvasFloorPlan = (plan: UnifiedFloorPlan | AppFloorPlan): CanvasFloorPlan => {
+  const now = new Date().toISOString();
+  
+  return {
+    id: plan.id,
+    name: plan.name,
+    label: plan.label || plan.name,
+    walls: plan.walls,
+    rooms: plan.rooms,
+    strokes: plan.strokes,
+    index: 'index' in plan ? plan.index : 0,
+    level: 'level' in plan ? plan.level : 0,
+    canvasData: null,
+    canvasJson: null,
+    gia: 'gia' in plan ? plan.gia : 0,
+    createdAt: 'createdAt' in plan ? plan.createdAt : now,
+    updatedAt: 'updatedAt' in plan ? plan.updatedAt : now,
+    metadata: plan.metadata,
+    data: 'data' in plan ? plan.data : {},
+    userId: 'userId' in plan ? plan.userId : '',
+    propertyId: 'propertyId' in plan ? plan.propertyId : ''
+  };
+};
+
+/**
+ * Convert canvas FloorPlan to unified format
+ */
+export const convertFromCanvasFloorPlan = (canvasPlan: CanvasFloorPlan): UnifiedFloorPlan => {
+  return {
+    id: canvasPlan.id,
+    name: canvasPlan.name,
+    label: canvasPlan.label,
+    walls: canvasPlan.walls,
+    rooms: canvasPlan.rooms,
+    strokes: canvasPlan.strokes,
+    gia: canvasPlan.gia,
+    level: canvasPlan.level,
+    index: canvasPlan.index,
+    createdAt: canvasPlan.createdAt,
+    updatedAt: canvasPlan.updatedAt,
+    metadata: canvasPlan.metadata,
+    data: canvasPlan.data,
+    userId: canvasPlan.userId,
+    canvasData: canvasPlan.canvasData,
+    canvasJson: canvasPlan.canvasJson
+  };
 };

@@ -20,7 +20,16 @@ export interface FloorPlan extends Omit<CoreFloorPlan, 'metadata'> {
   walls: Wall[];
   rooms: Room[];
   strokes: Stroke[];
-  metadata: CoreFloorPlan['metadata'];
+  metadata: {
+    createdAt: string;
+    updatedAt: string;
+    author?: string;
+    version?: string;
+    paperSize?: string;
+    level?: number;
+    lastModified?: string;
+    notes?: string;
+  };
 }
 
 export type AppFloorPlan = FloorPlan;

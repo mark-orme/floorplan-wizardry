@@ -5,15 +5,17 @@ import { render, screen } from '@testing-library/react';
 import { AccessibilityTester } from '../AccessibilityTester';
 
 // Instead of directly importing axe, we'll use our helper
-import { renderWithA11y } from '@/tests/helpers/accessibility';
+import { testComponentA11y } from '@/tests/helpers/accessibility';
 
 describe('AccessibilityTester', () => {
   it('should render without accessibility violations', async () => {
     const { container } = render(<AccessibilityTester />);
     
-    // Use our helper instead of direct axe import
-    const { axeResults } = await renderWithA11y(<AccessibilityTester />);
-    expect(axeResults.violations).toHaveLength(0);
+    // Test component for accessibility with our helper
+    await testComponentA11y(<AccessibilityTester />);
+    
+    // This test passes if no errors are thrown by testComponentA11y
+    expect(true).toBe(true);
   });
 
   it('should show only children when showResults is false', () => {

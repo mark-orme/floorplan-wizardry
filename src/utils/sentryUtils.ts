@@ -11,6 +11,7 @@ export interface ErrorOptions {
   tags?: Record<string, string>;
   extra?: Record<string, any>;
   user?: Sentry.User;
+  severity?: Sentry.SeverityLevel;
 }
 
 /**
@@ -49,6 +50,7 @@ export function captureError(
       },
       extra: options.extra || {},
       user: options.user,
+      level: options.severity,
     });
   }
 }
@@ -75,6 +77,7 @@ export function captureMessage(
       },
       extra: options.extra || {},
       user: options.user,
+      level: options.severity,
     });
   }
 }
