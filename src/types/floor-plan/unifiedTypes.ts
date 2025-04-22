@@ -16,12 +16,12 @@ export interface Point {
 /**
  * Room type literals
  */
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other' | 'hallway' | 'dining' | 'storage' | 'garage' | 'outdoor' | 'custom';
 
 /**
  * Stroke type literals
  */
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
+export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand' | 'appliance' | 'dimension' | 'custom';
 
 /**
  * Paper size enum
@@ -48,6 +48,9 @@ export interface Wall {
   updatedAt?: string;
   color?: string;
   height?: number;
+  roomIds?: string[]; // Property needed for compatibility
+  floorPlanId?: string; // Property needed for compatibility
+  metadata?: Record<string, any>; // Property needed for compatibility
 }
 
 /**
@@ -65,6 +68,8 @@ export interface Room {
   createdAt?: string;
   updatedAt?: string;
   color?: string;
+  floorPlanId?: string; // Property needed for compatibility
+  metadata?: Record<string, any>; // Property needed for compatibility
 }
 
 /**
@@ -78,6 +83,9 @@ export interface Stroke {
   thickness: number;
   createdAt?: string;
   updatedAt?: string;
+  width?: number; // Property needed for compatibility
+  floorPlanId?: string; // Property needed for compatibility
+  metadata?: Record<string, any>; // Property needed for compatibility
 }
 
 /**
@@ -93,6 +101,9 @@ export interface FloorPlanMetadata {
   dateCreated: string;
   lastModified: string;
   notes: string;
+  scale?: number; // Property needed for compatibility
+  unit?: string; // Property needed for compatibility
+  gridSize?: number; // Property needed for compatibility
 }
 
 /**
@@ -146,19 +157,26 @@ export interface FloorPlan {
   
   /** User ID who owns the floor plan (required) */
   userId: string;
+  
+  /** Property ID (for compatibility) */
+  propertyId?: string;
 }
 
 /**
  * Helper functions to safely convert string values to enum types
  */
 export function asStrokeType(type: string): StrokeTypeLiteral {
-  return (['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'] as StrokeTypeLiteral[])
-    .includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
+  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation', 
+    'polyline', 'room', 'freehand', 'appliance', 'dimension', 'custom'];
+  
+  return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
 }
 
 export function asRoomType(type: string): RoomTypeLiteral {
-  return (['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'] as RoomTypeLiteral[])
-    .includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
+  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other',
+    'hallway', 'dining', 'storage', 'garage', 'outdoor', 'custom'];
+  
+  return validTypes.includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
 }
 
 /**
@@ -219,7 +237,8 @@ export function createEmptyWall(): Wall {
     end: { x: 100, y: 0 },
     thickness: 5,
     length: 100,
-    angle: 0
+    angle: 0,
+    roomIds: [] // Add for compatibility
   };
 }
 

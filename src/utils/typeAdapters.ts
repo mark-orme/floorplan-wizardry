@@ -2,39 +2,9 @@
 /**
  * Type adapters for converting between different object formats
  */
-import type { FloorPlan, Room, Wall, Stroke, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan, Room, Wall, Stroke, FloorPlanMetadata, RoomTypeLiteral, StrokeTypeLiteral } from '@/types/floor-plan/unifiedTypes';
 import type { Point } from '@/types/core/Point';
-
-/**
- * Room type literal values
- */
-export type RoomTypeLiteral = 
-  | 'living' 
-  | 'bedroom' 
-  | 'kitchen' 
-  | 'bathroom' 
-  | 'hallway' 
-  | 'dining' 
-  | 'office' 
-  | 'storage'
-  | 'garage'
-  | 'outdoor'
-  | 'custom'
-  | 'unknown';
-
-/**
- * Stroke type literal values
- */
-export type StrokeTypeLiteral = 
-  | 'wall' 
-  | 'door' 
-  | 'window' 
-  | 'appliance' 
-  | 'furniture' 
-  | 'dimension'
-  | 'annotation'
-  | 'custom'
-  | 'unknown';
+import { asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Adapt a FloorPlan from any format to unified type
@@ -71,9 +41,11 @@ export function adaptRoom(room: any): Room {
     name: room.name || 'Untitled Room',
     type: asRoomType(room.type),
     area: typeof room.area === 'number' ? room.area : 0,
-    points: Array.isArray(room.points) ? room.points : [],
+    perimeter: typeof room.perimeter === 'number' ? room.perimeter : 0,
     center: room.center || { x: 0, y: 0 },
-    metadata: room.metadata || {}
+    vertices: Array.isArray(room.vertices) ? room.vertices : [],
+    labelPosition: room.labelPosition || { x: 0, y: 0 },
+    floorPlanId: room.floorPlanId
   };
 }
 
@@ -86,7 +58,10 @@ export function adaptWall(wall: any): Wall {
     start: wall.start || { x: 0, y: 0 },
     end: wall.end || { x: 100, y: 0 },
     thickness: typeof wall.thickness === 'number' ? wall.thickness : 1,
-    metadata: wall.metadata || {}
+    length: typeof wall.length === 'number' ? wall.length : 100,
+    angle: typeof wall.angle === 'number' ? wall.angle : 0,
+    roomIds: wall.roomIds || [],
+    floorPlanId: wall.floorPlanId
   };
 }
 
@@ -100,7 +75,7 @@ export function adaptStroke(stroke: any): Stroke {
     points: Array.isArray(stroke.points) ? stroke.points : [],
     color: stroke.color || '#000000',
     thickness: typeof stroke.thickness === 'number' ? stroke.thickness : 1,
-    metadata: stroke.metadata || {}
+    floorPlanId: stroke.floorPlanId
   };
 }
 
@@ -116,6 +91,11 @@ export function adaptMetadata(metadata: any): FloorPlanMetadata {
       updatedAt: now,
       version: '1.0',
       paperSize: 'A4',
+      level: 0,
+      author: 'User',
+      dateCreated: now,
+      lastModified: now,
+      notes: '',
       scale: 1,
       unit: 'mm',
       gridSize: 10
@@ -127,41 +107,15 @@ export function adaptMetadata(metadata: any): FloorPlanMetadata {
     updatedAt: metadata.updatedAt || now,
     version: metadata.version || '1.0',
     paperSize: metadata.paperSize || 'A4',
+    level: typeof metadata.level === 'number' ? metadata.level : 0,
+    author: metadata.author || 'User',
+    dateCreated: metadata.dateCreated || now,
+    lastModified: metadata.lastModified || now,
+    notes: metadata.notes || '',
     scale: typeof metadata.scale === 'number' ? metadata.scale : 1,
     unit: metadata.unit || 'mm',
-    gridSize: typeof metadata.gridSize === 'number' ? metadata.gridSize : 10,
-    // Forward any additional properties
-    ...metadata
+    gridSize: typeof metadata.gridSize === 'number' ? metadata.gridSize : 10
   };
-}
-
-/**
- * Convert any value to a valid StrokeTypeLiteral
- */
-export function asStrokeType(type: any): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = [
-    'wall', 'door', 'window', 'appliance', 'furniture', 
-    'dimension', 'annotation', 'custom', 'unknown'
-  ];
-  
-  return validTypes.includes(type as StrokeTypeLiteral) 
-    ? (type as StrokeTypeLiteral) 
-    : 'unknown';
-}
-
-/**
- * Convert any value to a valid RoomTypeLiteral
- */
-export function asRoomType(type: any): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = [
-    'living', 'bedroom', 'kitchen', 'bathroom', 'hallway',
-    'dining', 'office', 'storage', 'garage', 'outdoor',
-    'custom', 'unknown'
-  ];
-  
-  return validTypes.includes(type as RoomTypeLiteral)
-    ? (type as RoomTypeLiteral)
-    : 'unknown';
 }
 
 /**

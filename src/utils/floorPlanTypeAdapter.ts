@@ -1,149 +1,121 @@
 
 /**
  * Floor Plan Type Adapter
- * Utilities for converting between different floor plan type definitions
- * @module utils/floorPlanTypeAdapter
+ * Provides adapters between different FloorPlan interfaces in the application
  */
-import { FloorPlan as UnifiedFloorPlan, Stroke as UnifiedStroke, Room as UnifiedRoom } from '@/types/floor-plan/unifiedTypes';
-import { FloorPlan as LegacyFloorPlan, Stroke as LegacyStroke, Room as LegacyRoom } from '@/types/floorPlanTypes';
-import { asStrokeType, asRoomType } from '@/utils/typeAdapters';
+import type { FloorPlan as UnifiedFloorPlan, Room, Wall, Stroke, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
+import { asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Convert a unified floor plan to a legacy floor plan
- * @param floorPlan Unified floor plan
- * @returns Legacy floor plan
+ * Convert a unified floor plan to a compatible app floor plan
  */
-export function convertToAppFloorPlan(floorPlan: UnifiedFloorPlan): LegacyFloorPlan {
-  // Current timestamp for defaults
+export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPlan {
   const now = new Date().toISOString();
   
-  // Ensure all required properties are present
-  const result: LegacyFloorPlan = {
-    id: floorPlan.id,
-    propertyId: floorPlan.userId || 'default-property-id', // Ensure propertyId is present
-    name: floorPlan.name || '',
-    label: floorPlan.label || floorPlan.name || '',
-    data: floorPlan.data || {}, // Ensure data is present
-    userId: floorPlan.userId || 'test-user', // Ensure userId is present
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
-    walls: floorPlan.walls || [],
-    rooms: (floorPlan.rooms || []).map(convertToAppRoom),
-    strokes: (floorPlan.strokes || []).map(convertToAppStroke),
-    level: floorPlan.level || 0,
-    gia: floorPlan.gia || 0,
-    index: floorPlan.index || 0,
-    canvasData: floorPlan.canvasData || null,
-    canvasJson: floorPlan.canvasJson || null,
-    metadata: {
-      version: floorPlan.metadata?.version || '1.0',
-      author: 'User',
-      dateCreated: floorPlan.metadata?.createdAt || now,
-      lastModified: floorPlan.metadata?.updatedAt || now,
-      notes: '',
-      paperSize: floorPlan.metadata?.paperSize || 'A4',
-      level: floorPlan.metadata?.level || floorPlan.level || 0,
-      createdAt: floorPlan.metadata?.createdAt,
-      updatedAt: floorPlan.metadata?.updatedAt
-    }
-  };
-  
-  return result;
-}
-
-/**
- * Convert a unified stroke to a legacy stroke
- * @param stroke Unified stroke
- * @returns Legacy stroke
- */
-export function convertToAppStroke(stroke: UnifiedStroke): LegacyStroke {
-  // Convert type to ensure compatibility
-  const typeValue = typeof stroke.type === 'string' 
-    ? asStrokeType(stroke.type as string) 
-    : 'line';
-  
   return {
-    ...stroke,
-    type: typeValue as any,
-    floorPlanId: stroke.id?.split('-')[0] || 'floor-' + Date.now() // Add required floorPlanId
-  } as LegacyStroke;
-}
-
-/**
- * Convert a unified room to a legacy room
- * @param room Unified room
- * @returns Legacy room
- */
-export function convertToAppRoom(room: UnifiedRoom): LegacyRoom {
-  // Convert type to ensure compatibility
-  const typeValue = typeof room.type === 'string' 
-    ? asRoomType(room.type as string) 
-    : 'other';
-  
-  return {
-    ...room,
-    type: typeValue as any,
-    floorPlanId: room.id?.split('-')[0] || 'floor-' + Date.now(), // Add required floorPlanId
-    // Ensure required Room properties exist
-    area: room.area || 0,
-    perimeter: room.perimeter || 0,
-    center: room.center || { x: 0, y: 0 },
-    vertices: room.vertices || [],
-    labelPosition: room.labelPosition || { x: 0, y: 0 }
-  } as LegacyRoom;
-}
-
-/**
- * Convert a legacy floor plan to a unified floor plan
- * @param floorPlan Legacy floor plan
- * @returns Unified floor plan
- */
-export function convertToUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan {
-  const now = new Date().toISOString();
-  
-  // Basic conversion, treating the LegacyFloorPlan as a base
-  const unifiedPlan: UnifiedFloorPlan = {
-    id: floorPlan.id || `floor-${Date.now()}`,
-    name: floorPlan.name || 'Untitled',
-    label: floorPlan.label || floorPlan.name || 'Untitled',
-    walls: floorPlan.walls || [],
-    rooms: floorPlan.rooms || [],
-    strokes: floorPlan.strokes || [],
-    gia: floorPlan.gia || 0,
-    level: floorPlan.level || 0,
-    index: floorPlan.index || 0,
-    canvasData: floorPlan.canvasData || null,
-    canvasJson: floorPlan.canvasJson || null,
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
+    id: unifiedPlan.id,
+    propertyId: unifiedPlan.userId || unifiedPlan.propertyId || 'default-property',
+    name: unifiedPlan.name,
+    label: unifiedPlan.label,
+    walls: unifiedPlan.walls.map(wall => ({
+      ...wall,
+      // Only add floorPlanId if not already present
+      floorPlanId: wall.floorPlanId || unifiedPlan.id
+    })),
+    rooms: unifiedPlan.rooms.map(room => ({
+      ...room,
+      // Only add floorPlanId if not already present
+      floorPlanId: room.floorPlanId || unifiedPlan.id
+    })),
+    strokes: unifiedPlan.strokes.map(stroke => ({
+      ...stroke,
+      // Only add floorPlanId if not already present
+      floorPlanId: stroke.floorPlanId || unifiedPlan.id
+    })),
+    data: unifiedPlan.data || {},
+    version: unifiedPlan.metadata?.version,
+    createdAt: unifiedPlan.createdAt,
+    updatedAt: unifiedPlan.updatedAt,
+    level: unifiedPlan.level,
+    index: unifiedPlan.index,
+    gia: unifiedPlan.gia,
+    canvasData: unifiedPlan.canvasData,
+    canvasJson: unifiedPlan.canvasJson,
     metadata: {
-      createdAt: floorPlan.metadata?.createdAt || now,
-      updatedAt: floorPlan.metadata?.updatedAt || now,
-      paperSize: floorPlan.metadata?.paperSize || 'A4',
-      level: floorPlan.metadata?.level || 0,
-      version: floorPlan.metadata?.version || '1.0',
-      author: floorPlan.metadata?.author || 'User',
-      dateCreated: floorPlan.metadata?.dateCreated || now,
-      lastModified: floorPlan.metadata?.lastModified || now,
-      notes: floorPlan.metadata?.notes || ''
+      version: unifiedPlan.metadata?.version || '1.0',
+      author: unifiedPlan.metadata?.author || 'User',
+      dateCreated: unifiedPlan.metadata?.dateCreated || now,
+      lastModified: unifiedPlan.metadata?.lastModified || now,
+      notes: unifiedPlan.metadata?.notes || '',
+      paperSize: unifiedPlan.metadata?.paperSize,
+      level: unifiedPlan.metadata?.level,
+      createdAt: unifiedPlan.metadata?.createdAt,
+      updatedAt: unifiedPlan.metadata?.updatedAt
     },
-    data: floorPlan.data || {},
-    userId: floorPlan.userId || floorPlan.propertyId || 'default-user'
+    userId: unifiedPlan.userId
   };
+}
+
+/**
+ * Convert an app floor plan to a unified floor plan
+ */
+export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPlan {
+  const now = new Date().toISOString();
   
-  return unifiedPlan;
+  // Ensure ID is present
+  const id = appPlan.id || `floor-${Date.now()}`;
+
+  return {
+    id,
+    name: appPlan.name || 'Untitled Floor Plan',
+    label: appPlan.label || appPlan.name || 'Untitled',
+    walls: (appPlan.walls || []).map(wall => ({
+      ...wall,
+      roomIds: wall.roomIds || [] // Ensure roomIds exists
+    })),
+    rooms: (appPlan.rooms || []).map(room => ({
+      ...room,
+      type: asRoomType(room.type) // Ensure valid room type
+    })),
+    strokes: (appPlan.strokes || []).map(stroke => ({
+      ...stroke,
+      type: asStrokeType(stroke.type) // Ensure valid stroke type
+    })),
+    canvasData: appPlan.canvasData,
+    canvasJson: appPlan.canvasJson,
+    createdAt: appPlan.createdAt || now,
+    updatedAt: appPlan.updatedAt || now,
+    gia: appPlan.gia || 0,
+    level: appPlan.level || 0,
+    index: appPlan.index || appPlan.level || 0,
+    metadata: {
+      version: appPlan.metadata?.version || '1.0',
+      author: appPlan.metadata?.author || 'User',
+      dateCreated: appPlan.metadata?.dateCreated || now,
+      lastModified: appPlan.metadata?.lastModified || now,
+      notes: appPlan.metadata?.notes || '',
+      paperSize: appPlan.metadata?.paperSize || 'A4',
+      level: appPlan.metadata?.level || 0,
+      createdAt: appPlan.metadata?.createdAt || now,
+      updatedAt: appPlan.metadata?.updatedAt || now
+    },
+    data: appPlan.data || {},
+    userId: appPlan.userId || appPlan.propertyId || 'default-user',
+    propertyId: appPlan.propertyId // Keep for compatibility
+  };
 }
 
 /**
  * Convert multiple unified floor plans to app floor plans
  */
-export function convertToAppFloorPlans(unifiedPlans: UnifiedFloorPlan[]): LegacyFloorPlan[] {
+export function convertToAppFloorPlans(unifiedPlans: UnifiedFloorPlan[]): AppFloorPlan[] {
   return unifiedPlans.map(convertToAppFloorPlan);
 }
 
 /**
  * Convert multiple app floor plans to unified floor plans
  */
-export function convertToUnifiedFloorPlans(appPlans: LegacyFloorPlan[]): UnifiedFloorPlan[] {
+export function convertToUnifiedFloorPlans(appPlans: AppFloorPlan[]): UnifiedFloorPlan[] {
   return appPlans.map(convertToUnifiedFloorPlan);
 }
