@@ -8,30 +8,32 @@ import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  createTestFloorPlan,
-  createTestStroke,
-  createTestRoom,
-  createTestWall
-} from '@/types/floor-plan/unifiedTypes';
-import { asMockCanvas } from '@/utils/testing/testUtils';
+  createMockFloorPlan,
+  createMockStroke,
+  createMockRoom,
+  createMockWall
+} from '@/utils/test/mockUtils';
 import type { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
 
 describe('useFloorPlanDrawing', () => {
   let mockCanvas: any;
 
   beforeEach(() => {
-    // Use a generic mock object and wrap it for typing safety in tests
-    mockCanvas = asMockCanvas({
-      add: vi.fn().mockReturnValue(undefined),
-      renderAll: vi.fn().mockReturnValue(undefined),
-      // Add additional common canvas methods as needed for compatibility
-    });
+    // Create a mock canvas for testing
+    mockCanvas = {
+      add: vi.fn(),
+      renderAll: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      remove: vi.fn(),
+      clear: vi.fn(),
+      discardActiveObject: vi.fn()
+    };
   });
 
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       canvas: mockCanvas,
-      floorPlan: createTestFloorPlan()
+      floorPlan: createMockFloorPlan()
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -41,7 +43,7 @@ describe('useFloorPlanDrawing', () => {
   it('should handle tool change', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       canvas: mockCanvas,
-      floorPlan: createTestFloorPlan()
+      floorPlan: createMockFloorPlan()
     }));
 
     act(() => {
@@ -53,7 +55,7 @@ describe('useFloorPlanDrawing', () => {
 
   it('should create strokes with the correct type', () => {
     // Arrange
-    const testFloorPlan = createTestFloorPlan();
+    const testFloorPlan = createMockFloorPlan();
     const { result } = renderHook(() => useFloorPlanDrawing({
       canvas: mockCanvas,
       floorPlan: testFloorPlan
@@ -62,7 +64,7 @@ describe('useFloorPlanDrawing', () => {
     // Act
     act(() => {
       result.current.setTool(DrawingMode.WALL);
-      const myStroke = createTestStroke();
+      const myStroke = createMockStroke();
       result.current.addStroke(myStroke);
     });
 
@@ -72,8 +74,8 @@ describe('useFloorPlanDrawing', () => {
 
   it('should update floor plan when changes occur', () => {
     // Arrange
-    const updateFloorPlan = vi.fn().mockReturnValue(undefined);
-    const testFloorPlan = createTestFloorPlan();
+    const updateFloorPlan = vi.fn();
+    const testFloorPlan = createMockFloorPlan();
 
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
@@ -84,7 +86,7 @@ describe('useFloorPlanDrawing', () => {
 
     act(() => {
       // Adding a stroke with the correct type
-      const stroke = createTestStroke();
+      const stroke = createMockStroke();
       result.current.addStroke(stroke);
     });
 
@@ -94,9 +96,9 @@ describe('useFloorPlanDrawing', () => {
 
   it('should handle adding a room', () => {
     // Arrange
-    const testFloorPlan = createTestFloorPlan({
+    const testFloorPlan = createMockFloorPlan({
       rooms: [],
-      walls: [createTestWall()]
+      walls: [createMockWall()]
     });
 
     const { result } = renderHook(() => useFloorPlanDrawing({
@@ -106,7 +108,7 @@ describe('useFloorPlanDrawing', () => {
 
     // Act
     act(() => {
-      const room = createTestRoom();
+      const room = createMockRoom();
       result.current.addRoom(room);
     });
 

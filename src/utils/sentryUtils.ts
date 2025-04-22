@@ -9,7 +9,7 @@ import * as Sentry from '@sentry/react';
  * Interface for capture error options
  */
 export interface CaptureErrorOptions {
-  context?: Record<string, any>;
+  context?: string | Record<string, any>;
   tags?: Record<string, string>;
   level?: 'info' | 'warning' | 'error' | 'fatal';
   user?: {
@@ -25,7 +25,7 @@ export interface CaptureErrorOptions {
  * Interface for capture message options
  */
 export interface CaptureMessageOptions {
-  context?: Record<string, any>;
+  context?: string | Record<string, any>;
   tags?: Record<string, string>;
   level?: Sentry.SeverityLevel;
   user?: {
@@ -37,25 +37,33 @@ export interface CaptureMessageOptions {
 }
 
 /**
- * Capture an error with context information
+ * Legacy compatibility function that handles the old 3-argument pattern
  * @param error The error to capture
- * @param contextOrOptions Context string or options object (optional)
+ * @param context Context string 
+ * @param extraData Additional data
  */
 export function captureError(
   error: Error | any,
-  contextOrOptions?: string | Record<string, any>
+  context?: string | Record<string, any>,
+  extraData?: Record<string, any>
 ) {
   // Handle different call signatures to provide backward compatibility
-  if (typeof contextOrOptions === 'string') {
+  if (typeof context === 'string' && extraData) {
+    // Old pattern: captureError(error, 'contextName', { extra: 'data' })
+    Sentry.captureException(error, {
+      tags: { context: context },
+      extra: extraData
+    });
+  } else if (typeof context === 'string') {
     // String context only: captureError(error, 'name')
     Sentry.captureException(error, {
-      tags: { context: contextOrOptions }
+      tags: { context: context }
     });
-  } else if (contextOrOptions && typeof contextOrOptions === 'object') {
+  } else if (context && typeof context === 'object') {
     // Object context: captureError(error, { tags: {}, context: 'data', extra: 'data' })
     Sentry.captureException(error, {
-      tags: contextOrOptions.tags || { context: contextOrOptions.context || 'unknown' },
-      extra: contextOrOptions.extra || contextOrOptions
+      tags: context.tags || { context: context.context || 'unknown' },
+      extra: context.extra || context
     });
   } else {
     // Just the error: captureError(error)
@@ -64,27 +72,36 @@ export function captureError(
 }
 
 /**
- * Capture a message with context information
+ * Legacy compatibility function that handles the old 3-argument pattern 
  * @param message The message to capture
- * @param contextOrOptions Context string or options object (optional)
+ * @param context Context string
+ * @param extraData Additional data
  */
 export function captureMessage(
   message: string,
-  contextOrOptions?: string | Record<string, any>
+  context?: string | Record<string, any>,
+  extraData?: Record<string, any>
 ) {
   // Handle different call signatures to provide backward compatibility
-  if (typeof contextOrOptions === 'string') {
+  if (typeof context === 'string' && extraData) {
+    // Old pattern: captureMessage('message', 'contextName', { extra: 'data' })
+    Sentry.captureMessage(message, {
+      level: 'info',
+      tags: { context: context },
+      extra: extraData
+    });
+  } else if (typeof context === 'string') {
     // String context only: captureMessage('message', 'name')
     Sentry.captureMessage(message, {
       level: 'info',
-      tags: { context: contextOrOptions }
+      tags: { context: context }
     });
-  } else if (contextOrOptions && typeof contextOrOptions === 'object') {
+  } else if (context && typeof context === 'object') {
     // Object context: captureMessage('message', { level: 'info', context: 'data', extra: 'data' })
     Sentry.captureMessage(message, {
-      level: (contextOrOptions.level as Sentry.SeverityLevel) || 'info',
-      tags: contextOrOptions.tags || { context: contextOrOptions.context || 'unknown' },
-      extra: contextOrOptions.extra || contextOrOptions
+      level: (context.level as Sentry.SeverityLevel) || 'info',
+      tags: context.tags || { context: context.context || 'unknown' },
+      extra: context.extra || context
     });
   } else {
     // Just the message: captureMessage('message')

@@ -37,7 +37,7 @@ export function createMockUseFloorPlanDrawingResult() {
 /**
  * Create a mock wall object for testing
  */
-export function createMockWall(partial: Partial<Wall> = {}): Wall {
+export function createMockWall(): Wall {
   return {
     id: 'wall-test-1',
     start: { x: 0, y: 0 },
@@ -48,14 +48,14 @@ export function createMockWall(partial: Partial<Wall> = {}): Wall {
     roomIds: [],
     floorPlanId: 'floor-test-1',
     color: '#000000',
-    ...partial
+    height: 240
   };
 }
 
 /**
  * Create a mock room object for testing
  */
-export function createMockRoom(partial: Partial<Room> = {}): Room {
+export function createMockRoom(): Room {
   return {
     id: 'room-test-1',
     name: 'Test Room',
@@ -71,15 +71,14 @@ export function createMockRoom(partial: Partial<Room> = {}): Room {
     ],
     labelPosition: { x: 50, y: 50 },
     floorPlanId: 'floor-test-1',
-    color: '#ffffff',
-    ...partial
+    color: '#ffffff'
   };
 }
 
 /**
  * Create a mock stroke object for testing
  */
-export function createMockStroke(partial: Partial<Stroke> = {}): Stroke {
+export function createMockStroke(): Stroke {
   return {
     id: 'stroke-test-1',
     type: 'line',
@@ -89,15 +88,14 @@ export function createMockStroke(partial: Partial<Stroke> = {}): Stroke {
     ],
     color: '#000000',
     thickness: 1,
-    floorPlanId: 'floor-test-1',
-    ...partial
+    floorPlanId: 'floor-test-1'
   };
 }
 
 /**
  * Create a mock floor plan object for testing
  */
-export function createMockFloorPlan(partial: Partial<FloorPlan> = {}): FloorPlan {
+export function createMockFloorPlan(): FloorPlan {
   const now = new Date().toISOString();
   
   return {
@@ -126,14 +124,13 @@ export function createMockFloorPlan(partial: Partial<FloorPlan> = {}): FloorPlan
       notes: ''
     },
     data: {},
-    userId: 'user-test-1',
-    ...partial
+    userId: 'user-test-1'
   };
 }
 
 /**
  * Create a mock point object for testing
  */
-export function createMockPoint(x: number = 0, y: number = 0): Point {
-  return { x, y };
+export function createMockPoint(): Point {
+  return { x: 0, y: 0 };
 }

@@ -113,3 +113,28 @@ export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
 export function createMockPoint(x: number = 0, y: number = 0): Point {
   return { x, y };
 }
+
+/**
+ * Create a test point (alias for createMockPoint for backward compatibility)
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns A point object
+ */
+export function createTestPoint(x: number = 0, y: number = 0): Point {
+  return createMockPoint(x, y);
+}
+
+/**
+ * Create mock function parameters for testing
+ * @param overrides Properties to override defaults
+ * @returns Mock function parameters
+ */
+export function createMockFunctionParams(overrides: Record<string, any> = {}): Record<string, any> {
+  return {
+    mouseX: overrides.mouseX || 0,
+    mouseY: overrides.mouseY || 0,
+    pressure: overrides.pressure || 1,
+    timestamp: overrides.timestamp || Date.now(),
+    ...overrides
+  };
+}
