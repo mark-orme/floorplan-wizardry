@@ -5,8 +5,7 @@
  * @module utils/validation/typeValidation
  */
 
-import * as z from 'zod';
-import { ZodError } from 'zod';
+import z from '@/utils/zod-mock';
 import { sanitizeHtml, sanitizeObject } from '../security/inputSanitization';
 
 /**

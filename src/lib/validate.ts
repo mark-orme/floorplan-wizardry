@@ -1,5 +1,5 @@
-import * as z from 'zod';
-import { ZodError } from 'zod';
+
+import z from '@/utils/zod-mock';
 import { sanitizeHtml, sanitizeObject } from '../utils/security/inputSanitization';
 
 export const validateEmail = (email: string): boolean => {

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import * as z from "zod";
+import z from "@/utils/zod-mock";
 
 const propertySchema = z.object({
   orderId: z.string().min(1),
