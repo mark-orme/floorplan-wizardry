@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useCanvasContext } from '@/contexts/CanvasContext';
 import { GRID_CONSTANTS } from './GridConstants';
@@ -18,7 +19,7 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({ className }) =
     width: '100%',
     height: '100%',
     zIndex: 0,
-    pointerEvents: 'none',
+    pointerEvents: 'none' as const,
   };
 
   return (

@@ -63,7 +63,7 @@ export interface FloorPlan {
   createdAt?: string;
   updatedAt?: string;
   metadata?: any;
-  data?: any;
+  data: any; // Required for interface compatibility
   userId?: string;
   propertyId?: string;
 }
@@ -73,7 +73,8 @@ export interface CanvasData {
   offset: Point;
 }
 
-export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'other';
+// Update RoomTypeLiteral to include all possible room types
+export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'office' | 'other';
 export type StrokeTypeLiteral = 'line' | 'curve' | 'freehand' | 'rect' | 'circle';
 
 // Helper functions

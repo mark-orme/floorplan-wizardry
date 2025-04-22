@@ -1,4 +1,7 @@
 
+import { v4 as uuid } from 'uuid';
+import { FloorPlan } from '@/types/core';
+
 // Fix for missing required FloorPlan properties
 const floorPlan: FloorPlan = {
   id: uuid(),

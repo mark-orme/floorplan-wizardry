@@ -1,4 +1,3 @@
-
 /**
  * Room Types
  * Room interface and related types for floor plans
@@ -9,7 +8,7 @@ import { Point } from '../core/Point';
 /**
  * Room type literals
  */
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'dining' | 'other';
 
 /**
  * Room interface for floor plan

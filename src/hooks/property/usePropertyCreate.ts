@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -38,7 +39,8 @@ export const usePropertyCreate = ({ onSuccess, onError }: UsePropertyCreateProps
     return data;
   };
 
-  const mutation = useMutation(createProperty, {
+  const mutation = useMutation({
+    mutationFn: createProperty,
     onSuccess: () => {
       // Success logic already handled in createProperty
     },
