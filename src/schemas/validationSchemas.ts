@@ -1,9 +1,8 @@
-
 /**
  * Validation Schemas
  * Zod schemas for validating user inputs and API responses
  */
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**

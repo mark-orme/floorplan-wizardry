@@ -1,5 +1,5 @@
 
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { useForm } from 'react-hook-form';
 import {
   Form,
