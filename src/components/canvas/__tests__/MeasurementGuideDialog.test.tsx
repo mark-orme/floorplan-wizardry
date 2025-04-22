@@ -39,4 +39,47 @@ describe('MeasurementGuideDialog', () => {
     expect(button).toBeInTheDocument();
     expect(button).toHaveAccessibleName();
   });
+  
+  it('should correctly handle dialog state based on open prop', () => {
+    const handleOpenChange = vi.fn();
+    
+    const { rerender } = render(
+      <MeasurementGuideDialog 
+        open={true}
+        onOpenChange={handleOpenChange}
+      />
+    );
+    
+    // Dialog should be visible when open=true
+    expect(screen.getByRole('dialog')).toBeVisible();
+    
+    // Update to closed state
+    rerender(
+      <MeasurementGuideDialog 
+        open={false}
+        onOpenChange={handleOpenChange}
+      />
+    );
+    
+    // Dialog should not be in the document when open=false
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+  
+  it('should call onOpenChange when close button is clicked', () => {
+    const handleOpenChange = vi.fn();
+    
+    render(
+      <MeasurementGuideDialog 
+        open={true}
+        onOpenChange={handleOpenChange}
+      />
+    );
+    
+    // Click the close button
+    const closeButton = screen.getByRole('button', { name: /got it/i });
+    closeButton.click();
+    
+    // Should call onOpenChange with false
+    expect(handleOpenChange).toHaveBeenCalledWith(false);
+  });
 });

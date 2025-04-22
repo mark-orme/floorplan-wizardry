@@ -1,133 +1,123 @@
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { 
-  runAccessibilityCheck, 
-  checkColorContrast, 
+import React, { useEffect, useState } from 'react';
+import {
+  runAccessibilityCheck,
+  checkColorContrast,
   validateAriaAttributes,
   AccessibilityIssue,
   loadAccessibilityTester
 } from '@/utils/testing/accessibilityTester';
 
-interface AccessibilityTesterProps {
+export interface AccessibilityTesterProps {
+  /** Target element selector */
   selector?: string;
+  /** Whether to run tests automatically */
   autoRun?: boolean;
+  /** Whether to show test results */
   showResults?: boolean;
+  /** Children */
+  children?: React.ReactNode;
 }
 
-export function AccessibilityTester({ 
-  selector = 'body', 
+/**
+ * Component for testing accessibility in development
+ */
+export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
+  selector = '#root',
   autoRun = false,
-  showResults = true 
-}: AccessibilityTesterProps) {
+  showResults = true,
+  children
+}) => {
   const [issues, setIssues] = useState<AccessibilityIssue[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tested, setTested] = useState(false);
 
   const runTest = async () => {
     setLoading(true);
     try {
-      // Note: This is just for demonstration
-      // In a real app, you would need to integrate this with Playwright or
-      // use a browser extension approach to run accessibility tests
-      await loadAccessibilityTester();
-      
-      // Mock implementation since we can't run actual Playwright tests in the browser
-      setTimeout(() => {
-        setIssues([
-          {
-            id: 'color-contrast',
-            impact: 'serious',
-            description: 'Elements must have sufficient color contrast',
-            nodes: ['.low-contrast-text']
-          },
-          {
-            id: 'aria-required-attr',
-            impact: 'critical',
-            description: 'Required ARIA attributes must be provided',
-            nodes: ['#missing-aria-label']
-          }
-        ]);
-        setLoading(false);
-      }, 1000);
+      const element = document.querySelector(selector);
+      if (!element) {
+        console.error(`AccessibilityTester: Element with selector "${selector}" not found`);
+        return;
+      }
+
+      // Using axe-core directly in the browser
+      const { runTest } = await loadAccessibilityTester();
+      // @ts-ignore - we're running in browser context
+      const result = await runTest(element);
+      setIssues(result.violations);
+      setTested(true);
     } catch (error) {
-      console.error('Error running accessibility test:', error);
+      console.error('AccessibilityTester error:', error);
+    } finally {
       setLoading(false);
     }
   };
 
-  // Run the test automatically if autoRun is true
-  React.useEffect(() => {
+  useEffect(() => {
     if (autoRun) {
-      runTest();
-    }
-  }, [autoRun]);
+      // Wait for content to render
+      const timer = setTimeout(() => {
+        runTest();
+      }, 1000);
 
-  // If showResults is false, only return the button to run the test
+      return () => clearTimeout(timer);
+    }
+  }, [autoRun, selector]);
+
   if (!showResults) {
-    return (
-      <div className="p-4 border rounded-md">
-        <h2 className="text-xl font-semibold mb-4">Accessibility Tester</h2>
-        <Button 
-          onClick={runTest}
-          disabled={loading}
-        >
-          {loading ? 'Running Tests...' : 'Run A11y Tests'}
-        </Button>
-      </div>
-    );
+    return <>{children}</>;
   }
 
   return (
-    <div className="p-4 border rounded-md">
-      <h2 className="text-xl font-semibold mb-4">Accessibility Tester</h2>
-      <div className="mb-4">
-        <Button 
-          onClick={runTest}
-          disabled={loading}
-          className="mr-2"
-        >
-          {loading ? 'Running Tests...' : 'Run A11y Tests'}
-        </Button>
-        <span className="text-sm text-gray-500">Testing selector: {selector}</span>
-      </div>
+    <div className="accessibility-tester">
+      {children}
       
-      {issues.length > 0 && (
-        <div className="mt-4">
-          <h3 className="font-medium mb-2">Issues Found ({issues.length})</h3>
-          <ul className="space-y-2">
-            {issues.map((issue, index) => (
-              <li key={index} className="p-3 bg-red-50 border border-red-200 rounded">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{issue.description}</span>
-                  <span className={`px-2 py-1 text-xs rounded ${
-                    issue.impact === 'critical' ? 'bg-red-600 text-white' : 
-                    issue.impact === 'serious' ? 'bg-orange-500 text-white' : 
-                    'bg-yellow-200 text-yellow-800'
-                  }`}>
-                    {issue.impact}
-                  </span>
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-0 right-0 p-4 bg-white dark:bg-gray-800 border shadow-lg max-w-md max-h-96 overflow-auto z-50">
+          <h3 className="text-lg font-semibold mb-2">Accessibility Check</h3>
+          
+          <button
+            onClick={runTest}
+            disabled={loading}
+            className="px-3 py-1 bg-blue-500 text-white rounded mb-3 disabled:opacity-50"
+          >
+            {loading ? 'Running...' : 'Run Test'}
+          </button>
+          
+          {tested && (
+            <>
+              {issues.length === 0 ? (
+                <div className="text-green-500">✓ No issues found</div>
+              ) : (
+                <div>
+                  <div className="text-red-500 mb-2">Found {issues.length} issues:</div>
+                  <ul className="list-disc pl-4 space-y-2">
+                    {issues.map((issue, i) => (
+                      <li key={i}>
+                        <div className="font-semibold">
+                          {issue.id} ({issue.impact})
+                        </div>
+                        <div>{issue.description}</div>
+                        <a 
+                          href={issue.helpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline text-sm"
+                        >
+                          Learn more
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Affected elements: {issue.nodes.join(', ')}
-                </div>
-              </li>
-            ))}
-          </ul>
+              )}
+            </>
+          )}
         </div>
       )}
-      
-      {issues.length === 0 && !loading && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded">
-          <p className="text-green-800">No accessibility issues detected!</p>
-        </div>
-      )}
-      
-      <div className="mt-4 text-xs text-gray-500">
-        Note: This is a simplified demonstration. In a real application, you would integrate with 
-        Playwright and axe-core for comprehensive accessibility testing.
-      </div>
     </div>
   );
-}
+};
 
 export default AccessibilityTester;

@@ -1,68 +1,35 @@
 
-import { Page } from '@playwright/test';
-import { AxeBuilder } from '@axe-core/playwright';
+/**
+ * Accessibility Testing Utilities
+ * Wrapper functions for axe-core for testing components
+ */
+import { axe, toHaveNoViolations } from 'jest-axe';
+import React from 'react';
+import { render, RenderResult } from '@testing-library/react';
 
-// Define accessibility audit options
-export interface AccessibilityAuditOptions {
-  includeSelectors?: string[];
-  excludeSelectors?: string[];
-  includeRoles?: string[];
-  excludeRoles?: string[];
-  rules?: {
-    enable?: string[];
-    disable?: string[];
+// Add the jest-axe matcher
+expect.extend(toHaveNoViolations);
+
+/**
+ * Renders a component and tests it for accessibility
+ * @param ui Component to test
+ * @returns The rendered component and accessibility results
+ */
+export const renderWithA11y = async (ui: React.ReactElement) => {
+  const renderResult = render(ui);
+  const axeResults = await axe(renderResult.container);
+  
+  return {
+    ...renderResult,
+    axeResults,
   };
-}
+};
 
 /**
- * Run an accessibility audit on the current page
- * @param page Playwright page
- * @param options Audit options
- * @returns Array of violations
+ * Tests a component for accessibility violations
+ * @param ui Component to test
  */
-export async function runAccessibilityAudit(
-  page: Page, 
-  options: AccessibilityAuditOptions = {}
-) {
-  const builder = new AxeBuilder({ page });
-
-  if (options.includeSelectors) {
-    builder.include(options.includeSelectors);
-  }
-
-  if (options.excludeSelectors) {
-    builder.exclude(options.excludeSelectors);
-  }
-
-  if (options.rules?.enable) {
-    builder.options({ rules: options.rules.enable.reduce((acc, rule) => {
-      acc[rule] = { enabled: true };
-      return acc;
-    }, {} as Record<string, { enabled: boolean }>) });
-  }
-
-  const results = await builder.analyze();
-  return results.violations;
-}
-
-/**
- * Check dialog accessibility
- * @param element Element to check
- */
-export function checkDialogAccessibility(element: HTMLElement) {
-  const hasRole = element.hasAttribute('role') && element.getAttribute('role') === 'dialog';
-  const hasLabel = element.hasAttribute('aria-label') || element.hasAttribute('aria-labelledby');
-  const hasDescription = element.hasAttribute('aria-describedby');
-  
-  if (!hasRole) {
-    console.warn('Dialog missing role="dialog" attribute');
-  }
-  
-  if (!hasLabel) {
-    console.warn('Dialog missing aria-label or aria-labelledby attribute');
-  }
-  
-  if (!hasDescription) {
-    console.warn('Dialog missing aria-describedby attribute');
-  }
-}
+export const testComponentA11y = async (ui: React.ReactElement) => {
+  const { axeResults } = await renderWithA11y(ui);
+  expect(axeResults).toHaveNoViolations();
+};

@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -177,4 +178,29 @@ jobs:
           path: |
             test-results/
             playwright-report/
+          retention-days: 7
+
+  bundle-size:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build app with bundle analysis
+        run: npm run build:analyze
+      
+      - name: Check bundle size limits
+        run: node scripts/check-bundle-size.js
+      
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: stats.html
           retention-days: 7

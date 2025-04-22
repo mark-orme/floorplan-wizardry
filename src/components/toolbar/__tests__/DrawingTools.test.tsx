@@ -40,4 +40,28 @@ describe('DrawingTools', () => {
       expect(button).toHaveAccessibleName();
     });
   });
+  
+  it('should mark the active tool appropriately for screen readers', () => {
+    const handleToolChange = vi.fn();
+    const ACTIVE_TOOL = DrawingMode.PENCIL;
+    
+    render(
+      <DrawingTools 
+        activeTool={ACTIVE_TOOL}
+        onToolChange={handleToolChange}
+      />
+    );
+    
+    // Find the active tool button
+    const activeButton = screen.getAllByRole('button').find(button => {
+      return button.getAttribute('data-tool') === ACTIVE_TOOL ||
+             button.getAttribute('aria-pressed') === 'true' ||
+             button.getAttribute('data-state') === 'active';
+    });
+    
+    expect(activeButton).toBeDefined();
+    
+    // Active button should have appropriate aria attributes
+    expect(activeButton).toHaveAttribute('aria-pressed', 'true');
+  });
 });
