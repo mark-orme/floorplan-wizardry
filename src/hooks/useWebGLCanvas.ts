@@ -15,6 +15,7 @@ export const useWebGLCanvas = ({ canvasRef, fabricCanvas }: UseWebGLCanvasProps)
     if (!canvasRef.current || !fabricCanvas) return;
 
     try {
+      // Initialize the WebGL renderer
       webglRendererRef.current = new WebGLRenderer(canvasRef.current);
       console.log('WebGL renderer initialized successfully');
     } catch (error) {
@@ -23,8 +24,10 @@ export const useWebGLCanvas = ({ canvasRef, fabricCanvas }: UseWebGLCanvasProps)
     }
 
     return () => {
-      webglRendererRef.current?.dispose();
-      webglRendererRef.current = null;
+      if (webglRendererRef.current) {
+        webglRendererRef.current.dispose();
+        webglRendererRef.current = null;
+      }
     };
   }, [canvasRef, fabricCanvas]);
 

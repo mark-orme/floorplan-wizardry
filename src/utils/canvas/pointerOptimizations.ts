@@ -1,171 +1,226 @@
 
 /**
- * Pointer and canvas optimizations
- * Provides utilities for enhancing canvas drawing performance
+ * Pointer optimization utilities
+ * Provides advanced handling for stylus input
  */
-import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Check if event is from a pen/stylus
- * @param event The pointer event to check
+ * Check if an event is from a pen/stylus
+ * @param event Pointer event
  * @returns Whether the event is from a pen
  */
-export const isPenEvent = (event: PointerEvent): boolean => {
+export function isPenEvent(event: PointerEvent): boolean {
   return event.pointerType === 'pen';
-};
+}
 
 /**
- * Get coalesced events for smoother drawing
- * @param event The pointer event to get coalesced events from
- * @returns Array of coalesced events (or the original event if not supported)
+ * Get coalesced events from a pointer event
+ * Modern browsers coalesce multiple events into one for performance
+ * This extracts all the individual events for more precision
+ * 
+ * @param event Pointer event
+ * @returns Array of coalesced events, or the event itself if not supported
  */
-export const getCoalescedEvents = (event: PointerEvent): PointerEvent[] => {
-  if ('getCoalescedEvents' in event) {
-    const events = event.getCoalescedEvents();
-    return events.length > 0 ? events : [event];
+export function getCoalescedEvents(event: PointerEvent): PointerEvent[] {
+  if (event.getCoalescedEvents && event.getCoalescedEvents().length > 0) {
+    return event.getCoalescedEvents();
   }
   return [event];
-};
+}
 
 /**
- * Configure palm rejection
- * Ignores touch events when a pen is active
- * @param element The canvas element
+ * Configure palm rejection for canvas
+ * @param canvas Canvas element
  * @returns Cleanup function
  */
-export const configurePalmRejection = (element: HTMLCanvasElement): () => void => {
-  let isPenDown = false;
+export function configurePalmRejection(canvas: HTMLCanvasElement): () => void {
+  let activePenId: number | null = null;
   
   const handlePointerDown = (e: PointerEvent) => {
     if (e.pointerType === 'pen') {
-      isPenDown = true;
-    } else if (e.pointerType === 'touch' && isPenDown) {
-      // Block touch events when pen is down
+      activePenId = e.pointerId;
+    } else if (e.pointerType === 'touch' && activePenId !== null) {
+      // If a pen is active and this is a touch event, prevent it
       e.preventDefault();
       e.stopPropagation();
     }
   };
   
   const handlePointerUp = (e: PointerEvent) => {
-    if (e.pointerType === 'pen') {
-      isPenDown = false;
+    if (e.pointerType === 'pen' && e.pointerId === activePenId) {
+      activePenId = null;
     }
   };
   
-  // Add event listeners with capture to intercept events
-  element.addEventListener('pointerdown', handlePointerDown, true);
-  element.addEventListener('pointerup', handlePointerUp, true);
-  element.addEventListener('pointercancel', handlePointerUp, true);
+  // Add event listeners
+  canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
+  canvas.addEventListener('pointerup', handlePointerUp, { passive: true });
+  canvas.addEventListener('pointercancel', handlePointerUp, { passive: true });
   
-  // Touch events handler to block when pen is active
-  const handleTouch = (e: TouchEvent) => {
-    if (isPenDown) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
-  
-  element.addEventListener('touchstart', handleTouch, { passive: false });
-  element.addEventListener('touchmove', handleTouch, { passive: false });
-  
+  // Return cleanup function
   return () => {
-    element.removeEventListener('pointerdown', handlePointerDown, true);
-    element.removeEventListener('pointerup', handlePointerUp, true);
-    element.removeEventListener('pointercancel', handlePointerUp, true);
-    element.removeEventListener('touchstart', handleTouch);
-    element.removeEventListener('touchmove', handleTouch);
+    canvas.removeEventListener('pointerdown', handlePointerDown);
+    canvas.removeEventListener('pointerup', handlePointerUp);
+    canvas.removeEventListener('pointercancel', handlePointerUp);
   };
-};
+}
 
 /**
- * Optimize canvas for drawing performance
- * @param canvas The canvas element to optimize
+ * Optimize canvas for drawing
+ * @param canvas Canvas element
  */
-export const optimizeCanvasForDrawing = (canvas: HTMLCanvasElement): void => {
-  // Set up canvas for optimal drawing
+export function optimizeCanvasForDrawing(canvas: HTMLCanvasElement): void {
+  // Disable default touch behaviors
+  canvas.style.touchAction = 'none';
+  
+  // Prevent context menu
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  
+  // Set up fast event handling
+  canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  
+  // Force hardware acceleration
+  canvas.style.transform = 'translateZ(0)';
+  canvas.style.backfaceVisibility = 'hidden';
+  
+  // Optimize for high-DPI displays
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    // Fix for the TS error: check for property before setting
-    if ('imageSmoothingEnabled' in ctx) {
-      (ctx as CanvasRenderingContext2D).imageSmoothingEnabled = true;
-    }
-    
-    // Optimize canvas performance
-    canvas.style.touchAction = 'none';
-    // Remove vendor-prefixed properties that cause TypeScript errors
-    // and use standard properties instead
-    canvas.style.touchAction = 'none';
-    canvas.style.webkitUserSelect = 'none';
-    canvas.style.userSelect = 'none';
-    canvas.style.outline = 'none';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
   }
-};
+}
 
 /**
- * Set up WebGL rendering for a canvas
- * @param canvas The canvas element
- * @returns Cleanup function
- */
-export const setupWebGLRendering = (canvas: HTMLCanvasElement): (() => void) => {
-  // Implementation would go here
-  return () => {
-    // Cleanup
-  };
-};
-
-/**
- * Frame timing utility for performance monitoring
+ * Performance monitoring frame timer
  */
 export class FrameTimer {
+  private frameCount: number = 0;
   private lastTime: number = 0;
-  private frames: number = 0;
-  private totalTime: number = 0;
+  private fps: number = 0;
+  private avgFrameTime: number = 0;
+  private totalFrameTime: number = 0;
   private rafId: number | null = null;
   private callback: ((fps: number, avgTime: number) => void) | null = null;
   
   /**
-   * Start monitoring frame rate
-   * @param callback Function to call with FPS updates
+   * Start monitoring
+   * @param callback Callback function with FPS and average frame time
    */
-  startMonitoring(callback: (fps: number, avgTime: number) => void): void {
-    this.callback = callback;
+  public startMonitoring(callback?: (fps: number, avgTime: number) => void): void {
+    this.frameCount = 0;
     this.lastTime = performance.now();
-    this.frames = 0;
-    this.totalTime = 0;
+    this.fps = 0;
+    this.avgFrameTime = 0;
+    this.totalFrameTime = 0;
+    this.callback = callback || null;
     
-    const updateFps = () => {
-      const now = performance.now();
-      const delta = now - this.lastTime;
-      this.lastTime = now;
-      
-      this.frames++;
-      this.totalTime += delta;
-      
-      if (this.totalTime >= 1000) {
-        const fps = (this.frames * 1000) / this.totalTime;
-        const avgTime = this.totalTime / this.frames;
-        
-        if (this.callback) {
-          this.callback(fps, avgTime);
-        }
-        
-        this.frames = 0;
-        this.totalTime = 0;
-      }
-      
-      this.rafId = requestAnimationFrame(updateFps);
-    };
-    
-    this.rafId = requestAnimationFrame(updateFps);
+    this.tick();
   }
   
   /**
-   * Stop monitoring frame rate
+   * Stop monitoring
    */
-  stopMonitoring(): void {
+  public stopMonitoring(): void {
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
   }
+  
+  /**
+   * Get current FPS
+   * @returns Current FPS
+   */
+  public getFPS(): number {
+    return this.fps;
+  }
+  
+  /**
+   * Get average frame time
+   * @returns Average frame time in milliseconds
+   */
+  public getAverageFrameTime(): number {
+    return this.avgFrameTime;
+  }
+  
+  /**
+   * Frame tick
+   */
+  private tick = (): void => {
+    this.rafId = requestAnimationFrame(this.tick);
+    
+    const now = performance.now();
+    const frameTime = now - this.lastTime;
+    this.lastTime = now;
+    
+    this.frameCount++;
+    this.totalFrameTime += frameTime;
+    
+    // Update stats every second
+    if (this.totalFrameTime >= 1000) {
+      this.fps = this.frameCount / (this.totalFrameTime / 1000);
+      this.avgFrameTime = this.totalFrameTime / this.frameCount;
+      
+      if (this.callback) {
+        this.callback(this.fps, this.avgFrameTime);
+      }
+      
+      this.frameCount = 0;
+      this.totalFrameTime = 0;
+    }
+  };
+}
+
+/**
+ * Set up WebGL rendering
+ * @param canvas Canvas element
+ * @returns Cleanup function
+ */
+export function setupWebGLRendering(canvas: HTMLCanvasElement): () => void {
+  let gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
+  
+  try {
+    // Try to get WebGL context
+    const contextOptions = {
+      alpha: true,
+      antialias: true,
+      depth: false,
+      stencil: false,
+      preserveDrawingBuffer: true,
+      premultipliedAlpha: false,
+      desynchronized: true, // For lower latency
+      powerPreference: 'high-performance'
+    };
+    
+    gl = canvas.getContext('webgl2', contextOptions) as WebGL2RenderingContext || 
+         canvas.getContext('webgl', contextOptions) as WebGLRenderingContext;
+    
+    if (!gl) {
+      throw new Error('WebGL not supported');
+    }
+    
+    // Set up WebGL
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    
+    // Set up viewport
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    
+    console.log('WebGL rendering initialized');
+  } catch (error) {
+    console.warn('Failed to initialize WebGL rendering:', error);
+    return () => {}; // No cleanup needed
+  }
+  
+  // Return cleanup function
+  return () => {
+    if (gl) {
+      // Release WebGL context if possible
+      const extension = gl.getExtension('WEBGL_lose_context');
+      if (extension) extension.loseContext();
+    }
+  };
 }
