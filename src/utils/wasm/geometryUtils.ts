@@ -5,12 +5,7 @@
  */
 
 import { Point } from '@/types/core/Geometry';
-import { supportsWasm, wasmStatus, calculateArea } from './index';
-import { 
-  optimizePoints,
-  calculatePolygonArea as calculatePolygonAreaJs,
-  calculateDistance as calculateDistanceJs
-} from '../geometry/engine';
+import { isWasmSupported, loadGeometryModule } from './wasmLoader';
 
 /**
  * Simplify a polygon path using WASM when available
@@ -25,14 +20,19 @@ export async function simplifyPolygon(points: Point[], tolerance: number = 1.0):
   }
   
   // If WASM is not supported, use JS implementation
-  if (!supportsWasm() || wasmStatus.error) {
+  if (!isWasmSupported()) {
     return optimizePoints(points, tolerance);
   }
   
   try {
-    // Use WASM implementation for better performance
-    // This would call the WASM-backed implementation
-    return optimizePoints(points, tolerance); // Temporary fallback
+    const wasmModule = await loadGeometryModule();
+    if (!wasmModule) {
+      return optimizePoints(points, tolerance);
+    }
+    
+    // This would be implemented using the WASM module
+    // For now, fallback to JS implementation
+    return optimizePoints(points, tolerance);
   } catch (error) {
     console.error('Error in WASM simplifyPolygon:', error);
     return optimizePoints(points, tolerance);
@@ -40,96 +40,118 @@ export async function simplifyPolygon(points: Point[], tolerance: number = 1.0):
 }
 
 /**
- * Calculate polygon area using WASM when available
- * @param points Polygon points
+ * Optimize points by removing points that are too close together
+ * or unnecessary for the shape.
+ * @param points Array of points to optimize
+ * @param tolerance Simplification tolerance
+ * @returns Optimized array of points
+ */
+export function optimizePoints(points: Point[], tolerance: number = 1.0): Point[] {
+  if (points.length <= 2) return [...points];
+  
+  // Simple implementation of Ramer-Douglas-Peucker algorithm
+  const result: Point[] = [];
+  const stack: [number, number][] = [[0, points.length - 1]];
+  const marked = new Set<number>();
+  
+  marked.add(0);
+  marked.add(points.length - 1);
+  
+  while (stack.length > 0) {
+    const [start, end] = stack.pop()!;
+    
+    if (end - start <= 1) continue;
+    
+    let maxDist = 0;
+    let maxIndex = 0;
+    
+    const startPoint = points[start];
+    const endPoint = points[end];
+    
+    // Find the point with the maximum distance
+    for (let i = start + 1; i < end; i++) {
+      const dist = perpendicularDistance(points[i], startPoint, endPoint);
+      
+      if (dist > maxDist) {
+        maxDist = dist;
+        maxIndex = i;
+      }
+    }
+    
+    // If the maximum distance is greater than the tolerance,
+    // include the point and recursively process the segments
+    if (maxDist > tolerance) {
+      marked.add(maxIndex);
+      stack.push([start, maxIndex]);
+      stack.push([maxIndex, end]);
+    }
+  }
+  
+  // Collect all marked points
+  for (let i = 0; i < points.length; i++) {
+    if (marked.has(i)) {
+      result.push(points[i]);
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Calculate the perpendicular distance from a point to a line
+ * @param point The point
+ * @param lineStart Start of the line
+ * @param lineEnd End of the line
+ * @returns The perpendicular distance
+ */
+function perpendicularDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const dx = lineEnd.x - lineStart.x;
+  const dy = lineEnd.y - lineStart.y;
+  
+  const norm = Math.sqrt(dx * dx + dy * dy);
+  
+  // If the line is just a point, return the distance between points
+  if (norm === 0) {
+    return Math.sqrt(
+      Math.pow(point.x - lineStart.x, 2) + 
+      Math.pow(point.y - lineStart.y, 2)
+    );
+  }
+  
+  // Calculate perpendicular distance
+  const dist = Math.abs(
+    (dy * point.x - dx * point.y + lineEnd.x * lineStart.y - lineEnd.y * lineStart.x) / norm
+  );
+  
+  return dist;
+}
+
+/**
+ * Calculate the distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance between the points
+ */
+export function calculateDistance(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Calculate the area of a polygon
+ * @param points Polygon vertices
  * @returns Area of the polygon
  */
-export async function calculatePolygonAreaWasm(points: Point[]): Promise<number> {
-  return calculateArea(points);
-}
-
-/**
- * Calculate polygon area in square meters
- * @param points Polygon points
- * @param scale Scale factor (pixels to meters)
- * @returns Area in square meters
- */
-export async function calculateAreaInSquareMeters(points: Point[], scale: number = 1): Promise<number> {
-  const areaInPixels = await calculatePolygonAreaWasm(points);
-  return areaInPixels * scale * scale;
-}
-
-/**
- * Optimize polygon points by removing redundant vertices
- * @param points Original polygon points
- * @param tolerance Simplification tolerance
- * @returns Optimized polygon points
- */
-export async function optimizePolygon(points: Point[], tolerance: number = 1.0): Promise<Point[]> {
-  return simplifyPolygon(points, tolerance);
-}
-
-/**
- * Check if a point is inside a polygon
- * @param point The point to check
- * @param polygon Polygon points
- * @returns True if the point is inside the polygon
- */
-export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
-  // Ray casting algorithm
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
-    
-    const intersect = ((yi > point.y) !== (yj > point.y))
-        && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  
-  return inside;
-}
-
-/**
- * Calculate the perimeter of a polygon
- * @param points Polygon points
- * @returns Perimeter length
- */
-export function calculatePerimeter(points: Point[]): number {
-  let perimeter = 0;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    perimeter += calculateDistanceJs(points[i], points[j]);
-  }
-  return perimeter;
-}
-
-/**
- * Calculate the centroid of a polygon
- * @param points Polygon points
- * @returns Centroid point
- */
-export function calculateCentroid(points: Point[]): Point {
-  if (points.length === 0) return { x: 0, y: 0 };
+export function calculatePolygonArea(points: Point[]): number {
+  if (points.length < 3) return 0;
   
   let area = 0;
-  let cx = 0;
-  let cy = 0;
-  
   for (let i = 0; i < points.length; i++) {
-    const p1 = points[i];
-    const p2 = points[(i + 1) % points.length];
-    
-    const f = p1.x * p2.y - p2.x * p1.y;
-    area += f;
-    cx += (p1.x + p2.x) * f;
-    cy += (p1.y + p2.y) * f;
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
   }
   
-  area /= 2;
-  const factor = 1 / (6 * area);
-  
-  return {
-    x: cx * factor,
-    y: cy * factor
-  };
+  return Math.abs(area) / 2;
 }

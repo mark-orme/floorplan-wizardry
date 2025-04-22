@@ -92,8 +92,12 @@ export const optimizeCanvasForDrawing = (canvas: HTMLCanvasElement): void => {
     
     // Optimize canvas performance
     canvas.style.touchAction = 'none';
-    canvas.style.msTouchAction = 'none';
-    canvas.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+    // Remove vendor-prefixed properties that cause TypeScript errors
+    // and use standard properties instead
+    canvas.style.touchAction = 'none';
+    canvas.style.webkitUserSelect = 'none';
+    canvas.style.userSelect = 'none';
+    canvas.style.outline = 'none';
   }
 };
 

@@ -1,52 +1,105 @@
 
 /**
- * Throttling utilities for canvas operations
- * @module utils/canvas/throttle
- */
-
-/**
  * Throttle a function to run at most once per animation frame
- * @param fn Function to throttle
+ * @param fn The function to throttle
  * @returns Throttled function
  */
-export const throttleRAF = <T extends (...args: any[]) => any>(fn: T): ((...args: Parameters<T>) => void) => {
+export function throttleRAF<T extends (...args: any[]) => any>(fn: T): (...args: Parameters<T>) => void {
   let rafId: number | null = null;
   let lastArgs: Parameters<T> | null = null;
-
+  
   return (...args: Parameters<T>) => {
-    // Store the latest args
     lastArgs = args;
-
-    // If we already have a pending frame, don't request another
-    if (rafId !== null) return;
-
-    // Schedule the function to run on the next animation frame
-    rafId = requestAnimationFrame(() => {
-      if (lastArgs) {
-        fn(...lastArgs);
-      }
-      rafId = null;
-    });
+    
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        if (lastArgs) {
+          fn(...lastArgs);
+        }
+        rafId = null;
+      });
+    }
   };
-};
+}
 
 /**
- * Debounce a function to run after a specified delay
- * @param fn Function to debounce
- * @param delay Delay in milliseconds
+ * Debounce a function
+ * @param fn The function to debounce
+ * @param wait Wait time in milliseconds
+ * @param leading Whether to call the function on the leading edge
  * @returns Debounced function
  */
-export const debounce = <T extends (...args: any[]) => any>(fn: T, delay: number): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout | null = null;
-
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  wait: number,
+  leading = false
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<T> | null = null;
+  
   return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+    lastArgs = args;
+    
+    const callNow = leading && !timeout;
+    
+    if (timeout) {
+      clearTimeout(timeout);
     }
-
-    timeoutId = setTimeout(() => {
+    
+    timeout = setTimeout(() => {
+      timeout = null;
+      if (!leading && lastArgs) {
+        fn(...lastArgs);
+        lastArgs = null;
+      }
+    }, wait);
+    
+    if (callNow) {
       fn(...args);
-      timeoutId = null;
-    }, delay);
+    }
   };
-};
+}
+
+/**
+ * Throttle a function to run at most once per specified interval
+ * @param fn The function to throttle
+ * @param wait Wait time in milliseconds
+ * @returns Throttled function
+ */
+export function throttle<T extends (...args: any[]) => any>(
+  fn: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let lastTime = 0;
+  let lastArgs: Parameters<T> | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  
+  return (...args: Parameters<T>) => {
+    const now = Date.now();
+    const remaining = wait - (now - lastTime);
+    
+    lastArgs = args;
+    
+    if (remaining <= 0) {
+      // It's time to execute
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      
+      lastTime = now;
+      fn(...args);
+    } else if (!timeoutId) {
+      // Schedule execution at the end of wait period
+      timeoutId = setTimeout(() => {
+        lastTime = Date.now();
+        timeoutId = null;
+        
+        if (lastArgs) {
+          fn(...lastArgs);
+          lastArgs = null;
+        }
+      }, remaining);
+    }
+  };
+}

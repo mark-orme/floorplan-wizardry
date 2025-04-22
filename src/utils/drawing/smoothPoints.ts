@@ -4,7 +4,7 @@
  * Especially useful for stylus and Apple Pencil input
  * @module utils/drawing/smoothPoints
  */
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Geometry';
 
 /**
  * Apply a simple moving average filter to smooth points

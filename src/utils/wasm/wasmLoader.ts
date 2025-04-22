@@ -1,69 +1,61 @@
 
 /**
- * WebAssembly Module Loader
- * Provides utilities for loading and using WebAssembly modules
+ * WebAssembly loader for geometry calculations
  */
-
-interface GeometryModule {
-  calculate: (x: number, y: number) => number;
-}
-
-interface PDFModule {
-  generate: (x: number, y: number) => number;
-}
-
-const moduleCache: Record<string, WebAssembly.Instance> = {};
-
-/**
- * Load a WebAssembly module
- * @param url URL of the WebAssembly module
- * @returns Promise resolving to the instantiated module
- */
-export async function loadWasmModule(url: string): Promise<WebAssembly.Instance> {
-  // Check if module is already cached
-  if (moduleCache[url]) {
-    return moduleCache[url];
-  }
-  
-  try {
-    // Fetch and compile the module
-    const response = await fetch(url);
-    const bytes = await response.arrayBuffer();
-    const { instance } = await WebAssembly.instantiate(bytes);
-    
-    // Cache the module
-    moduleCache[url] = instance;
-    
-    return instance;
-  } catch (error) {
-    console.error(`Error loading WebAssembly module ${url}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Load the geometry module for optimized calculations
- * @returns Promise resolving to the geometry module
- */
-export async function loadGeometryModule(): Promise<GeometryModule> {
-  const instance = await loadWasmModule('/wasm/geometry.wasm');
-  return instance.exports as unknown as GeometryModule;
-}
-
-/**
- * Load the PDF generation module
- * @returns Promise resolving to the PDF module
- */
-export async function loadPDFModule(): Promise<PDFModule> {
-  const instance = await loadWasmModule('/wasm/pdf.wasm');
-  return instance.exports as unknown as PDFModule;
-}
 
 /**
  * Check if WebAssembly is supported in the current browser
- * @returns True if WebAssembly is supported
+ * @returns Whether WebAssembly is supported
  */
 export function isWasmSupported(): boolean {
   return typeof WebAssembly === 'object' && 
-         typeof WebAssembly.instantiate === 'function';
+         typeof WebAssembly.instantiate === 'function' &&
+         typeof WebAssembly.compile === 'function';
+}
+
+/**
+ * Load the geometry WebAssembly module
+ * @returns Promise resolving to the module exports
+ */
+export async function loadGeometryModule(): Promise<any> {
+  if (!isWasmSupported()) {
+    console.warn('WebAssembly is not supported in this browser');
+    return null;
+  }
+  
+  try {
+    // Attempt to fetch and compile the WebAssembly module
+    const response = await fetch('/wasm/geometry.wasm');
+    const buffer = await response.arrayBuffer();
+    const result = await WebAssembly.instantiate(buffer);
+    
+    // Return the module exports
+    return result.instance.exports;
+  } catch (error) {
+    console.error('Failed to load WebAssembly module:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a throttled RAF (Request Animation Frame) function
+ * @param fn Function to throttle
+ * @returns Throttled function
+ */
+export function throttleRAF(fn: (...args: any[]) => void): (...args: any[]) => void {
+  let rafId: number | null = null;
+  let lastArgs: any[] | null = null;
+  
+  return (...args: any[]) => {
+    lastArgs = args;
+    
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        if (lastArgs) {
+          fn(...lastArgs);
+        }
+        rafId = null;
+      });
+    }
+  };
 }

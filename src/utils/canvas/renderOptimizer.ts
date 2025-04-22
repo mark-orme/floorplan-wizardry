@@ -1,195 +1,112 @@
 /**
- * Canvas Render Optimization Utilities
- * 
- * Provides utilities for optimizing canvas rendering performance
+ * Canvas render optimization utilities
+ * Provides utilities for optimizing canvas rendering
  */
-
 import { Canvas as FabricCanvas } from 'fabric';
 
-// Map to track render requests
-const renderRequestMap = new Map<string, number>();
+// Track pending render requests by source
+const pendingRenders = new Map<string, number>();
 
 /**
- * Request a render with optimization
- * Debounces render calls to avoid excessive rendering
- * 
- * @param canvas Fabric canvas instance
- * @param source Source of the render request for tracking
- * @param delay Delay in ms before rendering
+ * Request an optimized render of the canvas
+ * Throttles render calls to avoid too many redraws
+ * @param canvas The Fabric.js canvas
+ * @param source Identifier for the source of the render request
  */
-export function requestOptimizedRender(
-  canvas: FabricCanvas, 
-  source: string = 'generic', 
-  delay: number = 0
-): void {
-  if (!canvas) return;
-  
-  // Cancel any pending render request for this source
-  if (renderRequestMap.has(source)) {
-    cancelAnimationFrame(renderRequestMap.get(source)!);
-    renderRequestMap.delete(source);
+export function requestOptimizedRender(canvas: FabricCanvas, source: string = 'default'): void {
+  // Cancel any pending render from the same source
+  if (pendingRenders.has(source)) {
+    cancelAnimationFrame(pendingRenders.get(source)!);
   }
   
-  if (delay > 0) {
-    // Delayed render with setTimeout
-    const timeoutId = window.setTimeout(() => {
-      canvas.requestRenderAll();
-      renderRequestMap.delete(source);
-    }, delay);
-    
-    // Store timeout ID as number
-    renderRequestMap.set(source, timeoutId as unknown as number);
-  } else {
-    // Immediate render with requestAnimationFrame
-    const frameId = requestAnimationFrame(() => {
-      canvas.requestRenderAll();
-      renderRequestMap.delete(source);
-    });
-    
-    renderRequestMap.set(source, frameId);
-  }
+  // Schedule a new render
+  pendingRenders.set(source, requestAnimationFrame(() => {
+    canvas.requestRenderAll();
+    pendingRenders.delete(source);
+  }));
 }
 
 /**
- * Batch multiple canvas operations and render only once at the end
- * 
- * @param canvas Fabric canvas instance
- * @param operations Array of operations to perform
- */
-export function batchCanvasOperations(
-  canvas: FabricCanvas,
-  operations: Array<(canvas: FabricCanvas) => void>
-): void {
-  if (!canvas || operations.length === 0) return;
-  
-  // Temporarily disable automatic rendering
-  const originalRenderOnAddRemove = canvas.renderOnAddRemove;
-  canvas.renderOnAddRemove = false;
-  
-  try {
-    // Execute all operations
-    operations.forEach(operation => operation(canvas));
-    
-    // Render once at the end
-    requestOptimizedRender(canvas, 'batch-operations');
-  } finally {
-    // Restore original rendering setting
-    canvas.renderOnAddRemove = originalRenderOnAddRemove;
-  }
-}
-
-/**
- * Create a smooth event handler that doesn't block the UI
- * 
- * @param handler Event handler function
- * @param throttleMs Throttle time in ms
- * @returns Throttled handler
+ * Create an event handler that is smoothed for user interaction
+ * @param handler The handler function to smooth
+ * @param fps Target FPS (default: 60)
+ * @returns Smoothed handler function
  */
 export function createSmoothEventHandler<T extends (...args: any[]) => void>(
   handler: T,
-  throttleMs: number = 0
+  fpsTarget: number = 60
 ): T {
-  let lastExecTime = 0;
-  let requestId: number | null = null;
+  const interval = 1000 / fpsTarget;
+  let lastTime = 0;
+  let rafId: number | null = null;
+  let lastArgs: any[] | null = null;
   
-  return ((...args: Parameters<T>) => {
+  const smoothHandler = function(this: any, ...args: any[]) {
+    lastArgs = args;
+    
     const now = performance.now();
+    const delta = now - lastTime;
     
-    // Clear any pending execution
-    if (requestId !== null) {
-      cancelAnimationFrame(requestId);
-      requestId = null;
-    }
-    
-    // If throttling is enabled and we're within the throttle window, schedule for later
-    if (throttleMs > 0 && now - lastExecTime < throttleMs) {
-      requestId = requestAnimationFrame(() => {
-        handler(...args);
-        lastExecTime = performance.now();
-        requestId = null;
-      });
+    // If we're due for an update, run immediately
+    if (delta >= interval) {
+      lastTime = now;
+      handler.apply(this, args);
       return;
     }
     
-    // Otherwise execute immediately
-    handler(...args);
-    lastExecTime = now;
-  }) as T;
-}
-
-/**
- * Create a load-balanced set of workers for heavy operations
- * 
- * @param workerScript Path to worker script
- * @param count Number of workers to create
- * @returns Array of workers
- */
-export function createWorkerPool(workerScript: string, count: number = navigator.hardwareConcurrency || 4) {
-  const workers: Worker[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    const worker = new Worker(workerScript);
-    workers.push(worker);
-  }
-  
-  return {
-    /**
-     * Execute a task on the least busy worker
-     * 
-     * @param task Task data to send to worker
-     * @returns Promise with worker result
-     */
-    execute<T, R>(task: T): Promise<R> {
-      return new Promise((resolve, reject) => {
-        // Simple round-robin for now
-        const worker = workers[Math.floor(Math.random() * workers.length)];
-        
-        const messageHandler = (e: MessageEvent) => {
-          worker.removeEventListener('message', messageHandler);
-          worker.removeEventListener('error', errorHandler);
-          resolve(e.data as R);
-        };
-        
-        const errorHandler = (e: ErrorEvent) => {
-          worker.removeEventListener('message', messageHandler);
-          worker.removeEventListener('error', errorHandler);
-          reject(new Error(`Worker error: ${e.message}`));
-        };
-        
-        worker.addEventListener('message', messageHandler);
-        worker.addEventListener('error', errorHandler);
-        worker.postMessage(task);
+    // Otherwise, schedule for the next frame
+    if (rafId === null) {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        lastTime = performance.now();
+        if (lastArgs) {
+          handler.apply(this, lastArgs);
+          lastArgs = null;
+        }
       });
-    },
-    
-    /**
-     * Terminate all workers in the pool
-     */
-    terminate() {
-      workers.forEach(worker => worker.terminate());
     }
   };
+  
+  return smoothHandler as T;
 }
 
 /**
- * Optimize canvas performance by configuring rendering options
- * 
- * @param canvas Fabric canvas instance to optimize
+ * Optimize draw calls to WebGL
+ * @param canvas The canvas element
+ * @param context The WebGL context
  */
-export function optimizeCanvasPerformance(canvas: FabricCanvas): void {
-  if (!canvas) return;
+export function optimizeDrawCalls(
+  canvas: HTMLCanvasElement,
+  context: WebGLRenderingContext
+): void {
+  // Basic WebGL optimization flags
+  (context as any).imageSmoothingEnabled = true;
   
-  // Configure canvas for better performance
-  canvas.renderOnAddRemove = false;
-  canvas.enableRetinaScaling = true;
-  canvas.skipOffscreen = true;
+  // Prevent context loss
+  canvas.addEventListener('webglcontextlost', (e) => {
+    console.warn('WebGL context lost, attempting to restore');
+    e.preventDefault();
+  }, { passive: false });
   
-  // Use requestAnimationFrame for smoother rendering
-  canvas.renderAll = function() {
-    requestAnimationFrame(() => {
-      FabricCanvas.prototype.renderAll.call(canvas);
-    });
-    
-    return canvas;
-  };
+  // Restore context when available
+  canvas.addEventListener('webglcontextrestored', () => {
+    console.log('WebGL context restored');
+  }, { passive: true });
+}
+
+/**
+ * Set up OffscreenCanvas if supported
+ * @param canvas The source canvas element
+ * @returns Either an OffscreenCanvas or the original canvas
+ */
+export function createOptimizedCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement | OffscreenCanvas {
+  if (typeof OffscreenCanvas !== 'undefined') {
+    try {
+      const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
+      return offscreen;
+    } catch (e) {
+      console.warn('Failed to create OffscreenCanvas:', e);
+    }
+  }
+  return canvas;
 }
