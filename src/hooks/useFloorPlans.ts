@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { adaptFloorPlan, coreToAppFloorPlan } from '@/utils/typeAdapters';
+import { adaptFloorPlan } from '@/utils/typeAdapters';
 import { convertToUnifiedFloorPlan, convertToAppFloorPlan } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
 
 export interface UseFloorPlansProps {
@@ -24,8 +24,8 @@ export const useFloorPlans = ({
   tool = DrawingMode.SELECT
 }: UseFloorPlansProps) => {
   // Convert any initialFloorPlans to unified type
-  const unifiedInitialFloorPlans = initialFloorPlans.map(plan => {
-    // Ensure the plan has a propertyId if it's from floorPlanTypes.ts
+  const unifiedInitialFloorPlans: FloorPlan[] = initialFloorPlans.map(plan => {
+    // Ensure the plan has a userId if it's from floorPlanTypes.ts
     if (!plan.userId && plan.propertyId) {
       return convertToUnifiedFloorPlan(plan);
     }
@@ -39,7 +39,7 @@ export const useFloorPlans = ({
   const currentFloorPlan = floorPlans[currentFloorIndex] || null;
   
   const now = new Date().toISOString();
-  const safeFloorPlan = currentFloorPlan || adaptFloorPlan({
+  const safeFloorPlan: FloorPlan = currentFloorPlan || adaptFloorPlan({
     id: 'empty',
     name: 'Empty Floor Plan',
     walls: [],
@@ -145,8 +145,9 @@ export const useFloorPlans = ({
   const getCompatibleFloorPlans = useCallback(() => {
     return floorPlans.map(plan => {
       // Add propertyId field for compatibility
+      const appPlan = convertToAppFloorPlan(plan);
       return {
-        ...convertToAppFloorPlan(plan),
+        ...appPlan,
         propertyId: plan.userId || 'default-property'
       };
     });

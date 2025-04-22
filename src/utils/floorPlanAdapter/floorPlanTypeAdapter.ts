@@ -3,7 +3,7 @@
  * Floor Plan Type Adapter
  * Provides adapters between different FloorPlan interfaces in the application
  */
-import type { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan as UnifiedFloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
 import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { adaptFloorPlan, adaptMetadata } from '@/utils/typeAdapters';
 
@@ -20,15 +20,18 @@ export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPl
     label: unifiedPlan.label,
     walls: unifiedPlan.walls.map(wall => ({
       ...wall,
-      floorPlanId: wall.floorPlanId || unifiedPlan.id
+      // Only add floorPlanId if not already present
+      floorPlanId: (wall as any).floorPlanId || unifiedPlan.id
     })),
     rooms: unifiedPlan.rooms.map(room => ({
       ...room,
-      floorPlanId: room.floorPlanId || unifiedPlan.id
+      // Only add floorPlanId if not already present
+      floorPlanId: (room as any).floorPlanId || unifiedPlan.id
     })),
     strokes: unifiedPlan.strokes.map(stroke => ({
       ...stroke,
-      floorPlanId: stroke.floorPlanId || unifiedPlan.id
+      // Only add floorPlanId if not already present
+      floorPlanId: (stroke as any).floorPlanId || unifiedPlan.id
     })),
     data: unifiedPlan.data || {},
     version: unifiedPlan.metadata?.version,

@@ -9,21 +9,13 @@ import * as Sentry from '@sentry/react';
  * Capture an error with context information
  * @param error The error to capture
  * @param contextOrName Context object or name string
- * @param extraData Optional extra data (legacy format)
  */
 export function captureError(
   error: Error | any,
-  contextOrName?: string | Record<string, any>,
-  extraData?: Record<string, any>
+  contextOrName?: string | Record<string, any>
 ) {
   // Handle all different call signatures to provide backward compatibility
-  if (typeof contextOrName === 'string' && extraData) {
-    // Legacy format: captureError(error, 'name', { extra: 'data' })
-    Sentry.captureException(error, {
-      tags: { context: contextOrName },
-      extra: extraData
-    });
-  } else if (typeof contextOrName === 'string') {
+  if (typeof contextOrName === 'string') {
     // String context only: captureError(error, 'name')
     Sentry.captureException(error, {
       tags: { context: contextOrName }
@@ -44,7 +36,6 @@ export function captureError(
  * Capture a message with context information
  * @param message The message to capture
  * @param name Name or context identifier
- * @param data Optional extra data
  */
 export function captureMessage(
   message: string,
@@ -52,17 +43,25 @@ export function captureMessage(
   data?: Record<string, any>
 ) {
   if (name && data) {
-    // Legacy format: captureMessage('message', 'name', { extra: 'data' })
-    Sentry.captureMessage(message, {
+    // Legacy format: We'll convert to the new format
+    return captureMessage(message, {
+      context: name,
       level: data.level || 'info',
       tags: { context: name },
       extra: data
     });
-  } else if (name) {
+  } else if (typeof name === 'string') {
     // String context only: captureMessage('message', 'name')
     Sentry.captureMessage(message, {
       level: 'info',
       tags: { context: name }
+    });
+  } else if (name && typeof name === 'object') {
+    // Object context: captureMessage('message', { context: 'data', extra: 'data' })
+    Sentry.captureMessage(message, {
+      level: name.level || 'info',
+      tags: name.tags || { context: name.context || 'unknown' },
+      extra: name.extra || name
     });
   } else {
     // Just the message: captureMessage('message')

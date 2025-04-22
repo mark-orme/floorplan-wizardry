@@ -7,7 +7,7 @@
 // Import from unifiedTypes instead of core/floor-plan/FloorPlan
 import type { FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
 import type { Point } from '@/types/core/Point';
-import { adaptFloorPlan, asRoomType, asStrokeType, adaptStroke, adaptRoom, adaptWall, adaptMetadata } from '@/utils/typeAdapters';
+import { adaptFloorPlan, adaptMetadata, adaptRoom, adaptStroke, adaptWall } from '@/utils/typeAdapters';
 
 /**
  * Convert core floor plans to app floor plans

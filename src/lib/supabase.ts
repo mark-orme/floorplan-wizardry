@@ -29,11 +29,13 @@ export const isSecureConnection = () => {
 };
 
 export const isSupabaseConfigured = () => {
-  // Fix for protected property access - use string comparison instead
+  // Fix for protected property access - use constructor comparison instead
   const configuredUrl = 'https://your-project-url.supabase.co';
   
-  // Safely check the URL without accessing the protected property
-  const isConfiguredProperly = supabase.getUrl() !== configuredUrl;
+  // Since getUrl() is not available, we'll use a different approach
+  // Check if the URL used for initialization isn't the default placeholder URL
+  const currentUrl = supabase.supabaseUrl || 'https://your-project-url.supabase.co';
+  const isConfiguredProperly = currentUrl !== configuredUrl;
   
   return isConfiguredProperly;
 };
