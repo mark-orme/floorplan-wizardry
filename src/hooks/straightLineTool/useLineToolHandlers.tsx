@@ -1,8 +1,7 @@
-
 import { useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { MeasurementData } from '../useStraightLineTool';
+import { MeasurementData } from '@/types/measurement/MeasurementData';
 import { InputMethod } from './useLineInputMethod';
 import React from 'react';
 

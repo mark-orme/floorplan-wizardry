@@ -1,10 +1,10 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod, useLineInputMethod } from './useLineInputMethod';
 import { useLineToolHandlers } from './useLineToolHandlers';
-import { UseStraightLineToolResult, MeasurementData } from '../useStraightLineTool';
+import { UseStraightLineToolResult } from '@/types/hooks';
+import { MeasurementData } from '@/types/measurement/MeasurementData';
 
 export const useStraightLineTool = (): UseStraightLineToolResult => {
   const [isActive, setIsActive] = useState<boolean>(false);
@@ -25,7 +25,6 @@ export const useStraightLineTool = (): UseStraightLineToolResult => {
     unit: 'm'
   });
 
-  // Initialize handlers
   const handlers = useLineToolHandlers({
     isDrawing,
     setIsDrawing,
