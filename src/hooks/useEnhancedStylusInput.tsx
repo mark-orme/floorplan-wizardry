@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { StylusProfile, DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
@@ -23,6 +22,17 @@ export function useEnhancedStylusInput({
   const [tiltX, setTiltX] = useState(0);
   const [tiltY, setTiltY] = useState(0);
   const [activeProfile, setActiveProfile] = useState<StylusProfile>(DEFAULT_STYLUS_PROFILE);
+
+  useEffect(() => {
+    // Load the default profile
+    stylusProfileService.getProfile('default')
+      .then(profile => {
+        if (profile) {
+          setActiveProfile(profile);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (!canvas || !enabled) return;
