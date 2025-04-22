@@ -7,6 +7,18 @@ import { AccessibilityTester } from '../AccessibilityTester';
 // Instead of directly importing axe, we'll use our helper
 import { testComponentA11y } from '@/tests/helpers/accessibility';
 
+// Mock the accessibility testing utility
+vi.mock('@/utils/testing/accessibilityTester', () => ({
+  runAccessibilityAudit: vi.fn().mockResolvedValue([]),
+  loadAccessibilityTester: vi.fn().mockResolvedValue({
+    runTest: vi.fn().mockResolvedValue({
+      violations: [],
+      passes: true
+    })
+  }),
+  AccessibilityIssue: vi.fn()
+}));
+
 describe('AccessibilityTester', () => {
   it('should render without accessibility violations', async () => {
     const { container } = render(<AccessibilityTester />);

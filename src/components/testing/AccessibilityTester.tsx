@@ -1,9 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  runAccessibilityCheck,
-  checkColorContrast,
-  validateAriaAttributes,
+  runAccessibilityAudit,
   AccessibilityIssue,
   loadAccessibilityTester
 } from '@/utils/testing/accessibilityTester';
@@ -41,12 +39,8 @@ export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
         return;
       }
 
-      // Load the accessibility tester
-      const { runTest } = await loadAccessibilityTester();
-      
-      // Run the audit on the DOM element
       if (element instanceof HTMLElement) {
-        // Use direct DOM audit when possible
+        // Run the audit on the DOM element
         const results = await runAccessibilityAudit(element);
         setIssues(results);
       } else {
@@ -127,8 +121,5 @@ export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
     </div>
   );
 };
-
-// Import the runtime accessibility audit function for browser use
-import { runAccessibilityAudit } from '@/utils/testing/accessibilityTester';
 
 export default AccessibilityTester;

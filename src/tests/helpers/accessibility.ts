@@ -2,15 +2,15 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 
-// Try to load jest-axe, but handle the case where it's not available
+// Try to load axe libraries dynamically
 let axe: any = null;
 let axeExtend: any = null;
 
 try {
-  // This import will only succeed in test environments
-  const jestAxe = require('jest-axe');
-  axe = jestAxe.axe;
-  axeExtend = jestAxe.toHaveNoViolations;
+  // Import axe testing utilities - this will only succeed in test environments
+  const importAxe = require('jest-axe');
+  axe = importAxe.axe;
+  axeExtend = importAxe.toHaveNoViolations;
   
   // Add the jest-axe matcher if we're in a test environment
   if (typeof expect !== 'undefined' && axeExtend) {
@@ -18,6 +18,7 @@ try {
   }
 } catch (error) {
   // jest-axe not available, which is fine in browser environments
+  console.warn('jest-axe not available, some accessibility tests will be limited');
 }
 
 /**
@@ -48,7 +49,7 @@ export const renderWithA11y = async (ui: React.ReactElement) => {
  */
 export const testComponentA11y = async (ui: React.ReactElement) => {
   if (!axe || !axeExtend) {
-    console.warn('Skipping accessibility test - jest-axe not available');
+    console.warn('Skipping accessibility test - axe testing not available');
     return;
   }
   
