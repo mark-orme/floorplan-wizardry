@@ -15,53 +15,132 @@ const z = {
     omit: () => z.object(),
     parse: (data) => data,
     safeParse: (data) => ({ success: true, data }),
+    optional: () => z.object()
   }),
   string: () => ({
-    email: (message = {}) => z.string(),
-    min: (length, message = {}) => z.string(),
-    max: (length, message = {}) => z.string(),
-    url: (message = {}) => z.string(),
-    optional: () => z.string(),
-    nullable: () => z.string(),
-    regex: (regex) => z.string(),
-    transform: () => z.string(),
-    ip: () => z.string(),
+    email: (message = {}) => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    min: (length, message = {}) => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    max: (length, message = {}) => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    url: (message = {}) => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    optional: () => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    nullable: () => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    regex: (regex) => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    transform: () => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
+    ip: () => ({ 
+      ...z.string(),
+      parse: (data) => data
+    }),
     parse: (data) => data,
     refine: (refineFn, options) => z.string(),
   }),
   boolean: () => ({
     optional: () => z.boolean(),
     nullable: () => z.boolean(),
+    parse: (data) => data,
   }),
   number: () => ({
-    min: (min, message = {}) => z.number(),
-    max: (max, message = {}) => z.number(),
-    int: (message = {}) => z.number(),
-    positive: () => z.number(),
-    nonnegative: () => z.number(),
-    optional: () => z.number(),
-    nullable: () => z.number(),
+    min: (min, message = {}) => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    max: (max, message = {}) => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    int: (message = {}) => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    positive: () => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    nonnegative: () => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    optional: () => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    nullable: () => ({
+      ...z.number(),
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
   enum: (values) => ({
-    optional: () => z.enum(values),
+    optional: () => ({
+      ...z.enum(values),
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
   nativeEnum: (enumObj) => ({
-    optional: () => ({}),
+    optional: () => ({
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
   array: (schema) => ({
-    min: () => z.array(schema),
-    max: () => z.array(schema),
-    optional: () => z.array(schema),
+    min: () => ({
+      ...z.array(schema),
+      parse: (data) => data
+    }),
+    max: () => ({
+      ...z.array(schema),
+      parse: (data) => data
+    }),
+    optional: () => ({
+      ...z.array(schema),
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
   record: (keySchema, valueSchema) => ({
-    optional: () => ({}),
+    optional: () => ({
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
   any: () => ({
-    optional: () => ({}),
+    optional: () => ({
+      parse: (data) => data
+    }),
+    parse: (data) => data,
   }),
+  // The infer type utility
   infer: (schema) => ({}),
+  
+  // ZodType and ZodSchema classes
   ZodType: class ZodType { },
   ZodSchema: class ZodSchema { },
+  
+  // ZodError class
   ZodError: class ZodError extends Error {
     errors = [];
     constructor() {

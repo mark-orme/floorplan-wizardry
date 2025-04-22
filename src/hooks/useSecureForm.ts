@@ -2,108 +2,74 @@
 import { useState, useCallback } from 'react';
 import z from '@/utils/zod-mock';
 
-export interface UseSecureFormOptions<T> {
-  schema: z.ZodType<T>;
-  initialValues: T;
-  onSubmit: (values: T) => void | Promise<void>;
-  sanitize?: (values: T) => T;
+export interface ValidationError {
+  path: string;
+  message: string;
 }
 
 export interface UseSecureFormResult<T> {
-  values: T;
-  errors: Record<string, string>;
-  isSubmitting: boolean;
-  submitted: boolean;
-  handleChange: (name: keyof T, value: any) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  reset: () => void;
-  setFieldError: (name: keyof T, error: string) => void;
+  data: T | null;
+  errors: ValidationError[];
+  validateForm: (formData: unknown) => boolean;
+  isValid: boolean;
+  resetForm: () => void;
+  sanitizedData: T | null;
 }
 
-/**
- * Custom hook for creating secure forms with validation and sanitization
- */
-export function useSecureForm<T extends Record<string, any>>({
-  schema,
-  initialValues,
-  onSubmit,
-  sanitize = (values) => values
-}: UseSecureFormOptions<T>): UseSecureFormResult<T> {
-  const [values, setValues] = useState<T>(initialValues);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+export function useSecureForm<T>(schema: z.ZodType<T>, initialData: T | null = null): UseSecureFormResult<T> {
+  const [data, setData] = useState<T | null>(initialData);
+  const [sanitizedData, setSanitizedData] = useState<T | null>(initialData);
+  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [isValid, setIsValid] = useState(false);
 
-  const handleChange = useCallback((name: keyof T, value: any) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
-    
-    // Clear the error for this field when it's changed
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[name as string];
-      return newErrors;
-    });
+  const sanitizeData = useCallback((data: T): T => {
+    // Implement sanitization logic
+    // For example, strip HTML tags from string fields
+    return data;
   }, []);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsSubmitting(true);
-      setSubmitted(true);
-
+  const validateForm = useCallback(
+    (formData: unknown): boolean => {
       try {
-        // Sanitize values before validation
-        const sanitizedValues = sanitize(values);
+        const validData = schema.parse(formData);
+        const cleanData = sanitizeData(validData);
         
-        // Validate with Zod
-        schema.parse(sanitizedValues);
-        
-        // Call onSubmit if validation passes
-        await onSubmit(sanitizedValues);
-        
-        // Clear errors after successful submission
-        setErrors({});
+        setData(validData);
+        setSanitizedData(cleanData);
+        setErrors([]);
+        setIsValid(true);
+        return true;
       } catch (error) {
         if (error instanceof z.ZodError) {
-          // Format Zod errors into a user-friendly format
-          const formattedErrors: Record<string, string> = {};
-          error.errors.forEach((err) => {
-            const path = err.path.join('.');
-            formattedErrors[path] = err.message;
-          });
+          const formattedErrors = error.errors.map((err) => ({
+            path: err.path.join('.'),
+            message: err.message,
+          }));
           setErrors(formattedErrors);
-        } else {
-          // Handle other errors
-          console.error('Form submission error:', error);
-          setErrors({ 
-            _form: 'An unexpected error occurred. Please try again.' 
-          });
+          setIsValid(false);
+          return false;
         }
-      } finally {
-        setIsSubmitting(false);
+        setErrors([{ path: '', message: 'An unknown validation error occurred' }]);
+        setIsValid(false);
+        return false;
       }
     },
-    [schema, values, onSubmit, sanitize]
+    [schema, sanitizeData]
   );
 
-  const reset = useCallback(() => {
-    setValues(initialValues);
-    setErrors({});
-    setSubmitted(false);
-  }, [initialValues]);
-
-  const setFieldError = useCallback((name: keyof T, error: string) => {
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  }, []);
+  const resetForm = useCallback(() => {
+    setData(initialData);
+    setSanitizedData(initialData);
+    setErrors([]);
+    setIsValid(false);
+  }, [initialData]);
 
   return {
-    values,
+    data,
+    sanitizedData,
     errors,
-    isSubmitting,
-    submitted,
-    handleChange,
-    handleSubmit,
-    reset,
-    setFieldError
+    validateForm,
+    isValid,
+    resetForm,
   };
 }

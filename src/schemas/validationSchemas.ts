@@ -55,7 +55,7 @@ export const drawingObjectSchema = z.object({
   angle: z.number(),
   scaleX: z.number(),
   scaleY: z.number(),
-  metadata: z.record(z.any())
+  metadata: z.record(z.string(), z.any())
 });
 
 /**
@@ -84,7 +84,7 @@ export const savedDrawingSchema = z.object({
   updatedAt: z.string(),
   canvasJson: z.string(),
   preview: z.string(),
-  metadata: z.record(z.any())
+  metadata: z.record(z.string(), z.any())
 });
 
 /**
@@ -93,16 +93,16 @@ export const savedDrawingSchema = z.object({
 export const apiResponseSchema = z.object({
   success: z.boolean(),
   data: z.any(),
-  error: z.string()
+  error: z.string().optional()
 });
 
 /**
  * Schema for validating URL query parameters
  */
 export const urlParamsSchema = z.object({
-  drawingId: z.string(),
-  tool: z.nativeEnum(DrawingMode),
-  zoom: z.number().positive(),
-  page: z.number().nonnegative(),
-  grid: z.boolean()
+  drawingId: z.string().optional(),
+  tool: z.nativeEnum(DrawingMode).optional(),
+  zoom: z.number().positive().optional(),
+  page: z.number().nonnegative().optional(),
+  grid: z.boolean().optional()
 });

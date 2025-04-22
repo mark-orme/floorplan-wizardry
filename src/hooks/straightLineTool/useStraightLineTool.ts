@@ -15,6 +15,7 @@ export interface UseStraightLineToolOptions {
   enabled?: boolean;
   lineColor?: string;
   lineThickness?: number;
+  saveCurrentState?: () => void; // Added saveCurrentState prop
 }
 
 export interface UseStraightLineToolResult {
@@ -43,6 +44,8 @@ export interface UseStraightLineToolResult {
   setInputMethod: (method: InputMethod) => void;
   shiftKeyPressed: boolean;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+  toggleSnap?: () => void; // Added toggleSnap prop
+  saveCurrentState?: () => void; // Added saveCurrentState prop
 }
 
 export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): UseStraightLineToolResult => {
@@ -54,7 +57,8 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     canvas = null,
     enabled = true,
     lineColor = '#000000',
-    lineThickness = 2
+    lineThickness = 2,
+    saveCurrentState = () => {} // Default implementation
   } = options;
   
   const [isEnabled, setIsEnabled] = useState<boolean>(enabled);
@@ -130,6 +134,8 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     renderTooltip: handlers.renderTooltip,
     setInputMethod: actualSetInputMethod,
     shiftKeyPressed,
-    setCurrentLine
+    setCurrentLine,
+    toggleSnap: toggleGridSnapping,
+    saveCurrentState
   };
 };

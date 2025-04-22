@@ -1,110 +1,137 @@
 
-/**
- * Canvas action types
- * @module types/canvas
- */
+// Fixed type export to avoid conflict
+export type { Point } from './core/Point';
 
-/**
- * Base canvas action interface
- */
+// Export other types
+export interface CanvasOptions {
+  width: number;
+  height: number;
+  backgroundColor?: string;
+  gridSize?: number;
+  snapToGrid?: boolean;
+  enablePanZoom?: boolean;
+  enableHistory?: boolean;
+  onObjectAdded?: (object: any) => void;
+  onObjectRemoved?: (object: any) => void;
+  onSelectionCreated?: (selection: any) => void;
+  onSelectionCleared?: () => void;
+  onCanvasReady?: (canvas: any) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface CanvasState {
+  objects: any[];
+  zoom: number;
+  pan: { x: number; y: number };
+  activeTool: string;
+  selection: any | null;
+  history: {
+    past: any[];
+    future: any[];
+  };
+  gridVisible: boolean;
+  snapToGrid: boolean;
+  readOnly: boolean;
+  loading: boolean;
+  error: Error | null;
+}
+
 export interface CanvasAction {
   type: string;
-  timestamp: number;
-  floorPlanId?: string;
-  data?: Record<string, any>;
+  payload?: any;
 }
 
-// Point interface for use in canvas operations
-export interface Point {
-  x: number;
-  y: number;
-}
-
-// DrawOptions for canvas operations
-export interface DrawOptions {
-  color?: string;
-  width?: number;
-  opacity?: number;
-  strokeLineCap?: 'butt' | 'round' | 'square';
-  strokeLineJoin?: 'bevel' | 'round' | 'miter';
-  options?: any;
-}
-
-// Canvas object representation
-export interface CanvasObject {
-  id: string;
-  type: string;
-  points?: Point[];
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  angle?: number;
-  properties?: Record<string, any>;
-  options?: Record<string, any>;
-}
-
-// Stroke styling options
-export interface StrokeStyle {
+export interface DrawingToolProps {
+  active: boolean;
   color: string;
   width: number;
-  opacity?: number;
+  opacity: number;
+  onComplete?: (object: any) => void;
+  onCancel?: () => void;
 }
 
-// Add from Fabric point conversion helpers
-export function fromFabricPoint(point: any): Point {
-  return { x: point.x, y: point.y };
+export interface GridProps {
+  visible: boolean;
+  size: number;
+  color: string;
+  snapEnabled: boolean;
+  opacity: number;
 }
 
-export function toFabricPoint(point: Point): any {
-  return { x: point.x, y: point.y };
+export interface CanvasHistory {
+  past: any[];
+  current: any | null;
+  future: any[];
 }
 
-// ZoomOptions for canvas zoom operations
-export interface ZoomOptions {
-  scale: number;
-  x?: number;
-  y?: number;
-  animate?: boolean;
+export interface CanvasMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  lastModifiedBy?: string;
+  version: number;
+  tags?: string[];
 }
 
-/**
- * Add floor plan action
- */
-export interface AddFloorPlanAction extends CanvasAction {
-  type: 'add_floor_plan';
-  floorPlanId: string;
+export interface CanvasExportOptions {
+  format: 'json' | 'svg' | 'png' | 'pdf';
+  quality?: number;
+  withBackground?: boolean;
+  withGrid?: boolean;
+  multiplier?: number;
+  width?: number;
+  height?: number;
 }
 
-/**
- * Update floor plan action
- */
-export interface UpdateFloorPlanAction extends CanvasAction {
-  type: 'update_floor_plan';
-  floorPlanId: string;
-  data: { index: number };
+export interface CanvasImportOptions {
+  format: 'json' | 'svg';
+  preservePosition?: boolean;
+  preserveScale?: boolean;
+  replaceContents?: boolean;
 }
 
-/**
- * Delete floor plan action
- */
-export interface DeleteFloorPlanAction extends CanvasAction {
-  type: 'delete_floor_plan';
-  floorPlanId: string;
+export interface CanvasContextMenuOptions {
+  enabled: boolean;
+  items?: any[];
+  onItemClick?: (item: string, target: any) => void;
 }
 
-/**
- * Create a new canvas action with timestamp
- * @param action Partial canvas action
- * @returns Complete canvas action with timestamp
- */
-export function createCanvasAction(action: Partial<CanvasAction> & { type: string }): CanvasAction {
-  return {
-    ...action,
-    timestamp: action.timestamp || Date.now()
-  };
+export interface CanvasSelectionOptions {
+  enabled: boolean;
+  selectable?: boolean;
+  selectableObjects?: string[];
+  multiSelect?: boolean;
+  transparentCorners?: boolean;
+  cornerColor?: string;
+  cornerSize?: number;
+  borderColor?: string;
+  borderDashArray?: number[];
 }
 
-// Re-export Point for compatibility
-export { Point };
+export interface CanvasPerformanceOptions {
+  enableCulling?: boolean;
+  objectCaching?: boolean;
+  renderOnAddRemove?: boolean;
+  statefulAnimation?: boolean;
+  optimizeTextRendering?: boolean;
+}
 
+export interface CanvasAccessibilityOptions {
+  enableAccessibility?: boolean;
+  includeAriaLabels?: boolean;
+  keyboardControls?: boolean;
+  tabIndex?: number;
+  focusableObjects?: boolean;
+}
+
+export type CanvasRenderer = 'canvas' | 'webgl';
+
+export interface CanvasRenderingOptions {
+  renderer?: CanvasRenderer;
+  enableRetinaScaling?: boolean;
+  enableSimplification?: boolean;
+  maxCurveSegments?: number;
+}

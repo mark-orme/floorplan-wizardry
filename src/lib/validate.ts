@@ -109,12 +109,9 @@ export const validateCreditCard = (cardNumber: string): boolean => {
 
 // Date validation with format checking
 export const validateDate = (dateStr: string, format: string = 'YYYY-MM-DD'): boolean => {
-  // For simplicity, we'll just validate ISO format dates with Zod
-  const dateSchema = z.string();
-  
+  // For simplicity, we'll just validate ISO format dates
   try {
-    dateSchema.parse(dateStr);
-    // Additional check to make sure it's a valid date
+    // Check if the date is valid
     return !isNaN(Date.parse(dateStr));
   } catch (error) {
     return false;
@@ -145,14 +142,8 @@ export const validateUsername = (username: string): { isValid: boolean; message?
 
 // IP address validation
 export const validateIPAddress = (ip: string): boolean => {
-  const ipSchema = z.string();
-  try {
-    ipSchema.parse(ip);
-    // Additional regex check for IP format
-    return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
-  } catch (error) {
-    return false;
-  }
+  // IP address validation with regex
+  return /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ip);
 };
 
 export default {

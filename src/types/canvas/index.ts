@@ -1,44 +1,57 @@
 
-/**
- * Canvas types index
- * @module types/canvas
- */
+// Fixed type export to avoid conflict
+export type { Point } from '../core/Point';
 
-import { Point as FabricPoint } from 'fabric';
-import { Point } from '@/types/core';
-
-export interface DrawOptions {
-  color?: string;
-  width?: number;
-  opacity?: number;
-  strokeLineCap?: 'butt' | 'round' | 'square';
-  strokeLineJoin?: 'bevel' | 'round' | 'miter';
-}
-
-export interface CanvasObject {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  angle: number;
-}
-
-export interface StrokeStyle {
+export interface GridOptions {
+  visible: boolean;
+  size: number;
+  snapEnabled: boolean;
   color: string;
-  width: number;
-  opacity?: number;
+  opacity: number;
+  subdivisions: number;
+  majorLineFrequency: number;
+  majorLineColor: string;
+  majorLineOpacity: number;
+  majorLineWidth: number;
+  minorLineWidth: number;
 }
 
-// Re-export Point from core
-export { Point };
-
-// Adapter function to convert between Fabric Point and our Point type
-export function fromFabricPoint(point: FabricPoint): Point {
-  return { x: point.x, y: point.y };
+export interface CanvasZoomOptions {
+  min: number;
+  max: number;
+  step: number;
+  initial: number;
+  pinchEnabled: boolean;
+  wheelEnabled: boolean;
+  sensitivity: number;
 }
 
-export function toFabricPoint(point: Point): FabricPoint {
-  return new FabricPoint(point.x, point.y);
+export interface CanvasPanOptions {
+  enabled: boolean;
+  panKey: string | null;
+  momentum: boolean;
+  restrictToCanvas: boolean;
 }
+
+export interface CanvasStateSnapshot {
+  objects: any[];
+  viewportTransform: number[];
+  zoom: number;
+  gridOptions: GridOptions;
+  activeObject: any | null;
+  timestamp: number;
+}
+
+export interface CanvasErrorState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: any;
+  timestamp: number;
+}
+
+// Additional export types
+export * from './canvasEvents';
+export * from './canvasControls';
+export * from './canvasObjects';
+export * from './canvasOperations';
+export * from './canvasRendering';

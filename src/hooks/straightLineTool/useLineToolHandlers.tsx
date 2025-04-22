@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -22,6 +23,7 @@ interface UseLineToolHandlersProps {
   inputMethod: InputMethod;
   isPencilMode: boolean;
   setInputMethod: (method: InputMethod) => void;
+  lineColor?: string; // Added lineColor prop
 }
 
 export const useLineToolHandlers = (props: UseLineToolHandlersProps) => {
@@ -41,7 +43,8 @@ export const useLineToolHandlers = (props: UseLineToolHandlersProps) => {
     isActive,
     inputMethod,
     isPencilMode,
-    setInputMethod
+    setInputMethod,
+    lineColor = '#000000' // Default value for lineColor
   } = props;
 
   const startDrawing = useCallback((point: Point) => {
