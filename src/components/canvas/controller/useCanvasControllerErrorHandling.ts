@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { FloorPlan } from '@/types/core';
 import { captureError } from '@/utils/sentryUtils';

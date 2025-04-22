@@ -6,7 +6,7 @@
  */
 
 // Mock Zod implementation
-const z = {
+export const z = {
   object: (shape = {}) => ({
     shape,
     extend: () => z.object(),
@@ -40,5 +40,4 @@ const z = {
   nativeEnum: (enumObj: any) => ({})
 };
 
-export { z };
 export default z;

@@ -22,10 +22,14 @@ export const AuthSection = () => {
         })
         .catch(error => {
           toast.error('Login failed: ' + (error.message || 'Unknown error'));
-          captureError(error, 'test-login-failed');
+          captureError(error, {
+            context: 'test-login-failed'
+          });
         });
     } catch (error) {
-      captureError(error, 'login-execution-error');
+      captureError(error instanceof Error ? error : new Error('Unknown error'), {
+        context: 'login-execution-error'
+      });
       toast.error('An error occurred during login');
     }
   };
