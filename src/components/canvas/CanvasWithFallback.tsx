@@ -116,8 +116,8 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
   if (showFallback) {
     return (
       <CanvasFallback
-        error={error}
-        onRetry={handleRetry}
+        error={error!}
+        retry={handleRetry}
         width={width}
         height={height}
         showDiagnostics={showDiagnostics}

@@ -12,17 +12,16 @@ export { FloorPlanActions } from '@/components/property/FloorPlanActions';
 // Re-export from hooks
 export { useFloorPlanQuery } from '@/hooks/query/useFloorPlanQuery';
 
-// Types (importing from the updated floorPlanTypes)
+// Types (importing from the updated core types)
 export type { 
   FloorPlan, 
   Room, 
   Wall, 
   Stroke, 
   Point, 
-  FloorPlanMetadata, 
-  StrokeTypeLiteral, 
-  StrokeType, 
-  RoomTypeLiteral 
-} from '@/types/floorPlanTypes';
+  RoomTypeLiteral,
+  StrokeTypeLiteral
+} from '@/types/core';
 
-export { PaperSize } from '@/types/floorPlanTypes';
+// Export PaperSize enum
+export { PaperSize } from '@/types/floor-plan/PaperSize';

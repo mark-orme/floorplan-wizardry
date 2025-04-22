@@ -1,13 +1,15 @@
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
+  type Control,
+  type FieldValues,
+  type FieldPath,
   FormProvider,
   useFormContext,
+  type UseFormReturn
 } from "react-hook-form"
 
 import { cn } from "@/lib/utils"
@@ -25,6 +27,33 @@ type FormFieldContextValue<
 const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 )
+
+type ControllerProps<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+> = {
+  name: TName
+  control?: Control<TFieldValues>
+  render: React.ComponentType<{
+    field: {
+      onChange: (...event: any[]) => void
+      onBlur: () => void
+      value: any
+      name: TName
+      ref: React.Ref<any>
+    }
+    fieldState: {
+      invalid: boolean
+      isDirty: boolean
+      isTouched: boolean
+      error?: {
+        type: string
+        message?: string
+      }
+    }
+    formState: UseFormReturn<TFieldValues>["formState"]
+  }>
+}
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,

@@ -9,16 +9,22 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { captureError } from '@/utils/sentryUtils';
 
-interface CanvasFallbackProps {
+export interface CanvasFallbackProps {
   error?: Error;
-  resetCanvas?: () => void;
+  retry?: () => void;
   fallbackMessage?: string;
+  width?: number;
+  height?: number;
+  showDiagnostics?: boolean;
 }
 
 export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
   error,
-  resetCanvas,
-  fallbackMessage = "We're having trouble loading the canvas. Please try again."
+  retry,
+  fallbackMessage = "We're having trouble loading the canvas. Please try again.",
+  width,
+  height,
+  showDiagnostics = false
 }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -29,7 +35,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
       console.error('Canvas Error:', error);
       
       // Report to Sentry with context
-      captureError(error, {
+      captureError(error instanceof Error ? error : new Error(String(error)), {
         context: 'canvas-fallback',
         tags: {
           component: 'CanvasFallback',
@@ -48,15 +54,15 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     
-    if (resetCanvas) {
+    if (retry) {
       // Show loading toast
-      toast.loading('Attempting to reload canvas...', {
+      toast.info('Attempting to reload canvas...', {
         id: 'canvas-reload'
       });
       
       // Attempt to reset the canvas
       try {
-        resetCanvas();
+        retry();
         
         // Update toast on success
         setTimeout(() => {
@@ -93,8 +99,17 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     }
   };
   
+  const containerStyle = {
+    width: width ? `${width}px` : '100%',
+    height: height ? `${height}px` : '300px',
+    minHeight: '300px'
+  };
+  
   return (
-    <div className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-center min-h-[300px]">
+    <div 
+      className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-center"
+      style={containerStyle}
+    >
       <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
       <h3 className="text-lg font-medium mb-2">Canvas Failed to Load</h3>
       <p className="text-gray-600 mb-4">{fallbackMessage}</p>
@@ -113,7 +128,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         </Button>
       </div>
       
-      {showDebugInfo && error && (
+      {showDebugInfo && error && showDiagnostics && (
         <div className="mt-4 p-4 bg-gray-100 rounded text-left w-full overflow-auto max-h-[200px] text-sm">
           <p className="font-mono">{error.name}: {error.message}</p>
           <pre className="mt-2 whitespace-pre-wrap text-xs text-gray-700">

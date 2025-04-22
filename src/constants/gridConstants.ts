@@ -47,7 +47,11 @@ export const GRID_CONSTANTS = {
   
   // Grid performance
   GRID_RENDER_BUFFER: 100,
-  GRID_RECREATION_DELAY: 500
+  GRID_RECREATION_DELAY: 500,
+  
+  // Additional constants needed by components
+  PIXELS_PER_METER: 100,
+  color: '#e0e0e0'
 };
 
 // Re-export constants for backward compatibility
@@ -63,5 +67,7 @@ export const {
   SNAP_TO_GRID,
   LARGE_GRID_WIDTH,
   SMALL_GRID_WIDTH,
-  DEFAULT_GRID_OPACITY
+  DEFAULT_GRID_OPACITY,
+  PIXELS_PER_METER,
+  color
 } = GRID_CONSTANTS;
