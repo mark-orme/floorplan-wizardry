@@ -9,6 +9,12 @@ interface CaptureMessageOptions {
   level?: 'info' | 'warning' | 'error';
   tags?: Record<string, string>;
   extra?: Record<string, any>;
+  context?: Record<string, any>;
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
+  };
 }
 
 /**
@@ -54,7 +60,19 @@ export function captureMessage(message: string, categoryOrOptions?: string | Cap
  * @param error Error to capture
  * @param options Optional configuration
  */
-export function captureException(error: Error, options?: CaptureMessageOptions): void {
+export function captureError(error: Error, options?: CaptureMessageOptions): void;
+export function captureError(error: Error, errorType: string, options?: CaptureMessageOptions): void;
+export function captureError(error: Error, errorTypeOrOptions?: string | CaptureMessageOptions, optionsArg?: CaptureMessageOptions): void {
+  let errorType: string | undefined;
+  let options: CaptureMessageOptions | undefined;
+
+  if (typeof errorTypeOrOptions === 'string') {
+    errorType = errorTypeOrOptions;
+    options = optionsArg;
+  } else {
+    options = errorTypeOrOptions;
+  }
+
   if (options?.tags) {
     Object.entries(options.tags).forEach(([key, value]) => {
       Sentry.setTag(key, value);
@@ -65,5 +83,13 @@ export function captureException(error: Error, options?: CaptureMessageOptions):
     Sentry.setContext('extra', options.extra);
   }
 
+  if (errorType) {
+    Sentry.setTag('error_type', errorType);
+  }
+
   Sentry.captureException(error);
 }
+
+// Export Sentry types to maintain compatibility with legacy code
+export type { CaptureMessageOptions as SentryOptions };
+export { Sentry };

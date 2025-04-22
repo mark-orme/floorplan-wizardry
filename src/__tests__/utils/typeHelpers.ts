@@ -1,8 +1,6 @@
 
-// Removed the duplicate 'gia' property in the floorPlan fixture and kept one correct entry.
-
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics'; // This is now exported correctly
-import { toFabricPoint } from '@/utils/fabric/pointAdapter';
+import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
+import { SimplePoint, toFabricPoint } from '@/utils/fabric/pointAdapter';
 
 import type { Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
 

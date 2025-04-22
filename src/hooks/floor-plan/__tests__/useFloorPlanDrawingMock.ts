@@ -1,136 +1,21 @@
+import { SimplePoint, toFabricPoint } from '@/utils/fabric/pointAdapter';
+import { mock } from 'vitest';
 
-import { vi } from 'vitest';
-import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/core/Point';
-import { Room, Wall, Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
+// Mock the useFloorPlanDrawing hook
+const useFloorPlanDrawingMock = {
+  startDrawing: mock<(point: SimplePoint) => void>(),
+  continueDrawing: mock<(point: SimplePoint) => void>(),
+  endDrawing: mock<() => void>(),
+  cancelDrawing: mock<() => void>(),
+  isDrawing: false,
+};
 
-/**
- * Create a mock useFloorPlanDrawing hook result
- */
-export function createMockUseFloorPlanDrawingResult() {
-  return {
-    isDrawing: false,
-    tool: DrawingMode.SELECT,
-    setTool: vi.fn(),
-    startDrawing: vi.fn(),
-    continueDrawing: vi.fn(),
-    endDrawing: vi.fn(),
-    cancelDrawing: vi.fn(),
-    drawFloorPlan: vi.fn(),
-    addRoom: vi.fn(),
-    addWall: vi.fn(),
-    addStroke: vi.fn(),
-    deleteObject: vi.fn(),
-    clearCanvas: vi.fn(),
-    selectedObjects: [],
-    setSelectedObjects: vi.fn(),
-    canUndo: false,
-    canRedo: false,
-    undo: vi.fn(),
-    redo: vi.fn(),
-    setFloorPlan: vi.fn(),
-    updateFloorPlan: vi.fn(),
-    calculateRoomArea: vi.fn()
-  };
-}
+// Update your Point instances to use toFabricPoint
+const testPoint1: SimplePoint = { x: 10, y: 20 };
+const testPoint2: SimplePoint = { x: 100, y: 200 };
 
-/**
- * Create a mock wall object for testing
- */
-export function createMockWall(): Wall {
-  return {
-    id: 'wall-test-1',
-    start: { x: 0, y: 0 },
-    end: { x: 100, y: 0 },
-    thickness: 5,
-    length: 100,
-    angle: 0,
-    roomIds: [],
-    floorPlanId: 'floor-test-1',
-    color: '#000000',
-    height: 240
-  };
-}
+// When you need a Fabric Point, convert it:
+const fabricPoint1 = toFabricPoint(testPoint1);
+const fabricPoint2 = toFabricPoint(testPoint2);
 
-/**
- * Create a mock room object for testing
- */
-export function createMockRoom(): Room {
-  return {
-    id: 'room-test-1',
-    name: 'Test Room',
-    type: 'living',
-    area: 100,
-    perimeter: 40,
-    center: { x: 50, y: 50 },
-    vertices: [
-      { x: 0, y: 0 },
-      { x: 100, y: 0 },
-      { x: 100, y: 100 },
-      { x: 0, y: 100 }
-    ],
-    labelPosition: { x: 50, y: 50 },
-    floorPlanId: 'floor-test-1',
-    color: '#ffffff'
-  };
-}
-
-/**
- * Create a mock stroke object for testing
- */
-export function createMockStroke(): Stroke {
-  return {
-    id: 'stroke-test-1',
-    type: 'line',
-    points: [
-      { x: 0, y: 0 },
-      { x: 100, y: 100 }
-    ],
-    color: '#000000',
-    thickness: 1,
-    floorPlanId: 'floor-test-1'
-  };
-}
-
-/**
- * Create a mock floor plan object for testing
- */
-export function createMockFloorPlan(): FloorPlan {
-  const now = new Date().toISOString();
-  
-  return {
-    id: 'floor-test-1',
-    name: 'Test Floor Plan',
-    label: 'Test Floor',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0',
-      paperSize: 'A4',
-      level: 0,
-      author: 'Test User',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    },
-    data: {},
-    userId: 'user-test-1'
-  };
-}
-
-/**
- * Create a mock point object for testing
- */
-export function createMockPoint(): Point {
-  return { x: 0, y: 0 };
-}
+export { useFloorPlanDrawingMock, testPoint1, testPoint2, fabricPoint1, fabricPoint2 };

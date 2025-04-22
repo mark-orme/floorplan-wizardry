@@ -20,7 +20,6 @@
 - src/hooks/canvas-operations/useToolOperations.ts
 - src/hooks/canvas-operations/useZoomOperations.ts
 - src/hooks/canvas/useCanvasObservability.ts
-- src/hooks/useGridMonitoring.ts
 - src/utils/diagnostics/lineToolDiagnostics.ts
 - src/utils/diagnostics/straightLineValidator.ts
 - src/utils/diagnostics/toolbar/toolbarMonitoring.ts

@@ -48,3 +48,6 @@ export function toFabricPoints(points: SimplePoint[]): FabricPoint[] {
 export function fromFabricPoints(points: FabricPoint[]): SimplePoint[] {
   return points.map(point => fromFabricPoint(point));
 }
+
+// For compatibility with existing code that expects Point
+export type Point = SimplePoint;
