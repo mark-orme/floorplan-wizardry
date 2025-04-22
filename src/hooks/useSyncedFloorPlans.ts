@@ -6,14 +6,14 @@ import { toast } from 'sonner';
 
 interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
-  loadFloorPlans: () => Promise<FloorPlan[]>;
-  saveFloorPlans: (floorPlans: FloorPlan[]) => Promise<void>;
+  loadFloorPlans?: () => Promise<FloorPlan[]>;
+  saveFloorPlans?: (floorPlans: FloorPlan[]) => Promise<void>;
 }
 
 export const useSyncedFloorPlans = ({
   initialFloorPlans = [],
-  loadFloorPlans,
-  saveFloorPlans,
+  loadFloorPlans = async () => initialFloorPlans,
+  saveFloorPlans = async () => {}
 }: UseSyncedFloorPlansProps) => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
   const [isLoading, setIsLoading] = useState(false);

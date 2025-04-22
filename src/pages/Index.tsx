@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
 import { CanvasProvider } from "@/contexts/CanvasContext";
 import { DrawingProvider } from "@/contexts/DrawingContext";
@@ -8,10 +8,12 @@ import { AuthSection } from "@/components/auth/AuthSection";
 import { CollaborationToggle } from "@/components/collaboration/CollaborationToggle";
 import { useWindowDimensions } from "@/hooks/useWindowDimensions";
 import { trackComponentLoad, markPerformance } from "@/utils/healthMonitoring";
+import { Canvas as FabricCanvas } from "fabric";
 
 export const Index = () => {
   const [enableSync, setEnableSync] = useState(true);
   const { isMobile, isTablet } = useWindowDimensions();
+  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   
   useEffect(() => {
     trackComponentLoad('IndexPage');
@@ -24,8 +26,8 @@ export const Index = () => {
 
   return (
     <main className="flex flex-col w-full min-h-screen bg-background">
-      <DrawingProvider>
-        <CanvasProvider>
+      <CanvasProvider>
+        <DrawingProvider canvas={fabricCanvas}>
           <CanvasControllerProvider>
             <AuthSection />
             
@@ -38,11 +40,11 @@ export const Index = () => {
             </div>
             
             <div className="flex-1 overflow-auto">
-              <FloorPlanEditor />
+              <FloorPlanEditor onCanvasReady={setFabricCanvas} />
             </div>
           </CanvasControllerProvider>
-        </CanvasProvider>
-      </DrawingProvider>
+        </DrawingProvider>
+      </CanvasProvider>
     </main>
   );
 };

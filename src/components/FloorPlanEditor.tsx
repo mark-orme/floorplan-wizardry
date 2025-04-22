@@ -1,151 +1,37 @@
 
-import React, { useRef, useEffect, useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { useDrawingContext } from "@/contexts/DrawingContext";
-import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
-import { useRestorePrompt } from "@/hooks/useRestorePrompt";
-import { MeasurementGuideModal } from "@/components/MeasurementGuideModal";
-import { startCanvasTracking } from "@/utils/sentry/performance";
-import { safeFinish } from "@/utils/sentry/safeFinish";
-import { toast } from "sonner";
-import { saveCanvasToLocalStorage } from "@/utils/autosave/canvasAutoSave";
-import { FloorPlanEditorToolbar } from "./canvas/FloorPlanEditorToolbar";
-import { MeasurementGuideButton } from "./canvas/MeasurementGuideButton";
-import { FloorPlanCanvas } from "./canvas/FloorPlanCanvas";
-import { RestoreDrawingButton } from "./canvas/RestoreDrawingButton";
-import { DrawingToolbarModals } from "@/components/DrawingToolbarModals";
+import React from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useCanvasContext } from '@/contexts/CanvasContext';
+import { FloorPlanCanvas } from '@/components/canvas/FloorPlanCanvas';
 
-export const FloorPlanEditor: React.FC = () => {
-  const [canvas, setCanvas] = React.useState<FabricCanvas | null>(null);
-  const { setCanUndo, setCanRedo } = useDrawingContext();
-  const canvasRef = useRef<any>(null);
-  const canvasTransaction = useRef<{ finish: (status: string) => void } | null>(null);
+interface FloorPlanEditorProps {
+  onCanvasReady?: (canvas: FabricCanvas) => void;
+}
 
-  const {
-    showMeasurementGuide,
-    handleCloseMeasurementGuide,
-    openMeasurementGuide,
-    setShowMeasurementGuide
-  } = useMeasurementGuide();
-
-  const {
-    showPrompt: showRestorePrompt,
-    timeElapsed,
-    isRestoring,
-    handleRestore,
-    handleDismiss
-  } = useRestorePrompt({
-    canvas,
-    canvasId: "main-canvas",
-    onRestore: () => {
-      setCanUndo(canvasRef.current?.canUndo || false);
-      setCanRedo(canvasRef.current?.canRedo || false);
+export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({ onCanvasReady }) => {
+  const { setCanvas } = useCanvasContext();
+  
+  const handleCanvasReady = (canvas: FabricCanvas) => {
+    if (setCanvas) {
+      setCanvas(canvas);
     }
-  });
-
-  useEffect(() => {
-    if (!canvas) return;
-
-    const handleCanvasModification = () => {
-      saveCanvasToLocalStorage(canvas);
-    };
-
-    canvas.on('object:modified', handleCanvasModification);
-    canvas.on('object:added', handleCanvasModification);
-    canvas.on('object:removed', handleCanvasModification);
-
-    return () => {
-      canvas.off('object:modified', handleCanvasModification);
-      canvas.off('object:added', handleCanvasModification);
-      canvas.off('object:removed', handleCanvasModification);
-    };
-  }, [canvas]);
-
-  const handleCanvasReady = (canvasOperations: any) => {
-    setCanvas(canvasOperations.canvas);
-    canvasRef.current = canvasOperations;
-
-    if (canvasOperations.canvas) {
-      canvasTransaction.current = startCanvasTracking("FloorPlanEditor", canvasOperations.canvas);
-      safeFinish(canvasTransaction.current, 'ok');
-      
-      // Initialize measurement guide for first-time users
-      const firstVisit = !localStorage.getItem('hasSeenMeasurementGuide');
-      if (firstVisit) {
-        setShowMeasurementGuide(true);
-        localStorage.setItem('hasSeenMeasurementGuide', 'true');
-      }
+    
+    if (onCanvasReady) {
+      onCanvasReady(canvas);
     }
   };
-
-  const handleCanvasOperations = {
-    undo: () => {
-      if (canvasRef.current?.undo) {
-        canvasRef.current.undo();
-        setCanUndo(canvasRef.current.canUndo);
-        setCanRedo(canvasRef.current.canRedo);
-        saveCanvasToLocalStorage(canvas);
-      }
-    },
-    redo: () => {
-      if (canvasRef.current?.redo) {
-        canvasRef.current.redo();
-        setCanUndo(canvasRef.current.canUndo);
-        setCanRedo(canvasRef.current.canRedo);
-        saveCanvasToLocalStorage(canvas);
-      }
-    },
-    clear: () => {
-      if (canvasRef.current?.clearCanvas) {
-        canvasRef.current.clearCanvas();
-        saveCanvasToLocalStorage(canvas);
-        toast.success("Canvas cleared");
-      }
-    },
-    save: () => {
-      if (canvasRef.current?.saveCanvas) {
-        canvasRef.current.saveCanvas();
-        saveCanvasToLocalStorage(canvas);
-        toast.success("Drawing saved successfully");
-      }
-    }
-  };
-
+  
   return (
-    <div className="flex flex-col h-full bg-white">
-      <FloorPlanEditorToolbar
-        onUndo={handleCanvasOperations.undo}
-        onRedo={handleCanvasOperations.redo}
-        onClear={handleCanvasOperations.clear}
-        onSave={handleCanvasOperations.save}
-        canUndo={canvasRef.current?.canUndo || false}
-        canRedo={canvasRef.current?.canRedo || false}
-      >
-        <DrawingToolbarModals />
-      </FloorPlanEditorToolbar>
-
-      <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-center bg-gray-50">
-        <MeasurementGuideButton onClick={openMeasurementGuide} />
+    <div className="w-full h-full flex flex-col">
+      <div className="flex-1 relative">
         <FloorPlanCanvas 
-          width={800} 
-          height={600} 
-          onCanvasReady={handleCanvasReady} 
+          onCanvasReady={handleCanvasReady}
+          width={800}
+          height={600}
         />
       </div>
-
-      <MeasurementGuideModal
-        open={showMeasurementGuide}
-        onClose={() => handleCloseMeasurementGuide(false)}
-        onOpenChange={setShowMeasurementGuide}
-      />
-
-      <RestoreDrawingButton
-        showPrompt={showRestorePrompt}
-        timeElapsed={timeElapsed}
-        isRestoring={isRestoring}
-        onRestore={handleRestore}
-        onDismiss={handleDismiss}
-      />
     </div>
   );
 };
+
+export default FloorPlanEditor;

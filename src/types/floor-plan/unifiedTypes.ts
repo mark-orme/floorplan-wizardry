@@ -1,82 +1,59 @@
 
-/**
- * Unified Floor Plan Types
- * Single source of truth for all floor plan related types
- * @module types/floor-plan/unifiedTypes
- */
-
-// Import dependencies
 import { v4 as uuidv4 } from 'uuid';
 
-// Point interface - fundamental building block
 export interface Point {
   x: number;
   y: number;
 }
 
-// Paper size enum
-export enum PaperSize {
-  A4 = 'A4',
-  A3 = 'A3',
-  LETTER = 'Letter',
-  LEGAL = 'Legal',
-  CUSTOM = 'Custom'
-}
-
-// Stroke type literals
-export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
-
-// Room type literals
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'other';
-
-// Stroke interface
-export interface Stroke {
-  id: string;
-  points: Point[];
-  type: StrokeTypeLiteral;
-  color: string;
-  width: number; // Standard width property
-  floorPlanId?: string;
-}
-
-// Wall interface
 export interface Wall {
   id: string;
   start: Point;
   end: Point;
   thickness: number;
-  color: string;
-  roomIds: string[];
   length: number;
-  angle?: number; // Added angle property to match usage
-  floorPlanId?: string;
+  type?: string;
 }
 
-// Room interface
 export interface Room {
   id: string;
+  points: Point[];
   name: string;
-  type: RoomTypeLiteral;
-  vertices: Point[];
-  area: number;
-  color: string;
-  floorPlanId?: string;
+  type?: string;
+  area?: number;
 }
 
-// Floor plan metadata interface
+export interface Stroke {
+  id: string;
+  points: Point[];
+  color: string;
+  width: number;
+  type: StrokeType;
+}
+
 export interface FloorPlanMetadata {
   createdAt: string;
   updatedAt: string;
-  paperSize: PaperSize | string;
+  paperSize: 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'Letter' | 'Legal' | 'Tabloid' | 'Custom';
   level: number;
   version: string;
   author: string;
-  notes: string;
-  dateCreated: string;
-  lastModified: string;
+  notes?: string;
+  dateCreated?: string;
+  lastModified?: string;
 }
 
-// Floor plan interface
+export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'line';
+export type StrokeType = StrokeTypeLiteral;
+export type RoomTypeLiteral = 'living' | 'bedroom' | 'bathroom' | 'kitchen' | 'dining' | 'office' | 'other';
+
+export function asStrokeType(type: string): StrokeType {
+  const validTypes: StrokeTypeLiteral[] = ['freehand', 'straight', 'wall', 'door', 'window', 'furniture', 'annotation', 'line'];
+  return validTypes.includes(type as StrokeTypeLiteral) 
+    ? type as StrokeTypeLiteral 
+    : 'freehand';
+}
+
 export interface FloorPlan {
   id: string;
   name: string;
@@ -90,44 +67,31 @@ export interface FloorPlan {
   level: number;
   index: number;
   metadata: FloorPlanMetadata;
-  data: any; // Required field
-  userId: string; // Required field
   canvasData?: any;
-  canvasJson?: string | null;
+  canvasJson?: string;
+  data?: Record<string, any>;
+  userId: string;
   propertyId?: string;
 }
 
-// Type guard helpers
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  return ((['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'] as StrokeTypeLiteral[])
-    .includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line');
-}
-
-export function asRoomType(type: string): RoomTypeLiteral {
-  return ((['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'] as RoomTypeLiteral[])
-    .includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other');
-}
-
-// Factory functions for creating empty objects
-export function createEmptyFloorPlan(propertyId: string = ''): FloorPlan {
+export function createEmptyFloorPlan(): FloorPlan {
   const now = new Date().toISOString();
   return {
     id: uuidv4(),
     name: 'Untitled Floor Plan',
-    label: 'Untitled',
+    label: 'Untitled Floor Plan',
     walls: [],
     rooms: [],
     strokes: [],
-    data: {},
     createdAt: now,
     updatedAt: now,
+    gia: 0,
     level: 0,
     index: 0,
-    gia: 0,
     metadata: {
       createdAt: now,
       updatedAt: now,
-      paperSize: PaperSize.A4,
+      paperSize: 'A4',
       level: 0,
       version: '1.0',
       author: 'System',
@@ -135,62 +99,22 @@ export function createEmptyFloorPlan(propertyId: string = ''): FloorPlan {
       dateCreated: now,
       lastModified: now
     },
-    userId: 'default-user',
-    propertyId
+    data: {},
+    userId: ''
   };
 }
 
-export function createEmptyStroke(): Stroke {
+// Add a utility type to allow partial wall creation
+export type WallInput = Omit<Wall, 'length'>;
+
+// Function to create a Wall with length automatically calculated
+export function createWall(input: WallInput): Wall {
+  const dx = input.end.x - input.start.x;
+  const dy = input.end.y - input.start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
   return {
-    id: `stroke-${Date.now()}`,
-    points: [],
-    type: 'line',
-    color: '#000000',
-    width: 1
+    ...input,
+    length
   };
-}
-
-export function createEmptyWall(): Wall {
-  return {
-    id: `wall-${Date.now()}`,
-    start: { x: 0, y: 0 },
-    end: { x: 100, y: 0 },
-    thickness: 5,
-    color: '#000000',
-    roomIds: [],
-    length: 100,
-    angle: 0 // Add default angle
-  };
-}
-
-export function createEmptyRoom(): Room {
-  return {
-    id: `room-${Date.now()}`,
-    name: 'Unnamed Room',
-    type: 'other',
-    vertices: [],
-    area: 0,
-    color: '#f0f0f0'
-  };
-}
-
-// Test object creation functions
-export function createTestPoint(): Point {
-  return { x: 100, y: 100 };
-}
-
-export function createTestFloorPlan(): FloorPlan {
-  return createEmptyFloorPlan('test-property-id');
-}
-
-export function createTestStroke(): Stroke {
-  return createEmptyStroke();
-}
-
-export function createTestWall(): Wall {
-  return createEmptyWall();
-}
-
-export function createTestRoom(): Room {
-  return createEmptyRoom();
 }

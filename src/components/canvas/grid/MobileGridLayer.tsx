@@ -1,322 +1,205 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useIsIOS } from '@/hooks/use-ios';
-import { createBasicEmergencyGrid, setupGridVisibilityCheck } from '@/utils/gridCreationUtils';
-import { enhanceGridForIOS } from '@/utils/grid/gridVisibilityManager';
-import * as Sentry from '@sentry/react';
-import { captureMessage, captureError } from '@/utils/sentry';
-import logger from '@/utils/logger';
+
+import React, { useEffect, useState, useRef } from "react";
+import { Canvas as FabricCanvas, Line, Point } from "fabric";
+import { captureMessage, captureError } from "@/utils/sentryUtils";
+import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import logger from "@/utils/logger";
 
 interface MobileGridLayerProps {
-  canvas: FabricCanvas | null;
+  canvas: FabricCanvas;
+  gridSize?: number;
+  color?: string;
+  opacity?: number;
   visible?: boolean;
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
+  onGridCreated?: (objects: any[]) => void;
 }
 
-/**
- * Specialized grid layer component optimized for mobile devices
- * Uses simpler grid pattern and more frequent visibility checks
- */
-export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({ 
-  canvas, 
+export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
+  canvas,
+  gridSize = GRID_CONSTANTS.DEFAULT_GRID_SIZE,
+  color = GRID_CONSTANTS.DEFAULT_GRID_COLOR,
+  opacity = GRID_CONSTANTS.DEFAULT_GRID_OPACITY,
   visible = true,
-  onGridCreated 
+  onGridCreated
 }) => {
-  const isMobile = useIsMobile();
-  const isIOS = useIsIOS();
-  const initialized = useRef(false);
-  const [gridStatus, setGridStatus] = useState<{
-    objectCount: number;
-    visibleCount: number;
-    lastCheckTime: number;
-  }>({ objectCount: 0, visibleCount: 0, lastCheckTime: 0 });
+  const [gridObjects, setGridObjects] = useState<any[]>([]);
+  const gridCreatedRef = useRef(false);
   
-  // Update Sentry context with component state
+  // Create and manage the grid
   useEffect(() => {
-    Sentry.setContext("mobileGrid", {
-      isMobile,
-      isIOS,
-      initialized: initialized.current,
-      gridStatus,
-      canvasAvailable: !!canvas,
-      deviceInfo: {
-        userAgent: navigator.userAgent,
-        screenWidth: window.innerWidth,
-        screenHeight: window.innerHeight,
-        pixelRatio: window.devicePixelRatio || 1
-      }
+    if (!canvas || gridCreatedRef.current) return;
+    
+    // Clear any existing grid lines
+    gridObjects.forEach(obj => {
+      canvas.remove(obj);
     });
     
-    return () => {
-      // Clear context when component unmounts
-      Sentry.setContext("mobileGrid", null);
-    };
-  }, [isMobile, isIOS, canvas, gridStatus]);
-  
-  useEffect(() => {
-    if (!canvas || !isMobile || initialized.current) return;
+    const newGridObjects: any[] = [];
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
     
     try {
-      // Create initial grid
-      logger.info("MobileGridLayer: Creating mobile-optimized grid", {
-        isIOS,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height
-      });
+      // Create vertical lines
+      for (let x = 0; x <= canvasWidth; x += gridSize) {
+        const line = new Line([x, 0, x, canvasHeight], {
+          stroke: color,
+          opacity: opacity,
+          selectable: false,
+          evented: false,
+          visible,
+          strokeWidth: 1
+        });
+        line.set('isGrid', true);
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
       
-      // Capture creation start in Sentry
-      const startTime = performance.now();
-      captureMessage("Starting mobile grid creation", "mobile-grid-creation", {
-        tags: { 
-          isIOS: String(isIOS),
-          isMobile: "true" 
-        },
-        extra: {
-          canvasDimensions: `${canvas.width}x${canvas.height}`,
-          devicePixelRatio: window.devicePixelRatio || 1
+      // Create horizontal lines
+      for (let y = 0; y <= canvasHeight; y += gridSize) {
+        const line = new Line([0, y, canvasWidth, y], {
+          stroke: color,
+          opacity: opacity,
+          selectable: false,
+          evented: false,
+          visible,
+          strokeWidth: 1
+        });
+        line.set('isGrid', true);
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
+      
+      // Log successful grid creation
+      logger.info(`Mobile grid created with ${newGridObjects.length} lines`);
+      captureMessage("Mobile grid created successfully", {
+        level: 'info',
+        tags: { component: 'MobileGridLayer' },
+        extra: { 
+          gridSize,
+          lineCount: newGridObjects.length
         }
       });
       
-      const gridObjects = createBasicEmergencyGrid(canvas);
-      initialized.current = true;
+      // Update the state
+      setGridObjects(newGridObjects);
       
-      const endTime = performance.now();
-      const creationTime = endTime - startTime;
+      // Mark as created
+      gridCreatedRef.current = true;
       
-      // Update grid status
-      setGridStatus({
-        objectCount: gridObjects.length,
-        visibleCount: gridObjects.filter(obj => obj.visible).length,
-        lastCheckTime: Date.now()
-      });
-      
-      // Report successful grid creation
-      captureMessage(
-        `Mobile grid created: ${gridObjects.length} objects in ${creationTime.toFixed(1)}ms`,
-        "mobile-grid-created",
-        {
-          level: 'info',
-          tags: { component: "MobileGridLayer" },
-          extra: {
-            objectCount: gridObjects.length,
-            creationTimeMs: creationTime,
-            isGridVisible: gridObjects.some(obj => obj.visible),
-            gridObjectIds: gridObjects.map(obj => obj.id || 'unknown'),
-            timestamp: new Date().toISOString()
-          }
-        }
-      );
-      
+      // Notify parent component
       if (onGridCreated) {
-        onGridCreated(gridObjects);
+        onGridCreated(newGridObjects);
       }
       
-      // Apply iOS-specific enhancements
-      if (isIOS) {
-        logger.info("Applying iOS-specific grid enhancements");
-        enhanceGridForIOS(canvas);
-        
-        // Force multiple renders on iOS to ensure visibility
-        let renderCount = 0;
-        const forceRenders = setInterval(() => {
-          if (canvas && renderCount < 5) {
-            canvas.requestRenderAll();
-            renderCount++;
-          } else {
-            clearInterval(forceRenders);
-            
-            // Check grid visibility after forced renders
-            const visibleGridCount = gridObjects.filter(obj => obj.visible).length;
-            
-            captureMessage(
-              `iOS grid visibility after forced renders: ${visibleGridCount}/${gridObjects.length}`,
-              "ios-grid-visibility-check",
-              {
-                level: visibleGridCount === 0 ? 'warning' : 'info',
-                tags: {
-                  visibilityStatus: visibleGridCount > 0 ? 'visible' : 'invisible',
-                  renderCount: String(renderCount)
-                }
-              }
-            );
-          }
-        }, 300);
-      }
-      
-      // Set up more frequent visibility checks for mobile
-      const cleanupCheck = setupGridVisibilityCheck(canvas, 3000);
-      
-      // Periodic grid status checks
-      const statusInterval = setInterval(() => {
-        if (!canvas) return;
-        
-        try {
-          const currentGridObjects = canvas.getObjects().filter(obj => 
-            (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-          );
-          
-          const visibleGridObjects = currentGridObjects.filter(obj => obj.visible);
-          
-          // Update grid status
-          setGridStatus({
-            objectCount: currentGridObjects.length,
-            visibleCount: visibleGridObjects.length,
-            lastCheckTime: Date.now()
-          });
-          
-          // Report if grid is missing or invisible
-          if (currentGridObjects.length === 0) {
-            captureMessage("Mobile grid objects missing", "grid-missing", {
-              level: 'warning',
-              tags: {
-                isIOS: String(isIOS),
-                wasInitialized: String(initialized.current)
-              }
-            });
-            
-            // Try to recreate grid if missing
-            if (initialized.current) {
-              logger.warn("Grid objects missing - attempting recreation");
-              const newGridObjects = createBasicEmergencyGrid(canvas);
-              
-              captureMessage(
-                `Emergency grid recreation: ${newGridObjects.length} objects created`,
-                "grid-recreation",
-                {
-                  tags: { 
-                    isIOS: String(isIOS),
-                    success: String(newGridObjects.length > 0)
-                  }
-                }
-              );
-            }
-          } else if (visibleGridObjects.length === 0) {
-            captureMessage("Mobile grid objects invisible", "grid-invisible", {
-              level: 'warning',
-              tags: {
-                isIOS: String(isIOS),
-                totalObjects: String(currentGridObjects.length)
-              },
-              extra: {
-                gridObjectProperties: currentGridObjects.map(obj => ({
-                  id: obj.id,
-                  visible: obj.visible,
-                  opacity: obj.opacity,
-                  type: obj.type
-                }))
-              }
-            });
-            
-            // Force visibility on all grid objects
-            currentGridObjects.forEach(obj => {
-              obj.set('visible', true);
-              obj.set('opacity', 1);
-            });
-            canvas.requestRenderAll();
-          }
-        } catch (error) {
-          captureError(error, "grid-status-check-error");
-        }
-      }, 5000);
-      
-      // Force additional renders to ensure grid visibility on iOS
-      const renderInterval = setInterval(() => {
-        if (canvas && isIOS) {
-          canvas.requestRenderAll();
-        }
-      }, 1000);
-      
-      // Cleanup on unmount
-      return () => {
-        cleanupCheck();
-        clearInterval(statusInterval);
-        clearInterval(renderInterval);
-        
-        // Remove grid objects if they exist
-        if (canvas) {
-          gridObjects.forEach(obj => {
-            if (canvas.contains(obj)) {
-              canvas.remove(obj);
-            }
-          });
-          canvas.requestRenderAll();
-        }
-        
-        captureMessage("Mobile grid layer unmounted", "mobile-grid-unmount", {
-          tags: {
-            isIOS: String(isIOS),
-            isMobile: "true"
+      canvas.renderAll();
+    } catch (error) {
+      logger.error("Failed to create mobile grid:", error);
+      captureError(error, {
+        tags: { component: 'MobileGridLayer' },
+        extra: { gridSize, color, opacity }
+      });
+    }
+    
+    // Clean up function
+    return () => {
+      try {
+        newGridObjects.forEach(obj => {
+          if (canvas.contains(obj)) {
+            canvas.remove(obj);
           }
         });
-      };
-    } catch (error) {
-      // Capture critical errors in grid creation
-      captureError(error, "mobile-grid-creation-error", {
-        level: 'error',
-        tags: {
-          isIOS: String(isIOS),
-          isMobile: "true"
-        },
-        extra: {
-          canvasDimensions: canvas ? `${canvas.width}x${canvas.height}` : 'unknown',
-          initialized: initialized.current
-        }
-      });
-      
-      logger.error("Error creating mobile grid:", error);
-      return () => {}; // Empty cleanup function
-    }
-  }, [canvas, isMobile, isIOS, onGridCreated]);
+        canvas.renderAll();
+      } catch (err) {
+        logger.error("Error cleaning up mobile grid:", err);
+        captureError(err, {
+          tags: { component: 'MobileGridLayer' },
+          extra: { action: 'cleanup' }
+        });
+      }
+    };
+  }, [canvas, gridSize, color, opacity]);
   
-  // Update grid visibility when it changes
+  // Update grid visibility when the visible prop changes
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || gridObjects.length === 0) return;
     
     try {
-      logger.info(`Setting grid visibility: ${visible}`);
-      
-      const gridObjects = canvas.getObjects().filter(obj => 
-        (obj as any).isGrid === true || (obj as any).objectType === 'grid'
-      );
-      
-      if (gridObjects.length === 0) {
-        captureMessage("No grid objects found when updating visibility", "grid-visibility-update", {
-          level: 'warning',
-          tags: {
-            isIOS: String(isIOS),
-            targetVisibility: String(visible)
-          }
-        });
-        return;
-      }
-      
       gridObjects.forEach(obj => {
         obj.set('visible', visible);
       });
       
-      canvas.requestRenderAll();
-      
-      // Update grid status after visibility change
-      setGridStatus(prev => ({
-        ...prev,
-        visibleCount: visible ? prev.objectCount : 0,
-        lastCheckTime: Date.now()
-      }));
-      
-      captureMessage(`Grid visibility set to ${visible}`, "grid-visibility-changed", {
+      captureMessage("Mobile grid visibility updated", {
         level: 'info',
-        tags: { component: "MobileGridLayer" },
-        extra: { visible: visible }
+        tags: { component: 'MobileGridLayer' },
+        extra: { visible, gridObjectCount: gridObjects.length }
       });
+      
+      canvas.requestRenderAll();
     } catch (error) {
-      captureError(error, "grid-visibility-update-error");
       logger.error("Error updating grid visibility:", error);
+      captureError(error, {
+        tags: { component: 'MobileGridLayer' },
+        extra: { action: 'updateVisibility' }
+      });
     }
-  }, [canvas, visible, isIOS]);
+  }, [canvas, visible, gridObjects]);
   
-  // This is a controller component, no visible elements
-  return null;
+  // Monitor and fix grid if it becomes compromised
+  useEffect(() => {
+    if (!canvas || gridObjects.length === 0) return;
+    
+    const checkGridIntegrity = () => {
+      try {
+        const compromisedGrids = gridObjects.filter(obj => 
+          !canvas.contains(obj) || 
+          (obj.visible !== visible) ||
+          !obj.width || 
+          !obj.height
+        );
+        
+        if (compromisedGrids.length > 0) {
+          logger.warn(`Found ${compromisedGrids.length} compromised grid lines`);
+          captureMessage("Grid integrity compromised", {
+            level: 'warning',
+            tags: { component: 'MobileGridLayer' },
+            extra: { 
+              compromisedCount: compromisedGrids.length,
+              totalGridLines: gridObjects.length
+            }
+          });
+          
+          // Recreate the grid if more than 50% is compromised
+          if (compromisedGrids.length > gridObjects.length * 0.5) {
+            logger.warn("Grid severely compromised, recreating...");
+            gridCreatedRef.current = false;
+            setGridObjects([]);
+          } else {
+            // Just fix the ones that are compromised
+            compromisedGrids.forEach(obj => {
+              obj.set('visible', visible);
+            });
+          }
+          
+          canvas.requestRenderAll();
+        }
+      } catch (error) {
+        logger.error("Error checking grid integrity:", error);
+        captureError(error, {
+          tags: { component: 'MobileGridLayer' },
+          extra: { action: 'integrityCheck' }
+        });
+      }
+    };
+    
+    // Check grid integrity every 5 seconds
+    const intervalId = setInterval(checkGridIntegrity, 5000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [canvas, gridObjects, visible]);
+  
+  return null; // This component doesn't render anything visible
 };
 
 export default MobileGridLayer;
