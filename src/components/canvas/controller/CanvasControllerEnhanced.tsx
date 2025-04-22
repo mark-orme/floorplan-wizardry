@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
@@ -5,7 +6,7 @@ import { useCanvasControllerDependencies } from './useCanvasControllerDependenci
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan } from '@/types/core';
+import { FloorPlan } from '@/types/floorPlan';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;

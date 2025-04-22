@@ -11,7 +11,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      // Remove the richColors prop that is causing the error
       {...props}
     />
   )

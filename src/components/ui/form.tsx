@@ -1,11 +1,11 @@
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
-  FormProvider as HookFormProvider,
-  useFormContext as useHookFormContext,
-  type ControllerProps,
+  useFormContext,
+  useForm,
   type FieldPath,
   type FieldValues,
   type UseFormReturn
@@ -14,9 +14,15 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
-// Export renamed React Hook Form types/components
-const Form = HookFormProvider
-const useFormContext = useHookFormContext
+// Form provider re-export
+const Form = React.forwardRef<
+  HTMLFormElement,
+  React.HTMLAttributes<HTMLFormElement> & { form?: UseFormReturn<any> }
+>(({ form, ...props }, ref) => {
+  return React.createElement('form', { ref, ...props });
+});
+Form.displayName = "Form";
+
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>

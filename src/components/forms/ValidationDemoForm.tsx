@@ -20,8 +20,10 @@ const formSchema = z.object({
   confirmPassword: z.string()
 });
 
+export type FormValues = z.infer<typeof formSchema>;
+
 export function ValidationDemoForm() {
-  const form = useForm({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -30,7 +32,7 @@ export function ValidationDemoForm() {
     },
   });
 
-  function onSubmit(values: any) {
+  function onSubmit(values: FormValues) {
     console.log("Form values:", values);
   }
 

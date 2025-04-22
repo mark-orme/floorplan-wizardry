@@ -1,146 +1,111 @@
 
-/**
- * SecureContactForm Component
- * Example form using security and validation features
- */
 import React from 'react';
-import { useSecureForm } from '@/hooks/useSecureForm';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
 import * as z from 'zod';
 
-// Define form schema using Zod
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Invalid email address" }),
-  phone: z.string().min(10, { message: "Phone number must be at least 10 digits" }),
-  message: z.string().min(10, { message: "Message must be at least 10 characters" })
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  subject: z.string().min(5, { message: 'Subject must be at least 5 characters' }),
+  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
 });
 
-type ContactFormValues = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>;
 
-interface SecureContactFormProps {
-  onSubmitSuccess?: () => void;
-  className?: string;
-}
-
-export const SecureContactForm: React.FC<SecureContactFormProps> = ({
-  onSubmitSuccess,
-  className = ''
-}) => {
-  const {
-    data,
-    errors,
-    touched,
-    isSubmitting,
-    isValid,
-    setField,
-    handleSubmit,
-    resetForm
-  } = useSecureForm<ContactFormValues>(formSchema, {
-    initialValues: {
+export const SecureContactForm: React.FC = () => {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
       name: '',
       email: '',
-      phone: '',
+      subject: '',
       message: ''
-    },
-    onSubmit: async (data) => {
-      // Simulate API call
-      console.log('Submitting contact form:', data);
-      
-      // For demo purposes, just show a success toast
-      toast.success('Message sent successfully!');
-      
-      // Reset form after successful submission
-      resetForm();
-      
-      // Call success callback if provided
-      if (onSubmitSuccess) {
-        onSubmitSuccess();
-      }
-    },
-    onValidationError: (errors) => {
-      // Show validation error toast
-      toast.error('Please fix the errors in the form');
-      console.error('Form validation errors:', errors);
     }
   });
-  
+
+  const onSubmit = (data: FormData) => {
+    console.log('Form submitted:', data);
+    // Here you would typically send the data to your backend
+    // For security, you should implement CSRF protection and rate limiting
+  };
+
   return (
-    <form onSubmit={(e) => handleSubmit(e)} className={`space-y-6 ${className}`}>
-      <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium">Name</label>
-        <Input
-          id="name"
-          value={data.name || ''}
-          onChange={(e) => setField('name', e.target.value)}
-          aria-invalid={touched.name && !!errors.name}
-          aria-describedby="name-error"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Your name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {touched.name && errors.name && (
-          <p id="name-error" className="text-sm text-red-500">{errors.name[0]}</p>
-        )}
-      </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">Email</label>
-        <Input
-          id="email"
-          type="email"
-          value={data.email || ''}
-          onChange={(e) => setField('email', e.target.value)}
-          aria-invalid={touched.email && !!errors.email}
-          aria-describedby="email-error"
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="your-email@example.com" type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {touched.email && errors.email && (
-          <p id="email-error" className="text-sm text-red-500">{errors.email[0]}</p>
-        )}
-      </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="phone" className="text-sm font-medium">Phone</label>
-        <Input
-          id="phone"
-          value={data.phone || ''}
-          onChange={(e) => setField('phone', e.target.value)}
-          aria-invalid={touched.phone && !!errors.phone}
-          aria-describedby="phone-error"
+
+        <FormField
+          control={form.control}
+          name="subject"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Subject</FormLabel>
+              <FormControl>
+                <Input placeholder="Message subject" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {touched.phone && errors.phone && (
-          <p id="phone-error" className="text-sm text-red-500">{errors.phone[0]}</p>
-        )}
-      </div>
-      
-      <div className="space-y-2">
-        <label htmlFor="message" className="text-sm font-medium">Message</label>
-        <Textarea
-          id="message"
-          value={data.message || ''}
-          onChange={(e) => setField('message', e.target.value)}
-          rows={5}
-          aria-invalid={touched.message && !!errors.message}
-          aria-describedby="message-error"
+
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Your message here..." 
+                  className="min-h-[120px]" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {touched.message && errors.message && (
-          <p id="message-error" className="text-sm text-red-500">{errors.message[0]}</p>
-        )}
-      </div>
-      
-      <div className="flex gap-4">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Sending...' : 'Send Message'}
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={resetForm}
-          disabled={isSubmitting}
-        >
-          Reset
-        </Button>
-      </div>
-    </form>
+
+        <Button type="submit">Send Message</Button>
+      </form>
+    </Form>
   );
 };

@@ -1,127 +1,140 @@
 
-/**
- * Hook for managing drawing history (undo/redo)
- * @module hooks/drawing/useDrawingHistory
- */
-import { useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { toast } from 'sonner';
 
-/**
- * Props for the useDrawingHistory hook
- */
-interface UseDrawingHistoryProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the history stack */
-  historyRef: React.MutableRefObject<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>;
+export interface UseDrawingHistoryProps {
+  canvas?: FabricCanvas | null;
+  maxHistorySteps?: number;
 }
 
-/**
- * Hook for managing drawing history (undo/redo)
- * 
- * @param {UseDrawingHistoryProps} props - Hook properties
- * @returns Drawing history management functions
- */
 export const useDrawingHistory = ({
-  fabricCanvasRef,
-  historyRef
-}: UseDrawingHistoryProps) => {
+  canvas,
+  maxHistorySteps = 50
+}: UseDrawingHistoryProps = {}) => {
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   
-  /**
-   * Save current canvas state for undo/redo functionality
-   */
-  const saveCurrentState = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-
+  // Using refs to avoid unnecessary re-renders
+  const historyRef = useRef<{
+    past: string[];
+    future: string[];
+    current: string | null;
+  }>({
+    past: [],
+    future: [],
+    current: null
+  });
+  
+  // Save current state to history
+  const saveState = useCallback(() => {
+    if (!canvas) return;
+    
     try {
-      const canvas = fabricCanvasRef.current;
-      const currentState = canvas.getObjects().filter(obj => !(obj as any).isGrid);
+      const json = JSON.stringify(canvas.toJSON(['id', 'selectable', 'evented']));
       
-      // Save a deep copy of the current state
-      historyRef.current.past.push(
-        currentState.map(obj => obj)
-      );
+      if (json === historyRef.current.current) return; // No changes
       
-      // Clear future history when a new action is performed
-      historyRef.current.future = [];
+      const newPast = [...historyRef.current.past];
+      if (historyRef.current.current) {
+        newPast.push(historyRef.current.current);
+      }
       
+      // Limit history size
+      while (newPast.length > maxHistorySteps) {
+        newPast.shift();
+      }
+      
+      historyRef.current = {
+        past: newPast,
+        current: json,
+        future: []
+      };
+      
+      setCanUndo(newPast.length > 0);
+      setCanRedo(false);
     } catch (error) {
-      console.error('Error saving canvas state:', error);
+      console.error('Error saving drawing state:', error);
     }
-  }, [fabricCanvasRef, historyRef]);
+  }, [canvas, maxHistorySteps]);
   
-  /**
-   * Undo last action
-   */
+  // Undo last action
   const undo = useCallback(() => {
-    if (!fabricCanvasRef.current || !historyRef.current.past.length) return;
+    if (!canvas || historyRef.current.past.length === 0) return;
     
-    const canvas = fabricCanvasRef.current;
-    
-    // Save the current state to the future stack
-    const currentState = canvas.getObjects().filter(obj => !(obj as any).isGrid);
-    historyRef.current.future.push(currentState.map(obj => obj));
-    
-    // Get the previous state
-    const prevState = historyRef.current.past.pop();
-    
-    // Remove all non-grid objects
-    canvas.getObjects().forEach(obj => {
-      if (!(obj as any).isGrid) {
-        canvas.remove(obj);
+    try {
+      const lastState = historyRef.current.past.pop();
+      const newFuture = [...historyRef.current.future];
+      
+      if (historyRef.current.current) {
+        newFuture.unshift(historyRef.current.current);
       }
-    });
-    
-    // Add the objects from the previous state
-    if (prevState) {
-      prevState.forEach(obj => {
-        canvas.add(obj);
-      });
+      
+      historyRef.current = {
+        past: [...historyRef.current.past],
+        current: lastState || null,
+        future: newFuture
+      };
+      
+      if (lastState) {
+        canvas.loadFromJSON(JSON.parse(lastState), () => {
+          canvas.renderAll();
+          toast.info('Undo successful');
+        });
+      }
+      
+      setCanUndo(historyRef.current.past.length > 0);
+      setCanRedo(true);
+    } catch (error) {
+      console.error('Error during undo:', error);
+      toast.error('Failed to undo');
     }
-    
-    canvas.renderAll();
-    
-  }, [fabricCanvasRef, historyRef]);
+  }, [canvas]);
   
-  /**
-   * Redo previously undone action
-   */
+  // Redo last undone action
   const redo = useCallback(() => {
-    if (!fabricCanvasRef.current || !historyRef.current.future.length) return;
+    if (!canvas || historyRef.current.future.length === 0) return;
     
-    const canvas = fabricCanvasRef.current;
-    
-    // Save the current state to the past stack
-    const currentState = canvas.getObjects().filter(obj => !(obj as any).isGrid);
-    historyRef.current.past.push(currentState.map(obj => obj));
-    
-    // Get the future state
-    const futureState = historyRef.current.future.pop();
-    
-    // Remove all non-grid objects
-    canvas.getObjects().forEach(obj => {
-      if (!(obj as any).isGrid) {
-        canvas.remove(obj);
+    try {
+      const nextState = historyRef.current.future.shift();
+      const newPast = [...historyRef.current.past];
+      
+      if (historyRef.current.current) {
+        newPast.push(historyRef.current.current);
       }
-    });
-    
-    // Add the objects from the future state
-    if (futureState) {
-      futureState.forEach(obj => {
-        canvas.add(obj);
-      });
+      
+      historyRef.current = {
+        past: newPast,
+        current: nextState || null,
+        future: [...historyRef.current.future]
+      };
+      
+      if (nextState) {
+        canvas.loadFromJSON(JSON.parse(nextState), () => {
+          canvas.renderAll();
+          toast.info('Redo successful');
+        });
+      }
+      
+      setCanUndo(true);
+      setCanRedo(historyRef.current.future.length > 0);
+    } catch (error) {
+      console.error('Error during redo:', error);
+      toast.error('Failed to redo');
     }
-    
-    canvas.renderAll();
-    
-  }, [fabricCanvasRef, historyRef]);
+  }, [canvas]);
   
   return {
-    saveCurrentState,
+    canUndo,
+    canRedo,
+    saveState,
     undo,
-    redo
+    redo,
+    
+    // Expose history for external use if needed
+    getHistory: () => ({
+      pastSteps: historyRef.current.past.length,
+      futureSteps: historyRef.current.future.length
+    })
   };
 };
