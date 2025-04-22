@@ -1,27 +1,35 @@
 
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import { ComponentPropsWithRef, ElementRef, forwardRef } from "react";
+import * as React from "react";
 
-export type TabsProps = ComponentPropsWithRef<typeof TabsPrimitive.Root>;
-export const Tabs = forwardRef<ElementRef<typeof TabsPrimitive.Root>, TabsProps>(
-  ({ ...props }, ref) => <TabsPrimitive.Root ref={ref} {...props} />
-);
-Tabs.displayName = TabsPrimitive.Root.displayName;
+export type TabsProps = React.ComponentProps<typeof TabsPrimitive.Root>;
+export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => (
+  <TabsPrimitive.Root ref={ref} {...props}>
+    {props.children}
+  </TabsPrimitive.Root>
+));
+Tabs.displayName = "Tabs";
 
-export type TabsListProps = ComponentPropsWithRef<typeof TabsPrimitive.List>;
-export const TabsList = forwardRef<ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
-  ({ ...props }, ref) => <TabsPrimitive.List ref={ref} {...props} />
-);
-TabsList.displayName = TabsPrimitive.List.displayName;
+export type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List>;
+export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>((props, ref) => (
+  <TabsPrimitive.List ref={ref} {...props}>
+    {props.children}
+  </TabsPrimitive.List>
+));
+TabsList.displayName = "TabsList";
 
-export type TabsTriggerProps = ComponentPropsWithRef<typeof TabsPrimitive.Trigger>;
-export const TabsTrigger = forwardRef<ElementRef<typeof TabsPrimitive.Trigger>, TabsTriggerProps>(
-  ({ ...props }, ref) => <TabsPrimitive.Trigger ref={ref} {...props} />
-);
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
+export type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Trigger>;
+export const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>((props, ref) => (
+  <TabsPrimitive.Trigger ref={ref} {...props}>
+    {props.children}
+  </TabsPrimitive.Trigger>
+));
+TabsTrigger.displayName = "TabsTrigger";
 
-export type TabsContentProps = ComponentPropsWithRef<typeof TabsPrimitive.Content>;
-export const TabsContent = forwardRef<ElementRef<typeof TabsPrimitive.Content>, TabsContentProps>(
-  ({ ...props }, ref) => <TabsPrimitive.Content ref={ref} {...props} />
-);
-TabsContent.displayName = TabsPrimitive.Content.displayName;
+export type TabsContentProps = React.ComponentProps<typeof TabsPrimitive.Content>;
+export const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>((props, ref) => (
+  <TabsPrimitive.Content ref={ref} {...props}>
+    {props.children}
+  </TabsPrimitive.Content>
+));
+TabsContent.displayName = "TabsContent";

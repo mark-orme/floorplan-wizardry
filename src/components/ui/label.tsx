@@ -1,12 +1,12 @@
 
 import * as React from "react";
-import { ComponentPropsWithRef, forwardRef } from "react";
-import { Root as LabelPrimitive } from "@radix-ui/react-label";
+import { Label as RadixLabel } from "@radix-ui/react-label";
 
-export type LabelProps = ComponentPropsWithRef<typeof LabelPrimitive>;
+export type LabelProps = React.ComponentProps<typeof RadixLabel>;
 
-export const Label = forwardRef<
-  React.ElementRef<typeof LabelPrimitive>,
-  LabelProps
->(({ ...props }, ref) => <LabelPrimitive ref={ref} {...props} />);
+export const Label = React.forwardRef<HTMLLabelElement, LabelProps>((props, ref) => (
+  <RadixLabel ref={ref} {...props}>
+    {props.children}
+  </RadixLabel>
+));
 Label.displayName = "Label";

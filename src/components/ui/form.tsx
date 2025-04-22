@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
@@ -10,6 +9,7 @@ import {
   type FieldValues,
   type Path,
   type UseFormReturn,
+  type FieldPath,
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -17,13 +17,15 @@ import { Label } from "@/components/ui/label";
 const Form = React.forwardRef<
   HTMLFormElement,
   React.ComponentPropsWithoutRef<"form">
->(({ className, ...props }, ref) => {
+>(({ className, children, ...props }, ref) => {
   return (
     <form
       ref={ref}
       className={cn("space-y-8", className)}
       {...props}
-    />
+    >
+      {children}
+    </form>
   );
 });
 Form.displayName = "Form";
