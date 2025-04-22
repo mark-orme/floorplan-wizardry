@@ -1,67 +1,108 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import { DrawingMode } from '@/constants/drawingModes';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
 interface DrawingContextType {
-  activeTool: DrawingMode;
-  setActiveTool: (tool: DrawingMode) => void;
-  tool: DrawingMode;  // Add this property
-  setTool: (tool: DrawingMode) => void;  // Add this property
-  lineColor: string;
-  setLineColor: (color: string) => void;
-  lineThickness: number;
-  setLineThickness: (thickness: number) => void;
-  snapToGrid: boolean;
-  setSnapToGrid: (snap: boolean) => void;
   canUndo: boolean;
-  setCanUndo: (canUndo: boolean) => void;
   canRedo: boolean;
-  setCanRedo: (canRedo: boolean) => void;
+  history: any[];
+  currentHistoryIndex: number;
+  addToHistory: () => void;
+  undo: () => void;
+  redo: () => void;
+  resetHistory: () => void;
 }
 
-const DrawingContext = createContext<DrawingContextType | undefined>(undefined);
+const DrawingContext = createContext<DrawingContextType>({
+  canUndo: false,
+  canRedo: false,
+  history: [],
+  currentHistoryIndex: -1,
+  addToHistory: () => {},
+  undo: () => {},
+  redo: () => {},
+  resetHistory: () => {}
+});
 
-export const DrawingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
-  const [lineColor, setLineColor] = useState('#000000');
-  const [lineThickness, setLineThickness] = useState(2);
-  const [snapToGrid, setSnapToGrid] = useState(true);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
+interface DrawingProviderProps {
+  canvas: FabricCanvas | null;
+  children: React.ReactNode;
+}
 
-  // Set tool as alias for activeTool to maintain compatibility with both naming conventions
-  const tool = activeTool;
-  const setTool = setActiveTool;
-
+export const DrawingProvider: React.FC<DrawingProviderProps> = ({
+  canvas,
+  children
+}) => {
+  const [history, setHistory] = useState<any[]>([]);
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
+  
+  const canUndo = currentHistoryIndex > 0;
+  const canRedo = history.length > 0 && currentHistoryIndex < history.length - 1;
+  
+  const saveCanvasState = useCallback(() => {
+    if (!canvas) return;
+    
+    const json = canvas.toJSON(['id', 'name']);
+    return json;
+  }, [canvas]);
+  
+  const addToHistory = useCallback(() => {
+    if (!canvas) return;
+    
+    const currentState = saveCanvasState();
+    if (!currentState) return;
+    
+    setHistory(prev => {
+      // If we've gone back in history and then made a change,
+      // discard any future states
+      const newHistory = prev.slice(0, currentHistoryIndex + 1);
+      return [...newHistory, currentState];
+    });
+    
+    setCurrentHistoryIndex(prev => prev + 1);
+  }, [canvas, currentHistoryIndex, saveCanvasState]);
+  
+  const undo = useCallback(() => {
+    if (!canvas || !canUndo) return;
+    
+    const previousState = history[currentHistoryIndex - 1];
+    canvas.loadFromJSON(previousState, () => {
+      canvas.renderAll();
+      setCurrentHistoryIndex(prev => prev - 1);
+    });
+  }, [canvas, canUndo, history, currentHistoryIndex]);
+  
+  const redo = useCallback(() => {
+    if (!canvas || !canRedo) return;
+    
+    const nextState = history[currentHistoryIndex + 1];
+    canvas.loadFromJSON(nextState, () => {
+      canvas.renderAll();
+      setCurrentHistoryIndex(prev => prev + 1);
+    });
+  }, [canvas, canRedo, history, currentHistoryIndex]);
+  
+  const resetHistory = useCallback(() => {
+    setHistory([]);
+    setCurrentHistoryIndex(-1);
+  }, []);
+  
+  const value = {
+    canUndo,
+    canRedo,
+    history,
+    currentHistoryIndex,
+    addToHistory,
+    undo,
+    redo,
+    resetHistory
+  };
+  
   return (
-    <DrawingContext.Provider value={{
-      activeTool,
-      setActiveTool,
-      tool,
-      setTool,
-      lineColor,
-      setLineColor,
-      lineThickness,
-      setLineThickness,
-      snapToGrid,
-      setSnapToGrid,
-      canUndo,
-      setCanUndo,
-      canRedo,
-      setCanRedo
-    }}>
+    <DrawingContext.Provider value={value}>
       {children}
     </DrawingContext.Provider>
   );
 };
 
-export const useDrawing = () => {
-  const context = useContext(DrawingContext);
-  if (context === undefined) {
-    throw new Error('useDrawing must be used within a DrawingProvider');
-  }
-  return context;
-};
-
-// Add this line to fix the useDrawingContext import errors
-export const useDrawingContext = useDrawing;
+export const useDrawingContext = () => useContext(DrawingContext);

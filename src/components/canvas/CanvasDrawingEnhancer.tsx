@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -18,7 +19,7 @@ export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({
   tool
 }) => {
   const [isDrawingMode, setIsDrawingMode] = useState(tool === DrawingMode.DRAW);
-  const { canUndo, canRedo, saveState } = useDrawingContext();
+  const { addToHistory } = useDrawingContext();
   
   // Update drawing mode when tool changes
   useEffect(() => {
@@ -31,7 +32,7 @@ export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({
       canvas.isDrawingMode = newDrawingMode;
       canvas.selection = tool === DrawingMode.SELECT;
       
-      // Report to Sentry
+      // Report to Sentry with new options format
       captureMessage("Drawing mode changed", {
         level: 'info',
         tags: { component: "CanvasDrawingEnhancer" },
@@ -42,8 +43,10 @@ export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({
   
   // Save canvas state after each modification
   const handleObjectModified = useCallback(() => {
-    saveState();
-  }, [saveState]);
+    if (addToHistory) {
+      addToHistory();
+    }
+  }, [addToHistory]);
   
   useEffect(() => {
     if (!canvas) return;

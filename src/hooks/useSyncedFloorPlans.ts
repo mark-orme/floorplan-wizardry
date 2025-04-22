@@ -1,6 +1,8 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { FloorPlan } from '@/types/core/floor-plan/FloorPlan';
-import { createFloorPlan } from '@/types/core/floor-plan/helpers';
+import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { createEmptyFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { toast } from 'sonner';
 
 interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
@@ -26,6 +28,7 @@ export const useSyncedFloorPlans = ({
         setFloorPlans(loadedFloorPlans);
       } catch (e: any) {
         setError(e.message || 'Failed to load floor plans');
+        toast.error('Failed to load floor plans');
       } finally {
         setIsLoading(false);
       }
@@ -39,16 +42,18 @@ export const useSyncedFloorPlans = ({
     setError(null);
     try {
       await saveFloorPlans(floorPlans);
+      toast.success('Floor plans saved successfully');
     } catch (e: any) {
       setError(e.message || 'Failed to sync floor plans');
+      toast.error('Failed to sync floor plans');
     } finally {
       setIsLoading(false);
     }
   }, [floorPlans, saveFloorPlans]);
 
   const addFloorPlan = useCallback(() => {
-    const emptyFloorPlan = createFloorPlan();
-    setFloorPlans(prev => [...prev, emptyFloorPlan]);
+    const newFloorPlan = createEmptyFloorPlan();
+    setFloorPlans(prev => [...prev, newFloorPlan]);
   }, []);
 
   const updateFloorPlan = useCallback((index: number, updatedFloorPlan: FloorPlan) => {

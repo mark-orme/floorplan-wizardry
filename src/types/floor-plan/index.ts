@@ -1,12 +1,12 @@
 
 /**
- * Floor Plan Types Index
- * Re-exports all floor plan related types
+ * Unified Floor Plan Types
+ * Central export point for all floor plan types
  * @module types/floor-plan
  */
 
-// Re-export everything from the unified types file
+// Re-export all types from unifiedTypes to have a single source of truth
 export * from './unifiedTypes';
 
-// Console log for debugging imports
-console.log('Loading floor-plan/index.ts - using unified type definitions');
+// Also re-export type adapters for backward compatibility
+export * from '../utils/floorPlanTypeAdapter';
