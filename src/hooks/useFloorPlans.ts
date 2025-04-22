@@ -1,11 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
-import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import type { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
+import type { FloorPlan } from '@/types/floorPlan';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { convertToUnifiedFloorPlan, convertToAppFloorPlan, convertToAppFloorPlans } from '@/utils/floorPlanTypeAdapter';
+import { Point } from '@/types/floorPlan';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: any[]; // Accept any FloorPlan types
@@ -26,7 +25,7 @@ export const useFloorPlans = ({
   const unifiedInitialFloorPlans: FloorPlan[] = initialFloorPlans.map(plan => {
     // Ensure the plan has a userId if it's from floorPlanTypes.ts
     if ('propertyId' in plan && !plan.userId) {
-      return convertToUnifiedFloorPlan(plan);
+      return plan as FloorPlan;
     }
     return plan as FloorPlan;
   });
@@ -142,9 +141,9 @@ export const useFloorPlans = ({
   }, []);
   
   // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
-  const getCompatibleFloorPlans = useCallback((): AppFloorPlan[] => {
+  const getCompatibleFloorPlans = useCallback((): FloorPlan[] => {
     // Convert unified plan to app plan format
-    return convertToAppFloorPlans(floorPlans);
+    return floorPlans;
   }, [floorPlans]);
   
   return {

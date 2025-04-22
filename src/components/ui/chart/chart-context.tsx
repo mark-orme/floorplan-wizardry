@@ -1,31 +1,15 @@
 
-import * as React from "react"
+import * as React from "react";
 
-// Format: { THEME_NAME: CSS_SELECTOR }
-export const THEMES = { light: "", dark: ".dark" } as const
-
-export type ChartConfig = {
-  [k in string]: {
-    label?: React.ReactNode
-    icon?: React.ComponentType
-  } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  )
+export interface ChartContextValue {
+  config?: Record<string, {
+    label: string;
+    icon?: React.ComponentType;
+  }>;
 }
 
-type ChartContextProps = {
-  config: ChartConfig
-}
+const ChartContext = React.createContext<ChartContextValue>({});
 
-export const ChartContext = React.createContext<ChartContextProps | null>(null)
+export const ChartProvider = ChartContext.Provider;
 
-export function useChart() {
-  const context = React.useContext(ChartContext)
-
-  if (!context) {
-    throw new Error("useChart must be used within a <ChartContainer />")
-  }
-
-  return context
-}
+export const useChart = () => React.useContext(ChartContext);

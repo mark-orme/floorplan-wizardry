@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
-import { FloorPlan, Wall, Room, Stroke, Point } from '@/types/core';
+import { FloorPlan, Wall, Room, Stroke, Point } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useFabricHelpers } from '@/hooks/useFabricHelpers';
 import { useObjectActions } from '@/hooks/useObjectActions';

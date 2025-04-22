@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/floorPlan';
 import { VirtualizedList } from '@/components/VirtualizedList';
 import logger from '@/utils/logger';
 

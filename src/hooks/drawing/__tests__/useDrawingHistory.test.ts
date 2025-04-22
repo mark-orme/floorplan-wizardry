@@ -1,6 +1,8 @@
+
 import { renderHook, act } from '@testing-library/react';
 import { useDrawingHistory } from '@/hooks/drawing/useDrawingHistory';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock data
 const mockHistory = {
@@ -16,8 +18,9 @@ describe('useDrawingHistory', () => {
   });
   
   it('should initialize with empty history', () => {
-    // Setup - Use a ref object as fabricCanvasRef
-    const fabricCanvasRef = { current: {} };
+    // Create a mock canvas to serve as the ref object
+    const mockCanvas = new FabricCanvas('');
+    const fabricCanvasRef = { current: mockCanvas };
     
     // Act
     const { result } = renderHook(() => useDrawingHistory({
@@ -34,7 +37,8 @@ describe('useDrawingHistory', () => {
   
   it('should save state', () => {
     // Setup
-    const fabricCanvasRef = { current: {} };
+    const mockCanvas = new FabricCanvas('');
+    const fabricCanvasRef = { current: mockCanvas };
     
     // Act
     const { result } = renderHook(() => useDrawingHistory({
@@ -52,7 +56,8 @@ describe('useDrawingHistory', () => {
   
   it('should not undo when no history', () => {
     // Setup
-    const fabricCanvasRef = { current: {} };
+    const mockCanvas = new FabricCanvas('');
+    const fabricCanvasRef = { current: mockCanvas };
     
     // Act
     const { result } = renderHook(() => useDrawingHistory({
@@ -70,7 +75,8 @@ describe('useDrawingHistory', () => {
   
   it('should not redo when no future states', () => {
     // Setup
-    const fabricCanvasRef = { current: {} };
+    const mockCanvas = new FabricCanvas('');
+    const fabricCanvasRef = { current: mockCanvas };
     
     // Act
     const { result } = renderHook(() => useDrawingHistory({
@@ -88,7 +94,8 @@ describe('useDrawingHistory', () => {
   
   it('should respect maxHistorySteps', () => {
     // Setup
-    const fabricCanvasRef = { current: {} };
+    const mockCanvas = new FabricCanvas('');
+    const fabricCanvasRef = { current: mockCanvas };
     const maxHistorySteps = 2;
     
     // Act

@@ -3,7 +3,7 @@
  * Floor Plans List Component
  * Displays a grid of floor plans with actions
  */
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/floorPlan';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Trash, Edit } from 'lucide-react';

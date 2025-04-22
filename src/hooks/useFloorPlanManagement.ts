@@ -1,4 +1,3 @@
-
 /**
  * Custom hook for managing floor plans (create, select, etc.)
  * Provides functions for floor plan management operations
@@ -6,7 +5,7 @@
  */
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { FloorPlan, PaperSize } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlan";
 
 /**
  * Props for the useFloorPlanManagement hook

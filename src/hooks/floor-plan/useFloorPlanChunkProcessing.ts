@@ -5,7 +5,7 @@
  * @module useFloorPlanChunkProcessing
  */
 import { useCallback } from "react";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlan";
 import logger from "@/utils/logger";
 
 /**

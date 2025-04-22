@@ -4,7 +4,7 @@
  * @module useFloorPlanStorage
  */
 import { useCallback, useState, useEffect } from "react";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlan";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   saveEncryptedCanvas, 

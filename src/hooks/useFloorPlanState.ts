@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface UseFloorPlanStateProps {
