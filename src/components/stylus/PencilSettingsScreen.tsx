@@ -1,12 +1,16 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -15,7 +19,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   Card,
   CardContent,
@@ -23,382 +27,262 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { StylusCurveVisualizer } from './StylusCurveVisualizer';
-import { StylusProfile, DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
-import { 
-  getAllProfiles, 
-  getActiveProfile, 
-  saveProfile, 
-  deleteProfile, 
-  setActiveProfile 
-} from '@/utils/stylus/stylusProfileService';
-import { v4 as uuidv4 } from 'uuid';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Pencil, Save, Trash2, Plus } from 'lucide-react';
+import { StylusProfile, DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-const formSchema = z.object({
-  name: z.string().min(1, 'Profile name is required'),
-  useTilt: z.boolean().default(false),
-});
+interface StylusCurveVisualizerProps {
+  pressureCurve: number[];
+  onChange?: (newCurve: number[]) => void;
+  readOnly?: boolean;
+}
 
+/**
+ * Component to visualize and edit the pressure curve
+ */
+const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
+  pressureCurve,
+  onChange,
+  readOnly = false,
+}) => {
+  return (
+    <div className="mt-4 p-4 border rounded-md">
+      <div className="h-32 bg-gray-50 border relative">
+        {pressureCurve.map((value, index) => {
+          const x = (index / (pressureCurve.length - 1)) * 100;
+          const y = 100 - value * 100;
+          
+          return (
+            <div
+              key={index}
+              className={`absolute w-3 h-3 rounded-full bg-primary transform -translate-x-1/2 -translate-y-1/2 ${
+                readOnly ? '' : 'cursor-grab'
+              }`}
+              style={{ left: `${x}%`, top: `${y}%` }}
+              onMouseDown={readOnly ? undefined : (e) => {
+                // Implement drag handling for point adjustment if not readOnly
+                if (onChange) {
+                  // Logic for adjusting points would go here
+                }
+              }}
+            />
+          );
+        })}
+        
+        {/* Connect the points with lines */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <polyline
+            points={pressureCurve
+              .map((value, index) => {
+                const x = (index / (pressureCurve.length - 1)) * 100;
+                const y = 100 - value * 100;
+                return `${x},${y}`;
+              })
+              .join(' ')}
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="2"
+          />
+        </svg>
+      </div>
+      
+      <div className="flex justify-between mt-2 text-xs text-gray-500">
+        <span>Light Pressure</span>
+        <span>Heavy Pressure</span>
+      </div>
+    </div>
+  );
+};
+
+interface PencilSettingsFormValues {
+  profileName: string;
+  useTiltForWidth: boolean;
+}
+
+/**
+ * Pencil Settings screen component for stylus calibration
+ */
 export function PencilCalibrationDialog({
   open,
-  onOpenChange
+  onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [profiles, setProfiles] = useState<StylusProfile[]>([]);
-  const [activeProfileId, setActiveProfileId] = useState<string>('default');
-  const [currentProfile, setCurrentProfile] = useState<StylusProfile>(DEFAULT_STYLUS_PROFILE);
-  const [pressureCurve, setPressureCurve] = useState<number[]>([0, 0.25, 0.5, 0.75, 1]);
-  const [tiltCurve, setTiltCurve] = useState<number[]>([0, 0.25, 0.5, 0.75, 1]);
-  const [calibrationMode, setCalibrationMode] = useState<'view' | 'draw' | 'test'>('view');
-  const [liveTestPressure, setLiveTestPressure] = useState<number>(0.5);
+  const [profiles, setProfiles] = useLocalStorage<StylusProfile[]>('stylus-profiles', [DEFAULT_STYLUS_PROFILE]);
+  const [activeProfileId, setActiveProfileId] = useLocalStorage<string>('active-stylus-profile-id', DEFAULT_STYLUS_PROFILE.id);
+  const [activeProfile, setActiveProfile] = useState<StylusProfile>(DEFAULT_STYLUS_PROFILE);
+  const [editedCurve, setEditedCurve] = useState<number[]>([]);
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<PencilSettingsFormValues>({
     defaultValues: {
-      name: currentProfile.name,
-      useTilt: !!currentProfile.tiltCurve,
+      profileName: '',
+      useTiltForWidth: false,
     },
   });
   
-  // Load profiles on initial render
+  // Load the active profile when component mounts or activeProfileId changes
   useEffect(() => {
-    const loadProfileData = async () => {
-      try {
-        const allProfiles = await getAllProfiles();
-        setProfiles(allProfiles);
-        
-        const active = await getActiveProfile();
-        setActiveProfileId(active.id);
-        setCurrentProfile(active);
-        setPressureCurve(active.pressureCurve);
-        setTiltCurve(active.tiltCurve || [0, 0.25, 0.5, 0.75, 1]);
-        
-        form.reset({
-          name: active.name,
-          useTilt: !!active.tiltCurve,
-        });
-      } catch (error) {
-        console.error('Error loading profiles:', error);
-        toast.error('Failed to load stylus profiles');
-      }
-    };
-    
-    if (open) {
-      loadProfileData();
-    }
-  }, [open, form]);
-  
-  // Select a profile
-  const handleSelectProfile = useCallback(async (profileId: string) => {
-    try {
-      // Find the profile in the loaded profiles
-      const selectedProfile = profiles.find(p => p.id === profileId);
-      
-      if (selectedProfile) {
-        setCurrentProfile(selectedProfile);
-        setPressureCurve(selectedProfile.pressureCurve);
-        setTiltCurve(selectedProfile.tiltCurve || [0, 0.25, 0.5, 0.75, 1]);
-        
-        form.reset({
-          name: selectedProfile.name,
-          useTilt: !!selectedProfile.tiltCurve,
-        });
-        
-        setActiveProfileId(profileId);
-        setActiveProfile(profileId);
-      }
-    } catch (error) {
-      console.error('Error selecting profile:', error);
-      toast.error('Failed to select profile');
-    }
-  }, [profiles, form]);
-  
-  // Create a new profile
-  const handleCreateProfile = useCallback(() => {
-    const newProfile: StylusProfile = {
-      id: uuidv4(),
-      name: 'New Profile',
-      pressureCurve: [0, 0.25, 0.5, 0.75, 1],
-      lastCalibrated: new Date()
-    };
-    
-    setCurrentProfile(newProfile);
-    setPressureCurve(newProfile.pressureCurve);
-    setTiltCurve([0, 0.25, 0.5, 0.75, 1]);
-    
+    const profile = profiles.find(p => p.id === activeProfileId) || DEFAULT_STYLUS_PROFILE;
+    setActiveProfile(profile);
+    setEditedCurve(profile.pressureCurve);
     form.reset({
-      name: newProfile.name,
-      useTilt: false,
+      profileName: profile.name,
+      useTiltForWidth: !!profile.tiltCurve,
     });
-    
-    // Switch to calibration mode
-    setCalibrationMode('draw');
-    
-    toast.success('New profile created. Draw a line to calibrate.');
-  }, [form]);
+  }, [activeProfileId, profiles, form]);
   
-  // Save the current profile
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const updatedProfile: StylusProfile = {
-        ...currentProfile,
-        name: values.name,
-        pressureCurve,
-        tiltCurve: values.useTilt ? tiltCurve : undefined,
-        lastCalibrated: new Date()
-      };
-      
-      const success = await saveProfile(updatedProfile);
-      
-      if (success) {
-        // Refresh profiles list
-        const allProfiles = await getAllProfiles();
-        setProfiles(allProfiles);
-        setCurrentProfile(updatedProfile);
-        setActiveProfileId(updatedProfile.id);
-        setActiveProfile(updatedProfile.id);
-        
-        toast.success('Profile saved successfully');
-        setCalibrationMode('view');
-      }
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      toast.error('Failed to save profile');
-    }
+  const handleSaveProfile = (values: PencilSettingsFormValues) => {
+    // Update the current profile
+    const updatedProfile: StylusProfile = {
+      ...activeProfile,
+      name: values.profileName,
+      pressureCurve: editedCurve,
+      tiltCurve: values.useTiltForWidth ? activeProfile.tiltCurve || [0, 0.25, 0.5, 0.75, 1] : undefined,
+      lastCalibrated: new Date(),
+    };
+    
+    // Update profiles array
+    const updatedProfiles = profiles.map(p => 
+      p.id === updatedProfile.id ? updatedProfile : p
+    );
+    
+    setProfiles(updatedProfiles);
+    toast.success('Pencil settings saved successfully');
   };
   
-  // Delete the current profile
-  const handleDeleteProfile = async () => {
-    if (currentProfile.id === 'default') {
-      toast.error('Cannot delete the default profile');
-      return;
-    }
+  const handleCreateNewProfile = () => {
+    const newProfile: StylusProfile = {
+      id: `profile-${Date.now()}`,
+      name: `New Profile ${profiles.length + 1}`,
+      pressureCurve: [...DEFAULT_STYLUS_PROFILE.pressureCurve],
+      lastCalibrated: new Date(),
+    };
     
-    try {
-      const success = await deleteProfile(currentProfile.id);
-      
-      if (success) {
-        // Switch to default profile
-        const allProfiles = await getAllProfiles();
-        setProfiles(allProfiles);
-        
-        const defaultProfile = allProfiles.find(p => p.id === 'default') || DEFAULT_STYLUS_PROFILE;
-        setCurrentProfile(defaultProfile);
-        setPressureCurve(defaultProfile.pressureCurve);
-        setTiltCurve(defaultProfile.tiltCurve || [0, 0.25, 0.5, 0.75, 1]);
-        
-        form.reset({
-          name: defaultProfile.name,
-          useTilt: !!defaultProfile.tiltCurve,
-        });
-        
-        setActiveProfileId('default');
-        setActiveProfile('default');
-        
-        toast.success('Profile deleted');
-      }
-    } catch (error) {
-      console.error('Error deleting profile:', error);
-      toast.error('Failed to delete profile');
-    }
+    setProfiles([...profiles, newProfile]);
+    setActiveProfileId(newProfile.id);
+    toast.success('New profile created');
   };
   
-  // Reset to default curve
-  const handleResetCurve = () => {
-    setPressureCurve([0, 0.25, 0.5, 0.75, 1]);
-    setTiltCurve([0, 0.25, 0.5, 0.75, 1]);
-    toast.info('Curves reset to default');
+  const handleResetToDefault = () => {
+    setEditedCurve(DEFAULT_STYLUS_PROFILE.pressureCurve);
+    toast.info('Pressure curve reset to default');
   };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Pencil Settings & Calibration</DialogTitle>
+          <DialogTitle>Pencil Settings</DialogTitle>
           <DialogDescription>
-            Customize your stylus pressure sensitivity and calibration to get the perfect feel for your drawing style.
+            Calibrate your stylus for optimal drawing experience. Adjust the pressure curve to match your drawing style.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Left Panel - Profiles */}
-          <div className="md:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profiles</CardTitle>
-                <CardDescription>Select or create a profile</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex flex-col space-y-2">
-                  {profiles.map(profile => (
-                    <Button
-                      key={profile.id}
-                      variant={profile.id === activeProfileId ? "default" : "outline"}
-                      className="justify-start"
-                      onClick={() => handleSelectProfile(profile.id)}
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      {profile.name}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  onClick={handleCreateProfile}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Profile
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          
-          {/* Right Panel - Calibration */}
-          <div className="md:col-span-2">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profile Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="useTilt"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-md border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Use Tilt for Width</FormLabel>
-                          <FormDescription>
-                            Adjust stroke width based on pen tilt
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium">Pressure Curve</h3>
-                    <p className="text-sm text-gray-500">
-                      Adjust how pressure affects stroke width
-                    </p>
-                    <StylusCurveVisualizer 
-                      curve={pressureCurve}
-                      onChange={setPressureCurve}
-                      className="mt-2"
-                      editable={calibrationMode !== 'draw'}
-                    />
-                  </div>
-                  
-                  {form.watch('useTilt') && (
-                    <div>
-                      <h3 className="text-lg font-medium">Tilt Curve</h3>
-                      <p className="text-sm text-gray-500">
-                        Adjust how pen tilt affects stroke width
-                      </p>
-                      <StylusCurveVisualizer 
-                        curve={tiltCurve}
-                        onChange={setTiltCurve}
-                        className="mt-2"
-                      />
-                    </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FormField
+                  control={form.control}
+                  name="profileName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Profile Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="My Profile" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Live Test</h3>
-                  <p className="text-sm text-gray-500">
-                    Test your stylus pressure settings
-                  </p>
-                  
-                  <div className="border rounded-md p-4 bg-white">
-                    <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${liveTestPressure * 100}%` }}
-                      />
-                    </div>
-                    <div className="mt-4">
-                      <Slider 
-                        value={[liveTestPressure * 100]}
-                        onValueChange={(values) => setLiveTestPressure(values[0] / 100)}
-                        min={0}
-                        max={100}
-                        step={1}
-                      />
-                      <div className="flex justify-between mt-1 text-xs text-gray-500">
-                        <span>Light</span>
-                        <span>Medium</span>
-                        <span>Heavy</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between">
-                  <div>
-                    {currentProfile.id !== 'default' && (
-                      <Button 
-                        type="button" 
-                        variant="destructive"
-                        onClick={handleDeleteProfile}
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Select Profile</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    {profiles.map(profile => (
+                      <Button
+                        key={profile.id}
+                        variant={profile.id === activeProfileId ? 'default' : 'outline'}
+                        onClick={() => setActiveProfileId(profile.id)}
+                        size="sm"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete Profile
+                        {profile.name}
                       </Button>
-                    )}
-                  </div>
-                  <div className="space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleResetCurve}
-                    >
-                      Reset Curves
-                    </Button>
-                    <Button type="submit">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Profile
+                    ))}
+                    <Button variant="outline" size="sm" onClick={handleCreateNewProfile}>
+                      + New
                     </Button>
                   </div>
                 </div>
-              </form>
-            </Form>
-          </div>
-        </div>
+              </div>
+              
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Active Profile</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2">
+                  <div className="text-sm">
+                    <p><span className="font-medium">Name:</span> {activeProfile.name}</p>
+                    <p><span className="font-medium">Last Calibrated:</span> {new Date(activeProfile.lastCalibrated).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Uses Tilt:</span> {activeProfile.tiltCurve ? 'Yes' : 'No'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Pressure Curve</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Adjust how your pencil responds to different pressure levels. Drag points to customize.
+              </p>
+              
+              <StylusCurveVisualizer 
+                pressureCurve={editedCurve} 
+                onChange={setEditedCurve}
+              />
+              
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Pressure Response</span>
+                  <Button variant="outline" size="sm" onClick={handleResetToDefault}>
+                    Reset to Default
+                  </Button>
+                </div>
+                <Slider 
+                  defaultValue={[50]} 
+                  max={100} 
+                  step={1}
+                  className="mt-2"
+                  onValueChange={(values) => {
+                    // Adjust the curve's "steepness" based on slider
+                    const value = values[0] / 100;
+                    const newCurve = editedCurve.map((point, index) => {
+                      const position = index / (editedCurve.length - 1);
+                      // Apply a weighting based on slider value
+                      return Math.pow(position, 1 + (1 - value)) * 1.0;
+                    });
+                    setEditedCurve(newCurve);
+                  }}
+                />
+                <div className="flex justify-between mt-1 text-xs text-gray-500">
+                  <span>Linear</span>
+                  <span>Curved</span>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
