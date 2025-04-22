@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
@@ -36,7 +38,12 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     toggleAngles,
     isDrawing,
     renderTooltip
-  } = useStraightLineTool();
+  } = useStraightLineTool({
+    isActive: enabled,
+    inputMethod: InputMethod.MOUSE,
+    isPencilMode: false,
+    canvas: canvas
+  });
   
   // Hide measurement after some time of inactivity
   useEffect(() => {

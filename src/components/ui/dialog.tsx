@@ -81,7 +81,7 @@ const DialogFooter = ({
 DialogFooter.displayName = "DialogFooter";
 export { DialogFooter };
 
-export type DialogTitleProps = ComponentPropsWithRef<typeof DialogPrimitive.Title>;
+export type DialogTitleProps = React.ComponentPropsWithRef<typeof DialogPrimitive.Title>;
 export const DialogTitle = forwardRef<
   ElementRef<typeof DialogPrimitive.Title>, 
   DialogTitleProps
@@ -92,7 +92,7 @@ export const DialogTitle = forwardRef<
 ));
 DialogTitle.displayName = "DialogTitle";
 
-export type DialogDescriptionProps = ComponentPropsWithRef<typeof DialogPrimitive.Description>;
+export type DialogDescriptionProps = React.ComponentPropsWithRef<typeof DialogPrimitive.Description>;
 export const DialogDescription = forwardRef<
   ElementRef<typeof DialogPrimitive.Description>, 
   DialogDescriptionProps

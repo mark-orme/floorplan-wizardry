@@ -1,14 +1,21 @@
+
 import React, { useState } from 'react';
 import { useStraightLineTool } from '@/hooks/straightLineTool';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
 
 export const StraightLineToolDemo: React.FC = () => {
   const [snapEnabled, setSnapEnabled] = useState(true);
   
-  // Call the hook without arguments
-  const straightLineTool = useStraightLineTool();
+  // Call the hook with required options
+  const straightLineTool = useStraightLineTool({
+    isActive: true,
+    inputMethod: InputMethod.MOUSE,
+    isPencilMode: false,
+    setInputMethod: () => {} // no-op function for demo
+  });
   
   return (
     <div className="p-4 border rounded-lg">

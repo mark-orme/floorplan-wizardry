@@ -5,7 +5,7 @@ import { Slot } from "@radix-ui/react-slot";
 import {
   Controller,
   useForm as useReactHookForm,
-  useFormContext as useRHFFormContext,
+  useFormContext as useHookFormContext,
   FormProvider as RHFFormProvider
 } from "react-hook-form";
 import { cn } from "@/lib/utils";
@@ -143,7 +143,7 @@ FormMessage.displayName = "FormMessage";
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useRHFFormContext();
+  const { getFieldState, formState } = useHookFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
@@ -173,7 +173,7 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  useRHFFormContext as useFormContext,
+  useHookFormContext as useFormContext,
   RHFFormProvider as FormProvider,
   useReactHookForm as useForm
 };

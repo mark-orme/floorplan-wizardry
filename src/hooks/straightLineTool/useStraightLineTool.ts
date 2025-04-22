@@ -7,10 +7,11 @@ import { useLineToolHandlers } from './useLineToolHandlers';
 import { MeasurementData } from '@/types/measurement/MeasurementData';
 
 export interface UseStraightLineToolOptions {
-  isActive: boolean;
-  inputMethod: InputMethod;
-  isPencilMode: boolean;
-  setInputMethod: (method: InputMethod) => void;
+  isActive?: boolean;
+  inputMethod?: InputMethod;
+  isPencilMode?: boolean;
+  setInputMethod?: (method: InputMethod) => void;
+  canvas?: Canvas | null;
 }
 
 export interface UseStraightLineToolResult {
@@ -41,8 +42,15 @@ export interface UseStraightLineToolResult {
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
 
-export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStraightLineToolResult => {
-  const { isActive, inputMethod, isPencilMode, setInputMethod } = options;
+export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): UseStraightLineToolResult => {
+  const { 
+    isActive = true, 
+    inputMethod: initialInputMethod = InputMethod.MOUSE, 
+    isPencilMode = false, 
+    setInputMethod: externalSetInputMethod,
+    canvas = null
+  } = options;
+  
   const [isEnabled, setIsEnabled] = useState<boolean>(true);
   const [isToolInitialized, setIsToolInitialized] = useState<boolean>(false);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
@@ -58,6 +66,11 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStr
     unit: 'm'
   });
 
+  // Use the standalone hook for input method
+  const inputMethodState = useLineInputMethod();
+  const actualInputMethod = externalSetInputMethod ? initialInputMethod : inputMethodState.inputMethod;
+  const actualSetInputMethod = externalSetInputMethod || inputMethodState.setInputMethod;
+
   const handlers = useLineToolHandlers({
     isDrawing,
     setIsDrawing,
@@ -72,9 +85,9 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStr
     shiftKeyPressed,
     setShiftKeyPressed,
     isActive,
-    inputMethod,
+    inputMethod: actualInputMethod,
     isPencilMode,
-    setInputMethod
+    setInputMethod: actualSetInputMethod
   });
   
   const toggleGridSnapping = useCallback(() => {
@@ -91,7 +104,7 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStr
     currentLine,
     isToolInitialized,
     isDrawing,
-    inputMethod,
+    inputMethod: actualInputMethod,
     isPencilMode,
     snapEnabled,
     anglesEnabled,
@@ -108,7 +121,7 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions): UseStr
     handleKeyDown: handlers.handleKeyDown,
     handleKeyUp: handlers.handleKeyUp,
     renderTooltip: handlers.renderTooltip,
-    setInputMethod,
+    setInputMethod: actualSetInputMethod,
     shiftKeyPressed,
     setCurrentLine
   };
