@@ -1,133 +1,22 @@
 
-// Importing the types from floor-plan/unifiedTypes
-import { FloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
+/**
+ * Mock utilities for testing
+ * @module utils/test/mockUtils
+ */
+import { vi } from 'vitest';
+import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
+import { Room, Wall, Stroke, FloorPlan } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Create a mock floor plan
- * @param overrides Properties to override defaults
- * @returns A mock floor plan
+ * Create a mock point object for testing
  */
-export function createMockFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
-  return {
-    id: overrides.id || `floor-${Date.now()}`,
-    name: overrides.name || 'Mock Floor Plan',
-    label: overrides.label || 'Mock Floor',
-    walls: overrides.walls || [],
-    rooms: overrides.rooms || [],
-    strokes: overrides.strokes || [],
-    canvasData: overrides.canvasData || null,
-    canvasJson: overrides.canvasJson || null,
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    gia: overrides.gia || 0,
-    level: overrides.level || 0,
-    index: overrides.index || 0,
-    metadata: {
-      version: '1.0',
-      author: 'Test User',
-      dateCreated: now,
-      lastModified: now,
-      notes: '',
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: 0
-    },
-    data: overrides.data || {},
-    userId: overrides.userId || 'test-user'
-  };
-}
-
-/**
- * Create a mock room
- * @param overrides Properties to override defaults
- * @returns A mock room
- */
-export function createMockRoom(overrides: Partial<Room> = {}): Room {
-  return {
-    id: overrides.id || `room-${Date.now()}`,
-    name: overrides.name || 'Mock Room',
-    type: overrides.type || 'living',
-    area: overrides.area || 100,
-    perimeter: overrides.perimeter || 40,
-    center: overrides.center || { x: 50, y: 50 },
-    vertices: overrides.vertices || [
-      { x: 0, y: 0 },
-      { x: 100, y: 0 },
-      { x: 100, y: 100 },
-      { x: 0, y: 100 }
-    ],
-    labelPosition: overrides.labelPosition || { x: 50, y: 50 },
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan',
-    color: overrides.color || '#ffffff'
-  };
-}
-
-/**
- * Create a mock wall
- * @param overrides Properties to override defaults
- * @returns A mock wall
- */
-export function createMockWall(overrides: Partial<Wall> = {}): Wall {
-  return {
-    id: overrides.id || `wall-${Date.now()}`,
-    start: overrides.start || { x: 0, y: 0 },
-    end: overrides.end || { x: 100, y: 0 },
-    thickness: overrides.thickness || 5,
-    length: overrides.length || 100,
-    angle: overrides.angle || 0, // Required property
-    color: overrides.color || '#000000',
-    height: overrides.height || 240,
-    roomIds: overrides.roomIds || [],
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
-  };
-}
-
-/**
- * Create a mock stroke
- * @param overrides Properties to override defaults
- * @returns A mock stroke
- */
-export function createMockStroke(overrides: Partial<Stroke> = {}): Stroke {
-  return {
-    id: overrides.id || `stroke-${Date.now()}`,
-    type: overrides.type || 'line',
-    points: overrides.points || [
-      { x: 0, y: 0 },
-      { x: 100, y: 100 }
-    ],
-    color: overrides.color || '#000000',
-    thickness: overrides.thickness || 1,
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
-  };
-}
-
-/**
- * Create a mock point
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A point object
- */
-export function createMockPoint(x: number = 0, y: number = 0): Point {
+export function createTestPoint(x: number = 0, y: number = 0): Point {
   return { x, y };
 }
 
 /**
- * Create a test point (alias for createMockPoint for backward compatibility)
- * @param x X coordinate
- * @param y Y coordinate
- * @returns A point object
- */
-export function createTestPoint(x: number = 0, y: number = 0): Point {
-  return createMockPoint(x, y);
-}
-
-/**
- * Create mock function parameters for testing
- * @param overrides Properties to override defaults
- * @returns Mock function parameters
+ * Create mock function parameters for straightLineTool tests
  */
 export function createMockFunctionParams(overrides: Record<string, any> = {}): Record<string, any> {
   return {
@@ -136,5 +25,129 @@ export function createMockFunctionParams(overrides: Record<string, any> = {}): R
     pressure: overrides.pressure || 1,
     timestamp: overrides.timestamp || Date.now(),
     ...overrides
+  };
+}
+
+/**
+ * Create a mock useFloorPlanDrawing hook result
+ */
+export function createMockUseFloorPlanDrawingResult() {
+  return {
+    isDrawing: false,
+    tool: DrawingMode.SELECT,
+    setTool: vi.fn(),
+    startDrawing: vi.fn(),
+    continueDrawing: vi.fn(),
+    endDrawing: vi.fn(),
+    cancelDrawing: vi.fn(),
+    drawFloorPlan: vi.fn(),
+    addRoom: vi.fn(),
+    addWall: vi.fn(),
+    addStroke: vi.fn(),
+    deleteObject: vi.fn(),
+    clearCanvas: vi.fn(),
+    selectedObjects: [],
+    setSelectedObjects: vi.fn(),
+    canUndo: false,
+    canRedo: false,
+    undo: vi.fn(),
+    redo: vi.fn(),
+    setFloorPlan: vi.fn(),
+    updateFloorPlan: vi.fn(),
+    calculateRoomArea: vi.fn()
+  };
+}
+
+/**
+ * Create a mock wall object for testing
+ */
+export function createMockWall(): Wall {
+  return {
+    id: 'wall-test-1',
+    start: { x: 0, y: 0 },
+    end: { x: 100, y: 0 },
+    thickness: 5,
+    length: 100,
+    angle: 0,
+    roomIds: [],
+    floorPlanId: 'floor-test-1',
+    color: '#000000',
+    height: 240
+  };
+}
+
+/**
+ * Create a mock room object for testing
+ */
+export function createMockRoom(): Room {
+  return {
+    id: 'room-test-1',
+    name: 'Test Room',
+    type: 'living',
+    area: 100,
+    perimeter: 40,
+    center: { x: 50, y: 50 },
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 }
+    ],
+    labelPosition: { x: 50, y: 50 },
+    floorPlanId: 'floor-test-1',
+    color: '#ffffff'
+  };
+}
+
+/**
+ * Create a mock stroke object for testing
+ */
+export function createMockStroke(): Stroke {
+  return {
+    id: 'stroke-test-1',
+    type: 'line',
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 100 }
+    ],
+    color: '#000000',
+    thickness: 1,
+    floorPlanId: 'floor-test-1'
+  };
+}
+
+/**
+ * Create a mock floor plan object for testing
+ */
+export function createMockFloorPlan(): FloorPlan {
+  const now = new Date().toISOString();
+  
+  return {
+    id: 'floor-test-1',
+    name: 'Test Floor Plan',
+    label: 'Test Floor',
+    walls: [],
+    rooms: [],
+    strokes: [],
+    canvasData: null,
+    canvasJson: null,
+    createdAt: now,
+    updatedAt: now,
+    gia: 0,
+    level: 0,
+    index: 0,
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      version: '1.0',
+      paperSize: 'A4',
+      level: 0,
+      author: 'Test User',
+      dateCreated: now,
+      lastModified: now,
+      notes: ''
+    },
+    data: {},
+    userId: 'user-test-1'
   };
 }

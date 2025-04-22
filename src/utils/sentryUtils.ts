@@ -1,142 +1,85 @@
 
-/**
- * Utility functions for Sentry error reporting
- * Provides backwards compatibility for different captureError signatures
- */
 import * as Sentry from '@sentry/react';
 
 /**
- * Interface for capture error options
- */
-export interface CaptureErrorOptions {
-  context?: string | Record<string, any>;
-  tags?: Record<string, string>;
-  level?: 'info' | 'warning' | 'error' | 'fatal';
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-  };
-  extra?: Record<string, any>;
-  showDialog?: boolean;
-}
-
-/**
- * Interface for capture message options
- */
-export interface CaptureMessageOptions {
-  context?: string | Record<string, any>;
-  tags?: Record<string, string>;
-  level?: Sentry.SeverityLevel;
-  user?: {
-    id?: string;
-    email?: string;
-    username?: string;
-  };
-  extra?: Record<string, any>;
-}
-
-/**
- * Legacy compatibility function that handles the old 3-argument pattern
- * @param error The error to capture
- * @param context Context string 
- * @param extraData Additional data
+ * Unified error capture function with backward compatibility for different call patterns
+ * 
+ * @param error - The error object to capture
+ * @param contextOrTags - Either a string context (legacy) or an object with tags and extra data
+ * @param extraData - Extra data (legacy parameter)
  */
 export function captureError(
-  error: Error | any,
-  context?: string | Record<string, any>,
+  error: Error | string,
+  contextOrTags?: string | { context?: string; tags?: Record<string, string>; extra?: Record<string, any> },
   extraData?: Record<string, any>
-) {
-  // Handle different call signatures to provide backward compatibility
-  if (typeof context === 'string' && extraData) {
-    // Old pattern: captureError(error, 'contextName', { extra: 'data' })
-    Sentry.captureException(error, {
-      tags: { context: context },
+): void {
+  // Handle the new unified format
+  if (typeof contextOrTags === 'object' && contextOrTags !== null) {
+    const { context, tags, extra } = contextOrTags;
+    
+    if (context) {
+      Sentry.setContext('error_context', { context });
+    }
+    
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      tags,
+      extra
+    });
+    return;
+  }
+  
+  // Handle legacy format (3 arguments)
+  if (typeof contextOrTags === 'string') {
+    Sentry.setContext('error_context', { context: contextOrTags });
+    
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
       extra: extraData
     });
-  } else if (typeof context === 'string') {
-    // String context only: captureError(error, 'name')
-    Sentry.captureException(error, {
-      tags: { context: context }
-    });
-  } else if (context && typeof context === 'object') {
-    // Object context: captureError(error, { tags: {}, context: 'data', extra: 'data' })
-    Sentry.captureException(error, {
-      tags: context.tags || { context: context.context || 'unknown' },
-      extra: context.extra || context
-    });
-  } else {
-    // Just the error: captureError(error)
-    Sentry.captureException(error);
+    return;
   }
+  
+  // Basic error capture with no context
+  Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
 }
 
 /**
- * Legacy compatibility function that handles the old 3-argument pattern 
- * @param message The message to capture
- * @param context Context string
- * @param extraData Additional data
+ * Unified message capture function with backward compatibility for different call patterns
+ * 
+ * @param message - The message to capture
+ * @param contextOrOptions - Either a string context (legacy) or an object with level, tags and extra data
+ * @param extraData - Extra data (legacy parameter)
  */
 export function captureMessage(
   message: string,
-  context?: string | Record<string, any>,
+  contextOrOptions?: string | { 
+    level?: Sentry.SeverityLevel; 
+    tags?: Record<string, string>; 
+    extra?: Record<string, any> 
+  },
   extraData?: Record<string, any>
-) {
-  // Handle different call signatures to provide backward compatibility
-  if (typeof context === 'string' && extraData) {
-    // Old pattern: captureMessage('message', 'contextName', { extra: 'data' })
+): void {
+  // Handle the new unified format
+  if (typeof contextOrOptions === 'object' && contextOrOptions !== null) {
+    const { level, tags, extra } = contextOrOptions;
+    
     Sentry.captureMessage(message, {
-      level: 'info',
-      tags: { context: context },
+      level,
+      tags,
+      extra
+    });
+    return;
+  }
+  
+  // Handle legacy format (3 arguments)
+  if (typeof contextOrOptions === 'string') {
+    Sentry.setContext('message_context', { context: contextOrOptions });
+    
+    Sentry.captureMessage(message, {
       extra: extraData
     });
-  } else if (typeof context === 'string') {
-    // String context only: captureMessage('message', 'name')
-    Sentry.captureMessage(message, {
-      level: 'info',
-      tags: { context: context }
-    });
-  } else if (context && typeof context === 'object') {
-    // Object context: captureMessage('message', { level: 'info', context: 'data', extra: 'data' })
-    Sentry.captureMessage(message, {
-      level: (context.level as Sentry.SeverityLevel) || 'info',
-      tags: context.tags || { context: context.context || 'unknown' },
-      extra: context.extra || context
-    });
-  } else {
-    // Just the message: captureMessage('message')
-    Sentry.captureMessage(message);
+    return;
   }
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use captureErrorWithMonitoring instead
- */
-export function captureErrorWithMonitoring(
-  error: Error | any,
-  contextName: string,
-  monitoringTag: string,
-  additionalContext?: Record<string, any>
-) {
-  captureError(error, {
-    tags: { context: contextName, monitoring: monitoringTag },
-    extra: additionalContext
-  });
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use captureMessage with options object instead
- */
-export function captureMessageWithMonitoring(
-  message: string,
-  contextName: string,
-  monitoringTag: string,
-  additionalContext?: Record<string, any>
-) {
-  captureMessage(message, {
-    tags: { context: contextName, monitoring: monitoringTag },
-    extra: additionalContext
-  });
+  
+  // Basic message capture with no context
+  Sentry.captureMessage(message);
 }

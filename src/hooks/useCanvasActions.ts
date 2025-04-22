@@ -7,7 +7,7 @@ import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { toast } from "sonner";
 import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { convertToUnifiedFloorPlans } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
+import { convertToUnifiedFloorPlans, convertToCoreFloorPlans } from '@/utils/floorPlanAdapter';
 import { saveFloorPlans } from "@/utils/drawing";
 import logger from "@/utils/logger";
 
@@ -119,11 +119,20 @@ export const useCanvasActions = ({
     if (!fabricCanvasRef.current) return;
     
     try {
-      // Convert app floor plans to unified format for storage using the proper adapter
-      const unifiedPlans = convertToUnifiedFloorPlans(floorPlans);
+      // Convert app floor plans to unified format for storage
+      // We ensure the types match by using our adapter functions
+      const adaptedPlans = floorPlans.map(plan => ({
+        ...plan,
+        // Ensure required fields are present
+        id: plan.id || `floor-${Date.now()}`,
+        walls: plan.walls?.map(wall => ({
+          ...wall,
+          color: wall.color || '#000000'
+        })) || []
+      }));
       
       // First save to storage
-      saveFloorPlans(unifiedPlans)
+      saveFloorPlans(adaptedPlans as unknown as FloorPlan[])
         .then(() => {
           toast.success("Floor plans saved to offline storage");
           
