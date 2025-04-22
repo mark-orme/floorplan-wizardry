@@ -9,5 +9,20 @@ export enum DrawingMode {
   DOOR = 'DOOR',
   WINDOW = 'WINDOW',
   ROOM = 'ROOM',
-  MEASUREMENT = 'MEASUREMENT'
+  MEASUREMENT = 'MEASUREMENT',
+  // Add missing values that are used in the codebase
+  STRAIGHT_LINE = 'STRAIGHT_LINE',
+  HAND = 'HAND',
+  PAN = 'PAN',
+  ERASER = 'ERASER',
+  ERASE = 'ERASE',
+  TEXT = 'TEXT',
+  ZOOM = 'ZOOM',
+  PENCIL = 'PENCIL',
+  SHAPE = 'SHAPE',
+  COLUMN = 'COLUMN',
+  DIMENSION = 'DIMENSION',
+  STAIR = 'STAIR',
+  RECTANGLE = 'RECTANGLE',
+  ROOM_LABEL = 'ROOM_LABEL'
 }

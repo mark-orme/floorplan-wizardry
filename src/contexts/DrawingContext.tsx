@@ -16,6 +16,10 @@ interface DrawingContextType {
   addToUndoStack: (state: any) => void;
   undo: () => void;
   redo: () => void;
+  // Additional properties needed for other components
+  activeTool?: DrawingMode; // Alias for tool for compatibility
+  setActiveTool?: React.Dispatch<React.SetStateAction<DrawingMode>>; // Alias for setTool for compatibility
+  addToHistory?: (state: any) => void; // Alias for addToUndoStack for compatibility
 }
 
 const DrawingContext = createContext<DrawingContextType | null>(null);
@@ -73,7 +77,11 @@ export const DrawingProvider: React.FC<{
         redoStack,
         addToUndoStack,
         undo,
-        redo
+        redo,
+        // Aliases for compatibility
+        activeTool: tool,
+        setActiveTool: setTool,
+        addToHistory: addToUndoStack
       }}
     >
       {children}

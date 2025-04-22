@@ -1,64 +1,47 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
+import React, { useEffect } from 'react';
 import { useDrawingContext } from '@/contexts/DrawingContext';
+import { DrawingMode } from '@/constants/drawingModes';
 import { captureMessage } from '@/utils/sentryUtils';
 
+/**
+ * Canvas Drawing Enhancer Component
+ * Enhances canvas with drawing capabilities by connecting drawing context to canvas
+ */
 interface CanvasDrawingEnhancerProps {
-  canvas: FabricCanvas | null;
-  tool: DrawingMode;
+  children: React.ReactNode;
 }
 
-/**
- * CanvasDrawingEnhancer component
- * Enhances canvas drawing capabilities based on the selected tool
- */
-export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({
-  canvas,
-  tool
-}) => {
-  const [isDrawingMode, setIsDrawingMode] = useState(tool === DrawingMode.DRAW);
-  const { addToHistory } = useDrawingContext();
+export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({ children }) => {
+  const { canvas, tool, lineColor, lineThickness, addToUndoStack } = useDrawingContext();
   
-  // Update drawing mode when tool changes
+  // Update canvas drawing settings when relevant context values change
   useEffect(() => {
     if (!canvas) return;
     
-    const newDrawingMode = tool === DrawingMode.DRAW;
-    
-    if (newDrawingMode !== isDrawingMode) {
-      setIsDrawingMode(newDrawingMode);
-      canvas.isDrawingMode = newDrawingMode;
-      canvas.selection = tool === DrawingMode.SELECT;
+    try {
+      // Set drawing mode based on tool
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
       
-      // Report to Sentry with new options format
-      captureMessage("Drawing mode changed", {
-        level: 'info',
-        tags: { component: "CanvasDrawingEnhancer" },
-        extra: { isDrawingMode }
+      if (canvas.isDrawingMode) {
+        // Configure brush
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+        
+        // Save current state for undo history
+        addToUndoStack(canvas.toJSON());
+      }
+      
+      // Log drawing mode changes
+      captureMessage('Drawing mode updated', 'canvas-drawing-enhancer', { 
+        isDrawingMode: canvas.isDrawingMode 
       });
+    } catch (err) {
+      console.error('Error configuring drawing mode:', err);
     }
-  }, [canvas, tool, isDrawingMode]);
+  }, [canvas, tool, lineColor, lineThickness, addToUndoStack]);
   
-  // Save canvas state after each modification
-  const handleObjectModified = useCallback(() => {
-    if (addToHistory) {
-      addToHistory();
-    }
-  }, [addToHistory]);
-  
-  useEffect(() => {
-    if (!canvas) return;
-    
-    canvas.on('object:modified', handleObjectModified);
-    
-    return () => {
-      canvas.off('object:modified', handleObjectModified);
-    };
-  }, [canvas, handleObjectModified]);
-  
-  return null;
+  return <>{children}</>;
 };
 
 export default CanvasDrawingEnhancer;

@@ -1,87 +1,79 @@
 
 import React, { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
 import { useDrawingContext } from '@/contexts/DrawingContext';
-import logger from '@/utils/logger';
-
-interface CanvasEventManagerProps {
-  canvas: FabricCanvas | null;
-  onSelectionChanged?: (objects: any[]) => void;
-  onModified?: () => void;
-  onHistoryChange?: () => void;
-}
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Manages canvas events and coordinates with the drawing context
+ * Canvas Event Manager Component
+ * Manages event handlers for canvas interactions
  */
-export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
-  canvas,
-  onSelectionChanged,
-  onModified,
-  onHistoryChange
-}) => {
+interface CanvasEventManagerProps {
+  children: React.ReactNode;
+}
+
+export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({ children }) => {
   const { 
-    addToHistory, 
-    undo, 
-    redo, 
-    activeTool, 
-    setActiveTool 
+    canvas, 
+    tool, 
+    setTool,
+    addToUndoStack,
+    undo,
+    redo
   } = useDrawingContext();
   
-  // Handle keyboard shortcuts
+  // Setup keyboard event handlers
   useEffect(() => {
     if (!canvas) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if target is input, textarea, etc.
-      if (e.target instanceof HTMLInputElement || 
-          e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      
-      // Undo: Ctrl+Z
-      if (e.ctrlKey && e.key === 'z') {
+      // Handle undo/redo with keyboard shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
-        if (onHistoryChange) onHistoryChange();
-        return;
-      }
-      
-      // Redo: Ctrl+Y or Ctrl+Shift+Z
-      if ((e.ctrlKey && e.key === 'y') || 
-          (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+      } else if (
+        ((e.ctrlKey || e.metaKey) && e.key === 'y') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z')
+      ) {
         e.preventDefault();
         redo();
-        if (onHistoryChange) onHistoryChange();
-        return;
       }
       
-      // Tool shortcuts
+      // Handle tool switching with keyboard shortcuts
       switch (e.key) {
         case 'v':
-          logger.info('Switching to Select tool');
-          setActiveTool(DrawingMode.SELECT);
+        case 's':
+          setTool(DrawingMode.SELECT);
           break;
         case 'p':
-          logger.info('Switching to Draw tool');
-          setActiveTool(DrawingMode.DRAW);
+        case 'd':
+          setTool(DrawingMode.DRAW);
+          break;
+        case 'r':
+          setTool(DrawingMode.RECT);
+          break;
+        case 'c':
+          setTool(DrawingMode.CIRCLE);
           break;
         case 'l':
-          logger.info('Switching to Line tool');
-          setActiveTool(DrawingMode.STRAIGHT_LINE);
+          setTool(DrawingMode.LINE);
+          break;
+        case 'L':
+          setTool(DrawingMode.STRAIGHT_LINE);
           break;
         case 'w':
-          logger.info('Switching to Wall tool');
-          setActiveTool(DrawingMode.WALL);
+          setTool(DrawingMode.WALL);
           break;
         case 'e':
-          logger.info('Switching to Eraser tool');
-          setActiveTool(DrawingMode.ERASER);
+          setTool(DrawingMode.ERASER);
           break;
         case 'h':
-          logger.info('Switching to Hand tool');
-          setActiveTool(DrawingMode.HAND);
+          setTool(DrawingMode.HAND);
+          break;
+        case 'Escape':
+          // Deselect all and reset to select tool
+          canvas.discardActiveObject();
+          canvas.renderAll();
+          setTool(DrawingMode.SELECT);
           break;
       }
     };
@@ -91,34 +83,25 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvas, undo, redo, setActiveTool, onHistoryChange]);
+  }, [canvas, setTool, undo, redo]);
   
-  // Handle object modifications and update history
+  // Setup canvas event handlers
   useEffect(() => {
     if (!canvas) return;
     
+    // Save state when objects are modified
     const handleObjectModified = () => {
-      addToHistory();
-      if (onModified) onModified();
-    };
-    
-    const handleSelectionUpdated = () => {
-      const selectedObjects = canvas.getActiveObjects();
-      if (onSelectionChanged) onSelectionChanged(selectedObjects);
+      addToUndoStack(canvas.toJSON());
     };
     
     canvas.on('object:modified', handleObjectModified);
-    canvas.on('selection:created', handleSelectionUpdated);
-    canvas.on('selection:updated', handleSelectionUpdated);
-    canvas.on('selection:cleared', handleSelectionUpdated);
     
     return () => {
       canvas.off('object:modified', handleObjectModified);
-      canvas.off('selection:created', handleSelectionUpdated);
-      canvas.off('selection:updated', handleSelectionUpdated);
-      canvas.off('selection:cleared', handleSelectionUpdated);
     };
-  }, [canvas, addToHistory, onModified, onSelectionChanged]);
+  }, [canvas, addToUndoStack]);
   
-  return null;
+  return <>{children}</>;
 };
+
+export default CanvasEventManager;
