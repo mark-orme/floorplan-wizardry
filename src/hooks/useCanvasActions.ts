@@ -28,7 +28,11 @@ export const useCanvasActions = ({
   const addFloorPlan = useCallback(() => {
     const newFloorPlan = createTestFloorPlan();
     setFloorPlans(prev => [...prev, newFloorPlan]);
-    setHistory(prev => [...prev, { type: 'add_floor_plan', floorPlanId: newFloorPlan.id }]);
+    setHistory(prev => [...prev, { 
+      type: 'add_floor_plan', 
+      floorPlanId: newFloorPlan.id,
+      timestamp: Date.now() 
+    }]);
   }, []);
 
   // Update floor plan action
@@ -41,7 +45,8 @@ export const useCanvasActions = ({
     setHistory(prev => [...prev, { 
       type: 'update_floor_plan', 
       floorPlanId: floorPlan.id,
-      data: { index }
+      data: { index },
+      timestamp: Date.now()
     }]);
   }, []);
 
@@ -53,7 +58,8 @@ export const useCanvasActions = ({
     setFloorPlans(prev => prev.filter((_, i) => i !== index));
     setHistory(prev => [...prev, { 
       type: 'delete_floor_plan', 
-      floorPlanId
+      floorPlanId,
+      timestamp: Date.now()
     }]);
 
     // Update current floor plan index if needed

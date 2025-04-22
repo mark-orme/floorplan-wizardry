@@ -22,7 +22,10 @@ export type CanvasActionType =
   | 'DESELECT'
   | 'GROUP'
   | 'UNGROUP'
-  | 'CHANGE_PROPERTY';
+  | 'CHANGE_PROPERTY'
+  | 'add_floor_plan'
+  | 'update_floor_plan'
+  | 'delete_floor_plan';
 
 // Canvas action interface
 export interface CanvasAction {
@@ -31,6 +34,8 @@ export interface CanvasAction {
   timestamp: number;
   userId?: string;
   metadata?: Record<string, any>;
+  floorPlanId?: string;
+  data?: Record<string, any>;
 }
 
 // Canvas state snapshot

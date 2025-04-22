@@ -1,99 +1,72 @@
 
 /**
- * Floor plan type adapters
+ * Floor plan type adapter
+ * Provides functions to convert between different floor plan formats
  * @module utils/floorPlanAdapter/floorPlanTypeAdapter
  */
-import { Point } from 'fabric';
-import {
-  FloorPlan,
-  Wall,
-  Room,
-  Stroke,
-  FloorPlanMetadata
-} from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
+import { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
+import { convertToCoreFloorPlans, convertToUnifiedFloorPlans } from './converters';
 
 /**
- * Convert a wall object to the unified format
- * @param wall Wall object to convert
- * @returns Unified wall format
+ * Convert a unified floor plan to app format
+ * @param unifiedPlan Unified floor plan
+ * @returns App floor plan
  */
-export const adaptWall = (wall: any): Wall => {
+export const convertToAppFloorPlan = (unifiedPlan: UnifiedFloorPlan): AppFloorPlan => {
+  // First convert to core format
+  const corePlan = convertToCoreFloorPlans([unifiedPlan])[0];
+  
+  // Then convert to app format
   return {
-    id: wall.id || `wall-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    start: { x: wall.start?.x || 0, y: wall.start?.y || 0 },
-    end: { x: wall.end?.x || 0, y: wall.end?.y || 0 },
-    thickness: wall.thickness || 5,
-    color: wall.color || '#000000',
-    roomIds: wall.roomIds || [],
-    length: Math.sqrt(
-      Math.pow((wall.end?.x || 0) - (wall.start?.x || 0), 2) + 
-      Math.pow((wall.end?.y || 0) - (wall.start?.y || 0), 2)
-    )
+    id: corePlan.id,
+    name: corePlan.name,
+    label: corePlan.label,
+    walls: corePlan.walls,
+    rooms: corePlan.rooms,
+    strokes: corePlan.strokes,
+    metadata: corePlan.metadata,
+    createdAt: corePlan.metadata.createdAt,
+    updatedAt: corePlan.metadata.updatedAt
   };
 };
 
 /**
- * Convert a room object to the unified format
- * @param room Room object to convert
- * @returns Unified room format
+ * Convert multiple unified floor plans to app format
+ * @param unifiedPlans Unified floor plans
+ * @returns App floor plans
  */
-export const adaptRoom = (room: any): Room => {
-  return {
-    id: room.id || `room-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    name: room.name || 'Unnamed Room',
-    type: room.type || 'other',
-    vertices: room.vertices || room.points || [],
-    points: room.points || room.vertices || [],
-    area: room.area || 0,
-    color: room.color || '#f0f0f0',
-    level: room.level || 0,
-    walls: room.walls || room.wallIds || []
-  };
+export const convertToAppFloorPlans = (unifiedPlans: UnifiedFloorPlan[]): AppFloorPlan[] => {
+  return unifiedPlans.map(convertToAppFloorPlan);
 };
 
 /**
- * Convert a stroke object to the unified format
- * @param stroke Stroke object to convert
- * @returns Unified stroke format
+ * Convert app floor plan to unified format
+ * @param appPlan App floor plan
+ * @returns Unified floor plan
  */
-export const adaptStroke = (stroke: any): Stroke => {
-  return {
-    id: stroke.id || `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    points: stroke.points || [],
-    color: stroke.color || '#000000',
-    width: stroke.width || 1,
-    type: stroke.type || 'annotation',
-    metadata: stroke.metadata || {}
+export const convertToUnifiedFloorPlan = (appPlan: AppFloorPlan): UnifiedFloorPlan => {
+  // First convert to core format
+  const corePlan: CoreFloorPlan = {
+    id: appPlan.id,
+    name: appPlan.name,
+    label: appPlan.label,
+    walls: appPlan.walls,
+    rooms: appPlan.rooms,
+    strokes: appPlan.strokes,
+    metadata: appPlan.metadata
   };
+  
+  // Then convert to unified format
+  return convertToUnifiedFloorPlans([corePlan])[0];
 };
 
 /**
- * Convert a metadata object to the unified format
- * @param metadata Metadata object to convert
- * @returns Unified metadata format
+ * Convert multiple app floor plans to unified format
+ * @param appPlans App floor plans
+ * @returns Unified floor plans
  */
-export const adaptMetadata = (metadata: any): FloorPlanMetadata => {
-  return {
-    createdAt: metadata.createdAt || new Date().toISOString(),
-    updatedAt: metadata.updatedAt || new Date().toISOString(),
-    author: metadata.author || 'system',
-    version: metadata.version || '1.0.0'
-  };
-};
-
-/**
- * Convert a floor plan to the unified format
- * @param floorPlan Floor plan to convert
- * @returns Unified floor plan format
- */
-export const adaptFloorPlan = (floorPlan: any): FloorPlan => {
-  return {
-    id: floorPlan.id || `floor-plan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    name: floorPlan.name || 'Untitled Floor Plan',
-    label: floorPlan.label || floorPlan.name || 'Untitled Floor Plan',
-    walls: (floorPlan.walls || []).map(adaptWall),
-    rooms: (floorPlan.rooms || []).map(adaptRoom),
-    strokes: (floorPlan.strokes || []).map(adaptStroke),
-    metadata: adaptMetadata(floorPlan.metadata || {})
-  };
+export const convertToUnifiedFloorPlans = (appPlans: AppFloorPlan[]): UnifiedFloorPlan[] => {
+  return appPlans.map(convertToUnifiedFloorPlan);
 };

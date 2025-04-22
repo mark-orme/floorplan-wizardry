@@ -1,87 +1,88 @@
 
 /**
  * Tests for useLineState hook
- * @module hooks/straightLineTool/__tests__/useLineState.test
  */
-import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLineState } from '../useLineState';
+import { createLineState } from '../lineState';
 
 describe('useLineState', () => {
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useLineState());
+  it('should initialize with default line state', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.isActive).toBe(false);
-    expect(result.current.isToolInitialized).toBe(false);
-    expect(result.current.inputMethod).toBe('mouse');
-    expect(result.current.isPencilMode).toBe(false);
-    expect(result.current.snapEnabled).toBe(true);
-    expect(result.current.anglesEnabled).toBe(false);
+    expect(result.current.lineState).toEqual(
+      expect.objectContaining({
+        id: 'test-line',
+        start: null,
+        end: null,
+        active: false
+      })
+    );
   });
-  
-  it('should set isDrawing state', () => {
-    const { result } = renderHook(() => useLineState());
+
+  it('should update start point', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
     act(() => {
-      result.current.setIsDrawing(true);
+      result.current.setStart({ x: 10, y: 20 });
     });
     
-    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.lineState.start).toEqual({ x: 10, y: 20 });
   });
-  
-  it('should toggle snap state', () => {
-    const { result } = renderHook(() => useLineState());
-    
-    const initialSnapState = result.current.snapEnabled;
+
+  it('should update end point', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
     act(() => {
-      result.current.toggleSnap();
+      result.current.setEnd({ x: 100, y: 200 });
     });
     
-    expect(result.current.snapEnabled).toBe(!initialSnapState);
+    expect(result.current.lineState.end).toEqual({ x: 100, y: 200 });
   });
-  
-  it('should toggle angles state', () => {
-    const { result } = renderHook(() => useLineState());
-    
-    const initialAnglesState = result.current.anglesEnabled;
+
+  it('should calculate length when both points are set', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
     act(() => {
-      result.current.toggleAngles();
+      result.current.setStart({ x: 0, y: 0 });
+      result.current.setEnd({ x: 3, y: 4 });
     });
     
-    expect(result.current.anglesEnabled).toBe(!initialAnglesState);
+    // Length should be 5 (Pythagorean theorem: 3^2 + 4^2 = 5^2)
+    expect(result.current.lineState.length).toBeCloseTo(5);
   });
-  
-  it('should initialize the tool', () => {
-    const { result } = renderHook(() => useLineState());
+
+  it('should calculate angle when both points are set', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
     act(() => {
-      result.current.initializeTool();
+      result.current.setStart({ x: 0, y: 0 });
+      result.current.setEnd({ x: 10, y: 0 });
     });
     
-    expect(result.current.isToolInitialized).toBe(true);
+    // Angle should be 0 for a horizontal line to the right
+    expect(result.current.lineState.angle).toBeCloseTo(0);
   });
-  
-  it('should reset drawing state', () => {
-    const { result } = renderHook(() => useLineState());
+
+  it('should reset the line state', () => {
+    const { result } = renderHook(() => useLineState({ id: 'test-line' }));
     
-    // Set up a drawing state
     act(() => {
-      result.current.setIsDrawing(true);
-      result.current.initializeTool();
+      result.current.setStart({ x: 10, y: 20 });
+      result.current.setEnd({ x: 30, y: 40 });
+      result.current.setActive(true);
+      result.current.reset();
     });
     
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.isToolInitialized).toBe(true);
-    
-    // Reset the state
-    act(() => {
-      result.current.resetDrawingState();
-    });
-    
-    // Check that the state was reset
-    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.lineState).toEqual(
+      expect.objectContaining({
+        id: 'test-line',
+        start: null,
+        end: null,
+        active: false,
+        length: 0,
+        angle: 0
+      })
+    );
   });
 });
