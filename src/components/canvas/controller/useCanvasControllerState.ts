@@ -8,8 +8,8 @@ import { useCanvasState } from "@/hooks/useCanvasState";
 import { UseCanvasStateResult } from "@/types/canvasStateTypes";
 import { useCanvasDebug } from "@/hooks/useCanvasDebug";
 import { useState } from "react";
-import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { DrawingState } from "@/types/core/DrawingState";
+import { FloorPlan } from "@/types/floorPlan";
 import { CanvasDimensions } from "@/types/core/Geometry";
 import { DebugInfoState } from "@/types/core/DebugInfo";
 

@@ -4,7 +4,7 @@
  * Provides form handling with built-in security and validation
  */
 import { useState, useCallback } from 'react';
-import { z } from 'zod';
+import * as z from 'zod';
 import { validateAndSanitize } from '@/utils/validation/typeValidation';
 import { sanitizeHtml } from '@/utils/security/inputSanitization';
 

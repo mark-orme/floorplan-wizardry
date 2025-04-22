@@ -1,52 +1,49 @@
 
-import * as React from "react"
-import { ChartConfig, THEMES } from "./chart-context"
-import DOMPurify from "dompurify"
-import { sanitizeCss } from "@/utils/security/htmlSanitization"
+import React from "react";
+import { useMemo } from "react";
+import { ChartConfig, THEMES } from "./chart-context";
 
-export const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
-  )
-
-  if (!colorConfig.length) {
-    return null
-  }
-
-  // Generate CSS content
-  const cssContent = Object.entries(THEMES)
-    .map(
-      ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .filter(Boolean)
-  .join("\n")}
+interface ChartStyleProps {
+  config?: ChartConfig;
+  children: React.ReactNode;
 }
-`
-    )
-    .join("\n")
 
-  // First sanitize the generated CSS content
-  const sanitizedCss = sanitizeCss(cssContent)
+export const ChartStyle: React.FC<ChartStyleProps> = ({ config, children }) => {
+  const style = useMemo(() => {
+    if (!config || !config.config) return {};
+    
+    const styles: Record<string, any> = {};
+    
+    Object.entries(config.config).forEach(([key, value]) => {
+      if (value.theme && THEMES[value.theme as keyof typeof THEMES]) {
+        styles[`.${key}`] = { 
+          fill: THEMES[value.theme as keyof typeof THEMES].primaryColor 
+        };
+      }
+      
+      if (value.color) {
+        styles[`.${key}`] = { 
+          ...styles[`.${key}`], 
+          fill: value.color 
+        };
+      }
+    });
+    
+    return styles;
+  }, [config]);
   
-  // Then sanitize with DOMPurify as an additional layer of protection
-  const fullySanitized = DOMPurify.sanitize(sanitizedCss, {
-    USE_PROFILES: { html: true },
-    ALLOWED_TAGS: [], // No HTML tags allowed
-    ALLOWED_ATTR: []  // No attributes allowed
-  })
-
+  if (Object.keys(style).length === 0) {
+    return <>{children}</>;
+  }
+  
   return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: fullySanitized
-      }}
-    />
-  )
-}
+    <>
+      <style>
+        {Object.entries(style).map(([selector, props]) => {
+          return `${selector} { ${Object.entries(props).map(([prop, value]) => `${prop}: ${value};`).join(' ')} }`;
+        }).join('\n')}
+      </style>
+      {children}
+    </>
+  );
+};

@@ -1,11 +1,10 @@
-
 /**
  * Hook for managing floor plans in the canvas controller
  * @module useCanvasControllerFloorPlans
  */
 import { useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlan";
 
 /**
  * Props for the useCanvasControllerFloorPlans hook
