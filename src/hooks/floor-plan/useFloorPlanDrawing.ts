@@ -1,30 +1,28 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import type { MutableRefObject } from 'react';
 import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface UseFloorPlanDrawingProps {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  floorPlan?: FloorPlan;
-  tool?: DrawingMode;
-  onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
+  fabricCanvasRef: MutableRefObject<FabricCanvas | null>;
+  floorPlan: FloorPlan;
+  tool: DrawingMode;
+  onFloorPlanUpdate: (fp: FloorPlan) => void;
 }
 
 export const useFloorPlanDrawing = ({
-  fabricCanvasRef = { current: null },
-  floorPlan = {} as FloorPlan,
+  fabricCanvasRef,
+  floorPlan,
   tool = DrawingMode.SELECT,
   onFloorPlanUpdate = () => {}
-}: UseFloorPlanDrawingProps = {}) => {
+}: UseFloorPlanDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   
-  // Initialize drawing modes
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Cleanup function for event handlers
     return () => {
       canvas.off('mouse:down');
       canvas.off('mouse:move');
@@ -32,17 +30,14 @@ export const useFloorPlanDrawing = ({
     };
   }, [fabricCanvasRef, tool]);
   
-  // Enable drawing mode based on selected tool
   const handleDrawingEvent = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Remove existing listeners
     canvas.off('mouse:down');
     canvas.off('mouse:move');
     canvas.off('mouse:up');
     
-    // Set up new listeners based on the current tool
     switch (tool) {
       case DrawingMode.SELECT:
         canvas.isDrawingMode = false;
@@ -54,21 +49,18 @@ export const useFloorPlanDrawing = ({
         canvas.isDrawingMode = false;
         break;
     }
-  }, [fabricCanvasRef, tool]);
+    
+    onFloorPlanUpdate(floorPlan);
+  }, [fabricCanvasRef, tool, floorPlan, onFloorPlanUpdate]);
   
-  // Draw the floor plan on the canvas
   const drawFloorPlan = useCallback((canvas: FabricCanvas, plan: FloorPlan) => {
     if (!canvas) return;
     
-    // Clear canvas
     canvas.clear();
     
-    // Set background
     canvas.backgroundColor = '#f0f0f0';
     
-    // Render floor plan elements (simplified)
     canvas.renderAll();
-    
   }, []);
   
   return {
@@ -76,7 +68,6 @@ export const useFloorPlanDrawing = ({
     setIsDrawing,
     handleDrawingEvent,
     drawFloorPlan,
-    // Provide minimal stub implementations for required methods
     saveState: () => console.log('Save state'),
     restoreState: () => console.log('Restore state'),
     snapPoint: (point: any) => point,

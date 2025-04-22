@@ -1,53 +1,38 @@
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
-import { DrawingMode } from '@/constants/drawingModes';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
-
-// Mock utility functions
-const createMockStroke = () => ({ id: '1', points: [], type: 'line' as const, color: '#000', thickness: 1, width: 1 });
-const createMockWall = () => ({ id: '1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, thickness: 5, length: 100, color: '#000', roomIds: [] });
+import { DrawingMode } from '@/constants/drawingModes';
 
 describe('useFloorPlanDrawing', () => {
-  let mockCanvas: any;
-  let fabricCanvasRef: any;
+  const mockCanvas = {} as FabricCanvas;
+  const fabricCanvasRef = { current: mockCanvas };
+  const floorPlan = createEmptyFloorPlan();
+  const onFloorPlanUpdate = jest.fn();
 
   beforeEach(() => {
-    // Create a mock canvas for testing
-    mockCanvas = {
-      add: vi.fn(),
-      renderAll: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      discardActiveObject: vi.fn()
-    };
-    
-    fabricCanvasRef = { current: mockCanvas };
+    jest.clearAllMocks();
   });
 
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createEmptyFloorPlan(),
+      floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate: vi.fn()
+      onFloorPlanUpdate
     }));
 
     expect(result.current.isDrawing).toBe(false);
   });
 
   it('should handle tool change (mock test only)', () => {
-    // This test is modified to work with the current implementation
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createEmptyFloorPlan(),
+      floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate: vi.fn()
+      onFloorPlanUpdate
     }));
 
-    // Just test isDrawing since tool is no longer exposed
     expect(result.current.isDrawing).toBe(false);
     
     act(() => {
@@ -58,63 +43,47 @@ describe('useFloorPlanDrawing', () => {
   });
 
   it('should create strokes with the correct type', () => {
-    // Arrange
-    const testFloorPlan = createEmptyFloorPlan();
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan,
+      floorPlan,
       tool: DrawingMode.DRAW,
-      onFloorPlanUpdate: vi.fn()
+      onFloorPlanUpdate
     }));
 
-    // Act
     act(() => {
       result.current.addStroke();
     });
 
-    // Assert
     expect(mockCanvas.add).toHaveBeenCalled();
   });
 
   it('should update floor plan when changes occur', () => {
-    // Arrange
-    const updateFloorPlan = vi.fn();
-    const testFloorPlan = createEmptyFloorPlan();
-
-    // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan, 
+      floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate: updateFloorPlan
+      onFloorPlanUpdate
     }));
 
     act(() => {
-      // Adding a stroke with the correct type
       result.current.addStroke();
     });
 
-    // Assert
-    expect(updateFloorPlan).toHaveBeenCalled();
+    expect(onFloorPlanUpdate).toHaveBeenCalled();
   });
 
   it('should handle adding a wall', () => {
-    // Arrange
-    const testFloorPlan = createEmptyFloorPlan();
-    
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan,
+      floorPlan,
       tool: DrawingMode.WALL,
-      onFloorPlanUpdate: vi.fn()
+      onFloorPlanUpdate
     }));
 
-    // Act
     act(() => {
       result.current.addWall();
     });
 
-    // Assert
     expect(mockCanvas.add).toHaveBeenCalled();
   });
 });
