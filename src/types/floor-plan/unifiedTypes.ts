@@ -43,6 +43,13 @@ export const createTestWall = createEmptyWall;
 export const createTestRoom = createEmptyRoom;
 export const createTestPoint = (x = 0, y = 0) => ({ x, y });
 
+// Add wall length calculation function
+export const calculateWallLength = (start: {x: number, y: number}, end: {x: number, y: number}) => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 // Add string to enum helper functions
 export function asStrokeType(type: string) {
   return type as any;

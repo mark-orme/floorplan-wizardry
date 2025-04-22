@@ -13,12 +13,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import z from '@/utils/zod-mock';
+import { z } from '@/utils/zod-mock';
 
 interface PropertyFormProps {
   onSubmit: (values: any) => void;
   isSubmitting: boolean;
 }
+
+// Define form schema
+const formSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  address: z.string().min(5, { message: "Address is required" }),
+  city: z.string(),
+  state: z.string(),
+  country: z.string(),
+  isCommercial: z.boolean()
+});
 
 export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitting }) => {
   const form = useForm({
@@ -32,15 +42,6 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, isSubmitti
       isCommercial: false
     },
     mode: 'onChange'
-  });
-
-  const formSchema = z.object({
-    name: z.string().min(3, { message: "Name must be at least 3 characters" }),
-    address: z.string().min(5, { message: "Address is required" }),
-    city: z.string(),
-    state: z.string(),
-    country: z.string(),
-    isCommercial: z.boolean()
   });
 
   return (

@@ -1,214 +1,127 @@
-/**
- * Hook for managing canvas drawing tools
- * Re-exports functionality from the useCanvasControllerTools
- * @module canvas/controller/useCanvasControllerTools
- */
 
-import { useState, useCallback } from 'react';
+/**
+ * Hook for managing canvas tools and interactions
+ */
+import { useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useDrawingContext } from '@/contexts/DrawingContext';
-import { useCanvasContext } from '@/contexts/CanvasContext';
+import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
+import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
-import { useCanvasControllerErrorHandling } from './useCanvasControllerErrorHandling';
-import { createFloorPlanAdapter } from '@/utils/floorPlanTypeAdapter';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 
-// Import a consistent FloorPlan type from the unified source
-import { FloorPlan } from '@/types/floor-plan';
-
-export interface UseCanvasControllerToolsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<any[]>;
-  floorPlans: FloorPlan[];
-  currentFloorIndex: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  setCurrentFloorIndex: React.Dispatch<React.SetStateAction<number>>;
-  clearDrawings: () => void;
-  createGrid: (canvas: FabricCanvas) => any[];
-  recalculateGIA: () => void;
+interface CanvasControllerToolsOptions {
+  enableVirtualization?: boolean;
 }
 
-export const useCanvasControllerTools = ({
-  fabricCanvasRef,
-  gridLayerRef,
-  floorPlans,
-  currentFloorIndex,
-  setFloorPlans,
-  setCurrentFloorIndex,
-  clearDrawings,
-  createGrid,
-  recalculateGIA
-}: UseCanvasControllerToolsProps) => {
-  const { setTool } = useDrawingContext();
-  const { canvasRef } = useCanvasContext();
-  const [isLoading, setLoading] = useState(false);
-  const { handleError } = useCanvasControllerErrorHandling();
-  
-  const handleLoadSuccess = (data: any) => {
+export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: CanvasControllerToolsOptions = {}) => {
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>("#000000");
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const gridObjectsRef = useRef<any[]>([]);
+  const canvasRef = useRef<FabricCanvas | null>(canvas);
+
+  // Initialize canvas virtualization
+  const {
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
+  } = useVirtualizedCanvas(canvasRef, {
+    enabled: options.enableVirtualization ?? true,
+    objectThreshold: 100
+  });
+
+  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     try {
-      if (!Array.isArray(data)) {
-        data = [data];
-      }
-      
-      // Use the adapter to ensure type compatibility
-      const adapter = createFloorPlanAdapter();
-      const compatibleFloorPlans = data.map(adapter.convertToUnified);
-      
-      setFloorPlans(compatibleFloorPlans);
-      setCurrentFloorIndex(0);
-      
-      if (compatibleFloorPlans.length > 0) {
-        drawFloorPlan(compatibleFloorPlans[0]);
-      }
-      
-      setLoading(false);
-    } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to load data'), 'load-data');
-      setLoading(false);
-    }
-  };
-  
-  const handleLoadError = (error: Error) => {
-    handleError(error, 'load-data');
-    setLoading(false);
-  };
-  
-  const loadData = useCallback(async (options: any = {}) => {
-    setLoading(true);
-    
-    try {
-      // Simulate loading data
-      const mockData = [
-        {
-          id: uuidv4(),
-          name: 'Floor Plan 1',
-          walls: [],
-          rooms: [],
-          strokes: [],
-          metadata: {
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            paperSize: 'A4',
-            level: 0,
-            version: '1.0',
-            author: 'User',
-            dateCreated: new Date().toISOString(),
-            lastModified: new Date().toISOString(),
-            notes: ''
-          },
-          data: {},
-          userId: 'default-user',
-          propertyId: 'default-property'
+      // Set fabricCanvasRef for external use
+      canvasRef.current = canvas;
+
+      // Set up proper tool based on the current drawing mode
+      canvas.isDrawingMode = tool === DrawingMode.DRAW;
+      canvas.selection = tool === DrawingMode.SELECT;
+
+      if (canvas.isDrawingMode) {
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+
+        // Check for enhanced input capabilities
+        const hasAdvancedInput = isPressureSupported() || isTiltSupported();
+
+        // Set brush to respond to pressure
+        if (hasAdvancedInput) {
+          console.log('Enhanced input capabilities detected');
+          toast.success('Enhanced drawing capabilities enabled', {
+            id: 'enhanced-drawing',
+            duration: 3000
+          });
         }
-      ];
-      
-      handleLoadSuccess(mockData);
+      }
+
+      // Create grid for the canvas
+      if (true) {
+        console.log("Creating grid for canvas");
+        const gridObjects = createSimpleGrid(canvas);
+        gridObjectsRef.current = gridObjects;
+      }
+
+      // Make sure touch events work well on mobile
+      canvas.allowTouchScrolling = tool === DrawingMode.HAND;
+
+      // Apply custom CSS to the canvas container to make it touch-friendly
+      if (canvas.wrapperEl) {
+        canvas.wrapperEl.classList.add('touch-manipulation');
+        canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
+      }
     } catch (error) {
-      handleLoadError(error instanceof Error ? error : new Error('Failed to load data'));
+      console.error("Error in canvas initialization:", error);
     }
-  }, [handleLoadSuccess, handleLoadError]);
-  
-  const drawFloorPlan = useCallback((floorPlan: FloorPlan) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    clearDrawings();
-    
-    // Load objects from floor plan
-    if (floorPlan.strokes && Array.isArray(floorPlan.strokes)) {
-      floorPlan.strokes.forEach(stroke => {
-        // Add stroke to canvas
-        console.log('Adding stroke to canvas', stroke);
+  }, [tool, lineColor, lineThickness]);
+
+  // Update grid visibility when showGrid changes
+  const updateGridVisibility = useCallback((showGrid: boolean) => {
+    const canvas = canvasRef.current;
+    if (canvas && gridObjectsRef.current.length > 0) {
+      gridObjectsRef.current.forEach(obj => {
+        obj.set('visible', showGrid);
       });
+      canvas.requestRenderAll();
+    } else if (canvas && showGrid && gridObjectsRef.current.length === 0) {
+      // Create grid if it doesn't exist and should be shown
+      const gridObjects = createSimpleGrid(canvas);
+      gridObjectsRef.current = gridObjects;
     }
-    
-    // Reset grid
-    if (gridLayerRef.current && gridLayerRef.current.length > 0) {
-      gridLayerRef.current.forEach(obj => canvas.remove(obj));
+  }, []);
+
+  // Update tool settings when they change
+  const updateToolSettings = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.selection = tool === DrawingMode.SELECT;
+
+    if (canvas.isDrawingMode) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
     }
-    
-    const gridObjects = createGrid(canvas);
-    gridLayerRef.current = gridObjects;
-    
-    // Set background color
-    canvas.backgroundColor = '#fff';
-    
-    // Render all
-    canvas.renderAll();
-    
-    // Set zoom and pan
-    setTool(DrawingMode.SELECT);
-    
-    // Recalculate GIA
-    recalculateGIA();
-    
-    toast.success(`Floor plan "${floorPlan.name}" loaded`);
-  }, [fabricCanvasRef, clearDrawings, createGrid, setTool, recalculateGIA]);
-  
-  const handleFloorSelect = useCallback((index: number) => {
-    setCurrentFloorIndex(index);
-    drawFloorPlan(floorPlans[index]);
-  }, [floorPlans, setCurrentFloorIndex, drawFloorPlan]);
-  
-  const handleAddFloor = useCallback(() => {
-    const newFloorPlan: FloorPlan = {
-      id: uuidv4(),
-      name: `Floor ${floorPlans.length + 1}`,
-      walls: [],
-      rooms: [],
-      strokes: [],
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        paperSize: 'A4',
-        level: floorPlans.length,
-        version: '1.0',
-        author: 'User',
-        dateCreated: new Date().toISOString(),
-        lastModified: new Date().toISOString(),
-        notes: ''
-      },
-      data: {},
-      userId: 'default-user',
-      propertyId: 'default-property'
-    };
-    
-    setFloorPlans([...floorPlans, newFloorPlan]);
-    setCurrentFloorIndex(floorPlans.length);
-  }, [floorPlans, setFloorPlans, setCurrentFloorIndex]);
-  
-  const syncFloorPlans = () => {
-    try {
-      // Convert to app floor plans for API compatibility
-      const adapter = createFloorPlanAdapter();
-      const compatibleFloorPlans = adapter.convertToAppArray(floorPlans);
-      
-      // Simulate API call
-      console.log('Syncing floor plans', compatibleFloorPlans);
-      toast.success('Floor plans synced');
-    } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to sync floor plans'), 'sync-floor-plans');
-    }
-  };
-  
+
+    canvas.requestRenderAll();
+  }, [tool, lineColor, lineThickness]);
+
   return {
-    isLoading,
-    loadData,
-    drawFloorPlan,
-    handleFloorSelect,
-    handleAddFloor,
-    syncFloorPlans,
-    getCompatibleFloorPlans: () => {
-      // Use adapter to ensure compatibility
-      const adapter = createFloorPlanAdapter();
-      return adapter.convertToAppArray(floorPlans);
-    }
+    tool,
+    setTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    handleCanvasReady,
+    updateGridVisibility,
+    updateToolSettings,
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
   };
 };
-
-// Export the useCanvasControllerTools from the correct location
-export { useCanvasControllerTools };
-
-// Export the FloorPlan type to ensure consistent usage
-export type { FloorPlan };

@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from '@/utils/toastUtils';
+import { toast } from 'sonner';
 import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/core';
+import { convertToAppFloorPlans } from '@/utils/floorPlanTypeAdapter';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
@@ -30,7 +32,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);
-  const [floorPlans, setFloorPlans] = useState<any[]>([]);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
   const [gia, setGia] = useState(0);
   const [lineThickness, setLineThickness] = useState(2);
@@ -119,12 +121,12 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
         toast.error(`Canvas error: ${error.message}`);
       }
     }
-  }, [width, height]);
+  }, [width, height, onCanvasReady, onError, createGrid]);
   
   // Load floor plans
   useEffect(() => {
-    loadData({});
-  }, []);
+    loadData();
+  }, [loadData]);
   
   return (
     <div className="canvas-controller-enhanced">

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import z from '@/utils/zod-mock';
+import { z } from '@/utils/zod-mock';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -29,7 +29,7 @@ export function ValidationDemoForm() {
     },
   });
 
-  function onSubmit(values) {
+  function onSubmit(values: any) {
     console.log("Form values:", values);
   }
 

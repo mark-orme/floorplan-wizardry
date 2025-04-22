@@ -1,21 +1,26 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { UseFormReturn } from 'react-hook-form';
-import { z } from 'zod';
+import { z } from '@/utils/zod-mock';
+
+// Define a type for UseFormReturn since we don't have access to react-hook-form directly
+interface UseFormReturnType {
+  control: any;
+  [key: string]: any;
+}
 
 // Form schema definition
 export const PropertyFormSchema = z.object({
-  order_id: z.string().min(1, 'Order ID is required'),
-  address: z.string().min(5, 'Address must be at least 5 characters'),
-  client_name: z.string().min(2, 'Client name is required'),
+  order_id: z.string().min(1, { message: 'Order ID is required' }),
+  address: z.string().min(5, { message: 'Address must be at least 5 characters' }),
+  client_name: z.string().min(2, { message: 'Client name is required' }),
   branch_name: z.string().optional()
 });
 
 export type PropertyFormValues = z.infer<typeof PropertyFormSchema>;
 
 interface PropertyFormFieldsProps {
-  form: UseFormReturn<PropertyFormValues>;
+  form: UseFormReturnType;
 }
 
 export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {

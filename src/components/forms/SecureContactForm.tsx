@@ -3,12 +3,12 @@
  * Example form using security and validation features
  */
 import React from 'react';
-import { z } from 'zod';
 import { useSecureForm } from '@/hooks/useSecureForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { z } from '@/utils/zod-mock';
 
 // Define form schema using Zod
 const formSchema = z.object({

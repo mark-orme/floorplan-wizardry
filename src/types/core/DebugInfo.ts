@@ -3,6 +3,29 @@
  * Debug information structure for canvas components
  */
 
+export interface PerformanceStats {
+  /** Frames per second */
+  fps?: number;
+  /** Number of dropped frames */
+  droppedFrames?: number;
+  /** Average frame time in milliseconds */
+  frameTime?: number;
+  /** Maximum frame time in milliseconds */
+  maxFrameTime?: number;
+  /** Number of long frames (frames taking longer than 16ms) */
+  longFrames?: number;
+  /** Render time in milliseconds */
+  renderTime?: number;
+  /** Event handling time in milliseconds */
+  eventHandlingTime?: number;
+  /** Object creation time in milliseconds */
+  objectCreationTime?: number;
+  /** Last frame time in milliseconds */
+  lastFrameTime?: number;
+  /** Additional performance metrics */
+  [key: string]: number | undefined;
+}
+
 export interface DebugInfoState {
   canvasReady: boolean;
   canvasInitialized: boolean;
@@ -21,20 +44,10 @@ export interface DebugInfoState {
   lastInitTime: number;
   lastGridCreationTime: number;
   
-  // Extended properties needed by components
-  performanceStats: {
-    renderTime: number;
-    eventHandlingTime: number;
-    objectCreationTime: number;
-    lastFrameTime: number;
-    fps: number;
-    droppedFrames: number;
-    frameTime: number;
-    maxFrameTime: number;
-    longFrames: number;
-  };
-  fps: number; // Direct fps property for backward compatibility
+  // Extended properties to match component usage
+  fps: number;
   currentFps: number;
+  performanceStats: PerformanceStats;
   objectCount: number;
   gridObjectCount: number;
   visibleObjectCount: number;

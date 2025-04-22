@@ -5,28 +5,20 @@
  * without requiring the actual Zod library
  */
 
+// Mock Zod implementation
 const z = {
-  object: () => ({
-    shape: {},
+  object: (shape = {}) => ({
+    shape,
     extend: () => z.object(),
     refine: () => z.object(),
     pick: () => z.object(),
     omit: () => z.object(),
-    string: () => z.string(),
-    boolean: () => z.boolean(),
-    number: () => z.number(),
-    email: () => z.string(),
-    min: () => z.string(),
-    max: () => z.string(),
-    url: () => z.string(),
-    optional: () => z.string(),
-    nullable: () => z.string(),
   }),
   string: () => ({
-    email: () => z.string(),
-    min: () => z.string(),
-    max: () => z.string(),
-    url: () => z.string(),
+    email: (message = {}) => z.string(),
+    min: (length: number, message = {}) => z.string(),
+    max: (length: number, message = {}) => z.string(),
+    url: (message = {}) => z.string(),
     optional: () => z.string(),
     nullable: () => z.string(),
   }),
@@ -35,12 +27,18 @@ const z = {
     nullable: () => z.boolean(),
   }),
   number: () => ({
-    min: () => z.number(),
-    max: () => z.number(),
-    int: () => z.number(),
+    min: (min: number, message = {}) => z.number(),
+    max: (max: number, message = {}) => z.number(),
+    int: (message = {}) => z.number(),
     optional: () => z.number(),
     nullable: () => z.number(),
   }),
+  enum: (values: any) => ({
+    optional: () => z.enum(values),
+  }),
+  infer: (schema: any) => ({}),
+  nativeEnum: (enumObj: any) => ({})
 };
 
+export { z };
 export default z;

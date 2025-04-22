@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
