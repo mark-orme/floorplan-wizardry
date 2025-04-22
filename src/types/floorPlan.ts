@@ -1,8 +1,4 @@
 
-/**
- * Consolidated FloorPlan type definitions
- * This is the single source of truth for all FloorPlan related types
- */
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Point {
@@ -14,30 +10,6 @@ export function createPoint(x = 0, y = 0): Point {
   return { x, y };
 }
 
-export type StrokeTypeLiteral = 
-  | 'line' 
-  | 'curve' 
-  | 'wall' 
-  | 'door' 
-  | 'window' 
-  | 'furniture' 
-  | 'annotation' 
-  | 'polyline' 
-  | 'room' 
-  | 'freehand' 
-  | 'rect' 
-  | 'circle'
-  | 'straight';
-
-export type RoomTypeLiteral = 
-  | 'bedroom' 
-  | 'bathroom' 
-  | 'kitchen' 
-  | 'living' 
-  | 'dining' 
-  | 'office' 
-  | 'other';
-
 export interface Wall {
   id: string;
   start: Point;
@@ -46,9 +18,9 @@ export interface Wall {
   length: number;
   color: string;
   roomIds: string[];
-  height?: number;
-  points?: Point[];
 }
+
+export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'office' | 'other';
 
 export interface Room {
   id: string;
@@ -57,25 +29,21 @@ export interface Room {
   points: Point[];
   vertices: Point[];
   area: number;
-  color: string;
   perimeter: number;
   center: Point;
   labelPosition: Point;
-  level?: number;
-  walls?: string[];
+  color: string;
 }
+
+export type StrokeTypeLiteral = 'line' | 'curve' | 'freehand' | 'rect' | 'circle' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'straight';
 
 export interface Stroke {
   id: string;
   points: Point[];
-  type: StrokeTypeLiteral;
   color: string;
-  thickness: number;
   width: number;
-  floorPlanId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  metadata?: any;
+  thickness: number;
+  type: StrokeTypeLiteral;
 }
 
 export interface CanvasData {
@@ -84,43 +52,40 @@ export interface CanvasData {
 }
 
 export interface FloorPlanMetadata {
-  version?: string;
+  createdAt: string;
+  updatedAt: string;
   author?: string;
-  dateCreated?: string;
-  lastModified?: string;
-  notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  version?: string;
   paperSize?: string;
   level?: number;
+  lastModified?: string;
+  notes?: string;
+  dateCreated?: string;
 }
 
 export interface FloorPlan {
   id: string;
   name: string;
   label?: string;
+  index?: number;
+  strokes: Stroke[];
   walls: Wall[];
   rooms: Room[];
-  strokes: Stroke[];
+  gia?: number;
+  level?: number;
   canvasData?: CanvasData | null;
   canvasJson?: string | null;
   createdAt?: string;
   updatedAt?: string;
-  gia?: number;
-  level?: number;
-  index?: number;
   metadata?: FloorPlanMetadata;
-  data: any;
+  data: any; // Required for interface compatibility
   userId?: string;
   propertyId?: string;
 }
 
-/**
- * Creates an empty floor plan with default values
- */
+// Helper functions
 export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
-  
   return {
     id: partialFloorPlan.id || uuidv4(),
     name: partialFloorPlan.name || 'Untitled Floor Plan',
@@ -136,11 +101,12 @@ export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}):
     level: partialFloorPlan.level || 0,
     index: partialFloorPlan.index || 0,
     metadata: partialFloorPlan.metadata || {
+      createdAt: now,
+      updatedAt: now,
       version: '1.0',
       author: '',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
+      paperSize: 'A4',
+      level: 0
     },
     data: partialFloorPlan.data || {},
     userId: partialFloorPlan.userId || '',

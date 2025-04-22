@@ -1,4 +1,3 @@
-
 /**
  * Hook for handling canvas initialization
  * Manages canvas initialization state and error handling
@@ -45,7 +44,6 @@ export const useCanvasInitialization = (onCanvasError?: () => void) => {
     // Log detailed canvas info to help debug grid issues
     captureError(
       new Error("Canvas initialization info"), 
-      "canvas-debug-info", 
       {
         level: "info",
         tags: {
@@ -73,7 +71,7 @@ export const useCanvasInitialization = (onCanvasError?: () => void) => {
     toast.error(`Canvas error: ${error.message}`);
     
     // Report detailed error to Sentry
-    captureError(error, "canvas-initialization-error", {
+    captureError(error, {
       level: "error",
       tags: {
         component: "FloorPlanCanvas",

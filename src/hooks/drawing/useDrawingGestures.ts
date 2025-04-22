@@ -1,6 +1,6 @@
-
 import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/floorPlan';
 
 export interface UseDrawingGesturesProps {
   canvas?: FabricCanvas | null;
