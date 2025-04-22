@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { MeasurementData } from '../useStraightLineTool.d';
 import { calculateDistance, calculateAngle } from '@/utils/geometry/lineOperations';
+import { Point } from '@/types/core/Point';
 
 interface UseLiveDistanceTooltipProps {
   measurementData: MeasurementData;
