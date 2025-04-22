@@ -1,46 +1,50 @@
 
 /**
- * Point adapter for Fabric.js Point conversion
- * Provides utilities to convert between Fabric.js Point and our custom Point interface
+ * Point adapter utility
+ * Converts between various point formats used in the application
  */
 import { Point as FabricPoint } from 'fabric';
-import { Point as CustomPoint } from '@/types/core/Point';
 
 /**
- * Convert a standard {x, y} object to a Fabric.js Point
+ * Simple point interface
  */
-export function toFabricPoint(point: { x: number; y: number }): FabricPoint {
+export interface SimplePoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Creates a Fabric.js Point from a simple point object
+ * @param point Simple point with x and y coordinates
+ * @returns Fabric.js Point object
+ */
+export function toFabricPoint(point: SimplePoint): FabricPoint {
   return new FabricPoint(point.x, point.y);
 }
 
 /**
- * Convert a Fabric.js Point to our standard Point interface
+ * Converts a Fabric.js Point to a simple point object
+ * @param point Fabric.js Point object
+ * @returns Simple point with x and y coordinates
  */
-export function toCustomPoint(fabricPoint: FabricPoint): CustomPoint {
-  return { x: fabricPoint.x, y: fabricPoint.y };
-}
-
-/**
- * Check if an object is a Fabric.js Point
- */
-export function isFabricPoint(point: any): point is FabricPoint {
-  return point && point.type === 'point' && typeof point.x === 'number' && typeof point.y === 'number';
-}
-
-/**
- * Create a compatible Point object based on the context
- * Uses Fabric.js Point for Fabric.js operations, and CustomPoint for our app
- */
-export function createCompatiblePoint(x: number, y: number, forFabric = false): FabricPoint | CustomPoint {
-  return forFabric ? new FabricPoint(x, y) : { x, y };
-}
-
-/**
- * Safely handle a point that could be either type
- */
-export function ensureCompatiblePoint(point: FabricPoint | CustomPoint | { x: number; y: number }): CustomPoint {
-  if (isFabricPoint(point)) {
-    return toCustomPoint(point);
-  }
+export function fromFabricPoint(point: FabricPoint): SimplePoint {
   return { x: point.x, y: point.y };
+}
+
+/**
+ * Creates an array of Fabric.js Points from an array of simple points
+ * @param points Array of simple points
+ * @returns Array of Fabric.js Points
+ */
+export function toFabricPoints(points: SimplePoint[]): FabricPoint[] {
+  return points.map(point => toFabricPoint(point));
+}
+
+/**
+ * Converts an array of Fabric.js Points to an array of simple points
+ * @param points Array of Fabric.js Points
+ * @returns Array of simple points
+ */
+export function fromFabricPoints(points: FabricPoint[]): SimplePoint[] {
+  return points.map(point => fromFabricPoint(point));
 }

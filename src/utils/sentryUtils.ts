@@ -1,88 +1,69 @@
 
 /**
- * Sentry utilities for error reporting
- * Provides backward compatibility for different captureError call patterns
+ * Sentry utility functions
+ * Provides standardized wrappers for Sentry reporting
  */
 import * as Sentry from '@sentry/react';
 
-// New error capture format
-export interface ErrorOptions {
-  context?: string;
+interface CaptureMessageOptions {
+  level?: 'info' | 'warning' | 'error';
   tags?: Record<string, string>;
   extra?: Record<string, any>;
-  user?: Sentry.User;
-  severity?: Sentry.SeverityLevel;
 }
 
 /**
- * Capture an error with Sentry
- * Supports both old format (error, context, extraData) and new format (error, options)
+ * Captures a message in Sentry with additional context
+ * @param message Message to capture
+ * @param options Optional configuration
  */
-export function captureError(
-  error: Error | string,
-  contextOrOptions?: string | ErrorOptions
-): void {
-  // Handle different call patterns for backward compatibility
-  if (typeof contextOrOptions === 'string') {
-    // Format: captureError(error, 'context')
-    Sentry.captureException(error, {
-      contexts: {
-        error: {
-          ...(typeof error === 'object' ? error : { message: error }),
-        },
-      },
-      tags: {
-        context: contextOrOptions,
-      },
-    });
-  } else if (typeof contextOrOptions === 'object' || contextOrOptions === undefined) {
-    // New format: captureError(error, { context, tags, extra })
-    const options = contextOrOptions || {};
-    Sentry.captureException(error, {
-      contexts: {
-        error: {
-          ...(typeof error === 'object' ? error : { message: error }),
-        },
-      },
-      tags: {
-        ...(options.context ? { context: options.context } : {}),
-        ...(options.tags || {}),
-      },
-      extra: options.extra || {},
-      user: options.user,
-      level: options.severity,
+export function captureMessage(message: string, options?: CaptureMessageOptions): void;
+export function captureMessage(message: string, category: string, options?: CaptureMessageOptions): void;
+export function captureMessage(message: string, categoryOrOptions?: string | CaptureMessageOptions, optionsArg?: CaptureMessageOptions): void {
+  let category: string | undefined;
+  let options: CaptureMessageOptions | undefined;
+
+  if (typeof categoryOrOptions === 'string') {
+    category = categoryOrOptions;
+    options = optionsArg;
+  } else {
+    options = categoryOrOptions;
+  }
+
+  if (options?.tags) {
+    Object.entries(options.tags).forEach(([key, value]) => {
+      Sentry.setTag(key, value);
     });
   }
+
+  if (options?.extra) {
+    Sentry.setContext('extra', options.extra);
+  }
+
+  if (category) {
+    Sentry.setTag('category', category);
+  }
+
+  const sentryLevel = options?.level === 'info' ? 'info' : 
+                      options?.level === 'warning' ? 'warning' : 'error';
+  
+  Sentry.captureMessage(message, sentryLevel);
 }
 
 /**
- * Capture a message with Sentry
+ * Captures an exception in Sentry with additional context
+ * @param error Error to capture
+ * @param options Optional configuration
  */
-export function captureMessage(
-  message: string,
-  optionsOrSeverity?: Sentry.SeverityLevel | ErrorOptions
-): void {
-  if (typeof optionsOrSeverity === 'string') {
-    // String severity level format: captureMessage(message, 'info')
-    Sentry.captureMessage(message, {
-      level: optionsOrSeverity as Sentry.SeverityLevel,
-    });
-  } else if (typeof optionsOrSeverity === 'object' || optionsOrSeverity === undefined) {
-    // Object options format: captureMessage(message, { context, tags, extra })
-    const options = optionsOrSeverity || {};
-    Sentry.captureMessage(message, {
-      tags: {
-        ...(options.context ? { context: options.context } : {}),
-        ...(options.tags || {}),
-      },
-      extra: options.extra || {},
-      user: options.user,
-      level: options.severity,
+export function captureException(error: Error, options?: CaptureMessageOptions): void {
+  if (options?.tags) {
+    Object.entries(options.tags).forEach(([key, value]) => {
+      Sentry.setTag(key, value);
     });
   }
-}
 
-export default {
-  captureError,
-  captureMessage,
-};
+  if (options?.extra) {
+    Sentry.setContext('extra', options.extra);
+  }
+
+  Sentry.captureException(error);
+}
