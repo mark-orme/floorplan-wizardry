@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import * as z from 'zod';
+import { sanitizeHtml, sanitizeObject } from '../utils/security/inputSanitization';
 
 export const validateEmail = (email: string): boolean => {
   const emailSchema = z.string().email();

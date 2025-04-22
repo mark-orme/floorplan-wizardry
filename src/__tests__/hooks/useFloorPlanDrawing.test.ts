@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
@@ -9,6 +10,7 @@ const createMockStroke = () => ({ id: '1', points: [], type: 'line' as const, co
 const createMockWall = () => ({ id: '1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, thickness: 5, length: 100, color: '#000', roomIds: [] });
 
 describe('useFloorPlanDrawing', () => {
+  // Update test implementation to use proper props
   let mockCanvas: any;
   let fabricCanvasRef: any;
 

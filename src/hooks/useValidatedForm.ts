@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { z, type ZodError } from 'zod';
+import * as z from 'zod';
 
 export interface ValidationError {
   path: string;
@@ -28,7 +28,7 @@ export function useValidatedForm<T>(schema: z.ZodType<T>, initialData: T | null 
         setIsValid(true);
         return true;
       } catch (error) {
-        if (error instanceof ZodError) {
+        if (error instanceof z.ZodError) {
           const formattedErrors = error.errors.map((err) => ({
             path: err.path.join('.'),
             message: err.message,
