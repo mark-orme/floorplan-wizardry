@@ -31,7 +31,7 @@ export const useZoomOperations = ({
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
       logger.error("Failed to perform zoom", { error: errorMsg, direction });
-      captureError(error as Error, "zoom-action-error", {
+      captureError(error as Error, {
         extra: { direction }
       });
       toast.error(`Failed to zoom ${direction}: ${errorMsg}`);

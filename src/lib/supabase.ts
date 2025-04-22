@@ -23,6 +23,15 @@ export enum PropertyStatus {
   ARCHIVED = 'archived'
 }
 
+// Add missing exports
+export const isSecureConnection = () => {
+  return window.location.protocol === 'https:';
+};
+
+export const isSupabaseConfigured = () => {
+  return supabase.supabaseUrl !== 'https://your-project-url.supabase.co';
+};
+
 // This is a mock for development environment
 export const mockSupabase = {
   auth: {

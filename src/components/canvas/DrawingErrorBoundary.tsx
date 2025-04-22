@@ -53,8 +53,8 @@ export class DrawingErrorBoundary extends Component<DrawingErrorBoundaryProps, D
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const { componentName, tool } = this.props;
     
-    // Report to Sentry with enhanced context
-    captureError(error, 'drawing-component-error', {
+    // Report to Sentry with enhanced context - updated to use correct signature
+    captureError(error, {
       tags: {
         component: componentName,
         tool: tool || 'unknown',
@@ -64,11 +64,6 @@ export class DrawingErrorBoundary extends Component<DrawingErrorBoundaryProps, D
         componentStack: errorInfo.componentStack,
         errorMessage: error.message,
         errorStack: error.stack
-      },
-      context: {
-        componentName,
-        tool,
-        errorInfo
       }
     });
     

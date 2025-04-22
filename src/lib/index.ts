@@ -1,19 +1,16 @@
 
 /**
- * Lib barrel file
- * Re-exports services and utilities
- * @module lib
+ * Library and utility exports
  */
 
-// Export supabase client and types
-export { 
-  supabase, 
-  UserRole, 
+// Supabase exports
+export {
+  supabase,
+  mockSupabase,
+  UserRole,
+  PropertyStatus,
   isSecureConnection,
   isSupabaseConfigured
 } from './supabase';
 
-// Export utility functions
-export { cn, formatDate } from './utils';
-
-// Export any other library functions or services here
+// Re-export other utility libraries as needed

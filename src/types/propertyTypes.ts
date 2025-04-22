@@ -1,123 +1,71 @@
 
-import { PropertyStatus, UserRole } from '@/lib/supabase';
-
 /**
- * Property interface
+ * Property related type definitions
  */
-export interface Property {
-  id: string;
-  name: string;
-  address: string;
-  userId: string;
-  status: PropertyStatus;
-  createdAt: string;
-  updatedAt: string;
-  clientName?: string;
-  orderId?: string;
-  metadata?: any;
-  // For compatibility with existing code (snake_case)
-  client_name?: string; 
-  order_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  branch_name?: string;
-  notes?: string;
-}
 
-/**
- * Property list item interface (simplified property for listings)
- */
+import { UserRole, PropertyStatus as SupabasePropertyStatus } from '@/lib/supabase';
+
+// Re-export PropertyStatus to ensure consistency
+export { PropertyStatus } from '@/lib/supabase';
+
+// Property list item interface
 export interface PropertyListItem {
   id: string;
-  name: string;
+  order_id?: string;
+  orderId?: string;
   address: string;
-  status: PropertyStatus;
-  updatedAt: string;
-  client_name?: string; // DB field name format
-  order_id?: string; // DB field name format
-  updated_at?: string; // For compatibility
+  client_name?: string;
+  clientName?: string;
+  status: SupabasePropertyStatus;
+  updated_at?: string;
+  updatedAt?: string;
 }
 
-/**
- * Create empty property with default values
- */
-export function createEmptyProperty(userId: string): Property {
-  const now = new Date().toISOString();
+// Property detail interface
+export interface Property extends PropertyListItem {
+  description?: string;
+  notes?: string;
+  assignedUser?: string;
+  assigned_user?: string;
+  createdAt?: string;
+  created_at?: string;
+}
+
+// Floorplan interface for property details
+export interface PropertyFloorPlan {
+  id: string;
+  propertyId: string;
+  name: string;
+  level: number;
+  data: any;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Optional access check function interface
+export interface AccessCheck {
+  canEdit: boolean;
+  canApprove: boolean;
+  canDelete: boolean;
+}
+
+// Helper to standardize property object with both camelCase and snake_case props
+export const normalizeProperty = (property: any): Property => {
   return {
-    id: `property-${Date.now()}`,
-    name: 'Untitled Property',
-    address: '',
-    userId,
-    status: PropertyStatus.DRAFT,
-    createdAt: now,
-    updatedAt: now
+    id: property.id,
+    order_id: property.order_id || property.orderId,
+    orderId: property.orderId || property.order_id,
+    address: property.address,
+    client_name: property.client_name || property.clientName,
+    clientName: property.clientName || property.client_name,
+    status: property.status,
+    updated_at: property.updated_at || property.updatedAt,
+    updatedAt: property.updatedAt || property.updated_at,
+    description: property.description,
+    notes: property.notes,
+    assignedUser: property.assignedUser || property.assigned_user,
+    assigned_user: property.assigned_user || property.assignedUser,
+    createdAt: property.createdAt || property.created_at,
+    created_at: property.created_at || property.createdAt
   };
-}
-
-/**
- * Format property address for display
- */
-export function formatPropertyAddress(property: Property): string {
-  return property.address || 'No address provided';
-}
-
-/**
- * Get property status display text
- */
-export function getPropertyStatusText(status: PropertyStatus): string {
-  switch (status) {
-    case PropertyStatus.DRAFT:
-      return 'Draft';
-    case PropertyStatus.PENDING_REVIEW:
-      return 'Pending Review';
-    case PropertyStatus.COMPLETED:
-      return 'Completed';
-    case PropertyStatus.ARCHIVED:
-      return 'Archived';
-    default:
-      return 'Unknown';
-  }
-}
-
-/**
- * Get property status color class for UI
- */
-export function getPropertyStatusColorClass(status: PropertyStatus): string {
-  switch (status) {
-    case PropertyStatus.DRAFT:
-      return 'bg-yellow-200 text-yellow-800';
-    case PropertyStatus.PENDING_REVIEW:
-      return 'bg-blue-200 text-blue-800';
-    case PropertyStatus.COMPLETED:
-      return 'bg-green-200 text-green-800';
-    case PropertyStatus.ARCHIVED:
-      return 'bg-gray-200 text-gray-800';
-    default:
-      return 'bg-gray-200 text-gray-800';
-  }
-}
-
-/**
- * Check if user can edit property based on role and ownership
- */
-export function canEditProperty(property: Property, userRole: UserRole, userId: string): boolean {
-  // Admins and managers can edit all properties
-  if (userRole === UserRole.ADMIN || userRole === UserRole.MANAGER) {
-    return true;
-  }
-  
-  // Processing managers can edit pending_review properties
-  if (userRole === UserRole.PROCESSING_MANAGER && property.status === PropertyStatus.PENDING_REVIEW) {
-    return true;
-  }
-  
-  // Users/photographers can only edit their own properties in draft status
-  if (property.userId === userId && property.status === PropertyStatus.DRAFT) {
-    return true;
-  }
-  
-  return false;
-}
-
-// Re-export PropertyStatus for convenience
-export { PropertyStatus };
+};

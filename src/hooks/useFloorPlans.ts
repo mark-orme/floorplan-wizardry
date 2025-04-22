@@ -1,18 +1,18 @@
+
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { adaptFloorPlan } from '@/utils/typeAdapters';
+import { adaptFloorPlan, appToCoreFloorPlans, coreToAppFloorPlan } from '@/utils/typeAdapters';
 
 export interface UseFloorPlansProps {
-  initialFloorPlans?: FloorPlan[];
+  initialFloorPlans?: any[]; // Accept any FloorPlan types
   defaultFloorIndex?: number;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
   gridLayerRef?: React.MutableRefObject<FabricObject[]>;
-  tool?: DrawingMode;
+  tool?: any; // Accept any DrawingMode type
 }
 
 export const useFloorPlans = ({
@@ -22,7 +22,10 @@ export const useFloorPlans = ({
   gridLayerRef,
   tool = DrawingMode.SELECT
 }: UseFloorPlansProps) => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
+  // Convert any initialFloorPlans to unified type
+  const unifiedInitialFloorPlans = initialFloorPlans.map(plan => adaptFloorPlan(plan));
+  
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(unifiedInitialFloorPlans);
   const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
   const [gia, setGia] = useState(0);
   
