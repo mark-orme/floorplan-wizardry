@@ -29,9 +29,13 @@ export const isSecureConnection = () => {
 };
 
 export const isSupabaseConfigured = () => {
-  // Fix for protected property access - use a string comparison instead
+  // Fix for protected property access - use string comparison instead
   const configuredUrl = 'https://your-project-url.supabase.co';
-  const currentUrl = supabase['supabaseUrl'] || configuredUrl;
+  
+  // Access supabase URL safely using any type assertion
+  const client = supabase as any;
+  const currentUrl = client.supabaseUrl || configuredUrl;
+  
   return currentUrl !== configuredUrl;
 };
 

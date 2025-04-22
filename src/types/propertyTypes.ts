@@ -26,6 +26,8 @@ export interface Property extends PropertyListItem {
   createdAt: string;
   // Added branch_name to match PropertyDetailContent usage
   branch_name: string;
+  // Add notes property to match usage in PropertyDetailContent
+  notes?: string;
   details?: {
     [key: string]: any;
   };
@@ -40,12 +42,32 @@ export interface PropertyUpdateInput {
   };
 }
 
-// Add missing function that's imported elsewhere
+/**
+ * Check if a property can be edited based on its status
+ * @param status Property status
+ * @returns Whether the property can be edited
+ */
 export function canEditProperty(status: PropertyStatus): boolean {
   return status !== PropertyStatus.ARCHIVED;
 }
 
-// Add missing function that may be used in components
+/**
+ * Extended canEditProperty function that takes a property, user role, and user ID
+ * @param property The property to check
+ * @param userRole The user's role
+ * @param userId The user's ID
+ * @returns Whether the property can be edited
+ */
+export function canEditProperty(property: Property, userRole: string, userId: string): boolean {
+  // Default implementation just checks status
+  return property.status !== PropertyStatus.ARCHIVED;
+}
+
+/**
+ * Get the appropriate color for a property status
+ * @param status Property status
+ * @returns Color string
+ */
 export function getStatusColor(status: PropertyStatus): string {
   switch (status) {
     case PropertyStatus.DRAFT:

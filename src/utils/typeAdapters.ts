@@ -1,137 +1,118 @@
+
 /**
  * Type Adapters
- * Provides utilities for converting between different type systems
+ * Utilities for adapting between different type systems and ensuring type safety
  */
-import type { FloorPlan as UnifiedFloorPlan, Room as UnifiedRoom, Stroke as UnifiedStroke } from '@/types/floor-plan/unifiedTypes';
-import type { FloorPlan as LegacyFloorPlan, Room as LegacyRoom, Stroke as LegacyStroke, RoomTypeLiteral, StrokeTypeLiteral } from '@/types/floorPlanTypes';
+
+// Room Type Literals
+export type RoomTypeLiteral = 'living' | 'kitchen' | 'bedroom' | 'bathroom' | 'hallway' | 'unknown';
+
+// Stroke Type Literals
+export type StrokeTypeLiteral = 'wall' | 'door' | 'window' | 'annotation' | 'measurement' | 'unknown';
 
 /**
- * Convert string value to room type safely
+ * Safely cast a string to a RoomTypeLiteral
+ * @param type Type string to convert
+ * @returns A valid RoomTypeLiteral
  */
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'kitchen', 'bathroom', 'office', 'other'];
-  return validTypes.includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'other';
+export function asRoomType(type: string | RoomTypeLiteral): RoomTypeLiteral {
+  const validTypes: RoomTypeLiteral[] = ['living', 'kitchen', 'bedroom', 'bathroom', 'hallway', 'unknown'];
+  return validTypes.includes(type as RoomTypeLiteral) ? (type as RoomTypeLiteral) : 'unknown';
 }
 
 /**
- * Convert string value to stroke type safely
+ * Safely cast a string to a StrokeTypeLiteral
+ * @param type Type string to convert
+ * @returns A valid StrokeTypeLiteral
  */
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'];
-  return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'line';
+export function asStrokeType(type: string | StrokeTypeLiteral): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['wall', 'door', 'window', 'annotation', 'measurement', 'unknown'];
+  return validTypes.includes(type as StrokeTypeLiteral) ? (type as StrokeTypeLiteral) : 'unknown';
 }
 
 /**
- * Adapt any floor plan type to unified format
+ * Adapt a floor plan to the unified interface
+ * @param plan Floor plan data
+ * @returns Adapted floor plan
  */
-export function adaptFloorPlan(floorPlan: any): UnifiedFloorPlan {
-  const now = new Date().toISOString();
-  
-  // Ensure we have an ID
-  const id = floorPlan.id || `floor-${Date.now()}`;
-  
-  // Handle different metadata formats
-  const metadata = {
-    version: '1.0',
-    author: 'User',
-    dateCreated: floorPlan.createdAt || now,
-    lastModified: floorPlan.updatedAt || now,
-    notes: '',
-    paperSize: 'A4',
-    level: floorPlan.level || 0,
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
-    ...(floorPlan.metadata || {})
-  };
-  
+export function adaptFloorPlan(plan: any) {
+  // Ensure the basic required structure is present
   return {
-    id,
-    name: floorPlan.name || 'Untitled Floor Plan',
-    label: floorPlan.label || floorPlan.name || 'Untitled',
-    walls: floorPlan.walls || [],
-    rooms: (floorPlan.rooms || []).map(adaptRoom),
-    strokes: (floorPlan.strokes || []).map(adaptStroke),
-    canvasData: floorPlan.canvasData,
-    canvasJson: floorPlan.canvasJson,
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
-    gia: floorPlan.gia || 0,
-    level: floorPlan.level || 0,
-    index: floorPlan.index || floorPlan.level || 0,
-    metadata,
-    data: floorPlan.data || {},
-    userId: floorPlan.userId || floorPlan.propertyId || 'default-user'
+    id: plan.id || `floor-${Date.now()}`,
+    name: plan.name || 'Untitled Floor Plan',
+    label: plan.label || plan.name || 'Untitled',
+    walls: plan.walls || [],
+    rooms: plan.rooms || [],
+    strokes: plan.strokes || [],
+    canvasData: plan.canvasData || null,
+    canvasJson: plan.canvasJson || null,
+    createdAt: plan.createdAt || new Date().toISOString(),
+    updatedAt: plan.updatedAt || new Date().toISOString(),
+    gia: plan.gia || 0,
+    level: plan.level || 0,
+    index: plan.index || plan.level || 0,
+    metadata: plan.metadata || {
+      version: '1.0',
+      author: 'User',
+      dateCreated: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      notes: '',
+      paperSize: 'A4',
+      level: plan.level || 0,
+      createdAt: plan.createdAt || new Date().toISOString(),
+      updatedAt: plan.updatedAt || new Date().toISOString()
+    },
+    data: plan.data || {},
+    userId: plan.userId || plan.propertyId || 'default-user'
   };
 }
 
 /**
- * Adapt room to unified format
+ * Create a consistent room type from any input
+ * @param room Room data
+ * @returns Adapted room
  */
-export function adaptRoom(room: any): UnifiedRoom {
-  // Build compatible room
-  const adaptedRoom: any = { ...room };
-  
-  // Ensure ID exists
-  if (!adaptedRoom.id) {
-    adaptedRoom.id = `room-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  }
-  
-  // If room has a floorPlanId property, keep it
-  if (!adaptedRoom.floorPlanId) {
-    adaptedRoom.floorPlanId = room.id?.split('-')[0] || `floor-${Date.now()}`;
-  }
-  
-  return adaptedRoom;
-}
-
-/**
- * Adapt stroke to unified format
- */
-export function adaptStroke(stroke: any): UnifiedStroke {
-  // Build compatible stroke
-  const adaptedStroke: any = { ...stroke };
-  
-  // Ensure ID exists
-  if (!adaptedStroke.id) {
-    adaptedStroke.id = `stroke-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  }
-  
-  // If stroke has a floorPlanId property, keep it
-  if (!adaptedStroke.floorPlanId) {
-    adaptedStroke.floorPlanId = stroke.id?.split('-')[0] || `floor-${Date.now()}`;
-  }
-  
-  return adaptedStroke;
-}
-
-/**
- * Convert a unified floor plan to a legacy floor plan format
- */
-export function coreToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): LegacyFloorPlan {
+export function asRoomType(room: any) {
+  // Ensure all required room properties are present
   return {
-    id: unifiedPlan.id,
-    propertyId: unifiedPlan.userId || 'default-property',
-    name: unifiedPlan.name,
-    label: unifiedPlan.label,
-    walls: unifiedPlan.walls,
-    rooms: unifiedPlan.rooms.map((r) => ({
-      ...r,
-      floorPlanId: r.floorPlanId || unifiedPlan.id
-    })),
-    strokes: unifiedPlan.strokes.map((s) => ({
-      ...s,
-      floorPlanId: s.floorPlanId || unifiedPlan.id
-    })),
-    data: unifiedPlan.data || {},
-    version: unifiedPlan.metadata?.version,
-    createdAt: unifiedPlan.createdAt,
-    updatedAt: unifiedPlan.updatedAt,
-    level: unifiedPlan.level,
-    index: unifiedPlan.index,
-    gia: unifiedPlan.gia,
-    canvasData: unifiedPlan.canvasData,
-    canvasJson: unifiedPlan.canvasJson,
-    metadata: unifiedPlan.metadata,
-    userId: unifiedPlan.userId
+    id: room.id || `room-${Date.now()}`,
+    name: room.name || 'Untitled Room',
+    type: asRoomType(room.type),
+    area: room.area || 0,
+    perimeter: room.perimeter || 0,
+    center: room.center || { x: 0, y: 0 },
+    vertices: room.vertices || [],
+    labelPosition: room.labelPosition || { x: 0, y: 0 },
+    floorPlanId: room.floorPlanId || room.id?.split('-')[0] || `floor-${Date.now()}`
+  };
+}
+
+/**
+ * Create a consistent stroke type from any input
+ * @param stroke Stroke data
+ * @returns Adapted stroke
+ */
+export function asStrokeType(stroke: any) {
+  // Ensure all required stroke properties are present
+  return {
+    id: stroke.id || `stroke-${Date.now()}`,
+    type: asStrokeType(stroke.type),
+    points: stroke.points || [],
+    color: stroke.color || '#000000',
+    thickness: stroke.thickness || 1,
+    floorPlanId: stroke.floorPlanId || stroke.id?.split('-')[0] || `floor-${Date.now()}`
+  };
+}
+
+/**
+ * Core to App type adapter
+ * @param corePlan Core floor plan data
+ * @returns App-compatible floor plan
+ */
+export function coreToAppFloorPlan(corePlan: any) {
+  // This function adapts core floor plan types to app-compatible types
+  return {
+    ...adaptFloorPlan(corePlan),
+    propertyId: corePlan.userId || corePlan.propertyId || 'default-property'
   };
 }

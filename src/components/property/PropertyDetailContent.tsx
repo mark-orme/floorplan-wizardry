@@ -11,6 +11,7 @@ import { UserRole } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
+import { captureError } from '@/utils/sentryUtils';
 
 interface PropertyDetailContentProps {
   id: string;
@@ -56,6 +57,8 @@ export function PropertyDetailContent({
     try {
       await onStatusChange(id, newStatus);
       refetch();
+    } catch (err) {
+      captureError(err, { context: 'property-status-change' });
     } finally {
       setIsSubmitting(false);
     }
@@ -84,20 +87,20 @@ export function PropertyDetailContent({
     
     // Property header expects these specific props
     const headerProps = {
-      order_id: property.order_id || property.orderId,
+      order_id: property.order_id,
       status: property.status,
       address: property.address
     };
     
     // Property details tab expects these specific props
     const detailsProps = {
-      order_id: property.order_id || property.orderId || property.id,
-      client_name: property.client_name || property.clientName || 'Unknown',
+      order_id: property.order_id,
+      client_name: property.client_name,
       address: property.address,
       branch_name: property.branch_name,
-      created_at: property.created_at || property.createdAt,
-      updated_at: property.updated_at || property.updatedAt,
-      notes: property.notes,
+      created_at: property.createdAt,
+      updated_at: property.updatedAt,
+      notes: property.notes || '',
       status: property.status
     };
     

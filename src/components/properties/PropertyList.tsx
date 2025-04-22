@@ -1,88 +1,69 @@
 
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
-import { VirtualizedList } from '@/components/VirtualizedList';
+import { PropertyListItem } from '@/types/propertyTypes';
 
 interface PropertyListProps {
   properties: PropertyListItem[];
-  onRowClick: (id: string) => void;
-  maxHeight?: number;
+  onSelect: (id: string) => void;
 }
 
-export const PropertyList = ({ 
-  properties, 
-  onRowClick,
-  maxHeight = 600
-}: PropertyListProps) => {
-  const getStatusBadge = (status: PropertyStatus) => {
-    switch (status) {
-      case PropertyStatus.DRAFT:
-        return <Badge variant="outline">Draft</Badge>;
-      case PropertyStatus.PENDING_REVIEW:
-        return <Badge variant="secondary">In Review</Badge>;
-      case PropertyStatus.COMPLETED:
-        return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
+export const PropertyList: React.FC<PropertyListProps> = ({ properties, onSelect }) => {
   const formatDate = (dateString: string) => {
-    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString();
   };
-  
-  const TableHeader = () => (
-    <div className="grid grid-cols-5 gap-4 px-4 py-3 font-medium text-sm border-b bg-muted/40">
-      <div>Order ID</div>
-      <div>Property Address</div>
-      <div>Client</div>
-      <div>Status</div>
-      <div>Last Updated</div>
-    </div>
-  );
-
-  if (properties.length === 0) {
-    return (
-      <div className="border rounded-lg p-8 text-center text-muted-foreground">
-        No properties found. Add a property to get started.
-      </div>
-    );
-  }
-
-  const renderRow = (property: PropertyListItem, _index: number, style: React.CSSProperties) => (
-    <div 
-      style={style}
-      className="grid grid-cols-5 gap-4 px-4 py-3 border-b cursor-pointer hover:bg-accent/50"
-      onClick={() => onRowClick(property.id)}
-      role="row"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onRowClick(property.id);
-          e.preventDefault();
-        }
-      }}
-    >
-      <div className="font-medium truncate">{property.order_id}</div>
-      <div className="truncate">{property.address}</div>
-      <div className="truncate">{property.client_name}</div>
-      <div>{getStatusBadge(property.status)}</div>
-      <div>{formatDate(property.updated_at || property.updatedAt)}</div>
-    </div>
-  );
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <TableHeader />
-      <VirtualizedList
-        items={properties}
-        renderItem={renderRow}
-        maxHeight={maxHeight - 40}
-        className="bg-background"
-      />
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Address
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Client
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Last Updated
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {properties.map((property) => (
+            <tr key={property.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {property.address}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {property.client_name}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                  {property.status}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {formatDate(property.updatedAt)}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  onClick={() => onSelect(property.id)}
+                  className="text-indigo-600 hover:text-indigo-900"
+                >
+                  View
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

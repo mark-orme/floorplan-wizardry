@@ -63,10 +63,12 @@ export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPl
     walls: appPlan.walls || [],
     rooms: (appPlan.rooms || []).map(room => ({
       ...room,
+      // Ensure floorPlanId exists for compatibility
       floorPlanId: room.floorPlanId || appPlan.id || `floor-${Date.now()}`
     })),
     strokes: (appPlan.strokes || []).map(stroke => ({
       ...stroke,
+      // Ensure floorPlanId exists for compatibility
       floorPlanId: stroke.floorPlanId || appPlan.id || `floor-${Date.now()}`
     })),
     canvasData: appPlan.canvasData,

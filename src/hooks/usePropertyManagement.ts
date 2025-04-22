@@ -39,7 +39,7 @@ export const usePropertyManagement = () => {
           updatedAt: new Date().toISOString(),
           client_name: 'John Doe',
           order_id: 'ORD-12345',
-          branch_name: 'Main Branch' // Add branch_name for PropertyDetailContent
+          branch_name: 'Main Branch'
         },
         {
           id: 'property-2',
@@ -48,7 +48,7 @@ export const usePropertyManagement = () => {
           updatedAt: new Date().toISOString(),
           client_name: 'Jane Smith',
           order_id: 'ORD-67890',
-          branch_name: 'Secondary Branch' // Add branch_name for PropertyDetailContent
+          branch_name: 'Secondary Branch'
         }
       ];
     } catch (err) {
@@ -84,7 +84,7 @@ export const usePropertyManagement = () => {
         updatedAt: new Date().toISOString(),
         client_name: 'John Doe',
         order_id: 'ORD-12345',
-        branch_name: 'Main Branch' // Add branch_name for PropertyDetailContent
+        branch_name: 'Main Branch'
       };
     } catch (err) {
       console.error('Error getting property:', err);
