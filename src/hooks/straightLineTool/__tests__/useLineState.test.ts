@@ -3,12 +3,9 @@ import { useLineState } from '../useLineState';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { MutableRefObject } from 'react';
 
-jest.mock('fabric', () => ({
-  Canvas: jest.fn()
-}));
-
 describe('useLineState', () => {
-  const fabricCanvasRef = { current: {} as any } as MutableRefObject<FabricCanvas>;
+  const mockCanvas = {} as FabricCanvas;
+  const fabricCanvasRef = { current: mockCanvas } as MutableRefObject<FabricCanvas>;
 
   const mockOptions = {
     fabricCanvasRef,

@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from 'zod';
+import { z, ZodError } from 'zod';
 import {
   Form,
   FormField,
@@ -14,7 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// Zod schema
 const propertySchema = z.object({
   orderId: z.string().min(1),
   address: z.string().min(3),
