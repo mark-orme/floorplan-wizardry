@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,19 +14,17 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-// Remove missing imports
-// import { validateAndSanitizeForm, appSchemas, trackValidationFailure } from "@/utils/validation/inputValidation";
 import { InputValidationResult } from "@/utils/validation/inputValidation";
 import { toast } from "sonner";
-import { z } from "zod";
+import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Define validation schema directly since we can't import it
 const propertyFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  address: z.string().min(5, { message: "Address is required" }),
+  name: z.string().min(3, { message: "Name is required (min 3 characters)" }),
+  address: z.string().min(5, { message: "Address is required (min 5 characters)" }),
+  city: z.string().min(2, { message: "City is required" }),
   description: z.string().optional(),
-  isCommercial: z.boolean().default(false),
+  isCommercial: z.boolean().default(false)
 });
 
 type PropertyFormValues = z.infer<typeof propertyFormSchema>;
@@ -50,6 +47,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     defaultValues: {
       name: initialValues.name || "",
       address: initialValues.address || "",
+      city: initialValues.city || "",
       description: initialValues.description || "",
       isCommercial: initialValues.isCommercial || false,
     },
@@ -59,13 +57,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Simple validation replacing the missing validateAndSanitizeForm
       const validationResult: InputValidationResult = {
         valid: true,
         errors: []
       };
       
-      // Check for empty required fields
       if (!values.name.trim()) {
         validationResult.valid = false;
         validationResult.errors = validationResult.errors || [];
@@ -78,8 +74,13 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         validationResult.errors.push("Address is required");
       }
       
+      if (!values.city.trim()) {
+        validationResult.valid = false;
+        validationResult.errors = validationResult.errors || [];
+        validationResult.errors.push("City is required");
+      }
+      
       if (!validationResult.valid) {
-        // Handle validation errors
         if (validationResult.errors && validationResult.errors.length > 0) {
           toast.error(validationResult.errors[0]);
         } else {
@@ -126,6 +127,20 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
               <FormLabel>Address</FormLabel>
               <FormControl>
                 <Input placeholder="Enter address" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>City</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter city" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

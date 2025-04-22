@@ -1,44 +1,49 @@
 
-/**
- * Hook for interacting with the geometry web worker
- */
 import { useState, useEffect } from 'react';
 
-export const useGeometryWorker = () => {
+interface GeometryWorkerResult {
+  isReady: boolean;
+  error: Error | null;
+  calculatePolygonArea: (points: { x: number; y: number; }[]) => number;
+  calculateArea: (options?: any) => Promise<{ areaM2: number }>;
+}
+
+export const useGeometryWorker = (): GeometryWorkerResult => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   useEffect(() => {
     // Simulate worker initialization
-    console.log('Initializing geometry worker...');
-    
     const timeout = setTimeout(() => {
       setIsReady(true);
-      console.log('Geometry worker ready');
     }, 500);
-    
-    return () => {
-      clearTimeout(timeout);
-    };
+
+    return () => clearTimeout(timeout);
   }, []);
-  
-  // Mock function to calculate polygon area
-  const calculatePolygonArea = (points: {x: number, y: number}[]) => {
-    if (points.length < 3) return 0;
-    
+
+  const calculatePolygonArea = (points: { x: number; y: number; }[]): number => {
+    // Simple polygon area calculation using the Shoelace formula
     let area = 0;
-    for (let i = 0; i < points.length; i++) {
-      const j = (i + 1) % points.length;
+    const n = points.length;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
       area += points[i].x * points[j].y;
       area -= points[j].x * points[i].y;
     }
-    
+
     return Math.abs(area / 2);
   };
-  
+
+  const calculateArea = async (options?: any): Promise<{ areaM2: number }> => {
+    // Simple implementation that returns a fixed area for now
+    return { areaM2: 75.5 };
+  };
+
   return {
     isReady,
     error,
-    calculatePolygonArea
+    calculatePolygonArea,
+    calculateArea
   };
 };

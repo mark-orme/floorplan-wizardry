@@ -7,5 +7,5 @@ if ! command -v vite &> /dev/null; then
   npm install vite@latest
 fi
 
-# Run vite with provided arguments
-vite "$@"
+# Run vite with provided arguments - using npx to ensure we use the local installation
+npx vite "$@"

@@ -32,8 +32,9 @@ export const CanvasDrawingEnhancer: React.FC<CanvasDrawingEnhancerProps> = ({ ch
         addToUndoStack(canvas.toJSON());
       }
       
-      // Log drawing mode changes
-      captureMessage('Drawing mode updated', 'canvas-drawing-enhancer', { 
+      // Log drawing mode changes - fix to use only two parameters
+      captureMessage('Drawing mode updated', { 
+        context: 'canvas-drawing-enhancer',
         isDrawingMode: canvas.isDrawingMode 
       });
     } catch (err) {

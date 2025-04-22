@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from '@/utils/toastUtils';
@@ -124,7 +123,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   
   // Load floor plans
   useEffect(() => {
-    loadData();
+    loadData({});
   }, []);
   
   return (

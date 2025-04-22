@@ -13,6 +13,11 @@ export function captureException(error: Error, options: any = {}) {
   return 'fake-event-id';
 }
 
+export function captureError(error: Error, options: any = {}) {
+  console.error('[Sentry]', error, options);
+  return 'fake-event-id';
+}
+
 export function startTransaction(context: any) {
   console.log('[Sentry] Starting transaction', context);
   return {

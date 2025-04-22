@@ -1,52 +1,39 @@
 
 import React, { createContext, useContext, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
-interface CanvasEngineContextType {
-  isInitialized: boolean;
-  isReady: boolean;
-  error: Error | null;
-  initialize: () => void;
-  reset: () => void;
+/**
+ * Canvas engine interface
+ */
+export interface CanvasEngine {
+  canvas: FabricCanvas;
+  getCanvas: () => FabricCanvas;
+  dispose: () => void;
 }
 
-const CanvasEngineContext = createContext<CanvasEngineContextType | null>(null);
+export interface CanvasEngineContextType {
+  engine: CanvasEngine | null;
+  setEngine: React.Dispatch<React.SetStateAction<CanvasEngine | null>>;
+}
 
-export const CanvasEngineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  
-  const initialize = () => {
-    console.log('Initializing canvas engine...');
-    setIsInitialized(true);
-    
-    setTimeout(() => {
-      setIsReady(true);
-      console.log('Canvas engine ready');
-    }, 500);
-  };
-  
-  const reset = () => {
-    console.log('Resetting canvas engine...');
-    setIsInitialized(false);
-    setIsReady(false);
-    setError(null);
-  };
-  
+const CanvasEngineContext = createContext<CanvasEngineContextType>({
+  engine: null,
+  setEngine: () => null,
+});
+
+export const CanvasEngineProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
+  const [engine, setEngine] = useState<CanvasEngine | null>(null);
+
   return (
-    <CanvasEngineContext.Provider value={{
-      isInitialized,
-      isReady,
-      error,
-      initialize,
-      reset
-    }}>
+    <CanvasEngineContext.Provider value={{ engine, setEngine }}>
       {children}
     </CanvasEngineContext.Provider>
   );
 };
 
-export const useCanvasEngine = () => {
+export const useCanvasEngine = (): CanvasEngineContextType => {
   const context = useContext(CanvasEngineContext);
   
   if (!context) {
