@@ -1,39 +1,35 @@
 
 import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
 
 interface CanvasErrorHandlingOptions {
-  showToast?: boolean;
-  logToConsole?: boolean;
+  onCanvasError?: (error: Error) => void;
 }
 
-export const useCanvasErrorHandling = (options: CanvasErrorHandlingOptions = {}) => {
-  const { showToast = true, logToConsole = true } = options;
+export function useCanvasErrorHandling(options: CanvasErrorHandlingOptions = {}) {
+  const { onCanvasError } = options;
+  
   const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+  const [errorMessage, setErrorMessage] = useState('');
+  
   const handleCanvasError = useCallback((error: Error) => {
+    console.error('Canvas error:', error);
     setHasError(true);
-    setErrorMessage(error.message || 'An error occurred with the canvas');
+    setErrorMessage(error.message);
     
-    if (logToConsole) {
-      console.error('Canvas error:', error);
+    if (onCanvasError) {
+      onCanvasError(error);
     }
-    
-    if (showToast) {
-      toast.error('There was an error loading the canvas. Please try again.');
-    }
-  }, [showToast, logToConsole]);
-
+  }, [onCanvasError]);
+  
   const resetCanvasError = useCallback(() => {
     setHasError(false);
-    setErrorMessage(null);
+    setErrorMessage('');
   }, []);
-
+  
   return {
     hasError,
     errorMessage,
     handleCanvasError,
     resetCanvasError
   };
-};
+}

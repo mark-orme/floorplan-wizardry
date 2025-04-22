@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas as FabricCanvas } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
@@ -26,14 +25,12 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
   
-  const { handleError } = useCanvasErrorHandling({
-    onErrorCallback: onCanvasError // Using a compatible property name
+  const { handleCanvasError } = useCanvasErrorHandling({
+    onCanvasError
   });
   
-  // Use geometry worker for offloading calculations
   const { isReady: workerReady } = useGeometryWorker();
   
-  // Use virtualized canvas for performance
   const {
     performanceMetrics,
     virtualizationEnabled,
@@ -44,7 +41,6 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     autoToggle: true
   });
   
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -57,24 +53,20 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         enableRetinaScaling: true
       });
       
-      // Apply performance optimizations
       canvas.skipOffscreen = true;
       
       fabricCanvasRef.current = canvas;
       setIsReady(true);
       
-      // Notify parent
       if (onCanvasReady) {
         onCanvasReady(canvas);
       }
       
-      // Add CSRF token to canvas for security
       const csrfToken = getCSRFToken();
       if (csrfToken) {
         console.log("CSRF protection active");
       }
       
-      // Accessibility enhancement
       canvasRef.current.setAttribute('aria-label', 'Floor plan canvas');
       
       return () => {
@@ -82,19 +74,17 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         fabricCanvasRef.current = null;
       };
     } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to initialize canvas'), 'canvas-initialization');
+      handleCanvasError(error instanceof Error ? error : new Error('Failed to initialize canvas'));
       toast.error("Failed to initialize canvas");
     }
-  }, [width, height, onCanvasReady, handleError]);
+  }, [width, height, onCanvasReady, handleCanvasError]);
   
-  // Refresh virtualization on resize
   useEffect(() => {
     if (isReady) {
       refreshVirtualization();
     }
   }, [width, height, isReady, refreshVirtualization]);
   
-  // Display performance metrics
   const performanceDisplay = showPerformanceMetrics && (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
       <div>FPS: {performanceMetrics?.fps || 0}</div>
