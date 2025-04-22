@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { GridRendererComponent } from "./GridRenderer";
-import { captureMessage } from "@/utils/sentry";
+import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
@@ -33,7 +33,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       setGridObjects(objects);
       gridInitializedRef.current = true;
       
-      captureMessage("Grid layer created", "grid-layer-created", {
+      captureMessage("Grid layer created", {
+        level: 'info',
         tags: { component: "GridLayer" },
         extra: { 
           objectCount: objects.length, 

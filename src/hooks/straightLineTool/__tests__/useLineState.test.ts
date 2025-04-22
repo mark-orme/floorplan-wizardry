@@ -1,113 +1,166 @@
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLineState } from '../useLineState';
-import { Canvas } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 
-// Create mock options that match the required interface
-const createMockOptions = () => {
-  const canvasRef = { current: new Canvas() };
-  return {
-    fabricCanvasRef: canvasRef,
-    lineColor: '#000000',
-    lineThickness: 2,
-    saveCurrentState: vi.fn()
-  };
-};
+// Mock fabricCanvasRef
+const mockCanvas = new FabricCanvas(null);
+const fabricCanvasRef = { current: mockCanvas };
+
+// Mock a Point with coordinates
+const createPoint = (x: number, y: number) => ({ x, y });
 
 describe('useLineState', () => {
-  beforeEach(() => {
-    // Reset any shared state or mocks before each test
-  });
-
-  it('should initialize with default state', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
+  it('should initialize with default values', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
+    
     expect(result.current.isDrawing).toBe(false);
+    expect(result.current.snapToGrid).toBe(true);
+    expect(result.current.snapAngles).toBe(true);
     expect(result.current.startPoint).toBeNull();
-    expect(result.current.endPoint).toBeNull();
+    expect(result.current.currentPoint).toBeNull();
+    expect(result.current.temporaryLine).toBeNull();
   });
-
-  it('should set start point correctly', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
+  
+  it('should toggle snap to grid', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
     
     act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
+      result.current.toggleSnap();
+    });
+    
+    expect(result.current.snapToGrid).toBe(false);
+    
+    act(() => {
+      result.current.toggleSnap();
+    });
+    
+    expect(result.current.snapToGrid).toBe(true);
+  });
+  
+  it('should toggle snap angles', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
+    
+    act(() => {
+      result.current.toggleAngles();
+    });
+    
+    expect(result.current.snapAngles).toBe(false);
+    
+    act(() => {
+      result.current.toggleAngles();
+    });
+    
+    expect(result.current.snapAngles).toBe(true);
+  });
+  
+  it('should start drawing at the given point', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
+    
+    const startPoint = createPoint(100, 100);
+    
+    act(() => {
+      result.current.startDrawing(startPoint);
     });
     
     expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPoint).not.toBeNull();
-    expect(result.current.startPoint?.x).toBe(100);
-    expect(result.current.startPoint?.y).toBe(100);
+    expect(result.current.startPoint).toEqual(startPoint);
+    expect(result.current.currentPoint).toEqual(startPoint);
   });
-
-  it('should update end point while drawing', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
+  
+  it('should update current point during drawing', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
     
-    // Start drawing first
+    const startPoint = createPoint(100, 100);
+    const movePoint = createPoint(200, 200);
+    
     act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
+      result.current.startDrawing(startPoint);
     });
     
-    // Update with continue drawing
     act(() => {
-      result.current.continueDrawing({ x: 200, y: 200 });
+      result.current.continueDrawing(movePoint);
     });
     
     expect(result.current.isDrawing).toBe(true);
-    expect(result.current.endPoint).not.toBeNull();
-    expect(result.current.endPoint?.x).toBe(200);
-    expect(result.current.endPoint?.y).toBe(200);
+    expect(result.current.startPoint).toEqual(startPoint);
+    expect(result.current.currentPoint).toEqual(movePoint);
   });
-
-  it('should finish drawing correctly', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
+  
+  it('should complete drawing at the given point', () => {
+    const mockSaveCurrentState = jest.fn();
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: mockSaveCurrentState
+    }));
     
-    // Start drawing
+    const startPoint = createPoint(100, 100);
+    const endPoint = createPoint(200, 200);
+    
     act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
+      result.current.startDrawing(startPoint);
     });
     
-    // Complete drawing
     act(() => {
-      result.current.completeDrawing({ x: 200, y: 200 });
+      result.current.continueDrawing(endPoint);
+    });
+    
+    act(() => {
+      result.current.completeDrawing(endPoint);
     });
     
     expect(result.current.isDrawing).toBe(false);
+    expect(mockSaveCurrentState).toHaveBeenCalled();
   });
-
-  it('should cancel drawing correctly', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
+  
+  it('should cancel drawing', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState: jest.fn()
+    }));
     
-    // Start drawing
+    const startPoint = createPoint(100, 100);
+    
     act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
+      result.current.startDrawing(startPoint);
     });
     
-    // Cancel drawing
     act(() => {
       result.current.cancelDrawing();
     });
     
     expect(result.current.isDrawing).toBe(false);
     expect(result.current.startPoint).toBeNull();
-    expect(result.current.endPoint).toBeNull();
-  });
-
-  it('should reset state correctly', () => {
-    const { result } = renderHook(() => useLineState(createMockOptions()));
-    
-    // Start drawing
-    act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
-    });
-    
-    // Reset state
-    act(() => {
-      result.current.resetDrawing();
-    });
-    
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPoint).toBeNull();
-    expect(result.current.endPoint).toBeNull();
+    expect(result.current.currentPoint).toBeNull();
+    expect(result.current.temporaryLine).toBeNull();
   });
 });

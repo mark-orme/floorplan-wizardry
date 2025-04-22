@@ -1,112 +1,134 @@
-import { useEffect, useRef } from 'react';
+
+import { useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { captureMessage } from '@/utils/sentry';
+import { captureMessage } from '@/utils/sentryUtils';
 
 interface UseCanvasObservabilityProps {
   canvas: FabricCanvas | null;
-  onInteraction?: (action: string, timestamp: number) => void;
-  onStateChange?: (objectCount: number, timestamp: number, action: string) => void;
+  componentName?: string;
 }
 
+/**
+ * Hook that adds observability to canvas operations
+ * Captures canvas events and sends them to monitoring systems
+ */
 export const useCanvasObservability = ({
   canvas,
-  onInteraction,
-  onStateChange
+  componentName = 'Canvas'
 }: UseCanvasObservabilityProps) => {
-  const objectCountRef = useRef(0);
-
+  // Track object additions
+  const trackObjectAdded = useCallback((e: any) => {
+    const timestamp = Date.now();
+    const objectCount = canvas?.getObjects().length || 0;
+    
+    captureMessage("Canvas object added", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        objectCount,
+        timestamp,
+        action: 'object-added'
+      }
+    });
+  }, [canvas, componentName]);
+  
+  // Track object removals
+  const trackObjectRemoved = useCallback((e: any) => {
+    const timestamp = Date.now();
+    const objectCount = canvas?.getObjects().length || 0;
+    
+    captureMessage("Canvas object removed", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        objectCount,
+        timestamp,
+        action: 'object-removed'
+      }
+    });
+  }, [canvas, componentName]);
+  
+  // Track object modifications
+  const trackObjectModified = useCallback((e: any) => {
+    const timestamp = Date.now();
+    const objectCount = canvas?.getObjects().length || 0;
+    
+    captureMessage("Canvas object modified", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        objectCount,
+        timestamp,
+        action: 'object-modified'
+      }
+    });
+  }, [canvas, componentName]);
+  
+  // Track canvas rendering
+  const trackRendered = useCallback(() => {
+    const timestamp = Date.now();
+    
+    captureMessage("Canvas rendered", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        action: 'canvas-rendered',
+        timestamp
+      }
+    });
+  }, [componentName]);
+  
+  // Track canvas cleared
+  const trackCleared = useCallback(() => {
+    const timestamp = Date.now();
+    
+    captureMessage("Canvas cleared", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        action: 'canvas-cleared',
+        timestamp
+      }
+    });
+  }, [componentName]);
+  
+  // Track canvas zoom
+  const trackZoomed = useCallback(() => {
+    const timestamp = Date.now();
+    
+    captureMessage("Canvas zoomed", {
+      level: 'info',
+      tags: { component: componentName },
+      extra: {
+        action: 'canvas-zoomed',
+        timestamp
+      }
+    });
+  }, [componentName]);
+  
+  // Attach event listeners
   useEffect(() => {
     if (!canvas) return;
-
-    const handleObjectAdded = (event: any) => {
-      const timestamp = Date.now();
-      const objectCount = canvas.getObjects().length;
-      objectCountRef.current = objectCount;
-
-      captureMessage("Canvas state change detected", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { objectCount, timestamp, action: 'objectAdded' }
-      });
-      
-      onStateChange?.(objectCount, timestamp, 'objectAdded');
-    };
-
-    const handleObjectRemoved = (event: any) => {
-      const timestamp = Date.now();
-      const objectCount = canvas.getObjects().length;
-      objectCountRef.current = objectCount;
-
-      captureMessage("Canvas state change detected", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { objectCount, timestamp, action: 'objectRemoved' }
-      });
-
-      onStateChange?.(objectCount, timestamp, 'objectRemoved');
-    };
-
-    const handleObjectModified = (event: any) => {
-      const timestamp = Date.now();
-      const objectCount = canvas.getObjects().length;
-      objectCountRef.current = objectCount;
-
-      captureMessage("Canvas state change detected", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { objectCount, timestamp, action: 'objectModified' }
-      });
-
-      onStateChange?.(objectCount, timestamp, 'objectModified');
-    };
-
-    const handleSelectionCreated = (event: any) => {
-      const timestamp = Date.now();
-      captureMessage("Canvas interaction metric", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { action: 'selectionCreated', timestamp }
-      });
-      
-      onInteraction?.('selectionCreated', timestamp);
-    };
-
-    const handleSelectionUpdated = (event: any) => {
-      const timestamp = Date.now();
-      captureMessage("Canvas interaction metric", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { action: 'selectionUpdated', timestamp }
-      });
-
-      onInteraction?.('selectionUpdated', timestamp);
-    };
-
-    const handleSelectionCleared = (event: any) => {
-      const timestamp = Date.now();
-      captureMessage("Canvas interaction metric", {
-        level: 'info',
-        tags: { component: "CanvasObservability" },
-        extra: { action: 'selectionCleared', timestamp }
-      });
-
-      onInteraction?.('selectionCleared', timestamp);
-    };
-
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('selection:created', handleSelectionCreated);
-    canvas.on('selection:updated', handleSelectionUpdated);
-    canvas.on('selection:cleared', handleSelectionCleared);
-
+    
+    canvas.on('object:added', trackObjectAdded);
+    canvas.on('object:removed', trackObjectRemoved);
+    canvas.on('object:modified', trackObjectModified);
+    canvas.on('after:render', trackRendered);
+    
     return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('selection:created', handleSelectionCreated);
-      canvas.off('selection:updated', handleSelectionUpdated);
-      canvas.off('selection:cleared', handleSelectionCleared);
+      canvas.off('object:added', trackObjectAdded);
+      canvas.off('object:removed', trackObjectRemoved);
+      canvas.off('object:modified', trackObjectModified);
+      canvas.off('after:render', trackRendered);
     };
-  }, [canvas, onInteraction, onStateChange]);
+  }, [canvas, trackObjectAdded, trackObjectModified, trackObjectRemoved, trackRendered]);
+  
+  return {
+    trackObjectAdded,
+    trackObjectRemoved,
+    trackObjectModified,
+    trackRendered,
+    trackCleared,
+    trackZoomed
+  };
 };

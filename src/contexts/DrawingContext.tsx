@@ -1,19 +1,25 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
 interface DrawingContextType {
   canUndo: boolean;
   canRedo: boolean;
   history: any[];
   currentHistoryIndex: number;
+  activeTool: DrawingMode;
+  lineColor: string;
+  lineThickness: number;
   addToHistory: () => void;
   undo: () => void;
   redo: () => void;
   resetHistory: () => void;
-  // Add the missing methods
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
+  setActiveTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
+  setLineColor: React.Dispatch<React.SetStateAction<string>>;
+  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const DrawingContext = createContext<DrawingContextType>({
@@ -21,12 +27,18 @@ const DrawingContext = createContext<DrawingContextType>({
   canRedo: false,
   history: [],
   currentHistoryIndex: -1,
+  activeTool: DrawingMode.SELECT,
+  lineColor: '#000000',
+  lineThickness: 2,
   addToHistory: () => {},
   undo: () => {},
   redo: () => {},
   resetHistory: () => {},
   setCanUndo: () => {},
-  setCanRedo: () => {}
+  setCanRedo: () => {},
+  setActiveTool: () => {},
+  setLineColor: () => {},
+  setLineThickness: () => {}
 });
 
 interface DrawingProviderProps {
@@ -42,6 +54,9 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
   
   const saveCanvasState = useCallback(() => {
     if (!canvas) return;
@@ -104,12 +119,18 @@ export const DrawingProvider: React.FC<DrawingProviderProps> = ({
     canRedo,
     history,
     currentHistoryIndex,
+    activeTool,
+    lineColor,
+    lineThickness,
     addToHistory,
     undo,
     redo,
     resetHistory,
     setCanUndo,
-    setCanRedo
+    setCanRedo,
+    setActiveTool,
+    setLineColor,
+    setLineThickness
   };
   
   return (

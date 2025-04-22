@@ -1,73 +1,94 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { captureMessage } from '@/utils/sentry';
 
-interface GridMonitoringOptions {
-  canvas: FabricCanvas | null;
+import { useEffect, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { captureMessage } from '@/utils/sentryUtils';
+
+interface UseGridMonitoringProps {
+  fabricCanvas: FabricCanvas | null;
+  gridObjects: any[];
   gridSize: number;
-  threshold?: number;
-  interval?: number;
+  componentName?: string;
 }
 
+/**
+ * Hook for monitoring grid performance and issues
+ */
 export const useGridMonitoring = ({
-  canvas,
+  fabricCanvas,
+  gridObjects,
   gridSize,
-  threshold = 0.1,
-  interval = 5000
-}: GridMonitoringOptions) => {
-  const [renderTime, setRenderTime] = useState(0);
-  const [objectCount, setObjectCount] = useState(0);
-
-  const measureGridPerformance = useCallback(() => {
-    if (!canvas) return;
-
-    const start = performance.now();
-    canvas.requestRenderAll();
-    const end = performance.now();
-
-    const currentRenderTime = end - start;
-    const currentObjectCount = canvas.getObjects().length;
-
-    setRenderTime(currentRenderTime);
-    setObjectCount(currentObjectCount);
+  componentName = 'GridMonitoring'
+}: UseGridMonitoringProps) => {
+  // Monitor grid rendering performance
+  const monitorGridRenderTime = useCallback(() => {
+    if (!fabricCanvas) return;
     
-    captureMessage("Grid performance metric captured", {
-      level: 'info',
-      tags: { component: "GridMonitoring" },
-      extra: { renderTime, objectCount, gridSize }
-    });
-  }, [canvas, gridSize, renderTime, objectCount]);
-
-  const optimizeGridSize = useCallback(() => {
-    if (!canvas) return;
-
-    const currentObjectCount = canvas.getObjects().length;
-    const idealGridSize = Math.ceil(Math.sqrt(currentObjectCount));
-
-    if (Math.abs(idealGridSize - gridSize) > threshold * gridSize) {
-      const previousSize = gridSize;
-      const newSize = idealGridSize;
-      
-      captureMessage("Grid size optimized", {
-        level: 'info',
-        tags: { component: "GridMonitoring" },
-        extra: { previousSize, newSize, threshold }
+    const startTime = performance.now();
+    
+    fabricCanvas.renderAll();
+    
+    const renderTime = performance.now() - startTime;
+    
+    // Only log if rendering takes longer than expected
+    if (renderTime > 16) { // 60fps = ~16ms per frame
+      captureMessage("Grid rendering performance issue", {
+        level: 'warning',
+        tags: { component: componentName },
+        extra: {
+          renderTime,
+          objectCount: gridObjects.length,
+          gridSize
+        }
       });
     }
-  }, [canvas, gridSize, threshold]);
-
+  }, [fabricCanvas, gridObjects, gridSize, componentName]);
+  
+  // Monitor grid visibility issues
+  const monitorGridVisibility = useCallback(() => {
+    if (!fabricCanvas || gridObjects.length === 0) return;
+    
+    const visibleGridLines = gridObjects.filter(obj => obj.visible);
+    const visibilityRatio = visibleGridLines.length / gridObjects.length;
+    
+    if (visibilityRatio < 0.9) { // More than 10% of grid lines are invisible
+      captureMessage("Grid visibility issue detected", {
+        level: 'warning',
+        tags: { component: componentName },
+        extra: {
+          totalLines: gridObjects.length,
+          visibleLines: visibleGridLines.length,
+          visibilityRatio
+        }
+      });
+      
+      // Try to fix by forcing all grid lines to be visible
+      gridObjects.forEach(obj => {
+        obj.set('visible', true);
+      });
+      
+      fabricCanvas.requestRenderAll();
+    }
+  }, [fabricCanvas, gridObjects, componentName]);
+  
+  // Set up periodic monitoring
   useEffect(() => {
-    const performanceInterval = setInterval(measureGridPerformance, interval);
-    const optimizationInterval = setInterval(optimizeGridSize, interval * 2);
-
+    if (!fabricCanvas || gridObjects.length === 0) return;
+    
+    // Initial check
+    monitorGridVisibility();
+    
+    // Periodic checks
+    const visibilityInterval = setInterval(monitorGridVisibility, 10000);
+    const performanceInterval = setInterval(monitorGridRenderTime, 30000);
+    
     return () => {
+      clearInterval(visibilityInterval);
       clearInterval(performanceInterval);
-      clearInterval(optimizationInterval);
     };
-  }, [measureGridPerformance, optimizeGridSize, interval]);
-
+  }, [fabricCanvas, gridObjects, monitorGridRenderTime, monitorGridVisibility]);
+  
   return {
-    renderTime,
-    objectCount
+    monitorGridRenderTime,
+    monitorGridVisibility
   };
 };

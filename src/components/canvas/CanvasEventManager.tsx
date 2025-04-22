@@ -1,85 +1,124 @@
 
 import React, { useEffect } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { useDrawingContext } from '@/contexts/DrawingContext';
+import logger from '@/utils/logger';
 
 interface CanvasEventManagerProps {
-  canvas: FabricCanvas;
-  tool: DrawingMode;
-  lineThickness: number;
-  lineColor: string;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  saveCurrentState?: () => void;
-  undo?: () => void;
-  redo?: () => void;
-  deleteSelectedObjects?: () => void;
-  enableSync?: boolean;
-  onDrawingComplete?: () => void;
+  canvas: FabricCanvas | null;
+  onSelectionChanged?: (objects: any[]) => void;
+  onModified?: () => void;
+  onHistoryChange?: () => void;
 }
 
+/**
+ * Manages canvas events and coordinates with the drawing context
+ */
 export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
   canvas,
-  tool,
-  lineThickness,
-  lineColor,
-  gridLayerRef,
-  saveCurrentState = () => {},
-  undo,
-  redo,
-  deleteSelectedObjects,
-  enableSync = true,
-  onDrawingComplete
+  onSelectionChanged,
+  onModified,
+  onHistoryChange
 }) => {
-  const { setActiveTool } = useDrawingContext();
+  const { 
+    addToHistory, 
+    undo, 
+    redo, 
+    activeTool, 
+    setActiveTool 
+  } = useDrawingContext();
   
-  // Hook for straight line tool
-  const straightLineTool = useStraightLineTool({
-    canvas,
-    enabled: tool === DrawingMode.STRAIGHT_LINE,
-    lineColor,
-    lineThickness,
-    saveCurrentState
-  });
-  
-  // Update active tool in context when it changes
+  // Handle keyboard shortcuts
   useEffect(() => {
-    setActiveTool(tool);
-  }, [tool, setActiveTool]);
-  
-  // Tool-specific setup
-  useEffect(() => {
-    canvas.isDrawingMode = tool === DrawingMode.DRAW;
-    canvas.selection = tool === DrawingMode.SELECT;
+    if (!canvas) return;
     
-    if (tool === DrawingMode.SELECT) {
-      canvas.defaultCursor = 'default';
-      canvas.hoverCursor = 'move';
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if target is input, textarea, etc.
+      if (e.target instanceof HTMLInputElement || 
+          e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
       
-      // Make objects selectable
-      canvas.getObjects().forEach(obj => {
-        if ((obj as any).objectType !== 'grid') {
-          obj.selectable = true;
-        }
-      });
-    } else {
-      // For drawing tools
-      canvas.defaultCursor = 'crosshair';
-      canvas.hoverCursor = 'crosshair';
+      // Undo: Ctrl+Z
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+        if (onHistoryChange) onHistoryChange();
+        return;
+      }
       
-      // Make objects non-selectable during drawing
-      canvas.getObjects().forEach(obj => {
-        obj.selectable = false;
-      });
-    }
+      // Redo: Ctrl+Y or Ctrl+Shift+Z
+      if ((e.ctrlKey && e.key === 'y') || 
+          (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+        e.preventDefault();
+        redo();
+        if (onHistoryChange) onHistoryChange();
+        return;
+      }
+      
+      // Tool shortcuts
+      switch (e.key) {
+        case 'v':
+          logger.info('Switching to Select tool');
+          setActiveTool(DrawingMode.SELECT);
+          break;
+        case 'p':
+          logger.info('Switching to Draw tool');
+          setActiveTool(DrawingMode.DRAW);
+          break;
+        case 'l':
+          logger.info('Switching to Line tool');
+          setActiveTool(DrawingMode.STRAIGHT_LINE);
+          break;
+        case 'w':
+          logger.info('Switching to Wall tool');
+          setActiveTool(DrawingMode.WALL);
+          break;
+        case 'e':
+          logger.info('Switching to Eraser tool');
+          setActiveTool(DrawingMode.ERASER);
+          break;
+        case 'h':
+          logger.info('Switching to Hand tool');
+          setActiveTool(DrawingMode.HAND);
+          break;
+      }
+    };
     
-    canvas.renderAll();
+    window.addEventListener('keydown', handleKeyDown);
     
     return () => {
-      // Cleanup
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [canvas, tool]);
+  }, [canvas, undo, redo, setActiveTool, onHistoryChange]);
+  
+  // Handle object modifications and update history
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handleObjectModified = () => {
+      addToHistory();
+      if (onModified) onModified();
+    };
+    
+    const handleSelectionUpdated = () => {
+      const selectedObjects = canvas.getActiveObjects();
+      if (onSelectionChanged) onSelectionChanged(selectedObjects);
+    };
+    
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('selection:created', handleSelectionUpdated);
+    canvas.on('selection:updated', handleSelectionUpdated);
+    canvas.on('selection:cleared', handleSelectionUpdated);
+    
+    return () => {
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('selection:created', handleSelectionUpdated);
+      canvas.off('selection:updated', handleSelectionUpdated);
+      canvas.off('selection:cleared', handleSelectionUpdated);
+    };
+  }, [canvas, addToHistory, onModified, onSelectionChanged]);
   
   return null;
 };

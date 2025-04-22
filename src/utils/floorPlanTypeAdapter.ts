@@ -3,112 +3,80 @@
  * Floor Plan Type Adapter
  * Provides adapters between different FloorPlan interfaces in the application
  */
-import type { FloorPlan, Room, Wall, Stroke, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
-import { asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan as UnifiedFloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
+import type { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Convert a unified floor plan to a compatible app floor plan
+ * Convert unified floor plan to app floor plan format
  */
-export function convertToAppFloorPlan(unifiedPlan: FloorPlan): FloorPlan {
+export function convertToAppFloorPlan(unifiedPlan: UnifiedFloorPlan): AppFloorPlan {
   const now = new Date().toISOString();
   
   return {
-    id: unifiedPlan.id,
-    name: unifiedPlan.name,
-    label: unifiedPlan.label,
-    walls: unifiedPlan.walls.map(wall => ({
-      ...wall,
-      // Only add floorPlanId if not already present
-      floorPlanId: wall.floorPlanId || unifiedPlan.id
-    })),
-    rooms: unifiedPlan.rooms.map(room => ({
-      ...room,
-      // Only add floorPlanId if not already present
-      floorPlanId: room.floorPlanId || unifiedPlan.id
-    })),
-    strokes: unifiedPlan.strokes.map(stroke => ({
-      ...stroke,
-      // Only add floorPlanId if not already present
-      floorPlanId: stroke.floorPlanId || unifiedPlan.id
-    })),
-    data: unifiedPlan.data || {},
-    createdAt: unifiedPlan.createdAt,
-    updatedAt: unifiedPlan.updatedAt,
-    level: unifiedPlan.level,
-    index: unifiedPlan.index,
-    gia: unifiedPlan.gia,
+    id: unifiedPlan.id || uuidv4(),
+    name: unifiedPlan.name || 'Untitled Floor Plan',
+    label: unifiedPlan.label || '',
+    walls: unifiedPlan.walls || [],
+    rooms: unifiedPlan.rooms || [],
+    strokes: unifiedPlan.strokes || [],
+    canvasData: unifiedPlan.canvasData || null,
+    canvasJson: unifiedPlan.canvasJson || null,
+    createdAt: unifiedPlan.createdAt || now,
+    updatedAt: unifiedPlan.updatedAt || now,
     metadata: {
-      createdAt: unifiedPlan.metadata?.createdAt || now,
-      updatedAt: unifiedPlan.metadata?.updatedAt || now,
-      version: unifiedPlan.metadata?.version || '1.0',
-      author: unifiedPlan.metadata?.author || 'User',
-      notes: unifiedPlan.metadata?.notes || '',
-      paperSize: unifiedPlan.metadata?.paperSize,
-      level: unifiedPlan.metadata?.level,
-      dateCreated: unifiedPlan.metadata?.dateCreated || now,
-      lastModified: unifiedPlan.metadata?.lastModified || now
-    },
-    userId: unifiedPlan.userId
-  };
+      ...unifiedPlan.metadata,
+      createdAt: unifiedPlan.metadata.createdAt || now,
+      updatedAt: unifiedPlan.metadata.updatedAt || now,
+    }
+  } as AppFloorPlan;
 }
 
 /**
- * Convert an app floor plan to a unified floor plan
+ * Convert app floor plan to unified floor plan format
  */
-export function convertToUnifiedFloorPlan(appPlan: any): FloorPlan {
+export function convertToUnifiedFloorPlan(appPlan: AppFloorPlan): UnifiedFloorPlan {
   const now = new Date().toISOString();
   
-  // Ensure ID is present
-  const id = appPlan.id || `floor-${Date.now()}`;
-
   return {
-    id,
+    id: appPlan.id || uuidv4(),
     name: appPlan.name || 'Untitled Floor Plan',
-    label: appPlan.label || appPlan.name || 'Untitled',
-    walls: (appPlan.walls || []).map((wall: any) => ({
-      ...wall,
-      roomIds: wall.roomIds || [] // Ensure roomIds exists
-    })),
-    rooms: (appPlan.rooms || []).map((room: any) => ({
-      ...room,
-      type: asRoomType(room.type) // Ensure valid room type
-    })),
-    strokes: (appPlan.strokes || []).map((stroke: any) => ({
-      ...stroke,
-      type: asStrokeType(stroke.type), // Ensure valid stroke type
-      width: stroke.width || stroke.thickness || 1 // Handle both width and thickness
-    })),
+    label: appPlan.label || '',
+    walls: appPlan.walls || [],
+    rooms: appPlan.rooms || [],
+    strokes: appPlan.strokes || [],
     createdAt: appPlan.createdAt || now,
     updatedAt: appPlan.updatedAt || now,
-    gia: appPlan.gia || 0,
-    level: appPlan.level || 0,
-    index: appPlan.index || appPlan.level || 0,
-    metadata: {
-      createdAt: appPlan.metadata?.createdAt || now,
-      updatedAt: appPlan.metadata?.updatedAt || now,
-      version: appPlan.metadata?.version || '1.0',
-      author: appPlan.metadata?.author || 'User',
-      notes: appPlan.metadata?.notes || '',
-      paperSize: appPlan.metadata?.paperSize || 'A4',
-      level: appPlan.metadata?.level || 0,
-      dateCreated: appPlan.metadata?.dateCreated || now,
-      lastModified: appPlan.metadata?.lastModified || now
+    gia: (appPlan as any).gia || 0,
+    level: (appPlan as any).level || 0,
+    index: (appPlan as any).index || 0,
+    metadata: appPlan.metadata || {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: 'A4',
+      level: 0,
+      version: '1.0',
+      author: 'System',
+      notes: '',
+      dateCreated: now,
+      lastModified: now
     },
-    data: appPlan.data || {},
-    userId: appPlan.userId || appPlan.propertyId || 'default-user'
-  };
+    data: {},
+    userId: '',
+    propertyId: ''
+  } as UnifiedFloorPlan;
 }
 
 /**
- * Convert multiple unified floor plans to app floor plans
+ * Convert array of unified floor plans to app floor plans
  */
-export function convertToAppFloorPlans(unifiedPlans: FloorPlan[]): FloorPlan[] {
+export function convertToAppFloorPlans(unifiedPlans: UnifiedFloorPlan[]): AppFloorPlan[] {
   return unifiedPlans.map(convertToAppFloorPlan);
 }
 
 /**
- * Convert multiple app floor plans to unified floor plans
+ * Convert array of app floor plans to unified floor plans
  */
-export function convertToUnifiedFloorPlans(appPlans: any[]): FloorPlan[] {
+export function convertToUnifiedFloorPlans(appPlans: AppFloorPlan[]): UnifiedFloorPlan[] {
   return appPlans.map(convertToUnifiedFloorPlan);
 }
