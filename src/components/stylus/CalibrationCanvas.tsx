@@ -26,7 +26,6 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
     });
 
     let lastTapTime = 0;
-    let touchCount = 0;
 
     const handlePointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'pen') {
@@ -58,14 +57,13 @@ export const CalibrationCanvas: React.FC<CalibrationCanvasProps> = ({
         const now = Date.now();
         if (now - lastTapTime < TOUCH.DEBOUNCE) {
           // Double tap with two fingers detected
-          provideFeedback([20, 50, 20]);
+          provideFeedback([20, 50, 20]); // Pass array directly for vibration pattern
           if (window.history.state?.lastStroke) {
             window.history.back(); // Undo last stroke
           }
         }
         lastTapTime = now;
       }
-      touchCount = e.touches.length;
     };
 
     canvasRef.current.addEventListener('pointerdown', handlePointerDown);

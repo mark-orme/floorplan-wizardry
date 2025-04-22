@@ -31,7 +31,6 @@ export const playDrawingSound = (type: 'start' | 'end' | 'stroke' = 'stroke') =>
   try {
     const source = audioContext.createBufferSource();
     source.buffer = soundEffects['sketch'];
-    source.connect(audioContext.destination);
     
     // Adjust volume based on type
     const gainNode = audioContext.createGain();
@@ -48,7 +47,7 @@ export const playDrawingSound = (type: 'start' | 'end' | 'stroke' = 'stroke') =>
 /**
  * Provide haptic feedback if available
  */
-export const vibrateFeedback = (pattern: number | number[] = 10) => {
+export const vibrateFeedback = (pattern: number | number[]) => {
   if ('vibrate' in navigator) {
     navigator.vibrate(pattern);
   }
@@ -57,7 +56,12 @@ export const vibrateFeedback = (pattern: number | number[] = 10) => {
 /**
  * Combined feedback for drawing actions
  */
-export const provideFeedback = (action: 'start' | 'end' | 'stroke' | 'collision') => {
+export const provideFeedback = (action: 'start' | 'end' | 'stroke' | 'collision' | number[]) => {
+  if (Array.isArray(action)) {
+    vibrateFeedback(action);
+    return;
+  }
+
   switch (action) {
     case 'start':
       vibrateFeedback(15);
