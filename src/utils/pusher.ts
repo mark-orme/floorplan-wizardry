@@ -1,19 +1,23 @@
 
-/**
- * Pusher service for real-time communication
- * @module pusher
- */
 import Pusher from 'pusher-js';
 import logger from './logger';
 
 // Pusher configuration
 const PUSHER_CONFIG = {
-  key: import.meta.env.VITE_PUSHER_APP_KEY || 'demo-key',
+  key: import.meta.env.VITE_PUSHER_APP_KEY || '',
   cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'eu',
   forceTLS: true,
-  // Use proper types for transport configuration
   enabledTransports: ['ws', 'wss'] as ('ws' | 'wss')[],
-  disabledTransports: [] as ('ws' | 'wss')[] // Fixed type to match enabledTransports
+  disabledTransports: [] as ('ws' | 'wss')[]
+};
+
+// Validate Pusher configuration
+const validatePusherConfig = () => {
+  if (!PUSHER_CONFIG.key) {
+    logger.warn('Pusher app key is missing. Real-time features will be disabled.');
+    return false;
+  }
+  return true;
 };
 
 // Singleton instance of Pusher
@@ -21,12 +25,15 @@ let pusherInstance: Pusher | null = null;
 
 /**
  * Get or create a Pusher instance
- * @returns {Pusher} The Pusher instance
+ * @returns {Pusher | null} The Pusher instance or null if configuration is invalid
  */
-export const getPusher = (): Pusher => {
+export const getPusher = (): Pusher | null => {
+  if (!validatePusherConfig()) {
+    return null;
+  }
+
   if (!pusherInstance) {
     try {
-      // Create a new Pusher instance
       pusherInstance = new Pusher(PUSHER_CONFIG.key, {
         cluster: PUSHER_CONFIG.cluster,
         forceTLS: PUSHER_CONFIG.forceTLS,
@@ -34,24 +41,22 @@ export const getPusher = (): Pusher => {
         disabledTransports: PUSHER_CONFIG.disabledTransports
       });
       
-      // Log successful connection
+      // Log connection events
       pusherInstance.connection.bind('connected', () => {
-        logger.info('Pusher connected');
+        logger.info('Pusher connected successfully');
       });
       
-      // Log disconnection
       pusherInstance.connection.bind('disconnected', () => {
         logger.warn('Pusher disconnected');
       });
       
-      // Log connection errors
       pusherInstance.connection.bind('error', (err: any) => {
         logger.error('Pusher connection error:', err);
       });
       
     } catch (error) {
       logger.error('Error initializing Pusher:', error);
-      throw new Error('Failed to initialize Pusher');
+      return null;
     }
   }
   
