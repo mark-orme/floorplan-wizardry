@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { FloorPlan, createEmptyFloorPlan } from '@/types/floorPlan';
 
@@ -66,21 +65,14 @@ export const useFloorPlans = (initialFloorPlans: FloorPlan[] = []) => {
   
   const createNewFloorPlan = useCallback((name: string = 'New Floor Plan', level: number = 0) => {
     const newFloorPlan: FloorPlan = {
+      ...createEmptyFloorPlan(),
       id: crypto.randomUUID(),
       name,
+      level,
       walls: [],
       rooms: [],
       strokes: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      gia: 0,
-      level,
-      index: floorPlans.length,
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      data: {}
+      updatedAt: new Date().toISOString()
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);

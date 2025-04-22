@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
@@ -6,7 +5,6 @@ import {
   Controller, 
   useForm, 
   useFormContext, 
-  FormProvider,
   type FieldValues,
   type Path,
   type UseFormReturn
@@ -170,7 +168,6 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  FormProvider,
   useFormContext,
   useForm,
 };

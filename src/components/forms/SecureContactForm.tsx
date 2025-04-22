@@ -1,4 +1,3 @@
-
 import React from 'react';
 import * as z from 'zod';
 import { useForm, Controller } from 'react-hook-form';
@@ -22,10 +21,10 @@ const formSchema = z.object({
   message: z.string().min(10, { message: 'Message must be at least 10 characters' })
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 export const SecureContactForm: React.FC = () => {
-  const form = useForm<FormData>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -35,7 +34,7 @@ export const SecureContactForm: React.FC = () => {
     }
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: FormValues) => {
     console.log('Form submitted:', data);
     // Here you would typically send the data to your backend
     // For security, you should implement CSRF protection and rate limiting

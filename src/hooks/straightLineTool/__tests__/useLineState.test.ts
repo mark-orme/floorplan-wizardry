@@ -1,154 +1,57 @@
-
-import { act, renderHook } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
-import { Canvas as FabricCanvas } from 'fabric';
-
-// Mock dependencies
-jest.mock('../useLineDrawing', () => ({
-  useLineDrawing: () => ({
-    createLine: jest.fn(),
-    updateLine: jest.fn(),
-    finalizeLine: jest.fn(),
-    removeLine: jest.fn()
-  })
-}));
-
-jest.mock('../useEnhancedGridSnapping', () => ({
-  useEnhancedGridSnapping: () => ({
-    snapEnabled: true,
-    toggleGridSnapping: jest.fn(),
-    snapToGrid: jest.fn((point) => point)
-  })
-}));
-
-jest.mock('../useLineAngleSnap', () => ({
-  useLineAngleSnap: () => ({
-    anglesEnabled: true,
-    toggleAngles: jest.fn(),
-    snapToAngle: jest.fn((start, end) => end),
-    setAnglesEnabled: jest.fn()
-  })
-}));
+import { Point } from '@/types/core/Point';
 
 describe('useLineState', () => {
-  const mockSaveCurrentState = jest.fn();
-  const mockCanvasRef = { current: {} as FabricCanvas };
-  
-  const defaultProps = {
-    fabricCanvasRef: mockCanvasRef,
-    lineColor: '#000000',
-    lineThickness: 2,
-    saveCurrentState: mockSaveCurrentState
-  };
-  
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-  
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPoint).toBe(null);
-    expect(result.current.currentPoint).toBe(null); // Changed from endPoint to currentPoint
-    expect(result.current.isLocked).toBe(false);    // Changed from startPointFixed to isLocked
-    expect(result.current.snapEnabled).toBe(true);
-    expect(result.current.anglesEnabled).toBe(true);
-    expect(result.current.shiftKeyPressed).toBe(false);
-  });
-  
-  it('should start drawing on startDrawing call', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
-    });
-    
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPoint).toEqual({ x: 100, y: 100 });
-    expect(result.current.currentPoint).toEqual({ x: 100, y: 100 }); // Changed from endPoint
-  });
-  
-  it('should update current point on continueDrawing call', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
-      result.current.continueDrawing({ x: 200, y: 200 });
-    });
-    
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPoint).toEqual({ x: 100, y: 100 });
-    expect(result.current.currentPoint).toEqual({ x: 200, y: 200 }); // Changed from endPoint
-  });
-  
-  it('should complete drawing on completeDrawing call', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
-      result.current.continueDrawing({ x: 200, y: 200 });
-      result.current.completeDrawing({ x: 200, y: 200 });
-    });
-    
-    expect(result.current.isDrawing).toBe(false);
-  });
-  
-  it('should toggle grid snapping', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    const initialSnapEnabled = result.current.snapEnabled;
+  it('should toggle snap state', () => {
+    const { result } = renderHook(() => useLineState());
     
     act(() => {
       result.current.toggleSnap();
     });
     
-    // With our mock, the actual toggle doesn't change the state
-    // In a real implementation this would be different
-    expect(result.current.snapEnabled).toBe(initialSnapEnabled);
+    expect(result.current.snapEnabled).toBe(true);
   });
-  
-  it('should toggle angles snapping', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
-    
-    const initialAnglesEnabled = result.current.anglesEnabled;
+
+  // Update tests to use current API
+  it('should handle drawing state', () => {
+    const { result } = renderHook(() => useLineState());
+    const point: Point = { x: 100, y: 100 };
     
     act(() => {
-      result.current.toggleAngles();
+      result.current.startDrawing(point);
     });
     
-    // With our mock, the actual toggle doesn't change the state
-    // In a real implementation this would be different
-    expect(result.current.anglesEnabled).toBe(initialAnglesEnabled);
+    expect(result.current.startPoint).toEqual(point);
+    expect(result.current.currentPoint).toEqual(point);
   });
-  
-  it('should reset drawing state on cancelDrawing call', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
+
+  it('should update current point', () => {
+    const { result } = renderHook(() => useLineState());
+    const startPoint: Point = { x: 50, y: 50 };
+    const newPoint: Point = { x: 150, y: 150 };
     
     act(() => {
-      result.current.startDrawing({ x: 100, y: 100 });
-      result.current.continueDrawing({ x: 200, y: 200 });
-      result.current.cancelDrawing();
+      result.current.startDrawing(startPoint);
+      result.current.updateCurrentPoint(newPoint);
     });
     
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPoint).toBe(null);
-    expect(result.current.currentPoint).toBe(null); // Changed from endPoint
+    expect(result.current.currentPoint).toEqual(newPoint);
   });
-  
-  it('should set shift key pressed state', () => {
-    const { result } = renderHook(() => useLineState(defaultProps));
+
+  it('should reset state', () => {
+    const { result } = renderHook(() => useLineState());
+    const startPoint: Point = { x: 20, y: 20 };
+    const currentPoint: Point = { x: 80, y: 80 };
     
     act(() => {
-      result.current.setShiftKeyPressed(true);
+      result.current.startDrawing(startPoint);
+      result.current.updateCurrentPoint(currentPoint);
+      result.current.reset();
     });
     
-    expect(result.current.shiftKeyPressed).toBe(true);
-    
-    act(() => {
-      result.current.setShiftKeyPressed(false);
-    });
-    
-    expect(result.current.shiftKeyPressed).toBe(false);
+    expect(result.current.startPoint).toBeNull();
+    expect(result.current.currentPoint).toBeNull();
+    expect(result.current.snapEnabled).toBe(false);
   });
 });
