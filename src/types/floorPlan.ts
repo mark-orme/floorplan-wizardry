@@ -43,6 +43,7 @@ export interface FloorPlanMetadata {
   version?: string;
   paperSize?: string;
   level?: number;
+  dateCreated?: string;
 }
 
 export interface FloorPlan {
@@ -53,6 +54,17 @@ export interface FloorPlan {
   rooms: Room[];
   strokes: Stroke[];
   metadata: FloorPlanMetadata;
+  // Add missing properties
+  updatedAt: string;
+  createdAt: string;
+  level?: number;
+  gia?: number;
+  index?: number;
+  canvasData?: any;
+  canvasJson?: string | null;
+  data?: any;
+  userId?: string;
+  propertyId?: string;
 }
 
 // Helper functions
@@ -63,10 +75,27 @@ export function createEmptyFloorPlan(id: string = crypto.randomUUID()): FloorPla
     walls: [],
     rooms: [],
     strokes: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     metadata: {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
+  };
+}
+
+export function createWall(start: Point, end: Point, thickness = 10, color = '#000000'): Wall {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  return {
+    id: crypto.randomUUID(),
+    start,
+    end,
+    thickness,
+    color,
+    roomIds: []
   };
 }
 
@@ -78,3 +107,6 @@ export function isFloorPlan(obj: any): obj is FloorPlan {
     Array.isArray(obj.rooms) &&
     Array.isArray(obj.strokes);
 }
+
+// Export Point type for compatibility
+export { Point };

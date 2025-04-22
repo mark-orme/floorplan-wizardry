@@ -27,6 +27,7 @@ export interface DrawOptions {
   opacity?: number;
   strokeLineCap?: 'butt' | 'round' | 'square';
   strokeLineJoin?: 'bevel' | 'round' | 'miter';
+  options?: any;
 }
 
 // Canvas object representation
@@ -40,6 +41,7 @@ export interface CanvasObject {
   height?: number;
   angle?: number;
   properties?: Record<string, any>;
+  options?: Record<string, any>;
 }
 
 // Stroke styling options
@@ -56,6 +58,14 @@ export function fromFabricPoint(point: any): Point {
 
 export function toFabricPoint(point: Point): any {
   return { x: point.x, y: point.y };
+}
+
+// ZoomOptions for canvas zoom operations
+export interface ZoomOptions {
+  scale: number;
+  x?: number;
+  y?: number;
+  animate?: boolean;
 }
 
 /**
