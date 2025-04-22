@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from "zod";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -13,18 +13,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from '@/components/ui/textarea';
 
-const formSchema = z.object({
+const contactSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   subject: z.string().min(5, { message: 'Subject must be at least 5 characters' }),
   message: z.string().min(10, { message: 'Message must be at least 10 characters' })
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof contactSchema>;
 
 export const SecureContactForm: React.FC = () => {
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(contactSchema),
     defaultValues: {
       name: '',
       email: '',
