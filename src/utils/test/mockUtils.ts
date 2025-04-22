@@ -1,105 +1,67 @@
 
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  FloorPlan, 
-  Wall, 
-  Room, 
-  Stroke, 
-  Point, 
-  createEmptyFloorPlan, 
-  createPoint,
-  createWall, 
-  StrokeTypeLiteral, 
-  RoomTypeLiteral 
-} from '@/types/core';
+import { createEmptyFloorPlan, Stroke, Room, Wall, StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floorPlan';
 
 /**
- * Generate a mock point with specified coordinates
+ * Creates a mock floor plan for testing
  */
-export function createMockPoint(x = 0, y = 0): Point {
-  return createPoint(x, y);
-}
+export const createMockFloorPlan = (partialFloorPlan = {}) => {
+  return createEmptyFloorPlan(partialFloorPlan);
+};
 
 /**
- * Generate a mock wall
+ * Creates a mock stroke for testing
  */
-export function createMockWall(overrides?: Partial<Wall>): Wall {
-  const defaultWall: Wall = {
-    id: uuidv4(),
-    start: createMockPoint(0, 0),
-    end: createMockPoint(100, 0),
+export const createMockStroke = (): Stroke => {
+  return {
+    id: '1',
+    points: [{ x: 10, y: 10 }, { x: 50, y: 50 }],
+    type: 'line',
+    color: '#000000',
+    thickness: 2,
+    width: 2
+  };
+};
+
+/**
+ * Creates a mock room for testing
+ */
+export const createMockRoom = (): Room => {
+  return {
+    id: '1',
+    name: 'Bedroom',
+    type: 'bedroom' as RoomTypeLiteral,
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 }
+    ],
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 }
+    ],
+    area: 10000,
+    perimeter: 400,
+    center: { x: 50, y: 50 },
+    labelPosition: { x: 50, y: 50 },
+    color: '#FFFFFF'
+  };
+};
+
+/**
+ * Creates a mock wall for testing
+ */
+export const createMockWall = (): Wall => {
+  return {
+    id: '1',
+    start: { x: 0, y: 0 },
+    end: { x: 100, y: 0 },
     thickness: 10,
     length: 100,
     color: '#000000',
     roomIds: []
   };
+};
 
-  return { ...defaultWall, ...overrides };
-}
-
-/**
- * Generate a mock room
- */
-export function createMockRoom(overrides?: Partial<Room>): Room {
-  const defaultRoom: Room = {
-    id: uuidv4(),
-    name: 'Test Room',
-    type: 'bedroom' as RoomTypeLiteral,
-    points: [
-      createMockPoint(0, 0),
-      createMockPoint(100, 0),
-      createMockPoint(100, 100),
-      createMockPoint(0, 100)
-    ],
-    vertices: [
-      createMockPoint(0, 0),
-      createMockPoint(100, 0),
-      createMockPoint(100, 100),
-      createMockPoint(0, 100)
-    ],
-    area: 10000,
-    color: '#ffffff'
-  };
-
-  return { ...defaultRoom, ...overrides };
-}
-
-/**
- * Generate a mock stroke
- */
-export function createMockStroke(overrides?: Partial<Stroke>): Stroke {
-  const defaultStroke: Stroke = {
-    id: uuidv4(),
-    points: [
-      createMockPoint(0, 0),
-      createMockPoint(100, 100)
-    ],
-    color: '#000000',
-    width: 2,
-    thickness: 2,
-    type: 'line' as StrokeTypeLiteral
-  };
-
-  return { ...defaultStroke, ...overrides };
-}
-
-/**
- * Generate a mock floor plan
- */
-export function createMockFloorPlan(overrides?: Partial<FloorPlan>): FloorPlan {
-  const baseFloorPlan = createEmptyFloorPlan();
-  
-  // Ensure all required properties are set with mock values
-  const mockFloorPlan: FloorPlan = {
-    ...baseFloorPlan,
-    walls: [createMockWall()],
-    rooms: [createMockRoom()],
-    strokes: [createMockStroke()],
-    // Make sure to add any other required fields that might be missing
-  };
-
-  return { ...mockFloorPlan, ...overrides };
-}
-
-// For backwards compatibility
-export const createTestFloorPlan = createMockFloorPlan;

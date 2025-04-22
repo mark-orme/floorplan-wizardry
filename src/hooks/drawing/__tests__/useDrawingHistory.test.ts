@@ -9,10 +9,6 @@ const mockHistory = {
   future: [{ id: 'state4' }]
 };
 
-// Mock functions
-const mockSaveState = vi.fn();
-const mockRestoreState = vi.fn();
-
 describe('useDrawingHistory', () => {
   beforeEach(() => {
     // Reset mocks
@@ -26,8 +22,6 @@ describe('useDrawingHistory', () => {
     // Act
     const { result } = renderHook(() => useDrawingHistory({
       maxHistorySteps: 10,
-      saveState: mockSaveState,
-      restoreState: mockRestoreState,
       fabricCanvasRef
     }));
     
@@ -45,8 +39,6 @@ describe('useDrawingHistory', () => {
     // Act
     const { result } = renderHook(() => useDrawingHistory({
       maxHistorySteps: 10,
-      saveState: mockSaveState,
-      restoreState: mockRestoreState,
       fabricCanvasRef
     }));
     
@@ -54,8 +46,8 @@ describe('useDrawingHistory', () => {
       result.current.saveState();
     });
     
-    // Assert
-    expect(mockSaveState).toHaveBeenCalled();
+    // Assert that we now have state saved
+    expect(result.current.getHistory().pastSteps).toBeGreaterThan(0);
   });
   
   it('should not undo when no history', () => {
@@ -65,8 +57,6 @@ describe('useDrawingHistory', () => {
     // Act
     const { result } = renderHook(() => useDrawingHistory({
       maxHistorySteps: 10,
-      saveState: mockSaveState,
-      restoreState: mockRestoreState,
       fabricCanvasRef
     }));
     
@@ -75,7 +65,6 @@ describe('useDrawingHistory', () => {
     });
     
     // Assert
-    expect(mockRestoreState).not.toHaveBeenCalled();
     expect(result.current.canUndo).toBe(false);
   });
   
@@ -86,8 +75,6 @@ describe('useDrawingHistory', () => {
     // Act
     const { result } = renderHook(() => useDrawingHistory({
       maxHistorySteps: 10,
-      saveState: mockSaveState,
-      restoreState: mockRestoreState,
       fabricCanvasRef
     }));
     
@@ -96,7 +83,6 @@ describe('useDrawingHistory', () => {
     });
     
     // Assert
-    expect(mockRestoreState).not.toHaveBeenCalled();
     expect(result.current.canRedo).toBe(false);
   });
   
@@ -108,8 +94,6 @@ describe('useDrawingHistory', () => {
     // Act
     const { result } = renderHook(() => useDrawingHistory({
       maxHistorySteps,
-      saveState: mockSaveState,
-      restoreState: mockRestoreState,
       fabricCanvasRef
     }));
     

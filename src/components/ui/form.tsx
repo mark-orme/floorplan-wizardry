@@ -5,8 +5,7 @@ import { Slot } from "@radix-ui/react-slot"
 import {
   Controller,
   useForm,
-  type ControllerProps,
-  type ControllerRenderProps,
+  type ControllerProps as RHFControllerProps,
   type FieldValues,
   type FieldPath,
   type UseFormReturn
@@ -42,7 +41,7 @@ type FormFieldProps<
   name: TName
   control?: UseFormReturn<TFieldValues>["control"]
   render: React.ComponentType<{
-    field: ControllerRenderProps<TFieldValues, TName>
+    field: any;
     fieldState: {
       invalid: boolean
       isDirty: boolean
@@ -114,12 +113,12 @@ const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField()
+  const { formItemId } = useFormField()
 
   return (
     <Label
       ref={ref}
-      className={cn(error && "text-destructive", className)}
+      className={className}
       htmlFor={formItemId}
       {...props}
     />
@@ -131,18 +130,18 @@ const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
   React.ComponentPropsWithoutRef<typeof Slot>
 >(({ ...props }, ref) => {
-  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+  const { formItemId, formDescriptionId, formMessageId } = useFormField()
 
   return (
     <Slot
       ref={ref}
       id={formItemId}
       aria-describedby={
-        !error
+        !props['aria-invalid']
           ? `${formDescriptionId}`
           : `${formDescriptionId} ${formMessageId}`
       }
-      aria-invalid={!!error}
+      aria-invalid={!!props['aria-invalid']}
       {...props}
     />
   )
@@ -170,7 +169,9 @@ const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
+  const { formMessageId } = useFormField()
+  const fieldState = React.useContext(FormFieldContext) as any;
+  const error = fieldState.error;
   const body = error ? String(error?.message) : children
 
   if (!body) {

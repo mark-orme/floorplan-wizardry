@@ -5,4 +5,14 @@
 // Export floor plan types
 export * from './floorPlan';
 
+// Add DebugInfoState for compatibility with existing imports
+export interface DebugInfoState {
+  fps: number;
+  objectCount: number;
+  visibleObjects: number;
+  gridCells: number;
+  memoryUsage?: number;
+  renderTime?: number;
+}
+
 // Other type exports can be added here in the future

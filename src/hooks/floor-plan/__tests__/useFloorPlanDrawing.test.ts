@@ -10,9 +10,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
 
 // Mock utility functions
-const createMockFloorPlan = () => createEmptyFloorPlan();
-const createMockStroke = () => ({ id: '1', points: [], type: 'line', color: '#000', thickness: 1, width: 1 });
-const createMockRoom = () => ({ id: '1', name: 'Room', type: 'bedroom', vertices: [], points: [], area: 0, perimeter: 0, center: { x: 0, y: 0 }, labelPosition: { x: 0, y: 0 }, color: '#fff' });
+const createMockStroke = () => ({ id: '1', points: [], type: 'line' as const, color: '#000', thickness: 1, width: 1 });
 const createMockWall = () => ({ id: '1', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, thickness: 5, length: 100, color: '#000', roomIds: [] });
 
 describe('useFloorPlanDrawing', () => {
@@ -36,7 +34,7 @@ describe('useFloorPlanDrawing', () => {
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createMockFloorPlan()
+      floorPlan: createEmptyFloorPlan()
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -46,7 +44,7 @@ describe('useFloorPlanDrawing', () => {
     // This test is modified to work with the current implementation
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createMockFloorPlan()
+      floorPlan: createEmptyFloorPlan()
     }));
 
     // Just test isDrawing since tool is no longer exposed
@@ -61,7 +59,7 @@ describe('useFloorPlanDrawing', () => {
 
   it('should create strokes with the correct type', () => {
     // Arrange
-    const testFloorPlan = createMockFloorPlan();
+    const testFloorPlan = createEmptyFloorPlan();
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
       floorPlan: testFloorPlan
@@ -80,7 +78,7 @@ describe('useFloorPlanDrawing', () => {
   it('should update floor plan when changes occur', () => {
     // Arrange
     const updateFloorPlan = vi.fn();
-    const testFloorPlan = createMockFloorPlan();
+    const testFloorPlan = createEmptyFloorPlan();
 
     // Act
     const { result } = renderHook(() => useFloorPlanDrawing({
@@ -101,7 +99,7 @@ describe('useFloorPlanDrawing', () => {
 
   it('should handle adding a wall', () => {
     // Arrange
-    const testFloorPlan = createMockFloorPlan();
+    const testFloorPlan = createEmptyFloorPlan();
     
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,

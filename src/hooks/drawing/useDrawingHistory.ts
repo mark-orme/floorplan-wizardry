@@ -1,140 +1,114 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { toast } from 'sonner';
+import { Canvas as FabricCanvas } from 'fabric';
 
 export interface UseDrawingHistoryProps {
-  canvas?: FabricCanvas | null;
   maxHistorySteps?: number;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+}
+
+export interface UseDrawingHistoryResult {
+  undo: () => void;
+  redo: () => void;
+  saveState: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  getHistory: () => { pastSteps: number; futureSteps: number };
 }
 
 export const useDrawingHistory = ({
-  canvas,
-  maxHistorySteps = 50
-}: UseDrawingHistoryProps = {}) => {
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  
-  // Using refs to avoid unnecessary re-renders
-  const historyRef = useRef<{
-    past: string[];
-    future: string[];
-    current: string | null;
-  }>({
-    past: [],
-    future: [],
-    current: null
-  });
-  
-  // Save current state to history
+  maxHistorySteps = 20,
+  fabricCanvasRef
+}: UseDrawingHistoryProps): UseDrawingHistoryResult => {
+  const [past, setPast] = useState<any[]>([]);
+  const [future, setFuture] = useState<any[]>([]);
+  const isBatchingRef = useRef(false);
+
   const saveState = useCallback(() => {
+    // Don't save if we're in the middle of a batch operation
+    if (isBatchingRef.current) return;
+
+    // Get the canvas
+    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+
+    // Save the current state
+    const currentState = canvas.toObject();
     
-    try {
-      const json = JSON.stringify(canvas.toJSON(['id', 'selectable', 'evented']));
-      
-      if (json === historyRef.current.current) return; // No changes
-      
-      const newPast = [...historyRef.current.past];
-      if (historyRef.current.current) {
-        newPast.push(historyRef.current.current);
+    // Add to history, maintaining the limit
+    setPast(prevPast => {
+      const newPast = [...prevPast, currentState];
+      if (newPast.length > maxHistorySteps) {
+        return newPast.slice(newPast.length - maxHistorySteps);
       }
-      
-      // Limit history size
-      while (newPast.length > maxHistorySteps) {
-        newPast.shift();
-      }
-      
-      historyRef.current = {
-        past: newPast,
-        current: json,
-        future: []
-      };
-      
-      setCanUndo(newPast.length > 0);
-      setCanRedo(false);
-    } catch (error) {
-      console.error('Error saving drawing state:', error);
-    }
-  }, [canvas, maxHistorySteps]);
-  
-  // Undo last action
+      return newPast;
+    });
+    
+    // Clear future states when a new action is performed
+    setFuture([]);
+  }, [fabricCanvasRef, maxHistorySteps]);
+
   const undo = useCallback(() => {
-    if (!canvas || historyRef.current.past.length === 0) return;
+    // Get the canvas
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || past.length === 0) return;
+
+    // Set batching flag to prevent saveState calls during restoration
+    isBatchingRef.current = true;
     
-    try {
-      const lastState = historyRef.current.past.pop();
-      const newFuture = [...historyRef.current.future];
-      
-      if (historyRef.current.current) {
-        newFuture.unshift(historyRef.current.current);
-      }
-      
-      historyRef.current = {
-        past: [...historyRef.current.past],
-        current: lastState || null,
-        future: newFuture
-      };
-      
-      if (lastState) {
-        canvas.loadFromJSON(JSON.parse(lastState), () => {
-          canvas.renderAll();
-          toast.info('Undo successful');
-        });
-      }
-      
-      setCanUndo(historyRef.current.past.length > 0);
-      setCanRedo(true);
-    } catch (error) {
-      console.error('Error during undo:', error);
-      toast.error('Failed to undo');
-    }
-  }, [canvas]);
-  
-  // Redo last undone action
+    // Remove the last state from past
+    const newPast = [...past];
+    const currentState = canvas.toObject();
+    const prevState = newPast.pop();
+    
+    // Update the states
+    setPast(newPast);
+    setFuture([currentState, ...future]);
+    
+    // Restore the canvas to the previous state
+    canvas.loadFromJSON(prevState, () => {
+      canvas.renderAll();
+      isBatchingRef.current = false;
+    });
+  }, [fabricCanvasRef, past, future]);
+
   const redo = useCallback(() => {
-    if (!canvas || historyRef.current.future.length === 0) return;
+    // Get the canvas
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || future.length === 0) return;
+
+    // Set batching flag to prevent saveState calls during restoration
+    isBatchingRef.current = true;
     
-    try {
-      const nextState = historyRef.current.future.shift();
-      const newPast = [...historyRef.current.past];
-      
-      if (historyRef.current.current) {
-        newPast.push(historyRef.current.current);
-      }
-      
-      historyRef.current = {
-        past: newPast,
-        current: nextState || null,
-        future: [...historyRef.current.future]
-      };
-      
-      if (nextState) {
-        canvas.loadFromJSON(JSON.parse(nextState), () => {
-          canvas.renderAll();
-          toast.info('Redo successful');
-        });
-      }
-      
-      setCanUndo(true);
-      setCanRedo(historyRef.current.future.length > 0);
-    } catch (error) {
-      console.error('Error during redo:', error);
-      toast.error('Failed to redo');
-    }
-  }, [canvas]);
-  
+    // Remove the first state from future
+    const newFuture = [...future];
+    const currentState = canvas.toObject();
+    const nextState = newFuture.shift();
+    
+    // Update the states
+    setPast([...past, currentState]);
+    setFuture(newFuture);
+    
+    // Restore the canvas to the next state
+    canvas.loadFromJSON(nextState, () => {
+      canvas.renderAll();
+      isBatchingRef.current = false;
+    });
+  }, [fabricCanvasRef, past, future]);
+
+  const getHistory = useCallback(() => {
+    return {
+      pastSteps: past.length,
+      futureSteps: future.length
+    };
+  }, [past, future]);
+
   return {
-    canUndo,
-    canRedo,
-    saveState,
     undo,
     redo,
-    
-    // Expose history for external use if needed
-    getHistory: () => ({
-      pastSteps: historyRef.current.past.length,
-      futureSteps: historyRef.current.future.length
-    })
+    saveState,
+    canUndo: past.length > 0,
+    canRedo: future.length > 0,
+    getHistory
   };
 };
