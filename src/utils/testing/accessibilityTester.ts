@@ -1,4 +1,3 @@
-
 /**
  * Accessibility Testing Utilities
  * Provides functions to test components for accessibility issues
