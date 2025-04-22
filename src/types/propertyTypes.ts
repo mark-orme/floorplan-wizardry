@@ -2,79 +2,89 @@
 import { PropertyStatus } from '@/lib/supabase';
 
 /**
- * Property data interface
+ * Property interface
  */
 export interface Property {
   id: string;
   name: string;
   address: string;
-  description?: string;
+  userId: string;
   status: PropertyStatus;
   createdAt: string;
   updatedAt: string;
-  createdBy: string;
-  assignedTo?: string;
-  
-  // Add extended properties that are used in components
-  order_id?: string;
-  client_name?: string;
-  branch_name?: string;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
-  floorPlans?: string;
+  clientName?: string;
+  orderId?: string;
+  metadata?: any;
 }
 
 /**
- * Property list item interface
- * Used for property listings
+ * Property list item interface (simplified property for listings)
  */
 export interface PropertyListItem {
   id: string;
-  name?: string;
-  address: string;
-  order_id?: string;
-  client_name?: string;
-  status: PropertyStatus;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * Property form data interface
- */
-export interface PropertyFormData {
   name: string;
   address: string;
-  description?: string;
-  status?: PropertyStatus;
+  status: PropertyStatus;
+  updatedAt: string;
+  client_name?: string; // DB field name format
+  order_id?: string; // DB field name format
 }
 
 /**
- * Check if a user can edit a property
- * @param property The property to check
- * @param userRole The user's role
- * @param userId The user's ID
- * @returns Whether the user can edit the property
+ * Create empty property with default values
  */
-export function canEditProperty(property: Property, userRole: string, userId: string): boolean {
-  // Admins and managers can edit any property
-  if (userRole === 'admin' || userRole === 'manager') {
-    return true;
-  }
-  
-  // Photographers can only edit their own properties
-  if (userRole === 'photographer' && property.createdBy === userId) {
-    return true;
-  }
-  
-  // Processing managers can edit properties in review
-  if (userRole === 'processing_manager' && property.status === PropertyStatus.PENDING_REVIEW) {
-    return true;
-  }
-  
-  return false;
+export function createEmptyProperty(userId: string): Property {
+  const now = new Date().toISOString();
+  return {
+    id: `property-${Date.now()}`,
+    name: 'Untitled Property',
+    address: '',
+    userId,
+    status: PropertyStatus.DRAFT,
+    createdAt: now,
+    updatedAt: now
+  };
 }
 
-// Re-export the PropertyStatus enum
-export { PropertyStatus } from '@/lib/supabase';
+/**
+ * Format property address for display
+ */
+export function formatPropertyAddress(property: Property): string {
+  return property.address || 'No address provided';
+}
+
+/**
+ * Get property status display text
+ */
+export function getPropertyStatusText(status: PropertyStatus): string {
+  switch (status) {
+    case PropertyStatus.DRAFT:
+      return 'Draft';
+    case PropertyStatus.PENDING_REVIEW:
+      return 'Pending Review';
+    case PropertyStatus.COMPLETED:
+      return 'Completed';
+    case PropertyStatus.ARCHIVED:
+      return 'Archived';
+    default:
+      return 'Unknown';
+  }
+}
+
+/**
+ * Get property status color class for UI
+ */
+export function getPropertyStatusColorClass(status: PropertyStatus): string {
+  switch (status) {
+    case PropertyStatus.DRAFT:
+      return 'bg-yellow-200 text-yellow-800';
+    case PropertyStatus.PENDING_REVIEW:
+      return 'bg-blue-200 text-blue-800';
+    case PropertyStatus.COMPLETED:
+      return 'bg-green-200 text-green-800';
+    case PropertyStatus.ARCHIVED:
+      return 'bg-gray-200 text-gray-800';
+    default:
+      return 'bg-gray-200 text-gray-800';
+  }
+}

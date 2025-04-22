@@ -1,35 +1,103 @@
 
-// A basic hook for property management functions
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { PropertyListItem } from '@/types/propertyTypes';
+import { toast } from 'sonner';
 
-export function usePropertyManagement() {
+/**
+ * Hook for property management operations
+ */
+export const usePropertyManagement = () => {
   const [isLoading, setIsLoading] = useState(false);
-  
-  const listProperties = async () => {
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  /**
+   * List properties for the current user
+   * @returns Array of properties or empty array
+   */
+  const listProperties = async (): Promise<PropertyListItem[]> => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return []; // Return empty array for now
+      if (!user) {
+        toast.error('User must be authenticated');
+        return [];
+      }
+      
+      console.log('Fetching properties for user:', user?.id);
+      
+      // In a real implementation, this would call Supabase
+      // For now, returning mock data
+      return [
+        {
+          id: 'property-1',
+          name: 'Sample Property',
+          address: '123 Main St, Anytown, USA',
+          status: 'completed' as any,
+          updatedAt: new Date().toISOString(),
+          client_name: 'John Doe',
+          order_id: 'ORD-12345'
+        },
+        {
+          id: 'property-2',
+          name: 'Another Property',
+          address: '456 Oak Ave, Somewhere, USA',
+          status: 'draft' as any,
+          updatedAt: new Date().toISOString(),
+          client_name: 'Jane Smith',
+          order_id: 'ORD-67890'
+        }
+      ];
+    } catch (err) {
+      console.error('Error listing properties:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return [];
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const getProperty = async (id: string) => {
+
+  /**
+   * Get property by ID
+   * @param propertyId Property ID
+   * @returns Property or null
+   */
+  const getProperty = async (propertyId: string): Promise<PropertyListItem | null> => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return null; // Return null for now
+      if (!user) {
+        toast.error('User must be authenticated');
+        return null;
+      }
+      
+      // In a real implementation, this would call Supabase
+      return {
+        id: propertyId,
+        name: 'Sample Property',
+        address: '123 Main St, Anytown, USA',
+        status: 'completed' as any,
+        updatedAt: new Date().toISOString(),
+        client_name: 'John Doe',
+        order_id: 'ORD-12345'
+      };
+    } catch (err) {
+      console.error('Error getting property:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return null;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return {
     isLoading,
+    error,
     listProperties,
     getProperty
   };
-}
+};

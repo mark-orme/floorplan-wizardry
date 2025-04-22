@@ -1,65 +1,102 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/lib/supabase';
 
-interface AuthContextType {
-  user: any | null;
-  userRole: UserRole | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>; // Add login method
+interface User {
+  id: string;
+  email: string;
 }
 
-const defaultAuthContext: AuthContextType = {
-  user: null,
-  userRole: null,
-  loading: true,
-  signIn: async () => {},
-  signOut: async () => {},
-  login: async () => {} // Add login method to default context
-};
+interface AuthContextType {
+  user: User | null;
+  userRole: UserRole;
+  login: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>; // Alias for login
+  logout: () => Promise<void>;
+  isLoading: boolean;
+}
 
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+// Create context with default values
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  userRole: UserRole.USER,
+  login: async () => {},
+  signIn: async () => {},
+  logout: async () => {},
+  isLoading: false
+});
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>(UserRole.USER);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check for existing session on mount
   useEffect(() => {
-    // Simulate auth loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    const checkUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (!error && data.user) {
+          // In a real app, we'd fetch the user's profile to get their role
+          setUser({
+            id: 'mock-user-id',
+            email: 'user@example.com'
+          });
+          setUserRole(UserRole.USER);
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
+    checkUser();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    // This would normally connect to your auth service
-    console.log('Sign in with:', email, password);
-    // Simulate successful login
-    setUser({ id: '1', email });
-    setUserRole(UserRole.PHOTOGRAPHER);
-  };
-
-  // Add login method as an alias to signIn for backward compatibility
   const login = async (email: string, password: string) => {
-    return signIn(email, password);
+    setIsLoading(true);
+    try {
+      // In a real implementation, this would call supabase.auth.signInWithPassword
+      // For now, simulating a successful login
+      setUser({
+        id: 'mock-user-id',
+        email: email
+      });
+      setUserRole(UserRole.USER);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const signOut = async () => {
-    // This would normally connect to your auth service
-    setUser(null);
-    setUserRole(null);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      // In a real implementation, this would call supabase.auth.signOut
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, userRole, loading, signIn, signOut, login }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Create the context value
+  const contextValue: AuthContextType = {
+    user,
+    userRole,
+    login,
+    signIn: login, // Alias for login
+    logout,
+    isLoading
+  };
+
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
