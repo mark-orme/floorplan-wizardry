@@ -25,7 +25,8 @@ export const StraightLineToolDemo: React.FC = () => {
     isEnabled: true,
     canvas: fabricCanvas,
     lineColor: '#000000',
-    lineThickness: 2
+    lineThickness: 2,
+    saveCurrentState: () => console.log('Saving state')
   });
   
   return (

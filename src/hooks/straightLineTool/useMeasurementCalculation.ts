@@ -1,28 +1,28 @@
 
+import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
+import { MeasurementData } from './useStraightLineTool';
 
 export const useMeasurementCalculation = () => {
-  /**
-   * Calculate distance and angle between two points
-   */
-  const calculateMeasurements = (startPoint: Point, endPoint: Point) => {
-    // Calculate distance using Pythagorean theorem
+  const calculateMeasurements = useCallback((startPoint: Point, endPoint: Point, isSnapped: boolean = false): MeasurementData => {
     const dx = endPoint.x - startPoint.x;
     const dy = endPoint.y - startPoint.y;
+    
+    // Calculate distance using Pythagorean theorem
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     // Calculate angle in degrees
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    if (angle < 0) angle += 360; // Convert to 0-360 range
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
     
-    return { distance, angle };
-  };
+    return {
+      distance,
+      angle,
+      snapped: isSnapped,
+      unit: 'px'
+    };
+  }, []);
 
-  // Alias for backward compatibility
-  const calculateMeasurement = calculateMeasurements;
-  
   return {
-    calculateMeasurements,
-    calculateMeasurement
+    calculateMeasurements
   };
 };

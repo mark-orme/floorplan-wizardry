@@ -1,29 +1,36 @@
 
 import { useCallback } from 'react';
-import { Point } from '@/types/core/Point';
-import { MeasurementData } from './types';
-import React from 'react';
+import { MeasurementData } from './useStraightLineTool';
+
+interface TooltipData {
+  distanceDisplay: string;
+  angleDisplay: string;
+  snappedInfo: string;
+}
 
 export const useLiveDistanceTooltip = () => {
-  const formatTooltipData = useCallback((measurementData: MeasurementData | null) => {
-    if (!measurementData || measurementData.distance === null) {
-      return null;
-    }
+  // Format measurement data for display
+  const formatTooltipData = useCallback((data: MeasurementData): TooltipData | null => {
+    if (!data || data.distance === null) return null;
     
-    const distanceDisplay = `${measurementData.distance.toFixed(2)} ${measurementData.unit}`;
-    const angleDisplay = measurementData.angle !== null ? `${measurementData.angle.toFixed(1)}°` : '';
-    const snappedInfo = measurementData.snapped ? ' (Snapped)' : '';
+    // Format distance with 1 decimal place
+    const distanceDisplay = `${data.distance.toFixed(1)}${data.unit}`;
     
-    return { distanceDisplay, angleDisplay, snappedInfo };
+    // Format angle if available
+    const angleDisplay = data.angle !== null ? ` / ${Math.round(data.angle)}°` : '';
+    
+    // Show if snapped to grid or angle
+    const snappedInfo = data.snapped ? 
+      ` (${data.snapType === 'angle' ? 'Angled' : data.snapType === 'grid' ? 'Snapped' : 'Snapped'})` : '';
+    
+    return {
+      distanceDisplay,
+      angleDisplay,
+      snappedInfo
+    };
   }, []);
 
-  const renderTooltip = useCallback(() => {
-    // This returns a React node for tooltip rendering
-    return React.createElement('div', { className: 'tooltip' }, 'Measurement');
-  }, []);
-  
   return {
-    formatTooltipData,
-    renderTooltip
+    formatTooltipData
   };
 };

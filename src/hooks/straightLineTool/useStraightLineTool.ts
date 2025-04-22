@@ -1,5 +1,5 @@
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod } from '@/types/input/InputMethod';
@@ -13,6 +13,7 @@ export interface UseStraightLineToolProps {
   canvas: Canvas | null;
   lineColor: string;
   lineThickness: number;
+  saveCurrentState?: () => void;
 }
 
 export interface MeasurementData {
@@ -27,7 +28,10 @@ export const useStraightLineTool = ({
   isEnabled = false,
   canvas,
   lineColor,
-  lineThickness
+  lineThickness,
+  saveCurrentState = () => {
+    console.log('State saved');
+  }
 }: UseStraightLineToolProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
@@ -40,18 +44,16 @@ export const useStraightLineTool = ({
   });
 
   const fabricCanvasRef = useRef<Canvas | null>(canvas);
-  const { calculateMeasurements } = useMeasurementCalculation();
-  const { formatTooltipData, renderTooltip } = useLiveDistanceTooltip();
+  const { calculateMeasurements } = useMeasurementCalculation ? useMeasurementCalculation() : { calculateMeasurements: () => null };
+  const { formatTooltipData, renderTooltip } = useLiveDistanceTooltip ? useLiveDistanceTooltip() : { 
+    formatTooltipData: () => null, 
+    renderTooltip: () => null 
+  };
 
   // Set canvas reference when it changes
   useEffect(() => {
     fabricCanvasRef.current = canvas;
   }, [canvas]);
-
-  // Create a mock saveCurrentState function if none is provided
-  const saveCurrentState = useCallback(() => {
-    console.log('State saved');
-  }, []);
 
   const { 
     snapEnabled, 
@@ -112,6 +114,3 @@ export const useStraightLineTool = ({
     renderTooltip: renderTooltipFn
   };
 };
-
-// Add useEffect hook that was missing
-import { useEffect } from 'react';
