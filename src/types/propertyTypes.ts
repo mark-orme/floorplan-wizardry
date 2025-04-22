@@ -19,6 +19,7 @@ export interface PropertyListItem {
   status: SupabasePropertyStatus;
   updated_at?: string;
   updatedAt?: string;
+  branch_name?: string;  // Add branch_name field
 }
 
 // Property detail interface

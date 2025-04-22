@@ -5,7 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { adaptFloorPlan, appToCoreFloorPlans, coreToAppFloorPlan } from '@/utils/typeAdapters';
+import { adaptFloorPlan, coreToAppFloorPlan } from '@/utils/typeAdapters';
+import { convertToUnifiedFloorPlan, convertToAppFloorPlan } from '@/utils/floorPlanAdapter/floorPlanTypeAdapter';
 
 export interface UseFloorPlansProps {
   initialFloorPlans?: any[]; // Accept any FloorPlan types
@@ -23,7 +24,13 @@ export const useFloorPlans = ({
   tool = DrawingMode.SELECT
 }: UseFloorPlansProps) => {
   // Convert any initialFloorPlans to unified type
-  const unifiedInitialFloorPlans = initialFloorPlans.map(plan => adaptFloorPlan(plan));
+  const unifiedInitialFloorPlans = initialFloorPlans.map(plan => {
+    // Ensure the plan has a propertyId if it's from floorPlanTypes.ts
+    if (!plan.userId && plan.propertyId) {
+      return convertToUnifiedFloorPlan(plan);
+    }
+    return adaptFloorPlan(plan);
+  });
   
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(unifiedInitialFloorPlans);
   const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
@@ -134,6 +141,11 @@ export const useFloorPlans = ({
     console.log('syncFloorPlans called (compatibility function)');
   }, []);
   
+  // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
+  const getCompatibleFloorPlans = useCallback(() => {
+    return floorPlans.map(plan => convertToAppFloorPlan(plan));
+  }, [floorPlans]);
+  
   return {
     floorPlans,
     setFloorPlans,
@@ -146,6 +158,7 @@ export const useFloorPlans = ({
     gia,
     setGia,
     syncFloorPlans,
+    getCompatibleFloorPlans, // Add this for compatibility
     ...drawingHook
   };
 };

@@ -50,7 +50,7 @@ export function toCompatStroke(stroke: UnifiedStroke): LegacyStroke {
   return {
     ...stroke,
     type: typeValue,
-    floorPlanId: stroke.floorPlanId || `floor-${Date.now()}` // Add required floorPlanId
+    floorPlanId: stroke.floorPlanId || stroke.id?.split('-')[0] || `floor-${Date.now()}` // Add required floorPlanId
   };
 }
 
@@ -66,7 +66,7 @@ export function toCompatRoom(room: UnifiedRoom): LegacyRoom {
   return {
     ...room,
     type: typeValue,
-    floorPlanId: room.floorPlanId || `floor-${Date.now()}` // Add required floorPlanId
+    floorPlanId: room.floorPlanId || room.id?.split('-')[0] || `floor-${Date.now()}` // Add required floorPlanId
   };
 }
 
@@ -87,7 +87,7 @@ export function toCompatFloorPlans(floorPlans: UnifiedFloorPlan[]): LegacyFloorP
 export function toUnifiedFloorPlan(floorPlan: LegacyFloorPlan): UnifiedFloorPlan {
   // Ensure all required properties are present
   if (!floorPlan.data) floorPlan.data = {};
-  if (!floorPlan.userId) floorPlan.userId = 'test-user';
+  if (!floorPlan.userId) floorPlan.userId = floorPlan.propertyId || 'test-user';
   
   return floorPlan as unknown as UnifiedFloorPlan;
 }

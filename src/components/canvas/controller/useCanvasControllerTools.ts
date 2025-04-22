@@ -14,6 +14,7 @@ import { ZoomDirection } from "@/types/drawingTypes";
 import { useCanvasToolState } from "@/hooks/canvas/controller/useCanvasToolState";
 import { useCanvasOperations } from "@/hooks/canvas/controller/useCanvasOperations";
 import { useFloorPlanOperations } from "@/hooks/canvas/controller/useFloorPlanOperations";
+import { convertToUnifiedFloorPlan, convertToUnifiedFloorPlans } from "@/utils/floorPlanAdapter/floorPlanTypeAdapter";
 
 /**
  * Props for useCanvasControllerTools hook
@@ -71,6 +72,20 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     createGrid
   } = props;
 
+  // Convert floor plans types for compatibility with hooks expecting unified types
+  const unifiedFloorPlans = convertToUnifiedFloorPlans(floorPlans);
+  const setUnifiedFloorPlans = (plans: any) => {
+    // This function will handle both direct state updates and function updates
+    if (typeof plans === 'function') {
+      setFloorPlans((prev: FloorPlan[]) => {
+        const newPlans = plans(convertToUnifiedFloorPlans(prev));
+        return newPlans.map((p: any) => p);  // Keep as-is, assuming convertToUnifiedFloorPlans made them compatible
+      });
+    } else {
+      setFloorPlans(plans);
+    }
+  };
+
   // Initialize GIA calculation hook
   const { recalculateGIA } = useFloorPlanGIA({
     fabricCanvasRef,
@@ -88,9 +103,9 @@ export const useCanvasControllerTools = (props: UseCanvasControllerToolsProps) =
     lineThickness,
     lineColor,
     historyRef,
-    floorPlans,
+    floorPlans: unifiedFloorPlans,
     currentFloor,
-    setFloorPlans,
+    setFloorPlans: setUnifiedFloorPlans,
     setGia,
     createGrid
   });

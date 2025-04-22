@@ -3,8 +3,8 @@
  * Type adapter utilities
  * Provides conversion functions between different type formats
  */
-import { type FloorPlan as CoreFloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { type FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan as CoreFloorPlan } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan as AppFloorPlan } from '@/types/floorPlanTypes';
 import { RoomTypeLiteral, StrokeTypeLiteral } from '@/types/floorPlanTypes';
 
 /**
@@ -31,7 +31,7 @@ export function adaptFloorPlan(input: any): CoreFloorPlan {
     index: input.index ?? input.level ?? 0,
     metadata: adaptMetadata(input.metadata),
     data: input.data ?? {},
-    userId: input.userId ?? input.user_id ?? ''
+    userId: input.userId ?? input.user_id ?? input.propertyId ?? ''
   };
 }
 
@@ -59,7 +59,10 @@ export function adaptMetadata(metadata: any = {}): any {
  * Adapt any Room object to a consistent format
  */
 export function adaptRoom(room: any): any {
-  return room;
+  return {
+    ...room,
+    floorPlanId: room.floorPlanId || room.id?.split('-')[0] || `floor-${Date.now()}`
+  };
 }
 
 /**
@@ -73,7 +76,10 @@ export function adaptWall(wall: any): any {
  * Adapt any Stroke object to a consistent format
  */
 export function adaptStroke(stroke: any): any {
-  return stroke;
+  return {
+    ...stroke,
+    floorPlanId: stroke.floorPlanId || stroke.id?.split('-')[0] || `floor-${Date.now()}`
+  };
 }
 
 /**
@@ -82,12 +88,18 @@ export function adaptStroke(stroke: any): any {
 export function coreToAppFloorPlan(floorPlan: CoreFloorPlan): AppFloorPlan {
   return {
     id: floorPlan.id,
-    propertyId: floorPlan.userId, // Map userId to propertyId
+    propertyId: floorPlan.userId || 'default-property', // Map userId to propertyId
     name: floorPlan.name,
     level: floorPlan.level,
     walls: floorPlan.walls,
-    rooms: floorPlan.rooms,
-    strokes: floorPlan.strokes,
+    rooms: floorPlan.rooms.map(room => ({
+      ...room,
+      floorPlanId: room.floorPlanId || floorPlan.id
+    })),
+    strokes: floorPlan.strokes.map(stroke => ({
+      ...stroke,
+      floorPlanId: stroke.floorPlanId || floorPlan.id
+    })),
     data: floorPlan.data ?? {},
     version: floorPlan.metadata?.version,
     createdAt: floorPlan.createdAt,
