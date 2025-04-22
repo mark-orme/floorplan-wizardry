@@ -1,6 +1,4 @@
-
 import * as z from 'zod';
-import { ZodError } from 'zod';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
