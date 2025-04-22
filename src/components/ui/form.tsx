@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
@@ -37,11 +36,21 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
 );
 
 const FormField = ({
-  ...props
+  control,
+  name,
+  render
+}: {
+  control: any;
+  name: string;
+  render: any;
 }) => {
   return (
-    <FormFieldContext.Provider value={{ name: props.name }}>
-      <Controller {...props} />
+    <FormFieldContext.Provider value={{ name }}>
+      <Controller
+        control={control}
+        name={name}
+        render={render}
+      />
     </FormFieldContext.Provider>
   );
 };
@@ -168,6 +177,5 @@ export {
   FormMessage,
   FormField,
   useFormContext,
-  useForm,
   FormProvider
 };

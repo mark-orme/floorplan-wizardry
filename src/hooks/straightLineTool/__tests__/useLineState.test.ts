@@ -1,7 +1,5 @@
-
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
-import { createRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock the Canvas
@@ -10,12 +8,10 @@ jest.mock('fabric', () => ({
 }));
 
 describe('useLineState', () => {
-  // Create a mock Canvas ref with a properly typed mock
-  const fabricCanvasRef = {
-    current: {} as FabricCanvas
+  const fabricCanvasRef = { 
+    current: {} as FabricCanvas 
   };
 
-  // Create mock options with required fields
   const mockOptions = {
     fabricCanvasRef,
     lineColor: '#000000',
