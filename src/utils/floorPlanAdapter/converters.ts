@@ -1,6 +1,6 @@
 
 import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/floorPlanTypes';
-import { FloorPlan as CoreFloorPlan } from '@/types/FloorPlan';
+import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
 import { FloorPlan as UnifiedFloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
 import { adaptRoom, adaptStroke, adaptWall } from '@/utils/typeAdapters';
 
@@ -12,10 +12,11 @@ import { adaptRoom, adaptStroke, adaptWall } from '@/utils/typeAdapters';
 export function convertToCoreFloorPlans(unifiedFloorPlans: UnifiedFloorPlan[]): CoreFloorPlan[] {
   return unifiedFloorPlans.map(unifiedPlan => {
     // Convert to core floor plan format
-    return {
+    const corePlan: CoreFloorPlan = {
       id: unifiedPlan.id,
       name: unifiedPlan.name,
       label: unifiedPlan.label || unifiedPlan.name,
+      index: unifiedPlan.index,
       walls: unifiedPlan.walls.map(wall => ({
         id: wall.id,
         start: wall.start,
@@ -32,13 +33,22 @@ export function convertToCoreFloorPlans(unifiedFloorPlans: UnifiedFloorPlan[]): 
         area: room.area,
         color: room.color
       })),
+      strokes: [],
+      canvasData: unifiedPlan.canvasData,
+      canvasJson: unifiedPlan.canvasJson,
+      createdAt: unifiedPlan.createdAt,
+      updatedAt: unifiedPlan.updatedAt,
+      gia: unifiedPlan.gia,
+      level: unifiedPlan.level,
       metadata: {
-        ...unifiedPlan.metadata,
-        level: unifiedPlan.level || 0
-      },
-      created: unifiedPlan.createdAt,
-      updated: unifiedPlan.updatedAt
+        createdAt: unifiedPlan.metadata.createdAt,
+        updatedAt: unifiedPlan.metadata.updatedAt,
+        paperSize: unifiedPlan.metadata.paperSize,
+        level: unifiedPlan.metadata.level
+      }
     };
+    
+    return corePlan;
   });
 }
 
@@ -65,23 +75,23 @@ export function convertToUnifiedFloorPlans(coreFloorPlans: CoreFloorPlan[]): Uni
         floorPlanId: corePlan.id
       })),
       strokes: [], // Core format doesn't have strokes
-      canvasData: null,
-      canvasJson: null,
-      createdAt: corePlan.created || now,
-      updatedAt: corePlan.updated || now,
-      gia: 0, // Default GIA
-      level: corePlan.metadata?.level || 0,
-      index: corePlan.metadata?.level || 0,
+      canvasData: corePlan.canvasData,
+      canvasJson: corePlan.canvasJson,
+      createdAt: corePlan.createdAt || now,
+      updatedAt: corePlan.updatedAt || now,
+      gia: corePlan.gia || 0,
+      level: corePlan.level || 0,
+      index: corePlan.index || corePlan.level || 0,
       metadata: {
-        createdAt: corePlan.created || now,
-        updatedAt: corePlan.updated || now,
-        version: corePlan.metadata?.version || '1.0',
+        createdAt: corePlan.metadata?.createdAt || now,
+        updatedAt: corePlan.metadata?.updatedAt || now,
+        version: '1.0',
         paperSize: corePlan.metadata?.paperSize || 'A4',
         level: corePlan.metadata?.level || 0,
-        author: corePlan.metadata?.author || '',
-        dateCreated: corePlan.created || now,
-        lastModified: corePlan.updated || now,
-        notes: corePlan.metadata?.notes || ''
+        author: 'User',
+        dateCreated: corePlan.createdAt || now,
+        lastModified: corePlan.updatedAt || now,
+        notes: ''
       },
       data: {},
       userId: 'default-user' // No user ID in core format

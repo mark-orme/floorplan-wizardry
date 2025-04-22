@@ -6,7 +6,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLineState } from '../useLineState';
-import { createMockFunctionParams, createTestPoint } from '@/utils/test/mockUtils';
 
 describe('useLineState', () => {
   it('should initialize with default values', () => {

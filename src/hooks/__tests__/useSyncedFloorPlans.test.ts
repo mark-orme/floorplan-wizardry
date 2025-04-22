@@ -42,13 +42,6 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-// Create a mock floor plan using the fixed helper function
-const mockFloorPlan = createTestFloorPlan({
-  id: 'floor-1',
-  name: 'Floor 1',
-  label: 'First Floor',
-});
-
 describe('useSyncedFloorPlans Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,7 +62,7 @@ describe('useSyncedFloorPlans Hook', () => {
   
   it('should load floor plans from localStorage on init', () => {
     // Setup: Add floor plans to localStorage
-    const testFloorPlans = [mockFloorPlan];
+    const testFloorPlans = [createTestFloorPlan()];
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(testFloorPlans));
     
     // Execute: Render the hook
@@ -105,7 +98,7 @@ describe('useSyncedFloorPlans Hook', () => {
     
     await act(async () => {
       // Trigger save via setFloorPlans which internally saves to localStorage
-      result.current.setFloorPlans([mockFloorPlan]);
+      result.current.setFloorPlans([createTestFloorPlan()]);
       
       // Verify: Error handling occurred
       expect(toast.error).toHaveBeenCalledWith('Failed to save floor plans');
@@ -129,6 +122,10 @@ describe('useSyncedFloorPlans Hook', () => {
   
   it('should update a floor plan', () => {
     // Setup existing floor plans
+    const mockFloorPlan = createTestFloorPlan({
+      id: 'floor-1',
+      name: 'Floor 1'
+    });
     const existingPlans = [mockFloorPlan];
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(existingPlans));
     
@@ -147,6 +144,9 @@ describe('useSyncedFloorPlans Hook', () => {
   
   it('should delete a floor plan', () => {
     // Setup existing floor plans
+    const mockFloorPlan = createTestFloorPlan({
+      id: 'floor-1'
+    });
     const existingPlans = [mockFloorPlan];
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(existingPlans));
     

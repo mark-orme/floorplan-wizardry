@@ -5,8 +5,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { 
-  appToCoreFloorPlans,
-  coreToAppFloorPlans,
+  convertToCoreFloorPlans,
+  convertToUnifiedFloorPlans,
   validatePoint,
   validateColor,
   validateTimestamp,
@@ -27,8 +27,8 @@ import { adaptWall } from './typeAdapters';
 describe('Floor Plan Adapter (Integration)', () => {
   it('should provide all required exports', () => {
     // Verify that the adapter properly re-exports all necessary functions
-    expect(appToCoreFloorPlans).toBeDefined();
-    expect(coreToAppFloorPlans).toBeDefined();
+    expect(convertToCoreFloorPlans).toBeDefined();
+    expect(convertToUnifiedFloorPlans).toBeDefined();
     expect(validatePoint).toBeDefined();
     expect(validateColor).toBeDefined();
     expect(validateTimestamp).toBeDefined();
@@ -38,7 +38,7 @@ describe('Floor Plan Adapter (Integration)', () => {
   
   it('should round-trip convert floor plans', () => {
     // Create a test app floor plan
-    const originalAppFloorPlan = createTestFloorPlan({
+    const originalFloorPlan = createTestFloorPlan({
       id: 'test123',
       name: 'Test Floor',
       label: 'Test Floor',
@@ -57,13 +57,13 @@ describe('Floor Plan Adapter (Integration)', () => {
     });
     
     // Convert to core and back
-    const coreFloorPlans = appToCoreFloorPlans([originalAppFloorPlan]);
-    const roundTrippedAppFloorPlans = coreToAppFloorPlans(coreFloorPlans);
+    const coreFloorPlans = convertToCoreFloorPlans([originalFloorPlan]);
+    const roundTrippedFloorPlans = convertToUnifiedFloorPlans(coreFloorPlans);
     
     // Verify the round-tripped floor plan matches the original
-    expect(roundTrippedAppFloorPlans[0].id).toBe(originalAppFloorPlan.id);
-    expect(roundTrippedAppFloorPlans[0].name).toBe(originalAppFloorPlan.name);
-    expect(roundTrippedAppFloorPlans[0].walls).toHaveLength(1);
-    expect(roundTrippedAppFloorPlans[0].walls[0].id).toBe('wall1');
+    expect(roundTrippedFloorPlans[0].id).toBe(originalFloorPlan.id);
+    expect(roundTrippedFloorPlans[0].name).toBe(originalFloorPlan.name);
+    expect(roundTrippedFloorPlans[0].walls).toHaveLength(1);
+    expect(roundTrippedFloorPlans[0].walls[0].id).toBe('wall1');
   });
 });

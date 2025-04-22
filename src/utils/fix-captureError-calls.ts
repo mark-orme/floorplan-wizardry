@@ -1,6 +1,6 @@
 
 // This is a utility to document the fixed captureError calls across the application
-// The following files were updated to use the new captureError(error, context) signature:
+// The following files were updated to use the new captureError and captureMessage API format:
 
 /*
 - src/components/BasicGrid.tsx
@@ -26,6 +26,7 @@
 - src/utils/diagnostics/toolbar/toolbarMonitoring.ts
 - src/utils/diagnostics/toolbar/toolbarRunDiagnostics.ts
 - src/utils/grid/gridErrorHandling.ts
+- src/utils/grid/gridVisibilityManager.ts
 - src/utils/logging/toolbar/toolActionLogger.ts
 - src/utils/logging/toolbar/toolActivationLogger.ts
 - src/utils/logging/toolbar/toolMonitoring.ts
@@ -33,8 +34,22 @@
 */
 
 // Example of how calls should be updated:
-// OLD: captureError(error, 'context', extraData);
-// NEW: captureError(error, { context: 'context', extraData });
+// 
+// OLD:
+// captureError(error, 'context', extraData);
+// 
+// NEW:
+// captureError(error, { context: 'context', extra: extraData });
+// 
+// OR:
+// captureError(error, { 
+//   context: 'context',
+//   tags: { component: 'ComponentName' },
+//   extra: { 
+//     userId: user.id,
+//     additionalData: someData 
+//   }
+// });
 
 // We have created a utility function in src/utils/sentryUtils.ts that handles 
 // both old and new call patterns for backward compatibility.
@@ -43,4 +58,3 @@
 // import { captureError, captureMessage } from '@/utils/sentryUtils';
 
 // This file serves as documentation only and has no runtime impact.
-

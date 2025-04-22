@@ -1,19 +1,13 @@
 
 /**
  * Tests for useFloorPlanDrawing hook
- * @module __tests__/hooks/useFloorPlanDrawing.test
+ * @module hooks/useFloorPlanDrawing/__tests__/useFloorPlanDrawing.test
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
-import { 
-  createMockFloorPlan,
-  createMockStroke,
-  createMockRoom,
-  createMockWall
-} from '@/utils/test/mockUtils';
-import type { StrokeTypeLiteral, RoomTypeLiteral } from '@/types/floor-plan/unifiedTypes';
+import { createMockFloorPlan, createMockStroke, createMockRoom, createMockWall } from '@/utils/test/mockUtils';
 
 describe('useFloorPlanDrawing', () => {
   let mockCanvas: any;

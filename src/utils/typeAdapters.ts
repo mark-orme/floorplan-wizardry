@@ -1,5 +1,5 @@
 
-import { Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
+import { Room, Wall, Stroke, FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
 import { Point } from '@/types/core/Point';
 
 /**
@@ -71,6 +71,53 @@ export const adaptStroke = (stroke: Partial<Stroke>): Stroke => {
     color: stroke.color || '#000000',
     thickness: stroke.thickness || 1,
     floorPlanId: stroke.floorPlanId || 'default-floor-plan'
+  };
+};
+
+/**
+ * Adapts a floor plan metadata object to ensure it meets the required interface
+ * @param metadata The metadata to adapt
+ * @returns A metadata object that conforms to the FloorPlanMetadata interface
+ */
+export const adaptMetadata = (metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata => {
+  const now = new Date().toISOString();
+  return {
+    createdAt: metadata.createdAt || now,
+    updatedAt: metadata.updatedAt || now,
+    version: metadata.version || '1.0',
+    paperSize: metadata.paperSize || 'A4',
+    level: metadata.level || 0,
+    author: metadata.author || 'User',
+    dateCreated: metadata.dateCreated || now,
+    lastModified: metadata.lastModified || now,
+    notes: metadata.notes || ''
+  };
+};
+
+/**
+ * Adapts a floor plan object to ensure it meets the required interface
+ * @param floorPlan The floor plan to adapt
+ * @returns A floor plan object that conforms to the FloorPlan interface
+ */
+export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
+  const now = new Date().toISOString();
+  return {
+    id: floorPlan.id || `floor-${Date.now()}`,
+    name: floorPlan.name || 'Untitled Floor Plan',
+    label: floorPlan.label || floorPlan.name || 'Untitled',
+    walls: floorPlan.walls || [],
+    rooms: floorPlan.rooms || [],
+    strokes: floorPlan.strokes || [],
+    canvasData: floorPlan.canvasData || null,
+    canvasJson: floorPlan.canvasJson || null,
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    gia: floorPlan.gia || 0,
+    level: floorPlan.level || 0,
+    index: floorPlan.index || 0,
+    metadata: adaptMetadata(floorPlan.metadata),
+    data: floorPlan.data || {},
+    userId: floorPlan.userId || 'default-user'
   };
 };
 

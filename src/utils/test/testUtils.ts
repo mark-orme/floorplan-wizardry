@@ -6,7 +6,7 @@
  */
 
 // Re-export specific utilities from test fixtures
-import { createTestPoint, createMockFunctionParams } from './mockUtils';
+import { createTestPoint, createMockFunctionParams } from './typedTestFixtures';
 import { adaptRoom, adaptWall, adaptStroke } from '@/utils/typeAdapters';
 import {
   createTestFloorPlan,

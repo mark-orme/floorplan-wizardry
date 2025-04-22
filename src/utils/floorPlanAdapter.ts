@@ -5,8 +5,10 @@
  * @module utils/floorPlanAdapter
  */
 
-// Re-export from index module
+// Re-export from floorPlanAdapter modules
 export * from './floorPlanAdapter/index';
+export * from './floorPlanAdapter/converters';
+export * from './floorPlanAdapter/floorPlanTypeAdapter';
 
 // Re-export drawing mode normalization
 export const normalizeDrawingMode = (mode: string): string => {
