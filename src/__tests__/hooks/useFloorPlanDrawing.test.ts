@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
 
 describe('useFloorPlanDrawing', () => {
   const mockCanvas = {
@@ -29,7 +30,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate,
       isActive: true,
-      inputMethod: 'mouse',
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -44,7 +45,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate,
       isActive: true,
-      inputMethod: 'mouse',
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -65,7 +66,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.DRAW,
       onFloorPlanUpdate,
       isActive: true,
-      inputMethod: 'mouse',
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -85,7 +86,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate,
       isActive: true,
-      inputMethod: 'mouse',
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -104,7 +105,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.WALL,
       onFloorPlanUpdate,
       isActive: true,
-      inputMethod: 'mouse',
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));

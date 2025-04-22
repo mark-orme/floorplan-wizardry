@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -12,6 +13,7 @@ export interface UseStraightLineToolOptions {
   setInputMethod?: (method: InputMethod) => void;
   canvas?: Canvas | null;
   enabled?: boolean;
+  lineColor?: string;
 }
 
 export interface UseStraightLineToolResult {
@@ -49,7 +51,8 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     isPencilMode = false, 
     setInputMethod: externalSetInputMethod,
     canvas = null,
-    enabled = true
+    enabled = true,
+    lineColor = '#000000'
   } = options;
   
   const [isEnabled, setIsEnabled] = useState<boolean>(enabled);
@@ -88,7 +91,8 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     isActive,
     inputMethod: actualInputMethod,
     isPencilMode,
-    setInputMethod: actualSetInputMethod
+    setInputMethod: actualSetInputMethod,
+    lineColor
   });
   
   const toggleGridSnapping = useCallback(() => {

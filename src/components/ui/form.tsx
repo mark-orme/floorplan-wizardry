@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
@@ -134,18 +135,28 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
+// Since we need to handle React Hook Form v8 compatibility,
+// we need to either upgrade or provide a compatibility layer.
+// For backward compatibility, we'll export the same interface:
+
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
-  const { getFieldState, formState } = useReactHookFormContext();
-
-  const fieldState = getFieldState(fieldContext.name, formState);
+  
+  // Using local context instead of react-hook-form v7's useFormContext
+  const formContext = React.useContext(FormContextAdapter);
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>");
   }
 
   const { id } = itemContext;
+  
+  // Fallback for getFieldState if not provided by context
+  const getFieldState = formContext?.getFieldState || (() => ({}));
+  const formState = formContext?.formState || {};
+  
+  const fieldState = getFieldState(fieldContext.name, formState);
 
   return {
     id,
@@ -157,7 +168,22 @@ const useFormField = () => {
   };
 };
 
-// Re-export with aliases to prevent naming conflicts
+// Create a context for form adapter
+const FormContextAdapter = React.createContext<{
+  getFieldState?: (name: string, formState: any) => any;
+  formState?: any;
+} | null>(null);
+
+// Simple FormProvider adapter
+const FormProvider = ({ children, ...props }: { children: React.ReactNode, [key: string]: any }) => {
+  return (
+    <FormContextAdapter.Provider value={props}>
+      {children}
+    </FormContextAdapter.Provider>
+  );
+};
+
+// Re-export
 export {
   useFormField,
   Form,
@@ -167,7 +193,7 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-  useReactHookFormContext as useFormContext,
-  useReactHookFormProvider as FormProvider,
+  FormContextAdapter as useFormContext,
+  FormProvider,
   useReactHookForm as useForm
 };

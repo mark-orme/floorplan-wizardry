@@ -1,129 +1,129 @@
 
-import React, { useRef, useEffect, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
-import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
-import { toast } from "sonner";
-import { useGeometryWorker } from "@/hooks/useGeometryWorker";
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import useResizeObserver from '@/hooks/useResizeObserver';
+import { FloorPlan } from '@/types/core/FloorPlan';
 
 interface VirtualizedFloorPlanCanvasProps {
-  width?: number;
-  height?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
-  onCanvasError?: (error: Error) => void;
-  showPerformanceMetrics?: boolean;
+  floorPlan: FloorPlan;
+  onFloorPlanUpdate: (floorPlan: FloorPlan) => void;
+  handleCanvasError: (err: Error) => void; // Renamed from onErrorCallback to match expected API
+  resetCanvasError: () => void;
+  hasError: boolean;
+  errorMessage: string;
 }
 
-export const VirtualizedFloorPlanCanvas: React.FC<VirtualizedFloorPlanCanvasProps> = ({
-  width = 800,
-  height = 600,
-  onCanvasReady,
-  onCanvasError,
-  showPerformanceMetrics = process.env.NODE_ENV === 'development'
+const VirtualizedFloorPlanCanvas: React.FC<VirtualizedFloorPlanCanvasProps> = ({
+  floorPlan,
+  onFloorPlanUpdate,
+  handleCanvasError,
+  resetCanvasError,
+  hasError,
+  errorMessage
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
-  const { handleCanvasError, resetCanvasError } = useCanvasErrorHandling({
-    onCanvasError
-  });
+  const dimensions = useResizeObserver(containerRef);
   
-  // Initialize geometry worker for offloading calculations
-  const { isReady: workerReady, calculateArea } = useGeometryWorker();
-  
-  // Use virtualized canvas for performance
-  const {
-    performanceMetrics,
-    virtualizationEnabled,
-    toggleVirtualization,
-    refreshVirtualization
-  } = useVirtualizedCanvas(fabricCanvasRef, {
-    enabled: true,
-    autoToggle: true
-  });
-  
-  // Initialize canvas
+  // Initialize the canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
     try {
-      // Apply CSP headers meta tag
-      if (typeof document !== 'undefined') {
-        const metaElement = document.createElement('meta');
-        metaElement.httpEquiv = 'Content-Security-Policy';
-        metaElement.content = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'";
-        document.head.appendChild(metaElement);
-      }
+      // Clear any previous errors
+      resetCanvasError();
       
+      // Create a new canvas
       const canvas = new FabricCanvas(canvasRef.current, {
-        width,
-        height,
-        backgroundColor: "#ffffff",
-        renderOnAddRemove: false,
-        enableRetinaScaling: true
+        width: dimensions?.width || 800,
+        height: dimensions?.height || 600,
+        selection: true,
+        renderOnAddRemove: true
       });
       
-      // Enable optimizations for canvas
-      canvas.skipOffscreen = true;
-      
       fabricCanvasRef.current = canvas;
-      setIsReady(true);
       
-      // Notify parent
-      if (onCanvasReady) {
-        onCanvasReady(canvas);
+      // Load the floor plan data if available
+      if (floorPlan.canvasJson) {
+        canvas.loadFromJSON(floorPlan.canvasJson, canvas.renderAll.bind(canvas));
       }
       
-      // Log worker status
-      console.log("Geometry worker ready:", workerReady);
-      
-      // Generate CSRF token
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      console.log("CSRF Protection active:", !!csrfToken);
-      
+      // Clean up on unmount
       return () => {
         canvas.dispose();
         fabricCanvasRef.current = null;
       };
     } catch (error) {
-      handleCanvasError(error instanceof Error ? error : new Error('Failed to initialize canvas'));
-      toast.error("Failed to initialize canvas");
+      // Use the renamed callback for error handling
+      handleCanvasError(error instanceof Error ? error : new Error('Canvas initialization failed'));
     }
-  }, [width, height, onCanvasReady, handleCanvasError, workerReady]);
+  }, [dimensions, floorPlan.canvasJson, handleCanvasError, resetCanvasError]);
   
-  // Refresh virtualization on resize
+  // Handle resize
   useEffect(() => {
-    if (isReady) {
-      refreshVirtualization();
+    if (!fabricCanvasRef.current || !dimensions) return;
+    
+    try {
+      fabricCanvasRef.current.setDimensions({
+        width: dimensions.width,
+        height: dimensions.height
+      });
+      fabricCanvasRef.current.renderAll();
+    } catch (error) {
+      handleCanvasError(error instanceof Error ? error : new Error('Canvas resize failed'));
     }
-  }, [width, height, isReady, refreshVirtualization]);
+  }, [dimensions, handleCanvasError]);
   
-  // Display performance metrics
-  const performanceDisplay = showPerformanceMetrics && (
-    <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
-      <div>FPS: {performanceMetrics?.fps || 0}</div>
-      <div>Objects: {performanceMetrics?.objectCount || 0}</div>
-      <div>Visible: {performanceMetrics?.visibleObjectCount || 0}</div>
-      <div>Worker: {workerReady ? 'Ready' : 'Initializing'}</div>
-      <button
-        onClick={() => toggleVirtualization()}
-        className="mt-1 px-2 py-1 bg-blue-100 rounded text-xs"
-      >
-        {virtualizationEnabled ? 'Disable' : 'Enable'} Virtualization
-      </button>
-    </div>
-  );
+  // Save changes to floor plan
+  const saveChanges = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    
+    try {
+      const updatedFloorPlan = {
+        ...floorPlan,
+        canvasJson: JSON.stringify(fabricCanvasRef.current.toJSON())
+      };
+      
+      onFloorPlanUpdate(updatedFloorPlan);
+    } catch (error) {
+      handleCanvasError(error instanceof Error ? error : new Error('Failed to save canvas changes'));
+    }
+  }, [floorPlan, onFloorPlanUpdate, handleCanvasError]);
+  
+  // Auto-save changes when objects are modified
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    const handleObjectModified = () => {
+      saveChanges();
+    };
+    
+    canvas.on('object:modified', handleObjectModified);
+    
+    return () => {
+      canvas.off('object:modified', handleObjectModified);
+    };
+  }, [saveChanges]);
   
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        className="border border-gray-200 rounded"
-        data-testid="virtualized-floor-plan-canvas"
-        aria-label="Floor plan canvas"
-      />
-      {performanceDisplay}
+    <div 
+      ref={containerRef} 
+      className="w-full h-full relative"
+      style={{ minHeight: '300px' }}
+    >
+      {hasError ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-50 text-red-500">
+          <p>{errorMessage || 'An error occurred with the canvas'}</p>
+        </div>
+      ) : (
+        <canvas 
+          ref={canvasRef} 
+          className="w-full h-full border border-gray-200"
+        />
+      )}
     </div>
   );
 };

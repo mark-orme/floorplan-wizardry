@@ -1,20 +1,34 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStraightLineTool } from '@/hooks/straightLineTool';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
+import { Canvas } from 'fabric';
 
 export const StraightLineToolDemo: React.FC = () => {
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
+  
+  useEffect(() => {
+    if (canvasRef.current) {
+      const canvas = new Canvas(canvasRef.current);
+      setFabricCanvas(canvas);
+      return () => {
+        canvas.dispose();
+      };
+    }
+  }, []);
   
   // Call the hook with required options
   const straightLineTool = useStraightLineTool({
     isActive: true,
     inputMethod: InputMethod.MOUSE,
     isPencilMode: false,
-    setInputMethod: () => {} // no-op function for demo
+    canvas: fabricCanvas,
+    setInputMethod: () => {}  // no-op function for demo
   });
   
   return (
@@ -50,7 +64,7 @@ export const StraightLineToolDemo: React.FC = () => {
       </div>
       
       <div className="w-full h-[300px] border border-gray-200 rounded-md bg-gray-50 flex items-center justify-center">
-        <p className="text-muted-foreground">Canvas will render here</p>
+        <canvas ref={canvasRef} width={600} height={300} />
       </div>
     </div>
   );
