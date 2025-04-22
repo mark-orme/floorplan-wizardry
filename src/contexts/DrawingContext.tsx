@@ -22,9 +22,9 @@ interface DrawingContextType {
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   // Additional properties needed for other components
-  activeTool?: DrawingMode; // Alias for tool for compatibility
-  setActiveTool?: React.Dispatch<React.SetStateAction<DrawingMode>>; // Alias for setTool for compatibility
-  addToHistory?: (state: any) => void; // Alias for addToUndoStack for compatibility
+  activeTool: DrawingMode; // Alias for tool for compatibility
+  setActiveTool: React.Dispatch<React.SetStateAction<DrawingMode>>; // Alias for setTool for compatibility
+  addToHistory: (state: any) => void; // Alias for addToUndoStack for compatibility
 }
 
 const DrawingContext = createContext<DrawingContextType | null>(null);

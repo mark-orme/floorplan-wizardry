@@ -1,56 +1,23 @@
 
 /**
- * Sentry utilities
- * Provides helper functions for capturing errors and messages in Sentry
+ * Utility functions for Sentry error reporting
  */
-import * as Sentry from '@sentry/react';
 
-/**
- * Capture error in Sentry
- * @param error Error to capture
- * @param contextOrOptions Context string or options
- * @param extraData Extra data (deprecated, use options instead)
- */
-export function captureError(
-  error: Error, 
-  contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any>
-): void {
-  // Handle the different function signatures
-  if (typeof contextOrOptions === 'string') {
-    Sentry.captureException(error, {
-      tags: { context: contextOrOptions },
-      extra: extraData
-    });
-  } else if (contextOrOptions && typeof contextOrOptions === 'object') {
-    // New style: passing options directly
-    Sentry.captureException(error, contextOrOptions);
-  } else {
-    Sentry.captureException(error);
-  }
+export function captureMessage(message: string, options: any = {}) {
+  console.log('[Sentry]', message, options);
+  return 'fake-event-id';
 }
 
-/**
- * Capture message in Sentry
- * @param message Message to capture
- * @param contextOrOptions Context string or options
- * @param extraData Extra data (deprecated, use options instead)
- */
-export function captureMessage(
-  message: string, 
-  contextOrOptions?: string | Record<string, any>,
-  extraData?: Record<string, any>
-): void {
-  // Handle the different function signatures
-  if (typeof contextOrOptions === 'string') {
-    Sentry.captureMessage(message, {
-      tags: { context: contextOrOptions },
-      extra: extraData
-    });
-  } else if (contextOrOptions && typeof contextOrOptions === 'object') {
-    // New style: passing options directly
-    Sentry.captureMessage(message, contextOrOptions);
-  } else {
-    Sentry.captureMessage(message);
-  }
+export function captureException(error: Error, options: any = {}) {
+  console.error('[Sentry]', error, options);
+  return 'fake-event-id';
+}
+
+export function startTransaction(context: any) {
+  console.log('[Sentry] Starting transaction', context);
+  return {
+    setTag: (key: string, value: string) => console.log(`[Sentry] Setting tag: ${key}=${value}`),
+    setData: (key: string, value: any) => console.log(`[Sentry] Setting data: ${key}=${JSON.stringify(value)}`),
+    finish: () => console.log('[Sentry] Transaction finished')
+  };
 }

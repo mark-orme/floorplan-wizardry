@@ -1,60 +1,59 @@
 
-import React, { useState } from 'react';
-import { DrawingProvider } from '@/contexts/DrawingContext';
-import { Canvas } from '@/components/Canvas';
-import { CanvasTools } from '@/components/CanvasTools';
-import { Canvas as FabricCanvas } from 'fabric';
-import { useCanvasContext } from '@/contexts/CanvasContext';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { WelcomeSection } from '@/components/properties/WelcomeSection';
+import { PropertyHeader } from '@/components/properties/PropertyHeader';
+import { EmptyState } from '@/components/properties/EmptyState';
 
-export default function Index() {
-  const { canvas, setCanvas } = useCanvasContext();
-  const [debugEnabled, setDebugEnabled] = useState(false);
+const Index: React.FC = () => {
+  const navigate = useNavigate();
+  const isAuthenticated = false;
+  const userRole = null;
   
-  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
-    setCanvas(fabricCanvas);
+  // Handle sign in
+  const handleSignIn = () => {
+    console.log('Sign in clicked');
+  };
+  
+  // Handle add property
+  const handleAddProperty = () => {
+    console.log('Add property clicked');
+  };
+  
+  // Handle go to floor plans
+  const handleGoToFloorplans = () => {
+    navigate('/floorplans');
+  };
+  
+  // Handle add test data
+  const handleAddTestData = () => {
+    console.log('Add test data clicked');
   };
   
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Floor Plan Editor</h1>
+      <PropertyHeader 
+        isAuthenticated={isAuthenticated} 
+        userRole={userRole} 
+        onAddProperty={handleAddProperty} 
+        onGoToFloorplans={handleGoToFloorplans} 
+      />
       
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1">
-          <DrawingProvider canvas={canvas}>
-            <div className="border rounded-lg overflow-hidden shadow-lg bg-white">
-              <Canvas 
-                width={800} 
-                height={600} 
-                onCanvasReady={handleCanvasReady}
-                showGridDebug={debugEnabled}
-              />
-            </div>
-            
-            {canvas && (
-              <div className="mt-4">
-                <CanvasTools />
-              </div>
-            )}
-          </DrawingProvider>
-        </div>
-        
-        <div className="lg:w-1/4">
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">Settings</h2>
-            
-            <div className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                id="debug-toggle"
-                checked={debugEnabled}
-                onChange={() => setDebugEnabled(!debugEnabled)}
-                className="mr-2"
-              />
-              <label htmlFor="debug-toggle">Show Debug Info</label>
-            </div>
-          </div>
-        </div>
-      </div>
+      {!isAuthenticated ? (
+        <WelcomeSection 
+          onSignIn={handleSignIn} 
+          onGoToFloorplans={handleGoToFloorplans} 
+        />
+      ) : (
+        <EmptyState 
+          searchTerm="" 
+          onAddProperty={handleAddProperty} 
+          onAddTestData={handleAddTestData} 
+          onGoToFloorplans={handleGoToFloorplans} 
+        />
+      )}
     </div>
   );
-}
+};
+
+export default Index;

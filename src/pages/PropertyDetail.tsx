@@ -1,38 +1,20 @@
 
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { PropertyDetailContent } from '@/components/property/PropertyDetailContent';
-import { PropertyStatus } from '@/types/propertyTypes';
-import { toast } from 'sonner';
+import { FloorPlanEditor } from '@/components/FloorPlanEditor';
 
-export default function PropertyDetail() {
+const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user, userRole } = useAuth();
-
-  // Fixed to return void as expected
-  const handleStatusChange = async (propertyId: string, status: PropertyStatus): Promise<void> => {
-    try {
-      console.log(`Updating property ${propertyId} status to ${status}`);
-      // In a real implementation, this would call a Supabase function
-      toast.success(`Property status updated to ${status}`);
-      // No return value to match void return type
-    } catch (error) {
-      console.error('Error updating property status:', error);
-      toast.error('Failed to update property status');
-    }
-  };
-
-  if (!id) {
-    return <div>Property ID is required</div>;
-  }
-
+  
   return (
-    <PropertyDetailContent
-      id={id}
-      user={user}
-      userRole={userRole}
-      onStatusChange={handleStatusChange}
-    />
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Property Detail: {id}</h1>
+      
+      <div className="bg-white rounded-lg shadow-lg p-4">
+        <FloorPlanEditor />
+      </div>
+    </div>
   );
-}
+};
+
+export default PropertyDetail;

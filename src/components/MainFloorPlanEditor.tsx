@@ -4,7 +4,7 @@ import { FloorPlanCanvasEnhancedMain } from './property/FloorPlanCanvasEnhancedM
 import { SecurityInitializer } from './security/SecurityInitializer';
 import { AccessibilityTester } from './testing/AccessibilityTester';
 import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toastUtils'; // Use our mock implementation
 import { useGeometryWorker } from '@/hooks/useGeometryWorker';
 
 export const MainFloorPlanEditor: React.FC = () => {

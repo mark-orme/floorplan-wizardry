@@ -1,5 +1,5 @@
 
-import { FloorPlan } from '@/types/FloorPlan';
+import { FloorPlan } from '@/types/core';
 
 // Mock implementation for useSyncedFloorPlans
 export const useSyncedFloorPlans = () => {

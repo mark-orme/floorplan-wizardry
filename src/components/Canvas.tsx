@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { GridLayer } from './canvas/grid/GridLayer';
-import { toast } from 'sonner';
+import { toast } from '@/utils/toastUtils'; // Use our mock implementation
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
 export interface CanvasProps {

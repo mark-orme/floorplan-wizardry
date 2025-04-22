@@ -1,19 +1,21 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface CanvasContextType {
   canvas: FabricCanvas | null;
   setCanvas: React.Dispatch<React.SetStateAction<FabricCanvas | null>>;
+  canvasRef: React.RefObject<HTMLCanvasElement>; // Added canvasRef
 }
 
 const CanvasContext = createContext<CanvasContextType | null>(null);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   return (
-    <CanvasContext.Provider value={{ canvas, setCanvas }}>
+    <CanvasContext.Provider value={{ canvas, setCanvas, canvasRef }}>
       {children}
     </CanvasContext.Provider>
   );

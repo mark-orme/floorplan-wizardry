@@ -1,204 +1,149 @@
-/**
- * Enhanced Canvas Controller Component
- * Provides unified state management and control for the canvas
- * @module components/canvas/controller/CanvasControllerEnhanced
- */
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { DebugInfoState } from "@/types/core/DebugInfo";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { useUnifiedGridManagement } from "@/hooks/useUnifiedGridManagement";
-import { useSyncedFloorPlans } from "@/hooks/useSyncedFloorPlans";
-import { toast } from "sonner";
 
-/**
- * Default debug information state
- * Initialized with all error flags set to false and timestamps to 0
- */
-const initialState: DebugInfoState = {
-  hasError: false,
-  errorMessage: '',
-  lastInitTime: 0,
-  lastGridCreationTime: 0,
-  currentFps: 0,
-  objectCount: 0,
-  canvasDimensions: {
-    width: 0,
-    height: 0
-  },
-  flags: {
-    gridEnabled: true,
-    snapToGridEnabled: false,
-    debugLoggingEnabled: false
-  },
-  eventHandlersSet: false,
-  canvasEventsRegistered: false,
-  gridRendered: false,
-  toolsInitialized: false,
-  gridCreated: false,
-  canvasInitialized: false,
-  dimensionsSet: false,
-  brushInitialized: false,
-  canvasReady: false,
-  lastRefresh: Date.now()
-};
+import React, { useState, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { toast } from '@/utils/toastUtils';
+import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
+import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
+import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
+import { DrawingMode } from '@/constants/drawingModes';
+import { FloorPlan } from '@/types/core';
 
-/**
- * Canvas Controller context type definition
- * Defines the shape of data and functions provided by the context
- * @interface CanvasControllerContextType
- */
-interface CanvasControllerContextType {
-  tool: DrawingMode;
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  zoomLevel: number;
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  lineThickness: number;
-  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
-  lineColor: string;
-  setLineColor: React.Dispatch<React.SetStateAction<string>>;
-  snapToGrid: boolean;
-  setSnapToGrid: React.Dispatch<React.SetStateAction<boolean>>;
-  floorPlans: FloorPlan[];
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  currentFloor: number;
-  setCurrentFloor: React.Dispatch<React.SetStateAction<number>>;
-  gia: number;
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  debugInfo: DebugInfoState;
-  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  hasError: boolean;
-  setHasError: React.Dispatch<React.SetStateAction<boolean>>;
-  errorMessage: string;
-  setErrorMessage: React.Dispatch<React.SetStateAction<string>>;
-  createGrid: () => FabricObject[];
-  checkAndFixGrid: () => void;
-  forceGridCreation: () => FabricObject[];
+interface CanvasControllerEnhancedProps {
+  onCanvasReady?: (canvas: FabricCanvas) => void;
+  onError?: (error: Error) => void;
+  initialTool?: DrawingMode;
+  width?: number;
+  height?: number;
+  showDebug?: boolean;
 }
 
-// Create the context with initial null value
-const CanvasControllerContext = createContext<CanvasControllerContextType | null>(null);
-
-/**
- * Custom hook to access the Canvas Controller context
- * Throws an error if used outside of a CanvasControllerProvider
- * @returns {CanvasControllerContextType} The canvas controller context
- */
-export const useCanvasController = () => {
-  const context = useContext(CanvasControllerContext);
-  if (!context) {
-    throw new Error("useCanvasController must be used within a CanvasControllerProvider");
-  }
-  return context;
-};
-
-/**
- * Props for the Canvas Controller Provider
- * @interface CanvasControllerProviderProps
- */
-interface CanvasControllerProviderProps {
-  /** React children to be wrapped by the provider */
-  children: React.ReactNode;
-}
-
-/**
- * Enhanced Canvas Controller Provider Component
- * Manages canvas state, tools, and grid functionality
- * 
- * @param {CanvasControllerProviderProps} props - Component properties
- * @returns {JSX.Element} Rendered context provider
- */
-export const CanvasControllerEnhanced: React.FC<CanvasControllerProviderProps> = ({ children }) => {
-  // Drawing tool and settings state
-  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [lineThickness, setLineThickness] = useState(2);
-  const [lineColor, setLineColor] = useState("#000000");
-  const [snapToGrid, setSnapToGrid] = useState(true);
+export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> = ({
+  onCanvasReady,
+  onError,
+  initialTool = DrawingMode.SELECT,
+  width = 800,
+  height = 600,
+  showDebug = false
+}) => {
+  // Canvas refs
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   
-  // Floor plan state
+  // State
+  const [tool, setTool] = useState<DrawingMode>(initialTool);
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
   const [currentFloor, setCurrentFloor] = useState(0);
   const [gia, setGia] = useState(0);
+  const [lineThickness, setLineThickness] = useState(2);
+  const [lineColor, setLineColor] = useState('#000000');
+  const [drawingState, setDrawingState] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Debugging and error state
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(initialState);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  // History
+  const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
-  // References
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const canvasDimensions = useRef({ width: 800, height: 600 });
-  
-  // Initialize grid management system
-  const { 
-    gridLayerRef, 
-    createGrid, 
-    checkAndFixGrid, 
-    forceGridCreation 
-  } = useUnifiedGridManagement({
+  // Initialize controller dependencies
+  const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
     fabricCanvasRef,
-    canvasDimensions: canvasDimensions.current,
-    zoomLevel
+    canvasRef
   });
   
-  // Initialize floor plan synchronization
-  // Note: No arguments needed for useSyncedFloorPlans
-  useSyncedFloorPlans();
-  
-  // Handle error state changes
-  useEffect(() => {
-    if (hasError) {
-      toast.error(errorMessage || "An error occurred in the canvas controller");
-      console.error("Canvas controller error:", errorMessage);
-      
-      // Update debug info with error details
-      setDebugInfo(prev => ({
-        ...prev,
-        hasError: true,
-        errorMessage
-      }));
-    }
-  }, [hasError, errorMessage]);
-  
-  // Create the context value object with all required properties
-  const contextValue: CanvasControllerContextType = {
-    tool,
-    setTool,
-    zoomLevel,
-    setZoomLevel,
-    lineThickness,
-    setLineThickness,
-    lineColor,
-    setLineColor,
-    snapToGrid,
-    setSnapToGrid,
-    floorPlans,
-    setFloorPlans,
-    currentFloor,
-    setCurrentFloor,
-    gia,
-    setGia,
-    debugInfo,
-    setDebugInfo,
+  // Drawing state handling
+  useCanvasControllerDrawingState({
     fabricCanvasRef,
     gridLayerRef,
-    hasError,
-    setHasError,
-    errorMessage,
-    setErrorMessage,
-    createGrid,
-    checkAndFixGrid,
-    forceGridCreation
-  };
+    historyRef,
+    tool,
+    currentFloor,
+    setFloorPlans,
+    setGia,
+    lineThickness,
+    lineColor,
+    deleteSelectedObjects: () => {},
+    setDrawingState
+  });
   
-  // Provide the context to all children components
+  // Floor plans handling
+  const { 
+    drawFloorPlan,
+    handleFloorSelect,
+    handleAddFloor,
+    loadData
+  } = useCanvasControllerFloorPlans({
+    fabricCanvasRef,
+    gridLayerRef,
+    floorPlans,
+    currentFloor,
+    isLoading,
+    setGia,
+    setFloorPlans,
+    setCurrentFloor,
+    clearDrawings: () => {},
+    createGrid,
+    recalculateGIA: () => {}
+  });
+  
+  // Initialize canvas
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    try {
+      const canvas = new FabricCanvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        selection: true,
+        renderOnAddRemove: true
+      });
+      
+      // Store reference
+      fabricCanvasRef.current = canvas;
+      
+      // Create grid
+      const gridObjects = createGrid(canvas);
+      gridLayerRef.current = gridObjects;
+      
+      // Notify parent
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
+      
+      // Clean up
+      return () => {
+        canvas.dispose();
+        fabricCanvasRef.current = null;
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      if (error instanceof Error) {
+        onError?.(error);
+        toast.error(`Canvas error: ${error.message}`);
+      }
+    }
+  }, [width, height]);
+  
+  // Load floor plans
+  useEffect(() => {
+    loadData();
+  }, []);
+  
   return (
-    <CanvasControllerContext.Provider value={contextValue}>
-      {children}
-    </CanvasControllerContext.Provider>
+    <div className="canvas-controller-enhanced">
+      <canvas
+        ref={canvasRef}
+        className="border border-gray-200 shadow-sm"
+        width={width}
+        height={height}
+      />
+      
+      {showDebug && (
+        <div className="mt-4 text-sm">
+          <p>Tool: {tool}</p>
+          <p>Floor: {currentFloor}</p>
+          <p>GIA: {gia} m²</p>
+          <p>Floor Plans: {floorPlans.length}</p>
+        </div>
+      )}
+    </div>
   );
 };

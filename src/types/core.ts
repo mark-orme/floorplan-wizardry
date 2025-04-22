@@ -1,36 +1,19 @@
 
 /**
- * Core type definitions
- * The single source of truth for all floor plan related types
+ * Centralized type definitions
+ * This file serves as the single source of truth for core types
  */
-import { v4 as uuidv4 } from 'uuid';
 
-// ----- Basic primitive types -----
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Point {
   x: number;
   y: number;
 }
 
-// ----- Enum type definitions -----
-
-export enum PaperSize {
-  A0 = 'A0',
-  A1 = 'A1',
-  A2 = 'A2',
-  A3 = 'A3',
-  A4 = 'A4',
-  A5 = 'A5',
-  Letter = 'Letter',
-  Legal = 'Legal',
-  Tabloid = 'Tabloid',
-  Custom = 'Custom'
+export function createPoint(x = 0, y = 0): Point {
+  return { x, y };
 }
-
-export type StrokeTypeLiteral = 'freehand' | 'straight' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'line' | 'polyline' | 'room';
-export type RoomTypeLiteral = 'living' | 'bedroom' | 'bathroom' | 'kitchen' | 'dining' | 'office' | 'other';
-
-// ----- Core entity types -----
 
 export interface Wall {
   id: string;
@@ -40,9 +23,6 @@ export interface Wall {
   length: number;
   color: string;
   roomIds: string[];
-  height?: number;
-  type?: string;
-  angle?: number;
 }
 
 export interface Room {
@@ -53,12 +33,6 @@ export interface Room {
   vertices: Point[];
   area: number;
   color: string;
-  level?: number;
-  walls?: string[];
-  center?: Point;
-  perimeter?: number;
-  labelPosition?: Point;
-  floorPlanId?: string;
 }
 
 export interface Stroke {
@@ -68,59 +42,38 @@ export interface Stroke {
   width: number;
   thickness: number;
   type: StrokeTypeLiteral;
-  floorPlanId?: string;
-}
-
-export interface FloorPlanMetadata {
-  createdAt: string;
-  updatedAt: string;
-  paperSize: PaperSize;
-  level: number;
-  version: string;
-  author: string;
-  notes?: string;
-  dateCreated?: string;
-  lastModified?: string;
 }
 
 export interface FloorPlan {
   id: string;
   name: string;
-  label: string;
+  label?: string;
+  index?: number;
+  strokes: Stroke[];
   walls: Wall[];
   rooms: Room[];
-  strokes: Stroke[];
-  createdAt: string;
-  updatedAt: string;
-  gia: number;
-  level: number;
-  index: number;
-  metadata: FloorPlanMetadata;
-  canvasData?: any;
-  canvasJson?: string;
-  data: Record<string, any>;
-  userId: string;
+  gia?: number;
+  level?: number;
+  canvasData?: CanvasData | null;
+  canvasJson?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  metadata?: any;
+  data?: any;
+  userId?: string;
   propertyId?: string;
 }
 
-// ----- Helper functions -----
-
-export function asStrokeType(type: string): StrokeTypeLiteral {
-  const validTypes: StrokeTypeLiteral[] = ['freehand', 'straight', 'wall', 'door', 'window', 'furniture', 'annotation', 'line', 'polyline', 'room'];
-  return validTypes.includes(type as StrokeTypeLiteral) 
-    ? type as StrokeTypeLiteral 
-    : 'freehand';
+export interface CanvasData {
+  zoom: number;
+  offset: Point;
 }
 
-export function asRoomType(type: string): RoomTypeLiteral {
-  const validTypes: RoomTypeLiteral[] = ['living', 'bedroom', 'bathroom', 'kitchen', 'dining', 'office', 'other'];
-  return validTypes.includes(type as RoomTypeLiteral)
-    ? type as RoomTypeLiteral
-    : 'other';
-}
+export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'other';
+export type StrokeTypeLiteral = 'line' | 'curve' | 'freehand' | 'rect' | 'circle';
 
+// Helper functions
 export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
   return {
     id: partialFloorPlan.id || uuidv4(),
     name: partialFloorPlan.name || 'Untitled Floor Plan',
@@ -130,96 +83,67 @@ export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}):
     strokes: partialFloorPlan.strokes || [],
     canvasData: partialFloorPlan.canvasData || null,
     canvasJson: partialFloorPlan.canvasJson || null,
-    createdAt: partialFloorPlan.createdAt || now,
-    updatedAt: partialFloorPlan.updatedAt || now,
+    createdAt: partialFloorPlan.createdAt || new Date().toISOString(),
+    updatedAt: partialFloorPlan.updatedAt || new Date().toISOString(),
     gia: partialFloorPlan.gia || 0,
     level: partialFloorPlan.level || 0,
     index: partialFloorPlan.index || 0,
-    metadata: partialFloorPlan.metadata || createEmptyFloorPlanMetadata(),
+    metadata: partialFloorPlan.metadata || {},
     data: partialFloorPlan.data || {},
-    userId: partialFloorPlan.userId || ''
+    userId: partialFloorPlan.userId || '',
+    propertyId: partialFloorPlan.propertyId || ''
   };
 }
 
-export function createEmptyFloorPlanMetadata(): FloorPlanMetadata {
-  const now = new Date().toISOString();
+export function createWall(start: Point, end: Point, thickness = 10, color = '#000000'): Wall {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
   return {
-    createdAt: now,
-    updatedAt: now,
-    paperSize: PaperSize.A4,
-    level: 0,
-    version: '1.0',
-    author: 'System',
-    notes: '',
-    dateCreated: now,
-    lastModified: now
+    id: uuidv4(),
+    start,
+    end,
+    thickness,
+    length,
+    color,
+    roomIds: []
   };
 }
 
-export function calculateWallLength(wall: Pick<Wall, 'start' | 'end'>): number {
-  const dx = wall.end.x - wall.start.x;
-  const dy = wall.end.y - wall.start.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-export function createWall(wallData: Omit<Wall, 'length'>): Wall {
+export function createRoom(name: string, vertices: Point[], type: RoomTypeLiteral = 'other', color = '#ffffff'): Room {
   return {
-    ...wallData,
-    length: calculateWallLength(wallData)
+    id: uuidv4(),
+    name,
+    type,
+    points: [...vertices],
+    vertices,
+    area: calculatePolygonArea(vertices),
+    color
   };
 }
 
-export function createPoint(x: number, y: number): Point {
-  return { x, y };
+export function createStroke(points: Point[], color = '#000000', width = 2, type: StrokeTypeLiteral = 'line'): Stroke {
+  return {
+    id: uuidv4(),
+    points,
+    color,
+    width,
+    thickness: width, // For compatibility
+    type
+  };
 }
 
-// For backward compatibility
-export const createTestFloorPlan = createEmptyFloorPlan;
-
-export const GRID_CONSTANTS = {
-  // Grid sizes
-  SMALL_GRID_SIZE: 10,
-  LARGE_GRID_SIZE: 50,
-  GRID_SIZE: 50,
+// Helper function to calculate polygon area
+function calculatePolygonArea(vertices: Point[]): number {
+  if (vertices.length < 3) return 0;
   
-  // Grid colors
-  SMALL_GRID_COLOR: '#f0f0f0',
-  LARGE_GRID_COLOR: '#e0e0e0',
+  let area = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    area += vertices[i].x * vertices[j].y;
+    area -= vertices[j].x * vertices[i].y;
+  }
   
-  // Grid line widths
-  SMALL_GRID_WIDTH: 0.5,
-  LARGE_GRID_WIDTH: 1,
-  
-  // Grid appearance
-  DEFAULT_VISIBLE: true,
-  DEFAULT_GRID_SIZE: 50,
-  DEFAULT_GRID_COLOR: '#e0e0e0',
-  DEFAULT_GRID_OPACITY: 0.5,
-  
-  // Grid interactions
-  ENABLE_SNAPPING: true,
-  SNAP_THRESHOLD: 10,
-  SNAP_DISTANCE: 5,
-  
-  // Grid performance
-  CANVAS_MARGIN: 100,
-  RENDER_VISIBLE_ONLY: true,
-  MAX_GRID_LINES: 1000,
-  GRID_BATCH_SIZE: 100,
-  GRID_RENDER_DELAY: 50,
-  
-  // Grid debugging
-  SHOW_GRID_DEBUG: false,
-  SHOW_GRID_BOUNDARIES: false,
-  SHOW_GRID_STATS: false,
-  SHOW_GRID_SNAPLINES: false,
-  
-  // Grid reliability
-  CHECK_INTERVAL: 5000,
-  MAX_CHECK_COUNT: 10,
-  GRID_RECREATION_DELAY: 500,
-  
-  // Additional constants
-  GRID_AUTO_FIX: true,
-  PIXELS_PER_METER: 100
-};
+  return Math.abs(area / 2);
+}

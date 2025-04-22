@@ -6,6 +6,21 @@ import { TouchGestureHandler } from '../TouchGestureHandler';
 import { ToolVisualizer } from '../ToolVisualizer';
 import { DrawingMode } from '@/constants/drawingModes';
 
+// Define the correct interface for CanvasEventManager props
+interface CanvasEventManagerProps {
+  canvas: FabricCanvas; // Ensure this matches what CanvasEventManager expects
+  tool: DrawingMode;
+  lineColor: string;
+  lineThickness: number;
+  gridLayerRef: React.MutableRefObject<any[]>;
+  saveCurrentState: () => void;
+  undo: () => void;
+  redo: () => void;
+  deleteSelectedObjects: () => void;
+  enableSync?: boolean;
+  onDrawingComplete?: () => void;
+}
+
 interface CanvasToolsProps {
   canvas: FabricCanvas;
   tool: DrawingMode;
