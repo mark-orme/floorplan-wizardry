@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { z } from 'zod';
+import { z, type ZodError } from 'zod';
 
 type ValidationResult = {
   isValid: boolean;
@@ -15,7 +15,7 @@ export const useInputValidation = <T>(schema: z.ZodType<T>) => {
         schema.parse(value);
         return { isValid: true };
       } catch (error) {
-        if (error instanceof z.ZodError) {
+        if (error instanceof ZodError) {
           const errorMessage = error.errors[0]?.message || 'Invalid input';
           return { isValid: false, error: errorMessage };
         }

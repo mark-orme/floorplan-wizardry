@@ -1,6 +1,5 @@
-
 import { useState, useCallback } from 'react';
-import * as z from 'zod';
+import { z, type ZodError } from 'zod';
 
 export interface UseSecureFormOptions<T> {
   schema: z.ZodType<T>;
@@ -64,7 +63,7 @@ export function useSecureForm<T extends Record<string, any>>({
         // Clear errors after successful submission
         setErrors({});
       } catch (error) {
-        if (error instanceof z.ZodError) {
+        if (error instanceof ZodError) {
           // Format Zod errors into a user-friendly format
           const formattedErrors: Record<string, string> = {};
           error.errors.forEach((err) => {
