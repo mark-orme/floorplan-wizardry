@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query';
-import { QueryKey } from '@tanstack/query-core';
+import { QueryKey } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 /**

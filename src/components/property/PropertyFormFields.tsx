@@ -1,7 +1,7 @@
 
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { z } from '@/utils/zod-mock';
+import * as z from 'zod';
 
 // Define a type for UseFormReturn since we don't have access to react-hook-form directly
 interface UseFormReturnType {

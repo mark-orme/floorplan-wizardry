@@ -1,13 +1,16 @@
+
 import React from 'react';
 import { axe, toHaveNoViolations } from 'jest-axe';
 
 export interface AccessibilityTesterProps {
   showResults: boolean;
-  children?: React.ReactNode; // Add children prop
+  autoRun?: boolean;
+  children?: React.ReactNode;
 }
 
 export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({ 
   showResults,
+  autoRun = false,
   children
 }) => {
   React.useEffect(() => {
@@ -35,7 +38,6 @@ export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
   return (
     <div className="accessibility-tester">
       {children}
-      {/* You can add any additional elements or content here */}
     </div>
   );
 };

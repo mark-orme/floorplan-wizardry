@@ -1,77 +1,56 @@
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { PropertyFormValues } from '@/components/property/PropertyFormFields';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Property, PropertyStatus } from "@/types/propertyTypes";
-import { toast } from "sonner";
-import logger from "@/utils/logger";
-import { usePropertyBase } from "./usePropertyBase";
-import { captureError } from "@/utils/sentryUtils";
+interface UsePropertyCreateProps {
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+}
 
-/**
- * Hook for creating new properties
- */
-export const usePropertyCreate = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { checkAuthentication } = usePropertyBase();
+export const usePropertyCreate = ({ onSuccess, onError }: UsePropertyCreateProps = {}) => {
+  const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter();
 
-  // Updated to accept a property data object instead of individual fields
-  const createProperty = async (propertyData: {
-    order_id: string;
-    address: string;
-    client_name: string;
-    branch_name?: string;
-  }) => {
-    setIsLoading(true);
-    
-    try {
-      logger.info("Creating property...", propertyData);
-      
-      // Get current user if logged in
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("User must be authenticated to create a property");
-      }
-      
-      // Create property in Supabase
-      const newProperty = {
-        user_id: user.id,
-        status: PropertyStatus.DRAFT,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        order_id: propertyData.order_id,
-        address: propertyData.address,
-        client_name: propertyData.client_name,
-        branch_name: propertyData.branch_name || "",
-        name: propertyData.address.split(',')[0] // Create a name from address
-      };
-      
-      // Fixed Supabase query syntax
-      const { data, error } = await supabase
-        .from('properties')
-        .insert(newProperty)
-        .select();
-        
-      if (error) {
-        logger.error("Error creating property:", error);
-        captureError(error, 'property-create-supabase-error', {
-          extra: { propertyData }
-        });
-        throw error;
-      }
-      
-      logger.info("Property created successfully:", data[0]);
-      return data[0];
-    } catch (error: any) {
-      logger.error("Error creating property:", error);
-      captureError(error, 'property-create-error', {
-        extra: { propertyData }
-      });
-      return null;
-    } finally {
-      setIsLoading(false);
+  const createProperty = async (propertyData: PropertyFormValues) => {
+    setIsCreating(true);
+
+    const { data, error } = await supabase
+      .from('properties')
+      .insert([propertyData])
+      .select()
+      .single();
+
+    if (error) {
+      setIsCreating(false);
+      toast.error(`Failed to create property: ${error.message}`);
+      onError?.(error);
+      throw error;
     }
+
+    setIsCreating(false);
+    toast.success('Property created successfully!');
+    onSuccess?.();
+    router.push('/properties');
+
+    return data;
   };
 
-  return { createProperty, isLoading, checkAuthentication };
+  const mutation = useMutation(createProperty, {
+    onSuccess: () => {
+      // Success logic already handled in createProperty
+    },
+    onError: (error: Error) => {
+      console.error("Mutation error:", error);
+      // Error logic already handled in createProperty
+    }
+  });
+
+  return {
+    createProperty: mutation.mutate,
+    isCreating,
+    ...mutation,
+  };
 };

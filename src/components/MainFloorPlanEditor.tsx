@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FloorPlanCanvasEnhancedMain } from './property/FloorPlanCanvasEnhancedMain';
 import { SecurityInitializer } from './security/SecurityInitializer';
@@ -109,7 +108,7 @@ export const MainFloorPlanEditor: React.FC = () => {
       </div>
       
       {/* Accessibility testing component */}
-      {accessibilityTestingEnabled && <AccessibilityTester autoRun={false} showResults={true} />}
+      {accessibilityTestingEnabled && <AccessibilityTester showResults={true} />}
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { createQueryHook, createMutationHook } from './useQueryHook';
 import { supabase } from '@/lib/supabase';
 import { Property, PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
 import { useAsyncState } from './useAsyncState';
-import { QueryKey } from '@tanstack/query-core';
+import { QueryKey } from '@tanstack/react-query';
 
 // Generate query keys for properties
 export const propertyKeys = {

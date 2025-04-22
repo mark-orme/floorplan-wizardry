@@ -1,156 +1,123 @@
-
-/**
- * Hook for floor plan drawing functionality
- * @module hooks/useFloorPlanDrawing
- */
 import { useState, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType, calculateWallLength } from '@/types/floor-plan/unifiedTypes';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { v4 as uuidv4 } from 'uuid';
+import { FloorPlan, Wall, Room, Stroke, Point } from '@/types/core';
 import { DrawingMode } from '@/constants/drawingModes';
+import { useFabricHelpers } from '@/hooks/useFabricHelpers';
+import { useObjectActions } from '@/hooks/useObjectActions';
+import { useWallDrawing } from '@/hooks/drawing/useWallDrawing';
+import { useRoomDrawing } from '@/hooks/drawing/useRoomDrawing';
+import { useStrokeDrawing } from '@/hooks/drawing/useStrokeDrawing';
+import { useObjectSelection } from '@/hooks/useObjectSelection';
+import { useObjectSnapping } from '@/hooks/useObjectSnapping';
+import { useHistory } from '@/hooks/useHistory';
+import { useBatchDrawing } from '@/hooks/useBatchDrawing';
 
-export interface UseFloorPlanDrawingProps {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: FabricCanvas;  // For test compatibility
+interface UseFloorPlanDrawingProps {
   floorPlan: FloorPlan;
-  onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
-  tool?: DrawingMode;
-  setFloorPlan?: React.Dispatch<React.SetStateAction<FloorPlan>>;  // For test compatibility
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool: DrawingMode;
+  onFloorPlanUpdate: (floorPlan: FloorPlan) => void;
 }
 
-export interface UseFloorPlanDrawingResult {
-  isDrawing: boolean;
-  setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
-  tool: DrawingMode;  // For test compatibility
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;  // For test compatibility
-  addStroke: (stroke: Stroke) => void;
-  addRoom: (room: Room) => void;  // For test compatibility
-  addWall: (wall: Omit<Wall, 'length'>) => void;
-}
-
-export const useFloorPlanDrawing = ({ 
-  fabricCanvasRef,
-  canvas,  // For test compatibility
+export const useFloorPlanDrawing = ({
   floorPlan,
-  onFloorPlanUpdate,
-  tool = DrawingMode.SELECT,
-  setFloorPlan  // For test compatibility
-}: UseFloorPlanDrawingProps): UseFloorPlanDrawingResult => {
+  fabricCanvasRef,
+  tool,
+  onFloorPlanUpdate
+}: UseFloorPlanDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentTool, setTool] = useState<DrawingMode>(tool);
   
-  // Use either fabricCanvasRef or canvas directly
-  const getCanvas = () => {
-    if (canvas) return canvas;
-    if (fabricCanvasRef?.current) return fabricCanvasRef.current;
-    return null;
-  };
-
-  // Add a stroke to the floor plan
-  const addStroke = useCallback((stroke: Stroke) => {
-    const currentCanvas = getCanvas();
-    if (!currentCanvas) return;
+  // Helpers and Actions
+  const { addWall, addRoom, addStroke, updateObject, deleteObject } = useObjectActions({
+    fabricCanvasRef,
+    onFloorPlanUpdate
+  });
+  
+  const { zoomToExtents } = useFabricHelpers({ fabricCanvasRef });
+  
+  // Drawing Hooks
+  const wallDrawing = useWallDrawing({ fabricCanvasRef, isDrawing, setIsDrawing, addWall });
+  const roomDrawing = useRoomDrawing({ fabricCanvasRef, isDrawing, setIsDrawing, addRoom });
+  const strokeDrawing = useStrokeDrawing({ fabricCanvasRef, isDrawing, setIsDrawing, addStroke });
+  
+  // Selection and Snapping
+  const { handleObjectSelect } = useObjectSelection({ fabricCanvasRef, updateObject });
+  const { snapPoint } = useObjectSnapping({ fabricCanvasRef });
+  
+  // History
+  const { saveState, restoreState } = useHistory({ fabricCanvasRef, floorPlan, onFloorPlanUpdate });
+  
+  // Batch Drawing
+  const { drawBatchedFloorPlan } = useBatchDrawing({ fabricCanvasRef });
+  
+  // Drawing mode switch
+  const handleDrawingEvent = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
     
-    // Ensure stroke has proper type
-    const validatedStroke = {
-      ...stroke,
-      type: asStrokeType(stroke.type)
-    };
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
+    canvas.off('object:moving');
+    canvas.off('object:modified');
+    canvas.off('selection:created');
+    canvas.off('selection:updated');
     
-    // Add the stroke to the canvas
-    currentCanvas.add(/* stroke visual representation */);
-    currentCanvas.renderAll();
-    
-    // Update the floor plan data
-    const updatedFloorPlan = {
-      ...floorPlan,
-      strokes: [...floorPlan.strokes, validatedStroke],
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Notify parent if callback exists
-    if (onFloorPlanUpdate) {
-      onFloorPlanUpdate(updatedFloorPlan);
+    switch (tool) {
+      case DrawingMode.WALL:
+        wallDrawing.enableWallDrawing();
+        break;
+      case DrawingMode.ROOM:
+        roomDrawing.enableRoomDrawing();
+        break;
+      case DrawingMode.STROKE:
+        strokeDrawing.enableStrokeDrawing();
+        break;
+      case DrawingMode.SELECT:
+        handleObjectSelect();
+        break;
+      default:
+        break;
     }
+  }, [fabricCanvasRef, tool, wallDrawing, roomDrawing, strokeDrawing, handleObjectSelect]);
+  
+  // Initial drawing setup
+  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
+    if (!canvas) return;
     
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
-
-  // Add a room to the floor plan
-  const addRoom = useCallback((room: Room) => {
-    const currentCanvas = getCanvas();
-    if (!currentCanvas) return;
+    // Clear existing objects
+    canvas.clear();
     
-    // Ensure room has proper type if it exists
-    const validatedRoom = {
-      ...room,
-      type: room.type ? asRoomType(room.type) : undefined
-    };
+    // Set background color
+    canvas.backgroundColor = '#f0f0f0';
     
-    // Add the room to the canvas
-    currentCanvas.add(/* room visual representation */);
-    currentCanvas.renderAll();
+    // Disable group selection
+    canvas.selection = false;
     
-    // Update the floor plan data
-    const updatedFloorPlan = {
-      ...floorPlan,
-      rooms: [...floorPlan.rooms, validatedRoom],
-      updatedAt: new Date().toISOString()
-    };
+    // Render optimized floor plan
+    drawBatchedFloorPlan(canvas, floorPlan);
     
-    // Notify parent if callback exists
-    if (onFloorPlanUpdate) {
-      onFloorPlanUpdate(updatedFloorPlan);
-    }
+    // Re-enable events and selection
+    canvas.selection = true;
+    canvas.renderAll();
     
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
-
-  // Add a wall to the floor plan
-  const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
-    const currentCanvas = getCanvas();
-    if (!currentCanvas) return;
-    
-    // Calculate length for the wall
-    const completeWall: Wall = {
-      ...wall,
-      length: calculateWallLength(wall)
-    };
-    
-    // Add the wall to the canvas
-    currentCanvas.add(/* wall visual representation */);
-    currentCanvas.renderAll();
-    
-    // Update the floor plan data
-    const updatedFloorPlan = {
-      ...floorPlan,
-      walls: [...floorPlan.walls, completeWall],
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Notify parent if callback exists
-    if (onFloorPlanUpdate) {
-      onFloorPlanUpdate(updatedFloorPlan);
-    }
-    
-    // Support for the test API
-    if (setFloorPlan) {
-      setFloorPlan(updatedFloorPlan);
-    }
-  }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
-
+    // Zoom to extents
+    zoomToExtents();
+  }, [drawBatchedFloorPlan, zoomToExtents]);
+  
   return {
     isDrawing,
     setIsDrawing,
-    tool: currentTool,  // For test compatibility
-    setTool,  // For test compatibility
+    handleDrawingEvent,
+    drawFloorPlan,
+    saveState,
+    restoreState,
+    snapPoint,
+    addWall,
+    addRoom,
     addStroke,
-    addRoom,  // For test compatibility
-    addWall
+    updateObject,
+    deleteObject
   };
 };

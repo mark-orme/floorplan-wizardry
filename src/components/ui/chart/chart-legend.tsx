@@ -1,10 +1,20 @@
-
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 import { cn } from "@/lib/utils"
 import { useChart } from "./chart-context"
 import { getPayloadConfigFromPayload } from "./chart-utils"
-import { LegendProps } from "recharts/types/component/Legend"
+
+interface LegendProps {
+  payload?: Array<{
+    value: string;
+    dataKey?: string;
+    color?: string;
+    type?: string;
+    [key: string]: any;
+  }>;
+  verticalAlign?: "top" | "middle" | "bottom";
+  [key: string]: any;
+}
 
 export const ChartLegend = RechartsPrimitive.Legend
 
