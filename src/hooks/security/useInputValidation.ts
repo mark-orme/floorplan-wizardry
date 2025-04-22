@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import * as z from 'zod';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 
 type ValidationResult = {
   isValid: boolean;

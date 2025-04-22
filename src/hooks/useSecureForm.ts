@@ -1,6 +1,6 @@
+
 import { useState, useCallback } from 'react';
-import * as z from 'zod';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 
 export interface UseSecureFormOptions<T> {
   schema: z.ZodType<T>;
