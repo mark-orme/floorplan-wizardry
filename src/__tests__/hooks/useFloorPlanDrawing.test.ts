@@ -1,7 +1,7 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
+import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 

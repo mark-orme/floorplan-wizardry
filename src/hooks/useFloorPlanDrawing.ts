@@ -5,18 +5,26 @@ import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 import type { MutableRefObject } from 'react';
 
-interface UseFloorPlanDrawingProps {
+export interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: MutableRefObject<FabricCanvas | null>;
   floorPlan?: FloorPlan;
   tool?: DrawingMode;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
+  isActive?: boolean;
+  inputMethod?: 'mouse' | 'touch' | 'stylus';
+  isPencilMode?: boolean;
+  setInputMethod?: (method: 'mouse' | 'touch' | 'stylus') => void;
 }
 
 export const useFloorPlanDrawing = ({
   fabricCanvasRef = { current: null },
   floorPlan = {} as FloorPlan,
   tool = DrawingMode.SELECT,
-  onFloorPlanUpdate = () => {}
+  onFloorPlanUpdate = () => {},
+  isActive = true,
+  inputMethod = 'mouse',
+  isPencilMode = false,
+  setInputMethod = () => {}
 }: UseFloorPlanDrawingProps = {}) => {
   const [isDrawing, setIsDrawing] = useState(false);
   
