@@ -1,85 +1,108 @@
 
+/**
+ * Sentry utilities for error reporting
+ * Provides backward compatibility for different captureError call patterns
+ */
 import * as Sentry from '@sentry/react';
 
+// New error capture format
+type ErrorOptions = {
+  context?: string;
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+};
+
 /**
- * Unified error capture function with backward compatibility for different call patterns
- * 
- * @param error - The error object to capture
- * @param contextOrTags - Either a string context (legacy) or an object with tags and extra data
- * @param extraData - Extra data (legacy parameter)
+ * Capture an error with Sentry
+ * Supports both old format (error, context, extraData) and new format (error, options)
  */
 export function captureError(
   error: Error | string,
-  contextOrTags?: string | { context?: string; tags?: Record<string, string>; extra?: Record<string, any> },
-  extraData?: Record<string, any>
+  contextOrOptions?: string | ErrorOptions,
+  legacyExtraData?: Record<string, any>
 ): void {
-  // Handle the new unified format
-  if (typeof contextOrTags === 'object' && contextOrTags !== null) {
-    const { context, tags, extra } = contextOrTags;
-    
-    if (context) {
-      Sentry.setContext('error_context', { context });
-    }
-    
-    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
-      tags,
-      extra
+  // Handle different call patterns for backward compatibility
+  if (typeof contextOrOptions === 'string' && legacyExtraData !== undefined) {
+    // Legacy format: captureError(error, 'context', extraData)
+    console.warn('Using deprecated captureError format. Please update to new format.');
+    Sentry.captureException(error, {
+      contexts: {
+        error: {
+          ...(typeof error === 'object' ? error : { message: error }),
+        },
+      },
+      tags: {
+        context: contextOrOptions,
+      },
+      extra: legacyExtraData,
     });
-    return;
-  }
-  
-  // Handle legacy format (3 arguments)
-  if (typeof contextOrTags === 'string') {
-    Sentry.setContext('error_context', { context: contextOrTags });
-    
-    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
-      extra: extraData
+  } else if (typeof contextOrOptions === 'object' || contextOrOptions === undefined) {
+    // New format: captureError(error, { context, tags, extra })
+    const options = contextOrOptions || {};
+    Sentry.captureException(error, {
+      contexts: {
+        error: {
+          ...(typeof error === 'object' ? error : { message: error }),
+        },
+      },
+      tags: {
+        ...(options.context ? { context: options.context } : {}),
+        ...(options.tags || {}),
+      },
+      extra: options.extra || {},
     });
-    return;
+  } else if (typeof contextOrOptions === 'string') {
+    // Simpler legacy format: captureError(error, 'context')
+    console.warn('Using deprecated captureError format. Please update to new format.');
+    Sentry.captureException(error, {
+      contexts: {
+        error: {
+          ...(typeof error === 'object' ? error : { message: error }),
+        },
+      },
+      tags: {
+        context: contextOrOptions,
+      },
+    });
   }
-  
-  // Basic error capture with no context
-  Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
 }
 
 /**
- * Unified message capture function with backward compatibility for different call patterns
- * 
- * @param message - The message to capture
- * @param contextOrOptions - Either a string context (legacy) or an object with level, tags and extra data
- * @param extraData - Extra data (legacy parameter)
+ * Capture a message with Sentry
+ * Supports both old format (message, level, extraData) and new format (message, options)
  */
 export function captureMessage(
   message: string,
-  contextOrOptions?: string | { 
-    level?: Sentry.SeverityLevel; 
-    tags?: Record<string, string>; 
-    extra?: Record<string, any> 
-  },
-  extraData?: Record<string, any>
+  levelOrOptions?: Sentry.SeverityLevel | ErrorOptions,
+  legacyExtraData?: Record<string, any>
 ): void {
-  // Handle the new unified format
-  if (typeof contextOrOptions === 'object' && contextOrOptions !== null) {
-    const { level, tags, extra } = contextOrOptions;
-    
+  if (typeof levelOrOptions === 'string' && legacyExtraData !== undefined) {
+    // Legacy format: captureMessage(message, 'level', extraData)
+    console.warn('Using deprecated captureMessage format. Please update to new format.');
     Sentry.captureMessage(message, {
-      level,
-      tags,
-      extra
+      level: levelOrOptions as Sentry.SeverityLevel,
+      extra: legacyExtraData,
     });
-    return;
-  }
-  
-  // Handle legacy format (3 arguments)
-  if (typeof contextOrOptions === 'string') {
-    Sentry.setContext('message_context', { context: contextOrOptions });
-    
+  } else if (typeof levelOrOptions === 'object' || levelOrOptions === undefined) {
+    // New format: captureMessage(message, { context, tags, extra })
+    const options = levelOrOptions || {};
     Sentry.captureMessage(message, {
-      extra: extraData
+      tags: {
+        ...(options.context ? { context: options.context } : {}),
+        ...(options.tags || {}),
+      },
+      extra: options.extra || {},
     });
-    return;
+  } else if (typeof levelOrOptions === 'string') {
+    // Simpler legacy format: captureMessage(message, 'level')
+    console.warn('Using deprecated captureMessage format. Please update to new format.');
+    Sentry.captureMessage(message, {
+      level: levelOrOptions as Sentry.SeverityLevel,
+    });
   }
-  
-  // Basic message capture with no context
-  Sentry.captureMessage(message);
 }
+
+export default {
+  captureError,
+  captureMessage,
+};

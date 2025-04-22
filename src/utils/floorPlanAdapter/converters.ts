@@ -1,100 +1,97 @@
 
-import { FloorPlan as AppFloorPlan } from '@/types/floor-plan/floorPlanTypes';
-import { FloorPlan as CoreFloorPlan } from '@/types/core/floor-plan/FloorPlan';
-import { FloorPlan as UnifiedFloorPlan, Wall, Room, Stroke } from '@/types/floor-plan/unifiedTypes';
-import { adaptRoom, adaptStroke, adaptWall } from '@/utils/typeAdapters';
+/**
+ * Floor plan format converters
+ * @module utils/floorPlanAdapter/converters
+ */
+import { Point } from 'fabric';
+import { 
+  FloorPlanMetadata, 
+  Wall, 
+  Room, 
+  Stroke, 
+  UnifiedFloorPlan 
+} from '@/types/floor-plan/unifiedTypes';
+import {
+  FloorPlan as CoreFloorPlan,
+  RoomTypeLiteral,
+} from '@/types/core/floor-plan/FloorPlan';
 
 /**
- * Convert unified floor plans to core floor plans
- * @param unifiedFloorPlans Array of unified floor plans
- * @returns Array of core floor plans
+ * Convert core floor plans to unified format
+ * @param corePlans Core floor plans
+ * @returns Unified floor plans
  */
-export function convertToCoreFloorPlans(unifiedFloorPlans: UnifiedFloorPlan[]): CoreFloorPlan[] {
-  return unifiedFloorPlans.map(unifiedPlan => {
-    // Convert to core floor plan format
-    const corePlan: CoreFloorPlan = {
-      id: unifiedPlan.id,
-      name: unifiedPlan.name,
-      label: unifiedPlan.label || unifiedPlan.name,
-      index: unifiedPlan.index,
-      walls: unifiedPlan.walls.map(wall => ({
-        id: wall.id,
-        start: wall.start,
-        end: wall.end,
-        thickness: wall.thickness,
-        color: wall.color,
-        roomIds: wall.roomIds
-      })),
-      rooms: unifiedPlan.rooms.map(room => ({
-        id: room.id,
-        name: room.name,
-        type: room.type,
-        vertices: room.vertices,
-        area: room.area,
-        color: room.color
-      })),
-      strokes: [],
-      canvasData: unifiedPlan.canvasData,
-      canvasJson: unifiedPlan.canvasJson,
-      createdAt: unifiedPlan.createdAt,
-      updatedAt: unifiedPlan.updatedAt,
-      gia: unifiedPlan.gia,
-      level: unifiedPlan.level,
-      metadata: {
-        createdAt: unifiedPlan.metadata.createdAt,
-        updatedAt: unifiedPlan.metadata.updatedAt,
-        paperSize: unifiedPlan.metadata.paperSize,
-        level: unifiedPlan.metadata.level
-      }
-    };
-    
-    return corePlan;
-  });
-}
+export const convertToUnifiedFloorPlans = (corePlans: CoreFloorPlan[]): UnifiedFloorPlan[] => {
+  return corePlans.map(corePlan => ({
+    id: corePlan.id,
+    name: corePlan.name,
+    label: corePlan.label || corePlan.name,
+    walls: corePlan.walls.map(wall => ({
+      id: wall.id,
+      start: wall.start,
+      end: wall.end,
+      thickness: wall.thickness,
+      color: wall.color,
+      roomIds: wall.roomIds || [],
+      length: Math.sqrt(
+        Math.pow(wall.end.x - wall.start.x, 2) + 
+        Math.pow(wall.end.y - wall.start.y, 2)
+      )
+    })),
+    rooms: corePlan.rooms.map(room => ({
+      id: room.id,
+      name: room.name,
+      type: room.type,
+      vertices: room.vertices,
+      area: room.area,
+      color: room.color,
+      points: room.vertices,
+      level: 0,
+      walls: room.wallIds || []
+    })),
+    strokes: corePlan.strokes || [],
+    metadata: {
+      createdAt: corePlan.metadata?.createdAt || new Date().toISOString(),
+      updatedAt: corePlan.metadata?.updatedAt || new Date().toISOString(),
+      author: corePlan.metadata?.author || 'system',
+      version: corePlan.metadata?.version || '1.0.0'
+    }
+  }));
+};
 
 /**
- * Convert core floor plans to unified floor plans
- * @param coreFloorPlans Array of core floor plans
- * @returns Array of unified floor plans
+ * Convert unified floor plans to core format
+ * @param unifiedPlans Unified floor plans
+ * @returns Core floor plans
  */
-export function convertToUnifiedFloorPlans(coreFloorPlans: CoreFloorPlan[]): UnifiedFloorPlan[] {
-  return coreFloorPlans.map(corePlan => {
-    const now = new Date().toISOString();
-    
-    // Convert to unified floor plan format
-    return {
-      id: corePlan.id,
-      name: corePlan.name,
-      label: corePlan.label || corePlan.name,
-      walls: corePlan.walls.map(wall => adaptWall({
-        ...wall,
-        floorPlanId: corePlan.id
-      })),
-      rooms: corePlan.rooms.map(room => adaptRoom({
-        ...room,
-        floorPlanId: corePlan.id
-      })),
-      strokes: [], // Core format doesn't have strokes
-      canvasData: corePlan.canvasData,
-      canvasJson: corePlan.canvasJson,
-      createdAt: corePlan.createdAt || now,
-      updatedAt: corePlan.updatedAt || now,
-      gia: corePlan.gia || 0,
-      level: corePlan.level || 0,
-      index: corePlan.index || corePlan.level || 0,
-      metadata: {
-        createdAt: corePlan.metadata?.createdAt || now,
-        updatedAt: corePlan.metadata?.updatedAt || now,
-        version: '1.0',
-        paperSize: corePlan.metadata?.paperSize || 'A4',
-        level: corePlan.metadata?.level || 0,
-        author: 'User',
-        dateCreated: corePlan.createdAt || now,
-        lastModified: corePlan.updatedAt || now,
-        notes: ''
-      },
-      data: {},
-      userId: 'default-user' // No user ID in core format
-    };
-  });
-}
+export const convertToCoreFloorPlans = (unifiedPlans: UnifiedFloorPlan[]): CoreFloorPlan[] => {
+  return unifiedPlans.map(unifiedPlan => ({
+    id: unifiedPlan.id,
+    name: unifiedPlan.name,
+    label: unifiedPlan.label || unifiedPlan.name,
+    walls: unifiedPlan.walls.map(wall => ({
+      id: wall.id,
+      start: wall.start,
+      end: wall.end,
+      thickness: wall.thickness,
+      color: wall.color,
+      roomIds: wall.roomIds || []
+    })),
+    rooms: unifiedPlan.rooms.map(room => ({
+      id: room.id,
+      name: room.name,
+      type: room.type as RoomTypeLiteral,
+      vertices: room.vertices || room.points || [],
+      area: room.area,
+      color: room.color,
+      wallIds: room.walls || []
+    })),
+    strokes: unifiedPlan.strokes || [],
+    metadata: {
+      createdAt: unifiedPlan.metadata?.createdAt || new Date().toISOString(),
+      updatedAt: unifiedPlan.metadata?.updatedAt || new Date().toISOString(),
+      author: unifiedPlan.metadata?.author || 'system',
+      version: unifiedPlan.metadata?.version || '1.0.0'
+    }
+  }));
+};

@@ -1,50 +1,50 @@
 
-export interface Point {
-  x: number;
-  y: number;
-}
+/**
+ * Canvas action types
+ * @module types/canvas
+ */
 
-export interface DrawOptions {
-  color: string;
-  width: number;
-  opacity?: number;
-}
+// Canvas action type definitions
+export type CanvasActionType = 
+  | 'DRAW'
+  | 'ERASE'
+  | 'CLEAR'
+  | 'ADD_OBJECT'
+  | 'REMOVE_OBJECT'
+  | 'MOVE_OBJECT'
+  | 'RESIZE_OBJECT'
+  | 'MODIFY_OBJECT'
+  | 'UNDO'
+  | 'REDO'
+  | 'ZOOM'
+  | 'PAN'
+  | 'SELECT'
+  | 'DESELECT'
+  | 'GROUP'
+  | 'UNGROUP'
+  | 'CHANGE_PROPERTY';
 
-export interface CanvasObject {
-  id: string;
-  type: string;
-  properties?: Record<string, any>;
-  points?: Point[];
-  options?: Record<string, any>; // Add options field for compatibility
-}
-
-export interface StrokeStyle {
-  color: string;
-  width: number;
-  opacity: number;
-}
-
-export interface CanvasEvents {
-  'object:added': (e: { target: CanvasObject }) => void;
-  'object:modified': (e: { target: CanvasObject }) => void;
-  'object:removed': (e: { target: CanvasObject }) => void;
-  'selection:created': (e: { target: CanvasObject[] }) => void;
-  'selection:updated': (e: { target: CanvasObject[] }) => void;
-  'selection:cleared': () => void;
-  'path:created': (e: { path: CanvasObject }) => void;
-  'mouse:down': (e: any) => void;
-  'mouse:move': (e: any) => void;
-  'mouse:up': (e: any) => void;
-  [key: string]: (...args: any[]) => void; // Add index signature for string keys
-}
-
-// Add PerformanceMetrics for utils/performance/canvasPerformance.ts
-export interface PerformanceMetrics {
-  frameRate: number;
-  renderTime: number;
-  objectCount: number;
-  memoryUsage?: number;
+// Canvas action interface
+export interface CanvasAction {
+  type: CanvasActionType;
+  payload?: any;
   timestamp: number;
-  fps?: number;
-  visibleObjectCount?: number;
+  userId?: string;
+  metadata?: Record<string, any>;
+}
+
+// Canvas state snapshot
+export interface CanvasStateSnapshot {
+  id: string;
+  state: any;
+  timestamp: number;
+  actionId?: string;
+}
+
+// Canvas operation result
+export interface CanvasOperationResult {
+  success: boolean;
+  message?: string;
+  data?: any;
+  error?: Error;
 }

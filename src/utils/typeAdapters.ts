@@ -1,137 +1,99 @@
 
-import { Room, Wall, Stroke, FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
-import { Point } from '@/types/core/Point';
+/**
+ * Type adapters for converting between different object formats
+ * @module utils/typeAdapters
+ */
+import { Point } from 'fabric';
+import {
+  FloorPlan,
+  Wall,
+  Room,
+  Stroke,
+  FloorPlanMetadata
+} from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Adapts a wall object to ensure it meets the required interface
- * @param wall The wall to adapt
- * @returns A wall object that conforms to the Wall interface
+ * Convert a wall object to the unified format
+ * @param wall Wall object to convert
+ * @returns Unified wall format
  */
-export const adaptWall = (wall: Partial<Wall>): Wall => {
-  // Calculate length if not provided
-  let length = wall.length;
-  if (!length && wall.start && wall.end) {
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    length = Math.sqrt(dx * dx + dy * dy);
-  }
-
-  // Calculate angle if not provided
-  let angle = wall.angle;
-  if (angle === undefined && wall.start && wall.end) {
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  }
-
+export const adaptWall = (wall: any): Wall => {
   return {
-    id: wall.id || `wall-${Date.now()}`,
-    start: wall.start || { x: 0, y: 0 },
-    end: wall.end || { x: 100, y: 0 },
+    id: wall.id || `wall-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    start: { x: wall.start?.x || 0, y: wall.start?.y || 0 },
+    end: { x: wall.end?.x || 0, y: wall.end?.y || 0 },
     thickness: wall.thickness || 5,
     color: wall.color || '#000000',
-    height: wall.height || 240,
     roomIds: wall.roomIds || [],
-    length: length || 100,
-    angle: angle || 0,
-    floorPlanId: wall.floorPlanId || 'default-floor-plan'
+    length: Math.sqrt(
+      Math.pow((wall.end?.x || 0) - (wall.start?.x || 0), 2) + 
+      Math.pow((wall.end?.y || 0) - (wall.start?.y || 0), 2)
+    )
   };
 };
 
 /**
- * Adapts a room object to ensure it meets the required interface
- * @param room The room to adapt
- * @returns A room object that conforms to the Room interface
+ * Convert a room object to the unified format
+ * @param room Room object to convert
+ * @returns Unified room format
  */
-export const adaptRoom = (room: Partial<Room>): Room => {
+export const adaptRoom = (room: any): Room => {
   return {
-    id: room.id || `room-${Date.now()}`,
+    id: room.id || `room-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     name: room.name || 'Unnamed Room',
     type: room.type || 'other',
+    vertices: room.vertices || room.points || [],
+    points: room.points || room.vertices || [],
     area: room.area || 0,
-    perimeter: room.perimeter || 0,
-    center: room.center || { x: 0, y: 0 },
-    vertices: room.vertices || [],
-    labelPosition: room.labelPosition || { x: 0, y: 0 },
-    color: room.color || '#FFFFFF',
-    floorPlanId: room.floorPlanId || 'default-floor-plan'
+    color: room.color || '#f0f0f0',
+    level: room.level || 0,
+    walls: room.walls || room.wallIds || []
   };
 };
 
 /**
- * Adapts a stroke object to ensure it meets the required interface
- * @param stroke The stroke to adapt
- * @returns A stroke object that conforms to the Stroke interface
+ * Convert a stroke object to the unified format
+ * @param stroke Stroke object to convert
+ * @returns Unified stroke format
  */
-export const adaptStroke = (stroke: Partial<Stroke>): Stroke => {
+export const adaptStroke = (stroke: any): Stroke => {
   return {
-    id: stroke.id || `stroke-${Date.now()}`,
-    type: stroke.type || 'line',
+    id: stroke.id || `stroke-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     points: stroke.points || [],
     color: stroke.color || '#000000',
-    thickness: stroke.thickness || 1,
-    floorPlanId: stroke.floorPlanId || 'default-floor-plan'
+    width: stroke.width || 1,
+    type: stroke.type || 'annotation',
+    metadata: stroke.metadata || {}
   };
 };
 
 /**
- * Adapts a floor plan metadata object to ensure it meets the required interface
- * @param metadata The metadata to adapt
- * @returns A metadata object that conforms to the FloorPlanMetadata interface
+ * Convert a metadata object to the unified format
+ * @param metadata Metadata object to convert
+ * @returns Unified metadata format
  */
-export const adaptMetadata = (metadata: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata => {
-  const now = new Date().toISOString();
+export const adaptMetadata = (metadata: any): FloorPlanMetadata => {
   return {
-    createdAt: metadata.createdAt || now,
-    updatedAt: metadata.updatedAt || now,
-    version: metadata.version || '1.0',
-    paperSize: metadata.paperSize || 'A4',
-    level: metadata.level || 0,
-    author: metadata.author || 'User',
-    dateCreated: metadata.dateCreated || now,
-    lastModified: metadata.lastModified || now,
-    notes: metadata.notes || ''
+    createdAt: metadata.createdAt || new Date().toISOString(),
+    updatedAt: metadata.updatedAt || new Date().toISOString(),
+    author: metadata.author || 'system',
+    version: metadata.version || '1.0.0'
   };
 };
 
 /**
- * Adapts a floor plan object to ensure it meets the required interface
- * @param floorPlan The floor plan to adapt
- * @returns A floor plan object that conforms to the FloorPlan interface
+ * Convert a floor plan to the unified format
+ * @param floorPlan Floor plan to convert
+ * @returns Unified floor plan format
  */
-export const adaptFloorPlan = (floorPlan: Partial<FloorPlan>): FloorPlan => {
-  const now = new Date().toISOString();
+export const adaptFloorPlan = (floorPlan: any): FloorPlan => {
   return {
-    id: floorPlan.id || `floor-${Date.now()}`,
+    id: floorPlan.id || `floor-plan-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     name: floorPlan.name || 'Untitled Floor Plan',
-    label: floorPlan.label || floorPlan.name || 'Untitled',
-    walls: floorPlan.walls || [],
-    rooms: floorPlan.rooms || [],
-    strokes: floorPlan.strokes || [],
-    canvasData: floorPlan.canvasData || null,
-    canvasJson: floorPlan.canvasJson || null,
-    createdAt: floorPlan.createdAt || now,
-    updatedAt: floorPlan.updatedAt || now,
-    gia: floorPlan.gia || 0,
-    level: floorPlan.level || 0,
-    index: floorPlan.index || 0,
-    metadata: adaptMetadata(floorPlan.metadata),
-    data: floorPlan.data || {},
-    userId: floorPlan.userId || 'default-user'
+    label: floorPlan.label || floorPlan.name || 'Untitled Floor Plan',
+    walls: (floorPlan.walls || []).map(adaptWall),
+    rooms: (floorPlan.rooms || []).map(adaptRoom),
+    strokes: (floorPlan.strokes || []).map(adaptStroke),
+    metadata: adaptMetadata(floorPlan.metadata || {})
   };
 };
-
-/**
- * Convert a wall object to the unified type
- */
-export const asWallType = adaptWall;
-
-/**
- * Convert a room object to the unified type
- */
-export const asRoomType = adaptRoom;
-
-/**
- * Convert a stroke object to the unified type
- */
-export const asStrokeType = adaptStroke;

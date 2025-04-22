@@ -1,78 +1,78 @@
 
 /**
  * Grid error handling utilities
- * @module grid/gridErrorHandling
+ * @module utils/grid/gridErrorHandling
  */
-
-import { toast } from "sonner";
-import logger from "../logger";
-
-// Import from gridManager directly
-import { resetGridProgress } from "../gridManager";
-import { captureError } from "../sentryUtils";
+import { captureError } from '@/utils/sentryUtils';
+import logger from '@/utils/logger';
 
 /**
- * Handle grid creation error
- * @param {Error} error - Error to handle
- * @param {Function} setHasError - Function to set error state
- * @param {Function} setErrorMessage - Function to set error message
+ * Log a grid error and capture it with Sentry
+ * @param error Error object or message
+ * @param context Error context
+ * @param extraData Additional error data
  */
-export const handleGridCreationError = (
-  error: Error,
-  setHasError: (value: boolean) => void,
-  setErrorMessage: (value: string) => void
-): void => {
-  // Log error
-  logger.error("Grid creation error:", error);
-  console.error("Grid creation error:", error);
+export const logGridError = (
+  error: Error | string,
+  context: string,
+  extraData?: Record<string, any>
+) => {
+  const errorObj = typeof error === 'string' ? new Error(error) : error;
   
-  // Set error state
-  setHasError(true);
-  setErrorMessage(error.message || "Unknown grid creation error");
+  // Log the error
+  logger.error(`Grid Error [${context}]:`, errorObj, extraData || {});
   
-  // Show toast
-  toast.error("Error creating grid", {
-    description: error.message || "Unknown error",
-    duration: 3000
-  });
-  
-  // Reset grid progress
-  resetGridProgress();
-  
-  // Report to Sentry
-  captureError(error, {
-    level: 'error',
-    tags: {
-      component: 'grid',
-      operation: 'creation'
-    }
+  // Capture the error with Sentry using new format
+  captureError(errorObj, {
+    context: context,
+    tags: { 
+      component: 'Grid',
+      area: 'canvas'
+    },
+    extra: extraData
   });
 };
 
 /**
- * Format grid error for logging
- * @param {Error} error - Error to format
- * @returns {string} Formatted error
+ * Handle a grid initialization error
+ * @param error Error object or message
+ * @param gridId Grid identifier
+ * @param extraData Additional error data
  */
-export const formatGridError = (error: Error): string => {
-  return `Grid Error: ${error.message}\nStack: ${error.stack || "No stack trace"}`;
+export const handleGridInitError = (
+  error: Error | string,
+  gridId: string,
+  extraData?: Record<string, any>
+) => {
+  const errorObj = typeof error === 'string' ? new Error(error) : error;
+  
+  // Log the error
+  logger.error(`Grid Initialization Error [${gridId}]:`, errorObj, extraData || {});
+  
+  // Capture with Sentry
+  captureError(errorObj, {
+    context: 'grid-initialization',
+    tags: { 
+      component: 'Grid', 
+      gridId: gridId
+    },
+    extra: extraData
+  });
 };
 
 /**
- * Get error severity level
- * @param {Error} error - Error to check
- * @returns {string} Severity level
+ * Create a grid error handler function
+ * @param context Error context
+ * @returns Error handler function
  */
-export const getErrorSeverity = (error: Error): "low" | "medium" | "high" => {
-  const message = error.message.toLowerCase();
-  
-  if (message.includes("canvas") || message.includes("disposed")) {
-    return "high";
-  }
-  
-  if (message.includes("render") || message.includes("object")) {
-    return "medium";
-  }
-  
-  return "low";
+export const createGridErrorHandler = (context: string) => {
+  return (error: Error | string, extraData?: Record<string, any>) => {
+    logGridError(error, context, extraData);
+  };
+};
+
+export default {
+  logGridError,
+  handleGridInitError,
+  createGridErrorHandler
 };

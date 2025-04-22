@@ -1,139 +1,104 @@
 
-import { Point } from '@/types/core/Point';
-import { Room, Wall, Stroke, FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
+/**
+ * Typed test fixtures
+ * @module utils/test/typedTestFixtures
+ */
+import { Point } from 'fabric';
+import { FloorPlan, Room, Wall, Stroke } from '@/types/floor-plan/unifiedTypes';
 
 /**
- * Create a test point for testing.
- * @param overrides Optional partial Point properties to override defaults
- * @returns Point object for testing
+ * Create a test point
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns Test point
  */
-export function createTestPoint(overrides: Partial<Point> = {}): Point {
-  return {
-    x: overrides.x !== undefined ? overrides.x : 0,
-    y: overrides.y !== undefined ? overrides.y : 0
-  };
-}
+export const createTestPoint = (x: number = 0, y: number = 0): Point => ({
+  x,
+  y
+});
 
 /**
- * Create a test wall for testing.
- * @param overrides Optional partial Wall properties to override defaults
- * @returns Wall object for testing
+ * Create mock function parameters
+ * @param params Parameters to include
+ * @returns Mock function parameters
  */
-export function createTestWall(overrides: Partial<Wall> = {}): Wall {
-  return {
-    id: overrides.id || `wall-${Date.now()}`,
-    start: overrides.start || { x: 0, y: 0 },
-    end: overrides.end || { x: 100, y: 0 },
-    thickness: overrides.thickness || 5,
-    roomIds: overrides.roomIds || [],
-    length: overrides.length || 100,
-    angle: overrides.angle !== undefined ? overrides.angle : 0,
-    color: overrides.color || '#000000',
-    height: overrides.height || 240,
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
-  };
-}
+export const createMockFunctionParams = (params: Record<string, any> = {}) => params;
 
 /**
- * Create a test room for testing.
- * @param overrides Optional partial Room properties to override defaults
- * @returns Room object for testing
+ * Create a test wall
+ * @param wall Wall properties
+ * @returns Test wall
  */
-export function createTestRoom(overrides: Partial<Room> = {}): Room {
-  return {
-    id: overrides.id || `room-${Date.now()}`,
-    name: overrides.name || 'Test Room',
-    type: overrides.type || 'other',
-    area: overrides.area || 100,
-    perimeter: overrides.perimeter || 40,
-    center: overrides.center || { x: 50, y: 50 },
-    vertices: overrides.vertices || [
-      { x: 0, y: 0 },
-      { x: 100, y: 0 },
-      { x: 100, y: 100 },
-      { x: 0, y: 100 }
-    ],
-    labelPosition: overrides.labelPosition || { x: 50, y: 50 },
-    color: overrides.color || '#FFFFFF',
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
-  };
-}
+export const createTestWall = (wall: Partial<Wall> = {}): Wall => ({
+  id: wall.id || `wall-test-${Date.now()}`,
+  start: wall.start || createTestPoint(0, 0),
+  end: wall.end || createTestPoint(100, 0),
+  thickness: wall.thickness || 5,
+  color: wall.color || '#000000',
+  roomIds: wall.roomIds || [],
+  length: wall.length || 100
+});
 
 /**
- * Create a test stroke for testing.
- * @param overrides Optional partial Stroke properties to override defaults
- * @returns Stroke object for testing
+ * Create a test room
+ * @param room Room properties
+ * @returns Test room
  */
-export function createTestStroke(overrides: Partial<Stroke> = {}): Stroke {
-  return {
-    id: overrides.id || `stroke-${Date.now()}`,
-    type: overrides.type || 'line',
-    points: overrides.points || [
-      { x: 0, y: 0 },
-      { x: 100, y: 100 }
-    ],
-    color: overrides.color || '#000000',
-    thickness: overrides.thickness || 1,
-    floorPlanId: overrides.floorPlanId || 'test-floor-plan'
-  };
-}
+export const createTestRoom = (room: Partial<Room> = {}): Room => ({
+  id: room.id || `room-test-${Date.now()}`,
+  name: room.name || 'Test Room',
+  type: room.type || 'other',
+  vertices: room.vertices || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 0),
+    createTestPoint(100, 100),
+    createTestPoint(0, 100)
+  ],
+  points: room.points || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 0),
+    createTestPoint(100, 100),
+    createTestPoint(0, 100)
+  ],
+  area: room.area || 10000,
+  color: room.color || '#f0f0f0',
+  level: room.level || 0,
+  walls: room.walls || []
+});
 
 /**
- * Create a test floor plan metadata for testing.
- * @param overrides Optional partial FloorPlanMetadata properties to override defaults
- * @returns FloorPlanMetadata object for testing
+ * Create a test stroke
+ * @param stroke Stroke properties
+ * @returns Test stroke
  */
-export function createTestMetadata(overrides: Partial<FloorPlanMetadata> = {}): FloorPlanMetadata {
-  const now = new Date().toISOString();
-  return {
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    version: overrides.version || '1.0',
-    paperSize: overrides.paperSize || 'A4',
-    level: overrides.level !== undefined ? overrides.level : 0,
-    author: overrides.author || 'Test User',
-    dateCreated: overrides.dateCreated || now,
-    lastModified: overrides.lastModified || now,
-    notes: overrides.notes || ''
-  };
-}
+export const createTestStroke = (stroke: Partial<Stroke> = {}): Stroke => ({
+  id: stroke.id || `stroke-test-${Date.now()}`,
+  points: stroke.points || [
+    createTestPoint(0, 0),
+    createTestPoint(100, 100)
+  ],
+  color: stroke.color || '#000000',
+  width: stroke.width || 1,
+  type: stroke.type || 'annotation',
+  metadata: stroke.metadata || {}
+});
 
 /**
- * Create a test floor plan for testing.
- * @param overrides Optional partial FloorPlan properties to override defaults
- * @returns FloorPlan object for testing
+ * Create a test floor plan
+ * @param floorPlan Floor plan properties
+ * @returns Test floor plan
  */
-export function createTestFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
-  const now = new Date().toISOString();
-  const metadata = createTestMetadata(overrides.metadata || {});
-  
-  return {
-    id: overrides.id || `floor-${Date.now()}`,
-    name: overrides.name || 'Test Floor Plan',
-    label: overrides.label || overrides.name || 'Test Floor Plan',
-    walls: overrides.walls || [],
-    rooms: overrides.rooms || [],
-    strokes: overrides.strokes || [],
-    canvasData: overrides.canvasData || null,
-    canvasJson: overrides.canvasJson || null,
-    createdAt: overrides.createdAt || now,
-    updatedAt: overrides.updatedAt || now,
-    gia: overrides.gia !== undefined ? overrides.gia : 0,
-    level: overrides.level !== undefined ? overrides.level : 0,
-    index: overrides.index !== undefined ? overrides.index : 0,
-    metadata: metadata,
-    data: overrides.data || {},
-    userId: overrides.userId || 'test-user-id'
-  };
-}
-
-/**
- * Create mock function parameters for testing.
- * @returns An object with mock function parameters
- */
-export function createMockFunctionParams() {
-  return {
-    mockCallback: jest.fn(),
-    mockEvent: { preventDefault: jest.fn() }
-  };
-}
+export const createTestFloorPlan = (floorPlan: Partial<FloorPlan> = {}): FloorPlan => ({
+  id: floorPlan.id || `floor-plan-test-${Date.now()}`,
+  name: floorPlan.name || 'Test Floor Plan',
+  label: floorPlan.label || 'Test Floor Plan',
+  walls: floorPlan.walls || [createTestWall()],
+  rooms: floorPlan.rooms || [createTestRoom()],
+  strokes: floorPlan.strokes || [createTestStroke()],
+  metadata: floorPlan.metadata || {
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    author: 'test',
+    version: '1.0.0'
+  }
+});
