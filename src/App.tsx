@@ -7,9 +7,8 @@ import Index from './pages/Index';
 import { CanvasProvider } from './contexts/CanvasContext';
 import FloorPlans from './pages/Floorplans';
 
-// Create a query client
-// Import the correct QueryClient constructor
-import { QueryClient } from '@tanstack/react-query';
+// Import from @tanstack/query-core instead of react-query for proper types
+import { QueryClient } from '@tanstack/query-core';
 
 // Create a query client
 const queryClient = new QueryClient({

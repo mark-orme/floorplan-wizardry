@@ -4,13 +4,14 @@ import * as RechartsPrimitive from "recharts"
 import { cn } from "@/lib/utils"
 import { useChart } from "./chart-context"
 import { getPayloadConfigFromPayload } from "./chart-utils"
+import { LegendProps } from "recharts/types/component/Legend"
 
 export const ChartLegend = RechartsPrimitive.Legend
 
 export const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    Pick<LegendProps, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string
     }

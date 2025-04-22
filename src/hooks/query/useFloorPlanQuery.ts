@@ -1,7 +1,8 @@
 
-import { useQuery, QueryKey } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { QueryKey } from '@tanstack/query-core';
 import { toast } from 'sonner';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/core';
 import { useAsyncState } from './useAsyncState';
 import { useFloorPlanLoader } from '@/hooks/useFloorPlanLoader';
 
