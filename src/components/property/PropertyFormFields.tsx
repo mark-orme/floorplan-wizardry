@@ -1,6 +1,6 @@
 
 import * as z from 'zod';
-import { Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
@@ -26,7 +26,7 @@ interface UseFormReturnType {
 export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
   return (
     <>
-      <Controller
+      <FormField
         control={form.control}
         name="order_id"
         render={({ field }) => (
@@ -40,7 +40,7 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
         )}
       />
 
-      <Controller
+      <FormField
         control={form.control}
         name="address"
         render={({ field }) => (
@@ -54,7 +54,7 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
         )}
       />
 
-      <Controller
+      <FormField
         control={form.control}
         name="client_name"
         render={({ field }) => (
@@ -68,7 +68,7 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
         )}
       />
 
-      <Controller
+      <FormField
         control={form.control}
         name="branch_name"
         render={({ field }) => (

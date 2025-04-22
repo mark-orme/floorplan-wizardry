@@ -27,7 +27,6 @@ export function useSecureForm<T extends Record<string, any>>({
   onSubmit,
   validateOnChange = true
 }: UseSecureFormOptions<T>) {
-  // Initialize form fields
   const initialFields = Object.entries(initialValues).reduce(
     (acc, [key, value]) => ({
       ...acc,
@@ -42,7 +41,6 @@ export function useSecureForm<T extends Record<string, any>>({
     isSubmitting: false
   });
 
-  // Function to validate the entire form
   const validateForm = useCallback(() => {
     if (!validationSchema) return true;
 
@@ -81,7 +79,6 @@ export function useSecureForm<T extends Record<string, any>>({
     }
   }, [formState.fields, validationSchema]);
 
-  // Function to update field value
   const handleChange = useCallback(
     (name: string, value: string) => {
       setFormState((prev) => {
@@ -108,7 +105,6 @@ export function useSecureForm<T extends Record<string, any>>({
     [validateForm, validateOnChange]
   );
 
-  // Function to handle blur events
   const handleBlur = useCallback(
     (name: string) => {
       setFormState((prev) => ({
@@ -127,7 +123,6 @@ export function useSecureForm<T extends Record<string, any>>({
     [validateForm]
   );
 
-  // Function to handle form submission
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -137,7 +132,6 @@ export function useSecureForm<T extends Record<string, any>>({
         isSubmitting: true
       }));
       
-      // Mark all fields as touched
       const touchedFields = Object.entries(formState.fields).reduce(
         (acc, [key, field]) => ({
           ...acc,

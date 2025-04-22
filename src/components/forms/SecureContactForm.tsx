@@ -1,6 +1,7 @@
+
 import React from 'react';
 import * as z from 'zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,7 @@ export const SecureContactForm: React.FC = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Controller
+        <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
@@ -57,7 +58,7 @@ export const SecureContactForm: React.FC = () => {
           )}
         />
 
-        <Controller
+        <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
@@ -71,7 +72,7 @@ export const SecureContactForm: React.FC = () => {
           )}
         />
 
-        <Controller
+        <FormField
           control={form.control}
           name="subject"
           render={({ field }) => (
@@ -85,7 +86,7 @@ export const SecureContactForm: React.FC = () => {
           )}
         />
 
-        <Controller
+        <FormField
           control={form.control}
           name="message"
           render={({ field }) => (

@@ -4,17 +4,17 @@ import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface UseFloorPlanDrawingProps {
-  floorPlan: FloorPlan;
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool: DrawingMode;
-  onFloorPlanUpdate: (floorPlan: FloorPlan) => void;
+  floorPlan: FloorPlan;
+  tool?: DrawingMode;
+  onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
 }
 
 export const useFloorPlanDrawing = ({
   floorPlan,
   fabricCanvasRef,
-  tool,
-  onFloorPlanUpdate
+  tool = DrawingMode.SELECT,
+  onFloorPlanUpdate = () => {}
 }: UseFloorPlanDrawingProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   

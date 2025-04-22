@@ -35,7 +35,8 @@ describe('useFloorPlanDrawing', () => {
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createMockFloorPlan()
+      floorPlan: createMockFloorPlan(),
+      tool: DrawingMode.SELECT
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -45,7 +46,8 @@ describe('useFloorPlanDrawing', () => {
     // This test is modified to work with the current implementation
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: createMockFloorPlan()
+      floorPlan: createMockFloorPlan(),
+      tool: DrawingMode.SELECT
     }));
 
     // Just test isDrawing since tool is no longer exposed
@@ -63,7 +65,8 @@ describe('useFloorPlanDrawing', () => {
     const testFloorPlan = createMockFloorPlan();
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      tool: DrawingMode.DRAW
     }));
 
     // Act
@@ -85,6 +88,7 @@ describe('useFloorPlanDrawing', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
       floorPlan: testFloorPlan,
+      tool: DrawingMode.SELECT,
       onFloorPlanUpdate: updateFloorPlan
     }));
 
@@ -104,7 +108,8 @@ describe('useFloorPlanDrawing', () => {
     
     const { result } = renderHook(() => useFloorPlanDrawing({
       fabricCanvasRef,
-      floorPlan: testFloorPlan
+      floorPlan: testFloorPlan,
+      tool: DrawingMode.WALL
     }));
 
     // Act
