@@ -27,7 +27,11 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate
+      onFloorPlanUpdate,
+      isActive: true,
+      inputMethod: 'mouse',
+      isPencilMode: false,
+      setInputMethod: () => {}
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -38,7 +42,11 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate
+      onFloorPlanUpdate,
+      isActive: true,
+      inputMethod: 'mouse',
+      isPencilMode: false,
+      setInputMethod: () => {}
     }));
 
     expect(result.current.isDrawing).toBe(false);
@@ -55,7 +63,11 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan,
       tool: DrawingMode.DRAW,
-      onFloorPlanUpdate
+      onFloorPlanUpdate,
+      isActive: true,
+      inputMethod: 'mouse',
+      isPencilMode: false,
+      setInputMethod: () => {}
     }));
 
     act(() => {
@@ -71,7 +83,11 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan,
       tool: DrawingMode.SELECT,
-      onFloorPlanUpdate
+      onFloorPlanUpdate,
+      isActive: true,
+      inputMethod: 'mouse',
+      isPencilMode: false,
+      setInputMethod: () => {}
     }));
 
     act(() => {
@@ -86,7 +102,11 @@ describe('useFloorPlanDrawing', () => {
       fabricCanvasRef,
       floorPlan,
       tool: DrawingMode.WALL,
-      onFloorPlanUpdate
+      onFloorPlanUpdate,
+      isActive: true,
+      inputMethod: 'mouse',
+      isPencilMode: false,
+      setInputMethod: () => {}
     }));
 
     act(() => {
