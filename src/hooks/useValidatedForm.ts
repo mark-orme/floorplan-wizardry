@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import z from '@/utils/zod-mock';
+import z, { ZodError, ZodType } from '@/utils/zod-mock';
 
 export interface ValidationError {
   path: string;
@@ -15,7 +15,7 @@ export interface UseValidatedFormResult<T> {
   resetForm: () => void;
 }
 
-export function useValidatedForm<T>(schema: z.ZodType<T>, initialData: T | null = null): UseValidatedFormResult<T> {
+export function useValidatedForm<T>(schema: ZodType<T>, initialData: T | null = null): UseValidatedFormResult<T> {
   const [data, setData] = useState<T | null>(initialData);
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [isValid, setIsValid] = useState(false);
@@ -29,7 +29,7 @@ export function useValidatedForm<T>(schema: z.ZodType<T>, initialData: T | null 
         setIsValid(true);
         return true;
       } catch (error) {
-        if (error instanceof z.ZodError) {
+        if (error instanceof ZodError) {
           const formattedErrors = error.errors.map((err) => ({
             path: err.path.join('.'),
             message: err.message,

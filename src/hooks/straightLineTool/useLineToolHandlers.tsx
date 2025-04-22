@@ -19,7 +19,7 @@ interface UseLineToolHandlersProps {
   toggleAngles: () => void;
   shiftKeyPressed: boolean;
   setShiftKeyPressed: (pressed: boolean) => void;
-  isActive: boolean;
+  isActive: boolean;  // Added isActive property
   inputMethod: InputMethod;
   isPencilMode: boolean;
   setInputMethod: (method: InputMethod) => void;

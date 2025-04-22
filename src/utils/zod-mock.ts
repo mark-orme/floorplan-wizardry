@@ -133,8 +133,8 @@ const z = {
     }),
     parse: (data) => data,
   }),
-  // The infer type utility
-  infer: (schema) => ({}),
+  // The infer type utility - now exported directly on z
+  infer: <T>(schema: any): T => ({} as T),
   
   // ZodType and ZodSchema classes
   ZodType: class ZodType { },

@@ -1,44 +1,57 @@
 
-/**
- * Floor plan helper functions
- * @module types/core/floor-plan/helpers
- */
-
-import { v4 as uuidv4 } from 'uuid';
-import { FloorPlan } from './FloorPlan';
-import { PaperSize } from './PaperSize';
+import { FloorPlan, FloorPlanMetadata, PaperSize } from '@/types/floorPlanTypes';
 
 /**
- * Create a new floor plan with default values
+ * Creates an empty floor plan
+ * @returns Empty floor plan object
  */
-export function createFloorPlan(propertyId: string = ''): FloorPlan {
+export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   const now = new Date().toISOString();
   
   return {
-    id: uuidv4(),
-    name: 'Untitled Floor Plan',
-    label: 'Untitled',
+    id: `fp-${Date.now()}`,
+    name: 'New Floor Plan',
+    label: 'New Floor Plan',
+    data: {},
+    userId: '',
     walls: [],
     rooms: [],
     strokes: [],
+    canvasJson: null,
+    canvasData: null,
     createdAt: now,
     updatedAt: now,
+    gia: 0,
     level: 0,
     index: 0,
-    gia: 0,
     metadata: {
       createdAt: now,
       updatedAt: now,
       paperSize: PaperSize.A4,
       level: 0,
-      version: '1.0',
-      author: 'System',
-      notes: '',
-      dateCreated: now,
-      lastModified: now
+      version: "1.0",
+      author: "",
+      lastModified: now,
+      notes: ""
     },
-    userId: 'default-user',
-    propertyId,
-    data: {}
+    ...overrides
+  };
+}
+
+/**
+ * Creates a default metadata object for floor plans
+ * @returns Default floor plan metadata
+ */
+export function createDefaultMetadata(): FloorPlanMetadata {
+  const now = new Date().toISOString();
+  return {
+    createdAt: now,
+    updatedAt: now,
+    paperSize: PaperSize.A4,
+    level: 0,
+    version: "1.0",
+    author: "",
+    lastModified: now,
+    notes: ""
   };
 }
