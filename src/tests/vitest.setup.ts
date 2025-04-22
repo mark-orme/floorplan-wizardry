@@ -1,10 +1,14 @@
 
 import '@testing-library/jest-dom';
-import 'vitest-axe/extend-expect';
-import { toHaveNoViolations } from 'jest-axe';
 
-// Extend Jest matchers with axe
-expect.extend(toHaveNoViolations);
+// Conditionally load axe testing utilities
+try {
+  const { toHaveNoViolations } = require('jest-axe');
+  expect.extend(toHaveNoViolations);
+  console.log('Loaded jest-axe accessibility testing extensions');
+} catch (error) {
+  console.warn('jest-axe not available, accessibility tests will be limited');
+}
 
 // Add global test environment setup
 beforeAll(() => {
