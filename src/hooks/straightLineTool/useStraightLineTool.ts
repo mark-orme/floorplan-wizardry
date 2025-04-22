@@ -44,11 +44,8 @@ export const useStraightLineTool = ({
   });
 
   const fabricCanvasRef = useRef<Canvas | null>(canvas);
-  const { calculateMeasurements } = useMeasurementCalculation ? useMeasurementCalculation() : { calculateMeasurements: () => null };
-  const { formatTooltipData, renderTooltip } = useLiveDistanceTooltip ? useLiveDistanceTooltip() : { 
-    formatTooltipData: () => null, 
-    renderTooltip: () => null 
-  };
+  const { calculateMeasurements } = useMeasurementCalculation();
+  const { formatTooltipData } = useLiveDistanceTooltip();
 
   // Set canvas reference when it changes
   useEffect(() => {
@@ -78,7 +75,7 @@ export const useStraightLineTool = ({
   });
 
   // Render tooltip function that returns a React node
-  const renderTooltipFn = useCallback((): ReactNode => {
+  const renderTooltip = useCallback((): ReactNode => {
     if (!isDrawing || !measurementData) return null;
     const tooltipData = formatTooltipData(measurementData);
     if (!tooltipData) return null;
@@ -111,6 +108,6 @@ export const useStraightLineTool = ({
     handlePointerUp,
     handleKeyDown,
     handleKeyUp,
-    renderTooltip: renderTooltipFn
+    renderTooltip
   };
 };
