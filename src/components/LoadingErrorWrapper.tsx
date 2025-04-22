@@ -1,59 +1,45 @@
 
-/**
- * Component for handling loading and error states
- * Provides a consistent wrapper for handling async data loading
- * @module LoadingErrorWrapper
- */
-import { LoadingError } from "./LoadingError";
+import React from 'react';
 
-/**
- * Props for the LoadingErrorWrapper component
- * @interface LoadingErrorWrapperProps
- */
 interface LoadingErrorWrapperProps {
-  /** Whether content is currently loading */
   isLoading: boolean;
-  
-  /** Whether an error has occurred */
   hasError: boolean;
-  
-  /** Error message to display if hasError is true */
   errorMessage: string;
-  
-  /** Callback function to retry the operation */
-  onRetry: () => void;
-  
-  /** Child content to render when not loading and no error */
+  onRetry?: () => void;
   children: React.ReactNode;
 }
 
-/**
- * Component that wraps content with loading and error handling
- * Shows a loading spinner when isLoading is true
- * Shows an error message with retry button when hasError is true
- * Shows children when not loading and no error
- * 
- * @param {LoadingErrorWrapperProps} props - Component props
- * @returns {JSX.Element} Rendered component
- */
-export const LoadingErrorWrapper = ({
+export const LoadingErrorWrapper: React.FC<LoadingErrorWrapperProps> = ({
   isLoading,
   hasError,
   errorMessage,
   onRetry,
   children
-}: LoadingErrorWrapperProps) => {
-  if (isLoading || hasError) {
+}) => {
+  if (isLoading) {
     return (
-      <LoadingError 
-        isLoading={isLoading}
-        hasError={hasError}
-        errorMessage={errorMessage}
-        onRetry={onRetry}
-      />
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <span className="ml-3">Loading...</span>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-destructive text-lg mb-4">{errorMessage || 'An error occurred'}</div>
+        {onRetry && (
+          <button 
+            onClick={onRetry}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        )}
+      </div>
     );
   }
 
   return <>{children}</>;
 };
-
