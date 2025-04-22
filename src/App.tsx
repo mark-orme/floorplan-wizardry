@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CanvasEngineProvider } from './contexts/CanvasEngineContext';
 import PropertyDetail from './pages/PropertyDetail';
 import Index from './pages/Index';
+import { CanvasProvider } from './contexts/CanvasContext';
 
 // Create a query client
 const queryClient = new QueryClient({
@@ -19,14 +20,16 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <CanvasEngineProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/properties/:id" element={<PropertyDetail />} />
-            <Route path="/floorplans" element={<Index />} />
-            <Route path="/floorplans/:id" element={<PropertyDetail />} />
-          </Routes>
-        </Router>
+        <CanvasProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
+              <Route path="/floorplans" element={<Index />} />
+              <Route path="/floorplans/:id" element={<PropertyDetail />} />
+            </Routes>
+          </Router>
+        </CanvasProvider>
       </CanvasEngineProvider>
     </QueryClientProvider>
   );

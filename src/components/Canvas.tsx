@@ -3,6 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { GridLayer } from './canvas/grid/GridLayer';
 import { toast } from 'sonner';
+import { DebugInfoState } from '@/types/core/DebugInfo';
 
 export interface CanvasProps {
   width: number;
@@ -10,6 +11,8 @@ export interface CanvasProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
   showGridDebug?: boolean;
+  setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  style?: React.CSSProperties;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -17,7 +20,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   height,
   onCanvasReady,
   onError,
-  showGridDebug = false
+  showGridDebug = false,
+  setDebugInfo,
+  style
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -59,7 +64,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [width, height, onCanvasReady, onError]);
 
   return (
-    <div className="canvas-container relative" data-testid="canvas-wrapper">
+    <div className="canvas-container relative" data-testid="canvas-wrapper" style={style}>
       <canvas
         ref={canvasRef}
         className="border border-gray-200 shadow-sm"

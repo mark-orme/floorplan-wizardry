@@ -1,52 +1,60 @@
 
-import React, { useState, useEffect, useRef } from "react";
-import { CanvasControllerProvider } from "@/components/canvas/controller/CanvasController";
-import { CanvasProvider } from "@/contexts/CanvasContext";
-import { DrawingProvider } from "@/contexts/DrawingContext";
-import { FloorPlanEditor } from "@/components/FloorPlanEditor";
-import { AuthSection } from "@/components/auth/AuthSection";
-import { CollaborationToggle } from "@/components/collaboration/CollaborationToggle";
-import { useWindowDimensions } from "@/hooks/useWindowDimensions";
-import { trackComponentLoad, markPerformance } from "@/utils/healthMonitoring";
-import { Canvas as FabricCanvas } from "fabric";
+import React, { useState } from 'react';
+import { DrawingProvider } from '@/contexts/DrawingContext';
+import { Canvas } from '@/components/Canvas';
+import { CanvasTools } from '@/components/CanvasTools';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useCanvasContext } from '@/contexts/CanvasContext';
 
-export const Index = () => {
-  const [enableSync, setEnableSync] = useState(true);
-  const { isMobile, isTablet } = useWindowDimensions();
-  const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+export default function Index() {
+  const { canvas, setCanvas } = useCanvasContext();
+  const [debugEnabled, setDebugEnabled] = useState(false);
   
-  useEffect(() => {
-    trackComponentLoad('IndexPage');
-    markPerformance('index-page-mounted');
-    
-    return () => {
-      markPerformance('index-page-unmounted');
-    };
-  }, []);
-
+  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
+    setCanvas(fabricCanvas);
+  };
+  
   return (
-    <main className="flex flex-col w-full min-h-screen bg-background">
-      <CanvasProvider>
-        <DrawingProvider canvas={fabricCanvas}>
-          <CanvasControllerProvider>
-            <AuthSection />
-            
-            <div className={`px-4 py-2 flex ${isMobile ? 'flex-col space-y-2' : 'items-center justify-end'}`}>
-              <CollaborationToggle 
-                enabled={enableSync}
-                onToggle={setEnableSync}
-                isMobile={isMobile}
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Floor Plan Editor</h1>
+      
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex-1">
+          <DrawingProvider canvas={canvas}>
+            <div className="border rounded-lg overflow-hidden shadow-lg bg-white">
+              <Canvas 
+                width={800} 
+                height={600} 
+                onCanvasReady={handleCanvasReady}
+                showGridDebug={debugEnabled}
               />
             </div>
             
-            <div className="flex-1 overflow-auto">
-              <FloorPlanEditor onCanvasReady={setFabricCanvas} />
+            {canvas && (
+              <div className="mt-4">
+                <CanvasTools />
+              </div>
+            )}
+          </DrawingProvider>
+        </div>
+        
+        <div className="lg:w-1/4">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-2">Settings</h2>
+            
+            <div className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                id="debug-toggle"
+                checked={debugEnabled}
+                onChange={() => setDebugEnabled(!debugEnabled)}
+                className="mr-2"
+              />
+              <label htmlFor="debug-toggle">Show Debug Info</label>
             </div>
-          </CanvasControllerProvider>
-        </DrawingProvider>
-      </CanvasProvider>
-    </main>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default Index;
+}

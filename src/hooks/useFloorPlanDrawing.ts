@@ -1,12 +1,12 @@
+
 /**
  * Hook for floor plan drawing functionality
  * @module hooks/useFloorPlanDrawing
  */
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType } from '@/types/floor-plan/unifiedTypes';
+import { FloorPlan, Stroke, Room, Wall, asStrokeType, asRoomType, createWall } from '@/types/core';
 import { DrawingMode } from '@/constants/drawingModes';
-import { calculateWallLength } from '@/utils/debug/typeDiagnostics';
 
 export interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
@@ -112,15 +112,12 @@ export const useFloorPlanDrawing = ({
   }, [getCanvas, floorPlan, onFloorPlanUpdate, setFloorPlan]);
 
   // Add a wall to the floor plan
-  const addWall = useCallback((wall: Omit<Wall, 'length'>) => {
+  const addWall = useCallback((wallInput: Omit<Wall, 'length'>) => {
     const currentCanvas = getCanvas();
     if (!currentCanvas) return;
     
     // Calculate length for the wall
-    const completeWall: Wall = {
-      ...wall,
-      length: calculateWallLength(wall)
-    };
+    const completeWall = createWall(wallInput);
     
     // Add the wall to the canvas
     currentCanvas.add(/* wall visual representation */);

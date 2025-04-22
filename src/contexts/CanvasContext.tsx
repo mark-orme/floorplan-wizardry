@@ -1,37 +1,30 @@
 
-import React, { createContext, useContext, useState, useRef } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface CanvasContextType {
   canvas: FabricCanvas | null;
-  setCanvas: (canvas: FabricCanvas | null) => void;
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  setCanvas: React.Dispatch<React.SetStateAction<FabricCanvas | null>>;
 }
 
-const CanvasContext = createContext<CanvasContextType | undefined>(undefined);
+const CanvasContext = createContext<CanvasContextType | null>(null);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   return (
-    <CanvasContext.Provider value={{
-      canvas,
-      setCanvas,
-      canvasRef
-    }}>
+    <CanvasContext.Provider value={{ canvas, setCanvas }}>
       {children}
     </CanvasContext.Provider>
   );
 };
 
-export const useCanvas = () => {
+export const useCanvasContext = (): CanvasContextType => {
   const context = useContext(CanvasContext);
-  if (context === undefined) {
-    throw new Error('useCanvas must be used within a CanvasProvider');
+  
+  if (!context) {
+    throw new Error('useCanvasContext must be used within a CanvasProvider');
   }
+  
   return context;
 };
-
-// Add this line to fix the useCanvasContext import errors
-export const useCanvasContext = useCanvas;

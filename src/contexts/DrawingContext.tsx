@@ -1,146 +1,92 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface DrawingContextType {
-  canUndo: boolean;
-  canRedo: boolean;
-  history: any[];
-  currentHistoryIndex: number;
-  activeTool: DrawingMode;
+  tool: DrawingMode;
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
   lineColor: string;
+  setLineColor: React.Dispatch<React.SetStateAction<string>>;
   lineThickness: number;
-  addToHistory: () => void;
+  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
+  canvas: FabricCanvas | null;
+  undoStack: any[];
+  redoStack: any[];
+  addToUndoStack: (state: any) => void;
   undo: () => void;
   redo: () => void;
-  resetHistory: () => void;
-  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
-  setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
-  setActiveTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  setLineColor: React.Dispatch<React.SetStateAction<string>>;
-  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
 }
 
-const DrawingContext = createContext<DrawingContextType>({
-  canUndo: false,
-  canRedo: false,
-  history: [],
-  currentHistoryIndex: -1,
-  activeTool: DrawingMode.SELECT,
-  lineColor: '#000000',
-  lineThickness: 2,
-  addToHistory: () => {},
-  undo: () => {},
-  redo: () => {},
-  resetHistory: () => {},
-  setCanUndo: () => {},
-  setCanRedo: () => {},
-  setActiveTool: () => {},
-  setLineColor: () => {},
-  setLineThickness: () => {}
-});
+const DrawingContext = createContext<DrawingContextType | null>(null);
 
-interface DrawingProviderProps {
-  canvas: FabricCanvas | null;
+export const DrawingProvider: React.FC<{
   children: React.ReactNode;
-}
+  canvas: FabricCanvas | null;
+}> = ({ children, canvas }) => {
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState('#000000');
+  const [lineThickness, setLineThickness] = useState(2);
+  const [undoStack, setUndoStack] = useState<any[]>([]);
+  const [redoStack, setRedoStack] = useState<any[]>([]);
 
-export const DrawingProvider: React.FC<DrawingProviderProps> = ({
-  canvas,
-  children
-}) => {
-  const [history, setHistory] = useState<any[]>([]);
-  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
-  const [lineColor, setLineColor] = useState<string>('#000000');
-  const [lineThickness, setLineThickness] = useState<number>(2);
-  
-  const saveCanvasState = useCallback(() => {
-    if (!canvas) return;
-    
-    const json = canvas.toJSON(['id', 'name']);
-    return json;
-  }, [canvas]);
-  
-  const addToHistory = useCallback(() => {
-    if (!canvas) return;
-    
-    const currentState = saveCanvasState();
-    if (!currentState) return;
-    
-    setHistory(prev => {
-      // If we've gone back in history and then made a change,
-      // discard any future states
-      const newHistory = prev.slice(0, currentHistoryIndex + 1);
-      return [...newHistory, currentState];
-    });
-    
-    setCurrentHistoryIndex(prev => prev + 1);
-    setCanUndo(true);
-    setCanRedo(false);
-  }, [canvas, currentHistoryIndex, saveCanvasState]);
-  
-  const undo = useCallback(() => {
-    if (!canvas || !canUndo) return;
-    
-    const previousState = history[currentHistoryIndex - 1];
-    canvas.loadFromJSON(previousState, () => {
-      canvas.renderAll();
-      setCurrentHistoryIndex(prev => prev - 1);
-      setCanUndo(currentHistoryIndex - 1 > 0);
-      setCanRedo(true);
-    });
-  }, [canvas, canUndo, history, currentHistoryIndex]);
-  
-  const redo = useCallback(() => {
-    if (!canvas || !canRedo) return;
-    
-    const nextState = history[currentHistoryIndex + 1];
-    canvas.loadFromJSON(nextState, () => {
-      canvas.renderAll();
-      setCurrentHistoryIndex(prev => prev + 1);
-      setCanUndo(true);
-      setCanRedo(currentHistoryIndex + 1 < history.length - 1);
-    });
-  }, [canvas, canRedo, history, currentHistoryIndex]);
-  
-  const resetHistory = useCallback(() => {
-    setHistory([]);
-    setCurrentHistoryIndex(-1);
-    setCanUndo(false);
-    setCanRedo(false);
-  }, []);
-  
-  const value = {
-    canUndo,
-    canRedo,
-    history,
-    currentHistoryIndex,
-    activeTool,
-    lineColor,
-    lineThickness,
-    addToHistory,
-    undo,
-    redo,
-    resetHistory,
-    setCanUndo,
-    setCanRedo,
-    setActiveTool,
-    setLineColor,
-    setLineThickness
+  const addToUndoStack = (state: any) => {
+    setUndoStack(prev => [...prev, state]);
+    setRedoStack([]);
   };
-  
+
+  const undo = () => {
+    if (undoStack.length === 0 || !canvas) return;
+    
+    const currentState = canvas.toJSON();
+    const prevState = undoStack[undoStack.length - 1];
+    
+    setRedoStack(prev => [...prev, currentState]);
+    setUndoStack(prev => prev.slice(0, prev.length - 1));
+    
+    canvas.loadFromJSON(prevState, canvas.renderAll.bind(canvas));
+  };
+
+  const redo = () => {
+    if (redoStack.length === 0 || !canvas) return;
+    
+    const currentState = canvas.toJSON();
+    const nextState = redoStack[redoStack.length - 1];
+    
+    setUndoStack(prev => [...prev, currentState]);
+    setRedoStack(prev => prev.slice(0, prev.length - 1));
+    
+    canvas.loadFromJSON(nextState, canvas.renderAll.bind(canvas));
+  };
+
   return (
-    <DrawingContext.Provider value={value}>
+    <DrawingContext.Provider
+      value={{
+        tool,
+        setTool,
+        lineColor,
+        setLineColor,
+        lineThickness,
+        setLineThickness,
+        canvas,
+        undoStack,
+        redoStack,
+        addToUndoStack,
+        undo,
+        redo
+      }}
+    >
       {children}
     </DrawingContext.Provider>
   );
 };
 
-export const useDrawingContext = () => useContext(DrawingContext);
-
-// Add the useDrawing alias for backward compatibility
-export const useDrawing = useDrawingContext;
+export const useDrawingContext = () => {
+  const context = useContext(DrawingContext);
+  
+  if (!context) {
+    throw new Error('useDrawingContext must be used within a DrawingProvider');
+  }
+  
+  return context;
+};

@@ -2,9 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { GridRendererComponent } from "./GridRenderer";
-import { captureMessage } from "@/utils/sentryUtils";
-import logger from "@/utils/logger";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import { GRID_CONSTANTS } from "@/types/core";
 
 interface GridLayerProps {
   fabricCanvas: FabricCanvas;
@@ -30,18 +28,9 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   // Handle grid creation
   const handleGridCreated = (objects: FabricObject[]) => {
     if (!gridInitializedRef.current) {
-      logger.info(`Grid created with ${objects.length} objects`);
+      console.info(`Grid created with ${objects.length} objects`);
       setGridObjects(objects);
       gridInitializedRef.current = true;
-      
-      captureMessage("Grid layer created", {
-        level: 'info',
-        tags: { component: "GridLayer" },
-        extra: { 
-          objectCount: objects.length, 
-          dimensions: dimensionsRef.current 
-        }
-      });
     }
   };
   
@@ -51,7 +40,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       const width = dimensionsRef.current.width;
       const height = dimensionsRef.current.height;
       
-      logger.info("Requesting render for grid with dimensions", { width, height });
+      console.info("Requesting render for grid with dimensions", { width, height });
       fabricCanvas.requestRenderAll();
     }
   }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]);
@@ -65,7 +54,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         );
         
         if (visibleGridObjects.length < gridObjects.length * 0.5) {
-          logger.warn("Grid visibility issue detected, forcing re-render");
+          console.warn("Grid visibility issue detected, forcing re-render");
           fabricCanvas.requestRenderAll();
         }
       }

@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvasEngine } from '@/contexts/CanvasEngineContext';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
+import { useCanvasContext } from '@/contexts/CanvasContext';
 
 export interface FloorPlanCanvasProps {
   width?: number;
@@ -24,6 +25,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { engine, setEngine } = useCanvasEngine();
+  const { setCanvas } = useCanvasContext();
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
 
   // Initialize canvas when component mounts
@@ -51,6 +53,10 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
         });
       }
       
+      if (setCanvas) {
+        setCanvas(canvas);
+      }
+      
       if (onCanvasReady) {
         onCanvasReady({ 
           canvas,
@@ -74,7 +80,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
         toast.error(`Canvas error: ${error.message}`);
       }
     }
-  }, [width, height, onCanvasReady, onError, setEngine]);
+  }, [width, height, onCanvasReady, onError, setEngine, setCanvas]);
 
   return (
     <canvas
