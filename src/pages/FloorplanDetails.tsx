@@ -9,6 +9,7 @@ import { useSupabase } from '@/contexts/SupabaseContext';
 import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
 import { adaptFloorPlan } from '@/utils/typeAdapters';
 import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
+import { createFloorPlan } from '@/types/core/floor-plan/helpers';
 
 export default function FloorplanDetails() {
   const { id } = useParams<{ id: string }>();
@@ -105,6 +106,35 @@ export default function FloorplanDetails() {
   const handleCancelClick = () => {
     setIsEditing(false);
     setName(floorPlan?.name || ''); // Revert to original name
+  };
+
+  const handleNewFloorPlan = async () => {
+    // Create a new floor plan using the helper
+    const newFloorPlan = createFloorPlan();
+    
+    setIsLoading(true);
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client is not initialized');
+      }
+
+      const { error } = await supabase
+        .from('floor_plans')
+        .insert(newFloorPlan);
+
+      if (error) {
+        console.error('Error creating new floor plan:', error);
+        toast.error(`Failed to create new floor plan: ${error.message}`);
+        return;
+      }
+
+      toast.success('New floor plan created successfully');
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast.error(`Unexpected error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

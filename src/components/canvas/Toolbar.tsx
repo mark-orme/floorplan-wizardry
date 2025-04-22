@@ -1,227 +1,180 @@
-
-import React, { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Pointer, 
-  Pencil, 
-  Square, 
-  Minus, 
-  Undo2, 
-  Redo2, 
-  Trash, 
-  Save, 
-  Eraser,
-  Ruler,
-  AlertCircle
-} from 'lucide-react';
+import React, { useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { ToolButton } from '@/components/canvas/ToolButton';
+import { UndoRedoButtons } from '@/components/canvas/UndoRedoButtons';
+import { LineThicknessSlider } from '@/components/canvas/LineThicknessSlider';
+import { ColorPicker } from '@/components/canvas/ColorPicker';
 import { captureMessage } from '@/utils/sentry';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
 interface ToolbarProps {
-  activeTool: DrawingMode;
-  lineThickness: number;
-  lineColor: string;
   onToolChange: (tool: DrawingMode) => void;
+  onLineThicknessChange: (thickness: number) => void;
+  onLineColorChange: (color: string) => void;
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
   onSave: () => void;
-  onDelete: () => void;
-  onLineThicknessChange: (thickness: number) => void;
-  onLineColorChange: (color: string) => void;
+  activeTool: DrawingMode;
+  lineThickness: number;
+  lineColor: string;
 }
 
-/**
- * Toolbar component for canvas drawing tools
- * @param {ToolbarProps} props - Component props
- * @returns {JSX.Element} Rendered component
- */
-export const Toolbar: React.FC<ToolbarProps> = ({
-  activeTool,
-  lineThickness,
-  lineColor,
+export const DrawingToolbar: React.FC<ToolbarProps> = React.memo(({
   onToolChange,
+  onLineThicknessChange,
+  onLineColorChange,
   onUndo,
   onRedo,
   onClear,
   onSave,
-  onDelete,
-  onLineThicknessChange,
-  onLineColorChange
-}: ToolbarProps): JSX.Element => {
-  const { t } = useTranslation();
-
-  // Log when the active tool changes to help debug
-  useEffect(() => {
-    console.log("Active tool in Toolbar:", activeTool);
-    
-    // Track tool changes in Sentry
-    captureMessage("Drawing tool changed", "tool-change", {
-      tags: { component: "Toolbar" },
-      extra: { tool: activeTool }
-    });
-  }, [activeTool]);
-
-  const handleStraightLineClick = () => {
-    console.log("Straight line tool clicked, current tool:", activeTool);
-    
-    // Track attempt to change to straight line tool
-    captureMessage("Straight line tool clicked", "straight-line-button-click", {
-      tags: { component: "Toolbar" },
-      extra: { previousTool: activeTool }
-    });
-    
-    onToolChange(DrawingMode.STRAIGHT_LINE);
-  };
+  activeTool,
+  lineThickness,
+  lineColor
+}) => {
+  const { canUndo, canRedo } = useDrawingContext();
   
-  // Report issues with straight line tool
-  const reportStraightLineIssue = () => {
-    captureMessage("User reported straight line tool issue", "user-reported-issue", {
-      tags: { component: "Toolbar", critical: "true" },
-      extra: { 
-        activeTool,
-        browserInfo: {
-          userAgent: navigator.userAgent,
-          platform: navigator.platform,
-          language: navigator.language,
-          windowDimensions: {
-            width: window.innerWidth,
-            height: window.innerHeight
-          }
-        }
-      }
-    });
+  const handleToolSelect = useCallback((tool: DrawingMode) => {
+    onToolChange(tool);
     
-    toast.success(t('common.reportSent', "Issue reported to developers. Thank you!"));
-  };
-
+    captureMessage("Tool selected", {
+      level: 'info',
+      tags: { component: "Toolbar" },
+      extra: { tool }
+    });
+  }, [onToolChange]);
+  
+  const handleClearCanvas = useCallback(() => {
+    onClear();
+    
+    captureMessage("Canvas cleared", {
+      level: 'info',
+      tags: { component: "Toolbar" }
+    });
+  }, [onClear]);
+  
+  const handleExportCanvas = useCallback(() => {
+    onSave();
+    
+    captureMessage("Canvas exported", {
+      level: 'info',
+      tags: { component: "Toolbar" },
+      extra: { format: "png" }
+    });
+  }, [onSave]);
+  
   return (
-    <div className="flex flex-wrap gap-2 bg-white rtl-reverse">
-      <div className="flex items-center gap-1 rtl-reverse">
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.SELECT ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.SELECT)}
-          title={t('canvas.toolbar.select')}
+    <div className="flex items-center justify-between p-2 bg-gray-100 border-b">
+      {/* Drawing Tools */}
+      <div className="flex items-center space-x-2">
+        <ToolButton
+          tool={DrawingMode.SELECT}
+          isActive={activeTool === DrawingMode.SELECT}
+          onClick={handleToolSelect}
+          title="Select"
         >
-          <Pointer className="h-4 w-4" />
-          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.select')}</span>
-        </Button>
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.DRAW ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.DRAW)}
-          title={t('canvas.toolbar.draw')}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9 0v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v-3.75m0 3.75l9 5.25m9-5.25v-3.75" />
+          </svg>
+        </ToolButton>
+        <ToolButton
+          tool={DrawingMode.DRAW}
+          isActive={activeTool === DrawingMode.DRAW}
+          onClick={handleToolSelect}
+          title="Draw"
         >
-          <Pencil className="h-4 w-4" />
-          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.draw')}</span>
-        </Button>
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
-          onClick={handleStraightLineClick}
-          title={t('canvas.toolbar.straightLine')}
-          data-test-id="straight-line-button"
-          className={activeTool === DrawingMode.STRAIGHT_LINE ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.25v-4.5m0 4.5H7.5m4.5 0h4.5m-4.5-15L3 6.75a2.25 2.25 0 00-2.25 2.25V18a2.25 2.25 0 002.25 2.25h18a2.25 2.25 0 002.25-2.25V9a2.25 2.25 0 00-2.25-2.25L12 2.25z" />
+          </svg>
+        </ToolButton>
+        <ToolButton
+          tool={DrawingMode.WALL}
+          isActive={activeTool === DrawingMode.WALL}
+          onClick={handleToolSelect}
+          title="Wall"
         >
-          <Minus className="h-4 w-4" />
-          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.straightLine')}</span>
-        </Button>
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.WALL ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.WALL)}
-          title={t('canvas.toolbar.wall')}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+            <path d="M9 3v18"></path>
+            <path d="M15 3v18"></path>
+          </svg>
+        </ToolButton>
+        <ToolButton
+          tool={DrawingMode.DOOR}
+          isActive={activeTool === DrawingMode.DOOR}
+          onClick={handleToolSelect}
+          title="Door"
         >
-          <Ruler className="h-4 w-4" />
-          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.wall')}</span>
-        </Button>
-        <Button 
-          size="sm" 
-          variant={activeTool === DrawingMode.ERASER ? 'default' : 'outline'} 
-          onClick={() => onToolChange(DrawingMode.ERASER)}
-          title={t('canvas.toolbar.eraser')}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 21V3"></path>
+            <path d="M4 9h16"></path>
+            <path d="M14 9v12"></path>
+          </svg>
+        </ToolButton>
+        <ToolButton
+          tool={DrawingMode.WINDOW}
+          isActive={activeTool === DrawingMode.WINDOW}
+          onClick={handleToolSelect}
+          title="Window"
         >
-          <Eraser className="h-4 w-4" />
-          <span className="ml-1 rtl-margin-right">{t('canvas.toolbar.eraser')}</span>
-        </Button>
-        
-        {/* Add a button to report line tool issues */}
-        {activeTool === DrawingMode.STRAIGHT_LINE && (
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="ml-2 text-amber-600 border-amber-600 rtl-margin-right"
-            onClick={reportStraightLineIssue}
-            title={t('common.reportIssue', "Report Issue with Line Tool")}
-          >
-            <AlertCircle className="h-4 w-4 mr-1 rtl-margin-left" />
-            <span className="text-xs">{t('common.reportIssue', "Report Issue")}</span>
-          </Button>
-        )}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M3 9h18"></path>
+            <path d="M3 15h18"></path>
+          </svg>
+        </ToolButton>
+        <ToolButton
+          tool={DrawingMode.ROOM}
+          isActive={activeTool === DrawingMode.ROOM}
+          onClick={handleToolSelect}
+          title="Room"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3h7a2 2 0 0 1 2 2v7"></path>
+            <path d="M14 3h7a2 2 0 0 0 2 2v7"></path>
+            <path d="M3 14v7a2 2 0 0 0 2 2h7"></path>
+            <path d="M14 14v7a2 2 0 0 1-2 2h-7"></path>
+          </svg>
+        </ToolButton>
       </div>
       
-      <Separator orientation="vertical" className="h-8" />
-      
-      <div className="flex items-center gap-1 rtl-reverse">
-        <Button size="sm" variant="outline" onClick={onUndo} title={t('common.undo', "Undo")}>
-          <Undo2 className="h-4 w-4 rtl-mirror" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={onRedo} title={t('common.redo', "Redo")}>
-          <Redo2 className="h-4 w-4 rtl-mirror" />
-        </Button>
+      {/* Line Settings */}
+      <div className="flex items-center space-x-2">
+        <LineThicknessSlider
+          value={lineThickness}
+          onChange={onLineThicknessChange}
+        />
+        <ColorPicker
+          color={lineColor}
+          onChange={onLineColorChange}
+        />
       </div>
       
-      <Separator orientation="vertical" className="h-8" />
-      
-      <div className="flex items-center gap-1 rtl-reverse">
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={onDelete} 
-          title={t('canvas.toolbar.delete')}
-          className="bg-red-50 border-red-200 hover:bg-red-100"
+      {/* Actions */}
+      <div className="flex items-center space-x-2">
+        <UndoRedoButtons
+          onUndo={onUndo}
+          onRedo={onRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+        />
+        <button
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleClearCanvas}
         >
-          <Trash className="h-4 w-4 text-red-500" />
-          <span className="ml-1 rtl-margin-right text-red-500">{t('canvas.toolbar.delete')}</span>
-        </Button>
-        <Button size="sm" variant="outline" onClick={onSave} title={t('common.save', "Save Canvas")}>
-          <Save className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <Separator orientation="vertical" className="h-8" />
-      
-      <div className="flex items-center gap-2 rtl-reverse">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="line-thickness" className="text-xs">{t('canvas.toolbar.thickness')}</Label>
-          <Input
-            id="line-thickness"
-            type="number"
-            min="1"
-            max="20"
-            value={lineThickness}
-            onChange={(e) => onLineThicknessChange(Number(e.target.value))}
-            className="w-16 h-8"
-          />
-        </div>
-        
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="line-color" className="text-xs">{t('canvas.toolbar.color')}</Label>
-          <Input
-            id="line-color"
-            type="color"
-            value={lineColor}
-            onChange={(e) => onLineColorChange(e.target.value)}
-            className="w-8 h-8 p-0"
-          />
-        </div>
+          Clear
+        </button>
+        <button
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleExportCanvas}
+        >
+          Save
+        </button>
       </div>
     </div>
   );
-};
+});
+
+DrawingToolbar.displayName = 'DrawingToolbar';

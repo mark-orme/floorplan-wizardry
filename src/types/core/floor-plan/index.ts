@@ -13,3 +13,4 @@ export * from './Room';
 export * from './Stroke';
 export * from './Floor';
 export * from './FloorPlan';
+export * from './helpers';

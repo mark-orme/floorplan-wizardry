@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -97,11 +96,10 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
         `Mobile grid created: ${gridObjects.length} objects in ${creationTime.toFixed(1)}ms`,
         "mobile-grid-created",
         {
-          tags: { 
-            isIOS: String(isIOS),
-            objectCount: String(gridObjects.length)
-          },
+          level: 'info',
+          tags: { component: "MobileGridLayer" },
           extra: {
+            objectCount: gridObjects.length,
             creationTimeMs: creationTime,
             isGridVisible: gridObjects.some(obj => obj.visible),
             gridObjectIds: gridObjects.map(obj => obj.id || 'unknown'),
@@ -307,11 +305,9 @@ export const MobileGridLayer: React.FC<MobileGridLayerProps> = ({
       }));
       
       captureMessage(`Grid visibility set to ${visible}`, "grid-visibility-changed", {
-        tags: {
-          visible: String(visible),
-          isIOS: String(isIOS),
-          objectCount: String(gridObjects.length)
-        }
+        level: 'info',
+        tags: { component: "MobileGridLayer" },
+        extra: { visible: visible }
       });
     } catch (error) {
       captureError(error, "grid-visibility-update-error");

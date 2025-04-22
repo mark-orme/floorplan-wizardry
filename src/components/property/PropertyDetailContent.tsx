@@ -1,4 +1,3 @@
-
 import { useProperty } from '@/hooks/query/usePropertyQuery';
 import { Property, PropertyStatus, canEditProperty } from '@/types/propertyTypes';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
@@ -58,7 +57,10 @@ export function PropertyDetailContent({
       await onStatusChange(id, newStatus);
       refetch();
     } catch (err) {
-      captureError(err, { context: 'property-status-change' });
+      captureError(error, {
+        tags: { context: 'PropertyDetailContent' },
+        extra: { propertyId: id }
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -1,4 +1,3 @@
-
 /**
  * Hook for floor plan drawing functionality
  * @module hooks/useFloorPlanDrawing
@@ -120,7 +119,7 @@ export const useFloorPlanDrawing = ({
     // Calculate length for the wall
     const completeWall: Wall = {
       ...wall,
-      length: calculateWallLength(wall.start, wall.end)
+      length: calculateWallLength(wall)
     };
     
     // Add the wall to the canvas

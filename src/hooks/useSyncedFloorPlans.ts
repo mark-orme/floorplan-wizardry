@@ -1,109 +1,76 @@
-
 import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
-import { FloorPlan, FloorPlanMetadata } from '@/types/floor-plan/unifiedTypes';
-import { createCompleteMetadata } from '@/utils/debug/typeDiagnostics';
-import { v4 as uuidv4 } from 'uuid';
+import { FloorPlan } from '@/types/core/floor-plan/FloorPlan';
+import { createFloorPlan } from '@/types/core/floor-plan/helpers';
 
 interface UseSyncedFloorPlansProps {
   initialFloorPlans?: FloorPlan[];
-  fabricCanvasRef?: React.MutableRefObject<any>;
+  loadFloorPlans: () => Promise<FloorPlan[]>;
+  saveFloorPlans: (floorPlans: FloorPlan[]) => Promise<void>;
 }
 
 export const useSyncedFloorPlans = ({
   initialFloorPlans = [],
-  fabricCanvasRef
-}: UseSyncedFloorPlansProps = {}) => {
+  loadFloorPlans,
+  saveFloorPlans,
+}: UseSyncedFloorPlansProps) => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  
-  // Load floor plans from localStorage on init
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    try {
-      const storedFloorPlans = localStorage.getItem('floorPlans');
-      if (storedFloorPlans) {
-        setFloorPlans(JSON.parse(storedFloorPlans));
+    const fetchFloorPlans = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const loadedFloorPlans = await loadFloorPlans();
+        setFloorPlans(loadedFloorPlans);
+      } catch (e: any) {
+        setError(e.message || 'Failed to load floor plans');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to load floor plans from localStorage:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load floor plans'));
-      toast.error('Failed to load floor plans');
-    }
-  }, []);
-  
-  // Save floor plans to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('floorPlans', JSON.stringify(floorPlans));
-    } catch (err) {
-      console.error('Failed to save floor plans to localStorage:', err);
-      toast.error('Failed to save floor plans');
-    }
-  }, [floorPlans]);
-  
-  // Create a new floor plan
-  const createFloorPlan = useCallback((options: { name?: string; level?: number } = {}) => {
-    const now = new Date().toISOString();
-    const metadata: FloorPlanMetadata = createCompleteMetadata({
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: options.level || 0,
-      version: '1.0',
-      author: 'User',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    }) as FloorPlanMetadata;
-    
-    const newFloorPlan: FloorPlan = {
-      id: uuidv4(),
-      name: options.name || `Floor Plan ${floorPlans.length + 1}`,
-      label: options.name || `Floor Plan ${floorPlans.length + 1}`,
-      walls: [],
-      rooms: [],
-      strokes: [],
-      canvasData: null,
-      canvasJson: null,
-      createdAt: now,
-      updatedAt: now,
-      gia: 0,
-      level: options.level || 0,
-      index: floorPlans.length,
-      metadata,
-      data: {},
-      userId: 'default-user'
     };
-    
-    setFloorPlans(prev => [...prev, newFloorPlan]);
-    return newFloorPlan;
-  }, [floorPlans.length]);
-  
-  // Update an existing floor plan
-  const updateFloorPlan = useCallback((index: number, floorPlan: FloorPlan) => {
+
+    fetchFloorPlans();
+  }, [loadFloorPlans]);
+
+  const syncFloorPlans = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await saveFloorPlans(floorPlans);
+    } catch (e: any) {
+      setError(e.message || 'Failed to sync floor plans');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [floorPlans, saveFloorPlans]);
+
+  const addFloorPlan = useCallback(() => {
+    const emptyFloorPlan = createFloorPlan();
+    setFloorPlans(prev => [...prev, emptyFloorPlan]);
+  }, []);
+
+  const updateFloorPlan = useCallback((index: number, updatedFloorPlan: FloorPlan) => {
     setFloorPlans(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...floorPlan,
-        updatedAt: new Date().toISOString()
-      };
-      return updated;
+      const newFloorPlans = [...prev];
+      newFloorPlans[index] = updatedFloorPlan;
+      return newFloorPlans;
     });
   }, []);
-  
-  // Delete a floor plan by ID
-  const deleteFloorPlan = useCallback((id: string) => {
-    setFloorPlans(prev => prev.filter(plan => plan.id !== id));
+
+  const deleteFloorPlan = useCallback((index: number) => {
+    setFloorPlans(prev => prev.filter((_, i) => i !== index));
   }, []);
-  
+
   return {
     floorPlans,
     setFloorPlans,
-    loading,
+    isLoading,
     error,
-    createFloorPlan,
+    syncFloorPlans,
+    addFloorPlan,
     updateFloorPlan,
-    deleteFloorPlan
+    deleteFloorPlan,
   };
 };
