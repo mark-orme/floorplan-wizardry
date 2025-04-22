@@ -3,7 +3,11 @@
  * Unified floor plan type definitions
  * @module types/floorPlan
  */
-import { Point } from './canvas';
+
+export interface Point {
+  x: number;
+  y: number;
+}
 
 export interface Wall {
   id: string;
@@ -77,10 +81,14 @@ export function createEmptyFloorPlan(id: string = crypto.randomUUID()): FloorPla
     strokes: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    gia: 0,
+    level: 0,
+    index: 0,
     metadata: {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }
+    },
+    data: {}
   };
 }
 

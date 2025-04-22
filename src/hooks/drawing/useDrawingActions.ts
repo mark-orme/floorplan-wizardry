@@ -5,11 +5,11 @@ import { useDrawingHistory } from './useDrawingHistory';
 import { Canvas as FabricCanvas } from 'fabric';
 
 export interface UseDrawingActionsProps {
-  canvas?: FabricCanvas | null;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
 }
 
-export const useDrawingActions = ({ canvas }: UseDrawingActionsProps = {}) => {
-  const { undo, redo, saveState } = useDrawingHistory({ canvas });
+export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = {}) => {
+  const { undo, redo, saveState } = useDrawingHistory({ fabricCanvasRef });
   
   const handleUndo = useCallback(() => {
     undo();
@@ -22,8 +22,9 @@ export const useDrawingActions = ({ canvas }: UseDrawingActionsProps = {}) => {
   }, [redo]);
 
   const handleClear = useCallback(() => {
-    if (!canvas) return;
+    if (!fabricCanvasRef?.current) return;
     
+    const canvas = fabricCanvasRef.current;
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
@@ -32,12 +33,13 @@ export const useDrawingActions = ({ canvas }: UseDrawingActionsProps = {}) => {
     saveState();
     
     toast.info('Canvas cleared');
-  }, [canvas, saveState]);
+  }, [fabricCanvasRef, saveState]);
 
   const handleSave = useCallback(() => {
-    if (!canvas) return;
+    if (!fabricCanvasRef?.current) return;
     
     try {
+      const canvas = fabricCanvasRef.current;
       // Convert canvas to JSON
       const json = JSON.stringify(canvas.toJSON());
       
@@ -49,7 +51,7 @@ export const useDrawingActions = ({ canvas }: UseDrawingActionsProps = {}) => {
       console.error('Error saving canvas:', error);
       toast.error('Failed to save');
     }
-  }, [canvas]);
+  }, [fabricCanvasRef]);
 
   return {
     handleUndo,

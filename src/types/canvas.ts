@@ -104,3 +104,7 @@ export function createCanvasAction(action: Partial<CanvasAction> & { type: strin
     timestamp: action.timestamp || Date.now()
   };
 }
+
+// Re-export Point for compatibility
+export { Point };
+

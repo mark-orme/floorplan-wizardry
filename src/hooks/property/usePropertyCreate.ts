@@ -1,58 +1,45 @@
 
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { PropertyFormValues } from '@/components/property/PropertyFormFields';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { FloorPlan } from '@/types/floorPlan';
 
-interface UsePropertyCreateProps {
-  onSuccess?: () => void;
-  onError?: (error: Error) => void;
+interface PropertyFormData {
+  name: string;
+  address: string;
+  city: string;
+  postcode: string;
+  description?: string;
+  floorPlans: FloorPlan[];
 }
 
-export const usePropertyCreate = ({ onSuccess, onError }: UsePropertyCreateProps = {}) => {
-  const [isCreating, setIsCreating] = useState(false);
-  const router = useRouter();
-
-  const createProperty = async (propertyData: PropertyFormValues) => {
-    setIsCreating(true);
-
-    const { data, error } = await supabase
-      .from('properties')
-      .insert([propertyData])
-      .select()
-      .single();
-
-    if (error) {
-      setIsCreating(false);
-      toast.error(`Failed to create property: ${error.message}`);
-      onError?.(error);
-      throw error;
+export const usePropertyCreate = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const createProperty = useCallback(async (data: PropertyFormData) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Mock API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Success
+      toast.success('Property created successfully');
+      return { id: 'property-' + Date.now(), ...data };
+    } catch (err) {
+      const createError = err instanceof Error ? err : new Error('Failed to create property');
+      setError(createError);
+      toast.error(`Error: ${createError.message}`);
+      throw createError;
+    } finally {
+      setLoading(false);
     }
-
-    setIsCreating(false);
-    toast.success('Property created successfully!');
-    onSuccess?.();
-    router.push('/properties');
-
-    return data;
-  };
-
-  const mutation = useMutation({
-    mutationFn: createProperty,
-    onSuccess: () => {
-      // Success logic already handled in createProperty
-    },
-    onError: (error: Error) => {
-      console.error("Mutation error:", error);
-      // Error logic already handled in createProperty
-    }
-  });
-
+  }, []);
+  
   return {
-    createProperty: mutation.mutate,
-    isCreating,
-    ...mutation,
+    createProperty,
+    loading,
+    error
   };
 };

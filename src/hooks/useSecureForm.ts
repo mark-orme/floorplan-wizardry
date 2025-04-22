@@ -1,169 +1,201 @@
 
-/**
- * useSecureForm hook
- * Provides form handling with built-in security and validation
- */
 import { useState, useCallback } from 'react';
 import * as z from 'zod';
-import { validateAndSanitize } from '@/utils/validation/typeValidation';
-import { sanitizeHtml } from '@/utils/security/inputSanitization';
+import { toast } from 'sonner';
 
-type FieldErrors = Record<string, string[]>;
+interface FormField {
+  value: string;
+  error: string | null;
+  touched: boolean;
+}
 
-interface SecureFormState<T> {
-  data: Partial<T>;
-  errors: FieldErrors;
-  touched: Record<string, boolean>;
+interface FormState<T extends Record<string, FormField>> {
+  fields: T;
   isValid: boolean;
   isSubmitting: boolean;
 }
 
-interface SecureFormOptions<T> {
-  initialValues?: Partial<T>;
-  onSubmit?: (data: T) => Promise<void> | void;
-  onValidationError?: (errors: FieldErrors) => void;
+interface UseSecureFormOptions<T> {
+  initialValues: Record<string, string>;
+  validationSchema?: z.ZodType<T>;
+  onSubmit?: (values: T) => Promise<void> | void;
+  validateOnChange?: boolean;
 }
 
-/**
- * Hook for handling forms with built-in security and validation
- * @param schema Zod schema for form validation
- * @param options Form configuration options
- * @returns Form state and handlers
- */
-export function useSecureForm<T>(
-  schema: z.ZodSchema<T>,
-  options: SecureFormOptions<T> = {}
-) {
-  const { initialValues = {}, onSubmit, onValidationError } = options;
-  
-  // Form state
-  const [state, setState] = useState<SecureFormState<T>>({
-    data: initialValues,
-    errors: {},
-    touched: {},
+export function useSecureForm<T extends Record<string, any>>({
+  initialValues,
+  validationSchema,
+  onSubmit,
+  validateOnChange = true
+}: UseSecureFormOptions<T>) {
+  // Initialize form fields
+  const initialFields = Object.entries(initialValues).reduce(
+    (acc, [key, value]) => ({
+      ...acc,
+      [key]: { value, error: null, touched: false }
+    }),
+    {} as Record<string, FormField>
+  );
+
+  const [formState, setFormState] = useState<FormState<Record<string, FormField>>>({
+    fields: initialFields,
     isValid: false,
     isSubmitting: false
   });
-  
-  // Update a form field with sanitization
-  const setField = useCallback((field: keyof T, value: any) => {
-    setState(prev => {
-      // Sanitize string values
-      const sanitizedValue = typeof value === 'string' ? sanitizeHtml(value) : value;
-      
-      // Update data and mark field as touched
-      const newData = { ...prev.data, [field]: sanitizedValue };
-      const newTouched = { ...prev.touched, [field]: true };
-      
-      // Validate the form with the new data
-      const result = validateAndSanitize(schema, newData);
-      
-      // Extract field-specific errors if validation failed
-      let newErrors: FieldErrors = {};
-      if (!result.success && result.errors) {
-        result.errors.errors.forEach(err => {
-          const fieldName = err.path.join('.') || field.toString();
-          if (!newErrors[fieldName]) {
-            newErrors[fieldName] = [];
+
+  // Function to validate the entire form
+  const validateForm = useCallback(() => {
+    if (!validationSchema) return true;
+
+    const values = Object.entries(formState.fields).reduce(
+      (acc, [key, field]) => ({
+        ...acc,
+        [key]: field.value
+      }),
+      {} as Record<string, string>
+    );
+
+    try {
+      validationSchema.parse(values);
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newFields = { ...formState.fields };
+        
+        error.errors.forEach((err) => {
+          const field = err.path[0];
+          if (field && typeof field === 'string' && field in newFields) {
+            newFields[field] = {
+              ...newFields[field],
+              error: err.message
+            };
           }
-          newErrors[fieldName].push(err.message);
         });
+        
+        setFormState((prev) => ({
+          ...prev,
+          fields: newFields,
+          isValid: false
+        }));
       }
-      
-      return {
-        data: newData,
-        errors: newErrors,
-        touched: newTouched,
-        isValid: result.success,
-        isSubmitting: prev.isSubmitting
-      };
-    });
-  }, [schema]);
-  
-  // Handle form submission
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
+      return false;
     }
-    
-    setState(prev => ({ ...prev, isSubmitting: true }));
-    
-    // Validate all fields
-    const result = validateAndSanitize(schema, state.data);
-    
-    if (result.success && result.data) {
-      // Form is valid, call submit handler
-      try {
-        if (onSubmit) {
-          await onSubmit(result.data);
-        }
-      } catch (error) {
-        console.error('Form submission error:', error);
-      }
-    } else {
-      // Form is invalid, extract errors
-      let newErrors: FieldErrors = {};
-      
-      if (result.errors) {
-        result.errors.errors.forEach(err => {
-          const fieldName = err.path.join('.') || 'form';
-          if (!newErrors[fieldName]) {
-            newErrors[fieldName] = [];
+  }, [formState.fields, validationSchema]);
+
+  // Function to update field value
+  const handleChange = useCallback(
+    (name: string, value: string) => {
+      setFormState((prev) => {
+        const newFields = {
+          ...prev.fields,
+          [name]: {
+            ...prev.fields[name],
+            value,
+            touched: true,
+            error: validateOnChange ? prev.fields[name].error : null
           }
-          newErrors[fieldName].push(err.message);
-        });
-      }
-      
-      // Mark all fields as touched
-      const allTouched: Record<string, boolean> = {};
-      Object.keys(state.data).forEach(key => {
-        allTouched[key] = true;
+        };
+        
+        return {
+          ...prev,
+          fields: newFields
+        };
       });
       
-      // Update state with errors
-      setState(prev => ({
+      if (validateOnChange) {
+        setTimeout(validateForm, 0);
+      }
+    },
+    [validateForm, validateOnChange]
+  );
+
+  // Function to handle blur events
+  const handleBlur = useCallback(
+    (name: string) => {
+      setFormState((prev) => ({
         ...prev,
-        errors: newErrors,
-        touched: allTouched,
-        isValid: false,
-        isSubmitting: false
+        fields: {
+          ...prev.fields,
+          [name]: {
+            ...prev.fields[name],
+            touched: true
+          }
+        }
       }));
       
-      // Call error handler if provided
-      if (onValidationError) {
-        onValidationError(newErrors);
-      }
-    }
-    
-    setState(prev => ({ ...prev, isSubmitting: false }));
-  }, [state.data, schema, onSubmit, onValidationError]);
-  
-  // Reset the form to initial values
-  const resetForm = useCallback(() => {
-    setState({
-      data: initialValues,
-      errors: {},
-      touched: {},
-      isValid: false,
-      isSubmitting: false
-    });
-  }, [initialValues]);
-  
-  return {
-    ...state,
-    setField,
-    handleSubmit,
-    resetForm,
-    // Helper to get field-specific props
-    getFieldProps: (field: keyof T) => ({
-      value: state.data[field] || '',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setField(field, e.target.value),
-      onBlur: () => setState(prev => ({
+      validateForm();
+    },
+    [validateForm]
+  );
+
+  // Function to handle form submission
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      setFormState((prev) => ({
         ...prev,
-        touched: { ...prev.touched, [field]: true }
-      })),
-      error: state.touched[field as string] ? state.errors[field as string]?.[0] : undefined,
-      'aria-invalid': state.touched[field as string] && !!state.errors[field as string]
-    })
+        isSubmitting: true
+      }));
+      
+      // Mark all fields as touched
+      const touchedFields = Object.entries(formState.fields).reduce(
+        (acc, [key, field]) => ({
+          ...acc,
+          [key]: { ...field, touched: true }
+        }),
+        {} as Record<string, FormField>
+      );
+      
+      setFormState((prev) => ({
+        ...prev,
+        fields: touchedFields
+      }));
+      
+      const isValid = validateForm();
+      
+      if (isValid && onSubmit) {
+        const values = Object.entries(formState.fields).reduce(
+          (acc, [key, field]) => ({
+            ...acc,
+            [key]: field.value
+          }),
+          {} as T
+        );
+        
+        try {
+          await onSubmit(values);
+          toast.success('Form submitted successfully');
+        } catch (error) {
+          console.error('Form submission error:', error);
+          toast.error('Form submission failed');
+        }
+      } else {
+        toast.error('Please correct the errors in the form');
+      }
+      
+      setFormState((prev) => ({
+        ...prev,
+        isSubmitting: false
+      }));
+    },
+    [formState.fields, onSubmit, validateForm]
+  );
+
+  return {
+    fields: formState.fields,
+    isValid: formState.isValid,
+    isSubmitting: formState.isSubmitting,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    validateForm,
+    resetForm: useCallback(() => {
+      setFormState({
+        fields: initialFields,
+        isValid: false,
+        isSubmitting: false
+      });
+    }, [initialFields])
   };
 }

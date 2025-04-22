@@ -1,164 +1,102 @@
-import { useState, useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { v4 as uuidv4 } from 'uuid';
-import type { FloorPlan } from '@/types/floorPlan';
-import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
-import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/floorPlan';
 
-export interface UseFloorPlansProps {
-  initialFloorPlans?: any[]; // Accept any FloorPlan types
-  defaultFloorIndex?: number;
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef?: React.MutableRefObject<FabricObject[]>;
-  tool?: any; // Accept any DrawingMode type
+import { useState, useCallback } from 'react';
+import { FloorPlan, createEmptyFloorPlan } from '@/types/floorPlan';
+
+// Remove any incompatible properties
+export interface FloorPlanMetadataExtended {
+  createdAt: string;
+  updatedAt: string;
+  author?: string;
+  version?: string;
+  paperSize?: string;
+  level?: number;
+  dateCreated?: string;
+  // Removed lastModified since it's not in FloorPlanMetadata
 }
 
-export const useFloorPlans = ({
-  initialFloorPlans = [],
-  defaultFloorIndex = 0,
-  fabricCanvasRef,
-  gridLayerRef,
-  tool = DrawingMode.SELECT
-}: UseFloorPlansProps) => {
-  // Convert any initialFloorPlans to unified type
-  const unifiedInitialFloorPlans: FloorPlan[] = initialFloorPlans.map(plan => {
-    // Ensure the plan has a userId if it's from floorPlanTypes.ts
-    if ('propertyId' in plan && !plan.userId) {
-      return plan as FloorPlan;
-    }
-    return plan as FloorPlan;
-  });
+export const useFloorPlans = (initialFloorPlans: FloorPlan[] = []) => {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans.length > 0 
+    ? initialFloorPlans 
+    : [createEmptyFloorPlan()]);
   
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(unifiedInitialFloorPlans);
-  const [currentFloorIndex, setCurrentFloorIndex] = useState(defaultFloorIndex);
-  const [gia, setGia] = useState(0);
-  
-  const currentFloorPlan = floorPlans[currentFloorIndex] || null;
-  
-  const now = new Date().toISOString();
-  const safeFloorPlan: FloorPlan = currentFloorPlan || {
-    id: 'empty',
-    name: 'Empty Floor Plan',
-    label: 'Empty Floor Plan',
-    walls: [],
-    rooms: [],
-    strokes: [],
-    canvasData: null,
-    canvasJson: null,
-    createdAt: now,
-    updatedAt: now,
-    gia: 0,
-    level: 0,
-    index: 0,
-    metadata: {
-      createdAt: now,
-      updatedAt: now,
-      paperSize: 'A4',
-      level: 0,
-      version: '1.0',
-      author: 'User',
-      dateCreated: now,
-      lastModified: now,
-      notes: ''
-    },
-    data: {},
-    userId: ''
-  };
-  
-  const drawingHook = useFloorPlanDrawing({
-    floorPlan: safeFloorPlan,
-    fabricCanvasRef,
-    tool,
-    onFloorPlanUpdate: (floorPlan) => {
-      setFloorPlans(prev => {
-        const updated = [...prev];
-        updated[currentFloorIndex] = floorPlan;
-        return updated;
-      });
-    }
-  });
-  
-  const drawFloorPlan = useCallback((canvas: FabricCanvas, floorPlan: FloorPlan) => {
-    if (!drawingHook || !drawingHook.drawFloorPlan) {
-      console.error('drawFloorPlan function not available');
-      return;
-    }
-    
-    drawingHook.drawFloorPlan(canvas, floorPlan);
-  }, [drawingHook]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   
   const addFloorPlan = useCallback(() => {
-    const now = new Date().toISOString();
+    const newFloorPlan = createEmptyFloorPlan();
+    
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+    setCurrentIndex(prev => prev + 1);
+    
+    return newFloorPlan;
+  }, []);
+  
+  const updateFloorPlan = useCallback((index: number, updatedFloorPlan: Partial<FloorPlan>) => {
+    setFloorPlans(prev => {
+      const newFloorPlans = [...prev];
+      
+      if (index >= 0 && index < newFloorPlans.length) {
+        newFloorPlans[index] = {
+          ...newFloorPlans[index],
+          ...updatedFloorPlan,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      
+      return newFloorPlans;
+    });
+  }, []);
+  
+  const deleteFloorPlan = useCallback((index: number) => {
+    setFloorPlans(prev => {
+      // Don't delete if it's the only floor plan
+      if (prev.length <= 1) {
+        return prev;
+      }
+      
+      const newFloorPlans = prev.filter((_, i) => i !== index);
+      
+      // Adjust current index if needed
+      if (index <= currentIndex) {
+        setCurrentIndex(Math.max(0, currentIndex - 1));
+      }
+      
+      return newFloorPlans;
+    });
+  }, [currentIndex]);
+  
+  const createNewFloorPlan = useCallback((name: string = 'New Floor Plan', level: number = 0) => {
     const newFloorPlan: FloorPlan = {
-      id: uuidv4(),
-      name: `Floor ${floorPlans.length + 1}`,
-      label: `Floor ${floorPlans.length + 1}`,
-      index: floorPlans.length,
-      level: floorPlans.length,
+      id: crypto.randomUUID(),
+      name,
       walls: [],
       rooms: [],
       strokes: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       gia: 0,
-      canvasData: null,
-      canvasJson: null,
-      createdAt: now,
-      updatedAt: now,
+      level,
+      index: floorPlans.length,
       metadata: {
-        createdAt: now,
-        updatedAt: now,
-        paperSize: 'A4',
-        level: floorPlans.length,
-        version: '1.0',
-        author: 'User',
-        dateCreated: now,
-        lastModified: now,
-        notes: ''
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       },
-      data: {},
-      userId: 'default-user'
+      data: {}
     };
     
     setFloorPlans(prev => [...prev, newFloorPlan]);
-    setCurrentFloorIndex(floorPlans.length);
+    setCurrentIndex(floorPlans.length);
+    
+    return newFloorPlan;
   }, [floorPlans.length]);
-  
-  const removeFloorPlan = useCallback((index: number) => {
-    if (floorPlans.length <= 1) {
-      console.warn('Cannot remove the last floor plan');
-      return;
-    }
-    
-    setFloorPlans(prev => prev.filter((_, i) => i !== index));
-    
-    if (currentFloorIndex >= index) {
-      setCurrentFloorIndex(prev => Math.max(0, prev - 1));
-    }
-  }, [floorPlans.length, currentFloorIndex]);
-  
-  const syncFloorPlans = useCallback(() => {
-    console.log('syncFloorPlans called (compatibility function)');
-  }, []);
-  
-  // Compatibility layer for components expecting AppFloorPlan[] instead of UnifiedFloorPlan[]
-  const getCompatibleFloorPlans = useCallback((): FloorPlan[] => {
-    // Convert unified plan to app plan format
-    return floorPlans;
-  }, [floorPlans]);
   
   return {
     floorPlans,
-    setFloorPlans,
-    currentFloorIndex,
-    setCurrentFloorIndex,
-    currentFloorPlan,
+    currentFloorPlan: floorPlans[currentIndex],
+    currentIndex,
+    setCurrentIndex,
     addFloorPlan,
-    removeFloorPlan,
-    drawFloorPlan,
-    gia,
-    setGia,
-    syncFloorPlans,
-    getCompatibleFloorPlans, // Add this for compatibility
-    ...drawingHook
+    updateFloorPlan,
+    deleteFloorPlan,
+    createNewFloorPlan
   };
 };

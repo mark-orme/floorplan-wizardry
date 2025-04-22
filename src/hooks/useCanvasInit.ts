@@ -1,296 +1,303 @@
 
-/**
- * Canvas initialization hook
- * Handles additional canvas initialization logic and error monitoring
- * @module useCanvasInit
- */
 import { useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { INIT_DELAY, resetInitializationState, resetGridProgress } from '@/utils/canvas/canvasInit';
 import { toast } from 'sonner';
-import { captureMessage, captureError } from '@/utils/sentryUtils';
-import { markInitialized } from '@/utils/healthMonitoring';
-import { 
-  generateCanvasDiagnosticReport, 
-  checkFabricJsLoading,
-  FabricLoadingStatus
-} from '@/utils/canvas/monitoring/canvasHealthCheck';
-import {
-  safeCanvasInitialization
-} from '@/utils/canvas/safeCanvasInitialization';
 
-interface UseCanvasInitProps {
-  onError?: () => void;
-  canvasId?: string;
+// Define the error categories
+export type CanvasErrorCategory = 
+  | 'dom-missing'
+  | 'canvas-creation'
+  | 'event-binding'
+  | 'initialization'
+  | 'grid-creation'
+  | 'object-loading'
+  | 'general';
+
+export interface UseCanvasInitOptions {
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  onReady?: (canvas: FabricCanvas) => void;
+  onError?: (error: Error, category: CanvasErrorCategory) => void;
+  maxRetries?: number;
+  throttleRender?: boolean;
+  preserveObjectStacking?: boolean;
+  enableRetinaScaling?: boolean;
+}
+
+export interface UseCanvasInitResult {
+  canvas: FabricCanvas | null;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  isInitializing: boolean;
+  isReady: boolean;
+  error: Error | null;
+  errorCategory: CanvasErrorCategory | null;
+  resetCanvas: () => void;
+  retryInitialization: () => void;
+  renderAll: () => void;
 }
 
 /**
- * Hook for canvas initialization with enhanced error monitoring
- * 
- * @param {UseCanvasInitProps} props - Hook properties
- * @returns {void}
+ * Hook for initializing and managing a Fabric.js canvas
  */
-export const useCanvasInit = ({ onError, canvasId = 'unknown' }: UseCanvasInitProps): void => {
-  const errorCountRef = useRef<number>(0);
-  const canvasInitializedRef = useRef<boolean>(false);
-  const [initChecked, setInitChecked] = useState<boolean>(false);
-  const [canvasElementReady, setCanvasElementReady] = useState<boolean>(false);
-  
-  // Check if DOM is ready for canvas operations
-  useEffect(() => {
-    const checkDocumentReady = () => {
-      if (document.readyState === 'complete') {
-        setCanvasElementReady(true);
-        return true;
-      }
-      return false;
-    };
+export function useCanvasInit(options: UseCanvasInitOptions = {}): UseCanvasInitResult {
+  const {
+    width = 800,
+    height = 600,
+    backgroundColor = '#ffffff',
+    onReady,
+    onError,
+    maxRetries = 3,
+    throttleRender = true,
+    preserveObjectStacking = true,
+    enableRetinaScaling = true
+  } = options;
 
-    // Try immediately
-    if (!checkDocumentReady()) {
-      // Set up event listener if document not ready
-      const handleReadyStateChange = () => {
-        if (checkDocumentReady()) {
-          document.removeEventListener('readystatechange', handleReadyStateChange);
-        }
-      };
-      
-      document.addEventListener('readystatechange', handleReadyStateChange);
-      return () => {
-        document.removeEventListener('readystatechange', handleReadyStateChange);
-      };
-    }
-  }, []);
-  
-  // Check Fabric.js loading during initialization
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [errorCategory, setErrorCategory] = useState<CanvasErrorCategory | null>(null);
+  const renderRequestRef = useRef<number | null>(null);
+  const retryCountRef = useRef(0);
+
+  // Initialize the canvas with safety checks
   useEffect(() => {
-    // This runs once on mount to check Fabric.js loading status
-    if (initChecked || !canvasElementReady) return;
-    
-    // Verify DOM is fully loaded before checking Fabric
-    if (document.readyState !== 'complete') {
-      const timer = setTimeout(() => {
-        setInitChecked(false); // Force re-run when document is ready
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    
-    const fabricStatus: FabricLoadingStatus = checkFabricJsLoading();
-    
-    captureMessage(
-      fabricStatus.fabricDetected 
-        ? `Fabric.js detected: ${fabricStatus.fabricVersion}` 
-        : 'Fabric.js not detected during initialization',
-      'fabric-load-check', 
-      {
-        level: fabricStatus.fabricDetected ? 'info' : 'error',
-        tags: {
-          component: 'useCanvasInit',
-          fabricLoaded: String(fabricStatus.fabricDetected),
-          fabricVersion: fabricStatus.fabricVersion || 'unknown'
-        },
-        extra: fabricStatus
-      }
-    );
-    
-    // If Fabric.js is not loaded correctly, log an error
-    if (!fabricStatus.fabricDetected || fabricStatus.fabricProblem) {
-      console.error("⚠️ Fabric.js loading issue:", fabricStatus.fabricProblem);
-      
-      captureError(
-        new Error(`Fabric.js loading issue: ${fabricStatus.fabricProblem}`),
-        'fabric-load-error',
-        {
-          level: 'error',
-          tags: {
-            component: 'useCanvasInit',
-            operation: 'initialization'
-          },
-          extra: {
-            fabricStatus,
-            documentState: document.readyState,
-            scripts: Array.from(document.querySelectorAll('script')).map(s => s.src || 'inline')
-          }
+    const initializeCanvas = () => {
+      try {
+        // Reset initialization state
+        resetInitializationState();
+        resetGridProgress();
+        
+        // Check if canvas element exists
+        if (!canvasRef.current) {
+          throw new Error('Canvas DOM element not found');
         }
-      );
-    }
-    
-    setInitChecked(true);
-  }, [initChecked, canvasElementReady]);
-  
-  // Track canvas initialization status
-  useEffect(() => {
-    if (!canvasElementReady || !initChecked) return;
-    
-    // Mark canvas as not yet initialized
-    markInitialized('canvas', false);
-    
-    // Create a function to mark successful initialization
-    const markCanvasInitialized = () => {
-      canvasInitializedRef.current = true;
-      markInitialized('canvas', true);
-      
-      captureMessage('Canvas initialization confirmed by hook', 'canvas-init-confirmed', {
-        level: 'info',
-        tags: {
-          component: 'useCanvasInit',
-          canvasId
-        }
-      });
-    };
-    
-    // Handle initialization success (via custom event that could be dispatched from Canvas)
-    const handleCanvasInitSuccess = () => {
-      markCanvasInitialized();
-    };
-    
-    // Listen for initialization events (could be added to Canvas component)
-    window.addEventListener('canvas-init-success', handleCanvasInitSuccess as EventListener);
-    
-    // After a reasonable delay, check if canvas has initialized
-    const initTimeout = setTimeout(() => {
-      if (!canvasInitializedRef.current) {
-        captureMessage('Canvas did not report initialization within expected timeframe', 'canvas-init-timeout', {
-          level: 'warning',
-          tags: {
-            component: 'useCanvasInit',
-            canvasId
-          },
-          extra: {
-            diagnostics: generateCanvasDiagnosticReport(),
-            documentReady: document.readyState,
-            canvasElements: {
-              count: document.querySelectorAll('canvas').length,
-              ids: Array.from(document.querySelectorAll('canvas')).map(c => c.id || 'no-id')
-            },
-            fabricStatus: checkFabricJsLoading()
-          }
+        
+        setIsInitializing(true);
+        
+        // Create Fabric canvas
+        const fabricCanvas = new FabricCanvas(canvasRef.current, {
+          width,
+          height,
+          backgroundColor,
+          preserveObjectStacking,
+          enableRetinaScaling
         });
+        
+        // Configure canvas options
+        fabricCanvas.selection = true;
+        fabricCanvas.renderOnAddRemove = !throttleRender;
+        
+        // Apply safety for object stacking
+        if (preserveObjectStacking) {
+          fabricCanvas.preserveObjectStacking = true;
+        }
+        
+        // Set canvas and update state
+        setCanvas(fabricCanvas);
+        setIsInitializing(false);
+        setIsReady(true);
+        setError(null);
+        setErrorCategory(null);
+        
+        // Call onReady callback if provided
+        if (onReady) {
+          setTimeout(() => {
+            onReady(fabricCanvas);
+          }, INIT_DELAY);
+        }
+        
+        return () => {
+          // Clean up canvas on unmount
+          fabricCanvas.dispose();
+          if (renderRequestRef.current !== null) {
+            cancelAnimationFrame(renderRequestRef.current);
+          }
+        };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Unknown canvas initialization error');
+        const category: CanvasErrorCategory = !canvasRef.current 
+          ? 'dom-missing' 
+          : 'canvas-creation';
+        
+        console.error('Canvas initialization error:', error);
+        setIsInitializing(false);
+        setIsReady(false);
+        setError(error);
+        setErrorCategory(category);
+        
+        // Call onError callback if provided
+        if (onError) {
+          onError(error, category);
+        }
+        
+        // Show error toast
+        toast.error(`Canvas error: ${error.message}`);
+        
+        return undefined;
       }
-    }, 5000);
+    };
+    
+    const cleanup = initializeCanvas();
     
     return () => {
-      window.removeEventListener('canvas-init-success', handleCanvasInitSuccess as EventListener);
-      clearTimeout(initTimeout);
+      if (cleanup) cleanup();
     };
-  }, [canvasId, canvasElementReady, initChecked]);
-  
-  // Listen for canvas initialization errors
-  useEffect(() => {
-    if (!canvasElementReady) return;
+  }, [
+    width, 
+    height, 
+    backgroundColor, 
+    onReady, 
+    onError, 
+    throttleRender,
+    preserveObjectStacking,
+    enableRetinaScaling
+  ]);
+
+  // Function to reset the canvas
+  const resetCanvas = () => {
+    if (!canvas) return;
     
-    const handleCanvasInitError = (event: CustomEvent) => {
-      errorCountRef.current += 1;
-      const { error, isFatal, specific } = event.detail || {};
+    try {
+      // Clear all objects
+      canvas.clear();
       
-      console.error("Canvas initialization error:", error);
+      // Reset canvas properties
+      canvas.backgroundColor = backgroundColor;
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
       
-      // Capture specific internal details about the error
-      const extractErrorDetails = (error: any): Record<string, any> => {
-        if (!error) return { noError: true };
-        
-        return {
-          message: error.message || 'No message',
-          stack: error.stack || 'No stack',
-          name: error.name || 'No name',
-          code: error.code,
-          lowerElementMissing: error.message?.includes('elements.lower.el') || false,
-          // Add any fabric-specific error properties
-          fabricSpecific: error.fabricSpecificError || false
-        };
-      };
+      // Render the canvas
+      canvas.renderAll();
       
-      // Detect common problems in the DOM that might cause canvas initialization issues
-      const detectDomProblems = (): Record<string, any> => {
-        const problems: Record<string, any> = {
-          missingCanvasElement: document.querySelectorAll('canvas').length === 0,
-          multipleFabricInstances: false,
-          cssProblems: false,
-          visibilityIssues: false
-        };
-        
-        // Check for CSS visibility issues
-        const canvases = document.querySelectorAll('canvas');
-        if (canvases.length > 0) {
-          const hiddenCanvas = Array.from(canvases).some(canvas => {
-            const style = window.getComputedStyle(canvas);
-            return style.display === 'none' || 
-                  style.visibility === 'hidden' || 
-                  style.opacity === '0' ||
-                  canvas.width === 0 || 
-                  canvas.height === 0;
-          });
-          problems.visibilityIssues = hiddenCanvas;
-        }
-        
-        // Check for multiple fabric instances
-        if (typeof window !== 'undefined') {
-          const fabricInstances = Object.keys(window).filter(key => 
-            key.startsWith('fabric') || 
-            (window as any)[key]?.Canvas || 
-            (window as any)[key]?.Object
-          );
-          problems.multipleFabricInstances = fabricInstances.length > 1;
-          if (problems.multipleFabricInstances) {
-            problems.fabricInstanceKeys = fabricInstances;
-          }
-        }
-        
-        return problems;
-      };
+      // Reset error state
+      setError(null);
+      setErrorCategory(null);
       
-      // Report error context to Sentry with enhanced diagnostics
-      captureError(error || new Error('Unknown canvas init error'), 'canvas-init-error-event', {
-        level: isFatal ? 'fatal' : 'error',
-        tags: {
-          component: 'useCanvasInit',
-          operation: 'initialization',
-          errorCount: String(errorCountRef.current),
-          canvasId,
-          lowerElementError: error?.message?.includes('elements.lower.el') ? 'true' : 'false',
-          specificError: specific || 'unknown'
-        },
-        extra: {
-          isFatal,
-          errorDetails: extractErrorDetails(error),
-          fabricStatus: checkFabricJsLoading(),
-          domProblems: detectDomProblems(),
-          diagnostics: generateCanvasDiagnosticReport(),
-          elementsInspection: {
-            canvasCount: document.querySelectorAll('canvas').length,
-            canvasParents: Array.from(document.querySelectorAll('canvas')).map(c => 
-              c.parentElement ? c.parentElement.tagName + (c.parentElement.id ? `#${c.parentElement.id}` : '') : 'no-parent'
-            ),
-            lowerCanvasPresent: document.querySelectorAll('.lower-canvas').length > 0
-          }
-        }
-      });
+      // Notify user
+      toast.success('Canvas reset successfully');
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to reset canvas');
       
-      // Call onError callback
+      console.error('Canvas reset error:', error);
+      setError(error);
+      setErrorCategory('general');
+      
+      // Call onError callback if provided
       if (onError) {
-        onError();
+        onError(error, 'general');
       }
       
-      // Show user notification for fatal errors
-      if (isFatal) {
-        toast.error('Unable to initialize canvas. Please refresh the page.', {
-          duration: 10000, // Show longer for fatal errors
-          action: {
-            label: 'Refresh',
-            onClick: () => window.location.reload()
-          }
-        });
+      // Show error toast
+      toast.error(`Failed to reset canvas: ${error.message}`);
+    }
+  };
+
+  // Function to retry initialization
+  const retryInitialization = () => {
+    if (retryCountRef.current >= maxRetries) {
+      toast.error(`Maximum retry attempts (${maxRetries}) reached`);
+      return;
+    }
+    
+    retryCountRef.current++;
+    
+    try {
+      // Clean up existing canvas if any
+      if (canvas) {
+        canvas.dispose();
       }
-    };
+      
+      // Reset state
+      setCanvas(null);
+      setIsInitializing(true);
+      setIsReady(false);
+      setError(null);
+      setErrorCategory(null);
+      
+      // Show toast
+      toast.info(`Retrying canvas initialization (attempt ${retryCountRef.current}/${maxRetries})`);
+      
+      // Re-run effect to initialize canvas
+      const timer = setTimeout(() => {
+        if (canvasRef.current) {
+          const fabricCanvas = new FabricCanvas(canvasRef.current, {
+            width,
+            height,
+            backgroundColor,
+            preserveObjectStacking,
+            enableRetinaScaling
+          });
+          
+          setCanvas(fabricCanvas);
+          setIsInitializing(false);
+          setIsReady(true);
+          
+          // Call onReady callback if provided
+          if (onReady) {
+            onReady(fabricCanvas);
+          }
+          
+          toast.success('Canvas initialized successfully');
+        } else {
+          setIsInitializing(false);
+          setError(new Error('Canvas DOM element not found on retry'));
+          setErrorCategory('dom-missing');
+          
+          toast.error('Canvas element not found on retry');
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to retry canvas initialization');
+      
+      console.error('Canvas retry error:', error);
+      setIsInitializing(false);
+      setError(error);
+      setErrorCategory('initialization');
+      
+      // Call onError callback if provided
+      if (onError) {
+        onError(error, 'initialization');
+      }
+      
+      // Show error toast
+      toast.error(`Retry failed: ${error.message}`);
+    }
+  };
+
+  // Function to render all objects
+  const renderAll = () => {
+    if (!canvas) return;
     
-    // Add event listener
-    window.addEventListener('canvas-init-error', handleCanvasInitError as EventListener);
-    
-    console.log("Canvas initialization error monitoring attached");
-    
-    // Cleanup function
-    return () => {
-      window.removeEventListener('canvas-init-error', handleCanvasInitError as EventListener);
-    };
-  }, [onError, canvasId, canvasElementReady]);
-  
-  return;
-};
+    if (throttleRender) {
+      // Use requestAnimationFrame for throttling
+      if (renderRequestRef.current !== null) {
+        cancelAnimationFrame(renderRequestRef.current);
+      }
+      
+      renderRequestRef.current = requestAnimationFrame(() => {
+        canvas.renderAll();
+        renderRequestRef.current = null;
+      });
+    } else {
+      // Render immediately
+      canvas.renderAll();
+    }
+  };
+
+  return {
+    canvas,
+    canvasRef,
+    isInitializing,
+    isReady,
+    error,
+    errorCategory,
+    resetCanvas,
+    retryInitialization,
+    renderAll
+  };
+}
