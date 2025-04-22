@@ -1,8 +1,4 @@
 
-/**
- * CanvasFallback Component
- * Renders when the main canvas fails to load
- */
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -43,7 +39,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         }
       });
       
-      // Show toast notification
+      // Use toast.error instead of toast.loading
       toast.error('Canvas failed to load', {
         description: 'Please try refreshing the page or contact support if the issue persists.',
         duration: 5000
@@ -55,7 +51,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     setRetryCount(prev => prev + 1);
     
     if (retry) {
-      // Show loading toast
+      // Use toast.info instead of toast.loading
       toast.info('Attempting to reload canvas...', {
         id: 'canvas-reload'
       });
