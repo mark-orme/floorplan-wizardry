@@ -12,7 +12,6 @@ export interface UseStraightLineToolOptions {
   inputMethod?: InputMethod;
   lineColor?: string;
   lineThickness?: number;
-  isActive?: boolean;
   isEnabled?: boolean;
   canvas?: any;
   saveCurrentState?: () => void;

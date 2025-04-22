@@ -25,7 +25,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
 }) => {
   const [showMeasurement, setShowMeasurement] = useState(true);
   
-  // Don't pass inputMethod prop
   const {
     snapEnabled,
     anglesEnabled,
@@ -38,8 +37,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isEnabled: enabled,
     canvas: canvas,
     lineColor: lineColor,
-    lineThickness: lineThickness,
-    saveCurrentState
+    lineThickness: lineThickness
   });
   
   useEffect(() => {
