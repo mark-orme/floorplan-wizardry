@@ -1,75 +1,94 @@
 
 import { useState, useCallback } from 'react';
-import z, { ZodError, ZodType } from '@/utils/zod-mock';
+import { sanitizeHtml, sanitizeObject } from '@/utils/security/inputSanitization';
+import z, { ZodType } from '@/utils/zod-mock';
 
-export interface ValidationError {
-  path: string;
-  message: string;
+interface UseSecureFormOptions<T> {
+  initialValues: T;
+  onSubmit: (values: T) => void;
+  sanitize?: boolean;
+  validationSchema?: ZodType<T>;
 }
 
-export interface UseSecureFormResult<T> {
-  data: T | null;
-  errors: ValidationError[];
-  validateForm: (formData: unknown) => boolean;
-  isValid: boolean;
-  resetForm: () => void;
-  sanitizedData: T | null;
-}
-
-export function useSecureForm<T>(schema: ZodType<T>, initialData: T | null = null): UseSecureFormResult<T> {
-  const [data, setData] = useState<T | null>(initialData);
-  const [sanitizedData, setSanitizedData] = useState<T | null>(initialData);
-  const [errors, setErrors] = useState<ValidationError[]>([]);
-  const [isValid, setIsValid] = useState(false);
-
-  const sanitizeData = useCallback((data: T): T => {
-    // Implement sanitization logic
-    // For example, strip HTML tags from string fields
-    return data;
-  }, []);
-
-  const validateForm = useCallback(
-    (formData: unknown): boolean => {
-      try {
-        const validData = schema.parse(formData);
-        const cleanData = sanitizeData(validData);
-        
-        setData(validData);
-        setSanitizedData(cleanData);
-        setErrors([]);
-        setIsValid(true);
-        return true;
-      } catch (error) {
-        if (error instanceof ZodError) {
-          const formattedErrors = error.errors.map((err) => ({
-            path: err.path.join('.'),
-            message: err.message,
-          }));
-          setErrors(formattedErrors);
-          setIsValid(false);
-          return false;
-        }
-        setErrors([{ path: '', message: 'An unknown validation error occurred' }]);
-        setIsValid(false);
-        return false;
+export function useSecureForm<T extends Record<string, any>>({
+  initialValues,
+  onSubmit,
+  sanitize = true,
+  validationSchema
+}: UseSecureFormOptions<T>) {
+  const [formValues, setFormValues] = useState<T>(initialValues);
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const handleChange = useCallback((field: keyof T, value: any) => {
+    // Sanitize input if enabled
+    const sanitizedValue = sanitize && typeof value === 'string' 
+      ? sanitizeHtml(value)
+      : value;
+    
+    setFormValues(prev => ({ ...prev, [field]: sanitizedValue }));
+    
+    // Clear error when field is edited
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  }, [errors, sanitize]);
+  
+  const validateForm = useCallback(() => {
+    if (!validationSchema) return true;
+    
+    try {
+      validationSchema.parse(formValues);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        // Handle validation errors
+        const newErrors: Partial<Record<keyof T, string>> = {};
+        // In a real implementation, we would parse the Zod error structure
+        // For now, just set a generic error
+        newErrors.general = error.message;
+        setErrors(newErrors);
       }
-    },
-    [schema, sanitizeData]
-  );
-
-  const resetForm = useCallback(() => {
-    setData(initialData);
-    setSanitizedData(initialData);
-    setErrors([]);
-    setIsValid(false);
-  }, [initialData]);
-
+      return false;
+    }
+  }, [formValues, validationSchema]);
+  
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    setIsSubmitting(true);
+    
+    // Validate before submission
+    const isValid = validateForm();
+    
+    if (isValid) {
+      // Final sanitization of all values before submission
+      const finalValues = sanitize 
+        ? sanitizeObject(formValues) as T
+        : formValues;
+      
+      // Submit form
+      onSubmit(finalValues);
+    }
+    
+    setIsSubmitting(false);
+  }, [formValues, onSubmit, sanitize, validateForm]);
+  
   return {
-    data,
-    sanitizedData,
+    formValues,
     errors,
+    isSubmitting,
+    handleChange,
+    handleSubmit,
     validateForm,
-    isValid,
-    resetForm,
+    setFormValues,
+    reset: () => setFormValues(initialValues)
   };
 }
+
+export default useSecureForm;

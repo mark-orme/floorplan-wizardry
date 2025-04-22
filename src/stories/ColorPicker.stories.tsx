@@ -1,69 +1,57 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { ColorPicker } from '../components/canvas/ColorPicker';
 import { useState } from 'react';
+import { ColorPicker, ColorPickerProps } from '../components/ui/color-picker';
 
-// Meta information for the component
-const meta = {
-  title: 'Canvas/ColorPicker',
+// Updated ColorPickerProps to include presetColors
+interface ExtendedColorPickerProps extends ColorPickerProps {
+  presetColors?: string[];
+}
+
+const meta: Meta<ExtendedColorPickerProps> = {
+  title: 'Components/ColorPicker',
   component: ColorPicker,
   parameters: {
     layout: 'centered',
   },
-  tags: ['autodocs'],
   argTypes: {
     color: { control: 'color' },
-    onChange: { action: 'colorChanged' },
-    presetColors: { 
-      control: 'object',
-      description: 'Array of preset color values'
-    }
+    onChange: { action: 'changed' },
+    presetColors: { control: 'object' },
   },
-} satisfies Meta<typeof ColorPicker>;
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
 
-// Default state story
-export const Default: Story = {
+type Story = StoryObj<ExtendedColorPickerProps>;
+
+export const Basic: Story = {
   args: {
-    color: '#000000',
-    presetColors: ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'],
+    color: '#ff0000',
+    onChange: () => {},
   },
 };
 
-// Interactive example with state management
-export const Interactive: Story = {
-  render: () => {
-    const [color, setColor] = useState('#3B82F6');
+export const WithPresetColors: Story = {
+  render: (args) => {
+    const [color, setColor] = useState('#3b82f6');
     
     return (
-      <div className="p-4 border rounded-md bg-gray-50">
-        <ColorPicker 
-          color={color} 
-          onChange={setColor}
-          presetColors={['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']}
-        />
-        
-        <div className="mt-4 p-4 bg-white rounded border">
-          <p className="font-medium mb-2">Selected Color:</p>
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-10 h-10 rounded border"
-              style={{ backgroundColor: color }}
-            ></div>
-            <span>{color}</span>
-          </div>
-        </div>
-      </div>
+      <ColorPicker 
+        color={color} 
+        onChange={setColor} 
+        presetColors={['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6']} 
+      />
     );
-  }
+  },
 };
 
-// Custom preset colors
-export const CustomPresets: Story = {
+export const Dark: Story = {
   args: {
-    color: '#6366F1',
-    presetColors: ['#6366F1', '#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#A78BFA'],
+    color: '#8b5cf6',
+    onChange: () => {},
+  },
+  parameters: {
+    backgrounds: { default: 'dark' },
   },
 };

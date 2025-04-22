@@ -1,13 +1,13 @@
 
 import { useState, useCallback } from 'react';
-import z, { ZodError } from '@/utils/zod-mock';
+import z, { ZodError, ZodType } from '@/utils/zod-mock';
 
 type ValidationResult = {
   isValid: boolean;
   error?: string;
 };
 
-export const useInputValidation = <T>(schema: z.ZodType<T>) => {
+export const useInputValidation = <T>(schema: ZodType<T>) => {
   const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
 
   const validate = useCallback(

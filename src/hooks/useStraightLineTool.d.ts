@@ -34,6 +34,7 @@ export interface UseStraightLineToolResult {
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
   endDrawing: () => void;
+  completeDrawing: (point: Point) => void;
   cancelDrawing: () => void;
   handlePointerDown: (event: any) => void;
   handlePointerMove: (event: any) => void;
@@ -44,4 +45,6 @@ export interface UseStraightLineToolResult {
   setInputMethod: (method: InputMethod) => void;
   shiftKeyPressed: boolean;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+  toggleSnap: () => void;
+  saveCurrentState: () => void;
 }

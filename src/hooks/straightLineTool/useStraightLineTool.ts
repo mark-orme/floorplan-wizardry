@@ -15,7 +15,7 @@ export interface UseStraightLineToolOptions {
   enabled?: boolean;
   lineColor?: string;
   lineThickness?: number;
-  saveCurrentState?: () => void; // Added saveCurrentState prop
+  saveCurrentState?: () => void;
 }
 
 export interface UseStraightLineToolResult {
@@ -34,6 +34,7 @@ export interface UseStraightLineToolResult {
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
   endDrawing: () => void;
+  completeDrawing: (point: Point) => void;
   cancelDrawing: () => void;
   handlePointerDown: (event: any) => void;
   handlePointerMove: (event: any) => void;
@@ -44,8 +45,8 @@ export interface UseStraightLineToolResult {
   setInputMethod: (method: InputMethod) => void;
   shiftKeyPressed: boolean;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
-  toggleSnap?: () => void; // Added toggleSnap prop
-  saveCurrentState?: () => void; // Added saveCurrentState prop
+  toggleSnap?: () => void;
+  saveCurrentState?: () => void;
 }
 
 export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): UseStraightLineToolResult => {
@@ -109,6 +110,14 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     setAnglesEnabled(prev => !prev);
   }, []);
 
+  // Add the completeDrawing method for compatibility with tests
+  const completeDrawing = useCallback((point: Point) => {
+    if (isDrawing) {
+      handlers.continueDrawing(point);
+      handlers.endDrawing();
+    }
+  }, [isDrawing, handlers]);
+
   return {
     isActive,
     isEnabled,
@@ -125,6 +134,7 @@ export const useStraightLineTool = (options: UseStraightLineToolOptions = {}): U
     startDrawing: handlers.startDrawing,
     continueDrawing: handlers.continueDrawing,
     endDrawing: handlers.endDrawing,
+    completeDrawing,
     cancelDrawing: handlers.cancelDrawing,
     handlePointerDown: handlers.handlePointerDown,
     handlePointerMove: handlers.handlePointerMove,

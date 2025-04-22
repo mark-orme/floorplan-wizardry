@@ -24,6 +24,35 @@ export const isPointNearLine = (
 };
 
 /**
+ * Calculates the distance between two points
+ * @param point1 First point
+ * @param point2 Second point
+ * @returns Distance between the points
+ */
+export const calculateDistance = (
+  point1: Point,
+  point2: Point
+): number => {
+  return Math.sqrt(
+    Math.pow(point2.x - point1.x, 2) + 
+    Math.pow(point2.y - point1.y, 2)
+  );
+};
+
+/**
+ * Calculates the angle between two points
+ * @param point1 First point
+ * @param point2 Second point
+ * @returns Angle in degrees
+ */
+export const calculateAngle = (
+  point1: Point,
+  point2: Point
+): number => {
+  return Math.atan2(point2.y - point1.y, point2.x - point1.x) * 180 / Math.PI;
+};
+
+/**
  * Finds the intersection point between two lines
  * @param line1Start Start point of first line
  * @param line1End End point of first line
