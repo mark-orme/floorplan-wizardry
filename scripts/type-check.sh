@@ -1,5 +1,5 @@
 
 #!/bin/bash
 echo "Running TypeScript type checking in strict mode..."
-npx tsc --noEmit --strict
+node ./scripts/enhanced-type-check.js
 echo "TypeScript type checking completed."
