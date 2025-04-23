@@ -29,7 +29,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     snapEnabled,
     anglesEnabled,
     measurementData,
-    toggleGridSnapping,
+    toggleSnap,
     toggleAngles,
     isDrawing,
     renderTooltip
@@ -69,7 +69,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       {/* Controls */}
       <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-50">
         <button 
-          onClick={toggleGridSnapping}
+          onClick={toggleSnap}
           className={cn(
             "p-2 rounded-full shadow-md transition-colors",
             snapEnabled ? "bg-green-500 text-white" : "bg-white text-gray-800"

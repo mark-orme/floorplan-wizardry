@@ -1,11 +1,12 @@
 
-import { useState, useRef } from 'react';
-import { Point } from '@/types/core/Point';
+import { useState } from 'react';
 import { Line } from 'fabric';
+import { Point } from '@/types/core/Point';
 
 export interface LineStateCore {
   isDrawing: boolean;
   setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
+  isActive?: boolean;  // Add isActive property to fix test errors
   startPoint: Point | null;
   setStartPoint: React.Dispatch<React.SetStateAction<Point | null>>;
   currentPoint: Point | null;
@@ -15,25 +16,21 @@ export interface LineStateCore {
 }
 
 /**
- * Hook for managing the core state of the line tool
+ * Core state management for line drawing
  */
 export const useLineStateCore = (): LineStateCore => {
-  // Drawing state
-  const [isDrawing, setIsDrawing] = useState<boolean>(false);
-  
-  // Point coordinates
+  const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
-  
-  // Current line being drawn
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
   
   return {
     isDrawing,
     setIsDrawing,
+    isActive: false, // Default value for backward compatibility
     startPoint,
     setStartPoint,
-    currentPoint,
+    currentPoint, 
     setCurrentPoint,
     currentLine,
     setCurrentLine

@@ -1,4 +1,3 @@
-
 /**
  * Tests for useFloorPlanDrawing hook
  * @module hooks/useFloorPlanDrawing/__tests__/useFloorPlanDrawing.test
@@ -8,7 +7,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
-import { InputMethodEnum } from '@/hooks/straightLineTool/useLineInputMethod';
+import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
 
 // Mock utility functions
 const createMockStroke = () => ({ id: '1', points: [], type: 'line' as const, color: '#000', thickness: 1, width: 1 });
@@ -40,7 +39,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate: vi.fn(),
       isActive: true,
-      inputMethod: InputMethodEnum.MOUSE,
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -56,7 +55,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate: vi.fn(),
       isActive: true,
-      inputMethod: InputMethodEnum.MOUSE,
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -81,7 +80,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.DRAW,
       onFloorPlanUpdate: updateFloorPlan,
       isActive: true,
-      inputMethod: InputMethodEnum.MOUSE,
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -107,7 +106,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.SELECT,
       onFloorPlanUpdate: updateFloorPlan,
       isActive: true,
-      inputMethod: InputMethodEnum.MOUSE,
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));
@@ -132,7 +131,7 @@ describe('useFloorPlanDrawing', () => {
       tool: DrawingMode.WALL,
       onFloorPlanUpdate: updateFloorPlan,
       isActive: true,
-      inputMethod: InputMethodEnum.MOUSE,
+      inputMethod: InputMethod.MOUSE,
       isPencilMode: false,
       setInputMethod: () => {}
     }));

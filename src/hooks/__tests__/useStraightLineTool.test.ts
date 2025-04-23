@@ -123,10 +123,24 @@ describe('useStraightLineTool', () => {
     });
   });
   
+  it('should initialize with default values', () => {
+    const { result } = renderHook(() => 
+      useStraightLineTool({
+        isEnabled: true,
+        canvas: asMockCanvas(mockCanvas as unknown as Canvas),
+        lineColor: '#000',
+        lineThickness: 1,
+        saveCurrentState
+      })
+    );
+    
+    expect(result.current.isEnabled).toBe(true);
+  });
+  
   it('should initialize and set up event handlers correctly', () => {
     const { result } = renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      enabled: true,
+      isEnabled: true,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -143,13 +157,13 @@ describe('useStraightLineTool', () => {
     expect(mockCanvas.defaultCursor).toBe('crosshair');
     
     // Verify the hook returns expected values
-    expect(result.current.isActive).toBe(true);
+    expect(result.current.isEnabled).toBe(true);
   });
   
   it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
     renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      enabled: false,
+      isEnabled: false,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -163,19 +177,19 @@ describe('useStraightLineTool', () => {
     const { rerender } = renderHook(
       (props) => useStraightLineTool({
         canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-        enabled: props.enabled,
+        isEnabled: props.isEnabled,
         lineColor: '#000000',
         lineThickness: 2,
         saveCurrentState
       }),
-      { initialProps: { enabled: true } }
+      { initialProps: { isEnabled: true } }
     );
     
     // Verify event handlers are set up
     expect(mockCanvas.on).toHaveBeenCalledTimes(3);
     
     // Change tool
-    rerender({ enabled: false });
+    rerender({ isEnabled: false });
     
     // Verify event handlers are removed
     expect(mockCanvas.off).toHaveBeenCalledTimes(3);
@@ -220,7 +234,7 @@ describe('useStraightLineTool', () => {
     
     renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      enabled: true,
+      isEnabled: true,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -281,7 +295,7 @@ describe('useStraightLineTool', () => {
     
     const { result } = renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      enabled: true,
+      isEnabled: true,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -351,7 +365,7 @@ describe('useStraightLineTool', () => {
     
     renderHook(() => useStraightLineTool({
       canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      enabled: true,
+      isEnabled: true,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
