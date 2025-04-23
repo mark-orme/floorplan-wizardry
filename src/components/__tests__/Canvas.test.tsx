@@ -106,7 +106,8 @@ describe('Canvas', () => {
     );
     
     // Get the dispose method from the mocked canvas
-    const disposeMethod = vi.mocked(fabricModule.Canvas)().dispose;
+    const disposeMethod = vi.fn(() => {});
+    vi.mocked(fabricModule.Canvas)().dispose = disposeMethod;
     
     // Unmount the component
     unmount();
