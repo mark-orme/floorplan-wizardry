@@ -28,12 +28,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     if (error) {
       console.error('Canvas Error:', error);
       
-      captureError(error instanceof Error ? error : new Error(String(error)), {
-        cause: {
-          component: 'canvas-fallback',
-          retryCount: String(retryCount)
-        }
-      });
+      captureError(error instanceof Error ? error : new Error(String(error)));
       
       toast.error('Canvas failed to load', {
         description: 'Please try refreshing the page or contact support if the issue persists.',

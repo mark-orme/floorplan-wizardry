@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 import { 
@@ -5,7 +6,7 @@ import {
   EyeOff, 
   Lock, 
   Unlock, 
-  Trash2 as Trash 
+  Trash 
 } from "lucide-react";
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 

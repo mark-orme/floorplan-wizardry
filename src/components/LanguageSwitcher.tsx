@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Globe2 as Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 
 interface Language {
   code: string;

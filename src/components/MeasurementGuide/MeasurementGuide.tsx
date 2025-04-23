@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,9 +8,9 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { 
-  Ruler2 as Ruler, 
-  Grid3x3, 
-  Square2 as Square, 
+  Ruler, 
+  Grid, 
+  Square, 
   Move 
 } from "lucide-react";
 
@@ -32,7 +31,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
         <div className="space-y-6 py-4">
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Grid3x3 className="h-5 w-5" />
+              <Grid className="h-5 w-5" />
               Grid System
             </h3>
             <div className="pl-7 space-y-2">
