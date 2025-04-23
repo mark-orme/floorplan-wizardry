@@ -1,7 +1,22 @@
 
-import { Canvas } from 'fabric';
-import type { Point } from '@/types/core/Point';
+import { Point } from '@/types/core/Point';
+import { Line } from 'fabric';
+import { InputMethod } from './straightLineTool/useLineInputMethod';
+import { ReactNode } from 'react';
 
+/**
+ * Measurement data for line tools
+ */
+export interface MeasurementData {
+  distance: number;
+  angle: number;
+  startPoint: Point;
+  endPoint: Point;
+}
+
+/**
+ * Props for the useStraightLineTool hook
+ */
 export interface UseStraightLineToolProps {
   isActive?: boolean;
   isEnabled?: boolean;
@@ -12,11 +27,4 @@ export interface UseStraightLineToolProps {
   snapToGrid?: boolean;
   saveCurrentState?: () => void;
   anglesEnabled?: boolean;
-}
-
-export interface MeasurementData {
-  distance: number;
-  angle: number;
-  startPoint: Point;
-  endPoint: Point;
 }

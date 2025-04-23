@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 
 /**
  * Hook for managing line drawing state
@@ -21,7 +21,7 @@ export const useLineDrawingState = () => {
     setStartPoint(null);
     setCurrentPoint(null);
     setCurrentLine(null);
-    lineToolLogger.debug('Drawing state reset');
+    toolsLogger.debug('Drawing state reset');
   }, []);
   
   return {
