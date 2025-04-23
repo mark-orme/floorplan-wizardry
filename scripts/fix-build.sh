@@ -27,4 +27,3 @@ chmod +x ./scripts/*.sh
 # Run dev server
 echo "Starting dev server..."
 npm run dev
-

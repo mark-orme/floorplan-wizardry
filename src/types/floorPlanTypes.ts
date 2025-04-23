@@ -71,9 +71,9 @@ export type StrokeTypeLiteral = 'line' | 'wall' | 'door' | 'window' | 'furniture
 
 export interface FloorPlanMetadata {
   version: string;
-  scale: number;
-  unit: 'mm' | 'cm' | 'm' | 'inch' | 'ft';
-  paperSize: PaperSize;
+  scale?: number;
+  unit?: 'mm' | 'cm' | 'm' | 'inch' | 'ft';
+  paperSize?: PaperSize;
   created?: string;
   modified?: string;
   createdAt?: string;

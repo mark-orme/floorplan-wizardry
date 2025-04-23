@@ -23,7 +23,14 @@ export const useStraightLineTool = ({
   const isToolEnabled = isEnabled || enabled;
   
   const fabricCanvasRef = useRef<Canvas | null>(null);
-  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
+  const [isPencilMode, setIsPencilMode] = useState<boolean>(false);
+  const [measurementData, setMeasurementData] = useState<MeasurementData>({
+    distance: null,
+    angle: null,
+    snapped: false,
+    unit: 'px'
+  });
 
   // Update canvas reference when it changes
   useEffect(() => {
@@ -39,7 +46,6 @@ export const useStraightLineTool = ({
   });
 
   const handlers = useLineToolHandlers({
-    isEnabled: isToolEnabled,
     lineState,
     fabricCanvasRef,
     shiftKeyPressed
@@ -56,6 +62,8 @@ export const useStraightLineTool = ({
     isActive: isToolEnabled,
     isEnabled: isToolEnabled,
     inputMethod,
+    isPencilMode,
+    measurementData,
     setInputMethod: handleSetInputMethod,
     shiftKeyPressed,
     saveCurrentState

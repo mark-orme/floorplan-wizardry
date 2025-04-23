@@ -73,36 +73,3 @@ export const userSettingsSchema = z.object({
   measurementUnit: z.enum(['mm', 'cm', 'm', 'in', 'ft']),
   notifications: z.boolean()
 });
-
-/**
- * Schema for validating saved drawings from localStorage
- */
-export const savedDrawingSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  canvasJson: z.string(),
-  preview: z.string(),
-  metadata: z.record(z.string(), z.any())
-});
-
-/**
- * Schema for validating API responses
- */
-export const apiResponseSchema = z.object({
-  success: z.boolean(),
-  data: z.any(),
-  error: z.string().optional()
-});
-
-/**
- * Schema for validating URL query parameters
- */
-export const urlParamsSchema = z.object({
-  drawingId: z.string().optional(),
-  tool: z.nativeEnum(DrawingMode).optional(),
-  zoom: z.number().positive().optional(),
-  page: z.number().nonnegative().optional(),
-  grid: z.boolean().optional()
-});

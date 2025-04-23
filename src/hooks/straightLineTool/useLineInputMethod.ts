@@ -1,6 +1,16 @@
 
 import { useState, useCallback } from 'react';
-import { InputMethod } from '@/types/input/InputMethod';
+
+/**
+ * Enum for different input methods
+ */
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  STYLUS = 'stylus',
+  PENCIL = 'pencil',
+  KEYBOARD = 'keyboard'
+}
 
 /**
  * Hook for detecting and managing input methods for line drawing
@@ -41,6 +51,3 @@ export const useLineInputMethod = (initialInputMethod: InputMethod = InputMethod
     updateInputMethod
   };
 };
-
-// Re-export the InputMethod enum for convenient access
-export { InputMethod };
