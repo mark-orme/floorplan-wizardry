@@ -2,6 +2,7 @@
 /**
  * Tests for useCanvasInteraction hook
  */
+import React from 'react';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useCanvasInteraction } from '@/hooks/useCanvasInteraction';
 import { vi, describe, it, expect, beforeEach } from 'vitest';

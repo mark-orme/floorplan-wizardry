@@ -1,7 +1,9 @@
+
 /**
  * Tests for useFloorPlanDrawing hook
  * @module hooks/useFloorPlanDrawing/__tests__/useFloorPlanDrawing.test
  */
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';

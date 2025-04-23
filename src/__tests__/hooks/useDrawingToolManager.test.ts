@@ -1,20 +1,23 @@
+
 /**
  * Tests for the drawing tool manager hook
  * @module __tests__/hooks/useDrawingToolManager.test
  */
+import React from 'react';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useDrawingToolManager } from '@/hooks/drawing/useDrawingToolManager';
 import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { asDrawingTool } from '@/types/core/DrawingToolAdapter';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock fabric.js
-jest.mock('fabric');
+vi.mock('fabric');
 
 describe('useDrawingToolManager', () => {
   let canvas: Canvas;
   let canvasRef: React.MutableRefObject<Canvas | null>;
-  const saveCurrentState = jest.fn();
+  const saveCurrentState = vi.fn();
   
   beforeEach(() => {
     // Create a new canvas instance for each test

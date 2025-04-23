@@ -1,19 +1,15 @@
 
 #!/bin/bash
 
-# Make this script executable
+# Make this script executable (will need to be done manually the first time)
 chmod +x "$0"
 
-echo "Setting execution permissions on all scripts..."
+echo "Setting executable permissions for all shell scripts..."
 
-# Make all shell scripts executable
-chmod +x ./scripts/*.sh
+# Find all .sh files in the scripts directory and make them executable
+find ./scripts -name "*.sh" -type f -exec chmod +x {} \;
 
-# Ensure Vite is executable in node_modules
-if [ -f "./node_modules/.bin/vite" ]; then
-  chmod +x ./node_modules/.bin/vite
-else
-  echo "Vite binary not found in node_modules. Run npm install first."
-fi
+echo "Making Vite executable..."
+chmod +x ./node_modules/.bin/vite 2>/dev/null || echo "Vite not found in node_modules"
 
-echo "Permissions fixed. You should now be able to run the scripts."
+echo "Done."

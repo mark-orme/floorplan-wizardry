@@ -1,67 +1,96 @@
 
-import { useEffect, useState, useCallback } from 'react';
-import { isPressureSupported, isTiltSupported, getPressure, getTilt, isStylus } from '@/utils/canvas/pointerEvents';
+import { useState, useEffect, useCallback } from 'react';
+import { isPressureSupported, isTiltSupported, isStylus, getPressure, getTilt } from '@/utils/canvas/pointerEvents';
 
 interface StylusInputOptions {
-  isEnabled: boolean;
+  isEnabled?: boolean;
   onPressureChange?: (pressure: number) => void;
-  onTiltChange?: (tilt: { x: number, y: number }) => void;
+  onTiltChange?: (tiltX: number, tiltY: number, angle: number) => void;
+  onStylusDetected?: (isStylus: boolean) => void;
 }
 
 export function useStylusInput({
-  isEnabled,
+  isEnabled = true,
   onPressureChange,
-  onTiltChange
-}: StylusInputOptions) {
-  const [pressure, setPressure] = useState(0.5); // Default pressure
-  const [tilt, setTilt] = useState({ x: 0, y: 0 }); // Default tilt
-  const [isStylusActive, setIsStylusActive] = useState(false);
+  onTiltChange,
+  onStylusDetected
+}: StylusInputOptions = {}) {
+  const [pressure, setPressure] = useState(0.5);
+  const [tilt, setTilt] = useState({ tiltX: 0, tiltY: 0, angle: 0 });
+  const [isActive, setIsActive] = useState(false);
+  const [hasStylusSupport, setHasStylusSupport] = useState(false);
 
+  // Check for stylus support
+  useEffect(() => {
+    const pressureSupport = isPressureSupported();
+    const tiltSupport = isTiltSupported();
+    
+    setHasStylusSupport(pressureSupport || tiltSupport);
+  }, []);
+  
+  // Handler for pointer move events
   const handlePointerMove = useCallback((event: PointerEvent) => {
     if (!isEnabled) return;
     
-    // Check if the event is from a stylus
-    if (isStylus(event)) {
-      setIsStylusActive(true);
+    const isStylusEvent = isStylus(event);
+    
+    if (isStylusEvent || isActive) {
+      // Always set isActive to true when we detect a stylus
+      if (isStylusEvent && !isActive) {
+        setIsActive(true);
+        onStylusDetected?.(true);
+      }
       
-      // Handle pressure
+      // Get pressure
       const newPressure = getPressure(event);
       setPressure(newPressure);
-      if (onPressureChange) onPressureChange(newPressure);
+      onPressureChange?.(newPressure);
       
-      // Handle tilt if supported
-      if (isTiltSupported()) {
-        const newTilt = getTilt(event);
-        setTilt(newTilt);
-        if (onTiltChange) onTiltChange(newTilt);
-      }
+      // Get tilt
+      const newTilt = getTilt(event);
+      setTilt(newTilt);
+      onTiltChange?.(newTilt.tiltX, newTilt.tiltY, newTilt.tiltAngle);
     }
-  }, [isEnabled, onPressureChange, onTiltChange]);
-
-  const handlePointerLeave = useCallback(() => {
-    setIsStylusActive(false);
-  }, []);
-
+  }, [isEnabled, isActive, onPressureChange, onTiltChange, onStylusDetected]);
+  
+  // Handler for pointer down events
+  const handlePointerDown = useCallback((event: PointerEvent) => {
+    if (!isEnabled) return;
+    
+    if (isStylus(event)) {
+      setIsActive(true);
+      onStylusDetected?.(true);
+    }
+  }, [isEnabled, onStylusDetected]);
+  
+  // Handler for pointer up events
+  const handlePointerUp = useCallback(() => {
+    if (!isEnabled) return;
+    
+    // Reset pressure to default
+    setPressure(0.5);
+    onPressureChange?.(0.5);
+  }, [isEnabled, onPressureChange]);
+  
+  // Set up event listeners
   useEffect(() => {
     if (!isEnabled) return;
     
-    // Only attach listeners if the device supports pressure or tilt
-    if (isPressureSupported() || isTiltSupported()) {
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerleave', handlePointerLeave);
-      
-      return () => {
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerleave', handlePointerLeave);
-      };
-    }
-  }, [isEnabled, handlePointerMove, handlePointerLeave]);
-
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('pointerup', handlePointerUp);
+    
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [isEnabled, handlePointerMove, handlePointerDown, handlePointerUp]);
+  
   return {
+    isStylus: isActive,
     pressure,
     tilt,
-    isStylus: isStylusActive,
-    isPressureSupported: isPressureSupported(),
-    isTiltSupported: isTiltSupported()
+    hasStylusSupport
   };
 }

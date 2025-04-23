@@ -1,47 +1,55 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
+/**
+ * Input method enum for different line drawing methods
+ */
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
   STYLUS = 'stylus',
-  PENCIL = 'pencil',
-  UNKNOWN = 'unknown'
+  KEYBOARD = 'keyboard'
 }
 
-export function useLineInputMethod(): { 
-  inputMethod: InputMethod; 
-  setInputMethod: (method: InputMethod) => void; 
-} {
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-
-  useEffect(() => {
-    // Detect input method based on pointer events
-    const detectInputMethod = (event: PointerEvent) => {
-      if (event.pointerType === 'mouse') {
-        setInputMethod(InputMethod.MOUSE);
-      } else if (event.pointerType === 'touch') {
-        setInputMethod(InputMethod.TOUCH);
-      } else if (event.pointerType === 'pen') {
-        // Check if it's Apple Pencil (high pressure sensitivity)
-        if (event.pressure > 0 && typeof event.tiltX !== 'undefined') {
-          setInputMethod(InputMethod.PENCIL);
-        } else {
-          setInputMethod(InputMethod.STYLUS);
-        }
-      } else {
-        setInputMethod(InputMethod.UNKNOWN);
-      }
-    };
-
-    // Add event listeners
-    window.addEventListener('pointerdown', detectInputMethod);
+/**
+ * Hook for managing line drawing input methods
+ */
+export function useLineInputMethod(defaultMethod: InputMethod = InputMethod.MOUSE) {
+  const [inputMethod, setInputMethod] = useState<InputMethod>(defaultMethod);
+  
+  // Detect input method from event
+  const detectInputMethod = useCallback((event: any): InputMethod => {
+    if (event.pointerType === 'pen') {
+      return InputMethod.STYLUS;
+    } else if (event.pointerType === 'touch' || event.touches) {
+      return InputMethod.TOUCH;
+    } else if (event.key) {
+      return InputMethod.KEYBOARD;
+    }
     
-    // Clean up
-    return () => {
-      window.removeEventListener('pointerdown', detectInputMethod);
-    };
+    return InputMethod.MOUSE;
   }, []);
-
-  return { inputMethod, setInputMethod };
+  
+  // Handle input method change
+  const handleInputMethodChange = useCallback((event: any) => {
+    const method = detectInputMethod(event);
+    setInputMethod(method);
+    return method;
+  }, [detectInputMethod]);
+  
+  // Check if input is precise
+  const isPreciseInput = useCallback((method?: InputMethod) => {
+    const currentMethod = method || inputMethod;
+    return currentMethod === InputMethod.MOUSE || 
+           currentMethod === InputMethod.STYLUS || 
+           currentMethod === InputMethod.KEYBOARD;
+  }, [inputMethod]);
+  
+  return {
+    inputMethod,
+    setInputMethod,
+    detectInputMethod,
+    handleInputMethodChange,
+    isPreciseInput
+  };
 }
