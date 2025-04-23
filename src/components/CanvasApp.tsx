@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlanCanvas } from './FloorPlanCanvas';
+import { FloorPlanCanvas } from './canvas/FloorPlanCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
 import logger from '@/utils/logger';
 import { toast } from 'sonner';

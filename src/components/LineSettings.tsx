@@ -1,60 +1,46 @@
 
-import React from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
+import React from 'react';
 
-interface LineSettingsProps {
-  thickness: number;
-  color: string;
-  onThicknessChange: (thickness: number) => void;
-  onColorChange: (color: string) => void;
+export interface LineSettingsProps {
+  lineColor: string;
+  setLineColor: (color: string) => void;
+  lineThickness: number;
+  setLineThickness: (thickness: number) => void;
 }
 
-/**
- * Line settings component for controlling line thickness and color
- * @param {LineSettingsProps} props - Component props
- * @returns {JSX.Element} Rendered component
- */
 export const LineSettings: React.FC<LineSettingsProps> = ({
-  thickness,
-  color,
-  onThicknessChange,
-  onColorChange
+  lineColor,
+  setLineColor,
+  lineThickness,
+  setLineThickness
 }) => {
-  // Handle thickness slider change
-  const handleThicknessChange = (values: number[]) => {
-    onThicknessChange(values[0]);
-  };
-
   return (
-    <div className="flex gap-6 items-center">
-      <div className="flex flex-col space-y-1 min-w-[120px]">
-        <Label htmlFor="line-thickness" className="text-xs">Thickness: {thickness}px</Label>
-        <Slider
-          min={1}
-          max={20}
-          step={1}
-          value={[thickness]}
-          onValueChange={handleThicknessChange}
+    <div className="flex flex-col space-y-4">
+      <div className="flex items-center justify-between">
+        <label htmlFor="color-input" className="text-sm font-medium">Color:</label>
+        <input
+          id="color-input"
+          type="color"
+          value={lineColor}
+          onChange={(e) => setLineColor(e.target.value)}
+          className="w-8 h-8 rounded cursor-pointer"
+          aria-label="Color:"
         />
       </div>
       
-      <div className="flex flex-col space-y-1">
-        <Label htmlFor="line-color" className="text-xs">Color</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            id="line-color"
-            type="color"
-            value={color}
-            onChange={(e) => onColorChange(e.target.value)}
-            className="w-10 h-10 p-1 cursor-pointer"
-          />
-          <div 
-            className="w-6 h-6 rounded border border-gray-200" 
-            style={{ backgroundColor: color }}
-          />
-        </div>
+      <div className="flex items-center justify-between">
+        <label htmlFor="thickness-input" className="text-sm font-medium">Thickness:</label>
+        <input
+          id="thickness-input"
+          type="range"
+          min="1"
+          max="10"
+          value={lineThickness}
+          onChange={(e) => setLineThickness(parseInt(e.target.value))}
+          className="w-32"
+          aria-label="Thickness:"
+        />
+        <span className="ml-2 text-sm">{lineThickness}px</span>
       </div>
     </div>
   );
