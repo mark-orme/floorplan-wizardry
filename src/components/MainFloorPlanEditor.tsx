@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import { FloorPlanCanvasEnhancedMain } from './property/FloorPlanCanvasEnhancedMain';
+import { Canvas as FabricCanvas } from 'fabric';
 import { SecurityInitializer } from './security/SecurityInitializer';
 import { AccessibilityTester } from './testing/AccessibilityTester';
-import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from '@/utils/toastUtils'; // Use our mock implementation
+import { Canvas } from './Canvas';
+import { CanvasTools } from './CanvasTools';
+import { toast } from 'sonner';
 import { useGeometryWorker } from '@/hooks/useGeometryWorker';
+import { DrawingMode } from '@/constants/drawingModes';
 
 export const MainFloorPlanEditor: React.FC = () => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -12,6 +15,9 @@ export const MainFloorPlanEditor: React.FC = () => {
   const [accessibilityTestingEnabled, setAccessibilityTestingEnabled] = useState(
     process.env.NODE_ENV === 'development'
   );
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState('#000000');
+  const [lineThickness, setLineThickness] = useState(2);
   
   const { isReady: workerReady } = useGeometryWorker();
   
@@ -19,11 +25,6 @@ export const MainFloorPlanEditor: React.FC = () => {
   const handleCanvasReady = (canvasInstance: FabricCanvas) => {
     setCanvas(canvasInstance);
     toast.success('Floor plan editor initialized');
-    
-    // Log worker status
-    if (workerReady) {
-      console.log('Geometry worker ready for high-performance calculations');
-    }
   };
   
   // Handle canvas error
@@ -67,43 +68,36 @@ export const MainFloorPlanEditor: React.FC = () => {
         </div>
         
         <div className="bg-white rounded-lg shadow-lg p-4">
-          <FloorPlanCanvasEnhancedMain
-            width={800}
-            height={600}
-            onCanvasReady={handleCanvasReady}
-            onCanvasError={handleCanvasError}
-            showPerformanceMetrics={true}
-            showSecurityInfo={securityEnabled}
-          />
+          {/* Canvas Tools */}
+          {canvas && (
+            <CanvasTools
+              tool={tool}
+              setTool={setTool}
+              lineColor={lineColor}
+              setLineColor={setLineColor}
+              lineThickness={lineThickness}
+              setLineThickness={setLineThickness}
+              canvas={canvas}
+              undo={() => console.log('undo')}
+              redo={() => console.log('redo')}
+            />
+          )}
+          
+          <div className="mt-2">
+            <Canvas
+              width={800}
+              height={600}
+              onCanvasReady={handleCanvasReady}
+              onError={handleCanvasError}
+              showGridDebug={true}
+            />
+          </div>
         </div>
         
         <div className="mt-4 text-sm text-gray-600">
           <p>
-            This component includes virtualization for improved performance with large floor plans,
-            web workers for offloading geometry calculations, CSRF protection, and CSP headers for security.
+            Floor plan editor with drawing tools and grid. Select different tools to draw shapes or lines on the canvas.
           </p>
-          
-          <div className="mt-2 grid grid-cols-2 gap-4">
-            <div className="bg-gray-100 p-3 rounded">
-              <h3 className="font-semibold">Performance Features:</h3>
-              <ul className="list-disc list-inside text-xs">
-                <li>Canvas virtualization (only renders visible objects)</li>
-                <li>Web Workers for geometry calculations</li>
-                <li>FPS monitoring and optimization</li>
-                <li>Selective rendering</li>
-              </ul>
-            </div>
-            
-            <div className="bg-gray-100 p-3 rounded">
-              <h3 className="font-semibold">Security Features:</h3>
-              <ul className="list-disc list-inside text-xs">
-                <li>CSRF token protection</li>
-                <li>Content Security Policy headers</li>
-                <li>Input sanitization</li>
-                <li>Secure event handling</li>
-              </ul>
-            </div>
-          </div>
         </div>
       </div>
       

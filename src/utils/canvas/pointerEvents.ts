@@ -1,70 +1,46 @@
 
 /**
- * Pointer Events Utilities
- * Helper functions for handling pointer/stylus input
+ * Utility functions for detecting pointer/stylus capabilities
  */
 
 /**
- * Check if pressure is supported
- * @returns {boolean} Whether pressure is supported
+ * Check if the device supports pressure sensitivity
  */
 export const isPressureSupported = (): boolean => {
-  return 'PointerEvent' in window && 'pressure' in PointerEvent.prototype;
+  // Check if the browser supports pointer events and pressure
+  if (window.PointerEvent && 'pressure' in new PointerEvent('pointerdown')) {
+    return true;
+  }
+  return false;
 };
 
 /**
- * Check if tilt is supported
- * @returns {boolean} Whether tilt is supported
+ * Check if the device supports tilt detection (e.g., Apple Pencil)
  */
 export const isTiltSupported = (): boolean => {
-  return 'PointerEvent' in window && 'tiltX' in PointerEvent.prototype;
+  // Check if the browser supports pointer events and tiltX/tiltY
+  if (window.PointerEvent && 'tiltX' in new PointerEvent('pointerdown')) {
+    return true;
+  }
+  return false;
 };
 
 /**
- * Get pressure from a pointer event
- * @param {PointerEvent} event The pointer event
- * @returns {number} The pressure value (0-1)
+ * Check if the pointer is likely a pen/stylus
  */
-export const getPressure = (event: PointerEvent): number => {
-  return event.pressure || 0.5;
-};
-
-/**
- * Get tilt from a pointer event
- * @param {PointerEvent} event The pointer event
- * @returns {{x: number, y: number}} The tilt values
- */
-export const getTilt = (event: PointerEvent): {x: number, y: number} => {
-  return {
-    x: event.tiltX || 0,
-    y: event.tiltY || 0
-  };
-};
-
-/**
- * Check if event is from a stylus
- * @param {PointerEvent} event The pointer event
- * @returns {boolean} Whether the event is from a stylus
- */
-export const isStylus = (event: PointerEvent): boolean => {
+export const isPenPointer = (event: PointerEvent): boolean => {
   return event.pointerType === 'pen';
 };
 
 /**
- * Check if event is from a touch
- * @param {PointerEvent} event The pointer event
- * @returns {boolean} Whether the event is from a touch
+ * Get pressure value from pointer event, normalized to 0-1 range
  */
-export const isTouch = (event: PointerEvent): boolean => {
-  return event.pointerType === 'touch';
+export const getNormalizedPressure = (event: PointerEvent): number => {
+  // Most devices that don't support pressure return 0.5 as default value
+  // or 1 for mouse clicks
+  if (event.pressure === 0.5 || event.pressure === 1) {
+    return event.pointerType === 'pen' ? 0.7 : 0.5; // Default value
+  }
+  return event.pressure;
 };
 
-/**
- * Provide haptic feedback if available
- * @param {number} duration Vibration duration in milliseconds
- */
-export const vibrateFeedback = (duration: number = 10): void => {
-  if (navigator.vibrate) {
-    navigator.vibrate(duration);
-  }
-};

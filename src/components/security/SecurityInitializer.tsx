@@ -1,31 +1,31 @@
 
 import { useEffect } from 'react';
-import { getCSRFToken } from '@/utils/security/csrfHandler';
-import { initXssProtection } from '@/utils/security/xssProtection';
 
-interface SecurityInitializerProps {
-  enableCSRF?: boolean;
-  enableXSSProtection?: boolean;
-}
-
-export const SecurityInitializer: React.FC<SecurityInitializerProps> = ({
-  enableCSRF = true,
-  enableXSSProtection = true
-}) => {
+/**
+ * Security initializer component that sets up basic security features
+ */
+export const SecurityInitializer: React.FC = () => {
   useEffect(() => {
-    if (enableCSRF) {
-      const token = getCSRFToken();
-      console.log('CSRF protection initialized');
+    // Set a simple CSRF token in localStorage (only for demo purposes)
+    if (!localStorage.getItem('csrfToken')) {
+      const token = Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('csrfToken', token);
     }
     
-    if (enableXSSProtection) {
-      initXssProtection();
-      console.log('XSS protection initialized');
+    // Add minimal Content-Security-Policy via meta tag
+    if (!document.querySelector('meta[http-equiv="Content-Security-Policy"]')) {
+      const meta = document.createElement('meta');
+      meta.httpEquiv = 'Content-Security-Policy';
+      meta.content = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';";
+      document.head.appendChild(meta);
     }
-  }, [enableCSRF, enableXSSProtection]);
+    
+    return () => {
+      // Nothing to clean up
+    };
+  }, []);
   
-  return null;
+  return null; // This component doesn't render anything
 };
 
-// Export for accessibility test
 export default SecurityInitializer;

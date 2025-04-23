@@ -1,39 +1,37 @@
 
 /**
- * Utility functions for Sentry error reporting
+ * Mock Sentry utility functions
+ * These simulate sending errors to Sentry but actually don't
  */
 
 interface CaptureOptions {
-  context?: string;
+  level?: string;
   tags?: Record<string, string>;
   extra?: Record<string, any>;
-  user?: Record<string, any>;
-  floorPlanId?: string;
-  level?: string;
-  [key: string]: any;
 }
 
-export function captureMessage(message: string, options: CaptureOptions = {}) {
-  console.log('[Sentry]', message, options);
-  return 'fake-event-id';
-}
+export const captureError = (error: Error, options: CaptureOptions = {}) => {
+  console.error(
+    `[Error Captured] ${error.message}`,
+    {
+      stack: error.stack,
+      ...options
+    }
+  );
+};
 
-export function captureException(error: Error, options: CaptureOptions = {}) {
-  console.error('[Sentry]', error, options);
-  return 'fake-event-id';
-}
+export const captureMessage = (message: string, options: CaptureOptions = {}) => {
+  const level = options.level || 'info';
+  console[level as 'log' | 'info' | 'warn' | 'error'](
+    `[Message Captured] ${message}`,
+    options
+  );
+};
 
-export function captureError(error: Error, options: CaptureOptions = {}) {
-  console.error('[Sentry] Error captured:', error);
-  console.error('[Sentry] Options:', options);
-  return 'fake-event-id';
-}
+export const setUserContext = (user: { id: string; email?: string; username?: string }) => {
+  console.info('[User Context Set]', user);
+};
 
-export function startTransaction(context: any) {
-  console.log('[Sentry] Starting transaction', context);
-  return {
-    setTag: (key: string, value: string) => console.log(`[Sentry] Setting tag: ${key}=${value}`),
-    setData: (key: string, value: any) => console.log(`[Sentry] Setting data: ${key}=${JSON.stringify(value)}`),
-    finish: () => console.log('[Sentry] Transaction finished')
-  };
-}
+export const clearUserContext = () => {
+  console.info('[User Context Cleared]');
+};

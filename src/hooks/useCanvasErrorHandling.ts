@@ -1,35 +1,29 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
-interface CanvasErrorHandlingOptions {
+interface UseCanvasErrorHandlingProps {
   onCanvasError?: (error: Error) => void;
 }
 
-export function useCanvasErrorHandling(options: CanvasErrorHandlingOptions = {}) {
-  const { onCanvasError } = options;
-  
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  
+/**
+ * Hook for centralizing canvas error handling
+ */
+export const useCanvasErrorHandling = ({ 
+  onCanvasError 
+}: UseCanvasErrorHandlingProps) => {
+  /**
+   * Handle canvas errors
+   */
   const handleCanvasError = useCallback((error: Error) => {
     console.error('Canvas error:', error);
-    setHasError(true);
-    setErrorMessage(error.message);
     
+    // Call provided error handler if available
     if (onCanvasError) {
       onCanvasError(error);
     }
   }, [onCanvasError]);
   
-  const resetCanvasError = useCallback(() => {
-    setHasError(false);
-    setErrorMessage('');
-  }, []);
-  
   return {
-    hasError,
-    errorMessage,
-    handleCanvasError,
-    resetCanvasError
+    handleCanvasError
   };
-}
+};
