@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Canvas } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -133,6 +132,7 @@ export const useStraightLineTool = ({
     toggleSnap,
     toggleAngles,
     inputMethod,
-    isEnabled
+    isEnabled,
+    shiftKeyPressed
   };
 };

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { FloorPlan } from '@/types/floorPlan';
