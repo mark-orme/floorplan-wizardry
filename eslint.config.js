@@ -18,6 +18,7 @@ import { jsxExtensionValidationRule } from './eslint/typescript/jsx-extension-va
 import { accessibilityRules } from './eslint/accessibility-rules.js';
 import { jsxSyntaxSafetyRules } from './eslint/jsx-syntax-safety.js';
 import { typeAdvancedSafetyRules } from './eslint/type-safety-advanced-rules.js';
+import { fabricMethodSafetyRules } from './eslint/fabric-method-safety-rules.js';
 
 export default [
   baseConfig,
@@ -38,5 +39,6 @@ export default [
   jsxExtensionValidationRule,
   accessibilityRules,
   jsxSyntaxSafetyRules,
-  typeAdvancedSafetyRules
+  typeAdvancedSafetyRules,
+  fabricMethodSafetyRules
 ];

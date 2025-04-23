@@ -6,6 +6,7 @@
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import logger from "@/utils/logger";
+import { captureError } from "@/utils/sentry";
 
 /**
  * Ensure all grid elements are visible and added to canvas 
@@ -34,8 +35,13 @@ export const ensureGridVisibility = (
     let addedElements = 0;
     gridLayerRef.current.forEach(gridObj => {
       if (!fabricCanvas.contains(gridObj)) {
-        fabricCanvas.add(gridObj);
-        addedElements++;
+        try {
+          fabricCanvas.add(gridObj);
+          addedElements++;
+        } catch (error) {
+          logger.error("Error adding grid element to canvas:", error);
+          captureError(error instanceof Error ? error : new Error(String(error)), 'grid-element-add');
+        }
       }
     });
     
@@ -54,52 +60,70 @@ export const ensureGridVisibility = (
     
     // Send grid lines to back
     gridLines.forEach(line => {
-      if (fabricCanvas.contains(line)) {
-        try {
-          if (typeof fabricCanvas.sendObjectToBack === 'function') {
-            fabricCanvas.sendObjectToBack(line);
-          } else if (typeof fabricCanvas.sendToBack === 'function') {
-            fabricCanvas.sendToBack(line);
-          } else {
-            // If neither method is available, try a different approach
-            if (line && typeof line.moveTo === 'function') {
-              line.moveTo(0); // Move to bottom of stack if possible
-            }
-          }
-        } catch (e) {
-          console.warn('Could not send grid line to back:', e);
+      if (!fabricCanvas.contains(line)) return;
+      
+      try {
+        // Try multiple approaches to send grid lines to back
+        if (typeof fabricCanvas.sendObjectToBack === 'function') {
+          fabricCanvas.sendObjectToBack(line);
+        } else if (typeof fabricCanvas.sendToBack === 'function') {
+          fabricCanvas.sendToBack(line);
+        } else if (typeof fabricCanvas.bringToBack === 'function') {
+          fabricCanvas.bringToBack(line);
+        } else if (line && typeof line.moveTo === 'function') {
+          // Move to bottom of stack if possible
+          line.moveTo(0); 
+        } else if (line && typeof line.sendToBack === 'function') {
+          line.sendToBack();
+        } else {
+          logger.warn('No supported method found to send grid lines to back');
         }
+      } catch (e) {
+        logger.warn('Could not send grid line to back:', e);
+        captureError(e instanceof Error ? e : new Error(String(e)), 'grid-line-ordering');
       }
     });
     
     // Bring grid markers to front of grid elements
     gridMarkers.forEach(marker => {
-      if (fabricCanvas.contains(marker)) {
-        try {
-          // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
-          if (typeof fabricCanvas.bringObjectToFront === 'function') {
-            fabricCanvas.bringObjectToFront(marker);
-          } else if (typeof fabricCanvas.bringToFront === 'function') {
-            fabricCanvas.bringToFront(marker);
-          } else {
-            // Alternative approach if methods aren't available
-            if (marker && typeof marker.moveTo === 'function') {
-              // Move near the top of the stack but not absolute top
-              const objectCount = fabricCanvas._objects ? fabricCanvas._objects.length - 1 : 0;
-              marker.moveTo(objectCount > 0 ? objectCount - 1 : 0);
-            }
-          }
-        } catch (e) {
-          console.warn('Could not bring grid marker to front:', e);
+      if (!fabricCanvas.contains(marker)) return;
+      
+      try {
+        // Try multiple approaches to bring grid markers to front
+        if (typeof fabricCanvas.bringObjectToFront === 'function') {
+          fabricCanvas.bringObjectToFront(marker);
+        } else if (typeof fabricCanvas.bringToFront === 'function') {
+          fabricCanvas.bringToFront(marker);
+        } else if (typeof fabricCanvas.bringForward === 'function') {
+          fabricCanvas.bringForward(marker);
+        } else if (marker && typeof marker.moveTo === 'function') {
+          // Alternative approach if methods aren't available
+          const objectCount = fabricCanvas._objects ? fabricCanvas._objects.length - 1 : 0;
+          marker.moveTo(objectCount > 0 ? objectCount - 1 : 0);
+        } else if (marker && typeof marker.bringToFront === 'function') {
+          marker.bringToFront();
+        } else {
+          logger.warn('No supported method found to bring grid markers to front');
         }
+      } catch (e) {
+        logger.warn('Could not bring grid marker to front:', e);
+        captureError(e instanceof Error ? e : new Error(String(e)), 'grid-marker-ordering');
       }
     });
     
     // Request a render to make grid changes visible
-    fabricCanvas.requestRenderAll();
+    try {
+      fabricCanvas.requestRenderAll();
+    } catch (error) {
+      logger.error("Error rendering canvas after grid ordering:", error);
+      captureError(error instanceof Error ? error : new Error(String(error)), 'grid-render');
+      return false;
+    }
+    
     return true;
   } catch (error) {
     logger.error("Error ensuring grid visibility:", error);
+    captureError(error instanceof Error ? error : new Error(String(error)), 'grid-visibility');
     return false;
   }
 };
@@ -130,8 +154,15 @@ export const arrangeGridElementsWithRetry = (
     attempts++;
     
     if (!success && attempts < maxAttempts) {
-      // Retry after a short delay
-      setTimeout(attemptArrangement, 100 * attempts);
+      // Retry after a short delay with exponential backoff
+      const delay = 100 * Math.pow(2, attempts - 1);
+      logger.debug(`Grid arrangement attempt ${attempts} failed, retrying in ${delay}ms`);
+      setTimeout(attemptArrangement, delay);
+    } else if (!success) {
+      logger.warn(`Failed to arrange grid elements after ${maxAttempts} attempts`);
+      captureError(new Error(`Grid arrangement failed after ${maxAttempts} attempts`), 'grid-arrangement');
+    } else {
+      logger.debug(`Grid arrangement succeeded on attempt ${attempts}`);
     }
   };
   
