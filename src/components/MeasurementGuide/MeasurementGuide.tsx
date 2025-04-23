@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,9 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Ruler, 
-  Grid, 
+  Grid3x3 as Grid, 
   Square, 
-  Move 
+  MoveIcon as Move 
 } from "lucide-react";
 
 interface MeasurementGuideProps {

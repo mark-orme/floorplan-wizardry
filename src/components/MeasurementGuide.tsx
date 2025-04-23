@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -6,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { X, Ruler2 as Ruler } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 
 interface MeasurementGuideProps {
   onClose: () => void;
