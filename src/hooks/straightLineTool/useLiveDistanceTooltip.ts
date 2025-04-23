@@ -20,7 +20,14 @@ export const useLiveDistanceTooltip = ({
   onMeasurement
 }: UseLiveDistanceTooltipProps) => {
   const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
-  const [measurement, setMeasurement] = useState<MeasurementData>({ distance: 0, angle: 0 });
+  const [measurement, setMeasurement] = useState<MeasurementData>({ 
+    distance: 0, 
+    angle: 0, 
+    startPoint: { x: 0, y: 0 }, 
+    endPoint: { x: 0, y: 0 },
+    snapped: false,
+    unit: 'px'
+  });
   const [visible, setVisible] = useState<boolean>(false);
   
   /**
@@ -35,7 +42,14 @@ export const useLiveDistanceTooltip = ({
     let angle = Math.atan2(dy, dx) * (180 / Math.PI);
     if (angle < 0) angle += 360; // Normalize to 0-360
     
-    return { distance, angle };
+    return { 
+      distance, 
+      angle, 
+      startPoint: start, 
+      endPoint: end,
+      snapped: false,
+      unit: 'px'
+    };
   }, []);
   
   // Update tooltip when drawing

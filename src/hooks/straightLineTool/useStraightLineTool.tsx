@@ -9,6 +9,8 @@ export interface MeasurementData {
   angle: number;
   startPoint: Point;
   endPoint: Point;
+  snapped: boolean;
+  unit: string;
 }
 
 // Define UseStraightLineToolProps interface
@@ -43,7 +45,9 @@ export const useStraightLineTool = ({
     distance: 0,
     angle: 0,
     startPoint: { x: 0, y: 0 },
-    endPoint: { x: 0, y: 0 }
+    endPoint: { x: 0, y: 0 },
+    snapped: false,
+    unit: 'px'
   });
   
   // Key event handlers

@@ -2,10 +2,10 @@
  * Custom hook for handling multi-touch gestures on a canvas
  * @module hooks/useMultiTouchGestures
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Point } from '@/types/core/Point';
-import { GestureType, GestureState } from '@/types/drawingTypes';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { vibrateFeedback } from '@/utils/canvas/pointerEvents';
+import type { GestureType, GestureState, GestureStateObject } from '@/types/drawingTypes';
+import type { Point } from '@/types/core/Point';
 
 interface UseMultiTouchGesturesProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -51,7 +51,7 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
     const currentTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     
     setGestureState(prevState => ({
-      type: GestureType.PAN,
+      type: 'pan',
       startPoints: [currentTouch],
       currentPoints: [currentTouch],
       scale: 1,
@@ -82,7 +82,7 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
     const initialDistance = Math.sqrt(dx * dx + dy * dy);
     
     setGestureState({
-      type: GestureType.PINCH,
+      type: 'pinch',
       startPoints: [touch1, touch2],
       currentPoints: [touch1, touch2],
       scale: 1,
@@ -94,7 +94,7 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
   
   // Handler for pinch gesture move
   const handlePinchMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2 || gestureState.type !== GestureType.PINCH) return;
+    if (e.touches.length !== 2 || gestureState.type !== 'pinch') return;
     
     // Get the touch points
     const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -133,7 +133,7 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
     const initialAngle = getAngle(touch1, touch2);
     
     setGestureState({
-      type: GestureType.ROTATE,
+      type: 'rotate',
       startPoints: [touch1, touch2],
       currentPoints: [touch1, touch2],
       scale: 1,
@@ -145,7 +145,7 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
   
   // Handler for rotate gesture move
   const handleRotateMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2 || gestureState.type !== GestureType.ROTATE) return;
+    if (e.touches.length !== 2 || gestureState.type !== 'rotate') return;
     
     // Get the touch points
     const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -228,31 +228,31 @@ export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps)
       y: touch.clientY
     }));
     
-    if (e.touches.length === 1 && gestureState.type === GestureType.PAN) {
+    if (e.touches.length === 1 && gestureState.type === 'pan') {
       handlePanGesture(e);
-    } else if (e.touches.length === 2 && gestureState.type === GestureType.PINCH) {
+    } else if (e.touches.length === 2 && gestureState.type === 'pinch') {
       handlePinchMove(e);
-    } else if (e.touches.length === 2 && gestureState.type === GestureType.ROTATE) {
+    } else if (e.touches.length === 2 && gestureState.type === 'rotate') {
       handleRotateMove(e);
     }
   }, [gestureState.type, handlePanGesture, handlePinchMove, handleRotateMove]);
   
   // Handler for touch end event
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (e.touches.length < 2 && gestureState.type === GestureType.PINCH) {
+    if (e.touches.length < 2 && gestureState.type === 'pinch') {
       setGestureState(prevState => ({
         ...prevState,
-        type: GestureType.NONE
+        type: 'none'
       }));
-    } else if (e.touches.length < 2 && gestureState.type === GestureType.ROTATE) {
+    } else if (e.touches.length < 2 && gestureState.type === 'rotate') {
       setGestureState(prevState => ({
         ...prevState,
-        type: GestureType.NONE
+        type: 'none'
       }));
-    } else if (e.touches.length === 0 && gestureState.type === GestureType.PAN) {
+    } else if (e.touches.length === 0 && gestureState.type === 'pan') {
       setGestureState(prevState => ({
         ...prevState,
-        type: GestureType.NONE
+        type: 'none'
       }));
     }
   }, [gestureState.type]);

@@ -34,7 +34,11 @@ export const useMeasurementCalculation = () => {
   const getMeasurements = useCallback((point1: Point, point2: Point): MeasurementData => {
     return {
       distance: calculateDistance(point1, point2),
-      angle: calculateAngle(point1, point2)
+      angle: calculateAngle(point1, point2),
+      startPoint: point1,
+      endPoint: point2,
+      snapped: false,
+      unit: 'px'
     };
   }, [calculateDistance, calculateAngle]);
   

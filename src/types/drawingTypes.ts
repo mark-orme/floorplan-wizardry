@@ -34,6 +34,17 @@ export interface CanvasDimensions {
 export type GestureType = 'pinch' | 'rotate' | 'pan';
 export type GestureState = 'start' | 'move' | 'end';
 
+// Define the gesture state interface matching what's used in useMultiTouchGestures.ts
+export interface GestureStateObject {
+  type: GestureType;
+  startPoints: Point[];
+  currentPoints: Point[];
+  scale: number;
+  rotation: number;
+  translation: Point;
+  center: Point;
+}
+
 // Add function to create default drawing state
 export function createDefaultDrawingState(): DrawingState {
   return { 
