@@ -78,12 +78,21 @@ export const useStraightLineTool = ({
     if (!isDrawing || !measurementData) return null;
     const tooltipData = formatTooltipData(measurementData);
     if (!tooltipData) return null;
+    
+    // Instead of using JSX directly (which would require a .tsx extension),
+    // we'll return null when in a .ts file. This can be replaced with a proper tooltip
+    // component in a UI layer
+    return null;
+    
+    // Note: The JSX below would require a .tsx file extension
+    /* 
     return (
       <div className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
         {tooltipData.distanceDisplay} {tooltipData.angleDisplay}
         {tooltipData.snappedInfo}
       </div>
     );
+    */
   }, [isDrawing, measurementData, formatTooltipData]);
 
   return {
