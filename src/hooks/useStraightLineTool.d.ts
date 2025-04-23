@@ -53,9 +53,11 @@ export interface UseStraightLineToolResult {
  * Props for the useStraightLineTool hook
  */
 export interface UseStraightLineToolProps {
-  isEnabled: boolean;
+  isEnabled?: boolean;
+  enabled?: boolean; // Alias for isEnabled for backward compatibility
   canvas: any;
   lineColor: string;
   lineThickness: number;
   saveCurrentState?: () => void;
+  shiftKeyPressed?: boolean;
 }

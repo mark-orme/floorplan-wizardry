@@ -15,12 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const propertySchema = z.object({
-  orderId: z.string(),
-  address: z.string(),
-  clientName: z.string(),
-  price: z.string(),
-  status: z.string(),
-  location: z.string(),
+  orderId: z.string().min(3, { message: "Order ID is required" }),
+  address: z.string().min(5, { message: "Address is required" }),
+  clientName: z.string().min(2, { message: "Client name is required" }),
+  price: z.string().min(1, { message: "Price is required" }),
+  status: z.string().min(1, { message: "Status is required" }),
+  location: z.string().min(1, { message: "Location is required" }),
   isActive: z.boolean()
 });
 

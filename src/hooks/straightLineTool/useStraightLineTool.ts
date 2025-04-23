@@ -1,162 +1,62 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Canvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { InputMethod } from '@/types/input/InputMethod';
-import { useMeasurementCalculation } from './useMeasurementCalculation';
-import { useLiveDistanceTooltip } from './useLiveDistanceTooltip';
+import { Canvas, Line } from 'fabric';
 import { useLineState } from './useLineState';
-import { ReactNode } from 'react';
-
-export interface UseStraightLineToolProps {
-  isEnabled?: boolean;
-  enabled?: boolean; // Alias for isEnabled for backward compatibility
-  canvas: Canvas | null;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState?: () => void;
-  // Add shiftKeyPressed for test compatibility
-  shiftKeyPressed?: boolean;
-  isPencilMode?: boolean;
-  inputMethod?: InputMethod;
-}
-
-export interface MeasurementData {
-  distance: number | null;
-  angle: number | null;
-  snapped: boolean;
-  unit: string;
-  snapType?: 'grid' | 'angle' | 'both';
-}
+import { useLineToolHandlers } from './useLineToolHandlers';
+import { InputMethod } from './useLineInputMethod';
+import { UseStraightLineToolProps, UseStraightLineToolResult } from '../useStraightLineTool.d';
 
 export const useStraightLineTool = ({
   isEnabled = false,
-  enabled, // For backward compatibility
+  enabled = false, // Backward compatibility
   canvas,
   lineColor,
   lineThickness,
-  saveCurrentState = () => {
-    console.log('State saved');
-  },
-  shiftKeyPressed: initialShiftKeyPressed, // For test compatibility
-  isPencilMode = false,
-  inputMethod: initialInputMethod
-}: UseStraightLineToolProps) => {
-  // Use either isEnabled or enabled for backward compatibility
-  const isToolEnabled = isEnabled || enabled || false;
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentLine, setCurrentLine] = useState<Line | null>(null);
-  const [shiftKeyPressed, setShiftKeyPressed] = useState(initialShiftKeyPressed || false);
-  const [inputMethod, setInputMethod] = useState<InputMethod>(initialInputMethod || 'mouse');
-  const [measurementData, setMeasurementData] = useState<MeasurementData>({
-    distance: null,
-    angle: null,
-    snapped: false,
-    unit: 'px'
-  });
+  saveCurrentState = () => {},
+  shiftKeyPressed = false
+}: UseStraightLineToolProps): UseStraightLineToolResult => {
+  // Use either isEnabled or enabled prop for backward compatibility
+  const isToolEnabled = isEnabled || enabled;
+  
+  const fabricCanvasRef = useRef<Canvas | null>(null);
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
 
-  const fabricCanvasRef = useRef<Canvas | null>(canvas);
-  const { calculateMeasurements } = useMeasurementCalculation();
-  const { formatTooltipData } = useLiveDistanceTooltip();
-  const [isToolInitialized, setIsToolInitialized] = useState(true);
-
+  // Update canvas reference when it changes
   useEffect(() => {
     fabricCanvasRef.current = canvas;
   }, [canvas]);
 
-  const {
-    snapEnabled,
-    anglesEnabled,
-    toggleSnap,
-    toggleAngles,
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    cancelDrawing
-  } = useLineState({
+  // Get state and handlers from separate hooks
+  const lineState = useLineState({
     fabricCanvasRef,
     lineColor,
     lineThickness,
     saveCurrentState
   });
 
-  // Add these missing handlers for compatibility
-  const handlePointerDown = useCallback((event: any) => {
-    if (!isToolEnabled) return;
-    const point = { x: event.pageX, y: event.pageY };
-    startDrawing(point);
-  }, [isToolEnabled, startDrawing]);
+  const handlers = useLineToolHandlers({
+    isEnabled: isToolEnabled,
+    lineState,
+    fabricCanvasRef,
+    shiftKeyPressed
+  });
 
-  const handlePointerMove = useCallback((event: any) => {
-    if (!isToolEnabled || !isDrawing) return;
-    const point = { x: event.pageX, y: event.pageY };
-    continueDrawing(point);
-  }, [isToolEnabled, isDrawing, continueDrawing]);
-
-  const handlePointerUp = useCallback((event: any) => {
-    if (!isToolEnabled || !isDrawing) return;
-    const point = { x: event.pageX, y: event.pageY };
-    completeDrawing(point);
-  }, [isToolEnabled, isDrawing, completeDrawing]);
-
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Shift') {
-      setShiftKeyPressed(true);
-    }
-    if (event.key === 'Escape') {
-      cancelDrawing();
-    }
-  }, [cancelDrawing]);
-
-  const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Shift') {
-      setShiftKeyPressed(false);
-    }
+  // Custom setter for input method that validates the input
+  const handleSetInputMethod = useCallback((method: InputMethod | 'mouse') => {
+    setInputMethod(method as InputMethod);
   }, []);
 
-  // For backward compatibility
-  const endDrawing = completeDrawing;
-  const toggleGridSnapping = toggleSnap;
-  const isActive = isToolEnabled;
-
-  // Render tooltip function that returns a React node
-  const renderTooltip = useCallback((): ReactNode => {
-    if (!isDrawing || !measurementData) return null;
-    // In a .ts file we return null instead of JSX
-    return null;
-  }, [isDrawing, measurementData]);
-
   return {
+    ...lineState,
+    ...handlers,
+    isActive: isToolEnabled,
     isEnabled: isToolEnabled,
-    isActive, // For backward compatibility
-    isDrawing,
-    isToolInitialized,
-    snapEnabled,
-    anglesEnabled,
-    currentLine,
-    measurementData,
-    shiftKeyPressed,
-    isPencilMode,
     inputMethod,
-    toggleSnap,
-    toggleAngles,
-    toggleGridSnapping, // Alias for toggleSnap
-    setCurrentLine,
-    setInputMethod,
-    startDrawing,
-    continueDrawing,
-    endDrawing,     // Alias for completeDrawing
-    completeDrawing,
-    cancelDrawing,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handleKeyDown,
-    handleKeyUp,
-    renderTooltip,
+    setInputMethod: handleSetInputMethod,
+    shiftKeyPressed,
     saveCurrentState
   };
 };
 
-// Export the type to fix imports in other files
-export type UseStraightLineToolResult = ReturnType<typeof useStraightLineTool>;
+export default useStraightLineTool;

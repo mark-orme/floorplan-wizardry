@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,9 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const formSchema = z.object({
-  email: z.string(),
-  password: z.string(),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
