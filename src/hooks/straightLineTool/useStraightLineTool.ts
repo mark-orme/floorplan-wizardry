@@ -128,7 +128,7 @@ export const useStraightLineTool = ({
     }
   }, [isActive]);
 
-  const renderTooltip = useCallback((): React.ReactNode => {
+  const renderTooltip = useCallback(() => {
     return (
       <div>
         Distance: {measurementData.distance.toFixed(2)}
