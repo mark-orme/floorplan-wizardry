@@ -15,7 +15,7 @@ interface CanvasLayoutProps {
  * @param {CanvasLayoutProps} props - Component props
  * @returns {JSX.Element} Rendered component
  */
-const CanvasLayout = ({ children }: CanvasLayoutProps): JSX.Element => {
+const CanvasLayout = ({ children }: CanvasLayoutProps): React.ReactElement => {
   console.info('CanvasLayout: Rendering canvas layout');
   
   return (

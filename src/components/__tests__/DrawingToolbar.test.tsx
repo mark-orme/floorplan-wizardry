@@ -34,16 +34,16 @@ describe('DrawingToolbar', () => {
   it('renders toolbar with all tools', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    expect(screen.getByText(/select/i)).toBeInTheDocument();
-    expect(screen.getByText(/line/i)).toBeInTheDocument();
-    expect(screen.getByText(/draw/i)).toBeInTheDocument();
+    expect(screen.getByText('select')).toBeInTheDocument();
+    expect(screen.getByText('line')).toBeInTheDocument();
+    expect(screen.getByText('draw')).toBeInTheDocument();
   });
 
   it('highlights active tool', () => {
     render(<DrawingToolbar {...defaultProps} activeTool={DrawingMode.STRAIGHT_LINE} />);
     
-    const lineButton = screen.getByText(/line/i).closest('button');
-    const selectButton = screen.getByText(/select/i).closest('button');
+    const lineButton = screen.getByText('line').closest('button');
+    const selectButton = screen.getByText('select').closest('button');
     
     expect(lineButton).toHaveClass('bg-primary');
     expect(selectButton).not.toHaveClass('bg-primary');

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,7 +9,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { 
-  Ruler2Icon, 
+  RulerIcon as Ruler2Icon, 
   GridIcon, 
   SquareIcon, 
   MoveIcon 
@@ -23,7 +24,9 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Floor Plan Measurement Guide</DialogTitle>
+          <DialogTitle>
+            Floor Plan Measurement Guide
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">

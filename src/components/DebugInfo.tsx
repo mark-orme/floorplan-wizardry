@@ -9,9 +9,9 @@ interface DebugInfoProps {
 /**
  * Displays debug information about the canvas state
  * @param {DebugInfoProps} props - Component properties
- * @returns {JSX.Element} Debug information component
+ * @returns {React.ReactElement} Debug information component
  */
-export const DebugInfo = ({ debugInfo }: DebugInfoProps): JSX.Element => {
+export const DebugInfo = ({ debugInfo }: DebugInfoProps): React.ReactElement => {
   // Only show in development mode
   if (process.env.NODE_ENV !== "development") {
     return <></>;

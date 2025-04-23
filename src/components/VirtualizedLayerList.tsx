@@ -1,7 +1,12 @@
 
 import React from 'react';
-import { FixedSizeList } from 'react-window';
-import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
+import { 
+  EyeIcon as Eye, 
+  EyeOffIcon as EyeOff, 
+  LockIcon as Lock, 
+  UnlockIcon as Unlock, 
+  Trash2Icon as Trash2 
+} from 'lucide-react';
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 
 interface VirtualizedLayerListProps {

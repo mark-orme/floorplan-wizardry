@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { Ruler2 } from "lucide-react";
+import { Ruler2Icon as Ruler2 } from "lucide-react";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { isIOSPlatform } from "@/utils/fabric/events";
 

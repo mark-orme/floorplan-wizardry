@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -65,7 +64,9 @@ export function TutorialOverlay({
         style={dialogStyle}
       >
         <DialogHeader>
-          <DialogTitle>{currentTutorialStep.title}</DialogTitle>
+          <DialogTitle>
+            {currentTutorialStep.title}
+          </DialogTitle>
           <DialogDescription>
             {currentTutorialStep.description}
           </DialogDescription>
