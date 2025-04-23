@@ -2,77 +2,67 @@
 import { Point } from '@/types/core/Point';
 
 /**
- * Calculate the distance between two points
+ * Calculates the distance between two points
  */
-export const calculateDistance = (startPoint: Point, endPoint: Point): number => {
-  const dx = endPoint.x - startPoint.x;
-  const dy = endPoint.y - startPoint.y;
+export const calculateDistance = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Calculate the angle between two points in degrees
+ * Calculates the angle between two points in degrees
  */
-export const calculateAngle = (startPoint: Point, endPoint: Point, snapToDegrees?: number): number => {
-  const dx = endPoint.x - startPoint.x;
-  const dy = endPoint.y - startPoint.y;
-  
-  // Calculate the angle in radians and convert to degrees
+export const calculateAngle = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-  
-  // Normalize to 0-360 degrees range
-  angle = (angle + 360) % 360;
-  
-  // Snap to nearest multiple of snapToDegrees if provided
-  if (snapToDegrees) {
-    const halfSnap = snapToDegrees / 2;
-    angle = Math.round(angle / snapToDegrees) * snapToDegrees;
-  }
-  
-  return angle;
+  return angle < 0 ? angle + 360 : angle;
 };
 
 /**
- * Snap an angle to the nearest 45 degrees
+ * Calculates the midpoint between two points
  */
-export const snapAngleTo45Degrees = (angle: number): number => {
-  const snapDegrees = 45;
-  return Math.round(angle / snapDegrees) * snapDegrees;
-};
-
-/**
- * Calculate midpoint between two points
- */
-export const calculateMidpoint = (startPoint: Point, endPoint: Point): Point => {
+export const calculateMidpoint = (point1: Point, point2: Point): Point => {
   return {
-    x: (startPoint.x + endPoint.x) / 2,
-    y: (startPoint.y + endPoint.y) / 2
+    x: (point1.x + point2.x) / 2,
+    y: (point1.y + point2.y) / 2
   };
 };
 
 /**
- * Get point at specific distance along a line
+ * Snaps a point to the closest grid intersection
  */
-export const getPointAtDistance = (
-  startPoint: Point, 
-  endPoint: Point, 
-  distance: number,
-  totalDistance?: number
-): Point => {
-  // Calculate total distance if not provided
-  const lineDistance = totalDistance || calculateDistance(startPoint, endPoint);
-  
-  // If distance is zero or line has no length, return start point
-  if (distance === 0 || lineDistance === 0) {
-    return { ...startPoint };
-  }
-  
-  // Calculate the ratio of the requested distance to the total distance
-  const ratio = distance / lineDistance;
-  
-  // Interpolate between start and end points
+export const snapToGrid = (point: Point, gridSize: number): Point => {
   return {
-    x: startPoint.x + (endPoint.x - startPoint.x) * ratio,
-    y: startPoint.y + (endPoint.y - startPoint.y) * ratio
+    x: Math.round(point.x / gridSize) * gridSize,
+    y: Math.round(point.y / gridSize) * gridSize
   };
+};
+
+/**
+ * Snaps both endpoints of a line to the grid
+ */
+export const snapLineToGrid = (start: Point, end: Point, gridSize: number): [Point, Point] => {
+  return [
+    snapToGrid(start, gridSize),
+    snapToGrid(end, gridSize)
+  ];
+};
+
+/**
+ * Checks if a value is an exact multiple of the grid size
+ */
+export const isExactGridMultiple = (value: number, gridSize: number): boolean => {
+  // Using epsilon for floating point comparison
+  const epsilon = 0.0001;
+  return Math.abs(Math.round(value / gridSize) * gridSize - value) < epsilon;
+};
+
+/**
+ * Checks if a line is aligned with the grid
+ */
+export const isLineAlignedWithGrid = (start: Point, end: Point): boolean => {
+  // Line is aligned if it's horizontal or vertical
+  return start.x === end.x || start.y === end.y;
 };

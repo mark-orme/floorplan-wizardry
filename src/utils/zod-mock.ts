@@ -27,7 +27,8 @@ export const z = {
   number: () => ({
     min: (val: number, message?: any) => ({
       max: (val: number, message?: any) => ({}),
-      positive: () => ({})
+      positive: () => ({}),
+      nonnegative: () => ({})
     }),
     max: (val: number, message?: any) => ({}),
     positive: () => ({})
@@ -36,7 +37,9 @@ export const z = {
   array: (schema: any) => ({}),
   any: () => ({}),
   nativeEnum: <T>(enumObj: T) => ({}),
-  date: (options?: { required_error?: string }) => ({})
+  date: (options?: { required_error?: string }) => ({}),
+  // Add missing record function
+  record: (keyType: any, valueType: any) => ({})
 };
 
 // ZodError for error handling
@@ -55,6 +58,7 @@ export interface ZodType<T> {
   _output: T;
   parse: (value: unknown) => T;
   safeParse: (value: unknown) => { success: boolean; data?: T; error?: ZodError };
+  optional: () => ZodType<T | undefined>;
 }
 
 // Export as default and named export for flexibility
