@@ -1,9 +1,10 @@
-
 /**
  * Enhanced Sentry utility functions for error reporting
  * Provides consistent error monitoring with context across the application
  */
 import * as Sentry from '@sentry/react';
+import React from 'react';
+import { ErrorFallback } from './sentry/ErrorFallback';
 
 // Define types for error reporting
 export interface ErrorReportOptions {
@@ -107,18 +108,7 @@ export function withComponentErrorMonitoring(
   componentName: string
 ): React.ComponentType<any> {
   return Sentry.withErrorBoundary(component, {
-    fallback: ({ error, componentStack, resetError }) => (
-      <div className="error-boundary p-4 bg-red-50 text-red-700 rounded-md">
-        <h3 className="font-bold">Something went wrong in {componentName}</h3>
-        <p>{error.message}</p>
-        <button
-          className="px-4 py-2 mt-4 bg-red-600 text-white rounded hover:bg-red-700"
-          onClick={resetError}
-        >
-          Try again
-        </button>
-      </div>
-    )
+    fallback: (props) => React.createElement(ErrorFallback, { ...props, componentName })
   });
 }
 
