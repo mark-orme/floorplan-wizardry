@@ -1,6 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw as RefreshCw } from "lucide-react";
+import { toast } from '@/utils/toastUtils'; // Use our mock implementation
+import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface CanvasFallbackProps {
   errorMessage?: string;
@@ -32,7 +34,7 @@ const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         </div>
         
         <Button onClick={onRetry} variant="default">
-          <RefreshCcw className="w-4 h-4 mr-2" />
+          <RefreshCw className="w-4 h-4 mr-2" />
           Retry Loading Canvas
         </Button>
       </div>

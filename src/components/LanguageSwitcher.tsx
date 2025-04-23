@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Globe } from "lucide-react";
+import { Globe2 as Globe } from "lucide-react";
 
 interface Language {
   code: string;

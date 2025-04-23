@@ -1,26 +1,24 @@
-
 /**
  * Canvas toolbar component
  * @module components/canvas/CanvasToolbar
  */
 import React from 'react';
-import { 
-  MousePointer, 
-  Pencil,
-  Square, 
-  Circle, 
-  Type, 
-  Eraser,
-  Hand,
-  Undo,
-  Redo,
+import {
+  Cursor2 as MousePointer,
+  Pencil2 as Pencil,
+  Square2 as Square,
+  Text as Type,
+  Eraser as Eraser,
+  Hand as Hand,
+  ArrowUndo2 as Undo,
+  ArrowRedo2 as Redo,
   ZoomIn,
   ZoomOut,
   Save,
   Download,
   Trash2,
-  Ruler
-} from 'lucide-react';
+  Ruler2 as Ruler
+} from "lucide-react";
 import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';
 import { ToolbarGroup } from './toolbar/ToolbarGroup';

@@ -5,7 +5,7 @@ import {
   EyeOff, 
   Lock, 
   Unlock, 
-  Trash 
+  Trash2 as Trash 
 } from "lucide-react";
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 
