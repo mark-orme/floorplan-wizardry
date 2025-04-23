@@ -1,15 +1,15 @@
-
 import { useState, useEffect } from 'react';
 
 export enum InputMethod {
-  MOUSE = 'MOUSE',
-  TOUCH = 'TOUCH',
-  STYLUS = 'STYLUS',
-  PENCIL = 'PENCIL',
-  UNKNOWN = 'UNKNOWN'
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  STYLUS = 'stylus'
 }
 
-export const useLineInputMethod = () => {
+export function useLineInputMethod(): { 
+  inputMethod: InputMethod; 
+  setInputMethod: (method: InputMethod) => void; 
+} {
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
 
   useEffect(() => {
@@ -41,4 +41,4 @@ export const useLineInputMethod = () => {
   }, []);
 
   return { inputMethod, setInputMethod };
-};
+}

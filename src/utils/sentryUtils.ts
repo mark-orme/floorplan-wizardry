@@ -19,6 +19,52 @@ export interface ErrorReportOptions {
   level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 }
 
+type SentryMessageOptions = {
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+};
+
+export function captureMessage(message: string, options: SentryMessageOptions): void;
+export function captureMessage(
+  message: string, 
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug',
+  tags?: Record<string, string>
+): void;
+export function captureMessage(
+  message: string,
+  levelOrOptions?: SentryMessageOptions | 'fatal' | 'error' | 'warning' | 'info' | 'debug',
+  tags?: Record<string, string>
+): void {
+  console.log(`[${typeof levelOrOptions === 'object' ? levelOrOptions.level || 'info' : levelOrOptions || 'info'}] ${message}`);
+  
+  try {
+    Sentry.withScope((scope) => {
+      if (typeof levelOrOptions === 'object') {
+        // Handle options object
+        if (levelOrOptions.level) {
+          scope.setLevel(levelOrOptions.level);
+        }
+        if (levelOrOptions.tags) {
+          scope.setTags(levelOrOptions.tags);
+        }
+        if (levelOrOptions.extra) {
+          scope.setExtras(levelOrOptions.extra);
+        }
+      } else {
+        // Handle level + tags
+        scope.setLevel(levelOrOptions || 'info');
+        if (tags) {
+          scope.setTags(tags);
+        }
+      }
+      Sentry.captureMessage(message);
+    });
+  } catch (sentryError) {
+    console.error('Failed to send message to Sentry:', sentryError);
+  }
+}
+
 /**
  * Capture an error with Sentry, with detailed context
  */
@@ -54,29 +100,6 @@ export function captureError(error: Error | string, options?: ErrorReportOptions
   } catch (sentryError) {
     console.error('Failed to report error to Sentry:', sentryError);
     console.error('Original error:', errorObj);
-  }
-}
-
-/**
- * Capture a diagnostic message
- */
-export function captureMessage(
-  message: string, 
-  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
-  tags?: Record<string, string>
-): void {
-  console.log(`[${level}] ${message}`);
-  
-  try {
-    Sentry.withScope((scope) => {
-      scope.setLevel(level);
-      if (tags) {
-        scope.setTags(tags);
-      }
-      Sentry.captureMessage(message);
-    });
-  } catch (sentryError) {
-    console.error('Failed to send message to Sentry:', sentryError);
   }
 }
 

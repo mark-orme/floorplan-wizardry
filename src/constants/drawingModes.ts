@@ -8,6 +8,8 @@ export enum DrawingMode {
   PENCIL = 'PENCIL',
   LINE = 'LINE',
   RECT = 'RECTANGLE',
+  WALL = 'WALL',
+  RECTANGLE = 'RECTANGLE',
   CIRCLE = 'CIRCLE',
   TEXT = 'TEXT',
   MEASURE = 'MEASURE',
@@ -16,4 +18,5 @@ export enum DrawingMode {
   PAN = 'PAN',
   ZOOM = 'ZOOM',
   ERASER = 'ERASER',
+  NONE = 'NONE'
 }

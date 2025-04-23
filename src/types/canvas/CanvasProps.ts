@@ -1,14 +1,18 @@
 
-import { DrawingMode } from '@/constants/drawingModes';
+import type { DrawingMode } from '@/constants/drawingModes';
+import type { DebugInfoState } from '@/types/core/DebugInfo';
+import type { Canvas as FabricCanvas } from 'fabric';
+import type { Dispatch, SetStateAction, CSSProperties } from 'react';
 
 export interface CanvasProps {
   width: number;
   height: number;
   backgroundColor?: string;
-  onReady?: (canvas: any) => void;
+  onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
-  // Add missing tool prop to fix test errors
   tool?: DrawingMode;
-  // Add missing saveCurrentState prop
   saveCurrentState?: () => void;
+  setDebugInfo?: Dispatch<SetStateAction<DebugInfoState>>;
+  style?: CSSProperties;
+  showGridDebug?: boolean;
 }
