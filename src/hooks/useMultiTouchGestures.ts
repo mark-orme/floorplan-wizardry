@@ -1,291 +1,187 @@
-/**
- * Custom hook for handling multi-touch gestures on a canvas
- * @module hooks/useMultiTouchGestures
- */
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Point } from '@/types/core/Point';
 import { vibrateFeedback } from '@/utils/canvas/pointerEvents';
-import type { GestureType, GestureState, GestureStateObject } from '@/types/drawingTypes';
-import type { Point } from '@/types/core/Point';
-
-interface UseMultiTouchGesturesProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-}
+import type { GestureType } from '@/types/drawingTypes';
+import { GestureStateObject } from '@/types/drawingTypes';
 
 /**
- * Custom hook for handling multi-touch gestures on a canvas
+ * Hook to handle multi-touch gestures like pinch zoom
  */
-export const useMultiTouchGestures = ({ canvasRef }: UseMultiTouchGesturesProps) => {
-  const [gestureState, setGestureState] = useState<GestureState>({
-    type: GestureType.NONE,
+export const useMultiTouchGestures = (
+  elementRef: React.RefObject<HTMLElement>,
+  onGestureUpdate?: (gestureState: GestureStateObject) => void,
+  onGestureEnd?: (gestureState: GestureStateObject) => void
+) => {
+  // Track points and state
+  const [touchPoints, setTouchPoints] = useState<Point[]>([]);
+  const [gestureState, setGestureState] = useState<GestureStateObject>({
+    type: 'pinch',
     startPoints: [],
     currentPoints: [],
     scale: 1,
     rotation: 0,
-    translation: { x: 0, y: 0 }
+    translation: { x: 0, y: 0 },
+    center: { x: 0, y: 0 }
   });
+  const [isGestureActive, setIsGestureActive] = useState(false);
   
-  const touchPoints = useRef<Point[]>([]);
-  
-  // Utility function to calculate the distance between two points
+  // Calculate distance between two points
   const getDistance = (p1: Point, p2: Point): number => {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     return Math.sqrt(dx * dx + dy * dy);
   };
   
-  // Utility function to calculate the midpoint between two points
-  const getMidpoint = (p1: Point, p2: Point): Point => ({
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  });
-  
-  // Utility function to calculate the angle between two points
+  // Calculate angle between two points
   const getAngle = (p1: Point, p2: Point): number => {
-    return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+    return Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
   };
   
-  // Handler for pan gesture
-  const handlePanGesture = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 1) return;
+  // Calculate center point
+  const getCenter = (p1: Point, p2: Point): Point => {
+    return {
+      x: (p1.x + p2.x) / 2,
+      y: (p1.y + p2.y) / 2
+    };
+  };
+  
+  // Update gesture state based on new touch points
+  const updateGestureState = useCallback((newPoints: Point[]) => {
+    if (newPoints.length < 2) return;
     
-    const currentTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    
-    setGestureState(prevState => ({
-      type: 'pan',
-      startPoints: [currentTouch],
-      currentPoints: [currentTouch],
-      scale: 1,
-      rotation: 0,
-      translation: {
-        x: currentTouch.x - (prevState.startPoints[0]?.x || 0),
-        y: currentTouch.y - (prevState.startPoints[0]?.y || 0)
-      },
-      center: currentTouch
-    }));
+    setGestureState(prevState => {
+      // Get initial values if starting gesture
+      const startPoints = prevState.startPoints.length ? prevState.startPoints : newPoints;
+      const initialDistance = getDistance(startPoints[0], startPoints[1]);
+      const initialAngle = getAngle(startPoints[0], startPoints[1]);
+      const initialCenter = getCenter(startPoints[0], startPoints[1]);
+      
+      // Calculate current values
+      const currentDistance = getDistance(newPoints[0], newPoints[1]);
+      const currentAngle = getAngle(newPoints[0], newPoints[1]);
+      const currentCenter = getCenter(newPoints[0], newPoints[1]);
+      
+      // Calculate scale, rotation, and translation
+      const scale = initialDistance ? currentDistance / initialDistance : 1;
+      const rotation = currentAngle - initialAngle;
+      const translation = {
+        x: currentCenter.x - initialCenter.x,
+        y: currentCenter.y - initialCenter.y
+      };
+      
+      return {
+        ...prevState,
+        type: 'pinch' as GestureType,
+        startPoints: startPoints,
+        currentPoints: newPoints,
+        scale,
+        rotation,
+        translation,
+        center: currentCenter
+      };
+    });
   }, []);
   
-  // Handler for pinch gesture start
-  const handlePinchStart = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2) return;
+  // Handle touch start
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length < 2) return;
     
-    // Get the touch points
-    const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    const touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
+    // Prevent default to avoid browser gestures
+    e.preventDefault();
     
-    // Calculate center point
-    const centerX = (touch1.x + touch2.x) / 2;
-    const centerY = (touch1.y + touch2.y) / 2;
+    // Convert touch points to Point array
+    const points: Point[] = Array.from(e.touches).map(touch => ({
+      x: touch.clientX,
+      y: touch.clientY
+    }));
     
-    // Calculate initial distance
-    const dx = touch1.x - touch2.x;
-    const dy = touch1.y - touch2.y;
-    const initialDistance = Math.sqrt(dx * dx + dy * dy);
+    setTouchPoints(points);
     
+    // Initialize or update gesture state
     setGestureState({
       type: 'pinch',
-      startPoints: [touch1, touch2],
-      currentPoints: [touch1, touch2],
+      startPoints: points,
+      currentPoints: points,
       scale: 1,
       rotation: 0,
       translation: { x: 0, y: 0 },
-      center: { x: centerX, y: centerY }
+      center: getCenter(points[0], points[1])
     });
+    
+    setIsGestureActive(true);
+    
+    // Provide haptic feedback
+    vibrateFeedback();
+    
   }, []);
   
-  // Handler for pinch gesture move
-  const handlePinchMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2 || gestureState.type !== 'pinch') return;
-    
-    // Get the touch points
-    const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    const touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-    
-    // Calculate current distance
-    const dx = touch1.x - touch2.x;
-    const dy = touch1.y - touch2.y;
-    const currentDistance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate scale
-    const initialDistance = getDistance(gestureState.startPoints[0], gestureState.startPoints[1]);
-    const scale = currentDistance / initialDistance;
-    
-    // Calculate center point
-    const centerX = (touch1.x + touch2.x) / 2;
-    const centerY = (touch1.y + touch2.y) / 2;
-    
-    setGestureState(prevState => ({
-      ...prevState,
-      currentPoints: [touch1, touch2],
-      scale: scale,
-      center: { x: centerX, y: centerY }
-    }));
-  }, [gestureState, getDistance]);
-  
-  // Handler for rotate gesture start
-  const handleRotateStart = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2) return;
-    
-    // Get the touch points
-    const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    const touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-    
-    // Calculate initial angle
-    const initialAngle = getAngle(touch1, touch2);
-    
-    setGestureState({
-      type: 'rotate',
-      startPoints: [touch1, touch2],
-      currentPoints: [touch1, touch2],
-      scale: 1,
-      rotation: 0,
-      translation: { x: 0, y: 0 },
-      center: getMidpoint(touch1, touch2)
-    });
-  }, [getAngle]);
-  
-  // Handler for rotate gesture move
-  const handleRotateMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length !== 2 || gestureState.type !== 'rotate') return;
-    
-    // Get the touch points
-    const touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    const touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-    
-    // Calculate current angle
-    const currentAngle = getAngle(touch1, touch2);
-    
-    // Calculate rotation
-    const initialAngle = getAngle(gestureState.startPoints[0], gestureState.startPoints[1]);
-    const rotation = currentAngle - initialAngle;
-    
-    setGestureState(prevState => ({
-      ...prevState,
-      currentPoints: [touch1, touch2],
-      rotation: rotation,
-      center: getMidpoint(touch1, touch2)
-    }));
-  }, [gestureState, getAngle, getMidpoint]);
-  
-  // Handler for tap gestures
-  const handleTapGesture = useCallback((touchCount: number, duration: number) => {
-    let gestureType: GestureType;
-    
-    switch (touchCount) {
-      case 1:
-        gestureType = GestureType.TAP;
-        vibrateFeedback(duration);
-        break;
-      case 2:
-        gestureType = GestureType.TWOFINGERTAP;
-        vibrateFeedback(duration);
-        break;
-      case 3:
-        gestureType = GestureType.THREEFINGERTAP;
-        vibrateFeedback(duration);
-        break;
-      case 4:
-        gestureType = GestureType.FOURFINGERTAP;
-        vibrateFeedback(duration);
-        break;
-      default:
-        return;
-    }
-    
-    // Calculate the center point of all touches
-    const centerX = touchPoints.current.reduce((sum, p) => sum + p.x, 0) / touchCount;
-    const centerY = touchPoints.current.reduce((sum, p) => sum + p.y, 0) / touchCount;
-    
-    setGestureState({
-      type: gestureType,
-      startPoints: [...touchPoints.current],
-      currentPoints: [...touchPoints.current],
-      scale: 1,
-      rotation: 0,
-      translation: { x: 0, y: 0 },
-      center: { x: centerX, y: centerY }
-    });
-  }, []);
-  
-  // Handler for touch start event
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    touchPoints.current = Array.from(e.touches).map(touch => ({
-      x: touch.clientX,
-      y: touch.clientY
-    }));
-    
-    if (e.touches.length === 1) {
-      handlePanGesture(e);
-    } else if (e.touches.length === 2) {
-      handlePinchStart(e);
-      handleRotateStart(e);
-    }
-  }, [handlePanGesture, handlePinchStart, handleRotateStart]);
-  
-  // Handler for touch move event
+  // Handle touch move
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    touchPoints.current = Array.from(e.touches).map(touch => ({
+    if (!isGestureActive || e.touches.length < 2) return;
+    
+    e.preventDefault();
+    
+    // Convert touch points to Point array
+    const points = Array.from(e.touches).map(touch => ({
       x: touch.clientX,
       y: touch.clientY
     }));
     
-    if (e.touches.length === 1 && gestureState.type === 'pan') {
-      handlePanGesture(e);
-    } else if (e.touches.length === 2 && gestureState.type === 'pinch') {
-      handlePinchMove(e);
-    } else if (e.touches.length === 2 && gestureState.type === 'rotate') {
-      handleRotateMove(e);
+    setTouchPoints(points);
+    updateGestureState(points);
+    
+    // Call callback with current gesture state
+    if (onGestureUpdate && gestureState) {
+      onGestureUpdate({
+        ...gestureState,
+        currentPoints: points
+      });
     }
-  }, [gestureState.type, handlePanGesture, handlePinchMove, handleRotateMove]);
+  }, [isGestureActive, updateGestureState, onGestureUpdate, gestureState]);
   
-  // Handler for touch end event
+  // Handle touch end
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (e.touches.length < 2 && gestureState.type === 'pinch') {
-      setGestureState(prevState => ({
-        ...prevState,
-        type: 'none'
+    // If there are still at least 2 touches, update with remaining touches
+    if (e.touches.length >= 2) {
+      const points = Array.from(e.touches).map(touch => ({
+        x: touch.clientX,
+        y: touch.clientY
       }));
-    } else if (e.touches.length < 2 && gestureState.type === 'rotate') {
-      setGestureState(prevState => ({
-        ...prevState,
-        type: 'none'
-      }));
-    } else if (e.touches.length === 0 && gestureState.type === 'pan') {
-      setGestureState(prevState => ({
-        ...prevState,
-        type: 'none'
-      }));
+      setTouchPoints(points);
+      updateGestureState(points);
+      return;
     }
-  }, [gestureState.type]);
+    
+    // Otherwise, end the gesture
+    if (isGestureActive && onGestureEnd && gestureState) {
+      onGestureEnd(gestureState);
+    }
+    
+    setIsGestureActive(false);
+    setTouchPoints([]);
+  }, [isGestureActive, updateGestureState, onGestureEnd, gestureState]);
   
-  // Handler for double tap event
-  const handleDoubleTap = useCallback(() => {
-    handleTapGesture(2, 50);
-  }, [handleTapGesture]);
-  
-  // Attach event listeners to the canvas
+  // Set up and clean up event listeners
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const element = elementRef.current;
+    if (!element) return;
     
-    if (!canvas) return;
+    element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('touchcancel', handleTouchEnd);
     
-    // Add event listeners
-    canvas.addEventListener('touchstart', handleTouchStart);
-    canvas.addEventListener('touchmove', handleTouchMove);
-    canvas.addEventListener('touchend', handleTouchEnd);
-    
-    // Add double tap listener
-    canvas.addEventListener('dblclick', handleDoubleTap);
-    
-    // Remove event listeners on cleanup
     return () => {
-      canvas.removeEventListener('touchstart', handleTouchStart);
-      canvas.removeEventListener('touchmove', handleTouchMove);
-      canvas.removeEventListener('touchend', handleTouchEnd);
-      canvas.removeEventListener('dblclick', handleDoubleTap);
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [canvasRef, handleTouchStart, handleTouchMove, handleTouchEnd, handleDoubleTap]);
+  }, [elementRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
   
   return {
-    gestureState
+    isGestureActive,
+    gestureState,
+    touchPoints
   };
 };

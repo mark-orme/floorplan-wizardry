@@ -1,5 +1,5 @@
 
-import type { Point } from './core/Point';
+import type { Point } from '@/types/core/Point';
 
 export interface DrawingState {
   isDrawing: boolean;
