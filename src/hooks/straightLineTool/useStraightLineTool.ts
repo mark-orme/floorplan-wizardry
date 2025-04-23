@@ -153,7 +153,7 @@ export const useStraightLineTool = ({
     handleKeyDown,
     handleKeyUp,
     renderTooltip,
-    setIsDrawing,   // Comma was added here
+    setIsDrawing,
     setCurrentLine
   };
 };
