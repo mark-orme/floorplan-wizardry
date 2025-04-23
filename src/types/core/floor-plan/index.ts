@@ -1,16 +1,8 @@
 
 /**
  * Floor Plan type definitions index
- * Re-exports all floor plan related types
- * @module types/core/floor-plan
+ * Unifies all floor plan related type exports.
  */
 
-// Export all types from their respective files
-export * from './PaperSize';
-export * from './Metadata';
-export * from './Wall';
-export * from './Room';
-export * from './Stroke';
-export * from './Floor';
-export * from './FloorPlan';
-export * from './helpers';
+// Canonical export: always use floorPlanTypes for primary domain types
+export * from '@/types/floorPlanTypes';

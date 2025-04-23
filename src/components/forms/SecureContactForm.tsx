@@ -1,7 +1,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from "@/utils/zod-mock";
+import { z } from "zod";
 import {
   Form,
   FormField,
