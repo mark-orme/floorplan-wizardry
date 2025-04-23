@@ -4,16 +4,16 @@ import { Canvas, Line } from 'fabric';
 
 interface SimpleGridLayerProps {
   canvas: Canvas | null;
-  gridSize: number;
-  visible: boolean;
+  gridSize?: number;
+  visible?: boolean;
   strokeWidth?: number;
   color?: string;
 }
 
 export function SimpleGridLayer({
   canvas,
-  gridSize,
-  visible,
+  gridSize = 50,
+  visible = true,
   strokeWidth = 0.5,
   color = 'rgba(200, 200, 200, 0.5)'
 }: SimpleGridLayerProps) {
@@ -34,54 +34,54 @@ export function SimpleGridLayer({
 
     const canvasWidth = canvas.width || 1000;
     const canvasHeight = canvas.height || 1000;
+    const newLines: Line[] = [];
 
-    const horizontalLines: Line[] = [];
+    // Create horizontal lines
     for (let i = 0; i <= canvasHeight; i += gridSize) {
       const line = new Line([0, i, canvasWidth, i], {
         stroke: color,
         strokeWidth: strokeWidth,
         selectable: false,
         evented: false,
-        hoverCursor: 'default'
+        hoverCursor: 'default',
+        objectCaching: false // Improve performance by disabling object caching
       });
-      horizontalLines.push(line);
       canvas.add(line);
+      newLines.push(line);
     }
 
-    const verticalLines: Line[] = [];
+    // Create vertical lines
     for (let i = 0; i <= canvasWidth; i += gridSize) {
       const line = new Line([i, 0, i, canvasHeight], {
         stroke: color,
         strokeWidth: strokeWidth,
         selectable: false,
         evented: false,
-        hoverCursor: 'default'
+        hoverCursor: 'default',
+        objectCaching: false // Improve performance by disabling object caching
       });
-      verticalLines.push(line);
       canvas.add(line);
+      newLines.push(line);
     }
 
-    // Ensure grid lines are in the background
-    const allLines = [...horizontalLines, ...verticalLines];
-    allLines.forEach(line => {
-      if (line.canvas) {
-        // Fix: Use canvas.sendObjectToBack instead of line.sendToBack
-        canvas.sendObjectToBack(line);
-      }
+    // Send grid lines to back
+    newLines.forEach(line => {
+      canvas.sendObjectToBack(line);
     });
 
-    setLines(allLines);
+    setLines(newLines);
     canvas.requestRenderAll();
 
     // Cleanup function to remove lines when unmounting
     return () => {
       if (canvas) {
-        allLines.forEach(line => {
+        newLines.forEach(line => {
           canvas.remove(line);
         });
       }
     };
   }, [canvas, gridSize, visible, strokeWidth, color]);
 
+  // This component doesn't render anything directly
   return null;
 }

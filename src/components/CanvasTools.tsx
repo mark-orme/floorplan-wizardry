@@ -10,9 +10,9 @@ import {
   Undo, 
   Redo, 
   MousePointer, 
-  Trash,
-  StraightLine
+  Trash
 } from 'lucide-react';
+import { StraightLine } from '@/components/icons/StraightLine';
 
 interface CanvasToolsProps {
   tool: DrawingMode;
@@ -43,6 +43,9 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
     // Configure canvas based on tool
     if (newTool === DrawingMode.DRAW) {
       canvas.isDrawingMode = true;
+      canvas.selection = false;
+    } else if (newTool === DrawingMode.STRAIGHT_LINE) {
+      canvas.isDrawingMode = false;
       canvas.selection = false;
     } else {
       canvas.isDrawingMode = false;

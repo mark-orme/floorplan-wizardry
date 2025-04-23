@@ -6,6 +6,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
 import { toast } from 'sonner';
+import { SimpleGridLayer } from './canvas/SimpleGridLayer';
 
 interface OptimizedCanvasControllerProps {
   width: number;
@@ -52,16 +53,11 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
         // Set brush to respond to pressure
         if (hasAdvancedInput) {
           console.log('Enhanced input capabilities detected');
-          toast.success('Enhanced drawing capabilities enabled', {
-            id: 'enhanced-drawing',
-            duration: 3000
-          });
         }
       }
       
       // Create grid for the canvas
       if (showGrid) {
-        console.log("Creating grid for canvas");
         const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
         gridObjectsRef.current = gridObjects;
       }
@@ -123,6 +119,14 @@ export const OptimizedCanvasController: React.FC<OptimizedCanvasControllerProps>
         onCanvasReady={handleCanvasReady}
         fabricCanvasRef={fabricCanvasRef}
       />
+      
+      {fabricCanvasRef.current && showGrid && (
+        <SimpleGridLayer
+          canvas={fabricCanvasRef.current}
+          visible={showGrid}
+          gridSize={50}
+        />
+      )}
     </div>
   );
 };

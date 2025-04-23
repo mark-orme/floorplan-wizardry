@@ -1,46 +1,82 @@
 
 /**
- * Utility functions for detecting pointer/stylus capabilities
+ * Utility functions for handling pointer events with pressure and tilt detection
  */
 
 /**
- * Check if the device supports pressure sensitivity
+ * Check if pressure input is supported
+ * @returns {boolean} Whether pressure input is supported
  */
 export const isPressureSupported = (): boolean => {
-  // Check if the browser supports pointer events and pressure
-  if (window.PointerEvent && 'pressure' in new PointerEvent('pointerdown')) {
-    return true;
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') return false;
+  
+  // Check if pointer events are supported
+  if (!('PointerEvent' in window)) return false;
+  
+  // Use a sample event to check if pressure is supported
+  try {
+    // Create a dummy pointer event to check properties
+    const event = new PointerEvent('pointerdown');
+    
+    // Return whether pressure is available (not undefined)
+    return typeof event.pressure !== 'undefined';
+  } catch (error) {
+    console.error('Error checking pressure support:', error);
+    return false;
   }
-  return false;
 };
 
 /**
- * Check if the device supports tilt detection (e.g., Apple Pencil)
+ * Check if tilt input is supported
+ * @returns {boolean} Whether tilt input is supported
  */
 export const isTiltSupported = (): boolean => {
-  // Check if the browser supports pointer events and tiltX/tiltY
-  if (window.PointerEvent && 'tiltX' in new PointerEvent('pointerdown')) {
-    return true;
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') return false;
+  
+  // Check if pointer events are supported
+  if (!('PointerEvent' in window)) return false;
+  
+  // Use a sample event to check if tilt is supported
+  try {
+    // Create a dummy pointer event to check properties
+    const event = new PointerEvent('pointerdown');
+    
+    // Return whether tiltX and tiltY are available (not undefined)
+    return typeof event.tiltX !== 'undefined' && typeof event.tiltY !== 'undefined';
+  } catch (error) {
+    console.error('Error checking tilt support:', error);
+    return false;
   }
-  return false;
 };
 
 /**
- * Check if the pointer is likely a pen/stylus
+ * Get pointer input capabilities
+ * @returns {Object} Object containing support status for various input methods
  */
-export const isPenPointer = (event: PointerEvent): boolean => {
-  return event.pointerType === 'pen';
+export const getPointerCapabilities = () => {
+  return {
+    pressure: isPressureSupported(),
+    tilt: isTiltSupported(),
+    pointerEvents: typeof window !== 'undefined' && 'PointerEvent' in window
+  };
 };
 
 /**
- * Get pressure value from pointer event, normalized to 0-1 range
+ * Extract pointer data from an event
+ * @param {PointerEvent} event - The pointer event
+ * @returns {Object} Extracted pointer data
  */
-export const getNormalizedPressure = (event: PointerEvent): number => {
-  // Most devices that don't support pressure return 0.5 as default value
-  // or 1 for mouse clicks
-  if (event.pressure === 0.5 || event.pressure === 1) {
-    return event.pointerType === 'pen' ? 0.7 : 0.5; // Default value
-  }
-  return event.pressure;
+export const extractPointerData = (event: PointerEvent) => {
+  return {
+    x: event.clientX,
+    y: event.clientY,
+    pressure: event.pressure || 0.5,
+    tiltX: event.tiltX || 0,
+    tiltY: event.tiltY || 0,
+    pointerType: event.pointerType,
+    isPrimary: event.isPrimary,
+    timestamp: event.timeStamp
+  };
 };
-
