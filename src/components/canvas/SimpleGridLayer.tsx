@@ -48,7 +48,7 @@ export const SimpleGridLayer = ({ canvas, gridSize = 50, visible = true }: Simpl
     return () => {
       lines.forEach(line => canvas.remove(line));
     };
-  }, [canvas, gridSize, visible]);
+  }, [canvas, gridSize, visible, createGrid]);
 
   return null;
 };

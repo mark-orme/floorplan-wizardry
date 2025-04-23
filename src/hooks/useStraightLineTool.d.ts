@@ -60,4 +60,5 @@ export interface UseStraightLineToolProps {
   lineThickness: number;
   saveCurrentState?: () => void;
   shiftKeyPressed?: boolean;
+  isActive?: boolean;
 }
