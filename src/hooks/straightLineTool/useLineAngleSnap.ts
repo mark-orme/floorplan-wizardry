@@ -1,6 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { snapToAngleUtil } from '@/utils/grid/snapping';
+import { snapToAngle } from '@/utils/grid/snapping';
 import { toolsLogger } from '@/utils/logger';
 
 interface UseLineAngleSnapOptions {
@@ -26,7 +27,7 @@ export const useLineAngleSnap = ({
   const snapToAngle = useCallback((start: Point, end: Point): Point => {
     if (!anglesEnabled) return end;
     
-    return snapToAngleUtil(start, end, snapAngleDeg);
+    return snapToAngle(start, end, snapAngleDeg);
   }, [anglesEnabled, snapAngleDeg]);
   
   /**

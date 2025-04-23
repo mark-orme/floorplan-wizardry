@@ -24,10 +24,20 @@ export interface UseStraightLineToolProps {
   anglesEnabled?: boolean;
 }
 
-export const useStraightLineTool = (props: UseStraightLineToolProps) => {
+export const useStraightLineTool = ({
+  isActive = false,
+  isEnabled = false,
+  canvas,
+  shiftKeyPressed = false,
+  lineColor = '#000000',
+  lineThickness = 1,
+  snapToGrid = false,
+  saveCurrentState,
+  anglesEnabled
+}: UseStraightLineToolProps) => {
   // State for tracking shift key
   const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
-  const [isActive, setIsActive] = useState(props.isActive || false);
+  const [isActive, setIsActive] = useState(isActive || false);
   
   // Key event handlers
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -93,5 +103,6 @@ export const useStraightLineTool = (props: UseStraightLineToolProps) => {
     renderTooltip,
     isDrawing,
     currentLine,
+    setCurrentLine,
   };
 };

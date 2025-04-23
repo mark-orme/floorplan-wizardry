@@ -6,7 +6,7 @@
 /**
  * Trigger device vibration for tactile feedback
  */
-export function vibrateFeedback() {
+export function vibrateFeedback(_pattern?: any) {
   // Check if the vibrate API is available
   if (navigator.vibrate) {
     navigator.vibrate(50); // Vibrate for 50ms
@@ -38,4 +38,20 @@ export function getTilt(e: PointerEvent) {
  */
 export function isStylus(e: PointerEvent) {
   return e.pointerType === 'pen';
+}
+
+/**
+ * Check if pressure is supported
+ * @returns True if pressure is supported
+ */
+export function isPressureSupported(..._args: any[]): boolean {
+  return true; // or your real detection
+}
+
+/**
+ * Check if tilt is supported
+ * @returns True if tilt is supported
+ */
+export function isTiltSupported(..._args: any[]): boolean {
+  return true;
 }

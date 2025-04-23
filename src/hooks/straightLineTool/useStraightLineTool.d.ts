@@ -1,8 +1,6 @@
 
 import { Point } from '@/types/core/Point';
-import { Line } from 'fabric';
-import { InputMethod } from './straightLineTool/useLineInputMethod';
-import { ReactNode } from 'react';
+import { Canvas } from 'fabric';
 
 /**
  * Measurement data for line tools
