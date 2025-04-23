@@ -47,15 +47,14 @@ export const useStraightLineTool = ({
   const { calculateMeasurements } = useMeasurementCalculation();
   const { formatTooltipData } = useLiveDistanceTooltip();
 
-  // Set canvas reference when it changes
   useEffect(() => {
     fabricCanvasRef.current = canvas;
   }, [canvas]);
 
-  const { 
-    snapEnabled, 
+  const {
+    snapEnabled,
     anglesEnabled,
-    toggleSnap, 
+    toggleSnap,
     toggleAngles,
     startDrawing,
     continueDrawing,
@@ -79,10 +78,10 @@ export const useStraightLineTool = ({
     if (!isDrawing || !measurementData) return null;
     const tooltipData = formatTooltipData(measurementData);
     if (!tooltipData) return null;
-    
     return (
       <div className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-        {tooltipData.distanceDisplay} {tooltipData.angleDisplay}{tooltipData.snappedInfo}
+        {tooltipData.distanceDisplay} {tooltipData.angleDisplay}
+        {tooltipData.snappedInfo}
       </div>
     );
   }, [isDrawing, measurementData, formatTooltipData]);
