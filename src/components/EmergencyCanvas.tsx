@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/utils/toastUtils'; // Use our mock implementation
-import { RefreshCcwIcon } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface EmergencyCanvasProps {
@@ -62,7 +63,7 @@ export const EmergencyCanvas: React.FC<EmergencyCanvasProps> = ({
             variant="outline"
             disabled={forceDisableRetry}
           >
-            <RefreshCcwIcon className="w-4 h-4 mr-2" />
+            <RefreshCcw className="w-4 h-4 mr-2" />
             Retry Loading Canvas
           </Button>
         </div>

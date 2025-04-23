@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MeasurementGuideModal } from "./MeasurementGuideModal";
-import { Ruler2Icon } from "lucide-react";
+import { Ruler2 } from "lucide-react";
 import { useMeasurementGuide } from "@/hooks/useMeasurementGuide";
 import { isIOSPlatform } from "@/utils/fabric/events";
 
@@ -26,7 +27,7 @@ export const DrawingToolbarModals = () => {
         aria-label="Measurement Guide"
         style={{ touchAction: isIOS ? 'none' : 'auto' }}
       >
-        <Ruler2Icon className="h-4 w-4" />
+        <Ruler2 className="h-4 w-4" />
         <span className="sr-only">Measurement Guide</span>
       </Button>
 

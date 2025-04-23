@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Globe2Icon } from 'lucide-react';
+import { Globe2 } from 'lucide-react';
 
 interface Language {
   code: string;
@@ -51,7 +52,7 @@ export const LanguageSwitcher: React.FC = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <Globe2Icon className="h-4 w-4" />
+          <Globe2 className="h-4 w-4" />
           <span>{currentLanguage.nativeName}</span>
         </Button>
       </DropdownMenuTrigger>
