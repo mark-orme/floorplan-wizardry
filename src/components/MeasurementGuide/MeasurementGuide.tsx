@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,9 +9,9 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { 
-  Ruler, 
+  Ruler2 as Ruler, 
   Grid3x3, 
-  Square, 
+  Square2 as Square, 
   Move 
 } from "lucide-react";
 
