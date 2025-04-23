@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { snapToAngle as snapToAngleUtil } from '@/utils/grid/snapping';
+import { snapToAngleUtil } from '@/utils/grid/snapping';
 import { toolsLogger } from '@/utils/logger';
 
 interface UseLineAngleSnapOptions {

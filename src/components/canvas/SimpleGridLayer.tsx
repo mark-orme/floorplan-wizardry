@@ -16,28 +16,8 @@ export const SimpleGridLayer = ({ canvas, gridSize = 50, visible = true }: Simpl
     if (!canvas || !visible) return;
 
     // Create grid lines
-    const lines: Line[] = [];
+    const lines = createGrid(canvas, gridSize);
     
-    // Create horizontal and vertical lines
-    for (let i = 0; i < canvas.width!; i += gridSize) {
-      const horizontalLine = new Line([i, 0, i, canvas.height!], {
-        stroke: '#ddd',
-        selectable: false,
-        evented: false
-      });
-      
-      const verticalLine = new Line([0, i, canvas.width!, i], {
-        stroke: '#ddd',
-        selectable: false,
-        evented: false
-      });
-
-      (lines[0] as any).moveTo(0);
-      (lines[0] as any).sendToBack();
-      
-      lines.push(horizontalLine, verticalLine);
-    }
-
     // Add lines to canvas
     lines.forEach(line => {
       canvas.add(line);
