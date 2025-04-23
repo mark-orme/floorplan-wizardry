@@ -5,13 +5,13 @@
  */
 import React from 'react';
 import { 
-  MousePointer, 
-  Pen, 
-  Pencil, 
-  Square, 
-  Circle, 
-  Type,
-  Ruler
+  Cursor2 as MousePointer, 
+  Pencil2 as Pen, 
+  Pencil2 as Pencil, 
+  Square2 as Square, 
+  Circle2 as Circle, 
+  Type2 as Type,
+  Ruler2 as Ruler
 } from 'lucide-react';
 import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';

@@ -3,7 +3,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Users } from "lucide-react";
+import { Users2 as Users } from "lucide-react";
 
 interface Collaborator {
   id: string;

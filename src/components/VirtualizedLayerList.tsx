@@ -2,11 +2,11 @@
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 import { 
-  Eye, 
-  EyeOff, 
-  Lock, 
-  Unlock, 
-  Trash 
+  Eye2 as Eye, 
+  EyeOff2 as EyeOff, 
+  Lock2 as Lock, 
+  Unlock2 as Unlock, 
+  Trash2 as Trash 
 } from "lucide-react";
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 

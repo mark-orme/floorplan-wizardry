@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 /**
@@ -11,7 +12,7 @@ interface CanvasLayoutProps {
  * CanvasLayout component
  * Provides a consistent layout for canvas-based views
  * @param {CanvasLayoutProps} props - Component props
- * @returns {JSX.Element} Rendered component
+ * @returns {React.ReactElement} Rendered component
  */
 const CanvasLayout = ({ children }: CanvasLayoutProps): React.ReactElement => {
   console.info('CanvasLayout: Rendering canvas layout');

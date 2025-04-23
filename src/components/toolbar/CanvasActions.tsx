@@ -9,12 +9,12 @@ import {
   Save,
   UploadCloud,
   Download,
-  Undo2,
-  Redo2,
+  ArrowUndo2 as Undo2,
+  ArrowRedo2 as Redo2,
   ZoomIn,
   ZoomOut,
-  RefreshCw,
-  Grid
+  RefreshCcw,
+  Grid3x3 as Grid
 } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';

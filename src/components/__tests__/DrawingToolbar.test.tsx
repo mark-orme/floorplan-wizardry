@@ -60,7 +60,7 @@ describe('DrawingToolbar', () => {
   it('calls onUndo when undo button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    fireEvent.click(screen.getByLabelText('undo'));
+    fireEvent.click(screen.getByRole('button', { name: /undo/i }));
     
     expect(defaultProps.onUndo).toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe('DrawingToolbar', () => {
   it('calls onClear when clear button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    fireEvent.click(screen.getByLabelText('clear'));
+    fireEvent.click(screen.getByRole('button', { name: /clear/i }));
     
     expect(defaultProps.onClear).toHaveBeenCalled();
   });
@@ -82,8 +82,8 @@ describe('DrawingToolbar', () => {
       />
     );
     
-    const undoButton = screen.getByLabelText('undo');
-    const redoButton = screen.getByLabelText('redo');
+    const undoButton = screen.getByRole('button', { name: /undo/i });
+    const redoButton = screen.getByRole('button', { name: /redo/i });
     
     expect(undoButton).toBeDisabled();
     expect(redoButton).toBeDisabled();
@@ -92,7 +92,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates color picker', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const colorInput = screen.getByLabelText('color');
+    const colorInput = screen.getByRole('textbox', { name: /color/i });
     
     fireEvent.change(colorInput, { target: { value: '#ff0000' } });
     
@@ -102,7 +102,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates thickness input', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const thicknessInput = screen.getByLabelText('thickness');
+    const thicknessInput = screen.getByRole('spinbutton', { name: /thickness/i });
     
     fireEvent.change(thicknessInput, { target: { value: '5' } });
     

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/utils/toastUtils'; // Use our mock implementation
-import { RefreshCw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface EmergencyCanvasProps {

@@ -3,7 +3,7 @@
  * Tests for Canvas component
  * @module components/__tests__/Canvas
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Canvas } from '@/components/Canvas';
 import * as fabricModule from 'fabric';
@@ -47,15 +47,15 @@ describe('Canvas', () => {
       />
     );
     
-    // Find the canvas element
-    const canvasElement = screen.getByTestId('canvas');
+    // Find the canvas element using the data-testid attribute
+    const canvasElement = document.querySelector('[data-testid="canvas"]');
     
     // Check that it has the correct dimensions
     expect(canvasElement).toHaveAttribute('width', width.toString());
     expect(canvasElement).toHaveAttribute('height', height.toString());
   });
   
-  it('calls onCanvasReady when canvas is initialized', async () => {
+  it('calls onCanvasReady when canvas is initialized', () => {
     const onCanvasReady = vi.fn();
     
     render(
@@ -67,17 +67,15 @@ describe('Canvas', () => {
     );
     
     // onCanvasReady should be called after canvas initialization
-    await waitFor(() => {
-      expect(onCanvasReady).toHaveBeenCalled();
-    });
+    expect(onCanvasReady).toHaveBeenCalled();
   });
   
-  it('handles onError callback when provided', async () => {
+  it('handles onError callback when provided', () => {
     const onError = vi.fn();
     
     // Mock fabric.Canvas to throw an error
     const fabricError = new Error('Canvas initialization failed');
-    vi.mocked(fabricModule.Canvas).mockImplementationOnce(() => {
+    vi.spyOn(fabricModule, 'Canvas').mockImplementationOnce(() => {
       throw fabricError;
     });
     
@@ -91,12 +89,22 @@ describe('Canvas', () => {
     );
     
     // onError should be called with the error
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(fabricError);
-    });
+    expect(onError).toHaveBeenCalledWith(fabricError);
   });
   
-  it('properly cleans up canvas on unmount', async () => {
+  it('properly cleans up canvas on unmount', () => {
+    const disposeMethod = vi.fn(() => {});
+    vi.spyOn(fabricModule, 'Canvas').mockImplementationOnce(() => ({
+      add: vi.fn(),
+      setWidth: vi.fn(),
+      setHeight: vi.fn(),
+      renderAll: vi.fn(),
+      dispose: disposeMethod,
+      on: vi.fn(),
+      off: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([])
+    }));
+    
     const { unmount } = render(
       <Canvas
         width={800}
@@ -104,10 +112,6 @@ describe('Canvas', () => {
         onCanvasReady={vi.fn()}
       />
     );
-    
-    // Get the dispose method from the mocked canvas
-    const disposeMethod = vi.fn(() => {});
-    vi.mocked(fabricModule.Canvas)().dispose = disposeMethod;
     
     // Unmount the component
     unmount();
@@ -129,9 +133,11 @@ describe('Canvas', () => {
     );
     
     // Find the canvas element
-    const canvasElement = screen.getByTestId('canvas');
+    const canvasElement = document.querySelector('[data-testid="canvas"]');
     
     // Check that it has the correct style
-    expect(canvasElement).toHaveStyle(style);
+    Object.entries(style).forEach(([prop, value]) => {
+      expect(canvasElement).toHaveStyle({ [prop]: value });
+    });
   });
 });

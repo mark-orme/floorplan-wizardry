@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { captureError } from '@/utils/sentryUtils';
 
@@ -93,7 +93,7 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
       
       <div className="flex flex-col sm:flex-row gap-4">
         <Button onClick={handleRetry} className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCcw className="h-4 w-4" />
           Try Again {retryCount > 0 && `(${retryCount})`}
         </Button>
         

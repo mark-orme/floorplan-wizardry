@@ -4,13 +4,13 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
-  Pencil, 
-  Square, 
+  Pencil2 as Pencil, 
+  Square2 as Square, 
   Circle, 
-  Undo, 
-  Redo, 
-  MousePointer, 
-  Trash 
+  ArrowUndo2 as Undo, 
+  ArrowRedo2 as Redo, 
+  Cursor2 as MousePointer, 
+  Trash2 as Trash 
 } from "lucide-react";
 import { StraightLine } from '@/components/icons/StraightLine';
 
