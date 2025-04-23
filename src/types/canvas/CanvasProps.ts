@@ -9,4 +9,6 @@ export interface CanvasProps {
   onError?: (error: Error) => void;
   // Add missing tool prop to fix test errors
   tool?: DrawingMode;
+  // Add missing saveCurrentState prop
+  saveCurrentState?: () => void;
 }

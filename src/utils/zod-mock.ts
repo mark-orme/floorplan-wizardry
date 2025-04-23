@@ -12,7 +12,7 @@ export const z = {
     regex: (regex: RegExp, message?: { message: string }) => ({
       message: (msg: string) => ({})
     }),
-    url: () => ({
+    url: (message?: { message: string }) => ({
       message: (msg: string) => ({})
     }),
   }),
@@ -31,15 +31,26 @@ export const z = {
       nonnegative: () => ({})
     }),
     max: (val: number, message?: any) => ({}),
-    positive: () => ({})
+    positive: () => ({}),
+    nonnegative: () => ({})
   }),
   enum: (values: any) => ({}),
-  array: (schema: any) => ({}),
-  any: () => ({}),
-  nativeEnum: <T>(enumObj: T) => ({}),
-  date: (options?: { required_error?: string }) => ({}),
+  array: (schema: any) => ({
+    optional: () => ({})
+  }),
+  any: () => ({
+    optional: () => ({})
+  }),
+  nativeEnum: <T>(enumObj: T) => ({
+    optional: () => ({})
+  }),
+  date: (options?: { required_error?: string }) => ({
+    optional: () => ({})
+  }),
   // Add missing record function
-  record: (keyType: any, valueType: any) => ({})
+  record: (keyType: any, valueType: any) => ({
+    optional: () => ({})
+  })
 };
 
 // ZodError for error handling

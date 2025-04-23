@@ -15,3 +15,4 @@ if [ -f "./node_modules/.bin/vite" ]; then
 fi
 
 echo "Permissions fixed. You should now be able to run scripts properly."
+

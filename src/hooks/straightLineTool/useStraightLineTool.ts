@@ -10,10 +10,13 @@ import { ReactNode } from 'react';
 
 export interface UseStraightLineToolProps {
   isEnabled?: boolean;
+  enabled?: boolean; // Alias for isEnabled for backward compatibility
   canvas: Canvas | null;
   lineColor: string;
   lineThickness: number;
   saveCurrentState?: () => void;
+  // Add shiftKeyPressed for test compatibility
+  shiftKeyPressed?: boolean;
 }
 
 export interface MeasurementData {
@@ -26,16 +29,20 @@ export interface MeasurementData {
 
 export const useStraightLineTool = ({
   isEnabled = false,
+  enabled, // For backward compatibility
   canvas,
   lineColor,
   lineThickness,
   saveCurrentState = () => {
     console.log('State saved');
-  }
+  },
+  shiftKeyPressed: initialShiftKeyPressed // For test compatibility
 }: UseStraightLineToolProps) => {
+  // Use either isEnabled or enabled for backward compatibility
+  const isToolEnabled = isEnabled || enabled || false;
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
-  const [shiftKeyPressed, setShiftKeyPressed] = useState(false);
+  const [shiftKeyPressed, setShiftKeyPressed] = useState(initialShiftKeyPressed || false);
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
     distance: null,
     angle: null,
@@ -70,22 +77,22 @@ export const useStraightLineTool = ({
 
   // Add these missing handlers for compatibility
   const handlePointerDown = useCallback((event: any) => {
-    if (!isEnabled) return;
+    if (!isToolEnabled) return;
     const point = { x: event.pageX, y: event.pageY };
     startDrawing(point);
-  }, [isEnabled, startDrawing]);
+  }, [isToolEnabled, startDrawing]);
 
   const handlePointerMove = useCallback((event: any) => {
-    if (!isEnabled || !isDrawing) return;
+    if (!isToolEnabled || !isDrawing) return;
     const point = { x: event.pageX, y: event.pageY };
     continueDrawing(point);
-  }, [isEnabled, isDrawing, continueDrawing]);
+  }, [isToolEnabled, isDrawing, continueDrawing]);
 
   const handlePointerUp = useCallback((event: any) => {
-    if (!isEnabled || !isDrawing) return;
+    if (!isToolEnabled || !isDrawing) return;
     const point = { x: event.pageX, y: event.pageY };
     completeDrawing(point);
-  }, [isEnabled, isDrawing, completeDrawing]);
+  }, [isToolEnabled, isDrawing, completeDrawing]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Shift') {
@@ -105,6 +112,7 @@ export const useStraightLineTool = ({
   // For backward compatibility
   const endDrawing = completeDrawing;
   const toggleGridSnapping = toggleSnap;
+  const isActive = isToolEnabled;
 
   // Render tooltip function that returns a React node
   const renderTooltip = useCallback((): ReactNode => {
@@ -114,8 +122,8 @@ export const useStraightLineTool = ({
   }, [isDrawing, measurementData]);
 
   return {
-    isEnabled,
-    isActive: isEnabled, // For backward compatibility
+    isEnabled: isToolEnabled,
+    isActive, // For backward compatibility
     isDrawing,
     isToolInitialized,
     snapEnabled,
@@ -140,3 +148,6 @@ export const useStraightLineTool = ({
     renderTooltip
   };
 };
+
+// Export the type to fix imports in other files
+export type UseStraightLineToolResult = ReturnType<typeof useStraightLineTool>;

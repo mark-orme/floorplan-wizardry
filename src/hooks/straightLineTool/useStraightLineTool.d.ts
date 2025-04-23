@@ -11,6 +11,9 @@ export interface UseStraightLineToolResult {
   /** Whether the straight line tool is active */
   isActive: boolean;
   
+  /** Whether the tool is enabled */
+  isEnabled: boolean;
+  
   /** Whether the tool is initialized and ready to use */
   isToolInitialized: boolean;
   
@@ -44,11 +47,20 @@ export interface UseStraightLineToolResult {
   /** Toggle angle snapping */
   toggleAngles: () => void;
   
+  /** Toggle snap function */
+  toggleSnap: () => void;
+  
   /** Measurement data */
   measurementData?: any;
   
   /** Render tooltip function */
   renderTooltip?: () => React.ReactNode;
+  
+  /** Whether shift key is pressed */
+  shiftKeyPressed: boolean;
+  
+  /** Set current line */
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
 
 /**
@@ -58,8 +70,11 @@ export interface UseStraightLineToolProps {
   /** Whether the tool is active */
   isActive?: boolean;
   
-  /** Whether the tool is enabled */
+  /** Whether the tool is enabled (new property) */
   isEnabled?: boolean;
+  
+  /** Whether the tool is enabled (alias for isEnabled) */
+  enabled?: boolean;
   
   /** Canvas reference */
   canvas?: any;
@@ -75,4 +90,7 @@ export interface UseStraightLineToolProps {
   
   /** Whether pencil mode is enabled */
   isPencilMode?: boolean;
+  
+  /** Whether shift key is pressed (new property for tests) */
+  shiftKeyPressed?: boolean;
 }

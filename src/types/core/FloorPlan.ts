@@ -10,4 +10,5 @@
 export * from '../core';
 
 // Add createFloorPlan for backwards compatibility
+import { createEmptyFloorPlan } from '../core';
 export const createFloorPlan = createEmptyFloorPlan;

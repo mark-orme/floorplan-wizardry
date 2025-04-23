@@ -9,27 +9,44 @@
 export * from '../core';
 
 // Add PaperSize enum which was missing
-export enum PaperSize {
-  A0 = 'A0',
-  A1 = 'A1',
-  A2 = 'A2',
-  A3 = 'A3',
-  A4 = 'A4',
-  A5 = 'A5',
-  LETTER = 'LETTER',
-  LEGAL = 'LEGAL',
-  TABLOID = 'TABLOID',
-  CUSTOM = 'CUSTOM'
+export { PaperSize } from './PaperSize';
+export type { PaperSizeLiteral } from './PaperSize';
+
+// Add FloorPlanMetadata type explicitly
+export interface FloorPlanMetadata {
+  createdAt: string;
+  updatedAt: string;
+  paperSize: string;
+  level: number;
+  version: string;
+  author: string;
+  dateCreated: string;
+  lastModified: string;
+  notes: string;
 }
 
 // Add helper functions for backward compatibility
+export const createEmptyFloorPlan = () => ({
+  id: '', 
+  name: 'New Floor Plan',
+  width: 1000,
+  height: 800,
+  level: 1,
+  updatedAt: new Date().toISOString(),
+  walls: [],
+  rooms: [],
+  strokes: []
+});
+
 export const createEmptyStroke = () => ({
   id: '', points: [], color: '#000000', width: 1, thickness: 1, type: 'line'
 });
+
 export const createEmptyWall = () => ({
   id: '', start: { x: 0, y: 0 }, end: { x: 100, y: 0 }, 
   thickness: 10, length: 100, color: '#000000', roomIds: []
 });
+
 export const createEmptyRoom = () => ({
   id: '', name: 'Room', type: 'other', points: [], vertices: [], 
   area: 0, perimeter: 0, center: { x: 0, y: 0 }, labelPosition: { x: 0, y: 0 }, 

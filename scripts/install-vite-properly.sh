@@ -24,3 +24,4 @@ fi
 
 # Fix all script permissions
 chmod +x ./scripts/*.sh
+

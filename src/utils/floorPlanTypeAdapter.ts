@@ -7,7 +7,6 @@ import type { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTy
 import type { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
 import type { FloorPlan as LegacyFloorPlan } from '@/types/floorPlanTypes';
 import { v4 as uuidv4 } from 'uuid';
-import { PaperSize } from '@/types/floor-plan/unifiedTypes';
 
 /**
  * Convert an AppFloorPlan to a unified type
@@ -42,7 +41,7 @@ export function convertLegacyToUnifiedFloorPlan(legacyFloorPlan: LegacyFloorPlan
     metadata: legacyFloorPlan.metadata || {
       createdAt: now,
       updatedAt: now,
-      paperSize: PaperSize.A4,
+      paperSize: 'A4',
       level: legacyFloorPlan.level || 0,
       version: '1.0',
       author: 'User',
