@@ -98,6 +98,22 @@ const appFloorPlan = coreFloorPlan as FloorPlan;
 const appFloorPlan = adaptFloorPlan(coreFloorPlan);
 ```
 
+### 4. Fabric.js Method Safety
+
+When calling Fabric.js methods, always check if they exist first:
+
+```typescript
+// INCORRECT - method might not exist
+line.sendToBack();
+
+// CORRECT - check if method exists
+if (typeof line.sendToBack === 'function') {
+  line.sendToBack();
+} else if (canvas && typeof canvas.sendObjectToBack === 'function') {
+  canvas.sendObjectToBack(line);
+}
+```
+
 ## ESLint Rules
 
 The project includes ESLint rules to catch common type issues:
@@ -124,3 +140,4 @@ npm run lint:strict
 - TypeScript Deep Dive: https://basarat.gitbook.io/typescript/
 - TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/intro.html
 - ESLint TypeScript Plugin: https://github.com/typescript-eslint/typescript-eslint
+
