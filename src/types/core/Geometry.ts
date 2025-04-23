@@ -28,6 +28,11 @@ export interface Circle {
 }
 
 /**
+ * Represents a polygon as an array of points
+ */
+export type Polygon = Point[];
+
+/**
  * Re-export Point to ensure it's available for imports
  */
 export type { Point };

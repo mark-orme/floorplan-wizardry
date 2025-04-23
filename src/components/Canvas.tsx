@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { DebugInfoState } from '@/types/core/DebugInfo';
 import { createSimpleGrid } from '@/utils/simpleGridCreator';
 import { toast } from 'sonner';
+import type { DrawingMode } from '@/types/drawing-types';
 
 export interface CanvasProps {
   width: number;
@@ -13,6 +15,7 @@ export interface CanvasProps {
   setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   style?: React.CSSProperties;
   showGridDebug?: boolean;
+  tool?: DrawingMode;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({

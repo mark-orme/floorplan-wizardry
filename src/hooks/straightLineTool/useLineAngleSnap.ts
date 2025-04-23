@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
 import { snapToAngleUtil } from '@/utils/grid/snapping';

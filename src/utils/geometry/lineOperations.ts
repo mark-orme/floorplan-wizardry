@@ -1,5 +1,16 @@
-
 import { Point } from '@/types/core/Point';
+
+/**
+ * Calculate distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance
+ */
+export function calculateDistance(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
 /**
  * Snap a point to the nearest grid point
