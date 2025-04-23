@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing canvas tools and interactions
  */

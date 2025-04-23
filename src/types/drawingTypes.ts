@@ -34,6 +34,10 @@ export interface DebugInfoState {
   isDrawingMode: boolean;
   selectionActive: boolean;
   renderedFrames: number;
+  canvasReady?: boolean;
+  canvasInitialized?: boolean;
+  canvasCreated?: boolean;
+  dimensionsSet?: boolean;
 }
 
 /**

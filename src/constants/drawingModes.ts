@@ -1,20 +1,26 @@
 
+/**
+ * Drawing mode enum
+ * Defines available drawing modes for the canvas
+ */
 export enum DrawingMode {
-  SELECT = 'SELECT',
-  DRAW = 'DRAW',
-  PENCIL = 'PENCIL',
-  LINE = 'LINE',
-  RECT = 'RECTANGLE',
-  WALL = 'WALL',
-  ROOM = 'ROOM',
-  RECTANGLE = 'RECTANGLE',
-  CIRCLE = 'CIRCLE',
-  TEXT = 'TEXT',
-  MEASURE = 'MEASURE',
-  HAND = 'HAND',
-  STRAIGHT_LINE = 'STRAIGHT_LINE',
-  PAN = 'PAN',
-  ZOOM = 'ZOOM',
-  ERASER = 'ERASER',
-  NONE = 'NONE'
+  SELECT = 'select',
+  DRAW = 'draw',
+  SHAPE = 'shape',
+  LINE = 'line',
+  ERASER = 'eraser',
+  TEXT = 'text',
+  HAND = 'hand'
 }
+
+export const DEFAULT_DRAWING_MODE = DrawingMode.SELECT;
+
+export const DRAWING_MODES = [
+  { id: DrawingMode.SELECT, label: 'Select' },
+  { id: DrawingMode.DRAW, label: 'Draw' },
+  { id: DrawingMode.SHAPE, label: 'Shape' },
+  { id: DrawingMode.LINE, label: 'Line' },
+  { id: DrawingMode.ERASER, label: 'Eraser' },
+  { id: DrawingMode.TEXT, label: 'Text' },
+  { id: DrawingMode.HAND, label: 'Hand' }
+];

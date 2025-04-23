@@ -1,135 +1,65 @@
 
-/**
- * Utility for creating grid lines on canvas
- * Provides robust error handling and compatibility with different Fabric.js versions
- */
 import { Canvas as FabricCanvas, Line } from 'fabric';
-import { captureError } from '@/utils/sentryUtils';
-import { safeSendToBack, captureRenderingError } from '@/utils/canvas/fabricErrorMonitoring';
 
 /**
- * Creates a simple grid pattern on the canvas
- * @param canvas - Fabric canvas instance
- * @param gridSize - Size of grid cells (default: 50px)
- * @param gridColor - Color of grid lines (default: #e0e0e0)
+ * Creates a simple grid for canvas
+ * @param canvas - The canvas to create grid for
+ * @param gridSize - Size of grid cells
+ * @param color - Color of grid lines
  * @returns Array of grid line objects
  */
-export const createSimpleGrid = (
-  canvas: FabricCanvas, 
-  gridSize: number = 50, 
-  gridColor: string = '#e0e0e0'
-): any[] => {
-  console.log("Creating grid - initializing");
+export function createSimpleGrid(canvas: FabricCanvas, gridSize: number = 50, color: string = '#e0e0e0'): any[] {
+  if (!canvas) return [];
   
-  if (!canvas) {
-    console.warn("Cannot create grid: canvas is null");
-    return [];
-  }
-
-  try {
-    const gridObjects: any[] = [];
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-
-    // Create vertical lines
-    for (let i = 0; i <= width; i += gridSize) {
-      try {
-        const line = new Line([i, 0, i, height], {
-          stroke: gridColor,
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          hoverCursor: 'default'
-        });
-        canvas.add(line);
-        gridObjects.push(line);
-        
-        // Use our safe method to send to back
-        safeSendToBack(line, canvas);
-      } catch (error) {
-        console.error("Error creating vertical grid line:", error);
-        captureError(error instanceof Error ? error : new Error(String(error)), {
-          tags: { component: "grid-creation" },
-          context: { position: i, type: "vertical" }
-        });
-      }
-    }
-
-    // Create horizontal lines
-    for (let i = 0; i <= height; i += gridSize) {
-      try {
-        const line = new Line([0, i, width, i], {
-          stroke: gridColor,
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          hoverCursor: 'default'
-        });
-        canvas.add(line);
-        gridObjects.push(line);
-        
-        // Use our safe method to send to back
-        safeSendToBack(line, canvas);
-      } catch (error) {
-        console.error("Error creating horizontal grid line:", error);
-        captureError(error instanceof Error ? error : new Error(String(error)), {
-          tags: { component: "grid-creation" },
-          context: { position: i, type: "horizontal" }
-        });
-      }
-    }
-
-    try {
-      canvas.renderAll();
-    } catch (error) {
-      captureRenderingError(canvas, "grid-rendering", error);
-    }
-    
-    return gridObjects;
-  } catch (error) {
-    console.error("Fatal error creating grid:", error);
-    captureError(error instanceof Error ? error : new Error(String(error)), {
-      tags: { component: "grid-fatal" },
-      level: 'error'
+  const width = canvas.width || 800;
+  const height = canvas.height || 600;
+  const gridObjects = [];
+  
+  // Create vertical lines
+  for (let i = 0; i <= width; i += gridSize) {
+    const line = new Line([i, 0, i, height], {
+      stroke: color,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1,
+      opacity: 0.5,
+      objectCaching: false
     });
-    return [];
+    
+    gridObjects.push(line);
   }
-};
+  
+  // Create horizontal lines
+  for (let i = 0; i <= height; i += gridSize) {
+    const line = new Line([0, i, width, i], {
+      stroke: color,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1,
+      opacity: 0.5,
+      objectCaching: false
+    });
+    
+    gridObjects.push(line);
+  }
+  
+  return gridObjects;
+}
 
 /**
- * Ensures grid is visible by bringing it to the back
- * Enhanced with careful error handling for each step
- * @param canvas - Fabric canvas instance
- * @param gridObjects - Array of grid line objects
+ * Ensures grid is visible on canvas
+ * @param canvas - The canvas containing grid
+ * @param gridObjects - Array of grid objects
  */
-export const ensureGridVisible = (
-  canvas: FabricCanvas,
-  gridObjects: any[]
-): void => {
-  if (!canvas) {
-    console.warn('Cannot ensure grid visibility: canvas is null');
-    return;
-  }
-  
-  if (!gridObjects || !gridObjects.length) {
-    console.warn('Cannot ensure grid visibility: no grid objects provided');
-    return;
-  }
+export function ensureGridVisible(canvas: FabricCanvas, gridObjects: any[]): void {
+  if (!canvas || !gridObjects.length) return;
   
   gridObjects.forEach(obj => {
-    if (!obj) return;
-    
-    // Use our safe send to back method
-    safeSendToBack(obj, canvas);
+    if (!canvas.contains(obj)) {
+      canvas.add(obj);
+    }
+    canvas.sendToBack(obj);
   });
   
-  try {
-    if (typeof canvas.requestRenderAll === 'function') {
-      canvas.requestRenderAll();
-    } else if (typeof canvas.renderAll === 'function') {
-      canvas.renderAll();
-    }
-  } catch (error) {
-    captureRenderingError(canvas, "grid-visibility", error);
-  }
-};
+  canvas.requestRenderAll();
+}

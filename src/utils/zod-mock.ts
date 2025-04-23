@@ -1,83 +1,32 @@
 
-// Create a mock version of Zod for components that need it
-export const z = {
-  string: () => ({
-    min: (length: number, message?: { message: string }) => ({ 
-      email: (message?: { message: string }) => ({ 
-        message: (msg: string) => ({}) 
-      }),
-      message: (msg: string) => ({}) 
-    }),
-    email: (message?: { message: string }) => ({ 
-      message: (msg: string) => ({}) 
-    }),
-    optional: () => ({}),
-    regex: (regex: RegExp, message?: { message: string }) => ({
-      message: (msg: string) => ({})
-    }),
-    url: (message?: { message: string }) => ({
-      message: (msg: string) => ({})
-    }),
-  }),
+/**
+ * Mock implementation of zod for component testing
+ */
+
+export default {
   object: (schema: any) => ({
     ...schema,
-    refine: (refineFn: any, message?: any) => ({})
-  }),
-  infer: function<T>(schema: any): T { return {} as T },
-  boolean: () => ({
-    optional: () => ({})
-  }),
-  number: () => ({
-    min: (val: number, message?: any) => ({
-      max: (val: number, message?: any) => ({}),
-      positive: () => ({}),
-      nonnegative: () => ({})
+    refine: () => ({
+      ...schema,
+      parse: (data: any) => data,
     }),
-    max: (val: number, message?: any) => ({}),
-    positive: () => ({}),
-    nonnegative: () => ({
-      optional: () => ({})
-    })
+    parse: (data: any) => data,
   }),
-  enum: (values: any) => ({
-    optional: () => ({})
+  string: () => ({
+    min: (min: number, message: { message: string }) => ({
+      email: (message: { message: string }) => ({
+        parse: (data: string) => data,
+      }),
+      parse: (data: string) => data,
+    }),
+    email: (message: { message: string }) => ({
+      parse: (data: string) => data,
+    }),
+    parse: (data: string) => data,
   }),
-  array: (schema: any) => ({
-    optional: () => ({})
+  boolean: () => ({
+    parse: (data: boolean) => data,
   }),
-  any: () => ({
-    optional: () => ({})
-  }),
-  nativeEnum: <T>(enumObj: T) => ({
-    optional: () => ({})
-  }),
-  date: (options?: { required_error?: string }) => ({
-    optional: () => ({})
-  }),
-  // Add missing record function
-  record: (keyType: any, valueType: any) => ({
-    optional: () => ({})
-  })
+  infer: (schema: any) => schema,
+  ZodObject: class ZodObject {},
 };
-
-// ZodError for error handling
-export class ZodError extends Error {
-  errors: Array<{ message: string, path: string[] }>;
-  
-  constructor(errors: Array<{ message: string, path: string[] }>) {
-    super('Validation failed');
-    this.errors = errors;
-  }
-}
-
-// ZodType for type references
-export interface ZodType<T> {
-  _input: T;
-  _output: T;
-  parse: (value: unknown) => T;
-  safeParse: (value: unknown) => { success: boolean; data?: T; error?: ZodError };
-  optional: () => ZodType<T | undefined>;
-}
-
-// Export as default and named export for flexibility
-export default z;
