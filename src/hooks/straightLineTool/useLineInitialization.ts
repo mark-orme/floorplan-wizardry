@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Line } from 'fabric';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 
 /**
  * Hook for managing line tool initialization
@@ -17,7 +17,7 @@ export const useLineInitialization = () => {
   const initializeTool = useCallback(() => {
     setIsToolInitialized(true);
     setIsActive(true);
-    lineToolLogger.debug('Line tool initialized');
+    toolsLogger.debug('Line tool initialized');
   }, []);
   
   /**

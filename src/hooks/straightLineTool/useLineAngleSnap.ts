@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
 import { snapToAngle as snapToAngleUtil } from '@/utils/grid/snapping';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 
 interface UseLineAngleSnapOptions {
   enabled?: boolean;
@@ -36,7 +36,7 @@ export const useLineAngleSnap = ({
   const toggleAngles = useCallback(() => {
     setAnglesEnabled(prev => {
       const newValue = !prev;
-      lineToolLogger.debug(`Angle constraints ${newValue ? 'enabled' : 'disabled'}`);
+      toolsLogger.debug(`Angle constraints ${newValue ? 'enabled' : 'disabled'}`);
       return newValue;
     });
   }, []);

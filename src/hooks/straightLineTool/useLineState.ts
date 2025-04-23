@@ -6,7 +6,7 @@ import { InputMethod } from './useLineInputMethod';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLineAngleSnap } from './useLineAngleSnap';
 import { useLineDrawing } from './useLineDrawing';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 import { useLineStateCore } from './useLineStateCore';
 import { useLineStateActions } from './useLineStateActions';
 

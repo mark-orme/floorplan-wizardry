@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -18,7 +17,7 @@ export const useLineDrawing = (
 ) => {
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
   const { createLine, createDistanceTooltip } = useLineCreation();
-  const { calculateMeasurements } = useMeasurementCalculation();
+  const { calculateDistance, calculateAngle, getMeasurements } = useMeasurementCalculation();
   const { finalizeLine, removeLine } = useLineFinalizer(fabricCanvasRef, saveCurrentState);
   
   /**
@@ -73,12 +72,12 @@ export const useLineDrawing = (
       });
       
       // Calculate measurement data
-      return calculateMeasurements(start, end);
+      return getMeasurements(start, end);
     } catch (error) {
       console.error("Error updating line", error);
       return null;
     }
-  }, [snapLineToGrid, calculateMeasurements]);
+  }, [snapLineToGrid, getMeasurements]);
   
   /**
    * Create or update the distance tooltip

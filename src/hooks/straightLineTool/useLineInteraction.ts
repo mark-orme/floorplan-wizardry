@@ -2,7 +2,7 @@
 import { useCallback, useState, useRef } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 
 /**
  * Hook for managing line interactions
@@ -16,7 +16,7 @@ export const useLineInteraction = () => {
    */
   const startDrawing = useCallback((point: Point) => {
     setIsDrawing(true);
-    lineToolLogger.debug('Started drawing at point', point);
+    toolsLogger.debug('Started drawing at point', point);
   }, []);
   
   /**
@@ -37,7 +37,7 @@ export const useLineInteraction = () => {
       
       canvas.renderAll();
     } catch (error) {
-      lineToolLogger.error('Error updating line', error);
+      toolsLogger.error('Error updating line', error);
     }
   }, []);
   
@@ -46,7 +46,7 @@ export const useLineInteraction = () => {
    */
   const completeDrawing = useCallback(() => {
     setIsDrawing(false);
-    lineToolLogger.debug('Drawing completed');
+    toolsLogger.debug('Drawing completed');
   }, []);
   
   /**
@@ -63,7 +63,7 @@ export const useLineInteraction = () => {
     
     setIsDrawing(false);
     lineRef.current = null;
-    lineToolLogger.debug('Drawing cancelled');
+    toolsLogger.debug('Drawing cancelled');
   }, []);
   
   return {

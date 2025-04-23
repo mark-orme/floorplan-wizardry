@@ -1,8 +1,7 @@
-
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { lineToolLogger } from '@/utils/logger';
+import { toolsLogger } from '@/utils/logger';
 
 /**
  * Hook for line drawing operations
@@ -34,7 +33,7 @@ export const useLineOperations = (
     const line = createLine(point.x, point.y, point.x, point.y);
     if (line) {
       setCurrentLine(line);
-      lineToolLogger.debug('Started drawing line', { startPoint: point });
+      toolsLogger.debug('Started drawing line', { startPoint: point });
     }
   }, [createLine]);
   
@@ -101,7 +100,7 @@ export const useLineOperations = (
     
     // Finalize line
     finalizeLine(currentLine, startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-    lineToolLogger.debug('Completed drawing line', { 
+    toolsLogger.debug('Completed drawing line', { 
       startPoint, 
       endPoint,
       lineId: (currentLine as any).id || 'unknown'
@@ -123,7 +122,7 @@ export const useLineOperations = (
     
     // Remove the current line
     removeLine(currentLine);
-    lineToolLogger.debug('Drawing cancelled');
+    toolsLogger.debug('Drawing cancelled');
     
     // Reset drawing state
     resetDrawingState();

@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from 'react';
 
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
   STYLUS = 'stylus',
-  PENCIL = 'pencil'
+  PENCIL = 'pencil',
+  UNKNOWN = 'unknown'
 }
 
 export function useLineInputMethod(): { 

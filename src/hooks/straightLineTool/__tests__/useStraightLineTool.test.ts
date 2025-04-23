@@ -1,3 +1,4 @@
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../useStraightLineTool';
 import type { InputMethod } from '../useLineInputMethod';

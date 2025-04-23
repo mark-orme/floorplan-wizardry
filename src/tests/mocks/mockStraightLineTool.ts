@@ -1,4 +1,3 @@
-
 import { vi } from 'vitest';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -38,7 +37,8 @@ export function createMockStraightLineTool() {
     handleKeyUp: vi.fn(),
     renderTooltip: vi.fn(),
     setInputMethod: vi.fn(),
-    setCurrentLine: vi.fn()
+    setCurrentLine: vi.fn(),
+    saveCurrentState: vi.fn()
   };
 }
 
