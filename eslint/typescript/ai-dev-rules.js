@@ -1,4 +1,3 @@
-
 /**
  * AI development ESLint rules
  * Enforces stricter checks for AI-assisted development
@@ -81,7 +80,17 @@ export const aiDevRules = {
         "selector": "MemberExpression[object.name='fabric'][property.name='Canvas']",
         "message": "Import Canvas directly from fabric instead of using the fabric namespace."
       }
-    ]
+    ],
+    
+    // Prevent arrow functions in favor of standard function declarations
+    "prefer-arrow-callback": "off",
+    "@typescript-eslint/prefer-function-type": "error",
+    "func-style": ["error", "declaration", { 
+      "allowArrowFunctions": false 
+    }],
+    
+    // Additional rules to discourage arrow functions
+    "no-confusing-arrow": "error",
+    "@typescript-eslint/consistent-type-definitions": ["error", "interface"]
   }
 };
-

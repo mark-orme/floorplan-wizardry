@@ -1,4 +1,3 @@
-
 /**
  * ESLint configuration specifically for AI development
  * This configuration helps prevent common issues when generating code
@@ -76,7 +75,14 @@ module.exports = {
       assertionStyle: 'as',
       objectLiteralTypeAssertions: 'allow-as-parameter'
     }],
-    '@typescript-eslint/no-unnecessary-type-assertion': 'error'
+    '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+    
+    // Prevent arrow functions
+    "func-style": ["error", "declaration", { 
+      "allowArrowFunctions": false 
+    }],
+    "@typescript-eslint/prefer-function-type": "error",
+    "prefer-arrow-callback": "off"
   },
   settings: {
     react: {

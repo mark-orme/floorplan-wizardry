@@ -1,4 +1,3 @@
-
 /**
  * Base TypeScript ESLint rules
  * Core rules that apply to all TypeScript files
@@ -65,6 +64,13 @@ export const baseTypeScriptRules = {
     "@typescript-eslint/prefer-as-const": "error",
     "@typescript-eslint/prefer-nullish-coalescing": "error",
     "@typescript-eslint/prefer-optional-chain": "error",
-    "@typescript-eslint/no-unnecessary-condition": "error"
+    "@typescript-eslint/no-unnecessary-condition": "error",
+    
+    // Prevent arrow functions
+    "func-style": ["error", "declaration", { 
+      "allowArrowFunctions": false 
+    }],
+    "@typescript-eslint/prefer-function-type": "error",
+    "prefer-arrow-callback": "off"
   }
 };
