@@ -4,7 +4,8 @@
  * Provides robust error handling and compatibility with different Fabric.js versions
  */
 import { Canvas as FabricCanvas, Line } from 'fabric';
-import { captureError } from '@/utils/sentry';
+import { captureError } from '@/utils/sentryUtils';
+import { safeSendToBack, captureRenderingError } from '@/utils/canvas/fabricErrorMonitoring';
 
 /**
  * Creates a simple grid pattern on the canvas
@@ -43,15 +44,14 @@ export const createSimpleGrid = (
         canvas.add(line);
         gridObjects.push(line);
         
-        // Check if the method exists before calling
-        if (line && typeof line.sendToBack === 'function') {
-          line.sendToBack();
-        } else if (canvas.bringToBack && typeof canvas.bringToBack === 'function') {
-          canvas.bringToBack(line);
-        }
+        // Use our safe method to send to back
+        safeSendToBack(line, canvas);
       } catch (error) {
         console.error("Error creating vertical grid line:", error);
-        captureError(error instanceof Error ? error : new Error(String(error)), 'grid-creation');
+        captureError(error instanceof Error ? error : new Error(String(error)), {
+          tags: { component: "grid-creation" },
+          context: { position: i, type: "vertical" }
+        });
       }
     }
 
@@ -68,29 +68,30 @@ export const createSimpleGrid = (
         canvas.add(line);
         gridObjects.push(line);
         
-        // Check if the method exists before calling
-        if (line && typeof line.sendToBack === 'function') {
-          line.sendToBack();
-        } else if (canvas.bringToBack && typeof canvas.bringToBack === 'function') {
-          canvas.bringToBack(line);
-        }
+        // Use our safe method to send to back
+        safeSendToBack(line, canvas);
       } catch (error) {
         console.error("Error creating horizontal grid line:", error);
-        captureError(error instanceof Error ? error : new Error(String(error)), 'grid-creation');
+        captureError(error instanceof Error ? error : new Error(String(error)), {
+          tags: { component: "grid-creation" },
+          context: { position: i, type: "horizontal" }
+        });
       }
     }
 
     try {
       canvas.renderAll();
     } catch (error) {
-      console.error("Error rendering canvas after grid creation:", error);
-      captureError(error instanceof Error ? error : new Error(String(error)), 'grid-render');
+      captureRenderingError(canvas, "grid-rendering", error);
     }
     
     return gridObjects;
   } catch (error) {
     console.error("Fatal error creating grid:", error);
-    captureError(error instanceof Error ? error : new Error(String(error)), 'grid-fatal');
+    captureError(error instanceof Error ? error : new Error(String(error)), {
+      tags: { component: "grid-fatal" },
+      level: 'error'
+    });
     return [];
   }
 };
@@ -118,32 +119,17 @@ export const ensureGridVisible = (
   gridObjects.forEach(obj => {
     if (!obj) return;
     
-    try {
-      // Try multiple approaches to send to back with fallbacks
-      if (typeof obj.sendToBack === 'function') {
-        obj.sendToBack();
-      } else if (canvas && typeof canvas.sendToBack === 'function') {
-        canvas.sendToBack(obj);
-      } else if (obj && typeof obj.moveTo === 'function') {
-        // Alternative approach using moveTo
-        obj.moveTo(0);
-      } else if (canvas && typeof canvas.sendObjectToBack === 'function') {
-        canvas.sendObjectToBack(obj);
-      } else if (canvas && typeof canvas.bringToBack === 'function') {
-        canvas.bringToBack(obj);
-      } else {
-        console.warn('No supported method found to send grid elements to back');
-      }
-    } catch (error) {
-      console.warn('Error ensuring grid element visibility:', error);
-      captureError(error instanceof Error ? error : new Error(String(error)), 'grid-visibility');
-    }
+    // Use our safe send to back method
+    safeSendToBack(obj, canvas);
   });
   
   try {
-    canvas.requestRenderAll();
+    if (typeof canvas.requestRenderAll === 'function') {
+      canvas.requestRenderAll();
+    } else if (typeof canvas.renderAll === 'function') {
+      canvas.renderAll();
+    }
   } catch (error) {
-    console.error('Error rendering canvas after grid visibility changes:', error);
-    captureError(error instanceof Error ? error : new Error(String(error)), 'grid-render');
+    captureRenderingError(canvas, "grid-visibility", error);
   }
 };
