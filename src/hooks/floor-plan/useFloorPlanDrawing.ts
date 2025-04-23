@@ -5,12 +5,15 @@ import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
 import type { MutableRefObject } from 'react';
 
-interface UseFloorPlanDrawingProps {
+export interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: MutableRefObject<FabricCanvas | null>;
   floorPlan?: FloorPlan;
   tool?: DrawingMode;
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
   isActive?: boolean;
+  inputMethod?: 'mouse' | 'touch' | 'stylus';
+  isPencilMode?: boolean;
+  setInputMethod?: (method: 'mouse' | 'touch' | 'stylus') => void;
   initialHistory?: FloorPlan[];
   initialTool?: DrawingMode;
   initialColor?: string;

@@ -1,103 +1,94 @@
-/**
- * Tests for useFloorPlanDrawing hook
- */
-import React from 'react';
+
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
+import { useFloorPlanDrawing } from '@/hooks/floor-plan/useFloorPlanDrawing';
+import { DrawingMode } from '@/constants/drawingModes';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-// Mock dependencies
-vi.mock('@/api/floorPlans', () => ({
-  saveFloorPlan: vi.fn(),
-}));
-
-vi.mock('fabric', () => ({
-  Canvas: vi.fn(),
-}));
+import type { Canvas } from 'fabric';
 
 describe('useFloorPlanDrawing', () => {
+  const mockCanvas = {
+    isDrawingMode: false,
+    clear: vi.fn(),
+    backgroundColor: '#ffffff',
+    renderAll: vi.fn(),
+  } as unknown as Canvas;
+
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
   });
-  
+
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({}));
-    
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.currentTool).toBeDefined();
-  });
-  
-  it('should change the current tool', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({}));
-    
-    act(() => {
-      result.current.setCurrentTool('wall');
-    });
-    
-    expect(result.current.currentTool).toBe('wall');
-  });
-  
-  it('should toggle drawing mode', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({}));
-    
-    act(() => {
-      result.current.setIsDrawing(true);
-    });
-    
-    expect(result.current.isDrawing).toBe(true);
-    
-    act(() => {
-      result.current.setIsDrawing(false);
-    });
-    
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: { current: mockCanvas },
+      initialTool: DrawingMode.SELECT,
+      initialColor: '#000000',
+      initialThickness: 2
+    }));
+
+    expect(result.current.currentTool).toBe(DrawingMode.SELECT);
+    expect(result.current.lineColor).toBe('#000000');
+    expect(result.current.lineThickness).toBe(2);
     expect(result.current.isDrawing).toBe(false);
   });
-  
-  it('should update line properties', () => {
-    const { result } = renderHook(() => useFloorPlanDrawing({}));
-    
+
+  it('should update tool when setCurrentTool is called', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: { current: mockCanvas },
+      initialTool: DrawingMode.SELECT,
+      initialColor: '#000000',
+      initialThickness: 2
+    }));
+
     act(() => {
-      result.current.setLineColor('#00FF00');
+      result.current.setCurrentTool(DrawingMode.DRAW);
+    });
+
+    expect(result.current.currentTool).toBe(DrawingMode.DRAW);
+  });
+
+  it('should update line properties correctly', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: { current: mockCanvas },
+      initialTool: DrawingMode.SELECT,
+      initialColor: '#000000',
+      initialThickness: 2
+    }));
+
+    act(() => {
+      result.current.setLineColor('#FF0000');
       result.current.setLineThickness(5);
     });
-    
-    expect(result.current.lineColor).toBe('#00FF00');
+
+    expect(result.current.lineColor).toBe('#FF0000');
     expect(result.current.lineThickness).toBe(5);
   });
-  
-  it('should handle canvas initialization', () => {
-    const mockCanvas = { on: vi.fn(), renderAll: vi.fn() };
-    const { result } = renderHook(() => useFloorPlanDrawing({}));
-    
-    act(() => {
-      // @ts-ignore - Mock canvas
-      result.current.initializeCanvas(mockCanvas);
-    });
-    
-    expect(result.current.canvas).toBeDefined();
-  });
-  
-  it('should handle undo and redo operations', () => {
+
+  it('should provide access to canvas instance', () => {
     const { result } = renderHook(() => useFloorPlanDrawing({
-      initialHistory: {
-        past: [{ objects: [{ id: 'obj1' }] }],
-        present: { objects: [{ id: 'obj2' }] },
-        future: [{ objects: [{ id: 'obj3' }] }]
-      }
+      fabricCanvasRef: { current: mockCanvas },
+      initialTool: DrawingMode.SELECT
     }));
-    
+
+    expect(result.current.canvas).toBe(mockCanvas);
+  });
+
+  it('should handle undo/redo operations', () => {
+    const { result } = renderHook(() => useFloorPlanDrawing({
+      fabricCanvasRef: { current: mockCanvas },
+      initialHistory: [{ id: '1' }] as any[],
+      initialTool: DrawingMode.SELECT
+    }));
+
     act(() => {
       result.current.undo();
     });
-    
-    // After undo, present should be the first item from past
-    expect(result.current.canUndo).toBeDefined();
-    
+
+    expect(result.current.canUndo).toBe(false);
+
     act(() => {
       result.current.redo();
     });
-    
-    // After redo, present should be the first item from future
-    expect(result.current.canRedo).toBeDefined();
+
+    expect(result.current.canRedo).toBe(false);
   });
 });
