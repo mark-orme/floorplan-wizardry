@@ -60,6 +60,11 @@ export const ensureGridVisibility = (
             fabricCanvas.sendObjectToBack(line);
           } else if (typeof fabricCanvas.sendToBack === 'function') {
             fabricCanvas.sendToBack(line);
+          } else {
+            // If neither method is available, try a different approach
+            if (line && typeof line.moveTo === 'function') {
+              line.moveTo(0); // Move to bottom of stack if possible
+            }
           }
         } catch (e) {
           console.warn('Could not send grid line to back:', e);
@@ -76,6 +81,13 @@ export const ensureGridVisibility = (
             fabricCanvas.bringObjectToFront(marker);
           } else if (typeof fabricCanvas.bringToFront === 'function') {
             fabricCanvas.bringToFront(marker);
+          } else {
+            // Alternative approach if methods aren't available
+            if (marker && typeof marker.moveTo === 'function') {
+              // Move near the top of the stack but not absolute top
+              const objectCount = fabricCanvas._objects ? fabricCanvas._objects.length - 1 : 0;
+              marker.moveTo(objectCount > 0 ? objectCount - 1 : 0);
+            }
           }
         } catch (e) {
           console.warn('Could not bring grid marker to front:', e);

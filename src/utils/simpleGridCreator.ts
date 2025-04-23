@@ -76,12 +76,24 @@ export const ensureGridVisible = (
   gridObjects.forEach(obj => {
     // Check if obj and the method both exist
     if (obj && typeof obj.sendToBack === 'function') {
-      obj.sendToBack();
+      try {
+        obj.sendToBack();
+      } catch (error) {
+        console.warn('Error using sendToBack on grid object:', error);
+      }
     } else if (canvas && typeof canvas.sendToBack === 'function') {
-      // Try to use canvas method instead
-      canvas.sendToBack(obj);
+      try {
+        // Try to use canvas method instead
+        canvas.sendToBack(obj);
+      } catch (error) {
+        console.warn('Error using canvas.sendToBack:', error);
+      }
     }
   });
   
-  canvas.renderAll();
+  try {
+    canvas.renderAll();
+  } catch (error) {
+    console.error('Error rendering canvas after grid changes:', error);
+  }
 };

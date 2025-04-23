@@ -10,6 +10,10 @@ interface SimpleGridLayerProps {
   color?: string;
 }
 
+/**
+ * A component that renders a grid layer on a Fabric.js canvas.
+ * Implements robust error handling and checks for method availability.
+ */
 export function SimpleGridLayer({
   canvas,
   gridSize = 50,
@@ -69,13 +73,16 @@ export function SimpleGridLayer({
         newLines.push(line);
       }
 
-      // Send grid lines to back safely
+      // Send grid lines to back safely by checking method availability first
       newLines.forEach(line => {
         try {
           if (typeof canvas.sendObjectToBack === 'function') {
             canvas.sendObjectToBack(line);
           } else if (typeof canvas.sendToBack === 'function') {
             canvas.sendToBack(line);
+          } else if (line && typeof line.moveTo === 'function') {
+            // If canvas methods aren't available, try using line's moveTo
+            line.moveTo(0); // Move to the bottom of the stack
           }
         } catch (e) {
           console.warn('Could not send grid line to back:', e);
