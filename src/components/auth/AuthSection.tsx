@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,14 +21,10 @@ export const AuthSection = () => {
         })
         .catch(error => {
           toast.error('Login failed: ' + (error.message || 'Unknown error'));
-          captureError(error, {
-            context: 'test-login-failed'
-          });
+          captureError(error);
         });
     } catch (error) {
-      captureError(error instanceof Error ? error : new Error('Unknown error'), {
-        context: 'login-execution-error'
-      });
+      captureError(error instanceof Error ? error : new Error('Unknown error'));
       toast.error('An error occurred during login');
     }
   };

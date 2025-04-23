@@ -52,7 +52,7 @@ describe('DrawingToolbar', () => {
   it('calls onToolChange when tool button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    fireEvent.click(screen.getByText(/line/i));
+    fireEvent.click(screen.getByText('line'));
     
     expect(defaultProps.onToolChange).toHaveBeenCalledWith(DrawingMode.STRAIGHT_LINE);
   });
@@ -60,7 +60,7 @@ describe('DrawingToolbar', () => {
   it('calls onUndo when undo button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    fireEvent.click(screen.getByLabelText(/undo/i));
+    fireEvent.click(screen.getByLabelText('undo'));
     
     expect(defaultProps.onUndo).toHaveBeenCalled();
   });
@@ -68,7 +68,7 @@ describe('DrawingToolbar', () => {
   it('calls onClear when clear button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    fireEvent.click(screen.getByLabelText(/clear/i));
+    fireEvent.click(screen.getByLabelText('clear'));
     
     expect(defaultProps.onClear).toHaveBeenCalled();
   });
@@ -82,8 +82,8 @@ describe('DrawingToolbar', () => {
       />
     );
     
-    const undoButton = screen.getByLabelText(/undo/i);
-    const redoButton = screen.getByLabelText(/redo/i);
+    const undoButton = screen.getByLabelText('undo');
+    const redoButton = screen.getByLabelText('redo');
     
     expect(undoButton).toBeDisabled();
     expect(redoButton).toBeDisabled();
@@ -92,7 +92,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates color picker', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const colorInput = screen.getByLabelText(/color/i);
+    const colorInput = screen.getByLabelText('color');
     
     fireEvent.change(colorInput, { target: { value: '#ff0000' } });
     
@@ -102,7 +102,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates thickness input', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const thicknessInput = screen.getByLabelText(/thickness/i);
+    const thicknessInput = screen.getByLabelText('thickness');
     
     fireEvent.change(thicknessInput, { target: { value: '5' } });
     
