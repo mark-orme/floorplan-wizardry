@@ -12,6 +12,9 @@ interface UseFloorPlanDrawingProps {
   onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
   isActive?: boolean;
   initialHistory?: FloorPlan[];
+  initialTool?: DrawingMode;
+  initialColor?: string;
+  initialThickness?: number;
 }
 
 export const useFloorPlanDrawing = ({
@@ -20,12 +23,15 @@ export const useFloorPlanDrawing = ({
   tool = DrawingMode.SELECT,
   onFloorPlanUpdate = () => {},
   isActive = true,
-  initialHistory = []
+  initialHistory = [],
+  initialTool = DrawingMode.SELECT,
+  initialColor = "#000",
+  initialThickness = 1
 }: UseFloorPlanDrawingProps = {}) => {
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentTool, setCurrentTool] = useState<DrawingMode>(tool);
-  const [lineColor, setLineColor] = useState<string>("#000");
-  const [lineThickness, setLineThickness] = useState<number>(1);
+  const [currentTool, setCurrentTool] = useState<DrawingMode>(initialTool);
+  const [lineColor, setLineColor] = useState<string>(initialColor);
+  const [lineThickness, setLineThickness] = useState<number>(initialThickness);
   
   // History stack for undo/redo
   const [history, setHistory] = useState<FloorPlan[]>(initialHistory);
@@ -33,6 +39,20 @@ export const useFloorPlanDrawing = ({
   
   const canUndo = history.length > 0;
   const canRedo = redoStack.length > 0;
+
+  const undo = useCallback(() => {
+    if (!canUndo) return;
+    const last = history[history.length - 1];
+    setHistory(prev => prev.slice(0, -1));
+    setRedoStack(prev => [last, ...prev]);
+  }, [canUndo, history]);
+
+  const redo = useCallback(() => {
+    if (!canRedo) return;
+    const next = redoStack[0];
+    setRedoStack(prev => prev.slice(1));
+    setHistory(prev => [...prev, next]);
+  }, [canRedo, redoStack]);
 
   const handleDrawingEvent = useCallback(() => {
     const canvas = fabricCanvasRef.current;
@@ -47,20 +67,6 @@ export const useFloorPlanDrawing = ({
     canvas.backgroundColor = '#f0f0f0';
     canvas.renderAll();
   }, []);
-
-  const undo = useCallback(() => {
-    if (!canUndo) return;
-    const prevState = history[history.length - 1];
-    setHistory(prev => prev.slice(0, -1));
-    setRedoStack(prev => [...prev, prevState]);
-  }, [canUndo, history]);
-
-  const redo = useCallback(() => {
-    if (!canRedo) return;
-    const nextState = redoStack[redoStack.length - 1];
-    setRedoStack(prev => prev.slice(0, -1));
-    setHistory(prev => [...prev, nextState]);
-  }, [canRedo, redoStack]);
 
   return {
     isDrawing,
@@ -85,6 +91,7 @@ export const useFloorPlanDrawing = ({
     undo,
     redo,
     canUndo,
-    canRedo
+    canRedo,
+    initialHistory
   };
 };
