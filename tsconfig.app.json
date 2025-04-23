@@ -1,20 +1,14 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    // enable the React 17+ JSX transform
     "jsx": "react-jsx",
-    // module resolution for node packages
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
-    // carry over your path mapping
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
-
-    // you can keep these as before
     "skipLibCheck": true,
     "noImplicitAny": false,
     "noUnusedParameters": false,
@@ -23,6 +17,5 @@
     "strictNullChecks": false
   },
 
-  // make sure TS actually sees all your source files
   "include": ["src"]
 }
