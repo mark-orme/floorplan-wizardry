@@ -1,12 +1,11 @@
-
 import { useState, useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { InputMethod, useLineInputMethod } from './useLineInputMethod';
 
 // Define MeasurementData type for exports
-export type MeasurementData = { 
-  distance: number; 
+export type MeasurementData = {
+  distance: number;
   angle: number;
 };
 
@@ -51,7 +50,7 @@ export const useStraightLineTool = ({
   const [anglesEnabled, setAnglesEnabled] = useState<boolean>(false);
   const [shiftKeyPressed, setShiftKeyPressed] = useState<boolean>(false);
   const [measurementData, setMeasurementData] = useState<MeasurementData>({ distance: 0, angle: 0 });
-  
+
   const { inputMethod, setInputMethod } = useLineInputMethod();
   const isPencilMode = inputMethod === InputMethod.STYLUS || inputMethod === InputMethod.PENCIL;
 
@@ -154,7 +153,7 @@ export const useStraightLineTool = ({
     handleKeyDown,
     handleKeyUp,
     renderTooltip,
-    setIsDrawing,
+    setIsDrawing,   // Comma was added here
     setCurrentLine
   };
 };
