@@ -3,21 +3,23 @@ import { useEffect } from 'react';
 import { Canvas, Line } from 'fabric';
 import { useGrid } from '@/hooks/useGrid';
 
-interface SimpleGridLayerProps {
+export interface SimpleGridLayerProps {
   canvas: Canvas;  
+  gridSize?: number;
+  visible?: boolean;
 }
 
-export const SimpleGridLayer = ({ canvas }: SimpleGridLayerProps) => {
+export const SimpleGridLayer = ({ canvas, gridSize = 50, visible = true }: SimpleGridLayerProps) => {
   const { spacing } = useGrid();
 
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || !visible) return;
 
     // Create grid lines
     const lines: Line[] = [];
     
     // Create horizontal and vertical lines
-    for (let i = 0; i < canvas.width!; i += spacing) {
+    for (let i = 0; i < canvas.width!; i += gridSize) {
       const horizontalLine = new Line([i, 0, i, canvas.height!], {
         stroke: '#ddd',
         selectable: false,
@@ -46,7 +48,7 @@ export const SimpleGridLayer = ({ canvas }: SimpleGridLayerProps) => {
     return () => {
       lines.forEach(line => canvas.remove(line));
     };
-  }, [canvas, spacing]);
+  }, [canvas, gridSize, visible]);
 
   return null;
 };

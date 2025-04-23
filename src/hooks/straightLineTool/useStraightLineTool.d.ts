@@ -1,8 +1,9 @@
 
 import { Canvas } from 'fabric';
+import type { Point } from '@/types/core/Point';
 
 export interface UseStraightLineToolProps {
-  isActive: boolean;
+  isActive?: boolean;
   isEnabled?: boolean;
   canvas?: Canvas;
   shiftKeyPressed?: boolean;
@@ -10,4 +11,12 @@ export interface UseStraightLineToolProps {
   lineThickness?: number;
   snapToGrid?: boolean;
   saveCurrentState?: () => void;
+  anglesEnabled?: boolean;
+}
+
+export interface MeasurementData {
+  distance: number;
+  angle: number;
+  startPoint: Point;
+  endPoint: Point;
 }

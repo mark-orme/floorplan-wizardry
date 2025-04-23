@@ -15,3 +15,12 @@ export enum ZoomDirection {
   IN = 'in',
   OUT = 'out'
 }
+
+export interface DebugInfoState {
+  fps?: number;
+  canvasReady?: boolean;
+  canvasInitialized?: boolean;
+  canvasCreated?: boolean;
+  dimensionsSet?: boolean;
+  brushInitialized?: boolean;
+}
