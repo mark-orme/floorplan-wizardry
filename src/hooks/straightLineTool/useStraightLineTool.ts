@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -154,7 +153,7 @@ export const useStraightLineTool = ({
     handleKeyDown,
     handleKeyUp,
     renderTooltip,
-    setIsDrawing,
+    setIsDrawing,   // Comma was added here
     setCurrentLine
   };
 };
