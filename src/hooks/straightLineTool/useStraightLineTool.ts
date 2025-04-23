@@ -5,7 +5,9 @@ import { Canvas, Line } from 'fabric';
 import { useLineState } from './useLineState';
 import { useLineToolHandlers } from './useLineToolHandlers';
 import { InputMethod } from './useLineInputMethod';
-import { UseStraightLineToolProps, UseStraightLineToolResult } from '../useStraightLineTool.d';
+import { UseStraightLineToolProps, UseStraightLineToolResult, MeasurementData } from '../useStraightLineTool.d';
+
+export { MeasurementData };
 
 export const useStraightLineTool = ({
   isEnabled = false,

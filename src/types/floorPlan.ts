@@ -16,9 +16,13 @@ export interface Room {
   vertices: Point[];
   area: number;
   roomType: RoomTypeLiteral;
+  // Add fields for compatibility
+  points?: Point[];
+  color?: string;
+  type?: string;
 }
 
-export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'other';
+export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'office' | 'other';
 
 export interface Wall {
   id: string;
@@ -26,6 +30,13 @@ export interface Wall {
   end: Point;
   thickness: number;
   color: string;
+  // Add fields for compatibility
+  startPoint?: Point;
+  endPoint?: Point;
+  points?: Point[];
+  roomIds?: string[];
+  length?: number;
+  height?: number;
 }
 
 export interface Stroke {
@@ -49,6 +60,16 @@ export interface FloorPlan {
   width: number;
   height: number;
   backgroundColor: string;
+  // Add required fields for compatibility
+  canvasData?: string | null;
+  canvasJson?: string | null;
+  createdAt?: string;
+  gia?: number;
+  index?: number;
+  metadata?: any;
+  data?: any;
+  userId?: string;
+  canvasState?: any;
 }
 
 export const createEmptyFloorPlan = (): FloorPlan => ({
@@ -61,7 +82,9 @@ export const createEmptyFloorPlan = (): FloorPlan => ({
   rooms: [],
   width: 1000,
   height: 800,
-  backgroundColor: '#ffffff'
+  backgroundColor: '#ffffff',
+  data: {}, // Add required data property
+  userId: 'default-user' // Add required userId property
 });
 
 export const createWall = (start: Point, end: Point): Wall => ({
