@@ -5,6 +5,7 @@ export interface SentryMessageOptions {
   level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
   tags?: Record<string, string>;
   extra?: Record<string, any>;
+  [key: string]: any; // Allow arbitrary properties
 }
 
 export function captureMessage(message: string, options: SentryMessageOptions): void;
@@ -20,11 +21,11 @@ export function captureMessage(
   if (typeof levelOrOptions === 'string') {
     Sentry.captureMessage(message, { level: levelOrOptions as Sentry.SeverityLevel });
   } else {
-    const { level = 'info', tags, extra } = levelOrOptions;
+    const { level = 'info', tags, extra, ...rest } = levelOrOptions;
     Sentry.captureMessage(message, {
       level: level as Sentry.SeverityLevel,
       tags,
-      extra
+      extra: { ...extra, ...rest }
     });
   }
 }
@@ -35,6 +36,7 @@ export interface ErrorReportOptions {
   extra?: Record<string, any>;
   context?: string;
   component?: string;
+  [key: string]: any; // Allow arbitrary properties
 }
 
 export function captureError(error: Error | unknown, options?: ErrorReportOptions): void {
@@ -54,6 +56,12 @@ export function captureError(error: Error | unknown, options?: ErrorReportOption
       }
       if (options.component) {
         scope.setTag('component', options.component);
+      }
+      
+      // Handle any other properties
+      const { level, tags, extra, context, component, ...rest } = options;
+      if (Object.keys(rest).length > 0) {
+        scope.setExtras(rest);
       }
     }
 

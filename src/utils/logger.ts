@@ -9,6 +9,9 @@ interface LogOptions {
   level?: LogLevel;
   context?: string;
   tags?: Record<string, string>;
+  extra?: Record<string, any>;
+  // Allow arbitrary properties
+  [key: string]: any;
 }
 
 class Logger {
