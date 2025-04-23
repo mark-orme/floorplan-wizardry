@@ -1,138 +1,81 @@
-import { useState, useCallback } from 'react';
-import { Canvas } from 'fabric';
+import { useCallback, useState, useRef } from 'react';
+import { Canvas, Line } from 'fabric';
+import { MeasurementData } from './useStraightLineTool';
 import { Point } from '@/types/core/Point';
 
-// Export MeasurementData for other hooks to use
-export interface MeasurementData {
-  distance: number;
-  angle: number;
-  startPoint: Point;
-  endPoint: Point;
-  snapped: boolean;
-  unit: string;
-}
-
-// Define UseStraightLineToolProps interface
 export interface UseStraightLineToolProps {
   isActive?: boolean;
   isEnabled?: boolean;
-  canvas?: Canvas;
-  shiftKeyPressed?: boolean;
+  canvas?: Canvas | null;
   lineColor?: string;
   lineThickness?: number;
-  snapToGrid?: boolean;
   saveCurrentState?: () => void;
-  anglesEnabled?: boolean;
+  shiftKeyPressed?: boolean;
 }
 
 export const useStraightLineTool = ({
   isActive = false,
-  isEnabled = false,
-  canvas,
-  shiftKeyPressed = false,
+  isEnabled = false, 
+  canvas = null,
   lineColor = '#000000',
-  lineThickness = 1,
-  snapToGrid = false,
+  lineThickness = 2,
   saveCurrentState,
-  anglesEnabled
+  shiftKeyPressed = false
 }: UseStraightLineToolProps) => {
-  // State for tracking internal state
-  const [internalShiftKeyPressed, setShiftKeyPressed] = useState(shiftKeyPressed);
-  const [internalIsActive, setIsActive] = useState(isActive);
-  const [snapEnabled, setSnapEnabled] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
-    distance: 0,
-    angle: 0,
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 0, y: 0 },
+    distance: null,
+    angle: null,
     snapped: false,
     unit: 'px'
   });
-  
-  // Key event handlers
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      setShiftKeyPressed(true);
-    }
-  }, []);
 
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      setShiftKeyPressed(false);
-    }
-  }, []);
-
-  // Togglers for snap and angles
+  // Toggle functions
   const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
-  
+
   const toggleAngles = useCallback(() => {
-    console.log('Toggle angles called');
+    setAnglesEnabled(prev => !prev);
   }, []);
-  
-  // Mock functions for the missing functionality
+
+  // Basic drawing functions (stub implementation)
   const startDrawing = useCallback((point: Point) => {
-    console.log('Start drawing at', point);
-  }, []);
-  
+    setIsDrawing(true);
+    // Implementation details...
+  }, [canvas, lineColor, lineThickness]);
+
   const continueDrawing = useCallback((point: Point) => {
-    console.log('Continue drawing to', point);
-  }, []);
-  
-  const endDrawing = useCallback(() => {
-    console.log('End drawing');
-  }, []);
-  
-  const cancelDrawing = useCallback(() => {
-    console.log('Drawing cancelled');
-  }, []);
-  
-  const handlePointerDown = useCallback((e: PointerEvent) => {
-    console.log('Pointer down', e);
-  }, []);
-  
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    console.log('Pointer move', e);
-  }, []);
-  
-  const handlePointerUp = useCallback((e: PointerEvent) => {
-    console.log('Pointer up', e);
-  }, []);
-  
+    if (!isDrawing) return;
+    // Implementation details...
+  }, [canvas, isDrawing, snapEnabled, anglesEnabled]);
+
+  const completeDrawing = useCallback((point: Point) => {
+    setIsDrawing(false);
+    // Implementation details...
+    if (saveCurrentState) {
+      saveCurrentState();
+    }
+  }, [canvas, saveCurrentState]);
+
+  // Mock method for rendering tooltip
   const renderTooltip = useCallback(() => {
-    return null;
-  }, []);
-  
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentLine, setCurrentLine] = useState(null);
-  
-  // Mock input method for tests
-  const inputMethod = 'mouse';
-  
+    return null; // Actual implementation would return a React component
+  }, [measurementData]);
+
   return {
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handleKeyDown,
-    handleKeyUp,
-    shiftKeyPressed: internalShiftKeyPressed,
-    isActive: internalIsActive,
-    renderTooltip,
-    isDrawing,
-    currentLine,
-    setCurrentLine,
     snapEnabled,
     anglesEnabled,
-    measurementData,
     toggleSnap,
     toggleAngles,
-    inputMethod,
-    isEnabled,
+    isDrawing,
+    startDrawing,
+    continueDrawing,
+    completeDrawing,
+    measurementData,
+    renderTooltip,
     shiftKeyPressed
   };
 };

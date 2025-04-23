@@ -1,20 +1,16 @@
+
 /**
- * Re-export all types from a central location
+ * Type definitions index
+ * Re-exports all type definitions for easier imports
  */
 
-// Export floor plan types
-export * from './floorPlan';
+// Re-export using 'export type' syntax for isolated modules
+export type { Point } from './core/Point';
+export type { FloorPlan } from './floorPlan';
 export * from './drawingTypes';
-export { Point } from './core/Point';
+export * from './fabricTypes';
 
-// Add DebugInfoState for compatibility with existing imports
-export interface DebugInfoState {
-  fps: number;
-  objectCount: number;
-  visibleObjects: number;
-  gridCells: number;
-  memoryUsage?: number;
-  renderTime?: number;
-}
-
-// Other type exports can be added here in the future
+// Export core types
+export * from './core';
+// Export floor plan types
+export * from './floor-plan';

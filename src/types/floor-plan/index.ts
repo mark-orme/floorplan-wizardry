@@ -1,18 +1,18 @@
 
 /**
- * Unified Floor Plan Types
- * Central export point for all floor plan types
- * @module types/floor-plan
+ * Floor plan types index
+ * Centralizes all floor plan related types
  */
 
-// Re-export all types from floorPlanTypes to have a single source of truth
-export * from '../floorPlanTypes';
+// Import from canonical sources
+import { FloorPlan, Wall, Room, Stroke } from '../floorPlanTypes';
+import { PaperSize as CorePaperSize } from '../core/floor-plan/PaperSize';
 
-// Export any floor-plan specific types that don't exist in core
-export * from './PaperSize';
+// Re-export types
+export type { FloorPlan, Wall, Room, Stroke };
 
-// Add RoomTypeLiteral that includes "dining" to ensure compatibility
-export type RoomTypeLiteral = 'bedroom' | 'bathroom' | 'kitchen' | 'living' | 'dining' | 'office' | 'other';
+// Re-export with renaming to avoid duplicate conflict
+export { type CorePaperSize as PaperSize };
 
-// Export floorPlanTypeAdapter for backward compatibility
+// Export adapter functions
 export * from '../utils/floorPlanTypeAdapter';

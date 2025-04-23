@@ -1,9 +1,10 @@
+
 import { useEffect } from 'react';
-import { Canvas, Line } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { useGrid } from '@/hooks/useGrid';
 
 export interface SimpleGridLayerProps {
-  canvas: Canvas;  
+  canvas: FabricCanvas;  
   gridSize?: number;
   visible?: boolean;
 }

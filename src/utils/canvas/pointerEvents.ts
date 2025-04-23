@@ -1,57 +1,42 @@
 
 /**
- * Canvas pointer event utilities
+ * Utilities for handling pointer events
  */
 
 /**
- * Trigger device vibration for tactile feedback
+ * Checks if the device supports pressure sensitivity
  */
-export function vibrateFeedback(_pattern?: any) {
-  // Check if the vibrate API is available
-  if (navigator.vibrate) {
-    navigator.vibrate(50); // Vibrate for 50ms
-  }
-}
+export const isPressureSupported = (event: PointerEvent): boolean => {
+  return 'pressure' in event && typeof event.pressure === 'number' && event.pressure !== 0.5;
+};
 
 /**
- * Get pressure value from pointer event
- * @param e Pointer event
- * @returns Pressure value (0-1)
+ * Checks if the device supports tilt sensitivity
  */
-export function getPressure(e: PointerEvent) {
-  return e.pressure;
-}
+export const isTiltSupported = (event: PointerEvent): boolean => {
+  return (
+    'tiltX' in event && 
+    'tiltY' in event && 
+    typeof event.tiltX === 'number' && 
+    typeof event.tiltY === 'number' && 
+    (event.tiltX !== 0 || event.tiltY !== 0)
+  );
+};
 
 /**
- * Get tilt values from pointer event
- * @param e Pointer event
- * @returns Object with x and y tilt values
+ * Get normalized pressure value from 0 to 1
  */
-export function getTilt(e: PointerEvent) {
-  return { x: e.tiltX, y: e.tiltY };
-}
+export const getNormalizedPressure = (event: PointerEvent): number => {
+  // Most devices report 0.5 as default/unsupported pressure
+  if (!isPressureSupported(event)) return 0.5;
+  
+  // Normalize between 0 and 1
+  return Math.max(0, Math.min(1, event.pressure));
+};
 
 /**
- * Check if the pointer is a stylus
- * @param e Pointer event
- * @returns True if the pointer is a stylus/pen
+ * Detects if the pointer event is from a stylus
  */
-export function isStylus(e: PointerEvent) {
-  return e.pointerType === 'pen';
-}
-
-/**
- * Check if pressure is supported
- * @returns True if pressure is supported
- */
-export function isPressureSupported(..._args: any[]): boolean {
-  return true; // or your real detection
-}
-
-/**
- * Check if tilt is supported
- * @returns True if tilt is supported
- */
-export function isTiltSupported(..._args: any[]): boolean {
-  return true;
-}
+export const isStylusPointer = (event: PointerEvent): boolean => {
+  return event.pointerType === 'pen';
+};

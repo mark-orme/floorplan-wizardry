@@ -29,7 +29,7 @@ export const createTestFloorPlan = (overrides: Partial<FloorPlan> = {}): FloorPl
     metadata: {
       createdAt: now,
       updatedAt: now,
-      paperSize: PaperSize.A4,
+      paperSize: "A4", // Use string literal instead of enum value
       level: 0,
       version: "1.0",
       author: "Test User",

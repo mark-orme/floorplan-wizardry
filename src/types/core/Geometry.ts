@@ -1,18 +1,8 @@
 
-import { Point } from './Point';
-
 /**
- * Represents a line defined by two points
+ * Bounding box representing a rectangular area
  */
-export interface Line {
-  start: Point;
-  end: Point;
-}
-
-/**
- * Represents a rectangle
- */
-export interface Rectangle {
+export interface BoundingBox {
   x: number;
   y: number;
   width: number;
@@ -20,27 +10,35 @@ export interface Rectangle {
 }
 
 /**
- * Represents a circle
+ * Transform matrix for 2D transformations
+ * [a, b, c, d, tx, ty]
+ * where:
+ * a, d: scale x, y
+ * b, c: skew
+ * tx, ty: translate
  */
-export interface Circle {
-  center: Point;
-  radius: number;
+export type TransformMatrix = [number, number, number, number, number, number];
+
+/**
+ * Line segment between two points
+ */
+export interface LineSegment {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
 }
 
 /**
- * Represents a polygon as an array of points
+ * Transform object for handling object transformations
  */
-export type Polygon = Point[];
-
-/**
- * Re-export Point to ensure it's available for imports
- */
-export type { Point };
-
-/**
- * Represents canvas dimensions
- */
-export interface CanvasDimensions {
-  width: number;
-  height: number;
+export interface Transform {
+  matrix: TransformMatrix;
+  flipX?: boolean;
+  flipY?: boolean;
+  angle?: number;
+  scaleX?: number;
+  scaleY?: number;
+  skewX?: number;
+  skewY?: number;
+  translateX?: number;
+  translateY?: number;
 }

@@ -1,9 +1,9 @@
-
 /**
  * Core floor plan type definitions
  * @module types/core/floor-plan/FloorPlan
  */
-import { Point } from 'fabric';
+import { Point } from '../Point';
+import { PaperSize } from './PaperSize';
 
 export interface Wall {
   id: string;
@@ -53,4 +53,27 @@ export interface FloorPlan {
   rooms: Room[];
   strokes: Stroke[];
   metadata: FloorPlanMetadata;
+}
+
+/**
+ * Creates a new floor plan with default values
+ */
+export function createFloorPlan(id: string, name: string): any {
+  const now = new Date().toISOString();
+  
+  return {
+    id,
+    name,
+    createdAt: now,
+    updatedAt: now,
+    walls: [],
+    rooms: [],
+    strokes: [],
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      paperSize: PaperSize.A4,
+      level: 0
+    }
+  };
 }

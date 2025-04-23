@@ -1,66 +1,41 @@
+
 import logger from '@/utils/logger';
 
 /**
- * Canvas Error Diagnostics
- * Utilities for logging and handling canvas-related errors
+ * Logs canvas errors with diagnostic information
  */
-
-export function logCanvasError(errorType: string, message: string, details?: any) {
-  logger.canvasError(message, { type: errorType, details });
-}
-
-/**
- * Handle a generic canvas error
- * @param error Error object
- * @param context Context in which the error occurred
- */
-export function handleCanvasError(error: any, context: string = 'Unknown'): void {
-  const errorMessage = `Canvas error in ${context}: ${error.message || error}`;
-  logCanvasError('Generic', errorMessage, { error });
-}
+export const logCanvasError = (errorType: string, details: any) => {
+  // Use logger.error instead of non-existent canvasError
+  logger.error(`Canvas error: ${errorType}`, details);
+};
 
 /**
- * Handle a specific type of canvas error
- * @param errorType Type of error
- * @param message Error message
- * @param details Additional details about the error
+ * Runs diagnostics on canvas state
  */
-export function handleSpecificCanvasError(errorType: string, message: string, details?: any): void {
-  logCanvasError(errorType, message, details);
-}
-
-/**
- * Report an issue with canvas initialization
- * @param message Error message
- * @param details Additional details
- */
-export function reportCanvasInitializationError(message: string, details?: any): void {
-  logCanvasError('Initialization', message, details);
-}
-
-/**
- * Report an issue with canvas rendering
- * @param message Error message
- * @param details Additional details
- */
-export function reportCanvasRenderingError(message: string, details?: any): void {
-  logCanvasError('Rendering', message, details);
-}
-
-/**
- * Report an issue with canvas event handling
- * @param message Error message
- * @param details Additional details
- */
-export function reportCanvasEventError(message: string, details?: any): void {
-  logCanvasError('Event Handling', message, details);
-}
-
-/**
- * Report an issue with canvas data processing
- * @param message Error message
- * @param details Additional details
- */
-export function reportCanvasDataError(message: string, details?: any): void {
-  logCanvasError('Data Processing', message, details);
-}
+export const runCanvasDiagnostics = (canvas: any) => {
+  if (!canvas) {
+    logger.error('Canvas diagnostic failed: Canvas is null');
+    return false;
+  }
+  
+  try {
+    // Check if canvas has basic methods
+    const checks = {
+      hasAdd: typeof canvas.add === 'function',
+      hasRender: typeof canvas.renderAll === 'function',
+      hasObjects: Array.isArray(canvas.getObjects?.()),
+      isValid: true
+    };
+    
+    checks.isValid = Object.values(checks).every(v => v);
+    
+    if (!checks.isValid) {
+      logger.error('Canvas diagnostic failed', checks);
+    }
+    
+    return checks.isValid;
+  } catch (err) {
+    logger.error('Canvas diagnostic error', err);
+    return false;
+  }
+};

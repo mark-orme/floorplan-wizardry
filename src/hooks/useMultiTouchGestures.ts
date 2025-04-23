@@ -1,10 +1,11 @@
+
 import { useState, useCallback } from 'react';
-import type { GestureType, GestureState, GestureStateObject } from '@/types/drawingTypes'; // ✓ Type-only import
+import type { GestureType, GestureState, GestureStateObject } from '@/types/drawingTypes';
 import { Point } from '@/types/core/Point';
 
 export const useMultiTouchGestures = () => {
   const [gestureState, setGestureState] = useState<GestureStateObject>({
-    type: 'pinch', // ✓ String literal
+    type: 'pinch',
     startPoints: [],
     currentPoints: [],
     scale: 1,
