@@ -9,10 +9,10 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { 
-  RulerIcon as Ruler2Icon, 
-  GridIcon, 
-  SquareIcon, 
-  MoveIcon 
+  Ruler2, 
+  Grid, 
+  Square, 
+  Move 
 } from "lucide-react";
 
 interface MeasurementGuideProps {
@@ -32,7 +32,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
         <div className="space-y-6 py-4">
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <GridIcon className="h-5 w-5" />
+              <Grid className="h-5 w-5" />
               Grid System
             </h3>
             <div className="pl-7 space-y-2">
@@ -44,7 +44,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
 
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Ruler2Icon className="h-5 w-5" />
+              <Ruler2 className="h-5 w-5" />
               Drawing Tools
             </h3>
             <div className="pl-7 space-y-2">
@@ -56,7 +56,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
 
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <SquareIcon className="h-5 w-5" />
+              <Square className="h-5 w-5" />
               Room Measurements
             </h3>
             <div className="pl-7 space-y-2">
@@ -68,7 +68,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
 
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <MoveIcon className="h-5 w-5" />
+              <Move className="h-5 w-5" />
               Navigation
             </h3>
             <div className="pl-7 space-y-2">
