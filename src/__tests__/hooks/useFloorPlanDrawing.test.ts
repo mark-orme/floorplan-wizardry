@@ -1,15 +1,14 @@
-
 /**
  * Tests for useFloorPlanDrawing hook
  * @module hooks/useFloorPlanDrawing/__tests__/useFloorPlanDrawing.test
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useFloorPlanDrawing } from '@/hooks/useFloorPlanDrawing';
 import { DrawingMode } from '@/constants/drawingModes';
 import { createEmptyFloorPlan } from '@/types/floorPlan';
-import { InputMethod } from '@/hooks/straightLineTool/useLineInputMethod';
+import { InputMethod } from '@/types/input/InputMethod';
 
 // Mock utility functions
 const createMockStroke = () => ({ id: '1', points: [], type: 'line' as const, color: '#000', thickness: 1, width: 1 });

@@ -1,8 +1,3 @@
-
-/**
- * Unit Tests for LineSettings Component
- * Tests the functionality and UI interactions of the line settings panel
- */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LineSettings } from './LineSettings';
@@ -42,7 +37,7 @@ describe('LineSettings Component', () => {
     const slider = screen.getByRole('slider');
     
     // Simulate a change in the slider value
-    fireEvent.change(slider, { target: { value: 5 } });
+    fireEvent.change(slider, { target: { value: "5" } });
     
     // Then: Callback should be called with the new value
     expect(mockThicknessChange).toHaveBeenCalledWith(5);

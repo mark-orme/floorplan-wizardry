@@ -1,9 +1,9 @@
-
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements
  * @module CanvasApp
  */
+import React from 'react';
 import { useState, useEffect } from "react";
 import { Canvas } from "@/components/Canvas";
 import CanvasLayout from "@/components/CanvasLayout"; 

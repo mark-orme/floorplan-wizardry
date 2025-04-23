@@ -1,12 +1,10 @@
-
 /**
  * Tests for useSyncedFloorPlans hook
  */
 import React from 'react';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useSyncedFloorPlans } from '@/hooks/useSyncedFloorPlans';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 // Mock dependencies
@@ -17,22 +15,12 @@ vi.mock('@/api/floorPlans', () => ({
 }));
 
 describe('useSyncedFloorPlans', () => {
-  let mockCanvas: any;
-  
   beforeEach(() => {
-    mockCanvas = {
-      clear: vi.fn(),
-      add: vi.fn(),
-      renderAll: vi.fn()
-    };
-    
-    // Reset mocks
     vi.resetAllMocks();
   });
   
   it('should initialize with empty floor plans', () => {
     const { result } = renderHook(() => useSyncedFloorPlans({
-      canvas: mockCanvas,
       autoSync: false
     }));
     
@@ -42,7 +30,6 @@ describe('useSyncedFloorPlans', () => {
   
   it('should add a floor plan', () => {
     const { result } = renderHook(() => useSyncedFloorPlans({
-      canvas: mockCanvas,
       autoSync: false
     }));
     
@@ -59,7 +46,6 @@ describe('useSyncedFloorPlans', () => {
   
   it('should select a floor plan', () => {
     const { result } = renderHook(() => useSyncedFloorPlans({
-      canvas: mockCanvas,
       autoSync: false
     }));
     
@@ -80,7 +66,6 @@ describe('useSyncedFloorPlans', () => {
   
   it('should delete a floor plan', () => {
     const { result } = renderHook(() => useSyncedFloorPlans({
-      canvas: mockCanvas,
       autoSync: false
     }));
     

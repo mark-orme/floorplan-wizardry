@@ -1,7 +1,4 @@
 
-/**
- * Debug information state interface
- */
 export interface DebugInfoState {
   fps: number;
   objectCount: number;
@@ -21,16 +18,22 @@ export interface DebugInfoState {
   canvasEventsRegistered?: boolean;
   gridRendered?: boolean;
   toolsInitialized?: boolean;
+  // Add performance stats
+  performanceStats?: {
+    fps: number;
+    droppedFrames: number;
+    frameTime: number;
+    maxFrameTime: number;
+    longFrames: number;
+  };
+  // Add missing properties
+  brushInitialized?: boolean;
+  gridObjectCount?: number;
+  canvasDimensions?: {
+    width: number;
+    height: number;
+  };
+  devicePixelRatio?: number;
+  lastError?: string;
+  lastErrorTime?: number;
 }
-
-/**
- * Default debug state for initialization
- */
-export const DEFAULT_DEBUG_STATE: DebugInfoState = {
-  fps: 0,
-  objectCount: 0,
-  viewportScale: 1,
-  isDrawingMode: false,
-  selectionActive: false,
-  renderedFrames: 0
-};
