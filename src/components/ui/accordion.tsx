@@ -54,7 +54,7 @@ const AccordionContent = React.forwardRef<
 
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
 
-// Export the wrapped components for use with proper value prop
+// Export the wrapped components with properly passed value prop
 export const AccordionDemo = () => (
   <Accordion type="single" collapsible className="w-full">
     <AccordionItem value="item-1">

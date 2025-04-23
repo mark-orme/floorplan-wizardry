@@ -1,43 +1,70 @@
 
-import { useCallback } from 'react';
-import type { MeasurementData } from '../useStraightLineTool.d';
+import { useCallback, useState, useEffect } from 'react';
+import type { MeasurementData } from './useStraightLineTool';
+import { Point } from '@/types/core/Point';
 
-interface TooltipData {
-  distanceDisplay: string;
-  angleDisplay: string;
-  snappedInfo: string;
+interface UseLiveDistanceTooltipProps {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  onMeasurement?: (measurement: MeasurementData) => void;
 }
 
-export const useLiveDistanceTooltip = () => {
+/**
+ * Hook for managing live distance tooltip during line drawing
+ */
+export const useLiveDistanceTooltip = ({
+  isDrawing,
+  startPoint,
+  currentPoint,
+  onMeasurement
+}: UseLiveDistanceTooltipProps) => {
+  const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
+  const [measurement, setMeasurement] = useState<MeasurementData>({ distance: 0, angle: 0 });
+  const [visible, setVisible] = useState<boolean>(false);
+  
   /**
-   * Formats measurement data for display in the tooltip
+   * Calculate distance and angle between two points
    */
-  const formatTooltipData = useCallback((data: MeasurementData): TooltipData | null => {
-    if (!data || data.distance === null) return null;
+  const calculateMeasurement = useCallback((start: Point, end: Point): MeasurementData => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Format distance with units
-    const distanceDisplay = `${data.distance.toFixed(2)} ${data.unit}`;
+    // Calculate angle in degrees
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (angle < 0) angle += 360; // Normalize to 0-360
     
-    // Format angle if available
-    const angleDisplay = data.angle !== null ? `${Math.round(data.angle)}°` : '';
-    
-    // Show snapping information if relevant
-    let snappedInfo = '';
-    if (data.snapped) {
-      if (data.snapType === 'grid') snappedInfo = ' (grid)';
-      else if (data.snapType === 'angle') snappedInfo = ' (angle)';
-      else if (data.snapType === 'both') snappedInfo = ' (grid+angle)';
-      else snappedInfo = ' (snapped)';
-    }
-    
-    return {
-      distanceDisplay,
-      angleDisplay,
-      snappedInfo
-    };
+    return { distance, angle };
   }, []);
   
+  // Update tooltip when drawing
+  useEffect(() => {
+    if (isDrawing && startPoint && currentPoint) {
+      // Calculate midpoint for tooltip position
+      const midPoint = {
+        x: (startPoint.x + currentPoint.x) / 2,
+        y: (startPoint.y + currentPoint.y) / 2 - 20 // Offset above the line
+      };
+      
+      setTooltipPosition(midPoint);
+      
+      // Calculate measurement
+      const newMeasurement = calculateMeasurement(startPoint, currentPoint);
+      setMeasurement(newMeasurement);
+      setVisible(true);
+      
+      if (onMeasurement) {
+        onMeasurement(newMeasurement);
+      }
+    } else {
+      setVisible(false);
+    }
+  }, [isDrawing, startPoint, currentPoint, calculateMeasurement, onMeasurement]);
+  
   return {
-    formatTooltipData
+    tooltipPosition,
+    measurement,
+    visible
   };
 };

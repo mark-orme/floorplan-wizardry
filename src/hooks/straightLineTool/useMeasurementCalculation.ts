@@ -1,28 +1,46 @@
 
 import { useCallback } from 'react';
+import type { MeasurementData } from './useStraightLineTool';
 import { Point } from '@/types/core/Point';
-import type { MeasurementData } from '../useStraightLineTool.d';
 
+/**
+ * Hook for calculating measurements between two points
+ */
 export const useMeasurementCalculation = () => {
-  const calculateMeasurements = useCallback((startPoint: Point, endPoint: Point, isSnapped: boolean = false): MeasurementData => {
-    const dx = endPoint.x - startPoint.x;
-    const dy = endPoint.y - startPoint.y;
-    
-    // Calculate distance using Pythagorean theorem
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate angle in degrees
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    
-    return {
-      distance,
-      angle,
-      snapped: isSnapped,
-      unit: 'px'
-    };
+  /**
+   * Calculate distance between two points
+   */
+  const calculateDistance = useCallback((point1: Point, point2: Point): number => {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }, []);
-
+  
+  /**
+   * Calculate angle between two points in degrees
+   */
+  const calculateAngle = useCallback((point1: Point, point2: Point): number => {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    // Calculate angle in radians and convert to degrees
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    // Normalize to 0-360 range
+    return angle < 0 ? angle + 360 : angle;
+  }, []);
+  
+  /**
+   * Get measurement data between two points
+   */
+  const getMeasurements = useCallback((point1: Point, point2: Point): MeasurementData => {
+    return {
+      distance: calculateDistance(point1, point2),
+      angle: calculateAngle(point1, point2)
+    };
+  }, [calculateDistance, calculateAngle]);
+  
   return {
-    calculateMeasurements
+    calculateDistance,
+    calculateAngle,
+    getMeasurements
   };
 };
