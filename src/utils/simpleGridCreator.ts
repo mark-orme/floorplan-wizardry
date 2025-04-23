@@ -35,7 +35,10 @@ export const createSimpleGrid = (
     });
     canvas.add(line);
     gridObjects.push(line);
-    line.sendToBack();
+    // Check if the method exists before calling
+    if (canvas.bringToBack && typeof canvas.bringToBack === 'function') {
+      canvas.bringToBack(line);
+    }
   }
 
   // Create horizontal lines
@@ -49,7 +52,10 @@ export const createSimpleGrid = (
     });
     canvas.add(line);
     gridObjects.push(line);
-    line.sendToBack();
+    // Check if the method exists before calling
+    if (canvas.bringToBack && typeof canvas.bringToBack === 'function') {
+      canvas.bringToBack(line);
+    }
   }
 
   canvas.renderAll();
@@ -68,8 +74,12 @@ export const ensureGridVisible = (
   if (!canvas || !gridObjects.length) return;
   
   gridObjects.forEach(obj => {
+    // Check if obj and the method both exist
     if (obj && typeof obj.sendToBack === 'function') {
       obj.sendToBack();
+    } else if (canvas && typeof canvas.sendToBack === 'function') {
+      // Try to use canvas method instead
+      canvas.sendToBack(obj);
     }
   });
   

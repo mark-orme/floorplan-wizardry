@@ -25,7 +25,11 @@ export function SimpleGridLayer({
     // Clear any existing grid lines
     if (lines.length > 0) {
       lines.forEach(line => {
-        canvas.remove(line);
+        try {
+          canvas.remove(line);
+        } catch (e) {
+          console.error('Error removing grid line:', e);
+        }
       });
       setLines([]);
     }
@@ -36,47 +40,63 @@ export function SimpleGridLayer({
     const canvasHeight = canvas.height || 1000;
     const newLines: Line[] = [];
 
-    // Create horizontal lines
-    for (let i = 0; i <= canvasHeight; i += gridSize) {
-      const line = new Line([0, i, canvasWidth, i], {
-        stroke: color,
-        strokeWidth: strokeWidth,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default',
-        objectCaching: false // Improve performance by disabling object caching
+    try {
+      // Create horizontal lines
+      for (let i = 0; i <= canvasHeight; i += gridSize) {
+        const line = new Line([0, i, canvasWidth, i], {
+          stroke: color,
+          strokeWidth: strokeWidth,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default',
+          objectCaching: false // Improve performance by disabling object caching
+        });
+        canvas.add(line);
+        newLines.push(line);
+      }
+
+      // Create vertical lines
+      for (let i = 0; i <= canvasWidth; i += gridSize) {
+        const line = new Line([i, 0, i, canvasHeight], {
+          stroke: color,
+          strokeWidth: strokeWidth,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default',
+          objectCaching: false // Improve performance by disabling object caching
+        });
+        canvas.add(line);
+        newLines.push(line);
+      }
+
+      // Send grid lines to back safely
+      newLines.forEach(line => {
+        try {
+          if (typeof canvas.sendObjectToBack === 'function') {
+            canvas.sendObjectToBack(line);
+          } else if (typeof canvas.sendToBack === 'function') {
+            canvas.sendToBack(line);
+          }
+        } catch (e) {
+          console.warn('Could not send grid line to back:', e);
+        }
       });
-      canvas.add(line);
-      newLines.push(line);
+
+      setLines(newLines);
+      canvas.requestRenderAll();
+    } catch (error) {
+      console.error('Error creating grid:', error);
     }
-
-    // Create vertical lines
-    for (let i = 0; i <= canvasWidth; i += gridSize) {
-      const line = new Line([i, 0, i, canvasHeight], {
-        stroke: color,
-        strokeWidth: strokeWidth,
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default',
-        objectCaching: false // Improve performance by disabling object caching
-      });
-      canvas.add(line);
-      newLines.push(line);
-    }
-
-    // Send grid lines to back
-    newLines.forEach(line => {
-      canvas.sendObjectToBack(line);
-    });
-
-    setLines(newLines);
-    canvas.requestRenderAll();
 
     // Cleanup function to remove lines when unmounting
     return () => {
       if (canvas) {
         newLines.forEach(line => {
-          canvas.remove(line);
+          try {
+            canvas.remove(line);
+          } catch (e) {
+            console.error('Error removing grid line during cleanup:', e);
+          }
         });
       }
     };

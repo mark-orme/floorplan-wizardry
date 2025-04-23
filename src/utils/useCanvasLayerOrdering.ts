@@ -55,15 +55,31 @@ export const ensureGridVisibility = (
     // Send grid lines to back
     gridLines.forEach(line => {
       if (fabricCanvas.contains(line)) {
-        fabricCanvas.sendObjectToBack(line);
+        try {
+          if (typeof fabricCanvas.sendObjectToBack === 'function') {
+            fabricCanvas.sendObjectToBack(line);
+          } else if (typeof fabricCanvas.sendToBack === 'function') {
+            fabricCanvas.sendToBack(line);
+          }
+        } catch (e) {
+          console.warn('Could not send grid line to back:', e);
+        }
       }
     });
     
     // Bring grid markers to front of grid elements
     gridMarkers.forEach(marker => {
       if (fabricCanvas.contains(marker)) {
-        // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
-        fabricCanvas.bringObjectToFront(marker);
+        try {
+          // Use bringObjectToFront instead of bringForward for Fabric.js v6 compatibility
+          if (typeof fabricCanvas.bringObjectToFront === 'function') {
+            fabricCanvas.bringObjectToFront(marker);
+          } else if (typeof fabricCanvas.bringToFront === 'function') {
+            fabricCanvas.bringToFront(marker);
+          }
+        } catch (e) {
+          console.warn('Could not bring grid marker to front:', e);
+        }
       }
     });
     
