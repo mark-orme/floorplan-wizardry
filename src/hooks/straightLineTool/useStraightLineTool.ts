@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { useState, useCallback } from 'react';
 import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
@@ -34,7 +35,7 @@ export interface UseStraightLineToolResult {
   handlePointerUp: (event: any) => void;
   handleKeyDown: (event: KeyboardEvent) => void;
   handleKeyUp: (event: KeyboardEvent) => void;
-  renderTooltip: () => JSX.Element;
+  renderTooltip: () => React.ReactNode;
   setIsDrawing: (isDrawing: boolean) => void;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
@@ -127,7 +128,7 @@ export const useStraightLineTool = ({
     }
   }, [isActive]);
 
-  const renderTooltip = useCallback(() => {
+  const renderTooltip = useCallback((): React.ReactNode => {
     return (
       <div>
         Distance: {measurementData.distance.toFixed(2)}
