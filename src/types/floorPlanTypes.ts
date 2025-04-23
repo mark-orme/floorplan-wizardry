@@ -13,14 +13,14 @@ export interface FloorPlan {
   strokes: Stroke[];
   // Add required fields for compatibility with other modules
   label?: string;
-  canvasData?: string | null;
-  canvasJson?: string | null;
-  createdAt?: string;
+  canvasData: string | null;
+  canvasJson: string | null;
+  createdAt: string;
   gia?: number;
   index?: number;
   metadata?: FloorPlanMetadata;
-  data?: any;
-  userId?: string;
+  data: any;
+  userId: string;
   canvasState?: any;
   backgroundColor?: string;
 }
@@ -33,8 +33,8 @@ export interface Wall {
   height?: number;
   color?: string;
   // Add required fields for compatibility with other modules
-  start?: Point;
-  end?: Point;
+  start: Point;
+  end: Point;
   points?: Point[];
   roomIds?: string[];
   length?: number;
@@ -98,7 +98,9 @@ export const createEmptyFloorPlan = (): FloorPlan => {
     strokes: [],
     data: {}, // Required field for compatibility
     userId: 'default-user', // Required field for compatibility
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    canvasData: null,
+    canvasJson: null
   };
 };
 
@@ -117,5 +119,8 @@ export const convertFloorPlan = (plan: any): FloorPlan => {
     strokes: Array.isArray(plan.strokes) ? plan.strokes.map(asStroke) : [],
     data: plan.data || {},
     userId: plan.userId || 'default-user',
+    createdAt: plan.createdAt || new Date().toISOString(),
+    canvasData: plan.canvasData || null,
+    canvasJson: plan.canvasJson || null
   };
 };
