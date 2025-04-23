@@ -140,4 +140,3 @@ npm run lint:strict
 - TypeScript Deep Dive: https://basarat.gitbook.io/typescript/
 - TypeScript Handbook: https://www.typescriptlang.org/docs/handbook/intro.html
 - ESLint TypeScript Plugin: https://github.com/typescript-eslint/typescript-eslint
-

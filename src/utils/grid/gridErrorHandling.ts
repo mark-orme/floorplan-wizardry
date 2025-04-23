@@ -22,14 +22,17 @@ export const logGridError = (
   // Log the error
   logger.error(`Grid Error [${context}]:`, errorObj, extraData || {});
   
-  // Capture the error with Sentry using new format
+  // Capture the error with Sentry
   captureError(errorObj, {
-    context: context,
     tags: { 
       component: 'Grid',
       area: 'canvas'
     },
-    extra: extraData
+    context: {
+      errorContext: context,
+      ...extraData
+    },
+    level: 'error'
   });
 };
 
@@ -51,12 +54,15 @@ export const handleGridInitError = (
   
   // Capture with Sentry
   captureError(errorObj, {
-    context: 'grid-initialization',
     tags: { 
       component: 'Grid', 
       gridId: gridId
     },
-    extra: extraData
+    context: {
+      errorContext: 'grid-initialization',
+      ...extraData
+    },
+    level: 'error'
   });
 };
 
