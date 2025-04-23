@@ -61,7 +61,7 @@
     "@sentry/vite-plugin": "^3.2.2",
     "@storybook/addon-interactions": "^7.6.17",
     "@storybook/addon-themes": "^7.6.17",
-    "@storybook/blocks": "^7.6.17",
+    "@storybook/blocks": "^8.6.12",
     "@storybook/react": "^8.6.12",
     "@stryker-mutator/core": "^8.7.1",
     "@supabase/supabase-js": "^2.49.4",
