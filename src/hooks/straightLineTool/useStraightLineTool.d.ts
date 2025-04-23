@@ -1,7 +1,7 @@
 
-import { Point } from '@/types/core/Geometry';
+import { Point } from '@/types/core/Point';
 import { Line } from 'fabric';
-import { InputMethod } from '@/types/input/InputMethod';
+import { InputMethod } from './useLineInputMethod';
 import React from 'react';
 
 /**

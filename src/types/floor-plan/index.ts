@@ -5,8 +5,8 @@
  * @module types/floor-plan
  */
 
-// Re-export all types from the core module to have a single source of truth
-export * from '../core';
+// Re-export all types from floorPlanTypes to have a single source of truth
+export * from '../floorPlanTypes';
 
 // Export any floor-plan specific types that don't exist in core
 export * from './PaperSize';

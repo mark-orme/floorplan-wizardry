@@ -14,6 +14,22 @@ export function sanitizeHtml(input: string): string {
 }
 
 /**
+ * Sanitizes HTML content but preserves some basic formatting tags (b, i, etc)
+ * @param input String to sanitize allowing basic rich text
+ * @returns Sanitized string with basic formatting preserved
+ */
+export function sanitizeRichHtml(input: string): string {
+  if (!input) return '';
+  
+  // Allow only specific safe tags
+  const safeTagsRegex = /<(?!\/?(b|i|strong|em|u|p|br|span|h[1-6]|ul|ol|li)\b)[^>]+>/gi;
+  const sanitized = input.replace(safeTagsRegex, '');
+  
+  // Remove potentially harmful attributes
+  return sanitized.replace(/(on\w+)="[^"]*"/g, '').replace(/javascript:/gi, '');
+}
+
+/**
  * Sanitizes a URL to prevent security issues
  * @param url URL to sanitize
  * @returns Sanitized URL or empty string
@@ -53,4 +69,16 @@ export function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/**
+ * Sanitizes HTML specifically for canvas text content
+ * @param input HTML content to sanitize for canvas
+ * @returns Sanitized HTML string safe for canvas
+ */
+export function sanitizeCanvasHtml(input: string): string {
+  if (!input) return '';
+  
+  // Canvas text should be very strictly sanitized
+  return sanitizeHtml(input);
 }

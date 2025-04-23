@@ -3,6 +3,9 @@
 export const z = {
   string: () => ({
     min: (length: number, message?: { message: string }) => ({ 
+      email: (message?: { message: string }) => ({ 
+        message: (msg: string) => ({}) 
+      }),
       message: (msg: string) => ({}) 
     }),
     email: (message?: { message: string }) => ({ 
@@ -77,5 +80,4 @@ export interface ZodType<T> {
 }
 
 // Export as default and named export for flexibility
-export { z };
 export default z;

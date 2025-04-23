@@ -106,3 +106,16 @@ export const createEmptyFloorPlan = (): FloorPlan => {
 export const asWall = (wall: any): Wall => wall;
 export const asRoom = (room: any): Room => room;
 export const asStroke = (stroke: any): Stroke => stroke;
+
+// Add type converter function for interoperability between different floor plan types
+export const convertFloorPlan = (plan: any): FloorPlan => {
+  // Ensure all required properties exist
+  return {
+    ...plan,
+    walls: Array.isArray(plan.walls) ? plan.walls.map(asWall) : [],
+    rooms: Array.isArray(plan.rooms) ? plan.rooms.map(asRoom) : [],
+    strokes: Array.isArray(plan.strokes) ? plan.strokes.map(asStroke) : [],
+    data: plan.data || {},
+    userId: plan.userId || 'default-user',
+  };
+};
