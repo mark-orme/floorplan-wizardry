@@ -32,6 +32,9 @@ export interface CanvasState {
 // Zoom direction type
 export type ZoomDirection = 'in' | 'out';
 
+// Drawing state for canvas
+export type DrawingState = 'idle' | 'drawing' | 'editing' | 'selecting';
+
 // Tool change event
 export interface ToolChangeEvent {
   previousTool: DrawingMode;

@@ -8,9 +8,10 @@ export * from './AuthContext';
 
 // Re-export drawing context
 export { 
-  DrawingProvider, 
+  DrawingContext,
   useDrawingContext,
-  useDrawing
+  useDrawing,
+  DrawingProvider
 } from './DrawingContext';
 
 // Re-export canvas context

@@ -25,6 +25,15 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
 }) => {
   const [showMeasurement, setShowMeasurement] = useState(true);
   
+  const straightLineTool = useStraightLineTool({
+    isEnabled: enabled,
+    isActive: enabled,
+    canvas: canvas,
+    lineColor: lineColor,
+    lineThickness: lineThickness,
+    saveCurrentState
+  });
+  
   const {
     snapEnabled,
     anglesEnabled,
@@ -33,13 +42,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     toggleAngles,
     isDrawing,
     renderTooltip
-  } = useStraightLineTool({
-    isEnabled: enabled,
-    canvas: canvas,
-    lineColor: lineColor,
-    lineThickness: lineThickness,
-    saveCurrentState
-  });
+  } = straightLineTool;
   
   useEffect(() => {
     if (isDrawing) {

@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
+import type { Canvas as FabricCanvas } from 'fabric';
 
 interface DrawingContextType {
   tool: DrawingMode;
@@ -13,6 +14,10 @@ interface DrawingContextType {
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   canUndo: boolean;
   canRedo: boolean;
+  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
+  setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
+  canvas?: FabricCanvas;
+  addToUndoStack: (state: any) => void;
 }
 
 export const DrawingContext = createContext<DrawingContextType>({
@@ -25,7 +30,10 @@ export const DrawingContext = createContext<DrawingContextType>({
   showGrid: true,
   setShowGrid: () => {},
   canUndo: false,
-  canRedo: false
+  canRedo: false,
+  setCanUndo: () => {},
+  setCanRedo: () => {},
+  addToUndoStack: () => {}
 });
 
 export const useDrawingContext = (): DrawingContextType => {
@@ -34,4 +42,19 @@ export const useDrawingContext = (): DrawingContextType => {
     throw new Error('useDrawingContext must be used within a DrawingContextProvider');
   }
   return context;
+};
+
+// Alias for backward compatibility
+export const useDrawing = useDrawingContext;
+
+// Export a type-safe provider for use in tests/apps
+export const DrawingProvider: React.FC<{
+  children: React.ReactNode;
+  value: DrawingContextType;
+}> = ({ children, value }) => {
+  return (
+    <DrawingContext.Provider value={value}>
+      {children}
+    </DrawingContext.Provider>
+  );
 };
