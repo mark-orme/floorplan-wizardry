@@ -31,6 +31,7 @@ export interface UseStraightLineToolResult {
   measurementData: MeasurementData;
   toggleGridSnapping: () => void;
   toggleAngles: () => void;
+  toggleSnap: () => void;
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
   endDrawing: () => void;
@@ -45,6 +46,16 @@ export interface UseStraightLineToolResult {
   setInputMethod: (method: InputMethod) => void;
   shiftKeyPressed: boolean;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
-  toggleSnap: () => void;
   saveCurrentState: () => void;
+}
+
+/**
+ * Props for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolProps {
+  isEnabled: boolean;
+  canvas: any;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState?: () => void;
 }

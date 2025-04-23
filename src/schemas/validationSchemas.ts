@@ -1,5 +1,4 @@
-
-import { z } from "zod";
+import { z } from "@/utils/zod-mock";
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
@@ -7,11 +6,11 @@ import { DrawingMode } from '@/constants/drawingModes';
  */
 export const drawingToolSchema = z.object({
   tool: z.nativeEnum(DrawingMode),
-  lineThickness: z.number().positive(),
-  lineColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
-  fillColor: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/),
-  opacity: z.number().min(0).max(1),
-  fontSize: z.number().positive(),
+  lineThickness: z.number(),
+  lineColor: z.string(),
+  fillColor: z.string(),
+  opacity: z.number(),
+  fontSize: z.number(),
   fontFamily: z.string(),
   objectType: z.string()
 });

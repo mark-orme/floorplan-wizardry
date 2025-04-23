@@ -9,22 +9,34 @@ export const z = {
       message: (msg: string) => ({}) 
     }),
     optional: () => ({}),
+    regex: (regex: RegExp, message?: { message: string }) => ({
+      message: (msg: string) => ({})
+    }),
+    url: () => ({
+      message: (msg: string) => ({})
+    }),
   }),
   object: (schema: any) => ({
     ...schema,
     refine: (refineFn: any, message?: any) => ({})
   }),
-  infer: <T>(schema: any): T => ({} as T),
+  infer: function<T>(schema: any): T { return {} as T },
   boolean: () => ({
     optional: () => ({})
   }),
   number: () => ({
-    min: (val: number, message?: any) => ({}),
+    min: (val: number, message?: any) => ({
+      max: (val: number, message?: any) => ({}),
+      positive: () => ({})
+    }),
     max: (val: number, message?: any) => ({}),
     positive: () => ({})
   }),
   enum: (values: any) => ({}),
-  array: (schema: any) => ({})
+  array: (schema: any) => ({}),
+  any: () => ({}),
+  nativeEnum: <T>(enumObj: T) => ({}),
+  date: (options?: { required_error?: string }) => ({})
 };
 
 // ZodError for error handling

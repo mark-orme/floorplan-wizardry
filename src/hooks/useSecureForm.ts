@@ -17,7 +17,7 @@ export function useSecureForm<T extends Record<string, any>>({
   validationSchema
 }: UseSecureFormOptions<T>) {
   const [formValues, setFormValues] = useState<T>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof T | 'general', string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleChange = useCallback((field: keyof T, value: any) => {
@@ -48,7 +48,7 @@ export function useSecureForm<T extends Record<string, any>>({
     } catch (error) {
       if (error instanceof Error) {
         // Handle validation errors
-        const newErrors: Partial<Record<keyof T, string>> = {};
+        const newErrors: Partial<Record<keyof T | 'general', string>> = {};
         // In a real implementation, we would parse the Zod error structure
         // For now, just set a generic error
         newErrors.general = error.message;

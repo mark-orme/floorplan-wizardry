@@ -1,5 +1,6 @@
 
-import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
+import { Point } from '@/types/core/Point';
+import { DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas/canvasTypes';
 
 export interface ICanvasEngine {
   // Core drawing operations

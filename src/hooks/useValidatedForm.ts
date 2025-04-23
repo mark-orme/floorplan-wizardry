@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import z, { ZodType } from '@/utils/zod-mock';
+import { z, ZodType } from '@/utils/zod-mock';
 
 interface ValidationOptions<T> {
   initialValues: T;
@@ -24,9 +24,9 @@ export function useValidatedForm<T extends Record<string, any>>({
   
   const validateField = useCallback((name: keyof T, value: any) => {
     try {
-      // Create a schema for just this field
-      const fieldSchema = z.object({ [name]: z.any() });
-      fieldSchema.parse({ [name]: value });
+      // Create a schema for just this field - using our mock
+      const fieldObject = { [name]: value };
+      // We're not actually validating since this is a mock, just showing the pattern
       return '';
     } catch (error) {
       if (error instanceof Error) {

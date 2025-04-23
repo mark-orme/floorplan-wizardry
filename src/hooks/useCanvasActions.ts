@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
-import { CanvasAction } from '@/types/canvas';
+import { CanvasAction } from '@/types/canvas/canvasTypes';
 
 // Local action type definitions
 interface AddFloorPlanAction extends CanvasAction {
@@ -33,7 +33,7 @@ function createCanvasAction<T extends CanvasAction>(type: T['type'], payload?: a
     type,
     payload,
     timestamp: Date.now()
-  } as T;
+  } as unknown as T;
 }
 
 export const useCanvasActions = (canvas: FabricCanvas | null) => {

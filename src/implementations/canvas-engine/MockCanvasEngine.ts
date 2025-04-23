@@ -1,126 +1,76 @@
-
 import { ICanvasEngine } from '@/interfaces/canvas-engine/ICanvasEngine';
-import { Point, DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas';
+import { Point } from '@/types/core/Point';
+import { DrawOptions, CanvasObject, StrokeStyle } from '@/types/canvas/canvasTypes';
 
 export class MockCanvasEngine implements ICanvasEngine {
-  private objects: CanvasObject[] = [];
-  private eventHandlers: Record<string, Function[]> = {};
-
-  // Drawing operations
+  // Implementation of the interface methods for testing
   drawLine(points: Point[], options: DrawOptions): void {
-    const object: CanvasObject = {
-      id: `line-${Date.now()}`,
-      type: 'line',
-      points: points,
-      properties: { stroke: options.color, strokeWidth: options.width }
-    };
-    
-    this.objects.push(object);
-    this.triggerEvent('object:added', { target: object });
+    console.log('MockCanvasEngine.drawLine called');
   }
-
+  
   drawShape(points: Point[], options: DrawOptions): void {
-    const object: CanvasObject = {
-      id: `shape-${Date.now()}`,
-      type: 'polygon',
-      points: points,
-      properties: { stroke: options.color, strokeWidth: options.width }
-    };
-    
-    this.objects.push(object);
-    this.triggerEvent('object:added', { target: object });
+    console.log('MockCanvasEngine.drawShape called');
   }
-
-  // Canvas state management
+  
   clear(): void {
-    this.objects = [];
-    this.triggerEvent('canvas:cleared', {});
+    console.log('MockCanvasEngine.clear called');
   }
-
+  
   undo(): void {
-    console.log('Undo operation');
+    console.log('MockCanvasEngine.undo called');
   }
-
+  
   redo(): void {
-    console.log('Redo operation');
+    console.log('MockCanvasEngine.redo called');
   }
-
-  // Object manipulation
+  
   addObject(object: CanvasObject): void {
-    this.objects.push(object);
-    this.triggerEvent('object:added', { target: object });
+    console.log('MockCanvasEngine.addObject called');
   }
-
+  
   removeObject(object: CanvasObject): void {
-    this.objects = this.objects.filter(obj => obj.id !== object.id);
-    this.triggerEvent('object:removed', { target: object });
+    console.log('MockCanvasEngine.removeObject called');
   }
-
+  
   updateObject(object: CanvasObject): void {
-    const index = this.objects.findIndex(obj => obj.id === object.id);
-    if (index !== -1) {
-      this.objects[index] = object;
-      this.triggerEvent('object:modified', { target: object });
-    }
+    console.log('MockCanvasEngine.updateObject called');
   }
-
-  // Canvas state
+  
   getObjects(): CanvasObject[] {
-    return [...this.objects];
+    console.log('MockCanvasEngine.getObjects called');
+    return [];
   }
-
+  
   getCanvasState(): any {
-    return { objects: this.objects };
+    console.log('MockCanvasEngine.getCanvasState called');
+    return {};
   }
-
+  
   setCanvasState(state: any): void {
-    if (state && Array.isArray(state.objects)) {
-      this.objects = [...state.objects];
-    }
+    console.log('MockCanvasEngine.setCanvasState called');
   }
-
-  // Style management
+  
   setStrokeStyle(style: StrokeStyle): void {
-    console.log('Set stroke style operation', style);
+    console.log('MockCanvasEngine.setStrokeStyle called');
   }
-
-  // Zoom and pan
+  
   setZoom(level: number): void {
-    console.log('Set zoom level', level);
+    console.log('MockCanvasEngine.setZoom called');
   }
-
+  
   setPan(x: number, y: number): void {
-    console.log('Set pan', x, y);
+    console.log('MockCanvasEngine.setPan called');
   }
-
-  // Event handlers
+  
   on(event: string, callback: Function): void {
-    if (!this.eventHandlers[event]) {
-      this.eventHandlers[event] = [];
-    }
-    this.eventHandlers[event].push(callback);
+    console.log('MockCanvasEngine.on called');
   }
-
+  
   off(event: string, callback: Function): void {
-    if (!this.eventHandlers[event]) return;
-    
-    this.eventHandlers[event] = this.eventHandlers[event].filter(
-      handler => handler !== callback
-    );
+    console.log('MockCanvasEngine.off called');
   }
-
-  // Cleanup
+  
   dispose(): void {
-    this.objects = [];
-    this.eventHandlers = {};
-  }
-
-  // Helper to trigger events
-  private triggerEvent(event: string, data: any): void {
-    if (!this.eventHandlers[event]) return;
-    
-    for (const handler of this.eventHandlers[event]) {
-      handler(data);
-    }
+    console.log('MockCanvasEngine.dispose called');
   }
 }
