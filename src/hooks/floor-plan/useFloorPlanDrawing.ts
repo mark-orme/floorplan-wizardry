@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { FloorPlan } from '@/types/floorPlan';
 import { DrawingMode } from '@/constants/drawingModes';
+import type { MutableRefObject } from 'react';
 
 interface UseFloorPlanDrawingProps {
   fabricCanvasRef?: MutableRefObject<FabricCanvas | null>;
@@ -87,4 +88,3 @@ export const useFloorPlanDrawing = ({
     canRedo
   };
 };
-
