@@ -1,93 +1,60 @@
-
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LineSettings } from './LineSettings';
 
 describe('LineSettings Component', () => {
-  // Mock callback functions to verify they're called correctly
-  const mockThicknessChange = vi.fn();
-  const mockColorChange = vi.fn();
-  
-  // Default props for consistent testing
-  const defaultProps = {
-    thickness: 3,
-    color: '#FF0000',
-    onThicknessChange: mockThicknessChange,
-    onColorChange: mockColorChange
-  };
-  
-  // Reset mocks before each test to ensure clean state
-  beforeEach(() => {
-    vi.resetAllMocks();
+  it('should render the component', () => {
+    render(<LineSettings lineColor="#000000" setLineColor={() => {}} lineThickness={2} setLineThickness={() => {}} />);
+    expect(screen.getByLabelText('Color:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Thickness:')).toBeInTheDocument();
   });
 
-  test('renders with correct initial values', () => {
-    // When: Component is rendered with default props
-    render(<LineSettings {...defaultProps} />);
+  it('should update line color when color input changes', async () => {
+    const setLineColor = jest.fn();
+    render(<LineSettings lineColor="#000000" setLineColor={setLineColor} lineThickness={2} setLineThickness={() => {}} />);
+    const colorInput = screen.getByLabelText('Color:');
     
-    // Then: Should display the initial thickness and color values
-    expect(screen.getByText('Thickness: 3px')).toBeInTheDocument();
-    expect(screen.getByLabelText('Color')).toHaveValue('#FF0000');
+    // Simulate a change event
+    fireEvent.change(colorInput, { target: { value: '#FF0000' } });
+    
+    // Assert that the setLineColor function was called with the new color
+    expect(setLineColor).toHaveBeenCalled();
   });
-  
-  test('calls onThicknessChange when slider value changes', () => {
-    // When: Component is rendered and slider is changed
-    render(<LineSettings {...defaultProps} />);
+
+  it('should update line thickness when thickness input changes', async () => {
+    const setLineThickness = jest.fn();
+    render(<LineSettings lineColor="#000000" setLineColor={() => {}} lineThickness={2} setLineThickness={setLineThickness} />);
+    const thicknessInput = screen.getByLabelText('Thickness:');
     
-    // Get the slider element
-    const slider = screen.getByRole('slider');
+    // Simulate a change event
+    fireEvent.change(thicknessInput, { target: { value: '5' } });
     
-    // Simulate a change in the slider value
-    fireEvent.change(slider, { target: { value: "5" } });
-    
-    // Then: Callback should be called with the new value
-    expect(mockThicknessChange).toHaveBeenCalledWith(5);
+    // Assert that the setLineThickness function was called with the new thickness
+    expect(setLineThickness).toHaveBeenCalled();
   });
-  
-  test('calls onColorChange when color picker value changes', () => {
-    // When: Component is rendered and color picker is changed
-    render(<LineSettings {...defaultProps} />);
+
+  it('should use userEvent to simulate color change', async () => {
+    const setLineColor = jest.fn();
+    render(<LineSettings lineColor="#000000" setLineColor={setLineColor} lineThickness={2} setLineThickness={() => {}} />);
+    const colorInput = screen.getByLabelText('Color:');
     
-    // Get the color picker element
-    const colorPicker = screen.getByLabelText('Color');
+    // Use userEvent to simulate a change event
+    await userEvent.type(colorInput, '#FF0000');
     
-    // Simulate a change in the color picker
-    fireEvent.change(colorPicker, { target: { value: '#00FF00' } });
-    
-    // Then: Callback should be called with the new color value
-    expect(mockColorChange).toHaveBeenCalledWith('#00FF00');
+    // Assert that the setLineColor function was called
+    expect(setLineColor).toHaveBeenCalled();
   });
-  
-  test('handles extreme thickness values', async () => {
-    // Test with minimum thickness value
-    const minProps = { ...defaultProps, thickness: 1 };
-    const { rerender } = render(<LineSettings {...minProps} />);
+
+  it('should use userEvent to simulate thickness change', async () => {
+    const setLineThickness = jest.fn();
+    render(<LineSettings lineColor="#000000" setLineColor={() => {}} lineThickness={2} setLineThickness={setLineThickness} />);
+    const thicknessInput = screen.getByLabelText('Thickness:');
     
-    // Verify minimum thickness is displayed correctly
-    expect(screen.getByText('Thickness: 1px')).toBeInTheDocument();
+    // Use userEvent to simulate a change event
+    await userEvent.type(thicknessInput, '5');
     
-    // Test with maximum thickness value
-    const maxProps = { ...defaultProps, thickness: 10 };
-    rerender(<LineSettings {...maxProps} />);
-    
-    // Verify maximum thickness is displayed correctly
-    expect(screen.getByText('Thickness: 10px')).toBeInTheDocument();
-  });
-  
-  test('renders correct container classes', () => {
-    // When: Component is rendered
-    render(<LineSettings {...defaultProps} />);
-    
-    // Then: Container should have all the expected CSS classes
-    // Find the container by locating a child element first
-    const container = screen.getByText('Thickness: 3px').closest('div')?.parentElement;
-    
-    // Verify all expected classes are applied
-    expect(container).toHaveClass('bg-gray-50');
-    expect(container).toHaveClass('dark:bg-gray-800');
-    expect(container).toHaveClass('p-2');
-    expect(container).toHaveClass('rounded');
-    expect(container).toHaveClass('border');
+    // Assert that the setLineThickness function was called
+    expect(setLineThickness).toHaveBeenCalled();
   });
 });

@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
   Pencil, 
-  Square, 
+  Square,
   Circle, 
-  Undo, 
-  Redo, 
+  Undo2 as Undo, 
+  Redo2 as Redo, 
   MousePointer, 
-  Trash
+  Trash 
 } from "lucide-react";
 import { StraightLine } from '@/components/icons/StraightLine';
 

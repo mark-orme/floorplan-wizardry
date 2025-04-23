@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,7 +7,12 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
-import { Ruler, Grid as GridIcon, Square, MoveIcon } from "lucide-react";
+import { 
+  Ruler, 
+  Grid2 as Grid, 
+  Square, 
+  Move as MoveIcon 
+} from "lucide-react";
 
 interface MeasurementGuideProps {
   onClose: () => void;
@@ -25,7 +29,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
         <div className="space-y-6 py-4">
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <GridIcon className="h-5 w-5" />
+              <Grid className="h-5 w-5" />
               Grid System
             </h3>
             <div className="pl-7 space-y-2">
