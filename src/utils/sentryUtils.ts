@@ -20,62 +20,50 @@ export interface ErrorReportOptions {
 
 /**
  * Capture an error with Sentry, with detailed context
- * @param error The error object or string message
- * @param options Additional options for error reporting
  */
-export const captureError = (error: Error | string, options?: ErrorReportOptions): void => {
+export function captureError(error: Error | string, options?: ErrorReportOptions): void {
   const errorObj = typeof error === 'string' ? new Error(error) : error;
   
   console.error('Error captured:', errorObj);
   
   try {
     Sentry.withScope((scope) => {
-      // Set error level
       if (options?.level) {
         scope.setLevel(options.level);
       }
       
-      // Set additional context tags
       if (options?.tags) {
         scope.setTags(options.tags);
       }
       
-      // Set additional context data
       if (options?.context) {
         scope.setContext('errorContext', options.context);
       }
       
-      // Set additional extra data
       if (options?.extra) {
         scope.setExtras(options.extra);
       }
       
-      // Set user information
       if (options?.user) {
         scope.setUser(options.user);
       }
       
-      // Capture the error
       Sentry.captureException(errorObj);
     });
   } catch (sentryError) {
-    // Fallback if Sentry fails
     console.error('Failed to report error to Sentry:', sentryError);
     console.error('Original error:', errorObj);
   }
-};
+}
 
 /**
  * Capture a diagnostic message
- * @param message Message to capture
- * @param level Log level
- * @param tags Additional tags
  */
-export const captureMessage = (
+export function captureMessage(
   message: string, 
   level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
   tags?: Record<string, string>
-): void => {
+): void {
   console.log(`[${level}] ${message}`);
   
   try {
@@ -89,19 +77,16 @@ export const captureMessage = (
   } catch (sentryError) {
     console.error('Failed to send message to Sentry:', sentryError);
   }
-};
+}
 
 /**
  * Create a monitored version of a function that automatically reports errors
- * @param fn Function to monitor
- * @param errorContext Context name for error reporting
- * @returns Monitored function
  */
 export function withErrorMonitoring<T extends (...args: any[]) => any>(
-  fn: T, 
+  fn: T,
   errorContext: string
 ): (...args: Parameters<T>) => ReturnType<T> {
-  return (...args: Parameters<T>): ReturnType<T> => {
+  return function(...args: Parameters<T>): ReturnType<T> {
     try {
       return fn(...args);
     } catch (error) {
@@ -116,14 +101,11 @@ export function withErrorMonitoring<T extends (...args: any[]) => any>(
 
 /**
  * Monitor a React component for errors
- * @param component Component to monitor
- * @param componentName Component name for error reporting
- * @returns Monitored component
  */
-export const withComponentErrorMonitoring = (
+export function withComponentErrorMonitoring(
   component: React.ComponentType<any>,
   componentName: string
-): React.ComponentType<any> => {
+): React.ComponentType<any> {
   return Sentry.withErrorBoundary(component, {
     fallback: ({ error, componentStack, resetError }) => (
       <div className="error-boundary p-4 bg-red-50 text-red-700 rounded-md">
@@ -138,7 +120,7 @@ export const withComponentErrorMonitoring = (
       </div>
     )
   });
-};
+}
 
 export default {
   captureError,
