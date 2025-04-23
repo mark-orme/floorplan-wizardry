@@ -24,3 +24,8 @@ export interface DebugInfoState {
   dimensionsSet?: boolean;
   brushInitialized?: boolean;
 }
+
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
