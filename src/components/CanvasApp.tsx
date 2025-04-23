@@ -1,3 +1,4 @@
+
 /**
  * Canvas application component
  * Main component that wraps the canvas with necessary UI elements

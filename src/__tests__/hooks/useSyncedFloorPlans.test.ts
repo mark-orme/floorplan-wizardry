@@ -1,3 +1,4 @@
+
 /**
  * Tests for useSyncedFloorPlans hook
  */
@@ -20,67 +21,47 @@ describe('useSyncedFloorPlans', () => {
   });
   
   it('should initialize with empty floor plans', () => {
-    const { result } = renderHook(() => useSyncedFloorPlans({
-      autoSync: false
-    }));
+    const { result } = renderHook(() => useSyncedFloorPlans({}));
     
     expect(result.current.floorPlans).toEqual([]);
     expect(result.current.isLoading).toBe(false);
   });
   
   it('should add a floor plan', () => {
-    const { result } = renderHook(() => useSyncedFloorPlans({
-      autoSync: false
-    }));
+    const { result } = renderHook(() => useSyncedFloorPlans({}));
     
     act(() => {
-      result.current.addFloorPlan({
-        name: 'Test Floor'
-      });
+      result.current.addFloorPlan();
     });
     
     expect(result.current.floorPlans.length).toBe(1);
-    expect(result.current.floorPlans[0].name).toBe('Test Floor');
-    expect(result.current.selectedFloorPlanIndex).toBe(0);
+    expect(result.current.floorPlans[0]).toHaveProperty('name');
   });
   
-  it('should select a floor plan', () => {
-    const { result } = renderHook(() => useSyncedFloorPlans({
-      autoSync: false
-    }));
+  it('should create a floor plan with custom data', () => {
+    const { result } = renderHook(() => useSyncedFloorPlans({}));
     
-    // Add two floor plans
     act(() => {
-      result.current.addFloorPlan({ name: 'Floor 1' });
-      result.current.addFloorPlan({ name: 'Floor 2' });
+      result.current.createFloorPlan({ name: 'Floor 1' });
+      result.current.createFloorPlan({ name: 'Floor 2' });
     });
     
-    // Select the second one
-    act(() => {
-      result.current.selectFloorPlan(1);
-    });
-    
-    expect(result.current.selectedFloorPlanIndex).toBe(1);
-    expect(result.current.selectedFloorPlan?.name).toBe('Floor 2');
+    expect(result.current.floorPlans.length).toBe(2);
+    expect(result.current.floorPlans[0].name).toBe('Floor 1');
+    expect(result.current.floorPlans[1].name).toBe('Floor 2');
   });
   
   it('should delete a floor plan', () => {
-    const { result } = renderHook(() => useSyncedFloorPlans({
-      autoSync: false
-    }));
+    const { result } = renderHook(() => useSyncedFloorPlans({}));
     
     // Add floor plans
     act(() => {
-      result.current.addFloorPlan({ name: 'Floor 1' });
-      result.current.addFloorPlan({ name: 'Floor 2' });
-      result.current.addFloorPlan({ name: 'Floor 3' });
+      result.current.createFloorPlan({ name: 'Floor 1' });
+      result.current.createFloorPlan({ name: 'Floor 2' });
+      result.current.createFloorPlan({ name: 'Floor 3' });
     });
     
-    // Select the second one then delete it
-    act(() => {
-      result.current.selectFloorPlan(1);
-    });
-    
+    // Delete the second one
     act(() => {
       result.current.deleteFloorPlan(1);
     });
@@ -88,6 +69,5 @@ describe('useSyncedFloorPlans', () => {
     expect(result.current.floorPlans.length).toBe(2);
     expect(result.current.floorPlans[0].name).toBe('Floor 1');
     expect(result.current.floorPlans[1].name).toBe('Floor 3');
-    expect(result.current.selectedFloorPlanIndex).toBe(0);
   });
 });

@@ -33,7 +33,26 @@ export interface DebugInfoState {
     width: number;
     height: number;
   };
+  canvasWidth?: number;
+  canvasHeight?: number;
   devicePixelRatio?: number;
   lastError?: string;
   lastErrorTime?: number;
+  currentFps?: number;
 }
+
+export const DEFAULT_DEBUG_STATE: DebugInfoState = {
+  fps: 0,
+  objectCount: 0,
+  viewportScale: 1,
+  isDrawingMode: false,
+  selectionActive: false,
+  renderedFrames: 0,
+  performanceStats: {
+    fps: 0,
+    droppedFrames: 0,
+    frameTime: 0,
+    maxFrameTime: 0,
+    longFrames: 0
+  }
+};

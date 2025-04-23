@@ -3,13 +3,13 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
-  PencilIcon, 
-  SquareIcon, 
-  CircleIcon, 
-  UndoIcon, 
-  RedoIcon, 
-  MousePointerIcon, 
-  TrashIcon 
+  Pencil, 
+  Square, 
+  Circle, 
+  Undo, 
+  Redo, 
+  MousePointer, 
+  Trash
 } from "lucide-react";
 import { StraightLine } from '@/components/icons/StraightLine';
 
@@ -76,7 +76,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.SELECT)}
       >
-        <MousePointerIcon className="h-4 w-4 mr-1" />
+        <MousePointer className="h-4 w-4 mr-1" />
         Select
       </Button>
       
@@ -85,7 +85,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.DRAW)}
       >
-        <PencilIcon className="h-4 w-4 mr-1" />
+        <Pencil className="h-4 w-4 mr-1" />
         Draw
       </Button>
       
@@ -103,7 +103,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.RECT)}
       >
-        <SquareIcon className="h-4 w-4 mr-1" />
+        <Square className="h-4 w-4 mr-1" />
         Rectangle
       </Button>
       
@@ -112,7 +112,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.CIRCLE)}
       >
-        <CircleIcon className="h-4 w-4 mr-1" />
+        <Circle className="h-4 w-4 mr-1" />
         Circle
       </Button>
       
@@ -121,7 +121,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={undo}
       >
-        <UndoIcon className="h-4 w-4" />
+        <Undo className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -129,7 +129,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={redo}
       >
-        <RedoIcon className="h-4 w-4" />
+        <Redo className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -137,7 +137,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={handleClear}
       >
-        <TrashIcon className="h-4 w-4 mr-1" />
+        <Trash className="h-4 w-4 mr-1" />
         Clear
       </Button>
       

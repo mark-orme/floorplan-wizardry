@@ -1,5 +1,7 @@
+
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { LineSettings } from './LineSettings';
 
 describe('LineSettings Component', () => {
@@ -57,7 +59,7 @@ describe('LineSettings Component', () => {
     expect(mockColorChange).toHaveBeenCalledWith('#00FF00');
   });
   
-  test('handles extreme thickness values', () => {
+  test('handles extreme thickness values', async () => {
     // Test with minimum thickness value
     const minProps = { ...defaultProps, thickness: 1 };
     const { rerender } = render(<LineSettings {...minProps} />);

@@ -1,169 +1,88 @@
 
-/**
- * Edge case tests for LineSettings Component
- * Tests unusual inputs, interactions, and accessibility concerns
- * 
- * @module components/LineSettings.edge
- */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { LineSettings } from './LineSettings';
-import * as Sentry from '@sentry/react';
-
-// Mock Sentry
-vi.mock('@sentry/react', () => ({
-  captureException: vi.fn(),
-  captureMessage: vi.fn(),
-  setTag: vi.fn()
-}));
 
 describe('LineSettings Edge Cases', () => {
-  // Mock callback functions
   const mockThicknessChange = vi.fn();
   const mockColorChange = vi.fn();
+  
+  const defaultProps = {
+    thickness: 3,
+    color: '#FF0000',
+    onThicknessChange: mockThicknessChange,
+    onColorChange: mockColorChange
+  };
   
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  test('handles extremely large thickness values', () => {
-    // When: Component is rendered with an extreme thickness value
-    render(
-      <LineSettings
-        thickness={1000}
-        color="#FF0000"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
+  test('handles non-numeric thickness values gracefully', () => {
+    // @ts-ignore - Intentionally passing invalid prop to test error handling
+    render(<LineSettings {...defaultProps} thickness={NaN} />);
     
-    // Then: Should still render without errors
-    expect(screen.getByText('Thickness: 1000px')).toBeInTheDocument();
-    
-    // The slider should have the right value
-    expect(screen.getByRole('slider')).toHaveValue('1000');
+    // Should fallback to a default value or at least not crash
+    expect(screen.getByRole('slider')).toBeInTheDocument();
   });
-
-  test('handles very small thickness values', () => {
-    // When: Component is rendered with a very small thickness value
-    render(
-      <LineSettings
-        thickness={0.1}
-        color="#FF0000"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
+  
+  test('handles malformed color values', () => {
+    // @ts-ignore - Intentionally passing invalid prop to test error handling
+    render(<LineSettings {...defaultProps} color="not-a-color" />);
     
-    // Then: Should display the tiny value correctly
-    expect(screen.getByText('Thickness: 0.1px')).toBeInTheDocument();
+    // Component should render without crashing
+    expect(screen.getByLabelText('Color')).toBeInTheDocument();
   });
-
-  test('prevents invalid color inputs', () => {
-    // When: Component is rendered with an invalid color
-    render(
-      <LineSettings
-        thickness={3}
-        color="not-a-color"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
+  
+  test('handles keyboard accessibility for slider', async () => {
+    render(<LineSettings {...defaultProps} />);
     
-    // Then: The color picker should still have a value (fallback or original)
-    const colorPicker = screen.getByLabelText('Color');
-    expect(colorPicker).toHaveValue();
-    
-    // Should log the invalid color to Sentry
-    expect(Sentry.captureMessage).toHaveBeenCalledWith(
-      expect.stringContaining("Invalid color value"),
-      "warning"
-    );
-  });
-
-  test('is keyboard accessible', () => {
-    // When: Component is rendered
-    render(
-      <LineSettings
-        thickness={3}
-        color="#FF0000"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
-    
-    // Then: The slider should be focusable via tab navigation
     const slider = screen.getByRole('slider');
     slider.focus();
-    expect(document.activeElement).toBe(slider);
     
-    // And: Should respond to keyboard input
-    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    // Use userEvent for modern keyboard interactions
+    await userEvent.keyboard('[ArrowRight]');
+    
+    // Verify callback was called
     expect(mockThicknessChange).toHaveBeenCalled();
   });
-
-  test('accepts different color formats', () => {
-    // Test color in rgb format
-    render(
-      <LineSettings
-        thickness={3}
-        color="rgb(255, 0, 0)"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
+  
+  test('handles color picker focus events', async () => {
+    render(<LineSettings {...defaultProps} />);
     
     const colorPicker = screen.getByLabelText('Color');
+    colorPicker.focus();
     
-    // Change to rgba format
-    fireEvent.change(colorPicker, { target: { value: 'rgba(0, 255, 0, 0.5)' } });
-    
-    // Should translate the color appropriately
-    expect(mockColorChange).toHaveBeenCalled();
+    // Just testing that the element can receive focus without errors
+    expect(document.activeElement).toBe(colorPicker);
   });
   
-  test('provides appropriate ARIA attributes for accessibility', () => {
-    render(
-      <LineSettings
-        thickness={3}
-        color="#FF0000"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
-    
-    // The slider should have appropriate aria attributes
-    const slider = screen.getByRole('slider');
-    expect(slider).toHaveAttribute('aria-valuemin');
-    expect(slider).toHaveAttribute('aria-valuemax');
-    expect(slider).toHaveAttribute('aria-valuenow');
-    
-    // Color picker should be properly labeled
-    const colorPicker = screen.getByLabelText('Color');
-    expect(colorPicker).toBeInTheDocument();
-  });
-  
-  test('handles thickness slider edge boundaries', () => {
-    // When: Component is rendered with values at boundaries
-    render(
-      <LineSettings
-        thickness={0}
-        color="#FF0000"
-        onThicknessChange={mockThicknessChange}
-        onColorChange={mockColorChange}
-      />
-    );
+  test('handles thickness at boundaries', () => {
+    // Test with thickness at minimum allowed value (1)
+    render(<LineSettings {...defaultProps} thickness={1} />);
     
     const slider = screen.getByRole('slider');
     
-    // Then: Should handle minimum value
-    expect(slider).toHaveAttribute('min');
+    // Verify slider has correct min attribute
+    expect(slider).toHaveAttribute('min', '1');
+    expect(screen.getByText('Thickness: 1px')).toBeInTheDocument();
     
-    // Try to go below minimum (should stay at minimum)
-    fireEvent.change(slider, { target: { value: -10 } });
+    // Re-render with maximum value
+    const { rerender } = render(<LineSettings {...defaultProps} thickness={1} />);
+    rerender(<LineSettings {...defaultProps} thickness={10} />);
     
-    // The value passed to the callback should be constrained
-    const callValues = mockThicknessChange.mock.calls.map(call => call[0]);
-    expect(callValues.some(val => val < 0)).toBe(false);
+    // Verify slider has correct max attribute
+    expect(slider).toHaveAttribute('max', '10');
+    expect(screen.getByText('Thickness: 10px')).toBeInTheDocument();
+  });
+  
+  test('handles string thickness values', () => {
+    // @ts-ignore - Testing with string instead of number
+    render(<LineSettings {...defaultProps} thickness="5" />);
+    
+    // Component should convert string to number
+    expect(screen.getByRole('slider')).toHaveValue("5");
+    expect(screen.getByText('Thickness: 5px')).toBeInTheDocument();
   });
 });

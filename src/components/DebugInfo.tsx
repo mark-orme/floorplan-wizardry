@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { DebugInfoState } from "@/types/core/DebugInfo";
 
 interface DebugInfoProps {
