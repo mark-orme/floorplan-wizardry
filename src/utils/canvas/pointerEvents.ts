@@ -1,98 +1,54 @@
 
 /**
- * Utility functions for detecting and handling pointer events
+ * Utilities to handle advanced pointer events
  */
 
 /**
- * Check if pressure sensitivity is supported
- * @returns {boolean} True if pressure sensitivity is supported
+ * Check if the browser supports pressure sensitivity
+ * @returns Boolean indicating support status
  */
 export function isPressureSupported(): boolean {
-  // Check for pointer events and pressure property
+  if (typeof window === 'undefined') return false;
+
+  // Check if PointerEvent exists and has pressure property
   if (window.PointerEvent && 'pressure' in new PointerEvent('pointerdown')) {
     return true;
   }
-  
-  // Check for Safari/WebKit implementation
-  if ((window as any).Touch && 'force' in new Touch({ 
-    identifier: 1, 
-    target: document.body 
-  })) {
-    return true;
-  }
-  
+
   return false;
 }
 
 /**
- * Check if tilt sensitivity is supported
- * @returns {boolean} True if tilt sensitivity is supported
+ * Check if the browser supports tilt detection (commonly for styluses)
+ * @returns Boolean indicating support status
  */
 export function isTiltSupported(): boolean {
-  // Check for pointer events with tiltX and tiltY properties
-  if (window.PointerEvent) {
-    const testEvent = new PointerEvent('pointerdown');
-    return 'tiltX' in testEvent && 'tiltY' in testEvent;
+  if (typeof window === 'undefined') return false;
+
+  // Check if PointerEvent exists and has tiltX/tiltY properties
+  if (window.PointerEvent && 
+     'tiltX' in new PointerEvent('pointerdown') &&
+     'tiltY' in new PointerEvent('pointerdown')) {
+    return true;
   }
-  
+
   return false;
 }
 
 /**
- * Get normalized pressure from a pointer event
- * @param {PointerEvent} event - The pointer event
- * @returns {number} Normalized pressure value between 0 and 1
+ * Get current pointer capabilities
+ * @returns Object describing current pointer capabilities
  */
-export function getNormalizedPressure(event: PointerEvent): number {
-  // Get pressure (returns 0.5 for non-pressure inputs like mouse)
-  const pressure = event.pressure || 0;
-  
-  // Normalize based on device
-  if (event.pointerType === 'pen' || event.pointerType === 'touch') {
-    // For most pens and touch, 0 is no pressure, 1 is max
-    return pressure;
-  } else {
-    // For mouse, either 0 (not pressed) or a default value when pressed
-    return pressure > 0 ? 0.5 : 0;
-  }
-}
-
-/**
- * Get tilt information from a pointer event
- * @param {PointerEvent} event - The pointer event
- * @returns {[number, number]} Array containing [tiltX, tiltY] in degrees
- */
-export function getTilt(event: PointerEvent): [number, number] {
-  return [event.tiltX || 0, event.tiltY || 0];
-}
-
-/**
- * Detect what input method is being used
- * @param {PointerEvent} event - The pointer event
- * @returns {string} Input method type
- */
-export function detectInputMethod(event: PointerEvent): string {
-  if (event.pointerType === 'pen') {
-    return 'stylus';
-  } else if (event.pointerType === 'touch') {
-    return 'touch';
-  } else if (event.pointerType === 'mouse') {
-    return 'mouse';
-  }
-  
-  return 'unknown';
-}
-
-/**
- * Check if event is from Apple Pencil
- * @param {PointerEvent} event - The pointer event
- * @returns {boolean} True if the event is likely from an Apple Pencil
- */
-export function isApplePencil(event: PointerEvent): boolean {
-  // Apple Pencil is a stylus with high precision
-  return event.pointerType === 'pen' && 
-         event.isPrimary && 
-         (event as any).pointerType !== 'mouse' && 
-         typeof event.tiltX === 'number' && 
-         typeof event.tiltY === 'number';
+export function getPointerCapabilities(): {
+  pressure: boolean;
+  tilt: boolean;
+  coalesced: boolean;
+  predicted: boolean;
+} {
+  return {
+    pressure: isPressureSupported(),
+    tilt: isTiltSupported(),
+    coalesced: 'getCoalescedEvents' in PointerEvent.prototype,
+    predicted: 'getPredictedEvents' in PointerEvent.prototype
+  };
 }

@@ -91,6 +91,24 @@ class Logger {
         break;
     }
   }
+  
+  // Add static methods
+  static debug(message: string, ...args: any[]): void {
+    console.debug(`[DEBUG] ${message}`, ...args);
+  }
+
+  static info(message: string, ...args: any[]): void {
+    console.info(`[INFO] ${message}`, ...args);
+  }
+
+  static warn(message: string, ...args: any[]): void {
+    console.warn(`[WARN] ${message}`, ...args);
+  }
+
+  static error(message: string | Error, ...args: any[]): void {
+    const errorMessage = message instanceof Error ? message.message : message;
+    console.error(`[ERROR] ${errorMessage}`, ...args);
+  }
 }
 
 // Create and export default logger instance
@@ -98,3 +116,9 @@ export const logger = new Logger();
 
 // Export the Logger class for creating context-specific loggers
 export default Logger;
+
+// Export a grid-specific logger
+export const gridLogger = new Logger('grid');
+
+// Export a tools-specific logger
+export const toolsLogger = new Logger('tools');

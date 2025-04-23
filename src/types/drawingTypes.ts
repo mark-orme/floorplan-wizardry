@@ -23,3 +23,37 @@ export interface GestureStateObject {
  * Gesture state type
  */
 export type GestureState = GestureStateObject;
+
+/**
+ * Debug information state
+ */
+export interface DebugInfoState {
+  fps: number;
+  objectCount: number;
+  viewportScale: number;
+  isDrawingMode: boolean;
+  selectionActive: boolean;
+  renderedFrames: number;
+}
+
+/**
+ * Zoom direction enumeration
+ */
+export enum ZoomDirection {
+  IN = 'in',
+  OUT = 'out',
+  RESET = 'reset'
+}
+
+/**
+ * Drawing state interface
+ */
+export interface DrawingState {
+  isDrawing: boolean;
+  currentTool: string;
+  strokeWidth: number;
+  strokeColor: string;
+  fillColor: string;
+  opacity: number;
+  selectedObjects: string[];
+}
