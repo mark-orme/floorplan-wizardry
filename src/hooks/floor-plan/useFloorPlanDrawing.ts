@@ -75,7 +75,7 @@ export const useFloorPlanDrawing = ({
     setCurrentTool,
     lineColor,
     setLineColor,
-    lineThickness,
+    lineThickness, 
     setLineThickness,
     canvas: fabricCanvasRef.current,
     handleDrawingEvent,
