@@ -5,13 +5,12 @@
  */
 import React from 'react';
 import { 
-  Cursor2 as MousePointer, 
-  Pencil2 as Pen, 
-  Pencil2 as Pencil, 
-  Square2 as Square, 
-  Circle2 as Circle, 
-  Type2 as Type,
-  Ruler2 as Ruler
+  MousePointer, 
+  Pencil, 
+  Square, 
+  Circle, 
+  Text,
+  Ruler
 } from 'lucide-react';
 import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -68,7 +67,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
     },
     {
       tool: DrawingMode.TEXT,
-      icon: <Type size={20} />,
+      icon: <Text size={20} />,
       label: 'Text',
       tooltip: 'Add text'
     },

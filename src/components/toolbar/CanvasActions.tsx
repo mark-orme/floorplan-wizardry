@@ -7,14 +7,14 @@ import React from 'react';
 import {
   Trash2,
   Save,
-  UploadCloud,
+  Upload,
   Download,
-  ArrowUndo2 as Undo2,
-  ArrowRedo2 as Redo2,
+  Undo,
+  Redo,
   ZoomIn,
   ZoomOut,
-  RefreshCcw,
-  Grid3x3 as Grid
+  RefreshCw,
+  Grid
 } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
@@ -73,7 +73,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Undo */}
       {onUndo && (
         <ToolbarButton
-          icon={<Undo2 size={20} />}
+          icon={<Undo size={20} />}
           label="Undo"
           tooltip="Undo last action"
           onClick={onUndo}
@@ -84,7 +84,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Redo */}
       {onRedo && (
         <ToolbarButton
-          icon={<Redo2 size={20} />}
+          icon={<Redo size={20} />}
           label="Redo"
           tooltip="Redo last action"
           onClick={onRedo}
@@ -115,7 +115,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Import */}
       {onImport && (
         <ToolbarButton
-          icon={<UploadCloud size={20} />}
+          icon={<Upload size={20} />}
           label="Import"
           tooltip="Import canvas"
           onClick={onImport}

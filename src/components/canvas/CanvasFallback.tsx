@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw as RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from '@/utils/toastUtils'; // Use our mock implementation
 import { DebugInfoState } from '@/types/core/DebugInfo';
 

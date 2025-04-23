@@ -2,9 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  Undo2, 
-  Redo2, 
-  Delete, 
+  Undo, 
+  Redo, 
+  Trash, 
   Save,
   Menu
 } from 'lucide-react';
@@ -43,7 +43,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               disabled={!canUndo}
               className="block md:hidden"
             >
-              <Undo2 className="h-5 w-5" />
+              <Undo className="h-5 w-5" />
             </Button>
             <Button
               variant="outline" 
@@ -52,7 +52,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               disabled={!canRedo}
               className="block md:hidden"
             >
-              <Redo2 className="h-5 w-5" />
+              <Redo className="h-5 w-5" />
             </Button>
           </>
         ) : (
@@ -66,7 +66,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   onClick={onUndo}
                   disabled={!canUndo}
                 >
-                  <Undo2 className="h-5 w-5" />
+                  <Undo className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -82,7 +82,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   onClick={onRedo}
                   disabled={!canRedo}
                 >
-                  <Redo2 className="h-5 w-5" />
+                  <Redo className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -102,7 +102,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             onClick={onClear}
             className="whitespace-nowrap"
           >
-            <Delete className="h-4 w-4 mr-1" />
+            <Trash className="h-4 w-4 mr-1" />
             {!isMobile && "Clear"}
           </Button>
         )}

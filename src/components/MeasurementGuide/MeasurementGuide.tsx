@@ -1,15 +1,17 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { 
-  Ruler2, 
-  Grid as Grid3x3, 
-  Square2, 
+  Ruler, 
+  Grid3x3, 
+  Square, 
   Move 
 } from "lucide-react";
 
@@ -42,7 +44,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
 
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Ruler2 className="h-5 w-5" />
+              <Ruler className="h-5 w-5" />
               Drawing Tools
             </h3>
             <div className="pl-7 space-y-2">
@@ -54,7 +56,7 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
 
           <section className="space-y-3">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Square2 className="h-5 w-5" />
+              <Square className="h-5 w-5" />
               Room Measurements
             </h3>
             <div className="pl-7 space-y-2">

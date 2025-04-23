@@ -1,12 +1,7 @@
+
 import React from 'react';
 import { FixedSizeList } from 'react-window';
-import { 
-  Eye, 
-  EyeOff, 
-  Lock, 
-  Unlock, 
-  Trash2 as Trash 
-} from "lucide-react";
+import { Eye, EyeOff, Lock, Unlock, Trash2 } from "lucide-react";
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
 
 interface VirtualizedLayerListProps {
@@ -69,7 +64,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
             className="p-1 rounded hover:bg-red-100 hover:text-red-600"
             title="Delete layer"
           >
-            <Trash size={14} />
+            <Trash2 size={14} />
           </button>
         )}
       </div>

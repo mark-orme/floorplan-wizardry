@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw as RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { toast } from '@/utils/toastUtils';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 

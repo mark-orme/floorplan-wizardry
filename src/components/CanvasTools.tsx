@@ -1,16 +1,18 @@
+
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
-  Pencil2,
-  Square2,
-  Circle2,
-  ArrowUndo2 as Undo,
-  ArrowRedo2 as Redo,
-  Cursor2 as MousePointer,
-  Trash2 as Trash
+  Pencil,
+  Square,
+  Circle,
+  Undo,
+  Redo,
+  MousePointer,
+  Trash
 } from "lucide-react";
 import { StraightLine } from '@/components/icons/StraightLine';
+import { Canvas as FabricCanvas } from 'fabric';
 
 interface CanvasToolsProps {
   tool: DrawingMode;
@@ -84,7 +86,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.DRAW)}
       >
-        <Pencil2 className="h-4 w-4 mr-1" />
+        <Pencil className="h-4 w-4 mr-1" />
         Draw
       </Button>
       
@@ -102,7 +104,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.RECT)}
       >
-        <Square2 className="h-4 w-4 mr-1" />
+        <Square className="h-4 w-4 mr-1" />
         Rectangle
       </Button>
       
@@ -111,7 +113,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.CIRCLE)}
       >
-        <Circle2 className="h-4 w-4 mr-1" />
+        <Circle className="h-4 w-4 mr-1" />
         Circle
       </Button>
       
