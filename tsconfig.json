@@ -1,16 +1,29 @@
 // tsconfig.json
 {
-  "files": [],
   "compilerOptions": {
+    // Use the new JSX transform so you don’t need `import React...`
+    "jsx": "react-jsx",
+
+    // Standard Node module resolution
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    // Your path aliasing
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     },
+
+    // loosen up strictness to mirror your old config
+    "skipLibCheck": true,
     "noImplicitAny": false,
     "noUnusedParameters": false,
-    "skipLibCheck": true,
     "allowJs": true,
     "noUnusedLocals": false,
     "strictNullChecks": false
-  }
+  },
+
+  // TypeScript will compile everything under src/
+  "include": ["src"]
 }
