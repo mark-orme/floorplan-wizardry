@@ -61,6 +61,18 @@ export interface UseStraightLineToolResult {
   
   /** Set current line */
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+  
+  /** Whether pencil mode is enabled */
+  isPencilMode: boolean;
+  
+  /** Current input method */
+  inputMethod: InputMethod;
+  
+  /** Set input method */
+  setInputMethod: (method: InputMethod) => void;
+  
+  /** Save current state */
+  saveCurrentState: () => void;
 }
 
 /**
@@ -91,6 +103,9 @@ export interface UseStraightLineToolProps {
   /** Whether pencil mode is enabled */
   isPencilMode?: boolean;
   
-  /** Whether shift key is pressed (new property for tests) */
+  /** Whether shift key is pressed (added for test compatibility) */
   shiftKeyPressed?: boolean;
+  
+  /** Current input method */
+  inputMethod?: InputMethod;
 }

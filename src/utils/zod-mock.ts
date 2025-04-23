@@ -32,9 +32,13 @@ export const z = {
     }),
     max: (val: number, message?: any) => ({}),
     positive: () => ({}),
-    nonnegative: () => ({})
+    nonnegative: () => ({
+      optional: () => ({})
+    })
   }),
-  enum: (values: any) => ({}),
+  enum: (values: any) => ({
+    optional: () => ({})
+  }),
   array: (schema: any) => ({
     optional: () => ({})
   }),

@@ -23,6 +23,9 @@ export interface Wall {
   length: number;
   color: string;
   roomIds: string[];
+  // Add for compatibility with older interfaces
+  startPoint?: Point;
+  endPoint?: Point;
 }
 
 export interface Room {
@@ -63,9 +66,14 @@ export interface FloorPlan {
   createdAt?: string;
   updatedAt?: string;
   metadata?: any;
-  data: any; // Required for interface compatibility
+  // Make data optional to work with different types
+  data?: any;
   userId?: string;
   propertyId?: string;
+  // Add for compatibility with floorPlanTypes
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
 }
 
 export interface CanvasData {
@@ -96,7 +104,10 @@ export function createEmptyFloorPlan(partialFloorPlan: Partial<FloorPlan> = {}):
     metadata: partialFloorPlan.metadata || {},
     data: partialFloorPlan.data || {},
     userId: partialFloorPlan.userId || '',
-    propertyId: partialFloorPlan.propertyId || ''
+    propertyId: partialFloorPlan.propertyId || '',
+    width: partialFloorPlan.width || 1000,
+    height: partialFloorPlan.height || 800,
+    backgroundColor: partialFloorPlan.backgroundColor || '#ffffff'
   };
 }
 
@@ -109,6 +120,8 @@ export function createWall(start: Point, end: Point, thickness = 10, color = '#0
     id: uuidv4(),
     start,
     end,
+    startPoint: start, // Add for compatibility
+    endPoint: end,     // Add for compatibility
     thickness,
     length,
     color,

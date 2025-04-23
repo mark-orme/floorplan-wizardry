@@ -35,7 +35,8 @@ export const createEmptyFloorPlan = () => ({
   updatedAt: new Date().toISOString(),
   walls: [],
   rooms: [],
-  strokes: []
+  strokes: [],
+  data: {} // Add missing required data property
 });
 
 export const createEmptyStroke = () => ({
@@ -54,7 +55,10 @@ export const createEmptyRoom = () => ({
 });
 
 // Add test helpers
-export const createTestFloorPlan = createEmptyFloorPlan;
+export const createTestFloorPlan = () => ({
+  ...createEmptyFloorPlan(),
+  data: {} // Ensure data is always present
+});
 export const createTestStroke = createEmptyStroke;
 export const createTestWall = createEmptyWall;
 export const createTestRoom = createEmptyRoom;

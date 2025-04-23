@@ -3,15 +3,14 @@
  * Floor Plan Type Adapter
  * Provides utilities for converting between different floor plan types
  */
-import type { FloorPlan as UnifiedFloorPlan } from '@/types/floor-plan/unifiedTypes';
-import type { FloorPlan as AppFloorPlan } from '@/types/core/floor-plan/AppFloorPlan';
+import type { FloorPlan as UnifiedFloorPlan } from '@/types/core';
 import type { FloorPlan as LegacyFloorPlan } from '@/types/floorPlanTypes';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Convert an AppFloorPlan to a unified type
  */
-export function convertToUnifiedFloorPlan(appFloorPlan: AppFloorPlan): UnifiedFloorPlan {
+export function convertToUnifiedFloorPlan(appFloorPlan: any): UnifiedFloorPlan {
   const now = new Date().toISOString();
   
   return {
@@ -19,7 +18,7 @@ export function convertToUnifiedFloorPlan(appFloorPlan: AppFloorPlan): UnifiedFl
     // Add missing required properties for UnifiedFloorPlan
     data: appFloorPlan.data || {},
     userId: appFloorPlan.userId || 'default-user',
-    propertyId: '',
+    propertyId: appFloorPlan.propertyId || '',
     createdAt: appFloorPlan.createdAt || now,
     updatedAt: appFloorPlan.updatedAt || now
   } as UnifiedFloorPlan;
@@ -34,6 +33,7 @@ export function convertLegacyToUnifiedFloorPlan(legacyFloorPlan: LegacyFloorPlan
   return {
     ...legacyFloorPlan,
     // Add missing required properties for UnifiedFloorPlan
+    data: {}, // Ensure data property exists
     label: legacyFloorPlan.name,
     userId: legacyFloorPlan.userId || 'default-user',
     createdAt: legacyFloorPlan.createdAt || now,
@@ -55,15 +55,15 @@ export function convertLegacyToUnifiedFloorPlan(legacyFloorPlan: LegacyFloorPlan
 /**
  * Convert a UnifiedFloorPlan to AppFloorPlan
  */
-export function convertToAppFloorPlan(unifiedFloorPlan: UnifiedFloorPlan): AppFloorPlan {
+export function convertToAppFloorPlan(unifiedFloorPlan: UnifiedFloorPlan): any {
   const { propertyId, ...appFloorPlan } = unifiedFloorPlan;
-  return appFloorPlan as AppFloorPlan;
+  return appFloorPlan;
 }
 
 /**
- * Convert an array of UnifiedFloorPlan to AppFloorPlan
+ * Convert an array of UnifiedFloorPlans to AppFloorPlans
  */
-export function convertToAppFloorPlans(unifiedFloorPlans: UnifiedFloorPlan[]): AppFloorPlan[] {
+export function convertToAppFloorPlans(unifiedFloorPlans: UnifiedFloorPlan[]): any[] {
   return unifiedFloorPlans.map(convertToAppFloorPlan);
 }
 
@@ -78,7 +78,7 @@ export function convertAnyToUnifiedFloorPlan(floorPlan: any): UnifiedFloorPlan {
   
   if ('userId' in floorPlan) {
     // Likely an AppFloorPlan
-    return convertToUnifiedFloorPlan(floorPlan as AppFloorPlan);
+    return convertToUnifiedFloorPlan(floorPlan);
   }
   
   // Assume it's a legacy floor plan

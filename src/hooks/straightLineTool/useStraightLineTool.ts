@@ -17,6 +17,8 @@ export interface UseStraightLineToolProps {
   saveCurrentState?: () => void;
   // Add shiftKeyPressed for test compatibility
   shiftKeyPressed?: boolean;
+  isPencilMode?: boolean;
+  inputMethod?: InputMethod;
 }
 
 export interface MeasurementData {
@@ -36,13 +38,16 @@ export const useStraightLineTool = ({
   saveCurrentState = () => {
     console.log('State saved');
   },
-  shiftKeyPressed: initialShiftKeyPressed // For test compatibility
+  shiftKeyPressed: initialShiftKeyPressed, // For test compatibility
+  isPencilMode = false,
+  inputMethod: initialInputMethod
 }: UseStraightLineToolProps) => {
   // Use either isEnabled or enabled for backward compatibility
   const isToolEnabled = isEnabled || enabled || false;
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<Line | null>(null);
   const [shiftKeyPressed, setShiftKeyPressed] = useState(initialShiftKeyPressed || false);
+  const [inputMethod, setInputMethod] = useState<InputMethod>(initialInputMethod || 'mouse');
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
     distance: null,
     angle: null,
@@ -131,10 +136,13 @@ export const useStraightLineTool = ({
     currentLine,
     measurementData,
     shiftKeyPressed,
+    isPencilMode,
+    inputMethod,
     toggleSnap,
     toggleAngles,
     toggleGridSnapping, // Alias for toggleSnap
     setCurrentLine,
+    setInputMethod,
     startDrawing,
     continueDrawing,
     endDrawing,     // Alias for completeDrawing
@@ -145,7 +153,8 @@ export const useStraightLineTool = ({
     handlePointerUp,
     handleKeyDown,
     handleKeyUp,
-    renderTooltip
+    renderTooltip,
+    saveCurrentState
   };
 };
 

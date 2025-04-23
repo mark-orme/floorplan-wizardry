@@ -1,5 +1,6 @@
 
-import { FloorPlan, FloorPlanMetadata, PaperSize } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/core';
+import { PaperSize } from '@/types/floor-plan/PaperSize';
 
 /**
  * Creates an empty floor plan
@@ -12,7 +13,7 @@ export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorP
     id: `fp-${Date.now()}`,
     name: 'New Floor Plan',
     label: 'New Floor Plan',
-    data: {},
+    data: {}, // Ensure data is always initialized
     userId: '',
     walls: [],
     rooms: [],
@@ -31,6 +32,7 @@ export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorP
       level: 0,
       version: "1.0",
       author: "",
+      dateCreated: now,
       lastModified: now,
       notes: ""
     },
@@ -42,7 +44,7 @@ export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorP
  * Creates a default metadata object for floor plans
  * @returns Default floor plan metadata
  */
-export function createDefaultMetadata(): FloorPlanMetadata {
+export function createDefaultMetadata() {
   const now = new Date().toISOString();
   return {
     createdAt: now,
@@ -51,6 +53,7 @@ export function createDefaultMetadata(): FloorPlanMetadata {
     level: 0,
     version: "1.0",
     author: "",
+    dateCreated: now,
     lastModified: now,
     notes: ""
   };
