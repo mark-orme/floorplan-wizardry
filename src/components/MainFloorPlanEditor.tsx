@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useDrawingContext } from '@/contexts/DrawingContext';
 import { FloorPlanCanvas } from '@/components/canvas/FloorPlanCanvas';

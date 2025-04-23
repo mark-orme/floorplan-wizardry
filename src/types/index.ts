@@ -4,6 +4,8 @@
 
 // Export floor plan types
 export * from './floorPlan';
+export * from './drawingTypes';
+export { Point } from './core/Point';
 
 // Add DebugInfoState for compatibility with existing imports
 export interface DebugInfoState {

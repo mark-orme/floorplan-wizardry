@@ -10,7 +10,7 @@ export interface SimpleGridLayerProps {
 }
 
 export const SimpleGridLayer = ({ canvas, gridSize = 50, visible = true }: SimpleGridLayerProps) => {
-  const { spacing } = useGrid();
+  const { createGrid } = useGrid();
 
   useEffect(() => {
     if (!canvas || !visible) return;
