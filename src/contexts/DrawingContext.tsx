@@ -14,11 +14,12 @@ interface DrawingContextType {
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   canUndo: boolean;
   canRedo: boolean;
-  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
-  setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
+  // Adding the missing methods
+  setCanUndo: (v: boolean) => void;
+  setCanRedo: (v: boolean) => void;
+  addToUndoStack: (cmd: any) => void;
   canvas?: FabricCanvas;  
   activeTool?: DrawingMode;
-  addToUndoStack: (state: any) => void;
 }
 
 export const DrawingContext = createContext<DrawingContextType>({
@@ -32,6 +33,7 @@ export const DrawingContext = createContext<DrawingContextType>({
   setShowGrid: () => {},
   canUndo: false,
   canRedo: false,
+  // Adding default implementations for missing methods
   setCanUndo: () => {},
   setCanRedo: () => {},
   addToUndoStack: () => {},
