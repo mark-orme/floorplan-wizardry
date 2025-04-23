@@ -29,6 +29,10 @@ export interface DebugInfoState {
   lastError?: string;
   lastErrorTime?: number;
   showDebugInfo?: boolean;
+  hasError?: boolean;
+  errorMessage?: string;
+  lastInitTime?: number;
+  eventHandlersSet?: boolean;
 }
 
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {

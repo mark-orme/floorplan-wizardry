@@ -1,23 +1,29 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import type { DebugInfoState } from '@/types/core/DebugInfo';
 import { createSimpleGrid } from '@/utils/simpleGridCreator';
 import { toast } from 'sonner';
 
-interface CanvasProps {
-  width?: number;
-  height?: number;
+export interface CanvasProps {
+  width: number;
+  height: number;
+  backgroundColor?: string;
   onCanvasReady?: (canvas: FabricCanvas) => void;
   onError?: (error: Error) => void;
+  setDebugInfo?: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  style?: React.CSSProperties;
   showGridDebug?: boolean;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
-  width = 800,
-  height = 600,
+  width,
+  height,
+  backgroundColor = '#ffffff',
   onCanvasReady,
   onError,
-  showGridDebug = true
+  setDebugInfo,
+  style,
+  showGridDebug = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -29,7 +35,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       const canvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
-        backgroundColor: '#ffffff',
+        backgroundColor,
         selection: true,
       });
       
@@ -54,7 +60,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         toast.error(`Canvas error: ${error.message}`);
       }
     }
-  }, [width, height, onCanvasReady, onError, showGridDebug]);
+  }, [width, height, onCanvasReady, onError, showGridDebug, backgroundColor]);
   
   return (
     <canvas 

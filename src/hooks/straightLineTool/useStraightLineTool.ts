@@ -1,4 +1,3 @@
-
 import type { InputMethod } from './useLineInputMethod';
 
 export interface UseStraightLineToolProps {
@@ -9,3 +8,7 @@ export interface UseStraightLineToolProps {
   snapToGrid?: boolean;
   inputMethod?: InputMethod;
 }
+
+export const useStraightLineTool = (props: UseStraightLineToolProps) => {
+  // Hook implementation will go here
+};

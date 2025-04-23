@@ -1,7 +1,4 @@
 
-/**
- * Enum for drawing modes
- */
 export enum DrawingMode {
   SELECT = 'SELECT',
   DRAW = 'DRAW',
@@ -9,6 +6,7 @@ export enum DrawingMode {
   LINE = 'LINE',
   RECT = 'RECTANGLE',
   WALL = 'WALL',
+  ROOM = 'ROOM',
   RECTANGLE = 'RECTANGLE',
   CIRCLE = 'CIRCLE',
   TEXT = 'TEXT',

@@ -127,7 +127,7 @@
     "vitest": "^3.0.9",
     "winston-papertrail": "^1.0.5",
     "y-websocket": "^3.0.0",
-    "zod": "^3.23.8"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

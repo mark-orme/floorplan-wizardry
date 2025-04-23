@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
-  STYLUS = 'stylus'
+  STYLUS = 'stylus',
+  PENCIL = 'pencil'
 }
 
 export function useLineInputMethod(): { 
