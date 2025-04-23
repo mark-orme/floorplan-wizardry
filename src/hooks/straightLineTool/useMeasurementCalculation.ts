@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { MeasurementData } from './useStraightLineTool';
+import type { MeasurementData } from '../useStraightLineTool.d';
 
 export const useMeasurementCalculation = () => {
   const calculateMeasurements = useCallback((startPoint: Point, endPoint: Point, isSnapped: boolean = false): MeasurementData => {

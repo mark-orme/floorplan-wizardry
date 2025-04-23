@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { MeasurementData } from './useStraightLineTool';
+import type { MeasurementData } from '../useStraightLineTool.d';
 
 interface TooltipData {
   distanceDisplay: string;

@@ -30,9 +30,9 @@ export interface Wall {
   end: Point;
   thickness: number;
   color: string;
-  // Add fields for compatibility
-  startPoint?: Point;
-  endPoint?: Point;
+  // Add fields for compatibility with floorPlanTypes
+  startPoint: Point;
+  endPoint: Point;
   points?: Point[];
   roomIds?: string[];
   length?: number;
@@ -60,15 +60,15 @@ export interface FloorPlan {
   width: number;
   height: number;
   backgroundColor: string;
-  // Add required fields for compatibility
-  canvasData?: string | null;
-  canvasJson?: string | null;
-  createdAt?: string;
+  // Add required fields for compatibility with floorPlanTypes
+  canvasData: string | null;
+  canvasJson: string | null;
+  createdAt: string;
   gia?: number;
   index?: number;
   metadata?: any;
-  data?: any;
-  userId?: string;
+  data: any;
+  userId: string;
   canvasState?: any;
 }
 
@@ -83,6 +83,9 @@ export const createEmptyFloorPlan = (): FloorPlan => ({
   width: 1000,
   height: 800,
   backgroundColor: '#ffffff',
+  canvasData: null,
+  canvasJson: null,
+  createdAt: new Date().toISOString(),
   data: {}, // Add required data property
   userId: 'default-user' // Add required userId property
 });
@@ -92,5 +95,8 @@ export const createWall = (start: Point, end: Point): Wall => ({
   start,
   end,
   thickness: 10,
-  color: '#000000'
+  color: '#000000',
+  // Add required compatibility fields
+  startPoint: start,
+  endPoint: end
 });

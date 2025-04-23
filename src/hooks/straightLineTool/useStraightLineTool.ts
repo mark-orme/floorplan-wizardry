@@ -7,7 +7,8 @@ import { useLineToolHandlers } from './useLineToolHandlers';
 import { InputMethod } from './useLineInputMethod';
 import { UseStraightLineToolProps, UseStraightLineToolResult, MeasurementData } from '../useStraightLineTool.d';
 
-export { MeasurementData };
+// Use 'export type' to properly re-export the type
+export type { MeasurementData };
 
 export const useStraightLineTool = ({
   isEnabled = false,
@@ -45,8 +46,8 @@ export const useStraightLineTool = ({
   });
 
   // Custom setter for input method that validates the input
-  const handleSetInputMethod = useCallback((method: InputMethod | 'mouse') => {
-    setInputMethod(method as InputMethod);
+  const handleSetInputMethod = useCallback((method: InputMethod) => {
+    setInputMethod(method);
   }, []);
 
   return {
