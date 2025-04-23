@@ -16,7 +16,7 @@ interface DrawingContextType {
   canRedo: boolean;
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
-  canvas?: FabricCanvas;
+  canvas?: FabricCanvas;  
   activeTool?: DrawingMode;
   addToUndoStack: (state: any) => void;
 }
