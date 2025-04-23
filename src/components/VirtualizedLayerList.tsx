@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { FixedSizeList } from 'react-window';
 import { 
   Eye, 
   EyeOff, 
@@ -8,7 +8,6 @@ import {
   Trash2 as Trash 
 } from "lucide-react";
 import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
-import { FixedSizeList } from 'react-window';
 
 interface VirtualizedLayerListProps {
   layers: DrawingLayer[];

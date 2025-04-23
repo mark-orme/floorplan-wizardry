@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -26,20 +25,16 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   useEffect(() => {
-    // Log the error to console and Sentry
     if (error) {
       console.error('Canvas Error:', error);
       
-      // Report to Sentry with context
       captureError(error instanceof Error ? error : new Error(String(error)), {
-        context: 'canvas-fallback',
-        tags: {
-          component: 'CanvasFallback',
+        cause: {
+          component: 'canvas-fallback',
           retryCount: String(retryCount)
         }
       });
       
-      // Use toast.error instead of toast.loading
       toast.error('Canvas failed to load', {
         description: 'Please try refreshing the page or contact support if the issue persists.',
         duration: 5000
@@ -51,26 +46,21 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
     setRetryCount(prev => prev + 1);
     
     if (retry) {
-      // Use toast.info instead of toast.loading
       toast.info('Attempting to reload canvas...', {
         id: 'canvas-reload'
       });
       
-      // Attempt to reset the canvas
       try {
         retry();
         
-        // Update toast on success
         setTimeout(() => {
           toast.success('Canvas reloaded successfully', {
             id: 'canvas-reload'
           });
         }, 1000);
       } catch (retryError) {
-        // Log retry error
         console.error('Error retrying canvas load:', retryError);
         
-        // Report to Sentry
         if (retryError instanceof Error) {
           captureError(retryError, {
             context: 'canvas-fallback-retry',
@@ -81,14 +71,12 @@ export const CanvasFallback: React.FC<CanvasFallbackProps> = ({
           });
         }
         
-        // Update toast on failure
         toast.error('Failed to reload canvas', {
           id: 'canvas-reload',
           description: 'Please refresh the page or try again later.'
         });
       }
     } else {
-      // If no reset function provided, suggest page refresh
       toast.error('Cannot reload canvas component', {
         description: 'Please refresh the page to try again.'
       });

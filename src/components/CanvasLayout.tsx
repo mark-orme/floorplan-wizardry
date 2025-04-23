@@ -1,11 +1,9 @@
-
 import React from 'react';
 
 /**
  * Props for CanvasLayout component
  */
 interface CanvasLayoutProps {
-  /** Children to render inside the layout */
   children: React.ReactNode;
 }
 

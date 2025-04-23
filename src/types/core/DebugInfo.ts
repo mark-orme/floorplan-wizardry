@@ -1,4 +1,3 @@
-
 export interface DebugInfoState {
   fps: number;
   objectCount: number;
@@ -6,6 +5,7 @@ export interface DebugInfoState {
   isDrawingMode: boolean;
   selectionActive: boolean;
   renderedFrames: number;
+  showDebugInfo?: boolean;
   canvasReady?: boolean;
   canvasInitialized?: boolean;
   canvasCreated?: boolean;
