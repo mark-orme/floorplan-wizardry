@@ -35,7 +35,8 @@ export interface UseStraightLineToolResult {
   handlePointerUp: (event: any) => void;
   handleKeyDown: (event: KeyboardEvent) => void;
   handleKeyUp: (event: KeyboardEvent) => void;
-  renderTooltip: () => React.ReactNode;
+  // Commenting out renderTooltip for now
+  // renderTooltip: () => React.ReactNode;
   setIsDrawing: (isDrawing: boolean) => void;
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
 }
@@ -128,14 +129,15 @@ export const useStraightLineTool = ({
     }
   }, [isActive]);
 
-  const renderTooltip = useCallback(() => {
-    return (
-      <div>
-        Distance: {measurementData.distance.toFixed(2)}
-        Angle: {measurementData.angle.toFixed(2)}°
-      </div>
-    );
-  }, [measurementData]);
+  // Commenting out renderTooltip for now
+  // const renderTooltip = useCallback(() => {
+  //   return (
+  //     <div>
+  //       Distance: {measurementData.distance.toFixed(2)}
+  //       Angle: {measurementData.angle.toFixed(2)}°
+  //     </div>
+  //   );
+  // }, [measurementData]);
 
   return {
     isDrawing,
@@ -154,7 +156,8 @@ export const useStraightLineTool = ({
     handlePointerUp,
     handleKeyDown,
     handleKeyUp,
-    renderTooltip,
+    // Commenting out renderTooltip
+    // renderTooltip,
     setIsDrawing,
     setCurrentLine
   };
