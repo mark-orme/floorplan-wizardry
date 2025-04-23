@@ -1,45 +1,16 @@
+// tsconfig.json
 {
-  "extends": "./tsconfig.json",
+  "files": [],
   "compilerOptions": {
-    // enable the React 17+ JSX transform so you no longer need `import React from 'react'` everywhere
-    "jsx": "react-jsx",
-    // Node module resolution for packages like react-router-dom, fabric, etc.
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-
-    // where to find ambient declarations
-    "typeRoots": ["node_modules/@types", "src/types"],
-    // include the types you need for tests, Vitest/Jest, React, Fabric, etc.
-    "types": [
-      "node",
-      "react",
-      "react-dom",
-      "react-router-dom",
-      "vitest",
-      "jest",
-      "@testing-library/react",
-      "@testing-library/react-hooks",
-      "fabric",
-      "lucide-react",
-      "react-i18next"
-    ],
-
-    // carry over your existing path mapping
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
-
-    // you can keep these if you want
-    "skipLibCheck": true,
     "noImplicitAny": false,
     "noUnusedParameters": false,
+    "skipLibCheck": true,
     "allowJs": true,
     "noUnusedLocals": false,
     "strictNullChecks": false
-  },
-
-  // make sure TS actually scans your source files
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/types/**/*.d.ts"]
+  }
 }
