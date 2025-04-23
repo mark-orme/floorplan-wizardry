@@ -1,45 +1,68 @@
 
-/**
- * Utility functions for input sanitization
- */
+import DOMPurify from 'dompurify';
 
 /**
- * Sanitizes HTML content from user input
- * @param input String to sanitize
- * @returns Sanitized string with HTML tags removed
+ * Sanitize HTML string to prevent XSS attacks
+ * @param input - HTML string to sanitize
+ * @returns Sanitized HTML string
  */
-export function sanitizeHtml(input: string): string {
-  if (!input) return '';
-  return input.replace(/<\/?[^>]+(>|$)/g, '');
-}
+export const sanitizeHtml = (input: string): string => {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'object', 'embed'],
+    USE_PROFILES: { html: true }
+  });
+};
 
 /**
- * Strips JavaScript events from HTML content
- * @param input String to sanitize
- * @returns Sanitized string with JavaScript events removed
+ * Sanitize a plain text input
+ * @param input - Text to sanitize
+ * @returns Sanitized text string
  */
-export function stripJavaScriptEvents(input: string): string {
-  if (!input) return '';
-  return input.replace(/on\w+="[^"]*"/g, '');
-}
-
-/**
- * Sanitizes an object's string properties
- * @param obj Object to sanitize
- * @returns New object with sanitized string properties
- */
-export function sanitizeObject(obj: Record<string, any>): Record<string, any> {
-  const sanitized: Record<string, any> = {};
+export const sanitizeText = (input: string): string => {
+  // First remove HTML tags completely
+  const noHtml = input.replace(/<[^>]*>?/gm, '');
   
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === 'string') {
-      sanitized[key] = sanitizeHtml(value);
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      sanitized[key] = sanitizeObject(value);
-    } else {
-      sanitized[key] = value;
-    }
+  // Then escape special characters
+  return noHtml
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+/**
+ * Sanitize user input for use in SQL queries
+ * @param input - Input string to sanitize
+ * @returns Sanitized string safe for SQL
+ */
+export const sanitizeSqlInput = (input: string): string => {
+  // Remove SQL injection patterns
+  return input.replace(/['";\\%]/g, '');
+};
+
+/**
+ * Validate email format
+ * @param email - Email address to validate
+ * @returns Boolean indicating if email format is valid
+ */
+export const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+/**
+ * Validate URL format and ensure it uses http or https
+ * @param url - URL to validate
+ * @returns Boolean indicating if URL format is valid
+ */
+export const isValidUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch (e) {
+    return false;
   }
-  
-  return sanitized;
-}
+};

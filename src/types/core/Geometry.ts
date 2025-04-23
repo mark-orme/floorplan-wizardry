@@ -10,6 +10,22 @@ export interface BoundingBox {
 }
 
 /**
+ * Point interface for coordinates
+ */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Canvas dimensions interface
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
  * Transform matrix for 2D transformations
  * [a, b, c, d, tx, ty]
  * where:
@@ -23,8 +39,8 @@ export type TransformMatrix = [number, number, number, number, number, number];
  * Line segment between two points
  */
 export interface LineSegment {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
+  start: Point;
+  end: Point;
 }
 
 /**

@@ -1,75 +1,100 @@
 
 /**
- * Basic logger utility
+ * Application logging utility
+ * Provides consistent logging across the application
  */
 
+// Log levels
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-interface LogOptions {
-  level?: LogLevel;
-  context?: string;
-  tags?: Record<string, string>;
-  extra?: Record<string, any>;
-  // Allow arbitrary properties
-  [key: string]: any;
-}
 
 class Logger {
   private context: string;
-  
-  constructor(context: string) {
+  private enabled: boolean = true;
+
+  constructor(context: string = 'app') {
     this.context = context;
   }
-  
-  debug(message: string, options?: Omit<LogOptions, 'level'>): void {
-    this.log(message, { ...options, level: 'debug' });
+
+  /**
+   * Log a debug message
+   */
+  debug(message: string, ...args: any[]): void {
+    this.log('debug', message, ...args);
   }
-  
-  info(message: string, options?: Omit<LogOptions, 'level'>): void {
-    this.log(message, { ...options, level: 'info' });
+
+  /**
+   * Log an info message
+   */
+  info(message: string, ...args: any[]): void {
+    this.log('info', message, ...args);
   }
-  
-  warn(message: string, options?: Omit<LogOptions, 'level'>): void {
-    this.log(message, { ...options, level: 'warn' });
+
+  /**
+   * Log a warning message
+   */
+  warn(message: string, ...args: any[]): void {
+    this.log('warn', message, ...args);
   }
-  
-  error(message: string, options?: Omit<LogOptions, 'level'>): void {
-    this.log(message, { ...options, level: 'error' });
-  }
-  
-  private log(message: string, options?: LogOptions): void {
-    const level = options?.level || 'info';
-    const context = options?.context || this.context;
-    const tagString = options?.tags 
-      ? Object.entries(options.tags)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(' ')
-      : '';
+
+  /**
+   * Log an error message
+   */
+  error(message: string | Error, ...args: any[]): void {
+    const errorMessage = message instanceof Error ? message.message : message;
+    const stack = message instanceof Error ? message.stack : undefined;
     
-    const prefix = `[${level.toUpperCase()}] [${context}]`;
+    this.log('error', errorMessage, ...(stack ? [stack, ...args] : args));
+  }
+
+  /**
+   * Log a canvas error
+   */
+  canvasError(message: string, ...args: any[]): void {
+    this.log('error', `[Canvas] ${message}`, ...args);
+  }
+
+  /**
+   * Set the context for the logger
+   */
+  setContext(context: string): void {
+    this.context = context;
+  }
+
+  /**
+   * Enable or disable logging
+   */
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
+
+  /**
+   * Internal log method
+   */
+  private log(level: LogLevel, message: string, ...args: any[]): void {
+    if (!this.enabled) return;
+
+    const timestamp = new Date().toISOString();
+    const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] [${this.context}] ${message}`;
     
     switch (level) {
       case 'debug':
-        console.debug(prefix, message, tagString);
+        console.debug(formattedMessage, ...args);
         break;
       case 'info':
-        console.info(prefix, message, tagString);
+        console.info(formattedMessage, ...args);
         break;
       case 'warn':
-        console.warn(prefix, message, tagString);
+        console.warn(formattedMessage, ...args);
         break;
       case 'error':
-        console.error(prefix, message, tagString);
+        console.error(formattedMessage, ...args);
         break;
     }
   }
 }
 
-// Create and export loggers for different parts of the application
-export const logger = new Logger('app');
-export const gridLogger = new Logger('grid');
-export const canvasLogger = new Logger('canvas');
-export const toolsLogger = new Logger('tools');
+// Create and export default logger instance
+export const logger = new Logger();
 
-// Default export
-export default logger;
+// Export the Logger class for creating context-specific loggers
+export default Logger;

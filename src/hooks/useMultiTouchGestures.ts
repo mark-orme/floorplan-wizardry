@@ -25,7 +25,7 @@ export const useMultiTouchGestures = () => {
       translation: { x: 0, y: 0 },
       center: getCenterPoint(points)
     }));
-  }, [setGestureState]);
+  }, []);
 
   const handleGestureMove = useCallback((currentPoints: Point[]) => {
     setGestureState(prevState => {
@@ -42,7 +42,7 @@ export const useMultiTouchGestures = () => {
         center: getCenterPoint(currentPoints)
       };
     });
-  }, [setGestureState]);
+  }, []);
 
   const handleGestureEnd = useCallback(() => {
     // Reset gesture state
@@ -55,9 +55,9 @@ export const useMultiTouchGestures = () => {
       translation: { x: 0, y: 0 },
       center: { x: 0, y: 0 }
     });
-  }, [setGestureState]);
+  }, []);
 
-  // Helper functions (can be moved outside if they don't depend on state)
+  // Helper functions
   const getCenterPoint = (points: Point[]): Point => {
     if (points.length === 0) return { x: 0, y: 0 };
     

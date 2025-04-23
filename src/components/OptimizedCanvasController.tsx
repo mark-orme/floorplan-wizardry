@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { OptimizedCanvas } from './OptimizedCanvas';
@@ -8,7 +7,7 @@ import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEven
 import { toast } from 'sonner';
 import { SimpleGridLayer } from './canvas/SimpleGridLayer';
 
-interface OptimizedCanvasControllerProps {
+export interface OptimizedCanvasControllerProps {
   width: number;
   height: number;
   onCanvasReady: (canvas: FabricCanvas) => void;

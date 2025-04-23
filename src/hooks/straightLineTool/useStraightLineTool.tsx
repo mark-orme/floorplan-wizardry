@@ -1,7 +1,17 @@
+
 import { useCallback, useState, useRef } from 'react';
 import { Canvas, Line } from 'fabric';
-import { MeasurementData } from './useStraightLineTool';
 import { Point } from '@/types/core/Point';
+
+export interface MeasurementData {
+  distance: number | null;
+  angle: number | null;
+  snapped: boolean;
+  unit: string;
+  startPoint?: Point;
+  endPoint?: Point;
+  snapType?: 'grid' | 'angle' | 'both';
+}
 
 export interface UseStraightLineToolProps {
   isActive?: boolean;
@@ -11,6 +21,7 @@ export interface UseStraightLineToolProps {
   lineThickness?: number;
   saveCurrentState?: () => void;
   shiftKeyPressed?: boolean;
+  snapToGrid?: boolean;
 }
 
 export const useStraightLineTool = ({
@@ -19,17 +30,21 @@ export const useStraightLineTool = ({
   canvas = null,
   lineColor = '#000000',
   lineThickness = 2,
-  saveCurrentState,
+  saveCurrentState = () => {},
   shiftKeyPressed = false
 }: UseStraightLineToolProps) => {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [anglesEnabled, setAnglesEnabled] = useState(true);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [inputMethod, setInputMethod] = useState('mouse');
   const [measurementData, setMeasurementData] = useState<MeasurementData>({
     distance: null,
     angle: null,
     snapped: false,
-    unit: 'px'
+    unit: 'px',
+    startPoint: undefined,
+    endPoint: undefined
   });
 
   // Toggle functions
@@ -41,7 +56,7 @@ export const useStraightLineTool = ({
     setAnglesEnabled(prev => !prev);
   }, []);
 
-  // Basic drawing functions (stub implementation)
+  // Basic drawing functions
   const startDrawing = useCallback((point: Point) => {
     setIsDrawing(true);
     // Implementation details...
@@ -60,6 +75,40 @@ export const useStraightLineTool = ({
     }
   }, [canvas, saveCurrentState]);
 
+  const endDrawing = useCallback(() => {
+    setIsDrawing(false);
+    setCurrentLine(null);
+    // Implementation details...
+  }, [canvas]);
+
+  const cancelDrawing = useCallback(() => {
+    setIsDrawing(false);
+    setCurrentLine(null);
+    // Implementation details...
+  }, [canvas]);
+
+  // Handle keyboard events
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Implementation details...
+  }, []);
+
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    // Implementation details...
+  }, []);
+
+  // For pointer events
+  const handlePointerDown = useCallback((event: any) => {
+    // Implementation details...
+  }, [startDrawing]);
+
+  const handlePointerMove = useCallback((event: any) => {
+    // Implementation details...
+  }, [continueDrawing]);
+
+  const handlePointerUp = useCallback((event: any) => {
+    // Implementation details...
+  }, [completeDrawing]);
+
   // Mock method for rendering tooltip
   const renderTooltip = useCallback(() => {
     return null; // Actual implementation would return a React component
@@ -76,6 +125,20 @@ export const useStraightLineTool = ({
     completeDrawing,
     measurementData,
     renderTooltip,
-    shiftKeyPressed
+    shiftKeyPressed,
+    isActive,
+    isEnabled,
+    currentLine,
+    setCurrentLine,
+    inputMethod,
+    setInputMethod,
+    endDrawing,
+    cancelDrawing,
+    handleKeyDown,
+    handleKeyUp,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    saveCurrentState
   };
 };
