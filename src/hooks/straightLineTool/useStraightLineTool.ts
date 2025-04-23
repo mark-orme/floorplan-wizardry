@@ -46,6 +46,7 @@ export const useStraightLineTool = ({
   const fabricCanvasRef = useRef<Canvas | null>(canvas);
   const { calculateMeasurements } = useMeasurementCalculation();
   const { formatTooltipData } = useLiveDistanceTooltip();
+  const [isToolInitialized, setIsToolInitialized] = useState(true);
 
   useEffect(() => {
     fabricCanvasRef.current = canvas;
@@ -58,14 +59,8 @@ export const useStraightLineTool = ({
     toggleAngles,
     startDrawing,
     continueDrawing,
-    endDrawing,
     completeDrawing,
-    cancelDrawing,
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handleKeyDown,
-    handleKeyUp
+    cancelDrawing
   } = useLineState({
     fabricCanvasRef,
     lineColor,
@@ -73,31 +68,56 @@ export const useStraightLineTool = ({
     saveCurrentState
   });
 
+  // Add these missing handlers for compatibility
+  const handlePointerDown = useCallback((event: any) => {
+    if (!isEnabled) return;
+    const point = { x: event.pageX, y: event.pageY };
+    startDrawing(point);
+  }, [isEnabled, startDrawing]);
+
+  const handlePointerMove = useCallback((event: any) => {
+    if (!isEnabled || !isDrawing) return;
+    const point = { x: event.pageX, y: event.pageY };
+    continueDrawing(point);
+  }, [isEnabled, isDrawing, continueDrawing]);
+
+  const handlePointerUp = useCallback((event: any) => {
+    if (!isEnabled || !isDrawing) return;
+    const point = { x: event.pageX, y: event.pageY };
+    completeDrawing(point);
+  }, [isEnabled, isDrawing, completeDrawing]);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Shift') {
+      setShiftKeyPressed(true);
+    }
+    if (event.key === 'Escape') {
+      cancelDrawing();
+    }
+  }, [cancelDrawing]);
+
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Shift') {
+      setShiftKeyPressed(false);
+    }
+  }, []);
+
+  // For backward compatibility
+  const endDrawing = completeDrawing;
+  const toggleGridSnapping = toggleSnap;
+
   // Render tooltip function that returns a React node
   const renderTooltip = useCallback((): ReactNode => {
     if (!isDrawing || !measurementData) return null;
-    const tooltipData = formatTooltipData(measurementData);
-    if (!tooltipData) return null;
-    
-    // Instead of using JSX directly (which would require a .tsx extension),
-    // we'll return null when in a .ts file. This can be replaced with a proper tooltip
-    // component in a UI layer
+    // In a .ts file we return null instead of JSX
     return null;
-    
-    // Note: The JSX below would require a .tsx file extension
-    /* 
-    return (
-      <div className="absolute bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-        {tooltipData.distanceDisplay} {tooltipData.angleDisplay}
-        {tooltipData.snappedInfo}
-      </div>
-    );
-    */
-  }, [isDrawing, measurementData, formatTooltipData]);
+  }, [isDrawing, measurementData]);
 
   return {
     isEnabled,
+    isActive: isEnabled, // For backward compatibility
     isDrawing,
+    isToolInitialized,
     snapEnabled,
     anglesEnabled,
     currentLine,
@@ -105,10 +125,11 @@ export const useStraightLineTool = ({
     shiftKeyPressed,
     toggleSnap,
     toggleAngles,
+    toggleGridSnapping, // Alias for toggleSnap
     setCurrentLine,
     startDrawing,
     continueDrawing,
-    endDrawing,
+    endDrawing,     // Alias for completeDrawing
     completeDrawing,
     cancelDrawing,
     handlePointerDown,

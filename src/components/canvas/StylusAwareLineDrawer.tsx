@@ -37,7 +37,8 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
     isEnabled: enabled,
     canvas: canvas,
     lineColor: lineColor,
-    lineThickness: lineThickness
+    lineThickness: lineThickness,
+    saveCurrentState
   });
   
   useEffect(() => {

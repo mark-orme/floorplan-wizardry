@@ -14,7 +14,7 @@ export const z = {
     ...schema,
     refine: (refineFn: any, message?: any) => ({})
   }),
-  infer: (schema: any) => ({}),
+  infer: <T>(schema: any): T => ({} as T),
   boolean: () => ({
     optional: () => ({})
   }),

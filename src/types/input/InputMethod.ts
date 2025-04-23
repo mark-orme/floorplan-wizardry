@@ -1,10 +1,11 @@
 
 /**
- * Enumeration of input methods for drawing tools
+ * Enum for different input methods
  */
 export enum InputMethod {
   MOUSE = 'mouse',
   TOUCH = 'touch',
+  STYLUS = 'stylus',
   PENCIL = 'pencil',
-  STYLUS = 'stylus'
+  KEYBOARD = 'keyboard'
 }
