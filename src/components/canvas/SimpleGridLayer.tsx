@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Canvas, Line } from 'fabric';
 import { useGrid } from '@/hooks/useGrid';
