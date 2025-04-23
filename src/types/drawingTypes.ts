@@ -36,5 +36,13 @@ export type GestureState = 'start' | 'move' | 'end';
 
 // Add function to create default drawing state
 export function createDefaultDrawingState(): DrawingState {
-  return { isDrawing: false, startPoint: {x:0,y:0}, currentPoint: {x:0,y:0}, points: [], distance:0, cursorPosition:{x:0,y:0}, currentZoom: 1 };
+  return { 
+    isDrawing: false, 
+    startPoint: {x:0, y:0}, 
+    currentPoint: {x:0, y:0}, 
+    points: [], 
+    distance: 0, 
+    cursorPosition: {x:0, y:0}, 
+    currentZoom: 1 
+  };
 }

@@ -27,8 +27,8 @@ export const useLineAngleSnap = ({
   const snapToAngle = useCallback((start: Point, end: Point): Point => {
     if (!anglesEnabled) return end;
     
-    return snapToAngle(start, end, snapAngleDeg);
-  }, [anglesEnabled, snapAngleDeg]);
+    return snapToAngle(start, end);
+  }, [anglesEnabled]);
   
   /**
    * Toggle angle constraints
