@@ -1,20 +1,19 @@
-
 /**
  * Canvas actions component for the drawing toolbar
  * @module components/toolbar/CanvasActions
  */
 import React from 'react';
 import {
-  Trash2,
+  Trash,
   Save,
   Upload,
   Download,
-  Undo,
-  Redo,
+  ArrowUndo as Undo,
+  ArrowRedo as Redo,
   ZoomIn,
   ZoomOut,
-  RefreshCw,
-  Grid
+  RefreshCcw,
+  LayoutGrid as Grid
 } from 'lucide-react';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
@@ -95,7 +94,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Clear */}
       {onClear && (
         <ToolbarButton
-          icon={<Trash2 size={20} />}
+          icon={<Trash size={20} />}
           label="Clear"
           tooltip="Clear canvas"
           onClick={onClear}
@@ -155,7 +154,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Reset zoom */}
       {onResetZoom && (
         <ToolbarButton
-          icon={<RefreshCw size={20} />}
+          icon={<RefreshCcw size={20} />}
           label="Reset Zoom"
           tooltip="Reset zoom"
           onClick={onResetZoom}

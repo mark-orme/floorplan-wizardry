@@ -10,7 +10,7 @@ import {
   Square, 
   Circle, 
   Text,
-  Ruler
+  RulerSquare as Ruler
 } from 'lucide-react';
 import { StraightLine } from '@/components/icons/StraightLine';
 import { DrawingMode } from '@/constants/drawingModes';

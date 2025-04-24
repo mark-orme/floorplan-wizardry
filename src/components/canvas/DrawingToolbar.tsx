@@ -2,8 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  Undo, 
-  Redo, 
+  ArrowUndo as Undo, 
+  ArrowRedo as Redo, 
   Trash, 
   Save,
   Menu

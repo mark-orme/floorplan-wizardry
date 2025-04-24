@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { X, Ruler } from 'lucide-react';
+import { X, RulerSquare as Ruler } from 'lucide-react';
 
 interface MeasurementGuideProps {
   onClose: () => void;

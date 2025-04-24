@@ -6,8 +6,8 @@ import {
   Pencil,
   Square,
   Circle,
-  Undo,
-  Redo,
+  ArrowUndo as Undo,
+  ArrowRedo as Redo,
   MousePointer,
   Trash
 } from "lucide-react";

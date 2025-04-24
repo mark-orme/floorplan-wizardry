@@ -1,4 +1,3 @@
-
 /**
  * Tests for Canvas component
  * @module components/__tests__/Canvas
@@ -29,6 +28,21 @@ vi.mock('fabric', () => ({
     }
   }))
 }));
+
+// Add this at the top level of your test file
+jest.mock('@testing-library/react', () => {
+  const originalModule = jest.requireActual('@testing-library/react');
+  return {
+    ...originalModule,
+    render: (...args) => {
+      const utils = originalModule.render(...args);
+      return {
+        ...utils,
+        unmount: jest.fn(),
+      };
+    },
+  };
+});
 
 describe('Canvas', () => {
   beforeEach(() => {

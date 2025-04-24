@@ -9,10 +9,10 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { 
-  Ruler, 
-  Grid, 
+  RulerSquare as Ruler, 
+  LayoutGrid as Grid, 
   Square, 
-  Move 
+  MoveIcon as Move 
 } from "lucide-react";
 
 interface MeasurementGuideProps {

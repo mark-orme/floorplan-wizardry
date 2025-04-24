@@ -1,7 +1,9 @@
+import React from 'react';
+import CanvasFallback from "@/components/canvas/CanvasFallback";
 
-import React, { useState, useEffect } from 'react';
+export { default as CanvasFallback } from '@/components/canvas/CanvasFallback';
+
 import { Canvas, CanvasProps } from '@/components/Canvas';
-import { CanvasFallback } from '@/components/canvas/CanvasFallback';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';

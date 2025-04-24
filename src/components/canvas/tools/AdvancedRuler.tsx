@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Ruler } from 'lucide-react';
+import { RulerSquare as Ruler } from 'lucide-react';
 
 interface AdvancedRulerProps {
   activeTool: DrawingMode;
@@ -28,7 +27,6 @@ const AdvancedRuler: React.FC<AdvancedRulerProps> = ({ activeTool, onSelectTool 
   );
 };
 
-// For plugin registration
 const plugin = {
   id: 'advanced-ruler',
   name: 'Advanced Ruler',

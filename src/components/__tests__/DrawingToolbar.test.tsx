@@ -1,8 +1,18 @@
-
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DrawingToolbar } from '@/components/DrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
+
+jest.mock('@testing-library/react', () => {
+  const originalModule = jest.requireActual('@testing-library/react');
+  return {
+    ...originalModule,
+    fireEvent: {
+      ...originalModule.fireEvent,
+      click: (element) => originalModule.fireEvent.click(element),
+    },
+  };
+});
 
 describe('DrawingToolbar', () => {
   const defaultProps = {

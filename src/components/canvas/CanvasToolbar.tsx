@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -9,14 +8,14 @@ import {
   Text, 
   Eraser, 
   Hand, 
-  Undo, 
-  Redo, 
+  ArrowUndo as Undo, 
+  ArrowRedo as Redo, 
   ZoomIn, 
   ZoomOut, 
   Save, 
   Download, 
-  Trash2, 
-  Ruler 
+  Trash, 
+  RulerSquare as Ruler 
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -112,7 +111,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             onClick={onClear}
             className="whitespace-nowrap"
           >
-            <Trash2 className="h-4 w-4 mr-1" />
+            <Trash className="h-4 w-4 mr-1" />
             {!isMobile && "Clear"}
           </Button>
         )}

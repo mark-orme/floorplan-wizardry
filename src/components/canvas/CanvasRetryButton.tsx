@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 
 interface CanvasRetryButtonProps {
   errorMessage?: string;
@@ -33,7 +32,7 @@ const CanvasRetryButton: React.FC<CanvasRetryButtonProps> = ({
         </div>
         
         <Button onClick={onRetry} variant="default">
-          <RefreshCw className="w-4 h-4 mr-2" />
+          <RefreshCcw className="w-4 h-4 mr-2" />
           Retry Loading Canvas
         </Button>
       </div>

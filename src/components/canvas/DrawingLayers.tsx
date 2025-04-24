@@ -1,73 +1,51 @@
-
-import React, { useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Layers, Plus } from 'lucide-react';
-import { LayerListContainer } from './layers/LayerListContainer';
-import { useLayerActions } from './layers/useLayerActions';
-import { DrawingLayer } from './types/DrawingLayer';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Layers, PlusCircle as Plus } from "lucide-react";
 
 interface DrawingLayersProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  layers: DrawingLayer[];
-  setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
-  activeLayerId: string;
-  setActiveLayerId: React.Dispatch<React.SetStateAction<string>>;
+  layerCount: number;
+  activeLayerName: string;
+  onAddLayer: () => void;
+  onShowLayerPanel: () => void;
 }
 
 export const DrawingLayers: React.FC<DrawingLayersProps> = ({
-  fabricCanvasRef,
-  layers,
-  setLayers,
-  activeLayerId,
-  setActiveLayerId
+  layerCount,
+  activeLayerName,
+  onAddLayer,
+  onShowLayerPanel
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  const { 
-    toggleLayerVisibility,
-    toggleLayerLock,
-    setActiveLayer,
-    createNewLayer,
-    deleteLayer
-  } = useLayerActions({ 
-    fabricCanvasRef, 
-    layers, 
-    setLayers, 
-    activeLayerId, 
-    setActiveLayerId 
-  });
-  
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-md shadow-md p-2 absolute top-4 left-4 z-20">
-      <div className="flex items-center justify-between mb-2">
-        <button 
-          className="flex items-center gap-1 text-sm font-medium"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <Layers size={16} />
-          <span>Layers</span>
-          <span className="text-xs text-gray-500 ml-1">({layers.length})</span>
-        </button>
-        
-        <button
-          className="p-1 rounded hover:bg-gray-100"
-          onClick={createNewLayer}
+    <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-2">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="bg-white/80 backdrop-blur-sm shadow-sm flex items-center gap-2"
+        onClick={onShowLayerPanel}
+      >
+        <Layers className="h-4 w-4" />
+        <span className="hidden sm:inline">Layers</span>
+        <Badge variant="secondary" className="ml-1 h-5 px-1">
+          {layerCount}
+        </Badge>
+      </Button>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 bg-white/80 backdrop-blur-sm shadow-sm"
+          onClick={onAddLayer}
           title="Add new layer"
         >
-          <Plus size={16} />
-        </button>
+          <Plus className="h-4 w-4" />
+        </Button>
+        
+        <Badge variant="outline" className="bg-white/80 backdrop-blur-sm shadow-sm">
+          {activeLayerName}
+        </Badge>
       </div>
-      
-      {isOpen && (
-        <LayerListContainer
-          layers={layers}
-          activeLayerId={activeLayerId}
-          onLayerClick={setActiveLayer}
-          onToggleVisibility={toggleLayerVisibility}
-          onToggleLock={toggleLayerLock}
-          onDeleteLayer={deleteLayer}
-        />
-      )}
     </div>
   );
 };
