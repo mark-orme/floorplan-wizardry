@@ -1,134 +1,118 @@
-
+/**
+ * Drawing toolbar component
+ * Combines various toolbar sections
+ * @module components/DrawingToolbar
+ */
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  MousePointer,
-  Pencil,
-  Square,
-  Circle,
-  Text,
-  Eraser,
-  Hand,
-  ArrowUndo,
-  ArrowRedo,
-  ZoomIn,
-  ZoomOut,
-  Save,
-  Download,
-  Trash,
-  RulerSquare as Ruler,
-} from "@/components/ui/icons";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useMediaQuery } from '@/hooks/use-media-query';
+import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingTools } from '@/components/toolbar/DrawingTools';
+import { StyleOptions } from '@/components/toolbar/StyleOptions';
+import { CanvasActions } from '@/components/toolbar/CanvasActions';
 
-interface DrawingToolbarProps {
-  onSave?: () => void;
+export interface DrawingToolbarProps {
+  /** Active drawing tool */
+  activeTool?: DrawingMode;
+  /** Current line color */
+  lineColor?: string;
+  /** Current line thickness */
+  lineThickness?: number;
+  /** Tool change handler */
+  onToolChange?: (tool: DrawingMode) => void;
+  /** Color change handler */
+  onColorChange?: (color: string) => void;
+  /** Thickness change handler */
+  onThicknessChange?: (thickness: number) => void;
+  /** Clear canvas handler */
   onClear?: () => void;
+  /** Save canvas handler */
+  onSave?: () => void;
+  /** Import canvas handler */
+  onImport?: () => void;
+  /** Export canvas handler */
+  onExport?: () => void;
+  /** Undo handler */
   onUndo?: () => void;
+  /** Redo handler */
   onRedo?: () => void;
+  /** Zoom in handler */
+  onZoomIn?: () => void;
+  /** Zoom out handler */
+  onZoomOut?: () => void;
+  /** Reset zoom handler */
+  onResetZoom?: () => void;
+  /** Toggle grid handler */
+  onToggleGrid?: () => void;
+  /** Whether grid is visible */
+  gridVisible?: boolean;
+  /** Whether undo is available */
   canUndo?: boolean;
+  /** Whether redo is available */
   canRedo?: boolean;
+  /** Children to render */
+  children?: React.ReactNode;
 }
 
+/**
+ * Drawing toolbar component
+ * @param props Component props
+ * @returns Rendered component
+ */
 export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
-  onSave,
+  activeTool,
+  lineColor,
+  lineThickness,
+  onToolChange,
+  onColorChange,
+  onThicknessChange,
   onClear,
+  onSave,
+  onImport,
+  onExport,
   onUndo,
   onRedo,
-  canUndo = false,
-  canRedo = false
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  onToggleGrid,
+  gridVisible,
+  canUndo,
+  canRedo,
+  children
 }) => {
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  
   return (
-    <div className="drawing-toolbar flex items-center justify-between w-full bg-background p-2 border-b">
-      <div className="flex gap-2">
-        {/* Condensed toolbar for mobile */}
-        {isMobile ? (
-          <>
-            <Button
-              variant="outline" 
-              size="icon"
-              onClick={onUndo}
-              disabled={!canUndo}
-              className="block md:hidden"
-            >
-              <Undo className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="outline" 
-              size="icon"
-              onClick={onRedo}
-              disabled={!canRedo}
-              className="block md:hidden"
-            >
-              <Redo className="h-5 w-5" />
-            </Button>
-          </>
-        ) : (
-          // Desktop tooltip version
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline" 
-                  size="icon"
-                  onClick={onUndo}
-                  disabled={!canUndo}
-                >
-                  <Undo className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Undo</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline" 
-                  size="icon"
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                >
-                  <Redo className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Redo</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+    <div className="flex items-center bg-background border-b p-1.5">
+      <DrawingTools
+        activeTool={activeTool}
+        onToolChange={onToolChange}
+      />
       
-      <div className="flex gap-2">
-        {/* Always visible buttons regardless of viewport size */}
-        {onClear && (
-          <Button 
-            variant="outline" 
-            size={isMobile ? "sm" : "default"}
-            onClick={onClear}
-            className="whitespace-nowrap"
-          >
-            <Trash className="h-4 w-4 mr-1" />
-            {!isMobile && "Clear"}
-          </Button>
-        )}
-        
-        {onSave && (
-          <Button 
-            variant="default" 
-            size={isMobile ? "sm" : "default"}
-            onClick={onSave}
-            className="whitespace-nowrap"
-          >
-            <Save className="h-4 w-4 mr-1" />
-            {!isMobile && "Save"}
-          </Button>
-        )}
-      </div>
+      <StyleOptions
+        lineColor={lineColor}
+        lineThickness={lineThickness}
+        onColorChange={onColorChange}
+        onThicknessChange={onThicknessChange}
+      />
+      
+      <CanvasActions
+        onClear={onClear}
+        onSave={onSave}
+        onImport={onImport}
+        onExport={onExport}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetZoom={onResetZoom}
+        onToggleGrid={onToggleGrid}
+        gridVisible={gridVisible}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
+      
+      {children}
     </div>
   );
 };
+
+// Export as default for backward compatibility
+export default DrawingToolbar;

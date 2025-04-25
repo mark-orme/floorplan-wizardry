@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { Canvas } from 'fabric';
 import { useStylusInput } from '@/hooks/useStylusInput'; 

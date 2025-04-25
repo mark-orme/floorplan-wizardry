@@ -1,4 +1,3 @@
-
 /**
  * Basic grid component for the canvas
  * Renders a grid on the canvas for visual reference and snapping
