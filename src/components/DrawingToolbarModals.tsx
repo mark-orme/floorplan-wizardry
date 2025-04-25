@@ -1,3 +1,5 @@
-import React from 'react';
-import { RulerSquare } from "@/components/ui/icons";
-import { Button } from '@/components/ui/button';
+
+/**
+ * Stub: DrawingToolbarModals unavailable due to missing React.
+ */
+export const DrawingToolbarModals = () => "DrawingToolbarModals unavailable: dependencies missing.";
