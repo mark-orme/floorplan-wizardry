@@ -103,7 +103,8 @@ describe('Canvas', () => {
       off: vi.fn(),
       getObjects: vi.fn().mockReturnValue([])
     }));
-    
+
+    // The returned object from render has unmount
     const { unmount } = render(
       <Canvas
         width={800}
@@ -111,9 +112,9 @@ describe('Canvas', () => {
         onCanvasReady={vi.fn()}
       />
     );
-    
+
     unmount();
-    
+
     // Canvas dispose should be called
     expect(disposeMethod).toHaveBeenCalled();
   });
