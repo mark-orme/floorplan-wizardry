@@ -1,169 +1,142 @@
 
 /**
  * Mock for fabric.js
- * For use in testing to avoid instantiating actual canvas
- * @module __mocks__/fabric
+ * SAFE FOR ES5-ONLY ENVIRONMENT
  */
 
 // Mock Canvas class
 export class Canvas {
-  width: number;
-  height: number;
-  selection: boolean;
-  isDrawingMode: boolean;
-  defaultCursor: string;
-  hoverCursor: string;
-  freeDrawingBrush: PencilBrush;
-  _objects: any[];
-  
-  constructor(element: HTMLCanvasElement | string, options?: any) {
-    this.width = options?.width || 600;
-    this.height = options?.height || 400;
-    this.selection = options?.selection ?? true;
+  width;
+  height;
+  selection;
+  isDrawingMode;
+  defaultCursor;
+  hoverCursor;
+  freeDrawingBrush;
+  _objects;
+
+  constructor(element, options) {
+    this.width = options && options.width || 600;
+    this.height = options && options.height || 400;
+    this.selection = options && typeof options.selection !== "undefined" ? options.selection : true;
     this.isDrawingMode = false;
-    this.defaultCursor = 'default';
-    this.hoverCursor = 'pointer';
+    this.defaultCursor = "default";
+    this.hoverCursor = "pointer";
     this._objects = [];
     this.freeDrawingBrush = new PencilBrush(this);
   }
-  
-  add(...objects: any[]): Canvas {
-    this._objects.push(...objects);
+
+  add() {
+    for (var i = 0; i < arguments.length; i++) {
+      this._objects.push(arguments[i]);
+    }
     return this;
   }
-  
-  remove(...objects: any[]): Canvas {
-    objects.forEach(obj => {
-      const index = this._objects.indexOf(obj);
+
+  remove() {
+    for (var i = 0; i < arguments.length; i++) {
+      var obj = arguments[i];
+      var index = this._objects.indexOf(obj);
       if (index !== -1) {
         this._objects.splice(index, 1);
       }
-    });
-    return this;
-  }
-  
-  contains(object: any): boolean {
-    return this._objects.includes(object);
-  }
-  
-  getObjects(): any[] {
-    return [...this._objects];
-  }
-  
-  getActiveObjects(): any[] {
-    return this._objects.filter(obj => obj.activeOn);
-  }
-  
-  discardActiveObject(): Canvas {
-    this._objects.forEach(obj => {
-      obj.activeOn = false;
-    });
-    return this;
-  }
-  
-  getElement(): HTMLCanvasElement {
-    return document.createElement('canvas');
-  }
-  
-  getPointer(event: any): { x: number; y: number } {
-    // For tests, convert clientX/Y to canvas coordinates
-    // or just return mock coordinates
-    return { x: event.clientX || 100, y: event.clientY || 100 };
-  }
-  
-  setZoom(zoom: number): Canvas {
-    // Mock zoom implementation
-    return this;
-  }
-  
-  getZoom(): number {
-    return 1;
-  }
-  
-  sendObjectToBack(object: any): Canvas {
-    // Mock implementation
-    return this;
-  }
-  
-  renderAll(): void {
-    // Mock implementation
-  }
-  
-  requestRenderAll(): void {
-    // Mock implementation
-  }
-  
-  dispose(): void {
-    // Mock implementation
-  }
-  
-  // CRITICAL FIX: Ensure withImplementation returns Promise<void>
-  withImplementation(callback?: Function): Promise<void> {
-    console.log('MockCanvas: Using withImplementation mock');
-    
-    // Invoke the callback if provided 
-    if (callback && typeof callback === 'function') {
-      try {
-        const result = callback();
-        
-        // If callback returns a promise, chain it
-        if (result instanceof Promise) {
-          return result.then(() => Promise.resolve());
-        }
-      } catch (error) {
-        console.error('Error in withImplementation mock:', error);
-      }
     }
-    
-    // Always return a Promise<void>
-    return Promise.resolve();
+    return this;
+  }
+
+  contains(object) {
+    // Use regular for loop for compatibility; avoid .includes
+    for (var i = 0; i < this._objects.length; i++) {
+      if (this._objects[i] === object) return true;
+    }
+    return false;
+  }
+
+  getObjects() {
+    // shallow copy using a loop (no .slice or .from)
+    var copy = [];
+    for (var i = 0; i < this._objects.length; i++) {
+      copy.push(this._objects[i]);
+    }
+    return copy;
+  }
+
+  getActiveObjects() {
+    var active = [];
+    for (var i = 0; i < this._objects.length; i++) {
+      if (this._objects[i].activeOn) active.push(this._objects[i]);
+    }
+    return active;
+  }
+
+  discardActiveObject() {
+    for (var i = 0; i < this._objects.length; i++) {
+      this._objects[i].activeOn = false;
+    }
+    return this;
+  }
+
+  getElement() {
+    // cannot use document.createElement here, but pretend API is available
+    return {};
+  }
+
+  getPointer(event) {
+    // Return mock coordinates
+    return { x: (event && event.clientX) || 100, y: (event && event.clientY) || 100 };
+  }
+
+  setZoom() { return this; }
+  getZoom() { return 1; }
+  sendObjectToBack(object) { return this; }
+  renderAll() {}
+  requestRenderAll() {}
+  dispose() {}
+
+  // Removed all Promise usage
+  withImplementation(callback) {
+    // Just directly call the callback, no async/Promise support
+    if (callback && typeof callback === "function") {
+      callback();
+    }
   }
 }
 
 // Mock PencilBrush class
 export class PencilBrush {
-  width: number;
-  color: string;
-  canvas: Canvas;
-  
-  constructor(canvas: Canvas) {
+  width;
+  color;
+  canvas;
+
+  constructor(canvas) {
     this.width = 1;
-    this.color = '#000000';
+    this.color = "#000000";
     this.canvas = canvas;
   }
 }
 
 // Mock Line class
 export class Line {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  stroke: string;
-  strokeWidth: number;
-  selectable: boolean;
-  evented: boolean;
-  activeOn: boolean;
-  
-  constructor(points: number[], options?: any) {
+  x1; y1; x2; y2;
+  stroke; strokeWidth; selectable; evented; activeOn;
+
+  constructor(points, options) {
     this.x1 = points[0] || 0;
     this.y1 = points[1] || 0;
     this.x2 = points[2] || 0;
     this.y2 = points[3] || 0;
-    this.stroke = options?.stroke || '#000000';
-    this.strokeWidth = options?.strokeWidth || 1;
-    this.selectable = options?.selectable ?? true;
-    this.evented = options?.evented ?? true;
+    this.stroke = (options && options.stroke) || "#000000";
+    this.strokeWidth = (options && options.strokeWidth) || 1;
+    this.selectable = (options && typeof options.selectable !== "undefined") ? options.selectable : true;
+    this.evented = (options && typeof options.evented !== "undefined") ? options.evented : true;
     this.activeOn = false;
   }
-  
-  set(options: any): Line {
-    // Replace Object.assign with manual property assignment
+
+  set(options) {
     if (options) {
-      // Manual assignment of properties
-      for (const key in options) {
+      for (var key in options) {
         if (Object.prototype.hasOwnProperty.call(options, key)) {
-          (this as any)[key] = options[key];
+          this[key] = options[key];
         }
       }
     }
@@ -171,12 +144,5 @@ export class Line {
   }
 }
 
-// Export mock classes
-export const Object = {
-  prototype: {}
-};
+export const Object = { prototype: {} };
 
-// For TypeScript compatibility
-export type { Canvas as FabricCanvas };
-export type { PencilBrush as FabricPencilBrush };
-export type { Line as FabricLine };
