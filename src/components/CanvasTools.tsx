@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import {
   RotateCw,
   MousePointer,
   Trash2
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface CanvasToolsProps {

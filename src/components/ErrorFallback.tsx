@@ -7,11 +7,11 @@
  */
 import { useEffect } from 'react';
 import { Button } from './ui/button';
-import { captureError } from '@/utils/sentryUtils';
+import { setTag, setContext, captureError } from '@/utils/sentryUtils';
 import * as Sentry from '@sentry/react';
 import { captureErrorWithMonitoring } from '@/utils/errorMonitoring';
 import { FallbackProps } from 'react-error-boundary';
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 /**
  * ErrorFallback component that displays when an uncaught error occurs
@@ -23,16 +23,17 @@ import { useLocation } from 'react-router-dom';
  */
 export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentRoute = location.pathname;
 
   // Report error to Sentry when the component mounts
   useEffect(() => {
     // Set Sentry context for critical errors
-    Sentry.setTag("errorType", "critical");
-    Sentry.setTag("errorBoundary", "triggered");
-    Sentry.setTag("route", currentRoute);
+    setTag("errorType", "critical");
+    setTag("errorBoundary", "triggered");
+    setTag("route", currentRoute);
     
-    Sentry.setContext("errorBoundaryDetails", {
+    setContext("errorBoundaryDetails", {
       message: error.message,
       stack: error.stack,
       route: currentRoute,
@@ -78,7 +79,7 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
           <Button 
             onClick={() => {
               // Set recovery attempt in Sentry
-              Sentry.setTag("recovery", "attempted");
+              setTag("recovery", "attempted");
               resetErrorBoundary();
             }}
             className="w-full"
@@ -90,8 +91,8 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
             variant="outline"
             onClick={() => {
               // Set navigation recovery in Sentry
-              Sentry.setTag("recovery", "navigation");
-              window.location.href = '/';
+              setTag("recovery", "navigation");
+              navigate('/');
             }}
             className="w-full"
           >

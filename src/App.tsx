@@ -1,33 +1,39 @@
 
-import { Routes, Route } from 'react-router-dom';
-import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/query-client';
 import { CanvasEngineProvider } from './contexts/CanvasEngineContext';
 import PropertyDetail from './pages/PropertyDetail';
 import Index from './pages/Index';
 import { CanvasProvider } from './contexts/CanvasContext';
 import FloorPlans from './pages/Floorplans';
 
-// Create a query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
+// Create router
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
   },
-});
+  {
+    path: "/properties/:id",
+    element: <PropertyDetail />,
+  },
+  {
+    path: "/floorplans",
+    element: <FloorPlans />,
+  },
+  {
+    path: "/floorplans/:id",
+    element: <PropertyDetail />,
+  }
+]);
 
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <CanvasEngineProvider>
         <CanvasProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/properties/:id" element={<PropertyDetail />} />
-            <Route path="/floorplans" element={<FloorPlans />} />
-            <Route path="/floorplans/:id" element={<PropertyDetail />} />
-          </Routes>
+          <RouterProvider router={router} />
         </CanvasProvider>
       </CanvasEngineProvider>
     </QueryClientProvider>

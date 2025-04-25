@@ -4,7 +4,8 @@ import { createIcon } from "lucide-react";
 // Re-export icons with correct names that match our usage
 export const RotateCw = createIcon('RotateCw', [
   ['path', { d: 'M21 12a9 9 0 1 1-9-9c4.97 0 9 4.03 9 9z' }],
-  ['path', { d: 'M21 3v6h-6' }]
+  ['path', { d: 'm21 3-6 6' }],
+  ['path', { d: 'M21 9V3h-6' }]
 ]);
 
 export const Pencil = createIcon('Pencil', [
@@ -66,4 +67,3 @@ export const RulerSquare = createIcon('RulerSquare', [
   ['path', { d: 'M9 3v6' }],
   ['path', { d: '15 3v6' }]
 ]);
-

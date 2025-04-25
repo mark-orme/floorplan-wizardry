@@ -1,18 +1,32 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
+import { RotateCw } from "@/components/ui/icons";
 import { toast } from '@/utils/toastUtils';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface CanvasFallbackProps {
+  error?: Error;
+  retry: () => void;
   errorMessage?: string;
-  onRetry: () => void;
+  width?: number;
+  height?: number;
+  showDiagnostics?: boolean;
 }
 
 const CanvasFallback: React.FC<CanvasFallbackProps> = ({
+  error,
+  retry,
   errorMessage,
-  onRetry
+  width = 800,
+  height = 600,
+  showDiagnostics = false
 }) => {
+  const handleRetry = () => {
+    toast.info("Retrying canvas initialization...");
+    retry();
+  };
+
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-90 z-10">
       <div className="text-center p-4 max-w-md">
@@ -21,6 +35,12 @@ const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         {errorMessage && (
           <p className="text-gray-600 mb-4 text-sm">
             {errorMessage}
+          </p>
+        )}
+        
+        {error && (
+          <p className="text-gray-600 mb-4 text-sm">
+            {error.message}
           </p>
         )}
         
@@ -33,7 +53,7 @@ const CanvasFallback: React.FC<CanvasFallbackProps> = ({
           </ul>
         </div>
         
-        <Button onClick={onRetry} variant="default">
+        <Button onClick={handleRetry} variant="default">
           <RotateCw className="w-4 h-4 mr-2" />
           Retry Loading Canvas
         </Button>

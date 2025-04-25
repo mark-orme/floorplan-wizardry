@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { render, screen, fireEvent } from '../tests/test-utils';
 import { LineSettings } from './LineSettings';
@@ -35,7 +36,7 @@ describe('LineSettings Component', () => {
 
   it('should use userEvent to simulate color change', async () => {
     const setLineColor = jest.fn();
-    render(<LineSettings lineColor="#000000" setLineColor={setLineColor} lineThickness={2} setLineThickness={() => {}} />);
+    const { userEvent } = render(<LineSettings lineColor="#000000" setLineColor={setLineColor} lineThickness={2} setLineThickness={() => {}} />);
     const colorInput = screen.getByLabelText('Color:');
     
     // Use userEvent to simulate a change event
@@ -47,7 +48,7 @@ describe('LineSettings Component', () => {
 
   it('should use userEvent to simulate thickness change', async () => {
     const setLineThickness = jest.fn();
-    render(<LineSettings lineColor="#000000" setLineColor={() => {}} lineThickness={2} setLineThickness={setLineThickness} />);
+    const { userEvent } = render(<LineSettings lineColor="#000000" setLineColor={() => {}} lineThickness={2} setLineThickness={setLineThickness} />);
     const thicknessInput = screen.getByLabelText('Thickness:');
     
     // Use userEvent to simulate a change event

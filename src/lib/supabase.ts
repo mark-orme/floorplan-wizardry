@@ -1,52 +1,34 @@
 
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Supabase client and types
+ */
 
-// Use Vite's import.meta.env instead of process.env
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+export type UserRole = 'admin' | 'manager' | 'user' | 'guest';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Define enum for user roles
-export enum UserRole {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  PHOTOGRAPHER = 'photographer',
-  USER = 'user',
-  PROCESSING_MANAGER = 'processing_manager',
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  name?: string;
+  avatarUrl?: string;
+  createdAt: string;
+  lastLogin?: string;
 }
 
-// Define a function to get the user role from claims
-export const getUserRole = async (): Promise<UserRole | null> => {
-  const { data, error } = await supabase.auth.getUser();
+export interface AuthState {
+  user: User | null;
+  session: any | null;
+  loading: boolean;
+  error: Error | null;
+}
 
-  if (error) {
-    console.error("Error fetching user:", error);
+// Mock functions for authentication
+export const supabaseAuth = {
+  getUser: async (): Promise<User | null> => {
     return null;
-  }
-
-  // Check if user data exists and has user_claims
-  if (data?.user?.app_metadata?.user_claims) {
-    const userClaims = data.user.app_metadata.user_claims as { role: UserRole };
-    return userClaims?.role || UserRole.USER; // Default to 'user' if role is not defined
-  }
-
-  return UserRole.USER; // Default to 'user' if no claims are found
+  },
+  signIn: async (email: string, password: string): Promise<{ user: User | null, error: Error | null }> => {
+    return { user: null, error: null };
+  },
+  signOut: async (): Promise<void> => {}
 };
-
-// Fixing the getConfig issue
-export const getStorageConfig = () => {
-  // Use the correct API instead of getConfig
-  return supabase.storage.from('assets').getPublicUrl('');
-};
-
-// Add missing exports that lib/index.ts expects
-export const mockSupabase = supabase;
-export enum PropertyStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-}
-export const isSecureConnection = () => window.location.protocol === 'https:';
-export const isSupabaseConfigured = () => !!supabaseUrl && !!supabaseKey;

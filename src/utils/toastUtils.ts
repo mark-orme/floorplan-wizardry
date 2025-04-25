@@ -1,18 +1,9 @@
 
-/**
- * Mock toast utility
- */
+// Toast utility functions
+// This is a mock implementation for now
 export const toast = {
-  success: (message: string) => {
-    console.info(`[Toast Success] ${message}`);
-  },
-  error: (message: string) => {
-    console.error(`[Toast Error] ${message}`);
-  },
-  info: (message: string) => {
-    console.info(`[Toast Info] ${message}`);
-  },
-  warning: (message: string) => {
-    console.warn(`[Toast Warning] ${message}`);
-  }
+  success: (message: string) => console.log(`SUCCESS: ${message}`),
+  error: (message: string) => console.error(`ERROR: ${message}`),
+  info: (message: string) => console.info(`INFO: ${message}`),
+  warning: (message: string) => console.warn(`WARNING: ${message}`),
 };

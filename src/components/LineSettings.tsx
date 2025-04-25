@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-export interface LineSettingsProps {
+interface LineSettingsProps {
   lineColor: string;
   setLineColor: (color: string) => void;
   lineThickness: number;
@@ -12,35 +12,39 @@ export const LineSettings: React.FC<LineSettingsProps> = ({
   lineColor,
   setLineColor,
   lineThickness,
-  setLineThickness
+  setLineThickness,
 }) => {
   return (
-    <div className="flex flex-col space-y-4">
-      <div className="flex items-center justify-between">
-        <label htmlFor="color-input" className="text-sm font-medium">Color:</label>
+    <div className="space-y-4">
+      <div className="flex items-center">
+        <label htmlFor="color-input" className="mr-2 w-20">
+          Color:
+        </label>
         <input
           id="color-input"
           type="color"
           value={lineColor}
           onChange={(e) => setLineColor(e.target.value)}
-          className="w-8 h-8 rounded cursor-pointer"
+          className="h-8 w-8 cursor-pointer"
           aria-label="Color:"
         />
       </div>
       
-      <div className="flex items-center justify-between">
-        <label htmlFor="thickness-input" className="text-sm font-medium">Thickness:</label>
+      <div className="flex items-center">
+        <label htmlFor="thickness-input" className="mr-2 w-20">
+          Thickness:
+        </label>
         <input
           id="thickness-input"
           type="range"
           min="1"
           max="10"
           value={lineThickness}
-          onChange={(e) => setLineThickness(parseInt(e.target.value))}
-          className="w-32"
+          onChange={(e) => setLineThickness(parseInt(e.target.value, 10))}
+          className="w-36"
           aria-label="Thickness:"
         />
-        <span className="ml-2 text-sm">{lineThickness}px</span>
+        <span className="ml-2">{lineThickness}px</span>
       </div>
     </div>
   );

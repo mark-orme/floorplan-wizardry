@@ -14,7 +14,7 @@ fi
 
 # Install missing dependencies
 echo "Installing missing dependencies..."
-npm install --save react-day-picker@latest @radix-ui/react-collapsible@latest @radix-ui/react-popover@latest vaul@latest fabric@latest
+npm install --save react-day-picker@latest @radix-ui/react-collapsible@latest @radix-ui/react-popover@latest vaul@latest
 
 # Ensure vite is executable
 if [ -f "./node_modules/.bin/vite" ]; then

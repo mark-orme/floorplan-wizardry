@@ -1,47 +1,42 @@
 
 /**
- * Logger utility for consistent logging across the application
+ * Logger utility for application
  */
 
-class LoggerClass {
-  debug(message: string, ...args: any[]) {
-    console.debug(`[DEBUG] ${message}`, ...args);
-  }
-  
-  info(message: string, ...args: any[]) {
-    console.info(`[INFO] ${message}`, ...args);
-  }
-  
-  warn(message: string, ...args: any[]) {
-    console.warn(`[WARN] ${message}`, ...args);
-  }
-  
-  error(message: string, ...args: any[]) {
-    console.error(`[ERROR] ${message}`, ...args);
-  }
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface LogOptions {
+  tags?: string[];
+  data?: Record<string, any>;
 }
 
-// Create a singleton instance
-const logger = new LoggerClass();
+/**
+ * Simple logger utility with level-based filtering
+ */
+const logger = {
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  
+  debug(message: string, options?: LogOptions | Record<string, any>) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug(`[DEBUG] ${message}`, options || '');
+    }
+    return this;
+  },
+  
+  info(message: string, options?: LogOptions | Record<string, any>) {
+    console.info(`[INFO] ${message}`, options || '');
+    return this;
+  },
+  
+  warn(message: string, options?: LogOptions | Record<string, any>) {
+    console.warn(`[WARN] ${message}`, options || '');
+    return this;
+  },
+  
+  error(message: string, error?: Error | string | Record<string, any>) {
+    console.error(`[ERROR] ${message}`, error || '');
+    return this;
+  }
+};
 
-// Export both the instance and class for flexibility
 export default logger;
-
-// For backward compatibility with code using Logger.info etc.
-export const Logger = {
-  debug: logger.debug,
-  info: logger.info,
-  warn: logger.warn,
-  error: logger.error
-};
-
-// For convenient export by name
-export { logger };
-
-// Named grid logger for specialized grid operations
-export const gridLogger = {
-  debug: (message: string, ...args: any[]) => logger.debug(`[GRID] ${message}`, ...args),
-  info: (message: string, ...args: any[]) => logger.info(`[GRID] ${message}`, ...args),
-  warn: (message: string, ...args: any[]) => logger.warn(`[GRID] ${message}`, ...args),
-  error: (message: string, ...args: any[]) => logger.error(`[GRID] ${message}`, ...args)
-};
