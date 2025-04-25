@@ -33,7 +33,6 @@ describe('DrawingToolbar', () => {
 
   it('renders toolbar with all tools', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     expect(screen.getByText('select')).toBeInTheDocument();
     expect(screen.getByText('line')).toBeInTheDocument();
     expect(screen.getByText('draw')).toBeInTheDocument();
@@ -41,35 +40,27 @@ describe('DrawingToolbar', () => {
 
   it('highlights active tool', () => {
     render(<DrawingToolbar {...defaultProps} activeTool={DrawingMode.STRAIGHT_LINE} />);
-    
     const lineButton = screen.getByText('line').closest('button');
     const selectButton = screen.getByText('select').closest('button');
-    
     expect(lineButton).toHaveClass('bg-primary');
     expect(selectButton).not.toHaveClass('bg-primary');
   });
 
   it('calls onToolChange when tool button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     fireEvent.click(screen.getByText('line'));
-    
     expect(defaultProps.onToolChange).toHaveBeenCalledWith(DrawingMode.STRAIGHT_LINE);
   });
 
   it('calls onUndo when undo button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     fireEvent.click(screen.getByRole('button', { name: /undo/i }));
-    
     expect(defaultProps.onUndo).toHaveBeenCalled();
   });
 
   it('calls onClear when clear button is clicked', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     fireEvent.click(screen.getByRole('button', { name: /clear/i }));
-    
     expect(defaultProps.onClear).toHaveBeenCalled();
   });
 
@@ -81,31 +72,23 @@ describe('DrawingToolbar', () => {
         canRedo={false}
       />
     );
-    
     const undoButton = screen.getByRole('button', { name: /undo/i });
     const redoButton = screen.getByRole('button', { name: /redo/i });
-    
     expect(undoButton).toBeDisabled();
     expect(redoButton).toBeDisabled();
   });
 
   it('displays and updates color picker', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     const colorInput = screen.getByLabelText(/color/i);
-    
     fireEvent.change(colorInput, { target: { value: '#ff0000' } });
-    
     expect(defaultProps.onColorChange).toHaveBeenCalledWith('#ff0000');
   });
 
   it('displays and updates thickness input', () => {
     render(<DrawingToolbar {...defaultProps} />);
-    
     const thicknessInput = screen.getByLabelText(/thickness/i);
-    
     fireEvent.change(thicknessInput, { target: { value: '5' } });
-    
     expect(defaultProps.onThicknessChange).toHaveBeenCalledWith(5);
   });
 });

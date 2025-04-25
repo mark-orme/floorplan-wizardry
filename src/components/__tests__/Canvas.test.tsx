@@ -1,4 +1,3 @@
-
 /**
  * Tests for Canvas component
  * @module components/__tests__/Canvas
@@ -113,7 +112,6 @@ describe('Canvas', () => {
       />
     );
     
-    // Unmount the component
     unmount();
     
     // Canvas dispose should be called
