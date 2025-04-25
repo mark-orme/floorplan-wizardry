@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import CanvasFallback from "@/components/canvas/CanvasFallback";
-
-export { default as CanvasFallback } from '@/components/canvas/CanvasFallback';
-
 import { Canvas, CanvasProps } from '@/components/Canvas';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 import { Canvas as FabricCanvas } from 'fabric';
+
+export { default as CanvasFallback } from '@/components/canvas/CanvasFallback';
 
 export interface CanvasWithFallbackProps extends CanvasProps {
   /** Additional class name for container */

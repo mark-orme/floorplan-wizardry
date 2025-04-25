@@ -1,7 +1,5 @@
-
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent } from '../tests/test-utils';
 import { LineSettings } from './LineSettings';
 
 describe('LineSettings Component', () => {

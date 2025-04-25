@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { propertyFormSchema, PropertyFormValues } from '@/types/PropertyFormSchema';
 import {
   Form,
   FormField,
@@ -14,21 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const propertySchema = z.object({
-  orderId: z.string().min(3, { message: "Order ID is required" }),
-  address: z.string().min(5, { message: "Address is required" }),
-  clientName: z.string().min(2, { message: "Client name is required" }),
-  price: z.string().min(1, { message: "Price is required" }),
-  status: z.string().min(1, { message: "Status is required" }),
-  location: z.string().min(1, { message: "Location is required" }),
-  isActive: z.boolean()
-});
-
-type PropertyFormValues = z.infer<typeof propertySchema>;
-
 export function PropertyForm() {
   const form = useForm<PropertyFormValues>({
-    resolver: zodResolver(propertySchema),
+    resolver: zodResolver(propertyFormSchema),
     defaultValues: {
       orderId: "",
       address: "",
