@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -16,10 +17,8 @@ describe('LineSettings Component', () => {
   it('should call setLineColor when the color input changes', async () => {
     render(<LineSettings lineColor="#000000" lineThickness={2} setLineColor={mockSetLineColor} setLineThickness={mockSetLineThickness} />);
     const colorInput = screen.getByLabelText('Color:');
-    
     await userEvent.click(colorInput);
     fireEvent.change(colorInput, { target: { value: '#ffffff' } });
-    
     expect(mockSetLineColor).toHaveBeenCalled();
   });
 
@@ -32,8 +31,8 @@ describe('LineSettings Component', () => {
 
   it('should display the correct color and thickness values', () => {
     render(<LineSettings lineColor="#FF0000" lineThickness={5} setLineColor={mockSetLineColor} setLineThickness={mockSetLineThickness} />);
-    const colorInput = screen.getByLabelText('Color:') as HTMLInputElement;
-    const thicknessInput = screen.getByLabelText('Thickness:') as HTMLInputElement;
+    const colorInput = screen.getByLabelText('Color:');
+    const thicknessInput = screen.getByLabelText('Thickness:');
     expect(colorInput.value).toBe('#FF0000');
     expect(thicknessInput.value).toBe('5');
   });

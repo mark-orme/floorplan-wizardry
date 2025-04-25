@@ -1,19 +1,12 @@
-
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader,
-  DialogTitle,
-  DialogFooter
+  DialogTitle
 } from '@/components/ui/dialog';
-import { 
-  RulerSquare as Ruler, 
-  LayoutGrid as Grid, 
-  Square, 
-  MoveIcon as Move 
-} from "lucide-react";
+import { X, RulerSquare, LayoutGrid, Square, MoveIcon } from '@/components/ui/icons';
 
 interface MeasurementGuideProps {
   onClose: () => void;
@@ -24,66 +17,48 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>
-            Floor Plan Measurement Guide
-          </DialogTitle>
+          <DialogTitle>Floor Plan Measurement Guide</DialogTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-4 top-4" 
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Grid className="h-5 w-5" />
-              Grid System
-            </h3>
-            <div className="pl-7 space-y-2">
-              <p>• Each small grid square represents 0.1 meters (10 cm)</p>
-              <p>• Bold grid lines appear every 1 meter</p>
-              <p>• Use the grid for precise measurements</p>
-            </div>
+        <div className="space-y-4 mt-2">
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Drawing to Scale</h3>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Each grid square represents 0.1 meters (10 cm)</li>
+              <li>Large grid lines appear every 1 meter</li>
+              <li>Measurements are automatically displayed while drawing</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Drawing Tips</h3>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Use the straight line tool for precise wall measurements</li>
+              <li>Lines automatically snap to the grid for accuracy</li>
+              <li>Close shapes completely to measure room areas</li>
+              <li>Use the select tool to adjust existing elements</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h3 className="font-semibold text-lg mb-2">Gross Internal Area (GIA)</h3>
+            <p>GIA is calculated automatically based on the closed areas in your floor plan. It represents the total usable internal floor area.</p>
           </section>
 
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Ruler className="h-5 w-5" />
-              Drawing Tools
-            </h3>
-            <div className="pl-7 space-y-2">
-              <p>• Lines snap to grid points for accuracy</p>
-              <p>• Hold Shift for perfect horizontal/vertical lines</p>
-              <p>• Double-click to end a continuous line</p>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Square className="h-5 w-5" />
-              Room Measurements
-            </h3>
-            <div className="pl-7 space-y-2">
-              <p>• Close shapes to measure room area</p>
-              <p>• Areas are calculated in square meters</p>
-              <p>• Click inside a room to see its dimensions</p>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Move className="h-5 w-5" />
-              Navigation
-            </h3>
-            <div className="pl-7 space-y-2">
-              <p>• Drag to pan around the canvas</p>
-              <p>• Mouse wheel or pinch to zoom</p>
-              <p>• Right-click or long press to access context menu</p>
-            </div>
+          <section className="pt-2">
+            <Button onClick={onClose} className="w-full">
+              Got it
+            </Button>
           </section>
         </div>
-
-        <DialogFooter>
-          <Button onClick={onClose} className="w-full sm:w-auto">
-            Got it
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

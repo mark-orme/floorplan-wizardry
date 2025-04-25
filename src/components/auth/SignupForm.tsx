@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +8,11 @@ import React from 'react';
 interface SignupFormProps {
   email: string;
   password: string;
-  role: UserRole;
+  role: string;
   isLoading: boolean;
   setEmail: (value: string) => void;
   setPassword: (value: string) => void;
-  setRole: (value: UserRole) => void;
+  setRole: (value: string) => void;
   handleSignUp: (event: React.FormEvent) => Promise<void>;
 }
 
@@ -53,23 +52,20 @@ export const SignupForm = ({
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
-          <Select 
-            value={role} 
-            onValueChange={(value) => setRole(value as UserRole)}
+          <select 
+            id="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full border px-2 py-1 rounded"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select your role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UserRole.PHOTOGRAPHER}>Photographer</SelectItem>
-              <SelectItem value={UserRole.PROCESSING_MANAGER}>Processing Manager</SelectItem>
-              <SelectItem value={UserRole.MANAGER}>Manager</SelectItem>
-            </SelectContent>
-          </Select>
+            <option value="photographer">Photographer</option>
+            <option value="processing_manager">Processing Manager</option>
+            <option value="manager">Manager</option>
+          </select>
           <p className="text-xs text-muted-foreground mt-1">
-            {role === UserRole.PHOTOGRAPHER && 'Create properties and floor plans'}
-            {role === UserRole.PROCESSING_MANAGER && 'Review and process floor plans'}
-            {role === UserRole.MANAGER && 'Full access to all properties and settings'}
+            {role === 'photographer' && 'Create properties and floor plans'}
+            {role === 'processing_manager' && 'Review and process floor plans'}
+            {role === 'manager' && 'Full access to all properties and settings'}
           </p>
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
