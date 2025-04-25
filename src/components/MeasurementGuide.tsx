@@ -7,17 +7,12 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { X, RulerSquare as Ruler } from 'lucide-react';
+import { X, RulerSquare as Ruler } from '@/components/ui/icons';
 
 interface MeasurementGuideProps {
   onClose: () => void;
 }
 
-/**
- * Guide for floor plan measurements
- * @param {MeasurementGuideProps} props - Component properties
- * @returns {JSX.Element} MeasurementGuide component
- */
 export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) => {
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -69,3 +64,4 @@ export const MeasurementGuide: React.FC<MeasurementGuideProps> = ({ onClose }) =
     </Dialog>
   );
 };
+

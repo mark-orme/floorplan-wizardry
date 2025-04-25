@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,17 +29,17 @@ const EditPropertyForm = () => {
         <CardContent>
           <form className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Property Name</Label>
+              <Label htmlFor="name">{'Property Name'}</Label>
               <Input id="name" defaultValue="Sample Property" />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">{'Address'}</Label>
               <Input id="address" defaultValue="123 Main St" />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{'Description'}</Label>
               <Textarea 
                 id="description" 
                 defaultValue="A beautiful property with modern amenities."
