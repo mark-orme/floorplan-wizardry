@@ -104,7 +104,6 @@ describe('Canvas', () => {
       getObjects: vi.fn().mockReturnValue([])
     }));
 
-    // The returned object from render has unmount
     const { unmount } = render(
       <Canvas
         width={800}

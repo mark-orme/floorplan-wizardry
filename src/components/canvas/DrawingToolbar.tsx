@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowUndo as Undo, 
-  ArrowRedo as Redo, 
-  Trash, 
+import {
+  ArrowUndo as Undo,
+  ArrowRedo as Redo,
+  Trash,
   Save,
-  Menu
-} from 'lucide-react';
+  Menu,
+} from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMediaQuery } from '@/hooks/use-media-query';
 

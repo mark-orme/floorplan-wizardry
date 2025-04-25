@@ -1,4 +1,3 @@
-
 import {
   RotateCw, Globe, X, Eye, EyeOff, Lock, Unlock, Hand,
   Eraser, ArrowUndo, ArrowRedo, ZoomIn, ZoomOut, Save, Download,

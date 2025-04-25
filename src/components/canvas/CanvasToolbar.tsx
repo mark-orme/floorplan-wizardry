@@ -1,22 +1,23 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  MousePointer, 
-  Pencil, 
-  Square, 
-  Circle, 
-  Text, 
-  Eraser, 
-  Hand, 
-  ArrowUndo as Undo, 
-  ArrowRedo as Redo, 
-  ZoomIn, 
-  ZoomOut, 
-  Save, 
-  Download, 
-  Trash, 
-  RulerSquare as Ruler 
-} from 'lucide-react';
+import {
+  MousePointer,
+  Pencil,
+  Square,
+  Circle,
+  Text,
+  Eraser,
+  Hand,
+  ArrowUndo,
+  ArrowRedo,
+  ZoomIn,
+  ZoomOut,
+  Save,
+  Download,
+  Trash,
+  RulerSquare as Ruler,
+} from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
