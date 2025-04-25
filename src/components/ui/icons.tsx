@@ -1,17 +1,27 @@
 
-import { createIcon } from "lucide-react";
-export { 
+import { 
   RotateCw, Globe, X, Eye, EyeOff, Lock, Unlock, Hand, 
   Eraser, ArrowUndo, ArrowRedo, ZoomIn, ZoomOut, Save, Download, 
   Text, RulerSquare, Layers, PlusCircle, Calculator, Hammer, 
   Home, Ruler, Type, Menu, Users, RefreshCcw, MousePointer, 
-  Pencil, Square, Trash, ArrowDown, ArrowUp 
+  Pencil, Square, Trash, ArrowDown, ArrowUp, Circle, LayoutGrid 
 } from "lucide-react";
 
-// Custom icon aliases for legacy/compatibility, if needed:
+import { createIcon } from "lucide-react";
+
+// Export icons as named exports
+export {
+  RotateCw, Globe, X, Eye, EyeOff, Lock, Unlock, Hand, 
+  Eraser, ArrowUndo, ArrowRedo, ZoomIn, ZoomOut, Save, Download, 
+  Text, RulerSquare, Layers, PlusCircle, Calculator, Hammer, 
+  Home, Ruler, Type, Menu, Users, RefreshCcw, MousePointer, 
+  Pencil, Square, Trash, ArrowDown, ArrowUp, Circle, LayoutGrid
+};
+
+// Aliases for legacy/compatibility, if needed:
 export const Trash2 = Trash;
 
-// MoveIcon example (custom, fallback to an icon if not defined)
+// Custom icons example (Move): ensure this covers legacy usage where not in Lucide.
 export const MoveIcon = createIcon('Move', [
   ['polyline', { points: '5 9 2 12 5 15' }],
   ['polyline', { points: '9 5 12 2 15 5' }],

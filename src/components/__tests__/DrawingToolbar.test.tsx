@@ -1,18 +1,8 @@
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DrawingToolbar } from '@/components/DrawingToolbar';
 import { DrawingMode } from '@/constants/drawingModes';
-
-jest.mock('@testing-library/react', () => {
-  const originalModule = jest.requireActual('@testing-library/react');
-  return {
-    ...originalModule,
-    fireEvent: {
-      ...originalModule.fireEvent,
-      click: (element) => originalModule.fireEvent.click(element),
-    },
-  };
-});
 
 describe('DrawingToolbar', () => {
   const defaultProps = {
@@ -102,7 +92,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates color picker', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const colorInput = screen.getByRole('textbox', { name: /color/i });
+    const colorInput = screen.getByLabelText(/color/i);
     
     fireEvent.change(colorInput, { target: { value: '#ff0000' } });
     
@@ -112,7 +102,7 @@ describe('DrawingToolbar', () => {
   it('displays and updates thickness input', () => {
     render(<DrawingToolbar {...defaultProps} />);
     
-    const thicknessInput = screen.getByRole('spinbutton', { name: /thickness/i });
+    const thicknessInput = screen.getByLabelText(/thickness/i);
     
     fireEvent.change(thicknessInput, { target: { value: '5' } });
     
