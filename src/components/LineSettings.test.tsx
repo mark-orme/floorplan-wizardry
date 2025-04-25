@@ -45,4 +45,3 @@ describe('LineSettings Component', () => {
     expect(setLineThickness).toHaveBeenCalled();
   });
 });
-

@@ -6,22 +6,25 @@
 export enum DrawingMode {
   SELECT = 'select',
   DRAW = 'draw',
-  RECT = 'rectangle',
+  RECT = 'rect',            // legacy alias
+  RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
   LINE = 'line',
+  STRAIGHT_LINE = 'straight_line',
   PENCIL = 'pencil',
   ERASER = 'eraser',
+  ERASE = 'erase',
   TEXT = 'text',
   SHAPE = 'shape',
-  STRAIGHT_LINE = 'straight_line',
-  ERASE = 'erase',
   HAND = 'hand',
   WALL = 'wall',
   ROOM = 'room',
-  PAN = 'pan',
   ROOM_LABEL = 'room_label',
+  PAN = 'pan',
   MEASURE = 'measure',
   DOOR = 'door',
   WINDOW = 'window',
   ZOOM = 'zoom'
 }
+
+// Only use this enum everywhere, remove/replace any dupes elsewhere!
