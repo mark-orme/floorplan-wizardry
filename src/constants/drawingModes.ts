@@ -11,5 +11,6 @@ export enum DrawingMode {
   PENCIL = 'pencil',
   ERASER = 'eraser',
   TEXT = 'text',
-  SHAPE = 'shape'
+  SHAPE = 'shape',
+  STRAIGHT_LINE = 'straight_line' // add this as referenced elsewhere
 }

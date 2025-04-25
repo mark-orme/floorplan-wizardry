@@ -1,70 +1,25 @@
 
 import React from 'react';
-import { DebugInfoState } from "@/types/core/DebugInfo";
+import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface DebugInfoProps {
   debugInfo: DebugInfoState;
 }
 
-/**
- * Displays debug information about the canvas state
- * @param {DebugInfoProps} props - Component properties
- * @returns {React.ReactElement} Debug information component
- */
-export const DebugInfo = ({ debugInfo }: DebugInfoProps): React.ReactElement => {
-  // Only show in development mode
-  if (process.env.NODE_ENV !== "development") {
-    return <></>;
-  }
-
-  // Helper to safely display debug values
-  const formatDebugValue = (value: unknown): string => {
-    if (value === undefined || value === null) return 'N/A';
-    if (typeof value === 'object') return '[Object]';
-    return String(value);
-  };
-
-  // Access the fps safely - make sure to check performanceStats fields exist
-  const fps = debugInfo.performanceStats?.fps || debugInfo.fps || debugInfo.currentFps || 0;
-  const droppedFrames = debugInfo.performanceStats?.droppedFrames || 0;
-  const frameTime = debugInfo.performanceStats?.frameTime || 0;
-  const maxFrameTime = debugInfo.performanceStats?.maxFrameTime || 0;
-  const longFrames = debugInfo.performanceStats?.longFrames || 0;
-
+export const DebugInfo: React.FC<DebugInfoProps> = ({ debugInfo }) => {
+  // Render only the available properties
   return (
-    <div className="mt-4 p-2 text-xs bg-gray-100 rounded-md overflow-auto max-h-32">
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <h3 className="font-bold">Canvas State</h3>
-          <p>Initialized: {debugInfo.canvasInitialized ? "✅" : "❌"}</p>
-          <p>Created: {debugInfo.canvasCreated ? "✅" : "❌"}</p>
-          <p>Grid Created: {debugInfo.gridCreated ? "✅" : "❌"}</p>
-          <p>Dimensions Set: {debugInfo.dimensionsSet ? "✅" : "❌"}</p>
-          <p>Brush Initialized: {debugInfo.brushInitialized ? "✅" : "❌"}</p>
-          <p>
-            Grid Objects: {formatDebugValue(debugInfo.gridObjectCount)} / Objects: {formatDebugValue(debugInfo.objectCount)}
-          </p>
-          <p>
-            Canvas Size: {formatDebugValue(debugInfo.canvasWidth || debugInfo.canvasDimensions?.width)}x
-            {formatDebugValue(debugInfo.canvasHeight || debugInfo.canvasDimensions?.height)} 
-            (DPR: {formatDebugValue(debugInfo.devicePixelRatio)})
-          </p>
-        </div>
-        
-        <div>
-          <h3 className="font-bold">Performance Metrics</h3>
-          <p>FPS: {fps?.toFixed(1) || 'N/A'}</p>
-          <p>Dropped Frames: {droppedFrames}</p>
-          <p>Avg Frame Time: {frameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Max Frame Time: {maxFrameTime?.toFixed(2) || 'N/A'}ms</p>
-          <p>Long Frames: {longFrames}</p>
-          {debugInfo.lastError && (
-            <p className="text-red-500">
-              Error: {String(debugInfo.lastError)} ({new Date(typeof debugInfo.lastErrorTime === 'number' ? debugInfo.lastErrorTime : 0).toLocaleTimeString()})
-            </p>
-          )}
-        </div>
-      </div>
+    <div>
+      <div>Canvas Ready: {debugInfo.canvasReady ? "Yes" : "No"}</div>
+      <div>Canvas Initialized: {debugInfo.canvasInitialized ? "Yes" : "No"}</div>
+      <div>Canvas Created: {debugInfo.canvasCreated ? "Yes" : "No"}</div>
+      <div>Dimensions Set: {debugInfo.dimensionsSet ? "Yes" : "No"}</div>
+      <div>Error Count: {debugInfo.errorCount}</div>
+      <div>Last Error: {debugInfo.lastError}</div>
+      <div>Logs: {debugInfo.logs && debugInfo.logs.length}</div>
+      <div>Metrics: {JSON.stringify(debugInfo.metrics)}</div>
     </div>
   );
 };
+
+export default DebugInfo;
