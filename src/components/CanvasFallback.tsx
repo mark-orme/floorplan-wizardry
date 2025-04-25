@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { toast } from '@/utils/toastUtils';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
@@ -35,7 +34,7 @@ const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         </div>
         
         <Button onClick={onRetry} variant="default">
-          <RotateCcw className="w-4 h-4 mr-2" />
+          <RotateCw className="w-4 h-4 mr-2" />
           Retry Loading Canvas
         </Button>
       </div>

@@ -26,28 +26,4 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     })),
   });
-  
-  // Mock canvas
-  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
-    writable: true,
-    value: vi.fn().mockImplementation(() => ({
-      fillRect: vi.fn(),
-      clearRect: vi.fn(),
-      getImageData: vi.fn(() => ({
-        data: new Array(4).fill(0),
-      })),
-      putImageData: vi.fn(),
-      createImageData: vi.fn(() => []),
-      setTransform: vi.fn(),
-      drawImage: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      scale: vi.fn(),
-      rotate: vi.fn(),
-      translate: vi.fn(),
-      transform: vi.fn(),
-      fillText: vi.fn(),
-      measureText: vi.fn(() => ({ width: 0 })),
-    })),
-  });
 });

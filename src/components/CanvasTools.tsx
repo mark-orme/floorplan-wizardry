@@ -2,10 +2,9 @@ import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
-  PenTool,
+  Pencil,
   Square,
   Circle,
-  RotateCcw,
   RotateCw,
   MousePointer,
   Trash2
@@ -81,7 +80,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.DRAW)}
       >
-        <PenTool className="h-4 w-4 mr-1" />
+        <Pencil className="h-4 w-4 mr-1" />
         Draw
       </Button>
       
@@ -108,7 +107,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={undo}
       >
-        <RotateCcw className="h-4 w-4" />
+        <RotateCw className="h-4 w-4" />
       </Button>
       
       <Button 
