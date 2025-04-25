@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { RefreshCcw } from "lucide-react";
-import { toast } from '@/utils/toastUtils'; // Use our mock implementation
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
+import { toast } from '@/utils/toastUtils';
 import { DebugInfoState } from '@/types/core/DebugInfo';
 
 interface CanvasFallbackProps {
@@ -35,7 +35,7 @@ const CanvasFallback: React.FC<CanvasFallbackProps> = ({
         </div>
         
         <Button onClick={onRetry} variant="default">
-          <RefreshCcw className="w-4 h-4 mr-2" />
+          <RotateCcw className="w-4 h-4 mr-2" />
           Retry Loading Canvas
         </Button>
       </div>

@@ -1,17 +1,15 @@
-
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Button } from "@/components/ui/button";
 import { 
-  Pencil,
+  PenTool,
   Square,
   Circle,
-  ArrowUndo as Undo,
-  ArrowRedo as Redo,
+  RotateCcw,
+  RotateCw,
   MousePointer,
-  Trash
+  Trash2
 } from "lucide-react";
-import { StraightLine } from '@/components/icons/StraightLine';
 import { Canvas as FabricCanvas } from 'fabric';
 
 interface CanvasToolsProps {
@@ -43,9 +41,6 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
     // Configure canvas based on tool
     if (newTool === DrawingMode.DRAW) {
       canvas.isDrawingMode = true;
-      canvas.selection = false;
-    } else if (newTool === DrawingMode.STRAIGHT_LINE) {
-      canvas.isDrawingMode = false;
       canvas.selection = false;
     } else {
       canvas.isDrawingMode = false;
@@ -86,17 +81,8 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={() => handleToolClick(DrawingMode.DRAW)}
       >
-        <Pencil className="h-4 w-4 mr-1" />
+        <PenTool className="h-4 w-4 mr-1" />
         Draw
-      </Button>
-      
-      <Button 
-        variant={tool === DrawingMode.STRAIGHT_LINE ? 'default' : 'outline'} 
-        size="sm" 
-        onClick={() => handleToolClick(DrawingMode.STRAIGHT_LINE)}
-      >
-        <StraightLine className="h-4 w-4 mr-1" />
-        Line
       </Button>
       
       <Button 
@@ -122,7 +108,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={undo}
       >
-        <Undo className="h-4 w-4" />
+        <RotateCcw className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -130,7 +116,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={redo}
       >
-        <Redo className="h-4 w-4" />
+        <RotateCw className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -138,7 +124,7 @@ export const CanvasTools: React.FC<CanvasToolsProps> = ({
         size="sm" 
         onClick={handleClear}
       >
-        <Trash className="h-4 w-4 mr-1" />
+        <Trash2 className="h-4 w-4 mr-1" />
         Clear
       </Button>
       
