@@ -21,6 +21,14 @@ interface MockFabricCanvas extends FabricCanvas {
   off: jest.Mock;
 }
 
+// Define interface for grid creation result
+interface GridCreationResult {
+  gridObjects: Array<{ id: string }>;
+  smallGridLines: Array<{ id: string }>;
+  largeGridLines: Array<{ id: string }>;
+  markers: Array<Record<string, unknown>>;
+}
+
 // Mock the fabric canvas
 jest.mock('fabric', () => {
   return {
@@ -36,14 +44,6 @@ jest.mock('fabric', () => {
     } as MockFabricCanvas))
   };
 });
-
-// Define interface for grid creation result
-interface GridCreationResult {
-  gridObjects: Array<{ id: string }>;
-  smallGridLines: Array<{ id: string }>;
-  largeGridLines: Array<{ id: string }>;
-  markers: Array<Record<string, unknown>>;
-}
 
 // Mock required utilities
 jest.mock('@/utils/gridUtils', () => ({

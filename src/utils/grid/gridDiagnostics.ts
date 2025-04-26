@@ -49,13 +49,14 @@ export function runGridDiagnostics(canvas: FabricCanvas): GridDiagnosticResult {
       fixResult: `Found ${gridObjects.length} grid objects, ${brokenGridObjects} broken`
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error running grid diagnostics:', error);
     return {
       hasGrid: false,
       gridObjectCount: 0,
       brokenGridObjects: 0,
       fixApplied: false,
-      fixResult: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      fixResult: `Error: ${errorMessage}`
     };
   }
 }
@@ -102,13 +103,14 @@ export function applyGridFixes(canvas: FabricCanvas): GridDiagnosticResult {
       fixedGrid: newGridObjects
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error applying grid fixes:', error);
     return {
       hasGrid: false,
       gridObjectCount: 0,
       brokenGridObjects: 0,
       fixApplied: true,
-      fixResult: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      fixResult: `Error: ${errorMessage}`
     };
   }
 }
@@ -158,7 +160,8 @@ export function emergencyGridFix(canvas: FabricCanvas): FabricObject[] {
     return emergencyGrid;
     
   } catch (error) {
-    logger.error('Error in emergency grid fix:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error in emergency grid fix:', errorMessage);
     return [];
   }
 }

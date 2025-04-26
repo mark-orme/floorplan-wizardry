@@ -71,7 +71,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     // Setup a partially valid grid (some objects exist, some don't)
     const partialGridObjects = [
       { id: 'grid1', objectType: 'grid' } as FabricObject,
-      null as unknown as FabricObject,  // Simulating a missing object
+      null as FabricObject,  // Simulating a missing object
       { id: 'grid3', objectType: 'grid' } as FabricObject
     ];
     

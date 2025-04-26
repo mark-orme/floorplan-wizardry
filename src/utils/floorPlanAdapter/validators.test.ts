@@ -1,3 +1,4 @@
+
 /**
  * Floor Plan Validator Tests
  * Tests for floor plan validation functions
@@ -35,7 +36,8 @@ describe('Floor Plan Validators', () => {
     });
     
     test('throws on invalid y coordinate', () => {
-      const invalidPoint = { x: 10, y: 'not a number' as unknown as number };
+      // Use a type assertion directly to number since we're deliberately testing invalid data
+      const invalidPoint: Point = { x: 10, y: 'not a number' as number };
       expect(() => validatePoint(invalidPoint)).toThrow(ValidationError);
     });
     

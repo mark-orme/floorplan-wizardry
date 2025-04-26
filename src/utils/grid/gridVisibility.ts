@@ -57,7 +57,8 @@ export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
     
     return false;
   } catch (error) {
-    logger.error('Error ensuring grid visibility:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error ensuring grid visibility:', errorMessage);
     return false;
   }
 };
@@ -82,7 +83,8 @@ export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void 
     canvas.requestRenderAll();
     logger.info(`Grid visibility set to ${visible} for ${gridObjects.length} objects`);
   } catch (error) {
-    logger.error('Error setting grid visibility:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error setting grid visibility:', errorMessage);
   }
 };
 
@@ -119,7 +121,8 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
     
     return gridObjects.length > 0;
   } catch (error) {
-    logger.error('Error forcing grid creation and visibility:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error forcing grid creation and visibility:', errorMessage);
     return false;
   }
 };
@@ -159,7 +162,8 @@ export const updateGridWithZoom = (canvas: FabricCanvas): boolean => {
     canvas.requestRenderAll();
     return true;
   } catch (error) {
-    logger.error('Error updating grid with zoom:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error updating grid with zoom:', errorMessage);
     return false;
   }
 };

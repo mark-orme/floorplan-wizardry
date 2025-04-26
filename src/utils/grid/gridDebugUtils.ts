@@ -1,3 +1,4 @@
+
 /**
  * Grid debugging utilities
  * @module utils/grid/gridDebugUtils
@@ -15,6 +16,12 @@ interface GridDebugInfo {
     height: number;
     zoom: number;
   };
+}
+
+interface GridAnalysisResult {
+  hasIssues: boolean;
+  issues: string[];
+  diagnostics: Record<string, unknown>;
 }
 
 /**
@@ -86,11 +93,7 @@ export const dumpGridState = (canvas: FabricCanvas): void => {
  * @param gridObjects - Grid objects to analyze
  * @returns Analysis results
  */
-export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObject[]): {
-  hasIssues: boolean;
-  issues: string[];
-  diagnostics: Record<string, unknown>;
-} => {
+export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObject[]): GridAnalysisResult => {
   const issues: string[] = [];
   const diagnostics: Record<string, unknown> = {};
   

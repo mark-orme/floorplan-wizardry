@@ -34,7 +34,7 @@ describe('gridDebugUtils', () => {
         { objectType: 'grid', visible: false, left: 20, top: 20 }
       ];
       
-      mockCanvas.getObjects.mockReturnValue(mockGridObjects as unknown as FabricObject[]);
+      mockCanvas.getObjects.mockReturnValue(mockGridObjects as FabricObject[]);
       
       // Call dumpGridState
       dumpGridState(mockCanvas as Canvas);
@@ -47,7 +47,7 @@ describe('gridDebugUtils', () => {
     
     it('should handle null canvas', () => {
       // Call with null canvas
-      dumpGridState(null as unknown as Canvas);
+      dumpGridState(null as Canvas);
       
       // Verify error log
       expect(consoleSpy).toHaveBeenCalledWith('Cannot dump grid state: Canvas is null');
