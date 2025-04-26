@@ -1,42 +1,61 @@
 
 /**
- * Logger utility for application
+ * Logger Utility
+ * Provides standardized logging functionality
+ * @module utils/logger
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+const LOG_LEVEL = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3
+};
 
-interface LogOptions {
-  tags?: string[];
-  data?: Record<string, any>;
+// Get log level from environment or default to INFO
+const currentLogLevel = LOG_LEVEL.INFO;
+
+/**
+ * Logger interface
+ */
+interface Logger {
+  debug: (message: string, ...args: any[]) => void;
+  info: (message: string, ...args: any[]) => void;
+  warn: (message: string, ...args: any[]) => void;
+  error: (message: string, ...args: any[]) => void;
 }
 
 /**
- * Simple logger utility with level-based filtering
+ * Create logger instance
  */
-const logger = {
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  
-  debug(message: string, options?: LogOptions | Record<string, any>) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.debug(`[DEBUG] ${message}`, options || '');
+const createLogger = (): Logger => {
+  return {
+    debug: (message: string, ...args: any[]) => {
+      if (currentLogLevel <= LOG_LEVEL.DEBUG) {
+        console.debug(`[DEBUG] ${message}`, ...args);
+      }
+    },
+    
+    info: (message: string, ...args: any[]) => {
+      if (currentLogLevel <= LOG_LEVEL.INFO) {
+        console.info(`[INFO] ${message}`, ...args);
+      }
+    },
+    
+    warn: (message: string, ...args: any[]) => {
+      if (currentLogLevel <= LOG_LEVEL.WARN) {
+        console.warn(`[WARN] ${message}`, ...args);
+      }
+    },
+    
+    error: (message: string, ...args: any[]) => {
+      if (currentLogLevel <= LOG_LEVEL.ERROR) {
+        console.error(`[ERROR] ${message}`, ...args);
+      }
     }
-    return this;
-  },
-  
-  info(message: string, options?: LogOptions | Record<string, any>) {
-    console.info(`[INFO] ${message}`, options || '');
-    return this;
-  },
-  
-  warn(message: string, options?: LogOptions | Record<string, any>) {
-    console.warn(`[WARN] ${message}`, options || '');
-    return this;
-  },
-  
-  error(message: string, error?: Error | string | Record<string, any>) {
-    console.error(`[ERROR] ${message}`, error || '');
-    return this;
-  }
+  };
 };
+
+const logger = createLogger();
 
 export default logger;

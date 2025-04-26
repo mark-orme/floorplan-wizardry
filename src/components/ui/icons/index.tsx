@@ -16,3 +16,4 @@ export const Lock = LucideIcons.Lock;
 export const Unlock = LucideIcons.Unlock;
 export const Database = LucideIcons.Database;
 export const Loader2 = LucideIcons.Loader2;
+export const RulerSquare = LucideIcons.RulerSquare;

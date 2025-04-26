@@ -1,73 +1,39 @@
 
 /**
- * Grid related constants
+ * Grid Constants
+ * Constants used for grid creation and management
+ * @module constants/gridConstants
  */
 
 export const GRID_CONSTANTS = {
-  // Small grid settings
-  SMALL_GRID_SIZE: 10,
+  // Grid sizes
+  SMALL_GRID_SIZE: 20,
+  LARGE_GRID_SIZE: 100,
+  
+  // Grid line widths
+  SMALL_GRID_WIDTH: 1,
+  LARGE_GRID_WIDTH: 1.5,
+  
+  // Grid colors
   SMALL_GRID_COLOR: '#e0e0e0',
-  SMALL_GRID_WIDTH: 0.5,
-  
-  // Large grid settings
-  LARGE_GRID_SIZE: 50,
   LARGE_GRID_COLOR: '#d0d0d0',
-  LARGE_GRID_WIDTH: 1,
   
-  // Default grid settings (for backward compatibility)
-  GRID_SIZE: 50,
-  DEFAULT_GRID_SIZE: 50,
-  DEFAULT_GRID_COLOR: '#e0e0e0',
-  DEFAULT_GRID_OPACITY: 0.1,
-  DEFAULT_LINE_WIDTH: 1,
-  DEFAULT_VISIBLE: true,
+  // Grid opacity
+  SMALL_GRID_OPACITY: 0.4,
+  LARGE_GRID_OPACITY: 0.6,
   
-  // Grid visibility
-  GRID_VISIBLE: true,
-  SHOW_GRID: true,
+  // Grid update interval
+  GRID_UPDATE_INTERVAL: 500,
   
-  // Grid performance settings
-  GRID_BATCH_SIZE: 50,
-  GRID_LAYER_NAME: 'grid-layer',
-  GRID_VIRTUALIZATION: true,
-  
-  // Grid behavior
-  SNAP_TO_GRID: false,
-  SNAP_THRESHOLD: 10,
-  
-  // Grid debug settings
-  GRID_DEBUG: false,
-  GRID_DEBUG_COLOR: '#ff0000',
-  GRID_AUTO_FIX: true,
-  
-  // Grid render settings
-  GRID_Z_INDEX: -1,
-  GRID_SELECTABLE: false,
-  GRID_EVENTED: false,
-  
-  // Grid performance
-  GRID_RENDER_BUFFER: 100,
-  GRID_RECREATION_DELAY: 500,
-  
-  // Additional constants needed by components
-  PIXELS_PER_METER: 100,
-  color: '#e0e0e0'
+  // Grid validation
+  MIN_GRID_SIZE: 5,
+  MAX_GRID_SIZE: 500
 };
 
-// Re-export constants for backward compatibility
-export const {
-  SMALL_GRID_SIZE,
-  SMALL_GRID_COLOR,
-  LARGE_GRID_SIZE,
-  LARGE_GRID_COLOR,
-  GRID_SIZE,
-  DEFAULT_GRID_SIZE,
-  DEFAULT_GRID_COLOR,
-  GRID_VISIBLE,
-  SNAP_TO_GRID,
-  LARGE_GRID_WIDTH,
-  SMALL_GRID_WIDTH,
-  DEFAULT_GRID_OPACITY,
-  PIXELS_PER_METER,
-  color
-} = GRID_CONSTANTS;
+// Re-export individual constants
+export const SMALL_GRID_SIZE = GRID_CONSTANTS.SMALL_GRID_SIZE;
+export const LARGE_GRID_SIZE = GRID_CONSTANTS.LARGE_GRID_SIZE;
+export const SMALL_GRID_WIDTH = GRID_CONSTANTS.SMALL_GRID_WIDTH;
+export const LARGE_GRID_WIDTH = GRID_CONSTANTS.LARGE_GRID_WIDTH;
+export const SMALL_GRID_COLOR = GRID_CONSTANTS.SMALL_GRID_COLOR;
+export const LARGE_GRID_COLOR = GRID_CONSTANTS.LARGE_GRID_COLOR;

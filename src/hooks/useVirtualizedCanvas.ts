@@ -1,146 +1,121 @@
 
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+/**
+ * Virtualized Canvas Hook
+ * Provides virtualization for large canvas with many objects
+ * @module hooks/useVirtualizedCanvas
+ */
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas } from 'fabric';
+import { debounce } from '@/utils/debounce';
+
+interface VirtualizationOptions {
+  enabled?: boolean;
+  autoToggle?: boolean;
+  objectThreshold?: number;
+  updateInterval?: number;
+}
 
 interface PerformanceMetrics {
   fps: number;
   objectCount: number;
   visibleObjectCount: number;
   renderTime: number;
+  lastUpdated: number;
 }
 
-interface VirtualizedCanvasOptions {
-  enabled?: boolean;
-  objectThreshold?: number;
-  autoToggle?: boolean;
-}
-
-export const useVirtualizedCanvas = (
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>,
-  options: VirtualizedCanvasOptions = {}
-) => {
-  const [virtualizationEnabled, setVirtualizationEnabled] = useState(options.enabled ?? true);
+export function useVirtualizedCanvas(
+  canvasRef: React.RefObject<Canvas | null>,
+  options: VirtualizationOptions = {}
+) {
+  const {
+    enabled = false,
+    autoToggle = true,
+    objectThreshold = 100,
+    updateInterval = 1000
+  } = options;
+  
+  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     fps: 0,
     objectCount: 0,
     visibleObjectCount: 0,
-    renderTime: 0
+    renderTime: 0,
+    lastUpdated: Date.now()
   });
-
-  const framesRef = useRef(0);
-  const lastFrameTimeRef = useRef(Date.now());
-  const fpsTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const objectThreshold = options.objectThreshold ?? 100;
-
+  
+  const fpsCounterRef = useRef({ frames: 0, lastCheck: Date.now() });
+  const metricsIntervalRef = useRef<number | null>(null);
+  
   // Update FPS counter
-  useEffect(() => {
-    const updateFps = () => {
-      const now = Date.now();
-      const elapsed = now - lastFrameTimeRef.current;
-      if (elapsed >= 1000) {
-        const currentFps = Math.round((framesRef.current * 1000) / elapsed);
-        setPerformanceMetrics(prev => ({
-          ...prev,
-          fps: currentFps
-        }));
-        framesRef.current = 0;
-        lastFrameTimeRef.current = now;
-      }
-    };
-
-    fpsTimerRef.current = setInterval(updateFps, 500);
-    return () => {
-      if (fpsTimerRef.current) {
-        clearInterval(fpsTimerRef.current);
-      }
-    };
-  }, []);
-
-  // Apply virtualization when object count exceeds threshold
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  const updateFpsCounter = useCallback(() => {
+    const now = Date.now();
+    const elapsed = now - fpsCounterRef.current.lastCheck;
     
-    const countObjects = () => {
-      const objects = canvas.getObjects();
-      const count = objects.length;
-      
-      // Auto-toggle virtualization if enabled and object count exceeds threshold
-      if (options.autoToggle && count > objectThreshold && !virtualizationEnabled) {
-        setVirtualizationEnabled(true);
-      }
+    if (elapsed >= 1000) {
+      const fps = Math.round((fpsCounterRef.current.frames * 1000) / elapsed);
+      fpsCounterRef.current = { frames: 0, lastCheck: now };
       
       setPerformanceMetrics(prev => ({
         ...prev,
-        objectCount: count
+        fps,
+        lastUpdated: now
       }));
-    };
-    
-    // Count initial objects
-    countObjects();
-    
-    // Listen for object changes
-    canvas.on('object:added object:removed', countObjects);
-    
-    return () => {
-      canvas.off('object:added object:removed', countObjects);
-    };
-  }, [fabricCanvasRef, objectThreshold, options.autoToggle, virtualizationEnabled]);
-
-  // Set up virtualization
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
+    } else {
+      fpsCounterRef.current.frames++;
+    }
+  }, []);
+  
+  // Update performance metrics
+  const updateMetrics = useCallback(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-
-    canvas.skipOffscreen = virtualizationEnabled;
     
-    // Record frame rendered
-    const recordFrame = () => {
-      framesRef.current += 1;
-      
-      // Count visible objects if virtualization is enabled
-      if (virtualizationEnabled) {
-        const allObjects = canvas.getObjects();
-        let visibleCount = 0;
-        
-        for (const obj of allObjects) {
-          if (obj.visible && !obj.isOffscreen) {
-            visibleCount++;
-          }
-        }
-        
-        setPerformanceMetrics(prev => ({
-          ...prev,
-          visibleObjectCount: visibleCount
-        }));
-      }
-    };
-
-    canvas.on('after:render', recordFrame);
+    const objects = canvas.getObjects();
+    const visibleObjects = objects.filter(obj => obj.visible !== false);
     
-    return () => {
-      canvas.skipOffscreen = false;
-      canvas.off('after:render', recordFrame);
-    };
-  }, [fabricCanvasRef, virtualizationEnabled]);
-
+    setPerformanceMetrics(prev => ({
+      ...prev,
+      objectCount: objects.length,
+      visibleObjectCount: visibleObjects.length,
+      lastUpdated: Date.now()
+    }));
+    
+    // Auto-toggle virtualization based on object count
+    if (autoToggle && !virtualizationEnabled && objects.length > objectThreshold) {
+      setVirtualizationEnabled(true);
+    }
+  }, [canvasRef, autoToggle, virtualizationEnabled, objectThreshold]);
+  
+  // Refresh virtualization state
+  const refreshVirtualization = useCallback(debounce(() => {
+    updateMetrics();
+    updateFpsCounter();
+  }, 100), [updateMetrics, updateFpsCounter]);
+  
+  // Toggle virtualization on/off
   const toggleVirtualization = useCallback(() => {
     setVirtualizationEnabled(prev => !prev);
   }, []);
-
-  const refreshVirtualization = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  
+  // Set up metrics interval
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      updateMetrics();
+    }, updateInterval);
     
-    // Force recalculation of offscreen status
-    canvas.calcViewportBoundaries();
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef]);
-
+    metricsIntervalRef.current = intervalId;
+    
+    return () => {
+      if (metricsIntervalRef.current !== null) {
+        clearInterval(metricsIntervalRef.current);
+      }
+    };
+  }, [updateMetrics, updateInterval]);
+  
   return {
-    performanceMetrics,
     virtualizationEnabled,
     toggleVirtualization,
+    performanceMetrics,
     refreshVirtualization
   };
-};
+}

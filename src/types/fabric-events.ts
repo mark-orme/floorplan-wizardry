@@ -1,129 +1,75 @@
 
 /**
- * Fabric.js Event Type Definitions
- * 
- * This file contains TypeScript type definitions for Fabric.js event handling
- * to ensure consistent usage across the application.
- * 
+ * Fabric Events Type Definitions
+ * Type definitions for Fabric.js events
  * @module types/fabric-events
  */
+import { Object as FabricObject } from 'fabric';
 
-import { Point as FabricPoint } from 'fabric';
+export type TPointerEvent = MouseEvent | TouchEvent;
 
-/**
- * Fabric.js event names
- */
+export interface TPointerEventInfo<E extends TPointerEvent> {
+  e: E;
+  pointer: { x: number; y: number };
+  absolutePointer: { x: number; y: number };
+  viewportPoint?: { x: number; y: number };
+}
+
+export interface TSelectionEventInfo<E extends TPointerEvent> extends TPointerEventInfo<E> {
+  isClick: boolean;
+  currentTarget: FabricObject;
+  currentSubTargets?: FabricObject[];
+}
+
+export interface TMouseEventInfo extends TPointerEventInfo<MouseEvent> {
+  transform?: any;
+  button?: number;
+}
+
+export interface TDragEventInfo extends TMouseEventInfo {
+  target?: FabricObject;
+  currentTarget?: FabricObject;
+}
+
+export interface TSelectionEventInfo extends TSelectionEventInfo<MouseEvent> {
+  selected?: FabricObject[];
+  deselected?: FabricObject[];
+  updated?: FabricObject[];
+}
+
 export enum FabricEventNames {
+  // Mouse events
   MOUSE_DOWN = 'mouse:down',
   MOUSE_MOVE = 'mouse:move',
   MOUSE_UP = 'mouse:up',
+  MOUSE_WHEEL = 'mouse:wheel',
+  MOUSE_OVER = 'mouse:over',
+  MOUSE_OUT = 'mouse:out',
+  MOUSE_DBL_CLICK = 'mouse:dblclick',
+
+  // Object events
   OBJECT_ADDED = 'object:added',
-  OBJECT_MODIFIED = 'object:modified',
   OBJECT_REMOVED = 'object:removed',
+  OBJECT_MODIFIED = 'object:modified',
+  OBJECT_ROTATED = 'object:rotated',
+  OBJECT_SCALED = 'object:scaled',
+  OBJECT_MOVED = 'object:moved',
+  OBJECT_MOVING = 'object:moving',
+
+  // Selection events
   SELECTION_CREATED = 'selection:created',
   SELECTION_UPDATED = 'selection:updated',
   SELECTION_CLEARED = 'selection:cleared',
-  PATH_CREATED = 'path:created'
+
+  // Canvas events
+  AFTER_RENDER = 'after:render',
+  BEFORE_RENDER = 'before:render',
+  CANVAS_CLEARED = 'canvas:cleared',
+  
+  // Path events
+  PATH_CREATED = 'path:created',
+  
+  // Custom keyboard events
+  KEY_DOWN = 'key:down',
+  KEY_UP = 'key:up'
 }
-
-/**
- * Fabric.js event types - alternative name for FabricEventNames for improved readability
- */
-export const FabricEventTypes = FabricEventNames;
-
-/**
- * Fabric.js pointer event info
- */
-export interface TPointerEventInfo<T> {
-  e: T;
-  pointer: { x: number; y: number };
-  absolutePointer: { x: number; y: number };
-  button?: number;
-  target?: unknown;
-  viewportPoint?: { x: number; y: number };
-  scenePoint?: { x: number; y: number };
-}
-
-/**
- * Pointer event type
- */
-export type TPointerEvent = MouseEvent | TouchEvent;
-
-/**
- * Extended Fabric pointer event
- */
-export interface FabricPointerEvent {
-  e: MouseEvent | TouchEvent;
-  pointer?: { x: number; y: number };
-  absolutePointer?: { x: number; y: number };
-  target?: unknown;
-  viewportPoint?: { x: number; y: number };
-  scenePoint?: { x: number; y: number };
-  isClick?: boolean;
-  currentSubTargets?: any[];
-}
-
-/**
- * Standard Fabric.js pointer event interface
- * Compatible with both Fabric.js v5 and v6
- */
-export interface FabricMouseDownEvent extends FabricPointerEvent {}
-
-/**
- * Event for fabric canvas mouse:move
- */
-export interface FabricMouseMoveEvent extends FabricPointerEvent {}
-
-/**
- * Event for fabric canvas mouse:up
- */
-export interface FabricMouseUpEvent extends FabricPointerEvent {}
-
-/**
- * Event for fabric canvas object:modified
- */
-export interface FabricObjectModifiedEvent {
-  /** Original DOM event */
-  e: Event;
-  /** Target object */
-  target: any;
-  /** Transform information */
-  transform?: any;
-}
-
-/**
- * Event for fabric canvas object:selected
- */
-export interface FabricObjectSelectedEvent {
-  /** Original DOM event */
-  e: Event;
-  /** Target object */
-  target: any;
-  /** Selected objects */
-  selected?: any[];
-}
-
-/**
- * Type for a Fabric.js event handler function
- */
-export type FabricEventHandler<T> = (event: T) => void;
-
-/**
- * Event handler for mouse:down events
- */
-export type FabricMouseDownHandler = FabricEventHandler<FabricMouseDownEvent>;
-
-/**
- * Event handler for mouse:move events
- */
-export type FabricMouseMoveHandler = FabricEventHandler<FabricMouseMoveEvent>;
-
-/**
- * Event handler for mouse:up events
- */
-export type FabricMouseUpHandler = FabricEventHandler<FabricMouseUpEvent>;
-
-/**
- * Type for extracting native event from Fabric event
- */
-export type FabricNativeEvent = MouseEvent | TouchEvent;

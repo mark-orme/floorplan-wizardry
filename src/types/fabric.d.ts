@@ -28,6 +28,12 @@ declare global {
         color: string;
         width: number;
       };
+      width: number;
+      height: number;
+      wrapperEl: HTMLElement;
+      upperCanvasEl: HTMLCanvasElement;
+      skipOffscreen: boolean;
+      stopContextMenu: boolean;
       getPointer(e: any): { x: number; y: number };
       getElement(): HTMLCanvasElement;
       loadFromJSON(json: string | Object, callback?: Function): void;
@@ -63,6 +69,8 @@ declare global {
       evented?: boolean;
       visible?: boolean;
       set(key: string | object, value?: any): Object;
+      objectType?: string;
+      isGrid?: boolean;
     }
 
     interface Line extends Object {

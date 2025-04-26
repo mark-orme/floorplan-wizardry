@@ -19,13 +19,17 @@ export interface GridObject extends FabricObject {
 /**
  * Grid line interface - extends FabricObject with line-specific properties
  */
-export interface GridLine extends Line, GridObject {
+export interface GridLine extends Line {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   stroke: string;
   strokeWidth: number;
+  gridObject: true;
+  gridType?: 'horizontal' | 'vertical';
+  gridIndex?: number;
+  gridSpacing?: number;
 }
 
 /**
