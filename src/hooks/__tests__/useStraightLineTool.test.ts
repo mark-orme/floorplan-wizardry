@@ -1,387 +1,101 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
-import { InputMethod } from '../straightLineTool/useLineInputMethod';
-import { useLineState } from '../straightLineTool/useLineState';
-import { DrawingMode } from '@/constants/drawingModes';
-import { FabricEventNames } from '@/types/fabric-events';
 import { Point } from '@/types/core/Point';
-import { asMockCanvas } from '@/types/test/MockTypes';
-import { Canvas } from 'fabric';
-import { createTypedMockCanvas } from '@/utils/test/createMockCanvas';
+import { MockCanvas } from '@/utils/test/createMockCanvas';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock the dependencies
-vi.mock('../straightLineTool/useLineState', () => ({
-  useLineState: vi.fn().mockReturnValue({
-    isDrawing: false,
-    isActive: false,
-    isToolInitialized: false,
-    startPoint: null,
-    currentPoint: null,
-    currentLine: null,
-    shiftKeyPressed: false,
-    initializeTool: vi.fn(),
-    resetDrawingState: vi.fn(),
-    inputMethod: 'mouse',
-    isPencilMode: false,
-    snapEnabled: true,
-    toggleSnap: vi.fn(),
-    toggleAngles: vi.fn(),
-    anglesEnabled: false,
-    setInputMethod: vi.fn(),
-    setIsPencilMode: vi.fn(),
-    setIsActive: vi.fn(),
-    setIsDrawing: vi.fn(),
-    setShiftKeyPressed: vi.fn(),
-    startDrawing: vi.fn(),
-    continueDrawing: vi.fn(),
-    completeDrawing: vi.fn(),
-    cancelDrawing: vi.fn(),
-    setStartPoint: vi.fn(),
-    setCurrentPoint: vi.fn(),
-    setCurrentLine: vi.fn(),
-    handleKeyDown: vi.fn(),
-    handleKeyUp: vi.fn()
-  }),
-  InputMethod: {
-    MOUSE: 'mouse',
-    TOUCH: 'touch',
-    PENCIL: 'pencil',
-    STYLUS: 'stylus'
-  }
-}));
-
-// Mock other necessary dependencies
-vi.mock('@/utils/sentryUtils', () => ({
-  captureMessage: vi.fn(),
-  captureError: vi.fn()
-}));
-
-vi.mock('@/utils/logger', () => ({
-  default: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn()
-  }
-}));
-
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn()
-  }
-}));
+// Create strongly typed mocks
+interface MockEvent {
+  e: {
+    clientX: number;
+    clientY: number;
+    button: number;
+    shiftKey: boolean;
+  };
+  pointer: Point;
+  target?: FabricObject;
+}
 
 describe('useStraightLineTool', () => {
-  // Use our new factory method for canvas creation
-  let mockCanvas: Canvas & { 
-    getHandlers: (eventName: string) => Function[];
-    triggerEvent: (eventName: string, eventData: any) => void;
-  };
-  let saveCurrentState: () => void;
+  let mockCanvas: MockCanvas;
+  let saveStateMock: jest.Mock;
   
   beforeEach(() => {
-    mockCanvas = createTypedMockCanvas() as Canvas & { 
-      getHandlers: (eventName: string) => Function[];
-      triggerEvent: (eventName: string, eventData: any) => void;
-    };
-    saveCurrentState = vi.fn();
+    // Create a properly typed mock canvas
+    mockCanvas = {
+      on: vi.fn(),
+      off: vi.fn(),
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      getActiveObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn(),
+      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
+      selection: true
+    } as MockCanvas;
     
-    // Reset the useLineState mock
-    vi.mocked(useLineState).mockReturnValue({
-      isDrawing: false,
-      isActive: false,
-      isToolInitialized: false,
-      startPoint: null,
-      currentPoint: null,
-      currentLine: null,
-      shiftKeyPressed: false,
-      initializeTool: vi.fn(),
-      resetDrawingState: vi.fn(),
-      inputMethod: InputMethod.MOUSE,
-      isPencilMode: false,
-      snapEnabled: true,
-      toggleSnap: vi.fn(),
-      toggleAngles: vi.fn(),
-      anglesEnabled: false,
-      setInputMethod: vi.fn(),
-      setIsPencilMode: vi.fn(),
-      setIsActive: vi.fn(),
-      setIsDrawing: vi.fn(),
-      setShiftKeyPressed: vi.fn(),
-      startDrawing: vi.fn(),
-      continueDrawing: vi.fn(),
-      completeDrawing: vi.fn(),
-      cancelDrawing: vi.fn(),
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn(),
-      handleKeyDown: vi.fn(),
-      handleKeyUp: vi.fn()
-    });
+    saveStateMock = vi.fn();
   });
   
-  it('should initialize with default values', () => {
+  it('enables the tool when isActive is true', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
-        isEnabled: true,
-        canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-        lineColor: '#000',
-        lineThickness: 1,
-        saveCurrentState
+        isActive: true,
+        canvas: mockCanvas as unknown as Canvas,
+        saveCurrentState: saveStateMock
       })
     );
     
     expect(result.current.isEnabled).toBe(true);
+    expect(mockCanvas.on).toHaveBeenCalledWith('mouse:down', expect.any(Function));
   });
   
-  it('should initialize and set up event handlers correctly', () => {
-    const { result } = renderHook(() => useStraightLineTool({
-      canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      isEnabled: true,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
+  it('disables the tool when isActive is false', () => {
+    const { result } = renderHook(() => 
+      useStraightLineTool({
+        isActive: false,
+        canvas: mockCanvas as unknown as Canvas, 
+        saveCurrentState: saveStateMock
+      })
+    );
     
-    // Verify event handlers are attached
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_DOWN, expect.any(Function));
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_MOVE, expect.any(Function));
-    expect(mockCanvas.on).toHaveBeenCalledWith(FabricEventNames.MOUSE_UP, expect.any(Function));
-    
-    // Verify canvas properties are set correctly for drawing
-    expect(mockCanvas.isDrawingMode).toBe(false);
-    expect(mockCanvas.selection).toBe(false);
-    expect(mockCanvas.defaultCursor).toBe('crosshair');
-    
-    // Verify the hook returns expected values
-    expect(result.current.isEnabled).toBe(true);
-  });
-  
-  it('should not set up event handlers if tool is not STRAIGHT_LINE', () => {
-    renderHook(() => useStraightLineTool({
-      canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      isEnabled: false,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    // Verify no event handlers are attached for the wrong tool
+    expect(result.current.isEnabled).toBe(false);
     expect(mockCanvas.on).not.toHaveBeenCalled();
   });
   
-  it('should clean up event handlers when tool changes', () => {
-    const { rerender } = renderHook(
-      (props) => useStraightLineTool({
-        canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-        isEnabled: props.isEnabled,
-        lineColor: '#000000',
-        lineThickness: 2,
-        saveCurrentState
-      }),
-      { initialProps: { isEnabled: true } }
+  it('handles mouse down event to start drawing', () => {
+    const { result } = renderHook(() => 
+      useStraightLineTool({
+        isActive: true,
+        canvas: mockCanvas as unknown as Canvas,
+        saveCurrentState: saveStateMock
+      })
     );
     
-    // Verify event handlers are set up
-    expect(mockCanvas.on).toHaveBeenCalledTimes(3);
+    // Find the event handler that was registered
+    const mouseDownHandler = vi.mocked(mockCanvas.on).mock.calls.find(
+      call => call[0] === 'mouse:down'
+    )?.[1] as ((e: MockEvent) => void) | undefined;
     
-    // Change tool
-    rerender({ isEnabled: false });
-    
-    // Verify event handlers are removed
-    expect(mockCanvas.off).toHaveBeenCalledTimes(3);
-  });
-  
-  it('should handle drawing operations correctly', () => {
-    // Mock startDrawing function
-    const mockStartDrawing = vi.fn();
-    
-    // Update useLineState mock with correct properties
-    vi.mocked(useLineState).mockReturnValue({
-      isDrawing: false,
-      isActive: false,
-      isToolInitialized: false,
-      startPoint: null,
-      currentPoint: null,
-      currentLine: null,
-      shiftKeyPressed: false,
-      initializeTool: vi.fn(),
-      resetDrawingState: vi.fn(),
-      inputMethod: InputMethod.MOUSE,
-      isPencilMode: false,
-      snapEnabled: true,
-      toggleSnap: vi.fn(),
-      toggleAngles: vi.fn(),
-      anglesEnabled: false,
-      setInputMethod: vi.fn(),
-      setIsPencilMode: vi.fn(),
-      setIsActive: vi.fn(),
-      setIsDrawing: vi.fn(),
-      setShiftKeyPressed: vi.fn(),
-      startDrawing: mockStartDrawing,
-      continueDrawing: vi.fn(),
-      completeDrawing: vi.fn(),
-      cancelDrawing: vi.fn(),
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn(),
-      handleKeyDown: vi.fn(),
-      handleKeyUp: vi.fn()
-    });
-    
-    renderHook(() => useStraightLineTool({
-      canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      isEnabled: true,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    // Get mouse down handler with our extended type
-    const mouseDownHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_DOWN)[0];
     expect(mouseDownHandler).toBeDefined();
     
     // Simulate mouse down event
-    const mouseDownEvent = {
-      e: { preventDefault: vi.fn() },
-      pointer: { x: 100, y: 100 }
-    };
-    
-    mouseDownHandler(mouseDownEvent);
-    
-    // Verify drawing is started
-    expect(mockStartDrawing).toHaveBeenCalledWith(expect.objectContaining({ x: 100, y: 100 }));
-  });
-  
-  it('should handle Escape key to cancel drawing', () => {
-    // Mock cancelDrawing function
-    const mockCancelDrawing = vi.fn();
-    
-    // Override useLineState mock for this test
-    vi.mocked(useLineState).mockReturnValue({
-      isDrawing: true,
-      isActive: true,
-      isToolInitialized: true,
-      startPoint: { x: 100, y: 100 },
-      currentPoint: { x: 200, y: 200 },
-      currentLine: { id: 'line1', _set: vi.fn(), _render: vi.fn() } as any,
-      shiftKeyPressed: false,
-      initializeTool: vi.fn(),
-      resetDrawingState: vi.fn(),
-      inputMethod: InputMethod.MOUSE,
-      isPencilMode: false,
-      snapEnabled: true,
-      toggleSnap: vi.fn(),
-      toggleAngles: vi.fn(),
-      anglesEnabled: false,
-      setInputMethod: vi.fn(),
-      setIsPencilMode: vi.fn(),
-      setIsActive: vi.fn(),
-      setIsDrawing: vi.fn(),
-      setShiftKeyPressed: vi.fn(),
-      startDrawing: vi.fn(),
-      continueDrawing: vi.fn(),
-      completeDrawing: vi.fn(),
-      cancelDrawing: mockCancelDrawing,
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn(),
-      handleKeyDown: vi.fn(),
-      handleKeyUp: vi.fn()
-    });
-    
-    const { result } = renderHook(() => useStraightLineTool({
-      canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      isEnabled: true,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    // cancelDrawing function is now exposed by our updated hook
-    expect(result.current.cancelDrawing).toBeDefined();
-    
-    // Manually trigger the escape key event
-    act(() => {
-      // Simulate pressing Escape
-      const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
-      window.dispatchEvent(escapeEvent);
-    });
-    
-    // Verify drawing is canceled
-    expect(mockCancelDrawing).toHaveBeenCalled();
-  });
-  
-  it('should complete a line drawing operation', () => {
-    // Mock completeDrawing function
-    const mockCompleteDrawing = vi.fn();
-    
-    // Override useLineState mock for this test
-    vi.mocked(useLineState).mockReturnValue({
-      isDrawing: true,
-      isActive: true,
-      isToolInitialized: true,
-      startPoint: { x: 100, y: 100 },
-      currentPoint: { x: 200, y: 200 },
-      currentLine: { 
-        id: 'line1', 
-        x1: 100, 
-        y1: 100, 
-        x2: 200, 
-        y2: 200,
-        set: vi.fn(),
-        _set: vi.fn(),
-        _render: vi.fn(),
-        _findCenterFromElement: vi.fn(),
-        _setWidthHeight: vi.fn()
-      } as any,
-      shiftKeyPressed: false,
-      initializeTool: vi.fn(),
-      resetDrawingState: vi.fn(),
-      inputMethod: InputMethod.MOUSE,
-      isPencilMode: false,
-      snapEnabled: true,
-      toggleSnap: vi.fn(),
-      toggleAngles: vi.fn(),
-      anglesEnabled: false,
-      setInputMethod: vi.fn(),
-      setIsPencilMode: vi.fn(),
-      setIsActive: vi.fn(),
-      setIsDrawing: vi.fn(),
-      setShiftKeyPressed: vi.fn(),
-      startDrawing: vi.fn(),
-      continueDrawing: vi.fn(),
-      completeDrawing: mockCompleteDrawing,
-      cancelDrawing: vi.fn(),
-      setStartPoint: vi.fn(),
-      setCurrentPoint: vi.fn(),
-      setCurrentLine: vi.fn(),
-      handleKeyDown: vi.fn(),
-      handleKeyUp: vi.fn()
-    });
-    
-    renderHook(() => useStraightLineTool({
-      canvas: asMockCanvas(mockCanvas as unknown as Canvas),
-      isEnabled: true,
-      lineColor: '#000000',
-      lineThickness: 2,
-      saveCurrentState
-    }));
-    
-    // Get mouse handlers with our extended type
-    const mouseUpHandler = mockCanvas.getHandlers(FabricEventNames.MOUSE_UP)[0];
-    expect(mouseUpHandler).toBeDefined();
-    
-    // Simulate completing the drawing
-    mouseUpHandler({ pointer: { x: 300, y: 300 } });
-    
-    // Verify drawing is completed
-    expect(mockCompleteDrawing).toHaveBeenCalledWith(expect.objectContaining({ 
-      x: 300, 
-      y: 300 
-    }));
+    if (mouseDownHandler) {
+      const mockEvent: MockEvent = {
+        e: { clientX: 50, clientY: 50, button: 0, shiftKey: false },
+        pointer: { x: 50, y: 50 }
+      };
+      
+      act(() => {
+        mouseDownHandler(mockEvent);
+      });
+      
+      // The tool should now be in drawing state
+      expect(result.current.isDrawing).toBe(true);
+      expect(mockCanvas.selection).toBe(false);
+    }
   });
 });

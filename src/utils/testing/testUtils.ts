@@ -4,7 +4,7 @@
  * Provides utilities for testing with fabric.js and floor plan types
  * @module utils/testing/testUtils
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
 import type { 
   FloorPlan, 

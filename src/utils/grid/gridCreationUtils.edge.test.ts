@@ -14,12 +14,13 @@ import {
   ensureGrid,
   retryWithBackoff
 } from './gridCreationUtils';
+import { MockCanvas } from '@/utils/test/createMockCanvas';
 
 // Mock timeout for faster tests
 vi.useFakeTimers();
 
 describe('Grid Creation Utils Edge Cases', () => {
-  let canvas: Canvas;
+  let canvas: MockCanvas;
   let gridLayerRef: { current: FabricObject[] };
   
   beforeEach(() => {
@@ -35,7 +36,7 @@ describe('Grid Creation Utils Edge Cases', () => {
       contains: vi.fn().mockReturnValue(true),
       remove: vi.fn(),
       requestRenderAll: vi.fn()
-    } as unknown as Canvas;
+    } as MockCanvas;
     
     gridLayerRef = { current: [] };
   });
@@ -46,7 +47,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     canvas.height = 0;
     
     // Should still create at least some kind of grid without errors
-    const gridObjects = createBasicEmergencyGrid(canvas);
+    const gridObjects = createBasicEmergencyGrid(canvas as Canvas);
     
     // Even with zero dimensions, we should get some fallback grid
     expect(gridObjects.length).toBeGreaterThan(0);
@@ -59,7 +60,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     canvas.height = 100000;
     
     // Performance optimization: Should limit the number of grid lines
-    const gridObjects = createBasicEmergencyGrid(canvas);
+    const gridObjects = createBasicEmergencyGrid(canvas as Canvas);
     
     // Should have created grid lines, but not an excessive amount
     expect(gridObjects.length).toBeGreaterThan(0);
@@ -69,9 +70,9 @@ describe('Grid Creation Utils Edge Cases', () => {
   it('should validate grid even with missing objects', () => {
     // Setup a partially valid grid (some objects exist, some don't)
     const partialGridObjects = [
-      { id: 'grid1', objectType: 'grid' },
-      null,  // Simulating a missing object
-      { id: 'grid3', objectType: 'grid' }
+      { id: 'grid1', objectType: 'grid' } as FabricObject,
+      null as unknown as FabricObject,  // Simulating a missing object
+      { id: 'grid3', objectType: 'grid' } as FabricObject
     ];
     
     canvas.contains = vi.fn().mockImplementation((obj) => {
@@ -79,7 +80,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     });
     
     // Should handle null/missing objects gracefully
-    const result = validateGrid(canvas, partialGridObjects as unknown as FabricObject[]);
+    const result = validateGrid(canvas as Canvas, partialGridObjects);
     
     // Should return false because not all grid objects exist
     expect(result).toBe(false);
@@ -111,15 +112,15 @@ describe('Grid Creation Utils Edge Cases', () => {
   it('should handle case where grid exists but reference is empty', () => {
     // Setup: Grid exists in canvas but not in ref
     canvas.getObjects = vi.fn().mockReturnValue([
-      { objectType: 'grid', id: 'existingGrid1' },
-      { objectType: 'grid', id: 'existingGrid2' }
+      { objectType: 'grid', id: 'existingGrid1' } as FabricObject,
+      { objectType: 'grid', id: 'existingGrid2' } as FabricObject
     ]);
     
     // Empty reference
     gridLayerRef.current = [];
     
     // Should detect existing grid despite empty reference
-    const exists = verifyGridExists(canvas, gridLayerRef.current);
+    const exists = verifyGridExists(canvas as Canvas, gridLayerRef.current);
     
     expect(exists).toBe(true);
   });
@@ -131,7 +132,7 @@ describe('Grid Creation Utils Edge Cases', () => {
     });
     
     // Should not throw despite canvas errors
-    const result = ensureGrid(canvas, gridLayerRef);
+    const result = ensureGrid(canvas as Canvas, gridLayerRef);
     
     // Should return an empty grid rather than throwing
     expect(Array.isArray(result)).toBe(true);

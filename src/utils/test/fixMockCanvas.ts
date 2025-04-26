@@ -31,7 +31,7 @@ export function fixMockCanvas(mockCanvas: Partial<MockCanvas>): MockCanvas {
     });
   }
   
-  // Add any missing required methods
+  // Add missing required methods
   if (!mockCanvas.getHandlers) {
     mockCanvas.getHandlers = (eventName: string) => [() => {}];
   }

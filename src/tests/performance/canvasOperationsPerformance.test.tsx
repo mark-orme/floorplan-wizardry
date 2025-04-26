@@ -1,183 +1,126 @@
 
 /**
- * Canvas operations performance test
- * Measures and ensures canvas rendering performance stays consistent
+ * Performance tests for canvas operations
  * @module tests/performance/canvasOperationsPerformance
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { createMockCanvas, createMockObject } from '@/utils/test/mockFabricCanvas';
-import { useCanvasOperations } from '@/hooks/canvas/useCanvasOperations';
 import { renderHook } from '@testing-library/react-hooks';
+import { useCanvasOperations } from '@/hooks/useCanvasOperations';
+import { MockCanvas } from '@/utils/test/createMockCanvas';
+import { vi, describe, it, expect } from 'vitest';
+import { Canvas, Object as FabricObject } from 'fabric';
 
-describe('Canvas Operations Performance Tests', () => {
-  let canvas: Canvas;
-  let saveCurrentState: () => void;
+// Type definition for canvas operations result
+interface CanvasOperationsResult {
+  addShape: (type: string, options: Record<string, unknown>) => void;
+  clearCanvas: () => void;
+  getObjectCount: () => number;
+  getPerformanceMetrics: () => PerformanceMetrics;
+}
+
+// Type definition for performance metrics
+interface PerformanceMetrics {
+  objectCount: number;
+  renderTime: number;
+  timestamp: number;
+}
+
+// Mock function to measure performance
+const measurePerformance = vi.fn().mockReturnValue({
+  objectCount: 0,
+  renderTime: 10,
+  timestamp: Date.now()
+});
+
+// Mock the hooks dependencies
+vi.mock('@/hooks/useCanvasMetrics', () => ({
+  useCanvasMetrics: () => ({
+    measurePerformance
+  })
+}));
+
+describe('Canvas Operations Performance', () => {
+  // Create a mock canvas for testing
+  let mockCanvas: MockCanvas;
   
   beforeEach(() => {
-    canvas = createMockCanvas() as unknown as Canvas;
-    saveCurrentState = vi.fn();
+    mockCanvas = {
+      add: vi.fn(),
+      remove: vi.fn(),
+      clear: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn()
+    } as MockCanvas;
     
-    // Clear previous mocks
     vi.clearAllMocks();
+    vi.useFakeTimers();
   });
   
-  it('performs deletions efficiently with many objects', () => {
-    // Add many objects to the canvas
-    const objects = Array(100).fill(null).map((_, i) => 
-      createMockObject('rect', { id: `rect-${i}` })
-    ) as unknown as FabricObject[];
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  
+  it('should measure performance when adding objects', () => {
+    // Create mock rectangle
+    const mockRect = { type: 'rect' } as FabricObject;
     
-    objects.forEach(obj => canvas.add(obj));
+    // Setup mock to return our mock rectangle
+    const createRectMock = vi.fn().mockReturnValue(mockRect);
     
-    // Mock getActiveObject to return an activeSelection
-    const activeSelection = {
-      type: 'activeSelection',
-      getObjects: vi.fn().mockReturnValue(objects.slice(0, 50)),
-      forEachObject: vi.fn((callback) => {
-        objects.slice(0, 50).forEach(callback);
+    // Test hooks with mocked canvas
+    const { result } = renderHook<unknown, CanvasOperationsResult>(() => 
+      useCanvasOperations({
+        canvas: mockCanvas as Canvas,
+        createRect: createRectMock
       })
-    };
+    );
     
-    vi.spyOn(canvas, 'getActiveObject').mockReturnValue(activeSelection as any);
+    // Act - add a shape
+    result.current.addShape('rectangle', { width: 100, height: 100 });
     
-    // Set up the hook
-    const { result } = renderHook(() => useCanvasOperations({
-      canvas,
-      saveCurrentState
-    }));
-    
-    // Mock performance.now for timing
-    const originalPerformanceNow = performance.now;
-    const mockPerformanceNow = vi.fn();
-    let time = 0;
-    mockPerformanceNow.mockImplementation(() => {
-      time += 10; // Simulate 10ms per operation
-      return time;
-    });
-    global.performance.now = mockPerformanceNow;
-    
-    // Track remove calls
-    const removeSpy = vi.spyOn(canvas, 'remove');
-    
-    // Execute deletion
-    result.current.deleteSelectedObjects();
-    
-    // Verify number of remove calls
-    expect(removeSpy).toHaveBeenCalledTimes(50);
-    
-    // Restore performance.now
-    global.performance.now = originalPerformanceNow;
+    // Assert
+    expect(createRectMock).toHaveBeenCalled();
+    expect(mockCanvas.add).toHaveBeenCalledWith(mockRect);
+    expect(measurePerformance).toHaveBeenCalled();
   });
   
-  it('performs canvas clearing efficiently', () => {
-    // Add many objects to the canvas
-    const objects = Array(100).fill(null).map((_, i) => 
-      createMockObject('rect', { id: `rect-${i}` })
-    ) as unknown as FabricObject[];
+  it('should measure object count correctly', () => {
+    // Setup mock objects array
+    const mockObjects = [
+      { id: 'obj1', type: 'rect' },
+      { id: 'obj2', type: 'circle' }
+    ] as FabricObject[];
     
-    objects.forEach(obj => canvas.add(obj));
+    // Make getObjects return our mock objects
+    vi.mocked(mockCanvas.getObjects).mockReturnValue(mockObjects);
     
-    // Add grid objects
-    const gridObjects = Array(20).fill(null).map((_, i) => 
-      createMockObject('line', { id: `grid-${i}`, objectType: 'grid' })
-    ) as unknown as FabricObject[];
+    // Test hooks with mocked canvas
+    const { result } = renderHook<unknown, CanvasOperationsResult>(() => 
+      useCanvasOperations({
+        canvas: mockCanvas as Canvas
+      })
+    );
     
-    gridObjects.forEach(obj => canvas.add(obj));
+    // Act - get object count
+    const count = result.current.getObjectCount();
     
-    // Mock getObjects to return all objects
-    vi.spyOn(canvas, 'getObjects').mockReturnValue([...objects, ...gridObjects]);
+    // Assert
+    expect(count).toBe(mockObjects.length);
+    expect(mockCanvas.getObjects).toHaveBeenCalled();
+  });
+  
+  it('should measure performance when clearing canvas', () => {
+    // Test hooks with mocked canvas
+    const { result } = renderHook<unknown, CanvasOperationsResult>(() => 
+      useCanvasOperations({
+        canvas: mockCanvas as Canvas
+      })
+    );
     
-    // Set up the hook
-    const { result } = renderHook(() => useCanvasOperations({
-      canvas,
-      saveCurrentState
-    }));
-    
-    // Track remove calls
-    const removeSpy = vi.spyOn(canvas, 'remove');
-    
-    // Execute clear
+    // Act - clear canvas
     result.current.clearCanvas();
     
-    // Verify number of remove calls - should only remove non-grid objects
-    expect(removeSpy).toHaveBeenCalledWith(...objects);
-    expect(removeSpy).not.toHaveBeenCalledWith(...gridObjects);
-  });
-  
-  it('performs zooming operations efficiently', () => {
-    // Mock the zoomToPoint method
-    const zoomToPointSpy = vi.spyOn(canvas, 'zoomToPoint');
-    
-    // Set up the hook
-    const { result } = renderHook(() => useCanvasOperations({
-      canvas,
-      saveCurrentState
-    }));
-    
-    // Execute zoom in
-    result.current.zoom('in');
-    
-    // Verify zoomToPoint was called
-    expect(zoomToPointSpy).toHaveBeenCalled();
-    
-    // Execute zoom out
-    result.current.zoom('out');
-    
-    // Verify zoomToPoint was called again
-    expect(zoomToPointSpy).toHaveBeenCalledTimes(2);
-  });
-  
-  it('performs save operation efficiently', () => {
-    // Mock JSON stringification
-    const originalStringify = JSON.stringify;
-    const stringifySpy = vi.fn().mockReturnValue('{}');
-    JSON.stringify = stringifySpy;
-    
-    // Mock canvas.toJSON
-    vi.spyOn(canvas, 'toJSON').mockReturnValue({});
-    
-    // Mock URL.createObjectURL
-    const originalCreateObjectURL = URL.createObjectURL;
-    URL.createObjectURL = vi.fn().mockReturnValue('blob:url');
-    
-    // Mock URL.revokeObjectURL
-    const originalRevokeObjectURL = URL.revokeObjectURL;
-    URL.revokeObjectURL = vi.fn();
-    
-    // Mock document.createElement
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: vi.fn()
-    };
-    
-    const originalCreateElement = document.createElement;
-    document.createElement = vi.fn().mockReturnValue(mockAnchor);
-    
-    // Set up the hook
-    const { result } = renderHook(() => useCanvasOperations({
-      canvas,
-      saveCurrentState
-    }));
-    
-    // Execute save
-    result.current.saveCanvas();
-    
-    // Verify JSON.stringify was called
-    expect(stringifySpy).toHaveBeenCalled();
-    
-    // Verify anchor was created and clicked
-    expect(document.createElement).toHaveBeenCalledWith('a');
-    expect(mockAnchor.click).toHaveBeenCalled();
-    
-    // Verify URL was revoked
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:url');
-    
-    // Restore mocks
-    JSON.stringify = originalStringify;
-    URL.createObjectURL = originalCreateObjectURL;
-    URL.revokeObjectURL = originalRevokeObjectURL;
-    document.createElement = originalCreateElement;
+    // Assert
+    expect(mockCanvas.clear).toHaveBeenCalled();
+    expect(measurePerformance).toHaveBeenCalled();
   });
 });

@@ -37,6 +37,14 @@ jest.mock('fabric', () => {
   };
 });
 
+// Define interface for grid creation result
+interface GridCreationResult {
+  gridObjects: Array<{ id: string }>;
+  smallGridLines: Array<{ id: string }>;
+  largeGridLines: Array<{ id: string }>;
+  markers: Array<Record<string, unknown>>;
+}
+
 // Mock required utilities
 jest.mock('@/utils/gridUtils', () => ({
   createCompleteGrid: jest.fn().mockReturnValue({
@@ -44,7 +52,7 @@ jest.mock('@/utils/gridUtils', () => ({
     smallGridLines: [{ id: 'small1' }],
     largeGridLines: [{ id: 'large1' }],
     markers: []
-  }),
+  } as GridCreationResult),
   setGridVisibility: jest.fn(),
   hasExistingGrid: jest.fn().mockReturnValue(false)
 }));

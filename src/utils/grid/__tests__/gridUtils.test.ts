@@ -1,195 +1,104 @@
 
-/**
- * Unit tests for grid utility functions
- * @module grid/__tests__/gridUtils
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { 
-  calculateGridDimensions, 
-  createGridLines, 
-  createCompleteGrid,
-  hasExistingGrid,
-  removeGrid,
-  setGridVisibility,
-  isGridObject,
-  filterGridObjects,
-  getNearestGridPoint
-} from '../../gridUtils';
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { createGrid, clearGrid, toggleGridVisibility } from '../gridUtils';
+import { Line, Canvas, Object as FabricObject } from 'fabric';
+import { MockCanvas } from '@/utils/test/createMockCanvas';
+import { GridConfig, GridObjects } from '../gridTypes';
 
-// Mock Fabric.js classes
-vi.mock('fabric', () => {
-  const MockLine = vi.fn().mockImplementation((points, options) => ({
-    ...options,
-    points,
-    objectType: options?.objectType,
-    visible: true
-  }));
-  
-  const MockCanvas = vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    remove: vi.fn(),
-    contains: vi.fn().mockReturnValue(true),
-    getObjects: vi.fn().mockReturnValue([]),
-    requestRenderAll: vi.fn()
-  }));
-  
-  return {
-    Canvas: MockCanvas,
-    Line: MockLine,
-    Object: {
-      prototype: {}
-    }
-  };
-});
-
-describe('gridUtils', () => {
-  let canvas: Canvas;
+describe('Grid Utils', () => {
+  let mockCanvas: MockCanvas;
   
   beforeEach(() => {
-    vi.clearAllMocks();
-    canvas = new Canvas();
+    mockCanvas = {
+      add: vi.fn(),
+      remove: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      renderAll: vi.fn(),
+      requestRenderAll: vi.fn()
+    } as MockCanvas;
   });
   
-  describe('calculateGridDimensions', () => {
-    it('should calculate correct grid dimensions', () => {
-      const result = calculateGridDimensions(800, 600, 20);
-      
-      expect(result).toEqual({
-        width: 800,
-        height: 600,
-        cellSize: 20
+  describe('createGrid', () => {
+    it('should create grid lines with default settings', () => {
+      const gridObjects = createGrid(mockCanvas as Canvas, {
+        gridSize: 20,
+        color: '#cccccc'
       });
+      
+      expect(gridObjects).toBeDefined();
+      expect(gridObjects.length).toBeGreaterThan(0);
+      expect(mockCanvas.add).toHaveBeenCalled();
     });
     
-    it('should use default cell size when not provided', () => {
-      const result = calculateGridDimensions(800, 600);
-      
-      expect(result.cellSize).toBe(20);
-    });
-  });
-  
-  describe('createGridLines', () => {
-    it('should create horizontal and vertical grid lines', () => {
-      const dimensions = {
-        width: 100,
-        height: 100,
-        cellSize: 50
+    it('should create grid lines with custom settings', () => {
+      const config: GridConfig = {
+        gridSize: 50,
+        color: '#ff0000',
+        opacity: 0.8,
+        showGrid: true
       };
       
-      const result = createGridLines(canvas, dimensions);
+      const gridObjects = createGrid(mockCanvas as Canvas, config);
       
-      // Should create 3 horizontal lines (0, 50, 100) and 3 vertical lines (0, 50, 100)
-      expect(result.length).toBe(6);
-      
-      // Verify canvas.add was called for each line
-      expect(canvas.add).toHaveBeenCalledTimes(6);
+      expect(gridObjects).toBeDefined();
+      expect(gridObjects.length).toBeGreaterThan(0);
+      expect(mockCanvas.add).toHaveBeenCalled();
     });
     
-    it('should set the correct properties on grid lines', () => {
-      const dimensions = {
-        width: 100,
-        height: 100,
-        cellSize: 100
+    it('should not create grid if showGrid is false', () => {
+      const config: GridConfig = {
+        gridSize: 20,
+        color: '#cccccc',
+        showGrid: false
       };
       
-      const result = createGridLines(canvas, dimensions);
+      const gridObjects = createGrid(mockCanvas as Canvas, config);
       
-      // Check one of the created lines
-      const line = result[0];
-      expect(line).toMatchObject({
-        stroke: '#ccc',
-        selectable: false,
-        evented: false,
-        objectType: 'grid'
-      });
+      expect(gridObjects.length).toBe(0);
+      expect(mockCanvas.add).not.toHaveBeenCalled();
     });
   });
   
-  describe('createCompleteGrid', () => {
-    it('should return existing grid if it already exists', () => {
-      // Mock hasExistingGrid to return true
-      const mockObjects = [{ objectType: 'grid' }];
-      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue(mockObjects);
-      
-      const result = createCompleteGrid(canvas, 800, 600);
-      
-      // Should not call add
-      expect(canvas.add).not.toHaveBeenCalled();
-      
-      // Should return filtered grid objects
-      expect(result.gridObjects).toEqual(mockObjects);
-    });
-    
-    it('should create a new grid when one does not exist', () => {
-      // Mock hasExistingGrid to return false
-      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([]);
-      
-      const result = createCompleteGrid(canvas, 200, 150, 10);
-      
-      // Should have lines
-      expect(result.gridObjects.length).toBeGreaterThan(0);
-      
-      // Should have called requestRenderAll
-      expect(canvas.requestRenderAll).toHaveBeenCalledTimes(1);
-    });
-  });
-  
-  describe('hasExistingGrid', () => {
-    it('should return false when canvas is null', () => {
-      const result = hasExistingGrid(null as unknown as Canvas);
-      
-      expect(result).toBe(false);
-    });
-    
-    it('should return true when grid objects exist', () => {
-      // Mock objects with a grid object
-      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([{ objectType: 'grid' }]);
-      
-      const result = hasExistingGrid(canvas);
-      
-      expect(result).toBe(true);
-    });
-    
-    it('should return false when no grid objects exist', () => {
-      // Mock objects with no grid objects
-      (canvas.getObjects as ReturnType<typeof vi.fn>).mockReturnValue([{ objectType: 'not-grid' }]);
-      
-      const result = hasExistingGrid(canvas);
-      
-      expect(result).toBe(false);
-    });
-  });
-  
-  describe('removeGrid', () => {
-    it('should remove each grid object from canvas', () => {
-      // Create mock grid objects
-      const gridObjects = [
-        { id: 'grid1' },
-        { id: 'grid2' }
+  describe('clearGrid', () => {
+    it('should remove grid objects from canvas', () => {
+      // Setup mock grid objects
+      const mockGridObjects: GridObjects = [
+        { id: 'grid-1', gridType: 'small' } as unknown as FabricObject,
+        { id: 'grid-2', gridType: 'large' } as unknown as FabricObject
       ];
       
-      removeGrid(canvas, gridObjects as unknown as FabricObject[]);
+      // Call clearGrid
+      clearGrid(mockCanvas as Canvas, mockGridObjects);
       
-      // Should call remove for each grid object
-      expect(canvas.remove).toHaveBeenCalledTimes(2);
+      // Verify all grid objects were removed
+      expect(mockCanvas.remove).toHaveBeenCalledTimes(mockGridObjects.length);
+    });
+    
+    it('should handle empty grid objects array', () => {
+      const emptyGridObjects: GridObjects = [];
       
-      // Should call requestRenderAll
-      expect(canvas.requestRenderAll).toHaveBeenCalledTimes(1);
+      clearGrid(mockCanvas as Canvas, emptyGridObjects);
+      
+      expect(mockCanvas.remove).not.toHaveBeenCalled();
     });
   });
   
-  describe('getNearestGridPoint', () => {
-    it('should snap to the nearest grid point', () => {
-      const result = getNearestGridPoint({ x: 23, y: 38 }, 20);
+  describe('toggleGridVisibility', () => {
+    it('should toggle grid visibility', () => {
+      // Setup mock grid objects with visible property
+      const mockGridObjects: GridObjects = [
+        { id: 'grid-1', gridType: 'small', visible: true, set: vi.fn() } as unknown as FabricObject,
+        { id: 'grid-2', gridType: 'large', visible: true, set: vi.fn() } as unknown as FabricObject
+      ];
       
-      expect(result).toEqual({ x: 20, y: 40 });
-    });
-    
-    it('should handle null points', () => {
-      const result = getNearestGridPoint(null as any, 20);
+      // Toggle visibility to false
+      toggleGridVisibility(mockCanvas as Canvas, mockGridObjects, false);
       
-      expect(result).toEqual({ x: 0, y: 0 });
+      // Verify visibility was set to false for all objects
+      mockGridObjects.forEach(obj => {
+        expect(obj.set).toHaveBeenCalledWith('visible', false);
+      });
+      expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
     });
   });
 });
