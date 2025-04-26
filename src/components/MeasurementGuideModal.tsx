@@ -1,37 +1,43 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface MeasurementGuideModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
+const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
   open,
   onOpenChange
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Measurement Guide</DialogTitle>
-          <DialogDescription>
-            How to use the measurement tool
-          </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <p>Click and drag to measure distances on the canvas.</p>
-          <p>Measurements are shown in the selected unit system.</p>
-          <p>Press Escape to cancel the current measurement.</p>
-          <p>Double-click to finish and keep the measurement on the canvas.</p>
+        <div className="grid gap-4 py-4">
+          <div className="space-y-2">
+            <h3 className="font-medium">How to measure</h3>
+            <p className="text-sm text-gray-500">
+              Click and drag to measure distances on the canvas.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-medium">Units</h3>
+            <p className="text-sm text-gray-500">
+              Measurements are shown in both pixels and meters (based on scale).
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-medium">Tips</h3>
+            <ul className="text-sm text-gray-500 list-disc pl-5">
+              <li>Hold Shift to constrain to straight lines</li>
+              <li>Double-click to end measurement</li>
+              <li>Press Escape to cancel</li>
+            </ul>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

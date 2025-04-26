@@ -13,7 +13,10 @@ export enum DrawingMode {
   CIRCLE = 'circle',
   WALL = 'wall',
   ROOM = 'room',
-  MEASURE = 'measure'
+  MEASURE = 'measure',
+  DRAW = 'draw',
+  ERASER = 'eraser',
+  TEXT = 'text'
 }
 
 export const DEFAULT_DRAWING_MODE = DrawingMode.SELECT;

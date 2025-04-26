@@ -1,8 +1,6 @@
-
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { initializeBrush } from '@/utils/drawings/brushManager';
 
 interface UseCanvasToolManagerProps {
   canvas: FabricCanvas | null;
@@ -11,63 +9,84 @@ interface UseCanvasToolManagerProps {
   lineThickness: number;
 }
 
-export const useCanvasToolManager = ({
+export function useCanvasToolManager({
   canvas,
   tool,
   lineColor,
   lineThickness
-}: UseCanvasToolManagerProps) => {
+}: UseCanvasToolManagerProps) {
+  // Configure canvas based on selected tool
   const configureToolSettings = useCallback(() => {
     if (!canvas) return;
     
-    // Reset canvas state
+    // Reset canvas settings
     canvas.isDrawingMode = false;
-    canvas.selection = false;
-    canvas.defaultCursor = 'default';
+    canvas.selection = true;
     
     // Configure based on tool
     switch (tool) {
-      case DrawingMode.SELECT:
-        canvas.selection = true;
-        canvas.forEachObject(obj => {
-          obj.selectable = true;
-          obj.evented = true;
-        });
-        break;
-        
+      case DrawingMode.PENCIL:
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
-        initializeBrush(canvas, lineColor, lineThickness);
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+        break;
+      
+      case DrawingMode.SELECT:
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        canvas.hoverCursor = 'move';
+        break;
+      
+      case DrawingMode.RECTANGLE:
         canvas.defaultCursor = 'crosshair';
-        canvas.forEachObject(obj => {
-          obj.selectable = false;
-          obj.evented = false;
-        });
+        canvas.selection = false;
         break;
         
-      case DrawingMode.STRAIGHT_LINE:
+      case DrawingMode.CIRCLE:
         canvas.defaultCursor = 'crosshair';
-        canvas.forEachObject(obj => {
-          obj.selectable = false;
-          obj.evented = false;
-        });
+        canvas.selection = false;
         break;
         
+      case DrawingMode.LINE:
+        canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
+        break;
+        
+      case DrawingMode.WALL:
+        canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
+        break;
+        
+      case DrawingMode.ROOM:
+        canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
+        break;
+        
+      case DrawingMode.MEASURE:
+        canvas.defaultCursor = 'crosshair';
+        canvas.selection = false;
+        break;
+        
+      case DrawingMode.TEXT:
+        canvas.defaultCursor = 'text';
+        canvas.selection = false;
+        break;
+        
+      case DrawingMode.ERASER:
+        canvas.defaultCursor = 'cell';
+        canvas.selection = false;
+        break;
+      
       default:
-        // Ensure objects are selectable by default for unknown tools
-        canvas.forEachObject(obj => {
-          obj.selectable = true;
-          obj.evented = true;
-        });
+        canvas.defaultCursor = 'default';
         break;
     }
     
     canvas.requestRenderAll();
   }, [canvas, tool, lineColor, lineThickness]);
-
-  useEffect(() => {
-    configureToolSettings();
-  }, [configureToolSettings]);
-
-  return { configureToolSettings };
-};
+  
+  return {
+    configureToolSettings
+  };
+}

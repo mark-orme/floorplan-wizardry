@@ -1,21 +1,20 @@
 
 declare module 'react-window-mock' {
-  import * as React from 'react';
-
+  import { ComponentType, CSSProperties, ReactNode } from 'react';
+  
   export interface ListChildComponentProps {
     index: number;
-    style: React.CSSProperties;
-    data?: any;
+    style: CSSProperties;
   }
-
+  
   export interface FixedSizeListProps {
     height: number;
     itemCount: number;
     itemSize: number;
-    width: string | number;
+    width: number | string;
     className?: string;
-    children: (props: ListChildComponentProps) => React.ReactElement;
+    children: ComponentType<ListChildComponentProps>;
   }
-
+  
   export class FixedSizeList extends React.Component<FixedSizeListProps> {}
 }

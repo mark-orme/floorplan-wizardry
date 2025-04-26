@@ -27,7 +27,10 @@ export const GRID_CONSTANTS = {
   
   // Grid validation
   MIN_GRID_SIZE: 5,
-  MAX_GRID_SIZE: 500
+  MAX_GRID_SIZE: 500,
+  
+  // Grid auto-fix option
+  GRID_AUTO_FIX: true
 };
 
 // Re-export individual constants

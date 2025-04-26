@@ -8,50 +8,47 @@ interface BrushCursorPreviewProps {
   color: string;
 }
 
-export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
+const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   canvas,
   size,
   color
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
-
+  
   useEffect(() => {
     if (!canvas) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const pointer = canvas.getPointer(e);
-      setPosition({ x: pointer.x, y: pointer.y });
-      setIsVisible(true);
+    
+    const handleMouseMove = (e: any) => {
+      const pointer = canvas.getPointer(e.e);
+      setPosition(pointer);
     };
-
-    const handleMouseOut = () => {
-      setIsVisible(false);
-    };
-
-    const canvasEl = canvas.getElement();
-    canvasEl.addEventListener('mousemove', handleMouseMove);
-    canvasEl.addEventListener('mouseout', handleMouseOut);
-
+    
+    canvas.on('mouse:move', handleMouseMove);
+    
     return () => {
-      canvasEl.removeEventListener('mousemove', handleMouseMove);
-      canvasEl.removeEventListener('mouseout', handleMouseOut);
+      canvas.off('mouse:move', handleMouseMove);
     };
   }, [canvas]);
-
-  if (!isVisible) return null;
-
+  
+  // Get canvas container element
+  const canvasElement = canvas?.getElement();
+  const canvasRect = canvasElement?.getBoundingClientRect();
+  
+  if (!canvasRect) return null;
+  
   return (
     <div
-      className="pointer-events-none absolute rounded-full border border-white"
       style={{
-        width: `${size}px`,
-        height: `${size}px`,
-        backgroundColor: `${color}33`,
-        borderColor: color,
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        marginLeft: `-${size / 2}px`,
-        marginTop: `-${size / 2}px`,
+        position: 'absolute',
+        left: position.x + canvasRect.left,
+        top: position.y + canvasRect.top,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        border: `1px solid ${color}`,
+        backgroundColor: `${color}20`,
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none'
       }}
     />
   );

@@ -11,7 +11,7 @@ export const ToolVisualizer: React.FC<ToolVisualizerProps> = ({
   tool,
   isApplePencil
 }) => {
-  // This component would render a visual indicator of the current tool
-  // For now, we'll just return null
+  // This component would show visual cues based on the active tool
+  // Not fully implemented for simplicity
   return null;
 };

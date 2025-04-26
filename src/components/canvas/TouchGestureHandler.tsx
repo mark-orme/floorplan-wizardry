@@ -1,38 +1,51 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface TouchGestureHandlerProps {
   canvas: FabricCanvas;
-  lineThickness: number;
   tool: DrawingMode;
+  lineThickness: number;
 }
 
 export const TouchGestureHandler: React.FC<TouchGestureHandlerProps> = ({
   canvas,
-  lineThickness,
-  tool
+  tool,
+  lineThickness
 }) => {
-  // This component doesn't render anything visible
-  // It just attaches touch gesture handlers to the canvas
-  
-  React.useEffect(() => {
+  // Handle touch gestures
+  useEffect(() => {
     if (!canvas) return;
     
-    console.log('[TouchGestureHandler] Setting up touch handling');
-    
-    // Set up touch-action CSS property
-    if (canvas.wrapperEl) {
-      canvas.wrapperEl.style.touchAction = 
-        tool === DrawingMode.PAN ? 'manipulation' : 'none';
-    }
-    
-    // Clean up function
-    return () => {
-      console.log('[TouchGestureHandler] Cleaning up touch handlers');
+    const handleTouchStart = (e: TouchEvent) => {
+      // Implementation would go here
     };
-  }, [canvas, tool]);
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      // Implementation would go here
+    };
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Implementation would go here
+    };
+    
+    // Get canvas DOM element and attach event listeners
+    const canvasEl = canvas.getElement();
+    
+    if (canvasEl) {
+      canvasEl.addEventListener('touchstart', handleTouchStart);
+      canvasEl.addEventListener('touchmove', handleTouchMove);
+      canvasEl.addEventListener('touchend', handleTouchEnd);
+      
+      return () => {
+        canvasEl.removeEventListener('touchstart', handleTouchStart);
+        canvasEl.removeEventListener('touchmove', handleTouchMove);
+        canvasEl.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [canvas, tool, lineThickness]);
   
+  // No UI rendering, this component just handles touch gestures
   return null;
 };

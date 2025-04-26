@@ -1,33 +1,17 @@
 
-import { ReactNode } from 'react';
-
-export interface DrawingLayer {
+export interface Layer {
   id: string;
   name: string;
   visible: boolean;
   locked: boolean;
-  type: string;
 }
 
 export interface VirtualizedLayerListProps {
-  layers: DrawingLayer[];
+  layers: Layer[];
   activeLayerId: string;
-  onLayerClick: (layerId: string) => void;
-  onToggleVisibility: (layerId: string) => void;
-  onToggleLock: (layerId: string) => void;
-  onDeleteLayer: (layerId: string) => void;
+  onLayerClick: (id: string) => void;
+  onToggleVisibility: (id: string) => void;
+  onToggleLock: (id: string) => void;
+  onDeleteLayer: (id: string) => void;
   listHeight: number;
-}
-
-export interface LayerItemProps {
-  index: number;
-  style: React.CSSProperties;
-  data: {
-    layers: DrawingLayer[];
-    activeLayerId: string;
-    onLayerClick: (layerId: string) => void;
-    onToggleVisibility: (layerId: string) => void;
-    onToggleLock: (layerId: string) => void;
-    onDeleteLayer: (layerId: string) => void;
-  };
 }

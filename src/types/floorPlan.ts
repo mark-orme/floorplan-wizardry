@@ -1,81 +1,76 @@
 
 /**
- * Floor plan type definitions
+ * Floor Plan Types
+ * Type definitions for floor plan functionality
+ * @module types/floorPlan
  */
 
-import { Point } from './core/Point';
-
-// Basic shape types
-export type StrokeType = 'line' | 'shape' | 'wall' | 'text';
-
-// Stroke interface for drawing
-export interface Stroke {
-  id: string;
-  points: Point[];
-  type: StrokeType;
-  color: string;
-  thickness: number;
-  width: number;
+export interface Point {
+  x: number;
+  y: number;
 }
 
-// Wall interface for architectural elements
 export interface Wall {
   id: string;
   start: Point;
   end: Point;
   thickness: number;
-  length: number;
-  color: string;
-  roomIds: string[];
+  height?: number;
+  color?: string;
+  metadata?: Record<string, any>;
 }
 
-// Room interface for enclosed spaces
 export interface Room {
   id: string;
   name: string;
-  wallIds: string[];
-  area: number;
-  color: string;
-  type?: string;
+  walls: string[]; // IDs of walls
+  area?: number; // m²
+  color?: string;
+  metadata?: Record<string, any>;
 }
 
-// Floor plan interface
+export interface Furniture {
+  id: string;
+  type: string;
+  position: Point;
+  rotation: number;
+  width: number;
+  depth: number;
+  height?: number;
+  color?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface Dimension {
+  id: string;
+  start: Point;
+  end: Point;
+  value: number; // length in mm
+  metadata?: Record<string, any>;
+}
+
+export interface FloorPlanLayer {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  objects: string[]; // IDs of objects on this layer
+}
+
 export interface FloorPlan {
   id: string;
   name: string;
-  strokes: Stroke[];
-  walls: Wall[];
-  rooms: Room[];
-  doors: any[]; // Could be expanded later
-  windows: any[]; // Could be expanded later
-  furniture: any[]; // Could be expanded later
-  level: number;
+  version: string;
   createdAt: string;
   updatedAt: string;
-}
-
-/**
- * Create an empty floor plan
- */
-export function createEmptyFloorPlan(): FloorPlan {
-  return {
-    id: generateId(),
-    name: 'New Floor Plan',
-    strokes: [],
-    walls: [],
-    rooms: [],
-    doors: [],
-    windows: [],
-    furniture: [],
-    level: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-}
-
-/**
- * Generate a unique ID
- */
-function generateId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  walls: Wall[];
+  rooms: Room[];
+  furniture: Furniture[];
+  dimensions: Dimension[];
+  layers: FloorPlanLayer[];
+  scale: number; // pixels per meter
+  width: number; // in pixels
+  height: number; // in pixels
+  backgroundColor?: string;
+  metadata?: Record<string, any>;
 }

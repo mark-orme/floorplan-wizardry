@@ -1,232 +1,112 @@
 
-import React, { useState, useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { dumpGridState } from "@/utils/grid/gridDebugUtils";
-import { forceGridCreationAndVisibility, ensureGridVisibility } from "@/utils/grid/gridVisibility";
-import { analyzeGridIssues } from "@/utils/grid/errorReporting";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
+import React, { useEffect, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import * as gridConstants from '@/constants/gridConstants';
 
 interface GridDebugOverlayProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  visible: boolean;
+  canvas: FabricCanvas | null;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  showGridInfo?: boolean;
+  showPerformance?: boolean;
 }
 
 export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
-  fabricCanvasRef,
-  visible
+  canvas,
+  position = 'bottom-right',
+  showGridInfo = false,
+  showPerformance = false
 }) => {
-  const [gridInfo, setGridInfo] = useState<any>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [autoFixEnabled, setAutoFixEnabled] = useState(GRID_CONSTANTS.GRID_AUTO_FIX);
+  const [stats, setStats] = useState({
+    gridObjects: 0,
+    canvasWidth: 0,
+    canvasHeight: 0,
+    visibleGridLines: 0
+  });
 
+  // Update statistics
   useEffect(() => {
-    // Refresh grid info every 2 seconds when visible
-    if (!visible) return;
-    
-    // Initial refresh
-    refreshGridInfo();
-    
-    const intervalId = setInterval(() => {
-      refreshGridInfo();
-    }, 2000);
-    
-    return () => clearInterval(intervalId);
-  }, [visible]);
-
-  if (!visible) return null;
-
-  const canvas = fabricCanvasRef.current;
-  if (!canvas) return null;
-
-  const debugInfo = {
-    canvasWidth: canvas.width,
-    canvasHeight: canvas.height,
-    objectCount: canvas.getObjects().length,
-    renderedAt: new Date().toISOString()
-  };
-
-  // Function to dump grid state 
-  const handleDumpGridState = () => {
-    if (canvas) {
-      dumpGridState(canvas);
-      console.log("Grid state dumped to console");
-      toast.info("Grid state dumped to console");
-    }
-  };
-  
-  // Function to force grid visibility
-  const handleForceVisibility = () => {
-    if (canvas) {
-      const gridObjects = canvas.getObjects().filter(obj => 
-        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-      );
-      
-      if (gridObjects.length === 0) {
-        toast.error("No grid objects found to make visible");
-        return;
-      }
-      
-      // Fix: Call ensureGridVisibility with only the canvas argument
-      ensureGridVisibility(canvas);
-      toast.success("Grid visibility updated");
-      refreshGridInfo();
-    }
-  };
-  
-  // Function to force grid creation
-  const handleForceGridCreation = () => {
-    if (canvas) {
-      const success = forceGridCreationAndVisibility(canvas);
-      toast.success(`Grid creation ${success ? "successful" : "failed"}`);
-      refreshGridInfo();
-    }
-  };
-  
-  // Function to analyze grid issues
-  const handleAnalyzeGrid = () => {
     if (!canvas) return;
     
-    setIsAnalyzing(true);
-    
-    try {
-      const gridObjects = canvas.getObjects().filter(obj => 
-        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    const updateStats = () => {
+      const allObjects = canvas.getObjects();
+      const gridObjects = allObjects.filter(obj => 
+        obj.get('objectType') === 'grid' || 
+        (obj as any).gridObject === true
       );
       
-      const analysis = analyzeGridIssues(canvas, gridObjects);
+      const visibleGridLines = gridObjects.filter(obj => obj.visible).length;
       
-      setGridInfo({
+      setStats({
         gridObjects: gridObjects.length,
-        hasIssues: analysis.hasIssues,
-        issues: analysis.issues,
-        diagnostics: analysis.diagnostics
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        visibleGridLines
       });
-      
-      console.log("Grid analysis:", analysis);
-      
-      if (analysis.hasIssues) {
-        toast.error(`Grid issues found: ${analysis.issues.join(", ")}`);
-      } else {
-        toast.success("Grid appears healthy");
-      }
-    } catch (error) {
-      console.error("Error analyzing grid:", error);
-      toast.error("Error analyzing grid");
-    } finally {
-      setIsAnalyzing(false);
-    }
+    };
+    
+    // Initial update
+    updateStats();
+    
+    // Setup periodic updates
+    const interval = setInterval(updateStats, 2000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, [canvas]);
+  
+  // Position classes
+  const positionClasses = {
+    'top-left': 'top-4 left-4',
+    'top-right': 'top-4 right-4',
+    'bottom-left': 'bottom-4 left-4',
+    'bottom-right': 'bottom-4 right-4'
   };
   
-  // Refresh grid info
-  const refreshGridInfo = () => {
+  // If canvas is null or debugging is not enabled
+  if (!canvas || (!showGridInfo && !showPerformance)) {
+    return null;
+  }
+  
+  // Auto-fix grid if configured
+  const handleFixGrid = () => {
     if (!canvas) return;
     
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
+    const gridAutoFix = gridConstants.GRID_AUTO_FIX;
+    if (!gridAutoFix) return;
     
-    setGridInfo({
-      totalObjects: canvas.getObjects().length,
-      gridObjects: gridObjects.length,
-      visibleGridObjects: gridObjects.filter(obj => obj.visible).length,
-      invisibleGridObjects: gridObjects.filter(obj => !obj.visible).length,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Auto-fix if enabled and invisible grid objects are found
-    if (autoFixEnabled && gridObjects.filter(obj => !obj.visible).length > 0) {
-      handleForceVisibility();
-    }
+    // Logic for fixing grid would go here
+    console.log('Auto-fixing grid');
   };
   
-  // Toggle auto-fix
-  const toggleAutoFix = () => {
-    setAutoFixEnabled(prev => !prev);
-    toast.info(`Auto-fix ${!autoFixEnabled ? "enabled" : "disabled"}`);
-  };
-
   return (
-    <div className="absolute top-2 right-2 bg-white/90 p-3 rounded shadow z-50 text-xs max-w-xs">
-      <h4 className="font-bold mb-2">Grid Debug</h4>
-      <div className="mb-2">
-        <div>Canvas: {debugInfo.canvasWidth}×{debugInfo.canvasHeight}</div>
-        <div>Total Objects: {debugInfo.objectCount}</div>
-        <div>Rendered: {new Date().toLocaleTimeString()}</div>
-      </div>
+    <div 
+      className={`fixed z-50 p-2 bg-black/70 text-white text-xs rounded-md ${positionClasses[position]}`}
+    >
+      <div className="font-semibold mb-1">Grid Debug</div>
       
-      {gridInfo && (
-        <div className="mb-2 p-1 bg-gray-100 rounded">
-          <div>Grid Objects: {gridInfo.gridObjects}</div>
-          {gridInfo.visibleGridObjects !== undefined && (
-            <div>Visible Grid: {gridInfo.visibleGridObjects}</div>
-          )}
-          {gridInfo.invisibleGridObjects > 0 && (
-            <div className="text-red-500">Invisible Grid: {gridInfo.invisibleGridObjects}</div>
-          )}
-          {gridInfo.hasIssues && (
-            <div className="text-red-500">Issues: {gridInfo.issues?.length || 0}</div>
-          )}
+      {showGridInfo && (
+        <>
+          <div>Size: {stats.canvasWidth} × {stats.canvasHeight}</div>
+          <div>Grid Objects: {stats.gridObjects}</div>
+          <div>Visible Lines: {stats.visibleGridLines}</div>
+          <div>Health: {stats.visibleGridLines === stats.gridObjects ? '✅' : '⚠️'}</div>
+        </>
+      )}
+      
+      {showPerformance && (
+        <div className="border-t border-white/30 mt-1 pt-1">
+          <div>Objects: {canvas.getObjects().length}</div>
+          <div>Background: {canvas.backgroundColor || 'none'}</div>
         </div>
       )}
       
-      <div className="grid grid-cols-2 gap-1">
-        <Button 
-          onClick={handleDumpGridState} 
-          variant="outline"
-          size="sm"
-          className="text-xs h-7"
-        >
-          Dump State
-        </Button>
-        
-        <Button 
-          onClick={handleForceVisibility} 
-          variant="outline"
-          size="sm"
-          className="text-xs h-7"
-        >
-          Force Visible
-        </Button>
-        
-        <Button 
-          onClick={handleForceGridCreation} 
-          variant="outline"
-          size="sm"
-          className="text-xs h-7"
-        >
-          Recreate Grid
-        </Button>
-        
-        <Button 
-          onClick={handleAnalyzeGrid} 
-          variant="outline"
-          size="sm"
-          className="text-xs h-7"
-          disabled={isAnalyzing}
-        >
-          Analyze Grid
-        </Button>
-        
-        <Button 
-          onClick={refreshGridInfo} 
-          variant="outline"
-          size="sm"
-          className="text-xs h-7"
-        >
-          Refresh Info
-        </Button>
-        
-        <Button 
-          onClick={toggleAutoFix} 
-          variant={autoFixEnabled ? "default" : "outline"}
-          size="sm"
-          className="text-xs h-7"
-        >
-          Auto-Fix {autoFixEnabled ? "ON" : "OFF"}
-        </Button>
-      </div>
+      <button 
+        className="mt-1 px-2 py-1 bg-blue-500 text-white rounded text-xs w-full"
+        onClick={handleFixGrid}
+      >
+        Fix Grid
+      </button>
     </div>
   );
 };

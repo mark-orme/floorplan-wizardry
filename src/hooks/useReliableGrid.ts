@@ -1,97 +1,135 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from '@/utils/canvas/reliableGridRenderer';
-import { measurePerformance } from '@/utils/performance';
 
-interface UseReliableGridProps {
+interface UseReliableGridOptions {
   canvas: FabricCanvas | null;
   gridSpacing?: number;
   enabled?: boolean;
 }
 
-export const useReliableGrid = ({ 
-  canvas, 
-  gridSpacing = 20, 
-  enabled = true 
-}: UseReliableGridProps) => {
+export function useReliableGrid({
+  canvas,
+  gridSpacing = 20,
+  enabled = true
+}: UseReliableGridOptions) {
   const [isGridCreated, setIsGridCreated] = useState(false);
   const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
-  const creationAttempts = useRef(0);
-  
-  // Create grid with performance monitoring
-  const createReliableGrid = useCallback(() => {
+
+  // Initialize grid
+  useEffect(() => {
     if (!canvas || !enabled) return;
-    
-    creationAttempts.current += 1;
-    
-    // Using the performance measurement utility
-    const [newGridObjects, measurement] = measurePerformance('grid.creation', () => {
-      return createGrid(canvas, {
-        gridSpacing,
-        majorGridInterval: 5,
-        gridColor: '#e5e5e5',
-        majorGridColor: '#c0c0c0',
-        gridSize: 5000
-      });
-    });
-    
-    if (newGridObjects.length > 0) {
-      console.log(`Grid created with ${newGridObjects.length} objects in ${measurement.duration.toFixed(2)}ms`);
-      setGridObjects(newGridObjects);
-      setIsGridCreated(true);
-    } else {
-      console.warn(`Grid creation failed on attempt ${creationAttempts.current}`);
-      setIsGridCreated(false);
-    }
-  }, [canvas, enabled, gridSpacing]);
-  
-  // Initialize grid on canvas change or enable state change
-  useEffect(() => {
-    if (canvas && enabled && !isGridCreated) {
-      // Small delay to ensure canvas is fully initialized
-      const timer = setTimeout(() => {
-        createReliableGrid();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [canvas, enabled, isGridCreated, createReliableGrid]);
-  
-  // Reinitialize grid (can be called externally)
-  const reinitializeGrid = useCallback(() => {
-    // Clear existing grid
-    if (canvas) {
-      gridObjects.forEach(obj => {
-        if (canvas.contains(obj)) {
+
+    // Create grid
+    const createGrid = () => {
+      try {
+        // Clean up any existing grid
+        gridObjects.forEach(obj => {
           canvas.remove(obj);
+        });
+
+        const width = canvas.getWidth();
+        const height = canvas.getHeight();
+        const newGridObjects: FabricObject[] = [];
+
+        // Create horizontal lines
+        for (let y = 0; y <= height; y += gridSpacing) {
+          const line = new window.fabric.Line([0, y, width, y], {
+            stroke: '#e0e0e0',
+            strokeWidth: 1,
+            opacity: 0.5,
+            selectable: false,
+            evented: false
+          });
+          canvas.add(line);
+          newGridObjects.push(line);
         }
-      });
-      setGridObjects([]);
-      setIsGridCreated(false);
-      creationAttempts.current = 0;
-      
-      // Create new grid
-      createReliableGrid();
-    }
-  }, [canvas, gridObjects, createReliableGrid]);
-  
-  // Clean up grid on unmount
-  useEffect(() => {
+
+        // Create vertical lines
+        for (let x = 0; x <= width; x += gridSpacing) {
+          const line = new window.fabric.Line([x, 0, x, height], {
+            stroke: '#e0e0e0',
+            strokeWidth: 1,
+            opacity: 0.5,
+            selectable: false,
+            evented: false
+          });
+          canvas.add(line);
+          newGridObjects.push(line);
+        }
+
+        setGridObjects(newGridObjects);
+        setIsGridCreated(true);
+        canvas.requestRenderAll();
+      } catch (error) {
+        console.error('Error creating grid:', error);
+        setIsGridCreated(false);
+      }
+    };
+
+    createGrid();
+
+    // Cleanup
     return () => {
       if (canvas) {
         gridObjects.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
+          canvas.remove(obj);
         });
       }
     };
-  }, [canvas, gridObjects]);
-  
+  }, [canvas, gridSpacing, enabled]);
+
+  // Reinitialize grid
+  const reinitializeGrid = () => {
+    if (!canvas || !enabled) return;
+
+    setIsGridCreated(false);
+    gridObjects.forEach(obj => {
+      canvas.remove(obj);
+    });
+    setGridObjects([]);
+
+    // Recreate grid
+    setTimeout(() => {
+      const width = canvas.getWidth();
+      const height = canvas.getHeight();
+      const newGridObjects: FabricObject[] = [];
+
+      // Create horizontal lines
+      for (let y = 0; y <= height; y += gridSpacing) {
+        const line = new window.fabric.Line([0, y, width, y], {
+          stroke: '#e0e0e0',
+          strokeWidth: 1,
+          opacity: 0.5,
+          selectable: false,
+          evented: false
+        });
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
+
+      // Create vertical lines
+      for (let x = 0; x <= width; x += gridSpacing) {
+        const line = new window.fabric.Line([x, 0, x, height], {
+          stroke: '#e0e0e0',
+          strokeWidth: 1,
+          opacity: 0.5,
+          selectable: false,
+          evented: false
+        });
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
+
+      setGridObjects(newGridObjects);
+      setIsGridCreated(true);
+      canvas.requestRenderAll();
+    }, 100);
+  };
+
   return {
     isGridCreated,
     gridObjects,
     reinitializeGrid
   };
-};
+}

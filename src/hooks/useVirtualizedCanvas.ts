@@ -1,120 +1,100 @@
 
-/**
- * Virtualized Canvas Hook
- * Provides virtualization for large canvas with many objects
- * @module hooks/useVirtualizedCanvas
- */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas } from 'fabric';
-import { debounce } from '@/utils/debounce';
+import { useEffect, useState, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { PerformanceMetrics } from '@/types/core/DebugInfo';
 
-interface VirtualizationOptions {
+interface UseVirtualizedCanvasOptions {
   enabled?: boolean;
-  autoToggle?: boolean;
-  objectThreshold?: number;
-  updateInterval?: number;
-}
-
-interface PerformanceMetrics {
-  fps: number;
-  objectCount: number;
-  visibleObjectCount: number;
-  renderTime: number;
-  lastUpdated: number;
+  maxFps?: number;
+  throttleRenders?: boolean;
 }
 
 export function useVirtualizedCanvas(
-  canvasRef: React.RefObject<Canvas | null>,
-  options: VirtualizationOptions = {}
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  options: UseVirtualizedCanvasOptions = {}
 ) {
   const {
-    enabled = false,
-    autoToggle = true,
-    objectThreshold = 100,
-    updateInterval = 1000
+    enabled = true,
+    maxFps = 60,
+    throttleRenders = true
   } = options;
   
-  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     fps: 0,
+    renderDuration: 0,
     objectCount: 0,
-    visibleObjectCount: 0,
-    renderTime: 0,
-    lastUpdated: Date.now()
+    throttled: false,
+    lastUpdate: 0
   });
   
-  const fpsCounterRef = useRef({ frames: 0, lastCheck: Date.now() });
-  const metricsIntervalRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastRenderTimeRef = useRef<number>(0);
+  const frameCountRef = useRef<number>(0);
+  const lastFpsUpdateRef = useRef<number>(0);
   
-  // Update FPS counter
-  const updateFpsCounter = useCallback(() => {
-    const now = Date.now();
-    const elapsed = now - fpsCounterRef.current.lastCheck;
+  // Set up virtualization
+  useEffect(() => {
+    if (!enabled) return;
     
-    if (elapsed >= 1000) {
-      const fps = Math.round((fpsCounterRef.current.frames * 1000) / elapsed);
-      fpsCounterRef.current = { frames: 0, lastCheck: now };
-      
-      setPerformanceMetrics(prev => ({
-        ...prev,
-        fps,
-        lastUpdated: now
-      }));
-    } else {
-      fpsCounterRef.current.frames++;
-    }
-  }, []);
-  
-  // Update performance metrics
-  const updateMetrics = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const objects = canvas.getObjects();
-    const visibleObjects = objects.filter(obj => obj.visible !== false);
-    
-    setPerformanceMetrics(prev => ({
-      ...prev,
-      objectCount: objects.length,
-      visibleObjectCount: visibleObjects.length,
-      lastUpdated: Date.now()
-    }));
-    
-    // Auto-toggle virtualization based on object count
-    if (autoToggle && !virtualizationEnabled && objects.length > objectThreshold) {
-      setVirtualizationEnabled(true);
-    }
-  }, [canvasRef, autoToggle, virtualizationEnabled, objectThreshold]);
-  
-  // Refresh virtualization state
-  const refreshVirtualization = useCallback(debounce(() => {
-    updateMetrics();
-    updateFpsCounter();
-  }, 100), [updateMetrics, updateFpsCounter]);
-  
-  // Toggle virtualization on/off
-  const toggleVirtualization = useCallback(() => {
-    setVirtualizationEnabled(prev => !prev);
-  }, []);
-  
-  // Set up metrics interval
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      updateMetrics();
-    }, updateInterval);
-    
-    metricsIntervalRef.current = intervalId;
-    
-    return () => {
-      if (metricsIntervalRef.current !== null) {
-        clearInterval(metricsIntervalRef.current);
+    // Enhance canvas with virtualization
+    const updatePerformanceMetrics = () => {
+      const now = performance.now();
+      frameCountRef.current++;
+      
+      // Update FPS every second
+      if (now - lastFpsUpdateRef.current > 1000) {
+        setPerformanceMetrics(prev => ({
+          ...prev,
+          fps: Math.round(frameCountRef.current * 1000 / (now - lastFpsUpdateRef.current)),
+          objectCount: canvas.getObjects().length,
+          lastUpdate: now
+        }));
+        
+        frameCountRef.current = 0;
+        lastFpsUpdateRef.current = now;
       }
     };
-  }, [updateMetrics, updateInterval]);
+    
+    // Set up render loop
+    const renderLoop = (timestamp: number) => {
+      if (throttleRenders) {
+        const elapsed = timestamp - lastRenderTimeRef.current;
+        const frameTime = 1000 / maxFps;
+        
+        if (elapsed < frameTime) {
+          animationFrameRef.current = requestAnimationFrame(renderLoop);
+          return;
+        }
+      }
+      
+      lastRenderTimeRef.current = timestamp;
+      updatePerformanceMetrics();
+      
+      animationFrameRef.current = requestAnimationFrame(renderLoop);
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(renderLoop);
+    
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [canvasRef, enabled, maxFps, throttleRenders]);
+  
+  // Method to refresh virtualization
+  const refreshVirtualization = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Force refresh by triggering a render
+    canvas.requestRenderAll();
+  };
   
   return {
-    virtualizationEnabled,
-    toggleVirtualization,
     performanceMetrics,
     refreshVirtualization
   };

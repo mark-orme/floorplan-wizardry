@@ -1,171 +1,88 @@
 
-import React, { useState, useCallback } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Database, Grid, RefreshCw } from "lucide-react";
-import { 
-  runGridDiagnostics,
-  applyGridFixes,
-  emergencyGridFix
-} from "@/utils/grid/gridDiagnostics";
-import logger from "@/utils/logger";
+import React from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import {
+  Database,
+  Grid,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Trash
+} from '@/components/ui/icons';
+import { Button } from '@/components/ui/button';
 
 interface GridDiagnosticToolsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  visible?: boolean;
+  canvas: FabricCanvas | null;
+  gridObjects: any[];
+  onToggleGridVisibility: () => void;
+  onRefreshGrid: () => void;
+  onResetGrid: () => void;
+  showDiagnostics?: boolean;
 }
 
 export const GridDiagnosticTools: React.FC<GridDiagnosticToolsProps> = ({
-  fabricCanvasRef,
-  visible = false
+  canvas,
+  gridObjects,
+  onToggleGridVisibility,
+  onRefreshGrid,
+  onResetGrid,
+  showDiagnostics = false
 }) => {
-  const [results, setResults] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  
-  // Run diagnostics
-  const handleRunDiagnostics = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) {
-      setResults({ error: "Canvas is not available" });
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const diagnostics = runGridDiagnostics(canvas);
-      setResults(diagnostics);
-    } catch (error) {
-      logger.error("Error running grid diagnostics:", error);
-      setResults({ error: error instanceof Error ? error.message : String(error) });
-    } finally {
-      setLoading(false);
-    }
-  }, [fabricCanvasRef]);
-  
-  // Apply fixes
-  const handleApplyFixes = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) {
-      setResults({ error: "Canvas is not available" });
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const fixResult = applyGridFixes(canvas);
-      setResults(fixResult);
-    } catch (error) {
-      logger.error("Error applying grid fixes:", error);
-      setResults({ error: error instanceof Error ? error.message : String(error) });
-    } finally {
-      setLoading(false);
-    }
-  }, [fabricCanvasRef]);
-  
-  // Emergency fix
-  const handleEmergencyFix = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) {
-      setResults({ error: "Canvas is not available" });
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const newGrid = emergencyGridFix(canvas);
-      
-      setResults({
-        emergencyFixApplied: true,
-        newGridObjects: newGrid.length
-      });
-    } catch (error) {
-      logger.error("Error applying emergency grid fix:", error);
-      setResults({ error: error instanceof Error ? error.message : String(error) });
-    } finally {
-      setLoading(false);
-    }
-  }, [fabricCanvasRef]);
-  
-  if (!visible) return null;
+  if (!canvas || !showDiagnostics) return null;
   
   return (
-    <div className="bg-white p-4 rounded shadow absolute bottom-4 right-4 z-50 text-xs">
-      <div className="font-bold mb-2 flex items-center">
-        <Database className="w-3 h-3 mr-1" />
-        Grid Diagnostic Tools
+    <div className="fixed bottom-4 left-4 z-50 bg-white rounded-md shadow-md p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium flex items-center">
+          <Grid className="w-4 h-4 mr-1" />
+          Grid Tools
+        </h3>
+        <span className="text-xs text-gray-500">
+          {gridObjects.length} objects
+        </span>
       </div>
       
-      <div className="grid grid-cols-2 gap-2 mb-2">
+      <div className="grid grid-cols-2 gap-1">
         <Button 
           size="sm" 
-          className="text-xs h-7"
-          onClick={handleRunDiagnostics}
-          disabled={loading}
+          variant="outline" 
+          className="text-xs"
+          onClick={onToggleGridVisibility}
         >
-          Run Diagnostics
+          <Eye className="w-3 h-3 mr-1" />
+          Toggle
         </Button>
         
         <Button 
           size="sm" 
-          className="text-xs h-7"
-          onClick={handleApplyFixes}
-          disabled={loading}
-          variant="outline"
+          variant="outline" 
+          className="text-xs"
+          onClick={onRefreshGrid}
         >
-          Apply Fixes
+          <RefreshCw className="w-3 h-3 mr-1" />
+          Refresh
+        </Button>
+        
+        <Button 
+          size="sm" 
+          variant="destructive" 
+          className="text-xs"
+          onClick={onResetGrid}
+        >
+          <Trash className="w-3 h-3 mr-1" />
+          Reset
+        </Button>
+        
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="text-xs"
+          onClick={() => console.log('Diagnostic data:', { gridObjects, canvas })}
+        >
+          <Database className="w-3 h-3 mr-1" />
+          Log
         </Button>
       </div>
-      
-      <Button 
-        size="sm" 
-        className="text-xs w-full h-7 mb-2"
-        onClick={handleEmergencyFix}
-        disabled={loading}
-        variant="destructive"
-      >
-        <AlertCircle className="w-3 h-3 mr-1" />
-        Emergency Grid Reset
-      </Button>
-      
-      <Separator className="my-2" />
-      
-      {results && (
-        <div className="mt-2">
-          {results.error ? (
-            <div className="text-red-500">{results.error}</div>
-          ) : (
-            <div className="space-y-1">
-              <div>Canvas: {results.canvasDimensions?.width ? '✅' : '❌'}</div>
-              <div>Grid exists: {results.hasGrid ? '✅' : '❌'}</div>
-              <div>Grid count: {results.gridObjectCount}</div>
-              {results.fixedGrid && (
-                <div className="text-green-500">
-                  Fixed grid: {results.fixedGrid.length} objects
-                </div>
-              )}
-              {results.issues && results.issues.length > 0 && (
-                <div className="text-red-500">
-                  Issues: {results.issues.join(', ')}
-                </div>
-              )}
-              {results.fixApplied && (
-                <div className="text-green-500">
-                  Fixes applied: {results.fixResult}
-                </div>
-              )}
-              {results.emergencyFixApplied && (
-                <div className="text-green-500">
-                  Emergency fix applied: {results.newGridObjects} objects
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
