@@ -4,6 +4,8 @@
  * @module hooks/straightLineTool/lineEvents
  */
 import { MeasurementData } from './types';
+import { Point } from '@/types/core/Point';
+import { Canvas, Line, Text } from 'fabric';
 
 /**
  * Line state interface - used for typechecking hook return values
@@ -19,31 +21,31 @@ export interface LineStateInterface {
   measurementData: MeasurementData;
   
   // Refs
-  startPointRef: React.MutableRefObject<any>;
-  currentLineRef: React.MutableRefObject<any>;
-  distanceTooltipRef: React.MutableRefObject<any>;
+  startPointRef: React.MutableRefObject<Point | null>;
+  currentLineRef: React.MutableRefObject<Line | null>;
+  distanceTooltipRef: React.MutableRefObject<Text | null>;
   
   // Methods
-  setStartPoint: (point: any) => void;
-  setCurrentLine: (line: any) => void;
-  setDistanceTooltip: (tooltip: any) => void;
+  setStartPoint: (point: Point) => void;
+  setCurrentLine: (line: Line) => void;
+  setDistanceTooltip: (tooltip: Text) => void;
   setIsDrawing: (isDrawing: boolean) => void;
   resetDrawingState: () => void;
   initializeTool: () => void;
   toggleSnap: () => void;
   toggleGridSnapping: () => void;
   toggleAngles: () => void;
-  createLine: (x1: number, y1: number, x2: number, y2: number) => any;
-  createDistanceTooltip: (x: number, y: number, distance: number) => any;
-  updateLineAndTooltip: (start: any, end: any) => void;
-  snapPointToGrid: (point: any) => any;
+  createLine: (x1: number, y1: number, x2: number, y2: number) => Line;
+  createDistanceTooltip: (x: number, y: number, distance: number) => Text;
+  updateLineAndTooltip: (start: Point, end: Point) => void;
+  snapPointToGrid: (point: Point) => Point;
   
   // Event handlers
-  handlePointerDown: (point: any) => void;
-  handlePointerMove: (point: any) => void;
-  handlePointerUp: (point: any) => void;
+  handlePointerDown: (point: Point) => void;
+  handlePointerMove: (point: Point) => void;
+  handlePointerUp: (point: Point) => void;
   cancelDrawing: () => void;
   
   // Current objects
-  currentLine: any | null;
+  currentLine: Line | null;
 }

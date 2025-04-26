@@ -1,3 +1,4 @@
+
 import { FloorPlan, PaperSize, stringToPaperSize } from "@/types/core/FloorPlan";
 
 /**
@@ -11,16 +12,24 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
       return [];
     }
     
-    const floorPlans = JSON.parse(storedData);
+    const floorPlans = JSON.parse(storedData) as Record<string, unknown>[];
     
     // Process data for any missing or outdated properties
-    return floorPlans.map((plan: any) => {
+    return floorPlans.map((plan: Record<string, unknown>) => {
+      // Create a typed FloorPlan from the parsed data
+      const typedPlan = plan as unknown as FloorPlan;
+      
       // Ensure paperSize is properly typed
-      if (plan.metadata && plan.metadata.paperSize) {
-        plan.metadata.paperSize = stringToPaperSize(plan.metadata.paperSize);
+      if (
+        typedPlan.metadata && 
+        typeof typedPlan.metadata === 'object' && 
+        typedPlan.metadata.paperSize
+      ) {
+        const paperSizeString = String(typedPlan.metadata.paperSize);
+        typedPlan.metadata.paperSize = stringToPaperSize(paperSizeString);
       }
       
-      return plan;
+      return typedPlan;
     });
   } catch (error) {
     console.error('Error loading floor plans:', error);
