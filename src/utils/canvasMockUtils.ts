@@ -76,7 +76,7 @@ export function createTypedMockCanvas(): MockCanvas {
     _objects: [],
     getHandlers: vi.fn().mockReturnValue([() => {}]),
     triggerEvent: vi.fn()
-  } as unknown as MockCanvas;
+  } as MockCanvas;
 }
 
 /**
@@ -108,9 +108,10 @@ export function createMockHistoryRef() {
  * @param canvas Any canvas-like object
  * @returns Canvas with added mock methods
  */
-export function assertMockCanvas(canvas: any): MockCanvas {
-  // Use type assertion to ensure mock canvas compatibility with Fabric.Canvas
-  return canvas as MockCanvas;
+export function assertMockCanvas(canvas: Partial<MockCanvas>): MockCanvas {
+  // Ensure we have a compatible mock canvas
+  const mockCanvas: MockCanvas = canvas as MockCanvas;
+  return mockCanvas;
 }
 
 /**

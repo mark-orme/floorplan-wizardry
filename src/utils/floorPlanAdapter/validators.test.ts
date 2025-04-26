@@ -23,18 +23,18 @@ describe('Floor Plan Validators', () => {
     });
     
     test('throws on missing point', () => {
-      // @ts-ignore - Testing invalid input
-      expect(() => validatePoint(undefined)).toThrow(ValidationError);
+      const invalidPoint = undefined;
+      expect(() => validatePoint(invalidPoint as unknown as Point)).toThrow(ValidationError);
     });
     
     test('throws on invalid x coordinate', () => {
-      // @ts-ignore - Testing invalid input
-      expect(() => validatePoint({ x: 'not a number', y: 20 })).toThrow(ValidationError);
+      const invalidPoint = { x: 'not a number' as unknown as number, y: 20 };
+      expect(() => validatePoint(invalidPoint)).toThrow(ValidationError);
     });
     
     test('throws on invalid y coordinate', () => {
-      // @ts-ignore - Testing invalid input
-      expect(() => validatePoint({ x: 10, y: 'not a number' })).toThrow(ValidationError);
+      const invalidPoint = { x: 10, y: 'not a number' as unknown as number };
+      expect(() => validatePoint(invalidPoint)).toThrow(ValidationError);
     });
     
     test('throws on NaN values', () => {
@@ -55,8 +55,8 @@ describe('Floor Plan Validators', () => {
     });
     
     test('throws on missing wall', () => {
-      // @ts-ignore - Testing invalid input
-      expect(() => validateWall(undefined)).toThrow(ValidationError);
+      const invalidWall = undefined;
+      expect(() => validateWall(invalidWall as unknown as Wall)).toThrow(ValidationError);
     });
     
     test('throws on missing id', () => {
@@ -65,8 +65,7 @@ describe('Floor Plan Validators', () => {
         end: { x: 100, y: 0 },
         thickness: 10
       };
-      // @ts-ignore - Testing invalid input
-      expect(() => validateWall(wall)).toThrow(ValidationError);
+      expect(() => validateWall(wall as Wall)).toThrow(ValidationError);
     });
     
     test('throws on invalid thickness', () => {

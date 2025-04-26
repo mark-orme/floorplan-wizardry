@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 
 export interface IMockCanvasObject {
   getHandlers: (eventName: string) => Function[];
-  triggerEvent: (eventName: string, eventData: any) => void;
+  triggerEvent: (eventName: string, eventData: unknown) => void;
   withImplementation: (callback?: Function) => Promise<void>;
 }
 
@@ -37,7 +37,7 @@ export function createTestMockCanvas(): MockCanvas {
   });
 
   // Create a base canvas mock object
-  const mockCanvas = {
+  const mockCanvas: MockCanvas = {
     on: vi.fn(),
     off: vi.fn(),
     add: vi.fn(),
@@ -79,7 +79,7 @@ export function createTestMockCanvas(): MockCanvas {
     _objects: [],
     getHandlers: vi.fn().mockReturnValue([() => {}]),
     triggerEvent: vi.fn()
-  } as unknown as MockCanvas;
+  };
 
   return mockCanvas;
 }

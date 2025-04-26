@@ -16,13 +16,15 @@ import { createMockObject } from '@/utils/test/mockFabricCanvas';
  * @returns Mocked pointer event info
  */
 export function createMockPointerEvent(x: number, y: number): TPointerEventInfo<TPointerEvent> {
+  const mockEvent: TPointerEvent = {
+    clientX: x,
+    clientY: y,
+    preventDefault: () => {},
+    stopPropagation: () => {}
+  } as TPointerEvent;
+  
   return {
-    e: {
-      clientX: x,
-      clientY: y,
-      preventDefault: () => {},
-      stopPropagation: () => {}
-    } as unknown as TPointerEvent,
+    e: mockEvent,
     pointer: { x, y },
     absolutePointer: { x, y },
     viewportPoint: { x, y }
@@ -36,10 +38,11 @@ export function createMockPointerEvent(x: number, y: number): TPointerEventInfo<
  * @returns Mocked selection event info with additional click properties
  */
 export function createMockSelectionEvent(x: number, y: number) {
+  const baseEvent = createMockPointerEvent(x, y);
   return {
-    ...createMockPointerEvent(x, y),
+    ...baseEvent,
     isClick: true,
-    currentTarget: null as unknown as FabricObject,
+    currentTarget: null as FabricObject | null,
     currentSubTargets: [] as FabricObject[]
   };
 }
@@ -71,7 +74,7 @@ export function createMockCanvas() {
  * @param props Object properties
  * @returns Mock fabric object
  */
-export function createMockFabricObject(type: string, props: Record<string, any> = {}) {
+export function createMockFabricObject(type: string, props: Record<string, unknown> = {}) {
   return createMockObject(type, props);
 }
 
@@ -89,7 +92,7 @@ export function createMockLine(
   y1: number, 
   x2: number, 
   y2: number, 
-  props: Record<string, any> = {}
+  props: Record<string, unknown> = {}
 ) {
   return createMockObject('line', {
     x1, y1, x2, y2,

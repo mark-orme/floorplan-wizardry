@@ -18,7 +18,7 @@ export function clearGrid(canvas: FabricCanvas): void {
   }
 
   // Find all grid objects
-  const gridObjects = canvas.getObjects().filter(obj => (obj as any).objectType === 'grid');
+  const gridObjects = canvas.getObjects().filter(obj => (obj as FabricObject & { objectType?: string }).objectType === 'grid');
   
   // Remove each grid object
   gridObjects.forEach(obj => {

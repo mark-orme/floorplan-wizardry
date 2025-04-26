@@ -7,6 +7,16 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
+interface DiagnosticsData {
+  [key: string]: unknown;
+}
+
+interface ReportOptions {
+  level: 'info' | 'warning' | 'error';
+  tags?: Record<string, string>;
+  extra?: Record<string, unknown>;
+}
+
 /**
  * Analyze grid issues
  * @param canvas - Fabric canvas
@@ -16,10 +26,10 @@ import logger from '@/utils/logger';
 export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObject[]): {
   hasIssues: boolean;
   issues: string[];
-  diagnostics: Record<string, any>;
+  diagnostics: DiagnosticsData;
 } => {
   const issues: string[] = [];
-  const diagnostics: Record<string, any> = {};
+  const diagnostics: DiagnosticsData = {};
   
   try {
     // Check for canvas issues
@@ -87,7 +97,7 @@ export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObjec
     };
   } catch (error) {
     // Handle errors in the analysis itself
-    captureError(error, 'grid-analysis-error', {
+    captureError(error as Error, 'grid-analysis-error', {
       level: 'error',
       tags: {
         component: 'grid-analysis'
@@ -111,7 +121,7 @@ export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObjec
 export const reportGridCreation = (
   success: boolean,
   gridCount: number,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): void => {
   if (success) {
     logger.info(`Grid created successfully: ${gridCount} objects`);

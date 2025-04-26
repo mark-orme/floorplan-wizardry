@@ -21,6 +21,16 @@ export interface GridCreationOptions {
   largeGridColor?: string;
 }
 
+interface GridObjectProperties {
+  stroke: string;
+  strokeWidth: number;
+  selectable: boolean;
+  evented: boolean;
+  objectType: string;
+  isGrid: boolean;
+  hoverCursor: string;
+}
+
 /**
  * Create a complete grid with labels and markers
  * @param canvas Fabric canvas
@@ -42,14 +52,15 @@ export const createEnhancedGrid = (
   
   // Remove existing grid objects
   canvas.getObjects().forEach(obj => {
-    if ((obj as any).objectType === 'grid' || (obj as any).isGrid === true) {
+    const extendedObj = obj as FabricObject & { objectType?: string, isGrid?: boolean };
+    if (extendedObj.objectType === 'grid' || extendedObj.isGrid === true) {
       canvas.remove(obj);
     }
   });
   
   // Create small grid lines
   for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-    const line = new Line([i, 0, i, height], {
+    const lineProps: GridObjectProperties = {
       stroke: options.smallGridColor || GRID_CONSTANTS.SMALL_GRID_COLOR,
       strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
       selectable: false,
@@ -57,14 +68,15 @@ export const createEnhancedGrid = (
       objectType: 'grid',
       isGrid: true,
       hoverCursor: 'default'
-    } as any);
+    };
     
+    const line = new Line([i, 0, i, height], lineProps);
     canvas.add(line);
     gridObjects.push(line);
   }
   
   for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-    const line = new Line([0, i, width, i], {
+    const lineProps: GridObjectProperties = {
       stroke: options.smallGridColor || GRID_CONSTANTS.SMALL_GRID_COLOR,
       strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
       selectable: false,
@@ -72,15 +84,16 @@ export const createEnhancedGrid = (
       objectType: 'grid',
       isGrid: true,
       hoverCursor: 'default'
-    } as any);
+    };
     
+    const line = new Line([0, i, width, i], lineProps);
     canvas.add(line);
     gridObjects.push(line);
   }
   
   // Create large grid lines
   for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-    const line = new Line([i, 0, i, height], {
+    const lineProps: GridObjectProperties = {
       stroke: options.largeGridColor || GRID_CONSTANTS.LARGE_GRID_COLOR,
       strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
       selectable: false,
@@ -88,14 +101,15 @@ export const createEnhancedGrid = (
       objectType: 'grid',
       isGrid: true,
       hoverCursor: 'default'
-    } as any);
+    };
     
+    const line = new Line([i, 0, i, height], lineProps);
     canvas.add(line);
     gridObjects.push(line);
   }
   
   for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-    const line = new Line([0, i, width, i], {
+    const lineProps: GridObjectProperties = {
       stroke: options.largeGridColor || GRID_CONSTANTS.LARGE_GRID_COLOR,
       strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
       selectable: false,
@@ -103,8 +117,9 @@ export const createEnhancedGrid = (
       objectType: 'grid',
       isGrid: true,
       hoverCursor: 'default'
-    } as any);
+    };
     
+    const line = new Line([0, i, width, i], lineProps);
     canvas.add(line);
     gridObjects.push(line);
   }
@@ -124,7 +139,7 @@ export const createEnhancedGrid = (
         evented: false,
         objectType: 'grid',
         isGrid: true
-      } as any);
+      } as GridObjectProperties);
       
       canvas.add(text);
       gridObjects.push(text);
@@ -143,7 +158,7 @@ export const createEnhancedGrid = (
         evented: false,
         objectType: 'grid',
         isGrid: true
-      } as any);
+      } as GridObjectProperties);
       
       canvas.add(text);
       gridObjects.push(text);

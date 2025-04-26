@@ -20,6 +20,7 @@ import {
   createTestWall,
   createTestPoint
 } from '@/types/floor-plan/unifiedTypes';
+import { MockCanvas } from '@/utils/test/createMockCanvas';
 
 // Re-export test creation functions
 export {
@@ -35,24 +36,16 @@ export {
  * @param canvas Canvas-like object to convert
  * @returns Properly typed Canvas object
  */
-export function asMockCanvas(canvas: any): FabricCanvas & {
-  getHandlers?: (eventName: string) => Function[];
-  triggerEvent?: (eventName: string, eventData: any) => void;
-  withImplementation: (callback?: Function) => Promise<void>;
-} {
-  return canvas as unknown as FabricCanvas & {
-    getHandlers?: (eventName: string) => Function[];
-    triggerEvent?: (eventName: string, eventData: any) => void;
-    withImplementation: (callback?: Function) => Promise<void>;
-  };
+export function asMockCanvas(canvas: Partial<FabricCanvas>): MockCanvas {
+  return canvas as MockCanvas;
 }
 
 /**
  * Create a fully compatible mock canvas for testing
  * @returns Type-compatible mock canvas
  */
-export function createMockCanvas() {
-  return asMockCanvas({
+export function createMockCanvas(): MockCanvas {
+  const mockCanvas: Partial<MockCanvas> = {
     on: vi.fn(),
     off: vi.fn(),
     add: vi.fn(),
@@ -83,6 +76,8 @@ export function createMockCanvas() {
     _isClick: false,
     _objects: [],
     getHandlers: (eventName: string) => [() => {}],
-    triggerEvent: (eventName: string, eventData: any) => {}
-  });
+    triggerEvent: (eventName: string, eventData: unknown) => {}
+  };
+
+  return mockCanvas as MockCanvas;
 }

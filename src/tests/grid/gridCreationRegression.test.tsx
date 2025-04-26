@@ -10,6 +10,17 @@ import { BasicGrid } from '@/components/BasicGrid';
 import { Canvas as FabricCanvas } from 'fabric';
 import { GridCreationState } from '@/types/core/GridTypes';
 
+interface MockFabricCanvas extends FabricCanvas {
+  width: number;
+  height: number;
+  add: jest.Mock;
+  remove: jest.Mock;
+  getObjects: jest.Mock;
+  requestRenderAll: jest.Mock;
+  on: jest.Mock;
+  off: jest.Mock;
+}
+
 // Mock the fabric canvas
 jest.mock('fabric', () => {
   return {
@@ -22,7 +33,7 @@ jest.mock('fabric', () => {
       requestRenderAll: jest.fn(),
       on: jest.fn(),
       off: jest.fn()
-    }))
+    } as MockFabricCanvas))
   };
 });
 
@@ -50,10 +61,10 @@ jest.mock('@/utils/sentry', () => ({
 }));
 
 describe('BasicGrid Component Regression Tests', () => {
-  let canvas: FabricCanvas;
+  let canvas: MockFabricCanvas;
   
   beforeEach(() => {
-    canvas = new FabricCanvas();
+    canvas = new FabricCanvas() as MockFabricCanvas;
     jest.clearAllMocks();
   });
   
@@ -91,7 +102,7 @@ describe('BasicGrid Component Regression Tests', () => {
     const mockOnGridCreated = jest.fn();
     render(
       <BasicGrid 
-        canvas={null as unknown as FabricCanvas} 
+        canvas={null} 
         onGridCreated={mockOnGridCreated} 
         initialVisibility={true} 
       />

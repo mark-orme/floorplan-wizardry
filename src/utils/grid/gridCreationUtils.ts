@@ -29,36 +29,44 @@ export function createGrid(canvas: FabricCanvas, options: GridOptions = {}): Gri
   try {
     // Create horizontal lines
     for (let y = 0; y <= height; y += spacing) {
-      const line = new window.fabric.Line([0, y, width, y], {
+      // Create custom properties object
+      const lineProps = {
         stroke: color,
         strokeWidth,
         opacity,
         selectable: false,
         evented: false,
         visible,
-        gridObject: true as any, // Type assertion needed due to fabric.js typings
-        gridType: 'horizontal' as any
-      });
+        gridObject: true,
+        gridType: 'horizontal'
+      };
+
+      // Create the line with proper typing
+      const line = new window.fabric.Line([0, y, width, y], lineProps);
       
       canvas.add(line);
-      gridLines.push(line as unknown as GridLine);
+      gridLines.push(line as GridLine);
     }
     
     // Create vertical lines
     for (let x = 0; x <= width; x += spacing) {
-      const line = new window.fabric.Line([x, 0, x, height], {
+      // Create custom properties object
+      const lineProps = {
         stroke: color,
         strokeWidth,
         opacity,
         selectable: false,
         evented: false,
         visible,
-        gridObject: true as any,
-        gridType: 'vertical' as any
-      });
+        gridObject: true,
+        gridType: 'vertical'
+      };
+
+      // Create the line with proper typing
+      const line = new window.fabric.Line([x, 0, x, height], lineProps);
       
       canvas.add(line);
-      gridLines.push(line as unknown as GridLine);
+      gridLines.push(line as GridLine);
     }
     
     // Ensure grid is behind other objects

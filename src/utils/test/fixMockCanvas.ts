@@ -13,7 +13,7 @@ import { MockCanvas } from './createMockCanvas';
  * @param mockCanvas The canvas mock to fix
  * @returns Type-compatible canvas mock
  */
-export function fixMockCanvas(mockCanvas: any): MockCanvas {
+export function fixMockCanvas(mockCanvas: Partial<MockCanvas>): MockCanvas {
   // Fix withImplementation if it doesn't return a Promise<void>
   if (mockCanvas.withImplementation && typeof mockCanvas.withImplementation !== 'function') {
     mockCanvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
@@ -37,7 +37,7 @@ export function fixMockCanvas(mockCanvas: any): MockCanvas {
   }
   
   if (!mockCanvas.triggerEvent) {
-    mockCanvas.triggerEvent = (eventName: string, eventData: any) => {};
+    mockCanvas.triggerEvent = (eventName: string, eventData: unknown) => {};
   }
   
   return mockCanvas as MockCanvas;
@@ -48,7 +48,7 @@ export function fixMockCanvas(mockCanvas: any): MockCanvas {
  * @returns Type-compatible canvas mock
  */
 export function createFixedTypeMockCanvas(): MockCanvas {
-  const mockCanvas = {
+  const mockCanvas: Partial<MockCanvas> = {
     add: vi.fn(),
     remove: vi.fn(),
     getObjects: vi.fn().mockReturnValue([]),

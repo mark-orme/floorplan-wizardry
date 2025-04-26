@@ -166,7 +166,7 @@ export function validateFloorPlan(floorPlan: FloorPlan): void {
  * @param floorPlan FloorPlan to validate
  * @returns True if valid, false otherwise
  */
-export function isValidFloorPlan(floorPlan: any): floorPlan is FloorPlan {
+export function isValidFloorPlan(floorPlan: unknown): floorPlan is FloorPlan {
   try {
     validateFloorPlan(floorPlan as FloorPlan);
     return true;
