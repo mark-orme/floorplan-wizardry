@@ -2,18 +2,17 @@
 import * as Sentry from '@sentry/react';
 import { captureMessage } from '@/utils/sentryUtils';
 
-/**
- * Types for monitoring data
- */
 interface ToolUsageStats {
   [toolName: string]: number;
 }
 
+interface ActionStat {
+  success: number;
+  failure: number;
+}
+
 interface ActionStats {
-  [actionName: string]: { 
-    success: number;
-    failure: number;
-  };
+  [actionName: string]: ActionStat;
 }
 
 interface MonitoringReport {
@@ -21,6 +20,20 @@ interface MonitoringReport {
   actionStats: ActionStats;
   timestamp: string;
 }
+
+type BreadcrumbData = {
+  newTool?: string;
+  action?: string;
+  successful?: boolean;
+};
+
+type BreadcrumbEvent = {
+  breadcrumb: {
+    category: string;
+    message: string;
+    data?: BreadcrumbData;
+  };
+};
 
 /**
  * Monitors toolbar operations over time
@@ -33,22 +46,23 @@ export const startToolbarMonitoring = (
 ): () => void => {
   const toolUsageStats: ToolUsageStats = {};
   const actionsStats: ActionStats = {};
-  let originalBreadcrumbs: { breadcrumb: any }[] = [];
+  const originalBreadcrumbs: BreadcrumbEvent[] = [];
   
   // Store breadcrumbs for analysis without modifying the API
-  const breadcrumbListener = (breadcrumb: any) => {
+  const breadcrumbListener = (breadcrumb: CustomEvent<BreadcrumbEvent>) => {
+    const data = breadcrumb.detail.breadcrumb;
     // Track tool activations
-    if (breadcrumb.category === 'toolbar' && breadcrumb.message?.includes('Tool changed')) {
-      const tool = breadcrumb.data?.newTool;
+    if (data.category === 'toolbar' && data.message?.includes('Tool changed')) {
+      const tool = data.data?.newTool;
       if (tool) {
         toolUsageStats[tool] = (toolUsageStats[tool] || 0) + 1;
       }
     }
     
     // Track action executions
-    if (breadcrumb.category === 'toolbar' && breadcrumb.message?.includes('Toolbar action')) {
-      const action = breadcrumb.data?.action;
-      const successful = breadcrumb.data?.successful;
+    if (data.category === 'toolbar' && data.message?.includes('Toolbar action')) {
+      const action = data.data?.action;
+      const successful = data.data?.successful;
       
       if (action) {
         if (!actionsStats[action]) {
@@ -64,11 +78,11 @@ export const startToolbarMonitoring = (
     }
     
     // Store the breadcrumb
-    originalBreadcrumbs.push({ breadcrumb });
+    originalBreadcrumbs.push({ breadcrumb: data });
   };
   
   // Add our listener
-  document.addEventListener('sentry-breadcrumb', breadcrumbListener);
+  document.addEventListener('sentry-breadcrumb', breadcrumbListener as EventListener);
   
   // Set up interval to report statistics
   const intervalId = setInterval(() => {
@@ -93,6 +107,6 @@ export const startToolbarMonitoring = (
   // Return cleanup function
   return () => {
     clearInterval(intervalId);
-    document.removeEventListener('sentry-breadcrumb', breadcrumbListener);
+    document.removeEventListener('sentry-breadcrumb', breadcrumbListener as EventListener);
   };
 };

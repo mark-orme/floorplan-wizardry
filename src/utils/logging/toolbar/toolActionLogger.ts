@@ -3,9 +3,13 @@ import * as Sentry from '@sentry/react';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 
+interface ToolbarActionContext extends Record<string, string | number | boolean> {
+  critical?: boolean;
+  timestamp?: string;
+}
+
 /**
  * Logs toolbar action execution with Sentry tracking
- * 
  * @param actionName The name of the action being executed
  * @param successful Whether the action was successful
  * @param context Additional context about the action
@@ -13,7 +17,7 @@ import logger from '@/utils/logger';
 export const logToolbarAction = (
   actionName: string,
   successful: boolean,
-  context: Record<string, any> = {}
+  context: ToolbarActionContext = {}
 ): void => {
   // Set Sentry tags for filtering
   Sentry.setTag("toolbarAction", actionName);

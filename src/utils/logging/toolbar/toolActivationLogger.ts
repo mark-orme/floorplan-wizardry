@@ -4,9 +4,12 @@ import { captureMessage } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 import { DrawingMode } from '@/constants/drawingModes';
 
+interface ToolActivationContext extends Record<string, string | number | boolean> {
+  timestamp?: string;
+}
+
 /**
  * Logs toolbar item activation with Sentry tracking
- * 
  * @param toolName The name of the tool being activated
  * @param previousTool The previously active tool
  * @param context Additional context about the tool activation
@@ -14,7 +17,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 export const logToolActivation = (
   toolName: DrawingMode,
   previousTool: DrawingMode | null,
-  context: Record<string, any> = {}
+  context: ToolActivationContext = {}
 ): void => {
   // Set Sentry tags for filtering
   Sentry.setTag("toolActivation", toolName);
