@@ -1,3 +1,4 @@
+
 /**
  * Grid Visibility Manager
  * Provides utilities for ensuring grid visibility and presence

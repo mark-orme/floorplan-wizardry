@@ -1,3 +1,4 @@
+
 /**
  * Grid safety module
  * Manages safety timeouts and cleanup for grid operations

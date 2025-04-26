@@ -9,6 +9,23 @@ import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
 /**
+ * Grid visibility options
+ */
+interface GridVisibilityOptions {
+  forceRerender?: boolean;
+  skipLog?: boolean;
+}
+
+/**
+ * Grid visibility map
+ */
+interface GridVisibilityMap {
+  smallGrid: boolean;
+  largeGrid: boolean;
+  markers: boolean;
+}
+
+/**
  * Ensure grid is visible on canvas
  * @param canvas - Fabric canvas
  * @returns Whether any changes were made
