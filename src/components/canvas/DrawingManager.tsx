@@ -1,182 +1,101 @@
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useAutoSaveCanvas } from '@/hooks/useAutoSaveCanvas';
 import { DrawingMode } from '@/constants/drawingModes';
-import { ReliableGridLayer } from '@/components/canvas/ReliableGridLayer';
-import { BrushCursorPreview } from '@/components/canvas/BrushCursorPreview';
-import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
-import { useMemoizedDrawingComponents } from '@/hooks/useMemoizedDrawingComponents';
-import { useRealtimeCanvasSync } from '@/hooks/useRealtimeCanvasSync';
+import { toast } from 'sonner';
+
+// Now import as default components
+import BrushCursorPreview from '@/components/canvas/BrushCursorPreview';
+import MeasurementGuideModal from '@/components/MeasurementGuideModal';
 
 interface DrawingManagerProps {
-  fabricCanvas: FabricCanvas | null;
-  tool: DrawingMode;
+  canvas: FabricCanvas | null;
+  activeTool: DrawingMode;
   lineColor: string;
   lineThickness: number;
-  showGrid?: boolean;
-  storageKey?: string;
-  disableAutoSave?: boolean;
-  enableCollaboration?: boolean;
-  userName?: string;
-  onCollaboratorUpdate?: (count: number) => void;
+  showMeasurementGuide?: boolean;
+  onShowMeasurementGuideChange?: (show: boolean) => void;
 }
 
 export const DrawingManager: React.FC<DrawingManagerProps> = ({
-  fabricCanvas,
-  tool,
+  canvas,
+  activeTool,
   lineColor,
   lineThickness,
-  showGrid = true,
-  storageKey = 'drawing_autosave',
-  disableAutoSave = false,
-  enableCollaboration = true,
-  userName = 'Anonymous',
-  onCollaboratorUpdate
+  showMeasurementGuide = false,
+  onShowMeasurementGuideChange = () => {}
 }) => {
-  // State for grid and guide modal
-  const [isGridReady, setIsGridReady] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
-  
-  // Track component mount state
-  const isMountedRef = useRef(true);
-  
-  // Auto-save drawing state
-  const { saveCanvas, loadCanvas } = useAutoSaveCanvas({
-    canvas: fabricCanvas,
-    enabled: !disableAutoSave && !!fabricCanvas,
-    storageKey: storageKey
-  });
-  
-  // Real-time collaboration
-  const { collaborators, syncCanvas } = useRealtimeCanvasSync({
-    canvas: fabricCanvas,
-    enabled: enableCollaboration && !!fabricCanvas,
-    userName,
-    onRemoteUpdate: () => {
-      console.log(`Canvas updated by ${userName} at ${new Date().toLocaleString()}`);
-    }
-  });
-  
-  // Update collaborator count for parent components
+  // Update canvas drawing mode when active tool changes
   useEffect(() => {
-    if (onCollaboratorUpdate && collaborators.length > 0) {
-      onCollaboratorUpdate(collaborators.length);
+    if (!canvas) return;
+    
+    // Reset previous settings
+    canvas.isDrawingMode = false;
+    canvas.selection = true;
+    
+    // Apply tool-specific settings
+    switch (activeTool) {
+      case DrawingMode.DRAW:
+      case DrawingMode.PENCIL:
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.color = lineColor;
+        canvas.freeDrawingBrush.width = lineThickness;
+        break;
+        
+      case DrawingMode.SELECT:
+        canvas.selection = true;
+        break;
+        
+      case DrawingMode.MEASURE:
+        onShowMeasurementGuideChange(true);
+        break;
+        
+      default:
+        toast.info(`Tool ${activeTool} not implemented yet`);
     }
-  }, [collaborators, onCollaboratorUpdate]);
+    
+    canvas.requestRenderAll();
+  }, [canvas, activeTool, lineColor, lineThickness, onShowMeasurementGuideChange]);
   
-  // Set up canvas change handlers for collaboration
+  // Set up canvas events
   useEffect(() => {
-    if (!fabricCanvas || !enableCollaboration) return;
+    if (!canvas) return;
     
-    const handleObjectModified = () => {
-      syncCanvas();
-    };
+    const handleMouseDown = () => {};
+    const handleMouseMove = () => {};
+    const handleMouseUp = () => {};
+    const handleSelectionCreated = () => {};
     
-    const handlePathCreated = () => {
-      syncCanvas();
-    };
-    
-    const handleObjectAdded = () => {
-      syncCanvas();
-    };
-    
-    const handleObjectRemoved = () => {
-      syncCanvas();
-    };
-    
-    // Attach event handlers
-    fabricCanvas.on('object:modified', handleObjectModified);
-    fabricCanvas.on('path:created', handlePathCreated);
-    fabricCanvas.on('object:added', handleObjectAdded);
-    fabricCanvas.on('object:removed', handleObjectRemoved);
-    
-    // Initial sync
-    const initialSyncTimer = setTimeout(() => {
-      syncCanvas();
-    }, 1000);
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
+    canvas.on('selection:created', handleSelectionCreated);
     
     return () => {
-      // Remove event handlers
-      fabricCanvas.off('object:modified', handleObjectModified);
-      fabricCanvas.off('path:created', handlePathCreated);
-      fabricCanvas.off('object:added', handleObjectAdded);
-      fabricCanvas.off('object:removed', handleObjectRemoved);
-      clearTimeout(initialSyncTimer);
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
+      canvas.off('selection:created', handleSelectionCreated);
     };
-  }, [fabricCanvas, enableCollaboration, syncCanvas, userName]);
+  }, [canvas, activeTool]);
   
-  // Memoize handlers to prevent unnecessary re-renders
-  const handleGridCreated = useCallback((isCreated: boolean) => {
-    setIsGridReady(isCreated);
-  }, []);
-  
-  const handleCloseGuide = useCallback(() => {
-    setShowGuide(false);
-  }, []);
-  
-  const handleOpenGuideChange = useCallback((open: boolean) => {
-    setShowGuide(open);
-  }, []);
-  
-  // Use memoized components for performance
-  const { brushPreview, measurementGuide } = useMemoizedDrawingComponents({
-    fabricCanvas,
-    tool,
-    lineColor,
-    lineThickness,
-    showGuide,
-    handleCloseGuide,
-    handleOpenGuideChange
-  });
-  
-  // Check if guide should be shown on mount
-  useEffect(() => {
-    const hideGuide = localStorage.getItem('hideDrawingGuide') === 'true';
-    
-    if (!hideGuide) {
-      const timer = setTimeout(() => {
-        if (isMountedRef.current) {
-          setShowGuide(true);
-        }
-      }, 1000);
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, []);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  // Skip rendering if no canvas
+  if (!canvas) return null;
   
   return (
     <>
-      {/* Grid Layer */}
-      {fabricCanvas && showGrid && (
-        <ReliableGridLayer
-          canvas={fabricCanvas}
-          enabled={showGrid}
-          onGridCreated={handleGridCreated}
+      {canvas && activeTool === DrawingMode.DRAW && (
+        <BrushCursorPreview 
+          canvas={canvas} 
+          size={lineThickness} 
+          color={lineColor} 
         />
       )}
       
-      {/* Brush Preview */}
-      {brushPreview}
-      
-      {/* Measurement Guide Modal */}
-      {measurementGuide}
-      
-      {/* Collaboration Indicator */}
-      {enableCollaboration && collaborators.length > 0 && (
-        <div className="absolute top-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-          {collaborators.length} {collaborators.length === 1 ? 'person' : 'people'} editing
-        </div>
-      )}
+      <MeasurementGuideModal 
+        open={showMeasurementGuide} 
+        onOpenChange={onShowMeasurementGuideChange} 
+      />
     </>
   );
 };

@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { useCanvas } from '@/contexts/CanvasContext';
-import { useDrawing } from '@/contexts/DrawingContext';
+import { useCanvas } from '@/components/Canvas';
 import { toast } from 'sonner';
 
 /**
@@ -11,7 +10,6 @@ import { toast } from 'sonner';
  */
 export const CanvasWrapper: React.FC = () => {
   const { canvasRef, setCanvas } = useCanvas();
-  const { activeTool, lineColor, lineThickness } = useDrawing();
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize the canvas
@@ -22,7 +20,7 @@ export const CanvasWrapper: React.FC = () => {
       console.log('Initializing canvas...');
       
       // Create a new Fabric.js canvas
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',

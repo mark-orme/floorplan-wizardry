@@ -1,13 +1,14 @@
-
 /**
  * Grid Monitor Component
  * Provides a way to monitor and debug grid state
  * @module components/canvas/GridMonitor
  */
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Grid, RefreshCw, Eye, EyeOff } from "@/components/ui/icons";
 import logger from "@/utils/logger";
 
 /**

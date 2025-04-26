@@ -1,8 +1,8 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Layers, PlusCircle as Plus } from "@/components/ui/icons";
+import React from "react";
+import { Canvas as FabricCanvas } from "fabric";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Layers, PlusCircle } from "@/components/ui/icons";
 
 interface DrawingLayersProps {
   layerCount: number;
@@ -40,7 +40,7 @@ export const DrawingLayers: React.FC<DrawingLayersProps> = ({
           onClick={onAddLayer}
           title="Add new layer"
         >
-          <Plus className="h-4 w-4" />
+          <PlusCircle className="h-4 w-4" />
         </Button>
         
         <Badge variant="outline" className="bg-white/80 backdrop-blur-sm shadow-sm">

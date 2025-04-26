@@ -1,173 +1,152 @@
-
-/**
- * Grid debug panel component
- * @module components/canvas/GridDebugPanel
- */
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { Bug, X } from 'lucide-react';
-import { DebugSection } from './debug/DebugSection';
-import { GridStats } from './debug/GridStats';
-import { CanvasStats } from './debug/CanvasStats';
-import { ActionButton } from './debug/ActionButton';
+// Fix the import to use our mock icons
+import { Bug } from "@/components/ui/icons";
+import { useCanvasDebugger } from '@/hooks/useCanvasDebugger';
+import { toast } from 'sonner';
+import { setupRenderTracking, getRenderCount } from '@/utils/canvas/renderTracker';
 
-export interface GridDebugPanelProps {
-  /** Fabric canvas instance */
-  canvas: FabricCanvas | null;
-  /** Whether the panel is visible */
+interface GridDebugPanelProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<FabricObject[]>;
   visible?: boolean;
-  /** Close handler */
-  onClose?: () => void;
-  /** Grid size */
-  gridSize?: number;
-  /** Grid color */
-  gridColor?: string;
-  /** Grid line thickness */
-  gridLineThickness?: number;
-  /** Force create grid handler */
-  onForceCreateGrid?: () => void;
-  /** Refresh canvas handler */
-  onRefreshCanvas?: () => void;
-  /** Current zoom level */
-  zoomLevel?: number;
 }
 
-/**
- * Grid debug panel component
- * @param props Component props
- * @returns Rendered component
- */
-const GridDebugPanel: React.FC<GridDebugPanelProps> = ({
-  canvas,
-  visible = true,
-  onClose,
-  gridSize = 20,
-  gridColor = '#cccccc',
-  gridLineThickness = 0.5,
-  onForceCreateGrid,
-  onRefreshCanvas,
-  zoomLevel = 1
+export const GridDebugPanel: React.FC<GridDebugPanelProps> = ({
+  fabricCanvasRef,
+  gridLayerRef,
+  visible = false
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [gridCreated, setGridCreated] = useState(false);
-  const [gridObjectCount, setGridObjectCount] = useState(0);
+  const [showPanel, setShowPanel] = useState(false);
+  const [renderCount, setRenderCount] = useState(0);
   
-  // Toggle panel open/closed
-  const togglePanel = () => setIsOpen(!isOpen);
+  // Initialize canvas debugger
+  const {
+    isDebugMode,
+    canvasStats,
+    dumpCanvasState,
+    forceRender,
+    forceGridVisibility,
+    toggleDebugMode
+  } = useCanvasDebugger({
+    canvas: fabricCanvasRef.current,
+    gridLayerRef,
+    enabled: visible
+  });
   
-  // Count grid objects in canvas
+  // Set up render tracking
   useEffect(() => {
+    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    const updateGridStats = () => {
-      const objects = canvas.getObjects();
-      const gridObjects = objects.filter(obj => 
-        obj.data && (obj.data.type === 'grid' || obj.data.isGridLine)
-      );
-      
-      setGridObjectCount(gridObjects.length);
-      setGridCreated(gridObjects.length > 0);
-    };
+    // Setup render tracking
+    setupRenderTracking(canvas);
     
-    updateGridStats();
-    
-    const handleObjectAdded = () => updateGridStats();
-    const handleObjectRemoved = () => updateGridStats();
-    
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
+    // Set up render count update
+    const updateInterval = setInterval(() => {
+      if (canvas && showPanel) {
+        setRenderCount(getRenderCount(canvas));
+      }
+    }, 1000);
     
     return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
+      clearInterval(updateInterval);
     };
-  }, [canvas]);
+  }, [fabricCanvasRef, showPanel]);
   
-  if (!visible) return null;
+  // Toggle panel visibility
+  useEffect(() => {
+    setShowPanel(visible);
+  }, [visible]);
+  
+  // Skip rendering if panel is hidden
+  if (!showPanel) return null;
+  
+  const handleDumpState = () => {
+    const stats = dumpCanvasState();
+    if (stats) {
+      toast.success('Canvas stats updated');
+      console.table(stats.objects.byType);
+    } else {
+      toast.error('Failed to generate canvas stats');
+    }
+  };
+  
+  const handleForceVisible = () => {
+    const fixed = forceGridVisibility();
+    if (fixed && fixed > 0) {
+      toast.success(`Fixed ${fixed} grid issues`);
+    } else {
+      toast.info('Grid is already fully visible');
+    }
+  };
   
   return (
-    <div className="absolute right-4 bottom-4 z-10">
-      {/* Button to toggle panel */}
-      {!isOpen && (
-        <button
-          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-100"
-          onClick={togglePanel}
-          title="Debug Grid"
+    <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600 z-50 max-w-md text-sm">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Grid Debugger</h3>
+        <button 
+          onClick={() => setShowPanel(false)}
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <Bug size={20} />
+          Close
         </button>
-      )}
+      </div>
       
-      {/* Debug panel */}
-      {isOpen && (
-        <div className="w-64 bg-white rounded-md shadow-md overflow-hidden border border-gray-200">
-          {/* Panel header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
-            <h3 className="text-sm font-medium flex items-center">
-              <Bug size={16} className="mr-1" />
-              Grid Debug Panel
-            </h3>
-            
-            <div className="flex items-center space-x-1">
-              <button
-                className="p-1 hover:bg-gray-100 rounded"
-                onClick={togglePanel}
-                title="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+          <div className="text-gray-600 dark:text-gray-400">Canvas Size:</div>
+          <div>
+            {canvasStats?.canvas.width ?? 0} x {canvasStats?.canvas.height ?? 0}
           </div>
           
-          {/* Panel content */}
-          <div className="max-h-96 overflow-y-auto">
-            <DebugSection
-              title="Grid Info"
-              defaultExpanded
-            >
-              <GridStats
-                canvas={canvas}
-                gridCreated={gridCreated}
-                gridSize={gridSize}
-                gridColor={gridColor}
-                gridLineThickness={gridLineThickness}
-                gridObjectCount={gridObjectCount}
-              />
-            </DebugSection>
-            
-            <DebugSection
-              title="Canvas Info"
-              defaultExpanded
-            >
-              <CanvasStats
-                canvas={canvas}
-                zoomLevel={zoomLevel}
-              />
-            </DebugSection>
-            
-            <DebugSection
-              title="Actions"
-              defaultExpanded
-            >
-              <div className="flex flex-col space-y-2">
-                <ActionButton
-                  label="Force Recreate Grid"
-                  onClick={onForceCreateGrid || (() => {})}
-                  variant="warning"
-                />
-                
-                <ActionButton
-                  label="Refresh Canvas"
-                  onClick={onRefreshCanvas || (() => {})}
-                  variant="default"
-                />
-              </div>
-            </DebugSection>
-          </div>
+          <div className="text-gray-600 dark:text-gray-400">Total Objects:</div>
+          <div>{canvasStats?.objects.total ?? 0}</div>
+          
+          <div className="text-gray-600 dark:text-gray-400">Grid Objects:</div>
+          <div>{canvasStats?.grid.total ?? 0}</div>
+          
+          <div className="text-gray-600 dark:text-gray-400">Visible Grid:</div>
+          <div>{canvasStats?.grid.visible ?? 0} / {canvasStats?.grid.total ?? 0}</div>
+          
+          <div className="text-gray-600 dark:text-gray-400">Render Count:</div>
+          <div>{renderCount}</div>
         </div>
-      )}
+        
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleDumpState}
+            className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs"
+          >
+            Dump State
+          </button>
+          
+          <button
+            onClick={forceRender}
+            className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-xs"
+          >
+            Force Render
+          </button>
+          
+          <button
+            onClick={handleForceVisible}
+            className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs"
+          >
+            Fix Grid
+          </button>
+          
+          <button
+            onClick={toggleDebugMode}
+            className={`px-2 py-1 rounded text-xs ${
+              isDebugMode 
+                ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {isDebugMode ? 'Disable Debug' : 'Enable Debug'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
-
-export default GridDebugPanel;

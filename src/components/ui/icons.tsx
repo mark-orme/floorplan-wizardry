@@ -1,44 +1,52 @@
 
-import {
-  Eye as LucideEye,
-  EyeOff as LucideEyeOff,
-  Lock as LucideLock,
-  Unlock as LucideUnlock,
-  Trash2 as LucideTrash2,
-  Layers as LucideLayers,
-  PlusCircle as LucidePlusCircle,
-  Calculator as LucideCalculator,
-  Eraser as LucideEraser,
-  Hammer as LucideHammer,
-  Home as LucideHome,
-  MousePointer as LucideMousePointer,
-  Pencil as LucidePencil,
-  Ruler as LucideRuler,
-  Square as LucideSquare,
-  Type as LucideType,
-  LayoutGrid as LucideGrid,
-  RefreshCcw as LucideRefreshCw
-} from "lucide-react";
+import React from 'react';
 
-// Export with renamed components
-export const Eye = LucideEye;
-export const EyeOff = LucideEyeOff;
-export const Lock = LucideLock;
-export const Unlock = LucideUnlock;
-export const Trash2 = LucideTrash2;
-export const Layers = LucideLayers;
-export const PlusCircle = LucidePlusCircle;
-export const Calculator = LucideCalculator;
-export const Eraser = LucideEraser;
-export const Hammer = LucideHammer;
-export const Home = LucideHome;
-export const MousePointer = LucideMousePointer;
-export const Pencil = LucidePencil;
-export const Ruler = LucideRuler;
-export const Square = LucideSquare;
-export const Type = LucideType;
-export const Grid = LucideGrid;
-export const RefreshCw = LucideRefreshCw;
+// Mock components for lucide icons
+const createIconComponent = (name: string) => {
+  const IconComponent = ({ size = 24, color = "currentColor", ...props }: {
+    size?: number;
+    color?: string;
+    [key: string]: any;
+  }) => {
+    return (
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        {...props}
+      >
+        <rect x="0" y="0" width="24" height="24" fill="none" stroke="none" />
+        <text x="12" y="12" fontSize="8" textAnchor="middle" dominantBaseline="middle" fill={color}>{name}</text>
+      </svg>
+    );
+  };
+  
+  IconComponent.displayName = name;
+  return IconComponent;
+};
 
-// Alias for legacy usage:
-export const Trash = LucideTrash2;
+// Create mock icons for all the icons we need
+export const Eye = createIconComponent('Eye');
+export const EyeOff = createIconComponent('EyeOff');
+export const Lock = createIconComponent('Lock');
+export const Unlock = createIconComponent('Unlock');
+export const Trash = createIconComponent('Trash');
+export const Layers = createIconComponent('Layers');
+export const PlusCircle = createIconComponent('PlusCircle');
+export const Grid = createIconComponent('Grid');
+export const RefreshCw = createIconComponent('RefreshCw');
+export const Home = createIconComponent('Home');
+export const Bug = createIconComponent('Bug');
+export const Calculator = createIconComponent('Calculator');
+export const Eraser = createIconComponent('Eraser');
+export const Hammer = createIconComponent('Hammer');
+export const MousePointer = createIconComponent('MousePointer');
+export const Pencil = createIconComponent('Pencil');
+export const Ruler = createIconComponent('Ruler');
+export const Square = createIconComponent('Square');
+export const Type = createIconComponent('Type');

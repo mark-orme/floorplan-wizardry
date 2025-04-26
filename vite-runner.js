@@ -1,20 +1,13 @@
 
-const { exec } = require('child_process');
-const path = require('path');
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 // Start the Vite development server
-const viteProcess = exec('node node_modules/vite/bin/vite.js', {
+const viteProcess = spawn('node', ['node_modules/vite/bin/vite.js'], {
   cwd: process.cwd(),
-  env: process.env
-});
-
-// Forward stdout and stderr
-viteProcess.stdout.on('data', (data) => {
-  process.stdout.write(data);
-});
-
-viteProcess.stderr.on('data', (data) => {
-  process.stderr.write(data);
+  env: process.env,
+  stdio: 'inherit'
 });
 
 // Handle process exit
