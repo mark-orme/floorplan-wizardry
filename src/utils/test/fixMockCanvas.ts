@@ -6,17 +6,14 @@
  */
 import { Canvas as FabricCanvas } from 'fabric';
 import { vi } from 'vitest';
+import { MockCanvas } from './createMockCanvas';
 
 /**
  * Fix canvas mock type compatibility issues
  * @param mockCanvas The canvas mock to fix
  * @returns Type-compatible canvas mock
  */
-export function fixMockCanvas(mockCanvas: any): FabricCanvas & {
-  getHandlers: (eventName: string) => Function[];
-  triggerEvent: (eventName: string, eventData: any) => void;
-  withImplementation: (callback?: Function) => Promise<void>;
-} {
+export function fixMockCanvas(mockCanvas: any): MockCanvas {
   // Fix withImplementation if it doesn't return a Promise<void>
   if (mockCanvas.withImplementation && typeof mockCanvas.withImplementation !== 'function') {
     mockCanvas.withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
@@ -43,18 +40,14 @@ export function fixMockCanvas(mockCanvas: any): FabricCanvas & {
     mockCanvas.triggerEvent = (eventName: string, eventData: any) => {};
   }
   
-  return mockCanvas as unknown as FabricCanvas & {
-    getHandlers: (eventName: string) => Function[];
-    triggerEvent: (eventName: string, eventData: any) => void;
-    withImplementation: (callback?: Function) => Promise<void>;
-  };
+  return mockCanvas as MockCanvas;
 }
 
 /**
  * Mock canvas creation with fixed typing
  * @returns Type-compatible canvas mock
  */
-export function createFixedTypeMockCanvas() {
+export function createFixedTypeMockCanvas(): MockCanvas {
   const mockCanvas = {
     add: vi.fn(),
     remove: vi.fn(),
@@ -79,13 +72,36 @@ export function createFixedTypeMockCanvas() {
       }
       return Promise.resolve();
     }),
+    isDrawingMode: false,
+    selection: true,
+    defaultCursor: 'default',
+    hoverCursor: 'move',
+    freeDrawingBrush: {
+      color: '#000000',
+      width: 1
+    },
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    getElement: vi.fn().mockReturnValue({}),
+    loadFromJSON: vi.fn(),
+    toJSON: vi.fn().mockReturnValue({}),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    item: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    sendObjectToBack: vi.fn(),
+    sendToBack: vi.fn(),
+    fire: vi.fn(),
+    dispose: vi.fn(),
     enablePointerEvents: true,
     _willAddMouseDown: false,
     _dropTarget: null,
     _isClick: false,
     _objects: [],
-    getHandlers: (eventName: string) => [() => {}],
-    triggerEvent: (eventName: string, eventData: any) => {}
+    getHandlers: vi.fn().mockReturnValue([() => {}]),
+    triggerEvent: vi.fn()
   };
   
   return fixMockCanvas(mockCanvas);

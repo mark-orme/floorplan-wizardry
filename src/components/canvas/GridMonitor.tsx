@@ -1,9 +1,10 @@
+
 /**
  * Grid Monitor Component
  * Provides a way to monitor and debug grid state
  * @module components/canvas/GridMonitor
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

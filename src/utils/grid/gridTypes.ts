@@ -1,55 +1,95 @@
 
 /**
- * Grid type definitions
+ * Grid Types
+ * Type definitions for grid-related functionality
  * @module utils/grid/gridTypes
  */
-
-import { FabricObject } from 'fabric';
+import { Object as FabricObject, Line, Canvas } from 'fabric';
 
 /**
- * Grid options interface
+ * Grid object interface - extends FabricObject with grid-specific properties
+ */
+export interface GridObject extends FabricObject {
+  gridObject: true;
+  gridType?: 'horizontal' | 'vertical';
+  gridIndex?: number;
+  gridSpacing?: number;
+}
+
+/**
+ * Grid line interface - extends FabricObject with line-specific properties
+ */
+export interface GridLine extends Line, GridObject {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  stroke: string;
+  strokeWidth: number;
+}
+
+/**
+ * Grid state interface - represents the current state of the grid
+ */
+export interface GridState {
+  lines: GridLine[];
+  spacing: number;
+  color: string;
+  visible: boolean;
+  lastUpdate: number;
+}
+
+/**
+ * Grid creation options
  */
 export interface GridOptions {
-  /** Grid line size (spacing between lines) */
-  size?: number;
-  /** Color for regular grid lines */
-  stroke?: string;
-  /** Width of regular grid lines */
+  spacing?: number;
+  color?: string;
+  opacity?: number;
   strokeWidth?: number;
-  /** Whether to show major grid lines */
-  showMajorLines?: boolean;
-  /** Interval for major grid lines (in terms of regular grid lines) */
-  majorInterval?: number;
-  /** Color for major grid lines */
-  majorStroke?: string;
-  /** Width of major grid lines */
-  majorStrokeWidth?: number;
+  visible?: boolean;
 }
 
 /**
- * Grid creation result
+ * Grid manager interface - provides methods for managing a grid
  */
-export interface GridCreationResult {
-  /** Created grid objects */
-  gridObjects: FabricObject[];
-  /** Whether grid creation was successful */
-  success: boolean;
-  /** Performance metrics for grid creation */
-  metrics?: Record<string, any>;
+export interface GridManager {
+  createGrid: (canvas: Canvas, options?: GridOptions) => GridLine[];
+  toggleGridVisibility: (visible: boolean) => void;
+  cleanupGrid: () => void;
+  updateGridSpacing: (spacing: number) => void;
 }
 
 /**
- * Grid diagnostic result
+ * Grid error interface
  */
-export interface GridDiagnosticResult {
-  /** Canvas dimensions */
-  canvasDimensions: { width: number | undefined; height: number | undefined };
-  /** Whether grid exists */
-  gridExists: boolean;
-  /** Number of grid objects */
-  gridObjectCount: number;
-  /** Issues found during diagnostics */
-  issues: string[];
-  /** Timestamp of diagnostics */
-  timestamp: string;
+export interface GridError {
+  code: string;
+  message: string;
+  timestamp: number;
+  context?: Record<string, unknown>;
+}
+
+/**
+ * Type guard to check if an object is a GridLine
+ */
+export function isGridLine(obj: FabricObject): obj is GridLine {
+  return (
+    obj !== null && 
+    typeof obj === 'object' && 
+    'gridObject' in obj && 
+    obj.gridObject === true
+  );
+}
+
+/**
+ * Type guard to check if an object is a GridObject
+ */
+export function isGridObject(obj: FabricObject): obj is GridObject {
+  return (
+    obj !== null && 
+    typeof obj === 'object' && 
+    'gridObject' in obj && 
+    obj.gridObject === true
+  );
 }

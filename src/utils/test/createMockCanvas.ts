@@ -4,15 +4,23 @@
  * Provides a properly typed mock canvas object for unit tests
  * @module utils/test/createMockCanvas
  */
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { vi } from 'vitest';
+
+export interface IMockCanvasObject {
+  getHandlers: (eventName: string) => Function[];
+  triggerEvent: (eventName: string, eventData: any) => void;
+  withImplementation: (callback?: Function) => Promise<void>;
+}
+
+export type MockCanvas = FabricCanvas & IMockCanvasObject;
 
 /**
  * Creates a fully compatible mock canvas for testing
  * Ensures return types match what is expected by fabric
  * @returns Type-compatible mock canvas
  */
-export function createTestMockCanvas() {
+export function createTestMockCanvas(): MockCanvas {
   // Create a mock withImplementation function
   const withImplementation = vi.fn().mockImplementation((callback?: Function): Promise<void> => {
     if (callback && typeof callback === 'function') {
@@ -41,29 +49,46 @@ export function createTestMockCanvas() {
     discardActiveObject: vi.fn(),
     contains: vi.fn().mockReturnValue(false),
     withImplementation,
+    isDrawingMode: false,
+    selection: true,
+    defaultCursor: 'default',
+    hoverCursor: 'move',
+    freeDrawingBrush: {
+      color: '#000000',
+      width: 1
+    },
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    getElement: vi.fn().mockReturnValue({}),
+    loadFromJSON: vi.fn(),
+    toJSON: vi.fn().mockReturnValue({}),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    item: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    sendObjectToBack: vi.fn(),
+    sendToBack: vi.fn(),
+    fire: vi.fn(),
+    dispose: vi.fn(),
     // Additional Canvas properties for compatibility
-    enablePointerEvents: true,
     _willAddMouseDown: false,
     _dropTarget: null,
     _isClick: false,
     _objects: [],
     getHandlers: vi.fn().mockReturnValue([() => {}]),
     triggerEvent: vi.fn()
-  };
+  } as unknown as MockCanvas;
 
-  // Type assertion to allow using in tests
-  return mockCanvas as unknown as FabricCanvas & {
-    getHandlers: (eventName: string) => Function[];
-    triggerEvent: (eventName: string, eventData: any) => void;
-    withImplementation: (callback?: Function) => Promise<void>;
-  };
+  return mockCanvas;
 }
 
 /**
  * Creates a typed mock canvas - alias for createTestMockCanvas to maintain API
  * @returns Type-compatible mock canvas
  */
-export function createTypedMockCanvas() {
+export function createTypedMockCanvas(): MockCanvas {
   return createTestMockCanvas();
 }
 
@@ -72,6 +97,6 @@ export function createTypedMockCanvas() {
  * This is compatible with test expectations
  * @returns Type-compatible mock canvas
  */
-export function createFixedMockCanvas() {
+export function createFixedMockCanvas(): MockCanvas {
   return createTestMockCanvas();
 }

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
 
 interface GridRendererProps {
@@ -36,7 +36,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     try {
       // Create vertical lines
       for (let x = 0; x <= canvasWidth; x += gridSize) {
-        const line = new Line([x, 0, x, canvasHeight], {
+        const line = new window.fabric.Line([x, 0, x, canvasHeight], {
           stroke: color,
           opacity: opacity,
           selectable: false,
@@ -49,7 +49,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       
       // Create horizontal lines
       for (let y = 0; y <= canvasHeight; y += gridSize) {
-        const line = new Line([0, y, canvasWidth, y], {
+        const line = new window.fabric.Line([0, y, canvasWidth, y], {
           stroke: color,
           opacity: opacity,
           selectable: false,

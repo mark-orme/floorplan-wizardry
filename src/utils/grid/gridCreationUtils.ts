@@ -1,112 +1,132 @@
 
 /**
- * Grid creation core utilities
+ * Grid Creation Utilities
+ * Utilities for creating and managing grid objects
  * @module utils/grid/gridCreationUtils
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from './gridRenderers';
-import { createCompleteGrid } from './gridRenderers';
-import { retryWithBackoff } from './gridRetryUtils';
+import { Canvas as FabricCanvas } from 'fabric';
+import { GridLine, GridOptions } from './gridTypes';
 
 /**
- * Ensure grid is created
- * @param canvas Fabric canvas
- * @param gridLayerRef Reference to grid objects
- * @returns Newly created or existing grid objects
+ * Create a grid of lines on the canvas
+ * @param canvas The canvas to create the grid on
+ * @param options Grid options
+ * @returns Array of created grid lines
  */
-export const ensureGrid = (
-  canvas: FabricCanvas,
-  gridLayerRef: React.MutableRefObject<FabricObject[]>
-): FabricObject[] => {
-  if (!canvas) return [];
+export function createGrid(canvas: FabricCanvas, options: GridOptions = {}): GridLine[] {
+  const {
+    spacing = 50,
+    color = '#e0e0e0',
+    opacity = 0.5,
+    strokeWidth = 1,
+    visible = true
+  } = options;
   
-  // Check if grid exists and is on canvas
-  if (gridLayerRef.current.length > 0) {
-    const objectsOnCanvas = gridLayerRef.current.filter(obj => canvas.contains(obj));
-    if (objectsOnCanvas.length === gridLayerRef.current.length) {
-      return gridLayerRef.current;
-    }
-  }
-  
-  // Clear any existing grid
-  if (gridLayerRef.current.length > 0) {
-    gridLayerRef.current.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    gridLayerRef.current = [];
-  }
-  
-  // Create new grid
-  const gridObjects = createCompleteGrid(canvas);
-  gridLayerRef.current = gridObjects;
-  
-  return gridObjects;
-};
-
-/**
- * Reorder grid objects to be at the back of canvas
- * @param canvas Fabric canvas
- * @param gridObjects Grid objects to reorder
- */
-export const reorderGridObjects = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): void => {
-  if (!canvas) return;
+  const gridLines: GridLine[] = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
   
   try {
-    // Move all grid objects to the back
-    gridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.sendObjectToBack(obj);
-      }
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += spacing) {
+      const line = new window.fabric.Line([0, y, width, y], {
+        stroke: color,
+        strokeWidth,
+        opacity,
+        selectable: false,
+        evented: false,
+        visible,
+        gridObject: true as any, // Type assertion needed due to fabric.js typings
+        gridType: 'horizontal' as any
+      });
+      
+      canvas.add(line);
+      gridLines.push(line as unknown as GridLine);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x <= width; x += spacing) {
+      const line = new window.fabric.Line([x, 0, x, height], {
+        stroke: color,
+        strokeWidth,
+        opacity,
+        selectable: false,
+        evented: false,
+        visible,
+        gridObject: true as any,
+        gridType: 'vertical' as any
+      });
+      
+      canvas.add(line);
+      gridLines.push(line as unknown as GridLine);
+    }
+    
+    // Ensure grid is behind other objects
+    gridLines.forEach(line => {
+      canvas.sendToBack(line);
+    });
+    
+    canvas.requestRenderAll();
+    
+    return gridLines;
+  } catch (error) {
+    console.error('Error creating grid:', error);
+    return [];
+  }
+}
+
+/**
+ * Remove grid lines from canvas
+ * @param canvas The canvas containing the grid
+ * @param gridLines Array of grid lines to remove
+ */
+export function removeGrid(canvas: FabricCanvas, gridLines: GridLine[]): void {
+  try {
+    gridLines.forEach(line => {
+      canvas.remove(line);
     });
     
     canvas.requestRenderAll();
   } catch (error) {
-    console.error("Error reordering grid objects:", error);
+    console.error('Error removing grid:', error);
   }
-};
+}
 
 /**
- * Validate grid existence and integrity
- * @param canvas Fabric canvas
- * @param gridObjects Grid objects to validate
- * @returns Whether grid is valid
+ * Update grid visibility
+ * @param canvas The canvas containing the grid
+ * @param gridLines Array of grid lines to update
+ * @param visible Whether the grid should be visible
  */
-export const validateGrid = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): boolean => {
-  if (!canvas) return false;
-  
-  // Check if grid objects exist
-  if (!gridObjects || gridObjects.length === 0) return false;
-  
-  // Check if grid objects are on canvas
-  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
-  return objectsOnCanvas.length > 0;
-};
+export function updateGridVisibility(canvas: FabricCanvas, gridLines: GridLine[], visible: boolean): void {
+  try {
+    gridLines.forEach(line => {
+      line.set('visible', visible);
+    });
+    
+    canvas.requestRenderAll();
+  } catch (error) {
+    console.error('Error updating grid visibility:', error);
+  }
+}
 
 /**
- * Verify that grid exists
- * @param canvas Fabric canvas
- * @param gridObjects Grid objects reference
- * @returns Whether grid exists
+ * Update grid dimensions when canvas size changes
+ * @param canvas The canvas containing the grid
+ * @param gridLines Array of grid lines to update
+ * @param options Grid options
  */
-export const verifyGridExists = (
-  canvas: FabricCanvas,
-  gridObjects: FabricObject[]
-): boolean => {
-  if (!canvas) return false;
-  if (!gridObjects || gridObjects.length === 0) return false;
+export function updateGridDimensions(canvas: FabricCanvas, gridLines: GridLine[], options: GridOptions = {}): void {
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
   
-  const objectsOnCanvas = gridObjects.filter(obj => canvas.contains(obj));
-  return objectsOnCanvas.length > 0;
-};
-
-// Re-export for compatibility
-export { retryWithBackoff } from './gridRetryUtils';
-export { createBasicEmergencyGrid, createCompleteGrid } from './gridRenderers';
+  try {
+    // Remove existing grid
+    removeGrid(canvas, gridLines);
+    
+    // Create new grid with updated dimensions
+    createGrid(canvas, options);
+  } catch (error) {
+    console.error('Error updating grid dimensions:', error);
+  }
+}

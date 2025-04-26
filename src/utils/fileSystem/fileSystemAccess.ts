@@ -1,209 +1,144 @@
 
 /**
  * File System Access API utilities
- * Modern browser API for direct file access
  * @module utils/fileSystem/fileSystemAccess
  */
-import logger from '@/utils/logger';
-
-// Type definitions
-export type FileSystemOptions = {
-  multiple?: boolean;
-  excludeAcceptAllOption?: boolean;
-  types?: Array<{
-    description: string;
-    accept: Record<string, string[]>;
-  }>;
-  startIn?: 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos';
-};
-
-export type SaveFileOptions = {
-  suggestedName?: string;
-  types?: Array<{
-    description: string;
-    accept: Record<string, string[]>;
-  }>;
-};
 
 /**
- * Check if File System Access API is supported
+ * Check if the File System Access API is available
+ * @returns True if File System Access API is available
  */
 export function isFileSystemAccessSupported(): boolean {
-  return typeof window !== 'undefined' && 'showOpenFilePicker' in window;
+  return 'showOpenFilePicker' in window && 'showSaveFilePicker' in window;
 }
 
 /**
- * Open file(s) using the File System Access API
- * 
- * @param options Options for file picker
- * @returns Promise resolving to array of files
+ * Open a file using the File System Access API
+ * @param options Options for opening files
+ * @returns File handle and file content
  */
-export async function openFilesWithPicker(options?: FileSystemOptions): Promise<File[]> {
+export async function openFile(options?: {
+  types?: Array<{
+    description: string;
+    accept: Record<string, string[]>;
+  }>;
+}) {
   if (!isFileSystemAccessSupported()) {
     throw new Error('File System Access API is not supported in this browser');
   }
-  
+
   try {
-    // Set default options for floor plans
-    const pickerOptions: FileSystemOptions = {
+    const [fileHandle] = await window.showOpenFilePicker({
       multiple: false,
-      types: [
+      types: options?.types || [
         {
-          description: 'Floor Plan Files',
+          description: 'All Files',
           accept: {
-            'application/json': ['.floorplan', '.fplan', '.json'],
-            'image/svg+xml': ['.svg']
+            '*/*': ['*']
           }
         }
-      ],
-      ...options
+      ]
+    });
+
+    const file = await fileHandle.getFile();
+    const content = await file.text();
+
+    return {
+      fileHandle,
+      file,
+      content,
+      name: file.name
     };
-    
-    // @ts-ignore - TypeScript doesn't have types for the File System Access API yet
-    const fileHandles = await window.showOpenFilePicker(pickerOptions);
-    
-    // Convert file handles to actual files
-    const files = await Promise.all(
-      fileHandles.map(async (handle: any) => {
-        const file = await handle.getFile();
-        // Store handle on file for later use
-        (file as any).handle = handle;
-        return file;
-      })
-    );
-    
-    return files;
   } catch (error) {
     // User cancelled or other error
-    if ((error as any)?.name === 'AbortError') {
-      // User cancelled dialog, not a real error
-      return [];
+    if ((error as Error).name !== 'AbortError') {
+      console.error('Error opening file:', error);
     }
-    
-    logger.error('Error opening files with picker', { error });
     throw error;
   }
 }
 
 /**
  * Save a file using the File System Access API
- * 
- * @param data Data to save
- * @param options Save options
- * @returns Promise resolving to boolean success
+ * @param content Content to save
+ * @param options Options for saving the file
+ * @returns File handle
  */
-export async function saveFileWithPicker(
-  data: string | Blob,
-  options?: SaveFileOptions
-): Promise<boolean> {
+export async function saveFile(content: string, options?: {
+  suggestedName?: string;
+  types?: Array<{
+    description: string;
+    accept: Record<string, string[]>;
+  }>;
+}) {
   if (!isFileSystemAccessSupported()) {
     throw new Error('File System Access API is not supported in this browser');
   }
-  
+
   try {
-    // Set default options
-    const saveOptions: SaveFileOptions = {
-      suggestedName: 'floor-plan.floorplan',
-      types: [
+    const fileHandle = await window.showSaveFilePicker({
+      suggestedName: options?.suggestedName || 'untitled.txt',
+      types: options?.types || [
         {
-          description: 'Floor Plan Files',
+          description: 'Text Files',
           accept: {
-            'application/json': ['.floorplan', '.fplan']
+            'text/plain': ['.txt']
           }
         }
-      ],
-      ...options
-    };
-    
-    // @ts-ignore - TypeScript doesn't have types for the File System Access API yet
-    const fileHandle = await window.showSaveFilePicker(saveOptions);
-    
-    // Create writable stream
+      ]
+    });
+
     const writable = await fileHandle.createWritable();
-    
-    // Write the data
-    await writable.write(data);
-    
-    // Close the file
+    await writable.write(content);
     await writable.close();
-    
-    return true;
+
+    return fileHandle;
   } catch (error) {
     // User cancelled or other error
-    if ((error as any)?.name === 'AbortError') {
-      // User cancelled dialog, not a real error
-      return false;
+    if ((error as Error).name !== 'AbortError') {
+      console.error('Error saving file:', error);
     }
-    
-    logger.error('Error saving file with picker', { error });
     throw error;
   }
 }
 
 /**
- * Check if Web Share API is supported
+ * Open a directory using the File System Access API
+ * @returns Directory handle
  */
-export function isWebShareSupported(): boolean {
-  return typeof navigator !== 'undefined' && !!navigator.share;
-}
-
-/**
- * Share content using the Web Share API
- * 
- * @param shareData Data to share
- * @returns Promise resolving to boolean success
- */
-export async function shareContent(shareData: {
-  title?: string;
-  text?: string;
-  url?: string;
-  files?: File[];
-}): Promise<boolean> {
-  if (!isWebShareSupported()) {
-    throw new Error('Web Share API is not supported in this browser');
+export async function openDirectory() {
+  if (!isFileSystemAccessSupported()) {
+    throw new Error('File System Access API is not supported in this browser');
   }
-  
+
   try {
-    await navigator.share(shareData);
-    return true;
+    const directoryHandle = await window.showDirectoryPicker();
+    return directoryHandle;
   } catch (error) {
     // User cancelled or other error
-    if ((error as any)?.name === 'AbortError') {
-      return false;
+    if ((error as Error).name !== 'AbortError') {
+      console.error('Error opening directory:', error);
     }
-    
-    logger.error('Error sharing content', { error });
     throw error;
   }
 }
 
 /**
- * Export a floor plan to a file using fallback method for older browsers
- * 
- * @param data Data to export
- * @param filename Suggested filename
+ * Save a file to a specific directory
+ * @param directoryHandle Directory handle to save to
+ * @param filename Filename to save as
+ * @param content Content to save
+ * @returns File handle
  */
-export function exportFallback(data: string | Blob, filename: string): void {
-  // Create a blob from the data if it's a string
-  const blob = typeof data === 'string' 
-    ? new Blob([data], { type: 'application/json' }) 
-    : data;
-  
-  // Create object URL
-  const url = URL.createObjectURL(blob);
-  
-  // Create download link
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  
-  // Trigger download
-  document.body.appendChild(link);
-  link.click();
-  
-  // Clean up
-  setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, 100);
+export async function saveFileToDirectory(directoryHandle: FileSystemDirectoryHandle, filename: string, content: string) {
+  try {
+    const fileHandle = await directoryHandle.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    return fileHandle;
+  } catch (error) {
+    console.error('Error saving file to directory:', error);
+    throw error;
+  }
 }
