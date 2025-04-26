@@ -1,169 +1,127 @@
 
 /**
- * Grid visibility management utilities
- * @module utils/grid/gridVisibility
+ * Grid visibility utilities
+ * Functions to manage grid visibility
+ * @module grid/gridVisibility
  */
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { canvasGrid, createGrid } from '@/utils/canvasGrid';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { Canvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
 
-/**
- * Grid visibility options
- */
-interface GridVisibilityOptions {
-  forceRerender?: boolean;
-  skipLog?: boolean;
+export interface GridVisibilityOptions {
+  visible: boolean;
+  redraw?: boolean;
+  updateCanvas?: boolean;
 }
 
-/**
- * Grid visibility map
- */
-interface GridVisibilityMap {
+export interface GridVisibilityMap {
   smallGrid: boolean;
   largeGrid: boolean;
   markers: boolean;
+  labels: boolean;
 }
 
 /**
- * Ensure grid is visible on canvas
- * @param canvas - Fabric canvas
- * @returns Whether any changes were made
+ * Set visibility for all grid objects
+ * @param canvas - The canvas containing the grid
+ * @param gridObjects - Array of grid objects
+ * @param visible - Whether grid should be visible
+ * @returns Success status
  */
-export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Check for grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
-    );
-    
-    // If no grid objects, create them
-    if (gridObjects.length === 0) {
-      canvasGrid.createGrid(canvas);
-      return true;
-    }
-    
-    // Check for invisible grid objects
-    const invisibleGridObjects = gridObjects.filter(obj => !obj.visible);
-    if (invisibleGridObjects.length > 0) {
-      invisibleGridObjects.forEach(obj => {
-        obj.set('visible', true);
-      });
-      canvas.requestRenderAll();
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error ensuring grid visibility:', errorMessage);
+export function setGridVisibility(
+  canvas: Canvas,
+  gridObjects: FabricObject[],
+  visible: boolean
+): boolean {
+  if (!canvas || !gridObjects || gridObjects.length === 0) {
     return false;
   }
-};
 
-/**
- * Set grid visibility
- * @param canvas - Fabric canvas
- * @param visible - Whether grid should be visible
- */
-export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void => {
-  if (!canvas) return;
-  
   try {
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
-    );
-    
-    gridObjects.forEach(obj => {
+    // Update visibility for all grid objects
+    gridObjects.forEach((obj) => {
       obj.set('visible', visible);
     });
-    
-    canvas.requestRenderAll();
-    logger.info(`Grid visibility set to ${visible} for ${gridObjects.length} objects`);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error setting grid visibility:', errorMessage);
-  }
-};
 
-/**
- * Force grid creation and visibility
- * @param canvas - Fabric canvas
- * @returns Whether operation was successful
- */
-export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Remove existing grid objects
-    const existingGridObjects = canvas.getObjects().filter(obj => 
-      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
-    );
-    
-    existingGridObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    
-    // Create new grid
-    const gridObjects = canvasGrid.createGrid(canvas);
-    
-    // Ensure grid is visible
-    gridObjects.forEach(obj => {
-      obj.set('visible', true);
-    });
-    
-    canvas.requestRenderAll();
-    logger.info(`Grid recreated: ${gridObjects.length} objects`);
-    
-    return gridObjects.length > 0;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error forcing grid creation and visibility:', errorMessage);
-    return false;
-  }
-};
-
-/**
- * Update grid when canvas zoom changes
- * @param canvas - Fabric canvas
- * @returns Whether grid was updated
- */
-export const updateGridWithZoom = (canvas: FabricCanvas): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Get existing grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
-    );
-    
-    // If no grid objects, nothing to update
-    if (gridObjects.length === 0) {
-      return false;
-    }
-    
-    // Adjust grid objects based on zoom if needed
-    const zoom = canvas.getZoom();
-    gridObjects.forEach(obj => {
-      // Adjust stroke width based on zoom
-      const isLargeGrid = (obj as { isLargeGrid?: boolean }).isLargeGrid;
-      const baseWidth = isLargeGrid ? 
-        GRID_CONSTANTS.LARGE_GRID_WIDTH : 
-        GRID_CONSTANTS.SMALL_GRID_WIDTH;
-      
-      // Inverse relationship with zoom to maintain visual consistency
-      obj.set('strokeWidth', baseWidth / Math.max(0.5, zoom));
-    });
-    
+    // Render canvas to show changes
     canvas.requestRenderAll();
     return true;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error updating grid with zoom:', errorMessage);
+    logger.error('Error setting grid visibility:', error);
     return false;
   }
-};
+}
+
+/**
+ * Toggle grid visibility
+ * @param canvas - The canvas containing the grid
+ * @param gridObjects - Array of grid objects
+ * @returns New visibility state
+ */
+export function toggleGridVisibility(
+  canvas: Canvas,
+  gridObjects: FabricObject[]
+): boolean {
+  if (!canvas || !gridObjects || gridObjects.length === 0) {
+    return false;
+  }
+
+  // Determine current visibility (use first grid object as reference)
+  const isVisible = gridObjects[0]?.visible || false;
+  
+  // Toggle to opposite visibility
+  return setGridVisibility(canvas, gridObjects, !isVisible);
+}
+
+/**
+ * Set visibility for different grid components
+ * @param canvas - The canvas containing the grid
+ * @param gridMap - Map of grid objects by type
+ * @param visibilityMap - Map of visibility settings by type
+ * @returns Success status
+ */
+export function setDetailedGridVisibility(
+  canvas: Canvas,
+  gridMap: Record<string, FabricObject[]>,
+  visibilityMap: GridVisibilityMap
+): boolean {
+  if (!canvas || !gridMap) {
+    return false;
+  }
+
+  try {
+    // Set visibility for small grid lines
+    if (gridMap.smallGrid) {
+      gridMap.smallGrid.forEach(obj => {
+        obj.set('visible', visibilityMap.smallGrid);
+      });
+    }
+
+    // Set visibility for large grid lines
+    if (gridMap.largeGrid) {
+      gridMap.largeGrid.forEach(obj => {
+        obj.set('visible', visibilityMap.largeGrid);
+      });
+    }
+
+    // Set visibility for markers
+    if (gridMap.markers) {
+      gridMap.markers.forEach(obj => {
+        obj.set('visible', visibilityMap.markers);
+      });
+    }
+
+    // Set visibility for labels
+    if (gridMap.labels) {
+      gridMap.labels.forEach(obj => {
+        obj.set('visible', visibilityMap.labels);
+      });
+    }
+
+    // Render canvas to show changes
+    canvas.requestRenderAll();
+    return true;
+  } catch (error) {
+    logger.error('Error setting detailed grid visibility:', error);
+    return false;
+  }
+}
