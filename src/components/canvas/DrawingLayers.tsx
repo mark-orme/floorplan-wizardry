@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Layers, PlusCircle as Plus } from "lucide-react";
+import { Layers, PlusCircle as Plus } from "@/components/ui/icons";
 
 interface DrawingLayersProps {
   layerCount: number;

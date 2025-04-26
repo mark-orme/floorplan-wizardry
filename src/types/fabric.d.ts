@@ -1,55 +1,31 @@
 
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { Canvas as FabricCanvasType, Object as FabricObject } from 'fabric';
 
-// Extend the global fabric namespace
 declare global {
   namespace fabric {
-    interface Canvas {
-      __lastRenderTime?: number;
-    }
-    
-    interface Text extends FabricObject {
-      text?: string;
-    }
-    
-    interface Object {
-      data?: {
-        type?: string;
-        startPoint?: { x: number, y: number };
-        endPoint?: { x: number, y: number };
-        createdAt?: string;
-        [key: string]: any;
+    interface Canvas extends FabricCanvasType {
+      isDrawingMode: boolean;
+      selection: boolean;
+      defaultCursor: string;
+      hoverCursor: string;
+      freeDrawingBrush: {
+        color: string;
+        width: number;
       };
-      objectType?: string;
-      measurement?: string;
+      on(eventName: string, handler: Function): void;
+      off(eventName: string, handler: Function): void;
+      renderAll(): void;
+      requestRenderAll(): void;
+      setWidth(width: number): void;
+      setHeight(height: number): void;
     }
     
-    interface Line extends Object {
-      calcLinePoints?(): { x1: number, y1: number, x2: number, y2: number };
+    interface Object extends FabricObject {
+      gridObject?: boolean;
+      selectable: boolean;
+      evented?: boolean;
     }
   }
 }
 
-// Extend FabricCanvas to include additional properties
-declare module 'fabric' {
-  interface Canvas {
-    __lastRenderTime?: number;
-    // Add other properties as needed
-  }
-  
-  interface Object {
-    data?: {
-      type?: string;
-      startPoint?: { x: number, y: number };
-      endPoint?: { x: number, y: number };
-      createdAt?: string;
-      [key: string]: any;
-    };
-    objectType?: string;
-    measurement?: string;
-  }
-  
-  interface Line {
-    calcLinePoints?(): { x1: number, y1: number, x2: number, y2: number };
-  }
-}
+export {};

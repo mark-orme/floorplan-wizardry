@@ -1,30 +1,44 @@
+
 import {
-  RotateCw, Globe, X, Eye, EyeOff, Lock, Unlock, Hand,
-  Eraser, ArrowUndo, ArrowRedo, ZoomIn, ZoomOut, Save, Download,
-  Text, RulerSquare, Layers, PlusCircle, Calculator, Hammer,
-  Home, Ruler, Type, Menu, Users, RefreshCcw, MousePointer,
-  Pencil, Square, Trash, ArrowDown, ArrowUp, Circle, LayoutGrid
+  Eye as LucideEye,
+  EyeOff as LucideEyeOff,
+  Lock as LucideLock,
+  Unlock as LucideUnlock,
+  Trash2 as LucideTrash2,
+  Layers as LucideLayers,
+  PlusCircle as LucidePlusCircle,
+  Calculator as LucideCalculator,
+  Eraser as LucideEraser,
+  Hammer as LucideHammer,
+  Home as LucideHome,
+  MousePointer as LucideMousePointer,
+  Pencil as LucidePencil,
+  Ruler as LucideRuler,
+  Square as LucideSquare,
+  Type as LucideType,
+  LayoutGrid as LucideGrid,
+  RefreshCcw as LucideRefreshCw
 } from "lucide-react";
 
-import { createIcon } from "lucide-react";
-
-export {
-  RotateCw, Globe, X, Eye, EyeOff, Lock, Unlock, Hand,
-  Eraser, ArrowUndo, ArrowRedo, ZoomIn, ZoomOut, Save, Download,
-  Text, RulerSquare, Layers, PlusCircle, Calculator, Hammer,
-  Home, Ruler, Type, Menu, Users, RefreshCcw, MousePointer,
-  Pencil, Square, Trash, ArrowDown, ArrowUp, Circle, LayoutGrid
-};
+// Export with renamed components
+export const Eye = LucideEye;
+export const EyeOff = LucideEyeOff;
+export const Lock = LucideLock;
+export const Unlock = LucideUnlock;
+export const Trash2 = LucideTrash2;
+export const Layers = LucideLayers;
+export const PlusCircle = LucidePlusCircle;
+export const Calculator = LucideCalculator;
+export const Eraser = LucideEraser;
+export const Hammer = LucideHammer;
+export const Home = LucideHome;
+export const MousePointer = LucideMousePointer;
+export const Pencil = LucidePencil;
+export const Ruler = LucideRuler;
+export const Square = LucideSquare;
+export const Type = LucideType;
+export const Grid = LucideGrid;
+export const RefreshCw = LucideRefreshCw;
 
 // Alias for legacy usage:
-export const Trash2 = Trash;
-
-// Custom icon example (Move):
-export const MoveIcon = createIcon('Move', [
-  ['polyline', { points: '5 9 2 12 5 15' }],
-  ['polyline', { points: '9 5 12 2 15 5' }],
-  ['polyline', { points: '15 19 12 22 9 19' }],
-  ['polyline', { points: '19 9 22 12 19 15' }],
-  ['line', { x1: '2', y1: '12', x2: '22', y2: '12' }],
-  ['line', { x1: '12', y1: '2', x2: '12', y2: '22' }]
-]);
+export const Trash = LucideTrash2;

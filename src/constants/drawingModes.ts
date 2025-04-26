@@ -26,5 +26,3 @@ export enum DrawingMode {
   WINDOW = 'window',
   ZOOM = 'zoom'
 }
-
-// Only use this enum everywhere, remove/replace any dupes elsewhere!

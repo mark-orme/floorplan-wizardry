@@ -1,6 +1,7 @@
+
 import React, { useCallback } from 'react';
-import { FixedSizeList } from 'react-window';
-import { Eye, EyeOff, Lock, Unlock, Trash } from 'lucide-react';
+import { ListChildComponentProps, FixedSizeList } from 'react-window-mock';
+import { Eye, EyeOff, Lock, Unlock, Trash2 } from '@/components/ui/icons';
 import { VirtualizedLayerListProps } from '@/types/drawing/LayerTypes';
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
@@ -51,7 +52,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
             className="p-1 rounded hover:bg-red-100 hover:text-red-600"
             title="Delete layer"
           >
-            <Trash size={14} />
+            <Trash2 size={14} />
           </button>
         )}
       </div>
