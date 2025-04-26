@@ -1,4 +1,3 @@
-
 /**
  * Floor Plan Validator Tests
  * Tests for floor plan validation functions
@@ -13,7 +12,7 @@ import {
   isValidFloorPlan,
   ValidationError 
 } from './validators';
-import { Point, Wall, Room, FloorPlan } from './index';
+import { Point, Wall, Room, FloorPlan } from '@/types/core/floor-plan';
 
 describe('Floor Plan Validators', () => {
   describe('validatePoint', () => {
@@ -28,7 +27,10 @@ describe('Floor Plan Validators', () => {
     });
     
     test('throws on invalid x coordinate', () => {
-      const invalidPoint = { x: 'not a number' as unknown as number, y: 20 };
+      const invalidPoint: Point = { 
+        x: Number('not a number'),
+        y: 20 
+      };
       expect(() => validatePoint(invalidPoint)).toThrow(ValidationError);
     });
     

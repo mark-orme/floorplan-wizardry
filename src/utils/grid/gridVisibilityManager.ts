@@ -1,4 +1,3 @@
-
 /**
  * Grid Visibility Manager
  * Provides utilities for ensuring grid visibility and presence
@@ -30,7 +29,6 @@ export function ensureGridIsPresent(canvas: Canvas): GridVisibilityResult {
     };
   }
 
-  // Check if grid already exists
   let gridObjects = canvas.getObjects().filter(obj => isGridObject(obj)) as GridLine[];
   
   // If grid exists, ensure visibility

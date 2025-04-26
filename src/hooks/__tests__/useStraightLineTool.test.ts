@@ -1,4 +1,3 @@
-
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { Point } from '@/types/core/Point';
@@ -23,7 +22,6 @@ describe('useStraightLineTool', () => {
   let saveStateMock: ReturnType<typeof vi.fn>;
   
   beforeEach(() => {
-    // Create a properly typed mock canvas
     mockCanvas = {
       on: vi.fn(),
       off: vi.fn(),

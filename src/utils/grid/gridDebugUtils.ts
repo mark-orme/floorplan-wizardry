@@ -1,10 +1,21 @@
-
 /**
  * Grid debugging utilities
  * @module utils/grid/gridDebugUtils
  */
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
+
+interface GridDebugInfo {
+  objectCount: number;
+  visibleCount: number;
+  hiddenCount: number;
+  outOfBoundsCount: number;
+  dimensions: {
+    width: number;
+    height: number;
+    zoom: number;
+  };
+}
 
 /**
  * Dump grid state to console for debugging

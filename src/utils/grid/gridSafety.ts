@@ -1,4 +1,3 @@
-
 /**
  * Grid safety module
  * Manages safety timeouts and cleanup for grid operations
@@ -6,6 +5,12 @@
  */
 import { Canvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
+
+interface SafetyCheckResult {
+  isLocked: boolean;
+  timeoutId: number | null;
+  error?: string;
+}
 
 // Safety timeout reference
 let safetyTimeout: number | null = null;
@@ -23,7 +28,7 @@ const MAX_GRID_CREATION_TIME = 10000; // 10 seconds
  * @param releaseCallback Function to call when lock is released
  * @returns True if lock acquired successfully
  */
-export const acquireGridLockWithSafety = (releaseCallback: () => void): boolean => {
+export const acquireGridLockWithSafety = (releaseCallback: () => void): SafetyCheckResult => {
   // Clear existing timeout if any
   if (safetyTimeout !== null) {
     window.clearTimeout(safetyTimeout);
@@ -37,7 +42,10 @@ export const acquireGridLockWithSafety = (releaseCallback: () => void): boolean 
     safetyTimeout = null;
   }, MAX_GRID_CREATION_TIME);
   
-  return true;
+  return {
+    isLocked: true,
+    timeoutId: safetyTimeout
+  };
 };
 
 /**

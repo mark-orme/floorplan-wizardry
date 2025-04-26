@@ -1,4 +1,3 @@
-
 /**
  * CSRF Protection Tests
  * Tests for CSRF protection utilities
@@ -7,7 +6,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { validateCSRFToken, generateCSRFToken } from '../csrfProtection';
 
-// Define types for request and response objects
 interface MockRequest {
   headers: Record<string, string>;
   cookies?: Record<string, string>;
@@ -26,21 +24,18 @@ describe('CSRF Protection', () => {
   let mockNext: () => void;
   
   beforeEach(() => {
-    // Setup mock request
     mockRequest = {
       headers: {},
       cookies: {},
       body: {}
     };
     
-    // Setup mock response
     mockResponse = {
       cookie: vi.fn(),
       status: vi.fn().mockReturnThis(),
       json: vi.fn()
     };
     
-    // Setup mock next function
     mockNext = vi.fn();
   });
   
