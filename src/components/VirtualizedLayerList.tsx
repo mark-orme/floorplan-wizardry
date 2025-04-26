@@ -1,19 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FixedSizeList } from 'react-window';
-import { Eye, EyeOff, Lock, Unlock, Trash } from '@/components/ui/icons';
-import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
-
-interface VirtualizedLayerListProps {
-  layers: DrawingLayer[];
-  activeLayerId: string;
-  onLayerClick: (layerId: string) => void;
-  onToggleVisibility: (layerId: string) => void;
-  onToggleLock: (layerId: string) => void;
-  onDeleteLayer: (layerId: string) => void;
-  listHeight: number;
-}
-
-const ITEM_HEIGHT = 40; // Height of each layer row
+import { Eye, EyeOff, Lock, Unlock, Trash } from 'lucide-react';
+import { VirtualizedLayerListProps } from '@/types/drawing/LayerTypes';
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   layers,
@@ -74,7 +62,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
     <FixedSizeList
       height={listHeight}
       itemCount={layers.length}
-      itemSize={ITEM_HEIGHT}
+      itemSize={40}
       width="100%"
       className="scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400"
     >

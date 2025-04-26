@@ -1,113 +1,61 @@
 
-/**
- * Drawing error boundary component
- * Provides error catching and reporting for drawing operations
- * @module components/canvas/DrawingErrorBoundary
- */
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { captureError } from '@/utils/sentry';
 import { toast } from 'sonner';
 
-interface DrawingErrorBoundaryProps {
-  /** Component name for error reporting */
-  componentName: string;
-  /** Tool name being used */
-  tool?: string;
-  /** Children to render */
+interface Props {
   children: ReactNode;
-  /** Optional fallback UI */
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
-interface DrawingErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
 }
 
-/**
- * Error boundary specifically for drawing operations
- * Catches errors during drawing and provides recovery options
- */
-export class DrawingErrorBoundary extends Component<DrawingErrorBoundaryProps, DrawingErrorBoundaryState> {
-  constructor(props: DrawingErrorBoundaryProps) {
-    super(props);
-    this.state = {
-      hasError: false,
-      error: null
-    };
-  }
-  
-  /**
-   * Update state when error occurs
-   */
-  static getDerivedStateFromError(error: Error): DrawingErrorBoundaryState {
-    return {
-      hasError: true,
-      error
-    };
-  }
-  
-  /**
-   * Report error to monitoring system
-   */
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    const { componentName, tool } = this.props;
-    
-    // Report to Sentry with enhanced context - updated to use correct signature
-    captureError(error, {
-      tags: {
-        component: componentName,
-        tool: tool || 'unknown',
-        errorType: error.name
-      },
-      extra: {
-        componentStack: errorInfo.componentStack,
-        errorMessage: error.message,
-        errorStack: error.stack
-      }
-    });
-    
-    // Show user-friendly error message
-    toast.error('Drawing operation failed. Try again or switch tools.', {
-      duration: 5000,
-      action: {
-        label: 'Retry',
-        onClick: () => this.resetError()
-      }
-    });
-  }
-  
-  /**
-   * Reset error state to allow retry
-   */
-  resetError = (): void => {
-    this.setState({
-      hasError: false,
-      error: null
-    });
+export class DrawingErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+    error: null
   };
-  
-  render(): ReactNode {
-    const { hasError } = this.state;
-    const { children, fallback } = this.props;
+
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('Canvas error:', error, errorInfo);
+    toast.error(`Canvas error: ${error.message}`);
     
-    if (hasError) {
-      // Show fallback UI if provided, otherwise show minimal retry button
-      return fallback || (
-        <div className="p-4 border border-red-200 bg-red-50 rounded-md">
-          <h3 className="text-red-800 text-sm font-medium mb-2">
-            Drawing operation failed
-          </h3>
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+  }
+
+  private handleRetry = (): void => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  public render(): ReactNode {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
+      return (
+        <div className="p-4 border border-red-200 rounded bg-red-50">
+          <h2 className="text-lg font-semibold text-red-700">Something went wrong</h2>
+          <p className="text-sm text-red-600 mt-1">{this.state.error?.message}</p>
           <button
-            className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs"
-            onClick={this.resetError}
+            onClick={this.handleRetry}
+            className="mt-2 px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
           >
-            Retry drawing
+            Try again
           </button>
         </div>
       );
     }
-    
-    return children;
+
+    return this.props.children;
   }
 }
