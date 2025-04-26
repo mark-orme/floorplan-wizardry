@@ -43,7 +43,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as unknown as Canvas,
+        canvas: mockCanvas as Canvas,
         saveCurrentState: saveStateMock
       })
     );
@@ -56,7 +56,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: false,
-        canvas: mockCanvas as unknown as Canvas, 
+        canvas: mockCanvas as Canvas, 
         saveCurrentState: saveStateMock
       })
     );
@@ -69,7 +69,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as unknown as Canvas,
+        canvas: mockCanvas as Canvas,
         saveCurrentState: saveStateMock
       })
     );
