@@ -19,7 +19,7 @@ export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
   try {
     // Check for grid objects
     const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     // If no grid objects, create them
@@ -55,7 +55,7 @@ export const setGridVisibility = (canvas: FabricCanvas, visible: boolean): void 
   
   try {
     const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     gridObjects.forEach(obj => {
@@ -80,7 +80,7 @@ export const forceGridCreationAndVisibility = (canvas: FabricCanvas): boolean =>
   try {
     // Remove existing grid objects
     const existingGridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     existingGridObjects.forEach(obj => {
@@ -118,7 +118,7 @@ export const updateGridWithZoom = (canvas: FabricCanvas): boolean => {
   try {
     // Get existing grid objects
     const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     // If no grid objects, nothing to update
@@ -130,7 +130,7 @@ export const updateGridWithZoom = (canvas: FabricCanvas): boolean => {
     const zoom = canvas.getZoom();
     gridObjects.forEach(obj => {
       // Adjust stroke width based on zoom
-      const isLargeGrid = (obj as any).isLargeGrid;
+      const isLargeGrid = (obj as { isLargeGrid?: boolean }).isLargeGrid;
       const baseWidth = isLargeGrid ? 
         GRID_CONSTANTS.LARGE_GRID_WIDTH : 
         GRID_CONSTANTS.SMALL_GRID_WIDTH;

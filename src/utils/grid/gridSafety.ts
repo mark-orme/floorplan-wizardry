@@ -20,8 +20,8 @@ const MAX_GRID_CREATION_TIME = 10000; // 10 seconds
  * Acquire a safety lock for grid creation with timeout
  * Sets a timeout to release lock if grid creation takes too long
  * 
- * @param {() => void} releaseCallback - Function to call when lock is released
- * @returns {boolean} True if lock acquired successfully
+ * @param releaseCallback Function to call when lock is released
+ * @returns True if lock acquired successfully
  */
 export const acquireGridLockWithSafety = (releaseCallback: () => void): boolean => {
   // Clear existing timeout if any
@@ -44,8 +44,8 @@ export const acquireGridLockWithSafety = (releaseCallback: () => void): boolean 
  * Clean up grid resources and release locks
  * Called when grid creation completes or component unmounts
  * 
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @param {Canvas} canvas - The fabric canvas instance
+ * @param gridLayerRef Reference to grid objects
+ * @param canvas The fabric canvas instance
  */
 export const cleanupGridResources = (
   gridLayerRef: React.MutableRefObject<FabricObject[]>,

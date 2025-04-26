@@ -57,7 +57,7 @@ export const setupGridDiagnosticMonitoring = (canvas: FabricCanvas): void => {
  * @param {FabricObject[]} gridObjects - Grid objects to analyze
  * @returns {Object} Grid stats
  */
-export const gridDebugStats = (canvas: FabricCanvas, gridObjects: FabricObject[]): any => {
+export const gridDebugStats = (canvas: FabricCanvas, gridObjects: FabricObject[]): Record<string, unknown> => {
   if (!canvas) return { error: "Canvas is null" };
   
   const stats = {
@@ -77,7 +77,7 @@ export const gridDebugStats = (canvas: FabricCanvas, gridObjects: FabricObject[]
  * @param {Error} error - Error that occurred
  * @returns {Object} Diagnostic information
  */
-export const diagnoseGridFailure = (canvas: FabricCanvas, error: Error): any => {
+export const diagnoseGridFailure = (canvas: FabricCanvas, error: Error): Record<string, unknown> => {
   const diagnosis = {
     error: error.message,
     stack: error.stack,

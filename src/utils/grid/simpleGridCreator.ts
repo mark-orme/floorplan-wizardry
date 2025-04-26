@@ -8,12 +8,14 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 import { createGrid } from './gridRenderers';
-import { createBasicEmergencyGrid } from './gridRenderers';
+
+// Define a function type for creating a basic emergency grid
+type EmergencyGridCreator = (canvas: FabricCanvas) => FabricObject[];
 
 /**
  * Create a reliable grid with error handling
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {FabricObject[]} Created grid objects
+ * @param canvas - Fabric canvas
+ * @returns Created grid objects
  */
 export const createReliableGrid = (canvas: FabricCanvas): FabricObject[] => {
   if (!canvas || !canvas.width || !canvas.height) {
@@ -47,9 +49,65 @@ export const createReliableGrid = (canvas: FabricCanvas): FabricObject[] => {
 };
 
 /**
+ * Create a basic emergency grid
+ * Fallback function when regular grid creation fails
+ * @param canvas - Canvas to create grid on
+ * @returns Created grid objects
+ */
+export const createBasicEmergencyGrid: EmergencyGridCreator = (canvas: FabricCanvas): FabricObject[] => {
+  if (!canvas) return [];
+  
+  const width = canvas.width || 1000;
+  const height = canvas.height || 1000;
+  const gridSize = 50; // Large grid size for emergency grid
+  const result: FabricObject[] = [];
+  
+  try {
+    // Create minimal number of lines for horizontal grid
+    for (let y = 0; y < height; y += gridSize) {
+      const line = new window.fabric.Line([0, y, width, y], {
+        stroke: GRID_CONSTANTS.DEFAULT_GRID_COLOR || '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true
+      });
+      
+      canvas.add(line);
+      result.push(line);
+    }
+    
+    // Create minimal number of lines for vertical grid
+    for (let x = 0; x < width; x += gridSize) {
+      const line = new window.fabric.Line([x, 0, x, height], {
+        stroke: GRID_CONSTANTS.DEFAULT_GRID_COLOR || '#cccccc',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true
+      });
+      
+      canvas.add(line);
+      result.push(line);
+    }
+    
+    // Send all grid lines to back
+    result.forEach(obj => canvas.sendToBack(obj));
+    canvas.requestRenderAll();
+    
+    return result;
+  } catch (error) {
+    logger.error("Error in emergency grid creation:", error);
+    return result; // Return whatever we managed to create
+  }
+};
+
+/**
  * Ensure grid is visible on canvas
- * @param {FabricCanvas} canvas - Fabric canvas
- * @returns {boolean} Whether operation succeeded
+ * @param canvas - Fabric canvas
+ * @returns Whether operation succeeded
  */
 export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
   if (!canvas) {
@@ -59,7 +117,7 @@ export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
   try {
     // Find grid objects
     const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     if (gridObjects.length === 0) {
@@ -77,7 +135,7 @@ export const ensureGridVisibility = (canvas: FabricCanvas): boolean => {
       }
       
       // Also ensure grid objects are at the back
-      canvas.sendObjectToBack(obj);
+      canvas.sendToBack(obj);
     });
     
     // Render if visibility changed

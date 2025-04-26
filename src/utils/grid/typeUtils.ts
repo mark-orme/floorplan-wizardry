@@ -37,9 +37,9 @@ export interface GridRenderResult {
   /** Large grid lines */
   largeGridLines: Line[];
   /** Grid markers */
-  markers: any[];
+  markers: unknown[];
   /** All grid objects */
-  gridObjects: any[];
+  gridObjects: unknown[];
 }
 
 /**
@@ -106,7 +106,7 @@ export const toFabricPoint = (point: Point): {x: number, y: number} => {
  * @param point - Point to normalize
  * @returns Normalized point with valid coordinates
  */
-export const normalizePoint = (point: any): Point => {
+export const normalizePoint = (point: Partial<Point>): Point => {
   return {
     x: typeof point.x === 'number' ? point.x : 0,
     y: typeof point.y === 'number' ? point.y : 0

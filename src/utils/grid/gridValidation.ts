@@ -67,7 +67,7 @@ export function isGridValid(grid: FabricObject[] | null | undefined): boolean {
   const invalidObjects = grid.filter(obj => 
     !obj || 
     typeof obj !== 'object' || 
-    !(obj as any).objectType
+    !(obj as { objectType?: string }).objectType
   );
 
   if (invalidObjects.length > 0) {

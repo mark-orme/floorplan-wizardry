@@ -1,9 +1,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createGrid, clearGrid, toggleGridVisibility } from '../gridUtils';
-import { Line, Canvas, Object as FabricObject } from 'fabric';
+import { Line, Canvas } from 'fabric';
 import { MockCanvas } from '@/utils/test/createMockCanvas';
 import { GridConfig, GridObjects } from '../gridTypes';
+import { FabricObject } from '@/types/fabric';
 
 describe('Grid Utils', () => {
   let mockCanvas: MockCanvas;
@@ -63,8 +64,8 @@ describe('Grid Utils', () => {
     it('should remove grid objects from canvas', () => {
       // Setup mock grid objects
       const mockGridObjects: GridObjects = [
-        { id: 'grid-1', gridType: 'small' } as unknown as FabricObject,
-        { id: 'grid-2', gridType: 'large' } as unknown as FabricObject
+        { id: 'grid-1', gridType: 'small' } as FabricObject,
+        { id: 'grid-2', gridType: 'large' } as FabricObject
       ];
       
       // Call clearGrid
@@ -87,8 +88,8 @@ describe('Grid Utils', () => {
     it('should toggle grid visibility', () => {
       // Setup mock grid objects with visible property
       const mockGridObjects: GridObjects = [
-        { id: 'grid-1', gridType: 'small', visible: true, set: vi.fn() } as unknown as FabricObject,
-        { id: 'grid-2', gridType: 'large', visible: true, set: vi.fn() } as unknown as FabricObject
+        { id: 'grid-1', gridType: 'small', visible: true, set: vi.fn() } as FabricObject,
+        { id: 'grid-2', gridType: 'large', visible: true, set: vi.fn() } as FabricObject
       ];
       
       // Toggle visibility to false

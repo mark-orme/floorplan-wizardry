@@ -21,7 +21,7 @@ export const dumpGridState = (canvas: FabricCanvas): void => {
   
   // Filter grid objects
   const gridObjects = allObjects.filter(obj => 
-    (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+    (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
   );
   
   // Log counts
@@ -41,7 +41,7 @@ export const dumpGridState = (canvas: FabricCanvas): void => {
     console.log(`- Hidden grid objects: ${hiddenCount}`);
     
     // Check grid object properties
-    const gridTypes = gridObjects.map(obj => (obj as any).objectType || 'unknown');
+    const gridTypes = gridObjects.map(obj => (obj as { objectType?: string }).objectType || 'unknown');
     const uniqueTypes = [...new Set(gridTypes)];
     console.log('Grid object types:', uniqueTypes);
     
@@ -78,10 +78,10 @@ export const dumpGridState = (canvas: FabricCanvas): void => {
 export const analyzeGridIssues = (canvas: FabricCanvas, gridObjects: FabricObject[]): {
   hasIssues: boolean;
   issues: string[];
-  diagnostics: Record<string, any>;
+  diagnostics: Record<string, unknown>;
 } => {
   const issues: string[] = [];
-  const diagnostics: Record<string, any> = {};
+  const diagnostics: Record<string, unknown> = {};
   
   // Check for canvas issues
   if (!canvas) {

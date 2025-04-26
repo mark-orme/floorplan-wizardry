@@ -1,3 +1,4 @@
+
 /**
  * Grid diagnostics and repair utilities
  */
@@ -32,7 +33,7 @@ export function runGridDiagnostics(canvas: FabricCanvas): GridDiagnosticResult {
   try {
     // Find all grid objects
     const gridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      obj => (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     // Count "broken" grid objects (invisible or invalid)
@@ -79,7 +80,7 @@ export function applyGridFixes(canvas: FabricCanvas): GridDiagnosticResult {
     
     // Remove all existing grid objects
     const gridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      obj => (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     gridObjects.forEach(obj => {
@@ -127,7 +128,7 @@ export function emergencyGridFix(canvas: FabricCanvas): FabricObject[] {
     
     // Remove any existing grid objects
     const existingGridObjects = canvas.getObjects().filter(
-      obj => (obj as any).objectType === 'grid' || (obj as any).isGrid === true
+      obj => (obj as { objectType?: string }).objectType === 'grid' || (obj as { isGrid?: boolean }).isGrid === true
     );
     
     existingGridObjects.forEach(obj => {

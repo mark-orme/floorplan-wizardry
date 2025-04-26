@@ -4,7 +4,7 @@
  * Provides functions for creating and rendering grid lines
  * @module utils/grid/gridRenderers
  */
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import { GridLine, GridOptions, GridObject } from './gridTypes';
 
 /**
@@ -46,10 +46,10 @@ export function createGrid(
         visible,
         gridObject: true,
         gridType: 'vertical'
-      } as unknown as GridLine);
+      }) as GridLine;
       
       canvas.add(line);
-      gridLines.push(line as unknown as GridLine);
+      gridLines.push(line);
     }
     
     // Create horizontal lines
@@ -63,10 +63,10 @@ export function createGrid(
         visible,
         gridObject: true,
         gridType: 'horizontal'
-      } as unknown as GridLine);
+      }) as GridLine;
       
       canvas.add(line);
-      gridLines.push(line as unknown as GridLine);
+      gridLines.push(line);
     }
     
     // Ensure grid is behind other objects
@@ -135,7 +135,7 @@ export function removeGrid(
 export function isGridObject(obj: FabricObject): boolean {
   return obj && (
     (obj as GridObject).gridObject === true || 
-    (obj as any).objectType === 'grid' ||
-    (obj as any).isGrid === true
+    (obj as { objectType?: string }).objectType === 'grid' ||
+    (obj as { isGrid?: boolean }).isGrid === true
   );
 }

@@ -24,7 +24,7 @@ describe('Floor Plan Validators', () => {
     
     test('throws on missing point', () => {
       const invalidPoint = undefined;
-      expect(() => validatePoint(invalidPoint as unknown as Point)).toThrow(ValidationError);
+      expect(() => validatePoint(invalidPoint as Point)).toThrow(ValidationError);
     });
     
     test('throws on invalid x coordinate', () => {
@@ -56,7 +56,7 @@ describe('Floor Plan Validators', () => {
     
     test('throws on missing wall', () => {
       const invalidWall = undefined;
-      expect(() => validateWall(invalidWall as unknown as Wall)).toThrow(ValidationError);
+      expect(() => validateWall(invalidWall as Wall)).toThrow(ValidationError);
     });
     
     test('throws on missing id', () => {

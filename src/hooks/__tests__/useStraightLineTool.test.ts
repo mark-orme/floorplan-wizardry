@@ -20,7 +20,7 @@ interface MockEvent {
 
 describe('useStraightLineTool', () => {
   let mockCanvas: MockCanvas;
-  let saveStateMock: jest.Mock;
+  let saveStateMock: ReturnType<typeof vi.fn>;
   
   beforeEach(() => {
     // Create a properly typed mock canvas
@@ -44,7 +44,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as unknown as Canvas,
+        canvas: mockCanvas as Canvas,
         saveCurrentState: saveStateMock
       })
     );
@@ -57,7 +57,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: false,
-        canvas: mockCanvas as unknown as Canvas, 
+        canvas: mockCanvas as Canvas, 
         saveCurrentState: saveStateMock
       })
     );
@@ -70,7 +70,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as unknown as Canvas,
+        canvas: mockCanvas as Canvas,
         saveCurrentState: saveStateMock
       })
     );

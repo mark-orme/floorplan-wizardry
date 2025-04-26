@@ -6,15 +6,23 @@
  */
 import { Canvas, Object as FabricObject } from "fabric";
 import logger from "../logger";
-import { handleGridCreationError } from "./errorHandling";
-import { toast } from "sonner";
 import { createBasicEmergencyGrid } from "../gridCreationUtils";
+import { toast } from "sonner";
+
+// Define interface for grid status result
+interface GridStatus {
+  gridObjectCount: number;
+  objectsOnCanvas: number;
+  percentOnCanvas: number;
+  status: 'ok' | 'degraded' | 'error';
+  needsRepair: boolean;
+}
 
 /**
  * Force grid repair
- * @param {Canvas} canvas - Canvas to repair
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {boolean} Success status
+ * @param canvas Canvas to repair
+ * @param gridLayerRef Reference to grid objects
+ * @returns Success status
  */
 export const forceGridRepair = (
   canvas: Canvas, 
@@ -56,16 +64,23 @@ export const forceGridRepair = (
 
 /**
  * Check grid immediately
- * @param {Canvas} canvas - Canvas to check
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {Object} Grid status
+ * @param canvas Canvas to check
+ * @param gridLayerRef Reference to grid objects
+ * @returns Grid status
  */
 export const checkGridImmediately = (
   canvas: Canvas, 
   gridLayerRef: React.MutableRefObject<FabricObject[]>
-): Record<string, any> => {
+): GridStatus => {
   if (!canvas) {
-    return { status: 'error', message: 'Canvas not available' };
+    return { 
+      status: 'error', 
+      message: 'Canvas not available',
+      gridObjectCount: 0,
+      objectsOnCanvas: 0,
+      percentOnCanvas: 0,
+      needsRepair: false
+    };
   }
   
   const gridObjects = gridLayerRef.current;
@@ -89,9 +104,9 @@ export const checkGridImmediately = (
 
 /**
  * Setup grid monitoring
- * @param {Canvas} canvas - Canvas to monitor
- * @param {React.MutableRefObject<FabricObject[]>} gridLayerRef - Reference to grid objects
- * @returns {Function} Cleanup function
+ * @param canvas Canvas to monitor
+ * @param gridLayerRef Reference to grid objects
+ * @returns Cleanup function
  */
 export const setupGridMonitoring = (
   canvas: Canvas, 

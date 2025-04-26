@@ -10,8 +10,8 @@ import logger from "../logger";
 
 /**
  * Validate canvas is ready for grid operations
- * @param {FabricCanvas} canvas - The canvas to validate
- * @returns {boolean} Whether the canvas is valid
+ * @param canvas The canvas to validate
+ * @returns Whether the canvas is valid
  */
 export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
   if (!canvas) {
@@ -55,8 +55,8 @@ export const validateCanvasForGrid = (canvas: FabricCanvas | null): boolean => {
 /**
  * Ensure proper tuple type for line coordinates
  * This fixes the type error in gridDiagnostics.ts
- * @param {number[]} coords - Array of coordinates
- * @returns {[number, number, number, number]} Properly typed coordinate tuple
+ * @param coords Array of coordinates
+ * @returns Properly typed coordinate tuple
  */
 export const ensureCoordsTuple = (coords: number[]): [number, number, number, number] => {
   // Ensure we have exactly 4 elements
@@ -77,10 +77,10 @@ export const ensureCoordsTuple = (coords: number[]): [number, number, number, nu
 
 /**
  * Validate grid objects
- * @param {FabricObject[]} gridObjects - Grid objects to validate
- * @returns {Object} Validation results
+ * @param gridObjects Grid objects to validate
+ * @returns Validation results
  */
-export const validateGridObjects = (gridObjects: FabricObject[]): Record<string, any> => {
+export const validateGridObjects = (gridObjects: FabricObject[]): Record<string, unknown> => {
   const results = {
     valid: true,
     count: gridObjects.length,
@@ -111,14 +111,14 @@ export const validateGridObjects = (gridObjects: FabricObject[]): Record<string,
 
 /**
  * Perform comprehensive grid health check
- * @param {FabricCanvas} canvas - Canvas to check
- * @param {FabricObject[]} gridObjects - Grid objects to check
- * @returns {Object} Health check results
+ * @param canvas Canvas to check
+ * @param gridObjects Grid objects to check
+ * @returns Health check results
  */
 export const checkGridHealth = (
   canvas: FabricCanvas | null,
   gridObjects: FabricObject[]
-): Record<string, any> => {
+): Record<string, unknown> => {
   const report = {
     timestamp: Date.now(),
     healthy: false,
@@ -132,7 +132,7 @@ export const checkGridHealth = (
     report.canvas.canvasValid && 
     report.grid.valid && 
     report.canvas.issues.length === 0 && 
-    report.grid.issues.length === 0;
+    (report.grid.issues as string[]).length === 0;
   
   // Generate recommended actions
   if (!report.canvas.canvasValid) {

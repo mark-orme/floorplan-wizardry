@@ -15,7 +15,7 @@ import logger from '@/utils/logger';
 export const logGridError = (
   error: Error | string,
   context: string,
-  extraData?: Record<string, any>
+  extraData?: Record<string, unknown>
 ) => {
   const errorObj = typeof error === 'string' ? new Error(error) : error;
   
@@ -45,7 +45,7 @@ export const logGridError = (
 export const handleGridInitError = (
   error: Error | string,
   gridId: string,
-  extraData?: Record<string, any>
+  extraData?: Record<string, unknown>
 ) => {
   const errorObj = typeof error === 'string' ? new Error(error) : error;
   
@@ -72,7 +72,7 @@ export const handleGridInitError = (
  * @returns Error handler function
  */
 export const createGridErrorHandler = (context: string) => {
-  return (error: Error | string, extraData?: Record<string, any>) => {
+  return (error: Error | string, extraData?: Record<string, unknown>) => {
     logGridError(error, context, extraData);
   };
 };
