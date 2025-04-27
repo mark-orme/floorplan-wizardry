@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Canvas } from 'fabric';
+import { fabric } from 'fabric';
 import { SimpleGrid } from './SimpleGrid';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 interface GridManagerProps {
-  canvas: Canvas | null;
+  canvas: fabric.Canvas | null;
   showGrid: boolean;
   onGridCreated: (objects: fabric.Object[]) => void;
 }

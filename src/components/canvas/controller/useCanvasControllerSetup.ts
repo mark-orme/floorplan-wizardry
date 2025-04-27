@@ -4,7 +4,7 @@
  * @module useCanvasControllerSetup
  */
 import { useRef, useEffect, useState, useCallback } from "react";
-import { Canvas, Object as FabricObject } from "fabric";
+import { fabric } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useGrid } from "@/hooks/useGrid";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
@@ -29,7 +29,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   } = props;
   
   // Initialize state variables
-  const [canvas, setCanvas] = useState<Canvas | null>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [tool, setTool] = useState<DrawingMode>(initialTool);
   const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
   const [lineThickness, setLineThickness] = useState<number>(initialLineThickness);
@@ -39,8 +39,8 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   const [currentFloor, setCurrentFloor] = useState(0);
   
   // Create references
-  const fabricCanvasRef = useRef<Canvas | null>(null);
-  const gridLayerRef = useRef<FabricObject[]>([]);
+  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const gridLayerRef = useRef<fabric.Object[]>([]);
   
   // Initialize drawing history
   const {
@@ -84,9 +84,9 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
    * Function to handle canvas ready event
    * Initializes the Fabric canvas and sets up event listeners
    * 
-   * @param {Canvas} fabricCanvas - Fabric canvas instance
+   * @param {fabric.Canvas} fabricCanvas - Fabric canvas instance
    */
-  const handleCanvasReady = useCallback((fabricCanvas: Canvas) => {
+  const handleCanvasReady = useCallback((fabricCanvas: fabric.Canvas) => {
     // Set fabric canvas reference
     fabricCanvasRef.current = fabricCanvas;
     

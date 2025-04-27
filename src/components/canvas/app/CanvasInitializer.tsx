@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { Canvas } from 'fabric';
+import { fabric } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 import { GRID_CONSTANTS, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
@@ -24,7 +24,7 @@ export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
     if (!canvasRef.current) return;
     
     // Properly cast to ExtendedCanvas
-    const canvas = new window.fabric.Canvas(canvasRef.current, {
+    const canvas = new fabric.Canvas(canvasRef.current, {
       width: dimensions.width,
       height: dimensions.height,
       backgroundColor: '#ffffff',

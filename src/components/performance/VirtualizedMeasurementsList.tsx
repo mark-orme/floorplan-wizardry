@@ -1,5 +1,6 @@
+
 import React from 'react';
-import VirtualizedList from "@/components/VirtualizedList";
+import { VirtualizedList } from "@/components/VirtualizedList";
 
 interface Measurement {
   id: string;
@@ -17,7 +18,6 @@ export const VirtualizedMeasurementsList: React.FC<VirtualizedMeasurementsListPr
   measurements,
   height = 300
 }) => {
-  // Component implementation
   return (
     <VirtualizedList 
       data={measurements}

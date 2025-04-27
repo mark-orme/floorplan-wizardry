@@ -1,7 +1,5 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createFabricLine } from '@/types/fabric-extended';
-import type { ExtendedFabricObject } from '@/types/fabric-extended';
+import { fabric } from 'fabric';
 import { SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
 
 export const GRID_CONSTANTS = {
@@ -14,8 +12,8 @@ export const GRID_CONSTANTS = {
 };
 
 export class SimpleGrid {
-  canvas: FabricCanvas;
-  gridObjects: ExtendedFabricObject[] = [];
+  canvas: fabric.Canvas;
+  gridObjects: fabric.Object[] = [];
   spacing: number;
   smallColor: string;
   largeColor: string;
@@ -24,7 +22,7 @@ export class SimpleGrid {
   largeSpacingMultiplier: number;
   
   constructor(
-    canvas: FabricCanvas,
+    canvas: fabric.Canvas,
     options: {
       spacing?: number;
       smallColor?: string;
@@ -53,12 +51,12 @@ export class SimpleGrid {
     // Create vertical lines
     for (let x = 0; x <= width; x += this.spacing) {
       const isLargeLine = x % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = createFabricLine([x, 0, x, height], {
+      const line = new fabric.Line([x, 0, x, height], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
         evented: false
-      }) as ExtendedFabricObject;
+      });
       
       this.canvas.add(line);
       this.gridObjects.push(line);
@@ -67,12 +65,12 @@ export class SimpleGrid {
     // Create horizontal lines
     for (let y = 0; y <= height; y += this.spacing) {
       const isLargeLine = y % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = createFabricLine([0, y, width, y], {
+      const line = new fabric.Line([0, y, width, y], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
         evented: false
-      }) as ExtendedFabricObject;
+      });
       
       this.canvas.add(line);
       this.gridObjects.push(line);
@@ -86,7 +84,9 @@ export class SimpleGrid {
   
   setVisible(visible: boolean) {
     this.gridObjects.forEach(obj => {
-      obj.set({ visible });
+      if (obj) {
+        obj.set({ visible });
+      }
     });
     
     this.canvas.requestRenderAll();

@@ -3,8 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  MousePointer, 
-  Pencil, 
+  MousePointer2 as MousePointer, 
+  PenLine as Pencil, 
   Eraser 
 } from 'lucide-react';
 

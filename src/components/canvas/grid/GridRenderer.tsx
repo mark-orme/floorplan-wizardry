@@ -75,7 +75,11 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       // Log success
       captureMessage("Grid rendered successfully", {
         level: 'info',
-        tags: { component: 'GridRenderer' }
+        tags: { component: 'GridRenderer' },
+        extra: { 
+          gridSize,
+          lineCount: newGridObjects.length
+        }
       });
       
       setGridObjects(newGridObjects);
@@ -83,7 +87,8 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     } catch (error) {
       captureMessage("Failed to render grid", {
         level: 'error',
-        tags: { component: 'GridRenderer' }
+        tags: { component: 'GridRenderer' },
+        extra: { error: String(error) }
       });
     }
     
@@ -103,7 +108,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     
     gridObjects.forEach(obj => {
       if (obj) {
-        (obj as any).visible = visible;
+        obj.set({ visible });
       }
     });
     

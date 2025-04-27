@@ -1,12 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { createFabricLine } from '@/types/fabric-extended';
-import type { ExtendedFabricObject } from '@/types/fabric-extended';
+import { fabric } from 'fabric';
 import { SMALL_GRID_COLOR, SMALL_GRID_WIDTH } from '@/constants/gridConstants';
 
 interface SimpleGridLayerProps {
-  canvas: FabricCanvas;
+  canvas: fabric.Canvas;
   gridSize?: number;
   visible?: boolean;
 }
@@ -16,22 +14,22 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
   gridSize = 20,
   visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
 
   useEffect(() => {
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const newObjects: ExtendedFabricObject[] = [];
+    const newObjects: fabric.Object[] = [];
 
     // Create vertical lines
     for (let x = 0; x <= width; x += gridSize) {
-      const line = createFabricLine([x, 0, x, height], {
+      const line = new fabric.Line([x, 0, x, height], {
         stroke: SMALL_GRID_COLOR,
         strokeWidth: SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
         visible
-      }) as ExtendedFabricObject;
+      });
       
       canvas.add(line);
       newObjects.push(line);
@@ -39,13 +37,13 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     // Create horizontal lines
     for (let y = 0; y <= height; y += gridSize) {
-      const line = createFabricLine([0, y, width, y], {
+      const line = new fabric.Line([0, y, width, y], {
         stroke: SMALL_GRID_COLOR,
         strokeWidth: SMALL_GRID_WIDTH,
         selectable: false,
         evented: false,
         visible
-      }) as ExtendedFabricObject;
+      });
       
       canvas.add(line);
       newObjects.push(line);
@@ -63,7 +61,9 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
   useEffect(() => {
     gridObjects.forEach(obj => {
-      obj.set({ visible });
+      if (obj) {
+        obj.set({ visible });
+      }
     });
     canvas.requestRenderAll();
   }, [canvas, visible, gridObjects]);

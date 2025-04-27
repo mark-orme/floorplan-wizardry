@@ -11,11 +11,20 @@ declare module 'fabric' {
     id?: string;
     objectType?: string;
     data?: any;
+    visible?: boolean;
+    set(options: Record<string, any>): FabricObject;
   }
   
   // Extend specific shape interfaces
   interface Line {
     data?: any;
+    stroke?: string;
+    strokeWidth?: number;
+  }
+
+  interface ILineOptions {
+    stroke?: string;
+    strokeWidth?: number;
   }
 
   // Add custom events
