@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { RulerSquare as Ruler } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Ruler } from 'lucide-react';
 
 interface MeasurementGuideButtonProps {
   onClick: () => void;

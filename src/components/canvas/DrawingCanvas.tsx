@@ -28,7 +28,7 @@ export const DrawingCanvas = ({
         width,
         height,
         backgroundColor: '#ffffff'
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
 
       onCanvasReady?.(canvas);
 

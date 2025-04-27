@@ -4,9 +4,9 @@ import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
 export interface CanvasProps {
-  width: number;
-  height: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
+  width?: number;
+  height?: number;
+  onCanvasReady?: (canvas: ExtendedCanvas) => void;
   onError?: (error: Error) => void;
   showGridDebug?: boolean;
 }
@@ -27,22 +27,23 @@ export const Canvas: React.FC<CanvasProps> = ({
     
     try {
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
-        width: 800,
-        height: 600,
+        width,
+        height,
         backgroundColor: '#ffffff',
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
       
       setCanvas(fabricCanvas);
+      onCanvasReady?.(fabricCanvas);
       setIsLoading(false);
       
       return () => {
         fabricCanvas.dispose();
       };
     } catch (error) {
-      console.error('Failed to initialize canvas:', error);
+      onError?.(error instanceof Error ? error : new Error('Canvas initialization failed'));
       setIsLoading(false);
     }
-  }, []);
+  }, [width, height, onCanvasReady, onError]);
 
   return (
     <div className="relative">

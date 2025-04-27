@@ -1,19 +1,16 @@
-import React from "react";
-import { Tool } from "./Tool";
-import { DrawingMode } from "@/constants/drawingModes";
-import { formatDistanceToNow } from 'date-fns';
+import React from 'react';
 import { 
-  MousePointer, 
-  Pencil, 
-  Undo2, 
-  Redo2, 
-  ZoomIn, 
-  ZoomOut, 
-  Grid, 
-  Trash, 
-  Wifi, 
+  MousePointer,
+  Pencil,
+  Undo2,
+  Redo2,
+  ZoomIn,
+  ZoomOut,
+  Grid,
+  Trash,
+  Wifi,
   WifiOff
-} from "lucide-react";
+} from 'lucide-react';
 import { 
   Button 
 } from "@/components/ui/button";

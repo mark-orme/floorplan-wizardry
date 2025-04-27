@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Object as FabricObject } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
-import * as gridConstants from '@/constants/gridConstants';
 
 interface GridStats {
   gridObjects: number;
@@ -36,24 +35,22 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
     const updateStats = () => {
       const allObjects = canvas.getObjects();
       const gridObjects = allObjects.filter(obj => 
-        obj.objectType === 'grid' || 
         (obj as FabricObject & { gridObject?: boolean }).gridObject === true
       );
       
-      const visibleGridLines = gridObjects.filter(obj => obj.visible).length;
+      const visibleGridLines = gridObjects.filter(obj => 
+        (obj as FabricObject).visible
+      ).length;
       
       setStats({
         gridObjects: gridObjects.length,
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
+        canvasWidth: canvas.width ?? 0,
+        canvasHeight: canvas.height ?? 0,
         visibleGridLines
       });
     };
     
-    // Initial update
     updateStats();
-    
-    // Setup periodic updates
     const interval = setInterval(updateStats, 2000);
     
     return () => {
@@ -112,3 +109,4 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
     </div>
   );
 };
+
