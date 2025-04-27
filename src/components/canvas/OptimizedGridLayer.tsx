@@ -1,179 +1,159 @@
 
-/**
- * Optimized Grid Layer Component
- * Memoized component for rendering grid lines efficiently
- */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
+import React, { useEffect, useRef } from 'react';
+import { Object as FabricObject } from 'fabric';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { gridLogger } from '@/utils/logger';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+
+// Constants that were missing
+const GRID_CONSTANTS = {
+  SMALL_GRID_SIZE: 10,
+  LARGE_GRID_SIZE: 50,
+  GRID_SIZE: 20, // Added missing constant
+  SMALL_GRID_WIDTH: 0.5,
+  LARGE_GRID_WIDTH: 1,
+  SMALL_GRID_COLOR: '#dddddd',
+  LARGE_GRID_COLOR: '#cccccc', 
+  SMALL_GRID_OPACITY: 0.5,
+  LARGE_GRID_OPACITY: 0.8,
+  GRID_SNAP_THRESHOLD: 5,
+  GRID_SNAP_ANGLE: 15,
+  GRID_AUTO_FIX: true
+};
+
+// Extended logger with debug method
+const logger = {
+  ...gridLogger,
+  debug: (message: string, data?: any) => {
+    console.debug(`[GRID] ${message}`, data || '');
+  }
+};
 
 interface OptimizedGridLayerProps {
-  canvas: FabricCanvas;
-  gridSize?: number;
-  largeGridSize?: number;
-  smallGridColor?: string;
-  largeGridColor?: string;
-  showGrid?: boolean;
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
+  canvas: ExtendedCanvas | null;
+  visible?: boolean;
 }
 
-export const OptimizedGridLayer = React.memo(({
+export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
   canvas,
-  gridSize = GRID_CONSTANTS.GRID_SIZE,
-  largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE,
-  smallGridColor = GRID_CONSTANTS.SMALL_GRID_COLOR,
-  largeGridColor = GRID_CONSTANTS.LARGE_GRID_COLOR,
-  showGrid = true,
-  onGridCreated
-}: OptimizedGridLayerProps) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
-  
-  // Create grid objects
-  const createGrid = useCallback(() => {
-    if (!canvas) return [];
-    
-    gridLogger.debug('Creating optimized grid');
-    
-    // Remove any existing grid objects
-    const existingGridObjects = canvas.getObjects().filter(
-      obj => obj.data?.type === 'grid'
-    );
-    
-    if (existingGridObjects.length > 0) {
-      gridLogger.debug(`Removing ${existingGridObjects.length} existing grid objects`);
-      canvas.remove(...existingGridObjects);
-    }
-    
-    const newGridObjects: FabricObject[] = [];
-    const width = canvas.width || 1000;
-    const height = canvas.height || 1000;
-    
-    // Draw grid lines
-    const drawGridLines = () => {
-      // Calculate grid dimensions
-      const gridWidth = Math.ceil(width / gridSize) + 1;
-      const gridHeight = Math.ceil(height / gridSize) + 1;
-      
-      // Create vertical grid lines
-      for (let i = 0; i <= gridWidth; i++) {
-        const x = i * gridSize;
-        const isLargeGrid = i % (largeGridSize / gridSize) === 0;
-        
-        const line = new Line([x, 0, x, height], {
-          stroke: isLargeGrid ? largeGridColor : smallGridColor,
-          strokeWidth: isLargeGrid ? 1 : 0.5,
-          selectable: false,
-          evented: false,
-          excludeFromExport: true,
-          data: { type: 'grid' },
-          visible: showGrid
-        });
-        
-        canvas.add(line);
-        newGridObjects.push(line);
-      }
-      
-      // Create horizontal grid lines
-      for (let i = 0; i <= gridHeight; i++) {
-        const y = i * gridSize;
-        const isLargeGrid = i % (largeGridSize / gridSize) === 0;
-        
-        const line = new Line([0, y, width, y], {
-          stroke: isLargeGrid ? largeGridColor : smallGridColor,
-          strokeWidth: isLargeGrid ? 1 : 0.5,
-          selectable: false,
-          evented: false,
-          excludeFromExport: true,
-          data: { type: 'grid' },
-          visible: showGrid
-        });
-        
-        canvas.add(line);
-        newGridObjects.push(line);
-      }
-      
-      return newGridObjects;
-    };
-    
-    // Use requestAnimationFrame for better performance
-    requestAnimationFrame(() => {
-      const objects = drawGridLines();
-      setGridObjects(objects);
-      
-      // Send objects to parent via callback
-      if (onGridCreated) {
-        onGridCreated(objects);
-      }
-      
-      // Ensure grid lines are at the bottom
-      objects.forEach(obj => {
-        canvas.sendToBack(obj);
-      });
-      
-      canvas.requestRenderAll();
-      gridLogger.info(`Created grid with ${objects.length} lines`);
-    });
-    
-    return [];
-  }, [
-    canvas, 
-    gridSize, 
-    largeGridSize, 
-    smallGridColor, 
-    largeGridColor, 
-    showGrid, 
-    onGridCreated
-  ]);
-  
-  // Toggle grid visibility
-  const updateGridVisibility = useCallback(() => {
-    if (gridObjects.length === 0) return;
-    
-    gridObjects.forEach(obj => {
-      obj.set('visible', showGrid);
-    });
-    
-    if (canvas) {
-      canvas.requestRenderAll();
-    }
-    
-    gridLogger.debug(`Grid visibility set to ${showGrid}`);
-  }, [canvas, gridObjects, showGrid]);
-  
-  // Create grid on mount
+  visible = true
+}) => {
+  const gridLinesRef = useRef<FabricObject[]>([]);
+
   useEffect(() => {
-    if (canvas) {
+    if (!canvas) {
+      logger.debug('Canvas not available yet');
+      return;
+    }
+
+    if (visible) {
+      logger.debug('Creating grid');
       createGrid();
     }
-    
+
     return () => {
-      // Clean up grid on unmount
-      if (canvas && gridObjects.length > 0) {
-        // Remove grid objects from canvas
-        canvas.remove(...gridObjects);
-        gridLogger.debug('Grid objects removed during cleanup');
+      if (gridLinesRef.current.length > 0) {
+        logger.debug('Cleaning up grid lines');
+        clearGrid();
       }
     };
-  }, [canvas, createGrid, gridObjects]);
-  
-  // Update grid visibility when showGrid changes
-  useEffect(() => {
-    updateGridVisibility();
-  }, [showGrid, updateGridVisibility]);
-  
-  // Nothing to render - this is a controller component
+  }, [canvas, visible]);
+
+  const createGrid = () => {
+    if (!canvas) return;
+
+    try {
+      // Create a set of horizontal and vertical grid lines
+      const gridSize = GRID_CONSTANTS.GRID_SIZE;
+      const width = canvas.width || 1000;
+      const height = canvas.height || 800;
+
+      clearGrid(); // Clear existing grid lines
+
+      // Create horizontal lines
+      for (let i = 0; i <= height / gridSize; i++) {
+        // Fixed Line usage - using fabric constructor correctly
+        const line = new window.fabric.Line(
+          [0, i * gridSize, width, i * gridSize], 
+          {
+            stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+            strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+            selectable: false,
+            evented: false
+          }
+        );
+        
+        canvas.add(line);
+        gridLinesRef.current.push(line);
+      }
+
+      // Create vertical lines
+      for (let i = 0; i <= width / gridSize; i++) {
+        // Fixed Line usage - using fabric constructor correctly
+        const line = new window.fabric.Line(
+          [i * gridSize, 0, i * gridSize, height], 
+          {
+            stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+            strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+            selectable: false,
+            evented: false
+          }
+        );
+        
+        canvas.add(line);
+        gridLinesRef.current.push(line);
+      }
+
+      // Create larger grid lines for better visibility
+      const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
+      
+      // Large horizontal lines
+      for (let i = 0; i <= height / largeGridSize; i++) {
+        const line = new window.fabric.Line(
+          [0, i * largeGridSize, width, i * largeGridSize], 
+          {
+            stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+            strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+            selectable: false,
+            evented: false
+          }
+        );
+        
+        // Fixed the object.set usage
+        line.set({
+          objectType: 'grid',
+          isGrid: true,
+          isLargeGrid: true
+        });
+        
+        canvas.add(line);
+        gridLinesRef.current.push(line);
+      }
+
+      logger.debug(`Created grid with ${gridLinesRef.current.length} lines`);
+      canvas.renderAll();
+      return true;
+    } catch (error) {
+      logger.debug('Error creating grid:', error);
+      return false;
+    }
+  };
+
+  const clearGrid = () => {
+    if (!canvas) return;
+    
+    try {
+      gridLinesRef.current.forEach(line => {
+        canvas.remove(line);
+      });
+      
+      gridLinesRef.current = [];
+      canvas.renderAll();
+      return true;
+    } catch (error) {
+      console.error('Error clearing grid:', error);
+      return false;
+    }
+  };
+
   return null;
-}, (prevProps, nextProps) => {
-  // Custom comparison function for memoization
-  // Only re-render if essential props change
-  return (
-    prevProps.canvas === nextProps.canvas &&
-    prevProps.gridSize === nextProps.gridSize &&
-    prevProps.showGrid === nextProps.showGrid
-  );
-});
-
-OptimizedGridLayer.displayName = 'OptimizedGridLayer';
-
-export default OptimizedGridLayer;
+};

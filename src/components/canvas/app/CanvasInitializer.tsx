@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
@@ -8,8 +8,8 @@ import logger from '@/utils/logger';
 interface CanvasInitializerProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   dimensions: { width: number; height: number };
-  setFabricCanvas: (canvas: FabricCanvas) => void;
-  setCanvas: (canvas: FabricCanvas) => void;
+  setFabricCanvas: (canvas: ExtendedCanvas) => void;
+  setCanvas: (canvas: ExtendedCanvas) => void;
 }
 
 export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
@@ -22,14 +22,15 @@ export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
     
-    const canvas = new FabricCanvas(canvasRef.current, {
+    // Properly cast to ExtendedCanvas
+    const canvas = new window.fabric.Canvas(canvasRef.current, {
       width: dimensions.width,
       height: dimensions.height,
       backgroundColor: '#ffffff',
       preserveObjectStacking: true,
       enableRetinaScaling: true,
       renderOnAddRemove: false // Disable automatic rendering for better control
-    });
+    }) as unknown as ExtendedCanvas;
     
     // Add zoom event listener for grid scaling
     canvas.on('mouse:wheel', () => {
@@ -49,7 +50,7 @@ export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
 };
 
 // Helper to update grid when zoom changes
-const updateGridWithZoom = (canvas: FabricCanvas): boolean => {
+const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
   if (!canvas) return false;
   
   try {

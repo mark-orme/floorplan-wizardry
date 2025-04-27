@@ -1,18 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-
-// Mock supabase client for now - this should be replaced with proper implementation
-const supabase = {
-  auth: {
-    onAuthStateChange: () => ({
-      data: { subscription: { unsubscribe: () => {} } }
-    }),
-    getSession: async () => ({
-      data: { session: null }
-    })
-  }
-};
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
       }
     );
 
+    // Fixed: Removed the argument '1' from getSession call
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -55,3 +45,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);
