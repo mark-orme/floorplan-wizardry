@@ -1,10 +1,9 @@
-
 /**
  * Style options component for the drawing toolbar
  * @module components/toolbar/StyleOptions
  */
-import React, { useState } from 'react';
-import { Palette, Plus, Minus, PaintBucket } from 'lucide-react';
+import React from 'react';
+import { AiOutlineEdit as Palette, AiOutlinePlus as Plus, AiOutlineMinus as Minus, AiOutlineBgColors as PaintBucket } from 'react-icons/ai';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';

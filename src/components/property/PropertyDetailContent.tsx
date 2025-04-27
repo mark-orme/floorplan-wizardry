@@ -1,162 +1,72 @@
-import { useProperty } from '@/hooks/query/usePropertyQuery';
-import { Property, PropertyStatus, canEditProperty } from '@/types/propertyTypes';
+import React from 'react';
+import { AiOutlineAppstore as Grid, AiOutlineHome as Home } from 'react-icons/ai';
+import LoadingErrorWrapper from '@/components/LoadingErrorWrapper';
+import { type UserRole } from '@/types/roles';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
 import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
-import { PropertyHeader } from './PropertyHeader';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Grid, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { UserRole } from '@/lib/supabase';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useState } from 'react';
-import { LoadingErrorWrapper } from '@/components/LoadingErrorWrapper';
-import { captureError } from '@/utils/sentryUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PropertyStatus } from '@/types/propertyTypes';
 
 interface PropertyDetailContentProps {
-  id: string;
-  user: any;
-  userRole: UserRole | null;
-  onStatusChange: (id: string, status: PropertyStatus) => Promise<void>;
+  property: {
+    id: string;
+    order_id: string;
+    client_name: string;
+    address: string;
+    branch_name?: string;
+    created_at: string;
+    updated_at: string;
+    notes?: string;
+    status: PropertyStatus;
+  };
+  userRole: UserRole;
+  isLoading: boolean;
+  error: Error | null;
+  onStatusChange: (status: PropertyStatus) => Promise<void>;
+  onMeasurementGuideOpen?: () => void;
 }
 
-export function PropertyDetailContent({
-  id,
-  user,
+interface PropertyFloorPlanTabProps {
+  canEdit?: boolean;
+  isApprovedUser?: boolean;
+  propertyStatus?: PropertyStatus;
+  onMeasurementGuideOpen?: () => void;
+}
+
+export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
+  property,
   userRole,
-  onStatusChange
-}: PropertyDetailContentProps) {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('details');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const {
-    data: property,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useProperty(id, {
-    enabled: !!id && !!user
-  });
-
-  const handleRetry = () => {
-    refetch();
-  };
-
-  const navigateToProperties = () => {
-    navigate('/properties');
-  };
-
-  const navigateToFloorplans = () => {
-    navigate('/floorplans');
-  };
-
-  const handleStatusChange = async (newStatus: PropertyStatus) => {
-    setIsSubmitting(true);
-    try {
-      await onStatusChange(id, newStatus);
-      refetch();
-    } catch (err) {
-      captureError(error, {
-        tags: { context: 'PropertyDetailContent' },
-        extra: { propertyId: id }
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const renderPropertyContent = () => {
-    if (!property || !user) {
-      return (
-        <div className="container mx-auto py-12 text-center">
-          <p>Property not found or you don't have access to view it</p>
-          <div className="flex justify-center gap-3 mt-4">
-            <Button onClick={navigateToProperties}>
-              <Home className="mr-2 h-4 w-4" />
-              Back to Properties
-            </Button>
-            <Button variant="outline" onClick={navigateToFloorplans}>
-              <Grid className="mr-2 h-4 w-4" />
-              Go to Floor Plan Editor
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    const canEdit = userRole ? canEditProperty(property, userRole, user.id) : false;
-    
-    // Property header expects these specific props
-    const headerProps = {
-      order_id: property.order_id,
-      status: property.status,
-      address: property.address
-    };
-    
-    // Property details tab expects these specific props
-    const detailsProps = {
-      order_id: property.order_id,
-      client_name: property.client_name,
-      address: property.address,
-      branch_name: property.branch_name,
-      created_at: property.createdAt,
-      updated_at: property.updatedAt,
-      notes: property.notes || '',
-      status: property.status
-    };
-    
-    return (
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" onClick={navigateToProperties}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Properties
-          </Button>
-          <Button variant="outline" size="sm" onClick={navigateToFloorplans}>
-            <Grid className="mr-2 h-4 w-4" />
-            Floor Plan Editor
-          </Button>
-          <PropertyHeader property={headerProps} />
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="floorplan">Floor Plan</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details" className="space-y-4">
-            <PropertyDetailsTab 
-              property={detailsProps}
-              userRole={userRole || UserRole.PHOTOGRAPHER}
-              propertyId={id}
-              onStatusChange={handleStatusChange}
-            />
-          </TabsContent>
-
-          <TabsContent value="floorplan" className="space-y-4">
-            <PropertyFloorPlanTab 
-              canEdit={canEdit}
-              userRole={userRole || UserRole.PHOTOGRAPHER}
-              property={property}
-              isSubmitting={isSubmitting}
-              onStatusChange={handleStatusChange}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-    );
-  };
+  isLoading,
+  error,
+  onStatusChange,
+  onMeasurementGuideOpen
+}) => {
+  const isApprovedUser = userRole === 'manager' || userRole === 'admin';
+  const canEdit = userRole === 'manager';
 
   return (
-    <LoadingErrorWrapper
-      isLoading={isLoading}
-      hasError={isError}
-      errorMessage={error?.message || 'Failed to load property'}
-      onRetry={handleRetry}
-    >
-      {renderPropertyContent()}
+    <LoadingErrorWrapper isLoading={isLoading} error={error}>
+      <Tabs defaultValue="details" className="w-full space-y-4">
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="floorplan">Floor Plan</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details">
+          <PropertyDetailsTab
+            property={property}
+            userRole={userRole}
+            propertyId={property.id}
+            onStatusChange={onStatusChange}
+          />
+        </TabsContent>
+        <TabsContent value="floorplan">
+          <PropertyFloorPlanTab
+            isApprovedUser={isApprovedUser}
+            propertyStatus={property.status}
+            onMeasurementGuideOpen={onMeasurementGuideOpen}
+          />
+        </TabsContent>
+      </Tabs>
     </LoadingErrorWrapper>
   );
-}
+};

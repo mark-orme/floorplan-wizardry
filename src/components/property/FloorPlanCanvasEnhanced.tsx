@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
@@ -52,7 +51,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         backgroundColor: "#ffffff",
         renderOnAddRemove: false,
         enableRetinaScaling: true
-      }) as ExtendedFabricCanvas;
+      }) as unknown as ExtendedFabricCanvas;
       
       if (canvas) {
         canvas.skipOffscreen = true;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
@@ -7,8 +6,7 @@ import {
   AiOutlineMinus, 
   AiOutlineHome, 
   AiOutlineDelete, 
-  AiOutlineHold, 
-  AiOutlineWarning 
+  AiOutlineHand 
 } from 'react-icons/ai';
 
 interface ToolIndicatorProps {
@@ -24,7 +22,6 @@ export const ToolIndicator: React.FC<ToolIndicatorProps> = ({
       case DrawingMode.DRAW: return 'Draw';
       case DrawingMode.STRAIGHT_LINE: return 'Line';
       case DrawingMode.WALL: return 'Wall';
-      case DrawingMode.ROOM: return 'Room';
       case DrawingMode.ERASER: return 'Eraser';
       case DrawingMode.HAND: return 'Pan';
       default: return 'Unknown';
@@ -38,8 +35,8 @@ export const ToolIndicator: React.FC<ToolIndicatorProps> = ({
       case DrawingMode.STRAIGHT_LINE: return <AiOutlineMinus className="h-4 w-4" />;
       case DrawingMode.WALL: return <AiOutlineHome className="h-4 w-4" />;
       case DrawingMode.ERASER: return <AiOutlineDelete className="h-4 w-4" />;
-      case DrawingMode.HAND: return <AiOutlineHold className="h-4 w-4" />;
-      default: return <AiOutlineWarning className="h-4 w-4" />;
+      case DrawingMode.HAND: return <AiOutlineHand className="h-4 w-4" />;
+      default: return null;
     }
   };
 

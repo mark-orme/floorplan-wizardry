@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
@@ -6,13 +5,13 @@ import { AccessibilityTester } from '../AccessibilityTester';
 
 describe('AccessibilityTester', () => {
   it('should render with children', () => {
-    render(
+    const { getByText } = render(
       <AccessibilityTester showResults={true}>
-        <div data-testid="test-child">Test Content</div>
+        <div>Test Content</div>
       </AccessibilityTester>
     );
     
-    expect(screen.getByTestId('test-child')).toBeInTheDocument();
+    expect(getByText('Test Content')).toBeInTheDocument();
   });
   
   it('should not show results when showResults is false', () => {

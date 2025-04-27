@@ -1,9 +1,8 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
-import { DrawingTools } from '../DrawingTools';
+import DrawingTools from '../DrawingTools';
 import { DrawingMode } from '@/constants/drawingModes';
 
 describe('DrawingTools', () => {
@@ -21,7 +20,7 @@ describe('DrawingTools', () => {
     expect(results).toHaveNoViolations();
   });
 
-  it('should have proper keyboard navigation', async () => {
+  it('should have proper keyboard navigation', () => {
     const handleToolChange = vi.fn();
     
     render(
@@ -31,11 +30,9 @@ describe('DrawingTools', () => {
       />
     );
     
-    // All buttons should be focusable
-    const buttons = screen.getAllByRole('button');
+    const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
     
-    // Each button should have an accessible name
     buttons.forEach(button => {
       expect(button).toHaveAccessibleName();
     });
@@ -52,7 +49,6 @@ describe('DrawingTools', () => {
       />
     );
     
-    // Find the active tool button
     const activeButton = screen.getAllByRole('button').find(button => {
       return button.getAttribute('data-tool') === ACTIVE_TOOL ||
              button.getAttribute('aria-pressed') === 'true' ||
@@ -61,7 +57,6 @@ describe('DrawingTools', () => {
     
     expect(activeButton).toBeDefined();
     
-    // Active button should have appropriate aria attributes
     expect(activeButton).toHaveAttribute('aria-pressed', 'true');
   });
 });

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PropertyListItem } from '@/types/propertyTypes';
 
@@ -50,7 +49,7 @@ export const PropertyList: React.FC<PropertyListProps> = ({ properties, onSelect
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {formatDate(property.updatedAt)}
+                {formatDate(property.updated_at)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
