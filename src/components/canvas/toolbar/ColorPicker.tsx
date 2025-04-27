@@ -1,15 +1,10 @@
-
-/**
- * Canvas color picker component
- * @module components/canvas/toolbar/ColorPicker
- */
 import React from 'react';
 import { 
   Popover,
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
-import { Palette } from 'lucide-react';
+import { MdPalette } from 'react-icons/md';
 import { ToolbarItem } from './ToolbarItem';
 
 export interface ColorPickerProps {
@@ -49,7 +44,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       <PopoverTrigger asChild>
         <div className="relative">
           <ToolbarItem
-            icon={<Palette size={16} />}
+            icon={<MdPalette size={16} />}
             label="Color"
           />
           <div

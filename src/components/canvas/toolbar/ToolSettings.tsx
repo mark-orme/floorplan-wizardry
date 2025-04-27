@@ -1,17 +1,12 @@
-
-/**
- * Canvas tool settings component
- * @module components/canvas/toolbar/ToolSettings
- */
 import React from 'react';
 import { 
-  Bold, 
-  Italic, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight,
-  Underline
-} from 'lucide-react';
+  AiOutlineBold, 
+  AiOutlineItalic,
+  AiOutlineAlignLeft,
+  AiOutlineAlignCenter,
+  AiOutlineAlignRight,
+  AiOutlineUnderline
+} from 'react-icons/ai';
 import { ToolbarGroup } from './ToolbarGroup';
 import { ToolbarItem } from './ToolbarItem';
 
@@ -44,11 +39,6 @@ export interface ToolSettingsProps {
   onUnderlineToggle?: () => void;
 }
 
-/**
- * Tool settings component for text formatting
- * @param props Component props
- * @returns Rendered component
- */
 export const ToolSettings: React.FC<ToolSettingsProps> = ({
   activeTool,
   fontFamily = 'Arial',
@@ -64,7 +54,6 @@ export const ToolSettings: React.FC<ToolSettingsProps> = ({
   onItalicToggle,
   onUnderlineToggle
 }) => {
-  // Only show text settings if text tool is active
   if (activeTool !== 'text') return null;
   
   return (
@@ -95,48 +84,46 @@ export const ToolSettings: React.FC<ToolSettingsProps> = ({
         ))}
       </select>
       
-      {/* Text style buttons */}
       <div className="flex">
         <ToolbarItem
-          icon={<Bold size={16} />}
+          icon={<AiOutlineBold size={16} />}
           label="Bold"
           active={isBold}
           onClick={onBoldToggle}
         />
         
         <ToolbarItem
-          icon={<Italic size={16} />}
+          icon={<AiOutlineItalic size={16} />}
           label="Italic"
           active={isItalic}
           onClick={onItalicToggle}
         />
         
         <ToolbarItem
-          icon={<Underline size={16} />}
+          icon={<AiOutlineUnderline size={16} />}
           label="Underline"
           active={isUnderlined}
           onClick={onUnderlineToggle}
         />
       </div>
       
-      {/* Text alignment buttons */}
       <div className="flex">
         <ToolbarItem
-          icon={<AlignLeft size={16} />}
+          icon={<AiOutlineAlignLeft size={16} />}
           label="Left"
           active={textAlign === 'left'}
           onClick={() => onTextAlignChange?.('left')}
         />
         
         <ToolbarItem
-          icon={<AlignCenter size={16} />}
+          icon={<AiOutlineAlignCenter size={16} />}
           label="Center"
           active={textAlign === 'center'}
           onClick={() => onTextAlignChange?.('center')}
         />
         
         <ToolbarItem
-          icon={<AlignRight size={16} />}
+          icon={<AiOutlineAlignRight size={16} />}
           label="Right"
           active={textAlign === 'right'}
           onClick={() => onTextAlignChange?.('right')}

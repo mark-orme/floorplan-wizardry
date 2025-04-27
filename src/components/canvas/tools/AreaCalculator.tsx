@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Calculator } from 'lucide-react';
+import { AiOutlineCalculator } from 'react-icons/ai';
 
 interface AreaCalculatorProps {
   activeTool: DrawingMode;
@@ -20,7 +19,7 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({ activeTool, onSelectToo
           onClick={() => onSelectTool(DrawingMode.ROOM)}
           className="flex items-center gap-2"
         >
-          <Calculator size={16} />
+          <AiOutlineCalculator size={16} />
           Calculate Area
         </Button>
       </div>
@@ -28,7 +27,6 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({ activeTool, onSelectToo
   );
 };
 
-// For plugin registration
 const plugin = {
   id: 'area-calculator',
   name: 'Area Calculator',

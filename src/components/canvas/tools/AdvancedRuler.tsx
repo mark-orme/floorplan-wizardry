@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { RulerSquare as Ruler } from 'lucide-react';
+import { AiOutlineCalculator } from 'react-icons/ai';
 
 interface AdvancedRulerProps {
   activeTool: DrawingMode;
@@ -19,7 +19,7 @@ const AdvancedRuler: React.FC<AdvancedRulerProps> = ({ activeTool, onSelectTool 
           onClick={() => onSelectTool(DrawingMode.MEASURE)}
           className="flex items-center gap-2"
         >
-          <Ruler size={16} />
+          <AiOutlineCalculator size={16} />
           Measure
         </Button>
       </div>

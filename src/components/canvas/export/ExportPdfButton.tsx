@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Button } from '@/components/ui/button';
-import { FileDown } from 'lucide-react';
+import { AiOutlineDownload } from 'react-icons/ai';
 import PdfExportSettings from './PdfExportSettings';
 
 interface ExportPdfButtonProps {
@@ -30,7 +30,7 @@ export const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({
         className={className}
         onClick={() => setShowSettings(true)}
       >
-        <FileDown className="w-4 h-4 mr-2" />
+        <AiOutlineDownload className="w-4 h-4 mr-2" />
         {label}
       </Button>
       
