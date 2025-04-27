@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2Icon } from "lucide-react";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 interface RestoreDrawingPromptProps {
   timeElapsed: string;
@@ -32,7 +31,7 @@ export const RestoreDrawingPrompt: React.FC<RestoreDrawingPromptProps> = ({
             <Button onClick={onRestore} disabled={isRestoring}>
               {isRestoring ? (
                 <>
-                  <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
+                  <AiOutlineLoading3Quarters className="h-4 w-4 mr-2 animate-spin" />
                   Restoring...
                 </>
               ) : (

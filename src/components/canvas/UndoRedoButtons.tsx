@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Undo2Icon, Redo2Icon } from 'lucide-react';
+import { AiOutlineUndo, AiOutlineRedo } from 'react-icons/ai';
 
 interface UndoRedoButtonsProps {
   /** Whether undo is available */
@@ -34,7 +33,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         title="Undo (Ctrl+Z)"
         aria-label="Undo"
       >
-        <Undo2Icon className="h-4 w-4" />
+        <AiOutlineUndo className="h-4 w-4" />
       </Button>
       
       <Button
@@ -45,7 +44,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         title="Redo (Ctrl+Shift+Z)"
         aria-label="Redo"
       >
-        <Redo2Icon className="h-4 w-4" />
+        <AiOutlineRedo className="h-4 w-4" />
       </Button>
     </div>
   );

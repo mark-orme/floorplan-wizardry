@@ -1,9 +1,12 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { LockIcon, UnlockIcon } from 'lucide-react';
-import { Trash2Icon } from 'lucide-react';
+import {
+  AiOutlineEye,
+  AiOutlineEyeInvisible,
+  AiOutlineLock,
+  AiOutlineUnlock,
+  AiOutlineDelete
+} from 'react-icons/ai';
 
 interface LayerItem {
   id: string;
@@ -51,9 +54,9 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
               title={layer.visible ? 'Hide Layer' : 'Show Layer'}
             >
               {layer.visible ? (
-                <EyeIcon className="h-4 w-4" />
+                <AiOutlineEye className="h-4 w-4" />
               ) : (
-                <EyeOffIcon className="h-4 w-4" />
+                <AiOutlineEyeInvisible className="h-4 w-4" />
               )}
             </Button>
             
@@ -67,9 +70,9 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
               title={layer.locked ? 'Unlock Layer' : 'Lock Layer'}
             >
               {layer.locked ? (
-                <LockIcon className="h-4 w-4" />
+                <AiOutlineLock className="h-4 w-4" />
               ) : (
-                <UnlockIcon className="h-4 w-4" />
+                <AiOutlineUnlock className="h-4 w-4" />
               )}
             </Button>
             
@@ -82,7 +85,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
               }}
               title="Delete Layer"
             >
-              <Trash2Icon className="h-4 w-4" />
+              <AiOutlineDelete className="h-4 w-4" />
             </Button>
           </div>
         </div>
