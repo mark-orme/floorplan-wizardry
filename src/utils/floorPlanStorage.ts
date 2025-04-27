@@ -30,7 +30,7 @@ export const loadFloorPlans = async (): Promise<FloorPlan[]> => {
         plan.metadata.paperSize = stringToPaperSize(paperSizeString);
       }
       
-      // Safely convert to FloorPlan type
+      // Convert to FloorPlan with type safety
       return plan as FloorPlan;
     });
   } catch (error) {
