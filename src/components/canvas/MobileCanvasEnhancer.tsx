@@ -6,10 +6,6 @@ interface MobileCanvasEnhancerProps {
   canvas: FabricCanvas;
 }
 
-/**
- * Component to enhance canvas for mobile devices
- * Adds mobile-specific optimizations and event handling
- */
 export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canvas }) => {
   useEffect(() => {
     if (!canvas || !canvas.wrapperEl) return;
@@ -49,8 +45,8 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
         canvas.freeDrawingBrush.width = originalWidth * 1.5; // Slightly thicker for touch
       }
       
-      // Add passive event listeners for better scroll performance
-      const addPassiveListener = (element: HTMLElement, event: string, handler: (e: any) => void) => {
+      // Update event listener types
+      const addPassiveListener = (element: HTMLElement, event: string, handler: (e: TouchEvent | MouseEvent) => void) => {
         element.addEventListener(event, handler, { passive: false });
         
         return () => {
@@ -87,5 +83,5 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
     }
   }, [canvas]);
   
-  return null; // Non-visual component
+  return null;
 };

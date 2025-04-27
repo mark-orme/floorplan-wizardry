@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
 
 interface GridRendererProps {
@@ -18,7 +17,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
   opacity = 0.5,
   visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<any[]>([]);
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
   
   // Create grid
   useEffect(() => {
@@ -29,7 +28,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       canvas.remove(obj);
     });
     
-    const newGridObjects: any[] = [];
+    const newGridObjects: FabricObject[] = [];
     const canvasWidth = canvas.getWidth();
     const canvasHeight = canvas.getHeight();
     

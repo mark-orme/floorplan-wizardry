@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import {
   Database,
   Grid,
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 interface GridDiagnosticToolsProps {
   canvas: FabricCanvas | null;
-  gridObjects: any[];
+  gridObjects: FabricObject[];
   onToggleGridVisibility: () => void;
   onRefreshGrid: () => void;
   onResetGrid: () => void;

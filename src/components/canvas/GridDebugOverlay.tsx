@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import * as gridConstants from '@/constants/gridConstants';
 
 interface GridDebugOverlayProps {
@@ -10,13 +9,20 @@ interface GridDebugOverlayProps {
   showPerformance?: boolean;
 }
 
+interface GridStats {
+  gridObjects: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  visibleGridLines: number;
+}
+
 export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
   canvas,
   position = 'bottom-right',
   showGridInfo = false,
   showPerformance = false
 }) => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<GridStats>({
     gridObjects: 0,
     canvasWidth: 0,
     canvasHeight: 0,
@@ -31,7 +37,7 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       const allObjects = canvas.getObjects();
       const gridObjects = allObjects.filter(obj => 
         obj.get('objectType') === 'grid' || 
-        (obj as any).gridObject === true
+        (obj as FabricObject & { gridObject?: boolean }).gridObject === true
       );
       
       const visibleGridLines = gridObjects.filter(obj => obj.visible).length;
