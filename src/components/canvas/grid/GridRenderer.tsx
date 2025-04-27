@@ -1,120 +1,100 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { captureMessage } from '@/utils/sentryUtils';
+import { Canvas as FabricCanvas } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
 import { 
-  SMALL_GRID_SIZE, 
-  LARGE_GRID_SIZE,
-  SMALL_GRID_COLOR, 
+  SMALL_GRID_SIZE,
+  LARGE_GRID_SIZE, 
+  SMALL_GRID_COLOR,
   LARGE_GRID_COLOR,
-  SMALL_GRID_WIDTH, 
-  LARGE_GRID_WIDTH
+  GRID_CONSTANTS
 } from '@/constants/gridConstants';
 
 interface GridRendererProps {
-  canvas: Canvas | null;
+  canvas: FabricCanvas;
   gridSize?: number;
-  color?: string;
-  opacity?: number;
   visible?: boolean;
 }
 
 const GridRenderer: React.FC<GridRendererProps> = ({
   canvas,
-  gridSize = 50,
-  color = '#e0e0e0',
-  opacity = 0.5,
+  gridSize = SMALL_GRID_SIZE,
   visible = true
 }) => {
   const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
-  
-  // Create grid
+
   useEffect(() => {
     if (!canvas) return;
-    
-    // Clear existing grid
-    gridObjects.forEach(obj => {
-      canvas.remove(obj);
-    });
-    
-    const newGridObjects: ExtendedFabricObject[] = [];
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
-    
-    try {
-      // Create vertical lines
-      for (let x = 0; x <= canvasWidth; x += gridSize) {
-        const isLargeLine = x % LARGE_GRID_SIZE === 0;
-        const line = createFabricLine([x, 0, x, canvasHeight], {
-          stroke: isLargeLine ? LARGE_GRID_COLOR : color,
-          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
-          opacity: opacity,
-          selectable: false,
-          evented: false,
-          visible
-        }) as ExtendedFabricObject;
-        canvas.add(line);
-        newGridObjects.push(line);
-      }
+
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    const objects: ExtendedFabricObject[] = [];
+
+    // Create vertical grid lines
+    for (let x = 0; x <= width; x += gridSize) {
+      const isLargeLine = x % LARGE_GRID_SIZE === 0;
+      const line = createFabricLine([x, 0, x, height], {
+        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        visible,
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      }) as ExtendedFabricObject;
       
-      // Create horizontal lines
-      for (let y = 0; y <= canvasHeight; y += gridSize) {
-        const isLargeLine = y % LARGE_GRID_SIZE === 0;
-        const line = createFabricLine([0, y, canvasWidth, y], {
-          stroke: isLargeLine ? LARGE_GRID_COLOR : color,
-          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
-          opacity: opacity,
-          selectable: false,
-          evented: false,
-          visible
-        }) as ExtendedFabricObject;
-        canvas.add(line);
-        newGridObjects.push(line);
-      }
+      canvas.add(line);
+      objects.push(line);
+    }
+
+    // Create horizontal grid lines
+    for (let y = 0; y <= height; y += gridSize) {
+      const isLargeLine = y % LARGE_GRID_SIZE === 0;
+      const line = createFabricLine([0, y, width, y], {
+        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        visible,
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      }) as ExtendedFabricObject;
       
-      // Log success
-      captureMessage("Grid rendered successfully", {
-        level: 'info',
-        tags: { component: 'GridRenderer' },
-        extra: { 
-          gridSize,
-          lineCount: newGridObjects.length
-        }
-      });
-      
-      setGridObjects(newGridObjects);
-      canvas.renderAll();
-    } catch (error) {
-      captureMessage("Failed to render grid", {
-        level: 'error',
-        tags: { component: 'GridRenderer' },
-        extra: { error: String(error) }
-      });
+      canvas.add(line);
+      objects.push(line);
     }
     
+    // Send grid to back
+    objects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
+
+    setGridObjects(objects);
+    canvas.requestRenderAll();
+
+    // Clean up on unmount
     return () => {
-      if (canvas) {
-        newGridObjects.forEach(obj => {
-          canvas.remove(obj);
-        });
-        canvas.renderAll();
-      }
+      objects.forEach(obj => {
+        canvas.remove(obj);
+      });
+      canvas.requestRenderAll();
     };
-  }, [canvas, gridSize, color, opacity]);
-  
-  // Update visibility
+  }, [canvas, gridSize, visible]);
+
+  // Update visibility when it changes
   useEffect(() => {
-    if (!canvas) return;
-    
+    if (!canvas || gridObjects.length === 0) return;
+
     gridObjects.forEach(obj => {
-      obj.set({ visible });
+      if (obj && typeof obj.set === 'function') {
+        obj.set('visible', visible);
+      }
     });
     
-    canvas.renderAll();
-  }, [canvas, visible, gridObjects]);
-  
+    canvas.requestRenderAll();
+  }, [canvas, gridObjects, visible]);
+
   return null;
 };
 

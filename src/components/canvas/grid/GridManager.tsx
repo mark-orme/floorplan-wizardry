@@ -1,11 +1,11 @@
 
 import { useEffect, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
 
 interface GridManagerProps {
-  canvas: Canvas | null;
+  canvas: FabricCanvas | null;
   spacing?: number;
   visible?: boolean;
   onChange?: (grid: FabricObject[]) => void;
@@ -73,7 +73,9 @@ const GridManager = ({
     if (!canvas) return;
     
     gridObjects.forEach(obj => {
-      obj.set({ visible });
+      if (obj && typeof obj.set === 'function') {
+        obj.set({ visible });
+      }
     });
     
     canvas.requestRenderAll();

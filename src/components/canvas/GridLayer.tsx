@@ -1,13 +1,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas } from "fabric";
+import { Canvas as FabricCanvas } from "fabric";
 import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 import { ExtendedFabricObject } from "@/types/fabric-extended";
 
 interface GridLayerProps {
-  fabricCanvas: Canvas;
+  fabricCanvas: FabricCanvas;
   dimensions: { width: number; height: number };
   showDebug?: boolean;
 }

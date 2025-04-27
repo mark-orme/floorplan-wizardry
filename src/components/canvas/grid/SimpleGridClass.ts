@@ -1,11 +1,24 @@
 
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
-import { GRID_CONSTANTS, SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
+
+// Define grid constants
+export const GRID_CONSTANTS = {
+  SMALL: {
+    WIDTH: 0.5
+  },
+  LARGE: {
+    WIDTH: 1
+  }
+};
+
+export const SMALL_GRID_SIZE = 20;
+export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
+export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
 
 export class SimpleGrid {
-  canvas: Canvas;
+  canvas: FabricCanvas;
   gridObjects: ExtendedFabricObject[] = [];
   spacing: number;
   smallColor: string;
@@ -15,7 +28,7 @@ export class SimpleGrid {
   largeSpacingMultiplier: number;
   
   constructor(
-    canvas: Canvas,
+    canvas: FabricCanvas,
     options: {
       spacing?: number;
       smallColor?: string;

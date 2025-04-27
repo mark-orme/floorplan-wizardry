@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
 
 interface SimpleGridLayerProps {
-  canvas: Canvas;
+  canvas: FabricCanvas;
   gridSize?: number;
   visible?: boolean;
 }

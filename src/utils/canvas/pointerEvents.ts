@@ -1,68 +1,59 @@
 
-// Utility functions to detect input capabilities
+/**
+ * Utilities for handling pointer events in canvas
+ */
 
 /**
- * Check if pressure sensitivity is supported
- * @returns True if pressure is supported
+ * Checks if pressure sensitivity is supported
+ * @returns boolean indicating if pressure sensitivity is supported
  */
-export const isPressureSupported = (): boolean => {
+export function isPressureSupported(): boolean {
+  // PointerEvent exists in window and has pressure property
   return (
-    typeof window !== 'undefined' && 
-    'PointerEvent' in window && 
+    typeof window !== 'undefined' &&
+    'PointerEvent' in window &&
     'pressure' in PointerEvent.prototype
   );
-};
+}
 
 /**
- * Check if tilt input is supported
- * @returns True if tilt is supported
+ * Checks if tilt sensitivity is supported
+ * @returns boolean indicating if tilt sensitivity is supported
  */
-export const isTiltSupported = (): boolean => {
+export function isTiltSupported(): boolean {
+  // PointerEvent exists in window and has tiltX/tiltY properties
   return (
-    typeof window !== 'undefined' && 
-    'PointerEvent' in window && 
-    'tiltX' in PointerEvent.prototype && 
+    typeof window !== 'undefined' &&
+    'PointerEvent' in window &&
+    'tiltX' in PointerEvent.prototype &&
     'tiltY' in PointerEvent.prototype
   );
-};
+}
 
 /**
- * Check if the current device supports touch input
- * @returns True if touch is supported
+ * Checks if a pointer event has pressure data
+ * @param event The pointer event to check
+ * @returns boolean indicating if event has pressure data
  */
-export const isTouchSupported = (): boolean => {
+export function hasPressureData(event: PointerEvent): boolean {
   return (
-    typeof window !== 'undefined' && 
-    ('ontouchstart' in window || 
-    (window.navigator.maxTouchPoints > 0))
+    typeof event.pressure === 'number' &&
+    event.pressure > 0 &&
+    event.pressure <= 1
   );
-};
+}
 
 /**
- * Check if the current pointer event is from a pen/stylus
- * @param event PointerEvent to check
- * @returns True if the event is from a pen
+ * Gets normalized pressure from pointer event
+ * @param event The pointer event
+ * @returns normalized pressure (0.5 if not available)
  */
-export const isPenPointer = (event: PointerEvent): boolean => {
-  return event.pointerType === 'pen';
-};
-
-/**
- * Get normalized pressure value from pointer event
- * @param event PointerEvent with pressure
- * @returns Normalized pressure between 0 and 1
- */
-export const getNormalizedPressure = (event: PointerEvent): number => {
-  // Default pressure is 0.5 if not supported
-  if (!isPressureSupported() || typeof event.pressure !== 'number') {
-    return 0.5;
+export function getNormalizedPressure(event: PointerEvent): number {
+  if (hasPressureData(event)) {
+    // Normalize to range between 0.1 and 1
+    return Math.max(0.1, event.pressure);
   }
   
-  // Most systems report pressure between 0 and 1
-  // Some report 0 when hovering and 0.5 when touching
-  if (event.pressure === 0 && event.buttons > 0) {
-    return 0.5;
-  }
-  
-  return Math.min(Math.max(event.pressure, 0), 1);
-};
+  // Default pressure if not available
+  return 0.5;
+}

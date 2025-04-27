@@ -1,103 +1,103 @@
 
-import { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
-
-export interface PerformanceMetrics {
-  fps: number;
-  objectCount: number;
-  visibleObjectCount: number;
-  renderTime: number;
-  lastUpdateTime: number;
-}
+import { useCallback, useState, useRef, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
 interface UseVirtualizedCanvasOptions {
   enabled?: boolean;
-  autoToggle?: boolean;
-  visibilityThreshold?: number;
-  refreshInterval?: number;
+  objectThreshold?: number;
 }
 
-export const useVirtualizedCanvas = (
-  canvasRef: React.MutableRefObject<fabric.Canvas | null>,
+interface PerformanceMetrics {
+  fps: number;
+  renderTime: number;
+  objectCount: number;
+}
+
+/**
+ * Hook for managing virtualized canvas rendering
+ * Improves performance for canvases with many objects
+ */
+export function useVirtualizedCanvas(
+  canvasRef: React.MutableRefObject<FabricCanvas | null>,
   options: UseVirtualizedCanvasOptions = {}
-) => {
-  const {
-    enabled = true,
-    autoToggle = true,
-    visibilityThreshold = 100,
-    refreshInterval = 1000
-  } = options;
-  
-  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+) {
+  const [virtualizationEnabled, setVirtualizationEnabled] = useState(options.enabled ?? false);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     fps: 0,
-    objectCount: 0,
-    visibleObjectCount: 0,
     renderTime: 0,
-    lastUpdateTime: Date.now()
+    objectCount: 0
   });
-  
-  useEffect(() => {
-    if (!canvasRef.current || !enabled) return;
+  const lastRenderTimeRef = useRef(0);
+  const frameCountRef = useRef(0);
+  const lastFpsUpdateRef = useRef(0);
+
+  // Toggle virtualization on/off
+  const toggleVirtualization = useCallback(() => {
+    setVirtualizationEnabled(prev => !prev);
+  }, []);
+
+  // Force refresh virtualization with current settings
+  const refreshVirtualization = useCallback(() => {
+    if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;
-    let frameCount = 0;
-    let lastTime = performance.now();
+    const objectCount = canvas.getObjects().length;
     
-    const updateMetrics = () => {
+    // Track metrics
+    setPerformanceMetrics(prev => ({
+      ...prev,
+      objectCount
+    }));
+    
+    // Trigger a render
+    canvas.requestRenderAll();
+  }, [canvasRef]);
+
+  // Monitor canvas performance
+  useEffect(() => {
+    if (!virtualizationEnabled || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    let animFrameId: number;
+
+    const measurePerformance = () => {
       const now = performance.now();
-      const elapsed = now - lastTime;
       
-      if (elapsed >= refreshInterval) {
-        const objects = canvas.getObjects();
-        const objectCount = objects.length;
-        const visibleObjectCount = objects.filter(obj => (obj as any).visible !== false).length;
-        const fps = Math.round((frameCount * 1000) / elapsed);
-        
-        setPerformanceMetrics({
-          fps,
-          objectCount,
-          visibleObjectCount,
-          renderTime: elapsed / frameCount,
-          lastUpdateTime: Date.now()
-        });
-        
-        // Auto toggle virtualization based on object count
-        if (autoToggle) {
-          setVirtualizationEnabled(objectCount > visibilityThreshold);
-        }
-        
-        // Reset counters
-        frameCount = 0;
-        lastTime = now;
+      // Calculate FPS
+      frameCountRef.current++;
+      if (now - lastFpsUpdateRef.current > 1000) {
+        setPerformanceMetrics(prev => ({
+          ...prev,
+          fps: frameCountRef.current
+        }));
+        frameCountRef.current = 0;
+        lastFpsUpdateRef.current = now;
       }
+      
+      // Track render time
+      if (lastRenderTimeRef.current > 0) {
+        const renderTime = now - lastRenderTimeRef.current;
+        setPerformanceMetrics(prev => ({
+          ...prev,
+          renderTime
+        }));
+      }
+      
+      lastRenderTimeRef.current = now;
+      animFrameId = requestAnimationFrame(measurePerformance);
     };
     
-    const handleRender = () => {
-      frameCount++;
-      updateMetrics();
-    };
-    
-    canvas.on('after:render', handleRender);
+    animFrameId = requestAnimationFrame(measurePerformance);
     
     return () => {
-      canvas.off('after:render', handleRender);
+      cancelAnimationFrame(animFrameId);
     };
-  }, [canvasRef, enabled, autoToggle, visibilityThreshold, refreshInterval]);
-  
-  const toggleVirtualization = () => {
-    setVirtualizationEnabled(prev => !prev);
-  };
-  
-  const refreshVirtualization = () => {
-    if (!canvasRef.current) return;
-    canvasRef.current.requestRenderAll();
-  };
-  
+  }, [virtualizationEnabled, canvasRef]);
+
   return {
-    performanceMetrics,
     virtualizationEnabled,
     toggleVirtualization,
-    refreshVirtualization
+    refreshVirtualization,
+    performanceMetrics
   };
-};
+}

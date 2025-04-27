@@ -1,11 +1,18 @@
 
 import React from 'react';
-import { DebugInfoState } from '@/types/core/DebugInfo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface DebugPanelProps {
-  debugInfo: DebugInfoState;
+interface DebugInfoState {
+  canvasInitialized: boolean;
+  dimensionsSet?: boolean;
+  gridCreated?: boolean;
+  eventHandlersSet?: boolean;
+  canvasDimensions?: { width: number; height: number };
+  gridObjectCount?: number;
+  hasError: boolean;
+  errorMessage?: string;
+  lastInitTime?: number;
 }
 
 /**
@@ -13,9 +20,9 @@ interface DebugPanelProps {
  * @param {DebugPanelProps} props - Component props
  * @returns {JSX.Element} Rendered component
  */
-export const DebugPanel: React.FC<DebugPanelProps> = ({
+export const DebugPanel: React.FC<{ debugInfo: DebugInfoState }> = ({
   debugInfo
-}: DebugPanelProps): JSX.Element => {
+}: { debugInfo: DebugInfoState }): JSX.Element => {
   return (
     <div className="absolute bottom-4 right-4 w-80 z-50">
       <Card className="bg-gray-900 text-white border-gray-700">

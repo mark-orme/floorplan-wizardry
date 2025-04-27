@@ -1,12 +1,26 @@
 
 import React, { useEffect, useRef, useState, memo } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
-import { GRID_CONSTANTS, SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
+
+// Define grid constants
+const SMALL_GRID_SIZE = 20;
+const LARGE_GRID_SIZE = 100;
+const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
+const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
+
+const GRID_CONSTANTS = {
+  SMALL: {
+    WIDTH: 0.5
+  },
+  LARGE: {
+    WIDTH: 1
+  }
+};
 
 interface MemoizedGridProps {
-  canvas: Canvas | null;
+  canvas: FabricCanvas | null;
   gridSize?: number;
   visible?: boolean;
   onCreated?: (gridObjects: ExtendedFabricObject[]) => void;

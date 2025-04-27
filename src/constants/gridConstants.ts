@@ -1,24 +1,25 @@
 
+// Grid size constants
 export const SMALL_GRID_SIZE = 20;
 export const LARGE_GRID_SIZE = 100;
-export const SMALL_GRID_COLOR = '#e0e0e0';
-export const LARGE_GRID_COLOR = '#c0c0c0';
-export const SMALL_GRID_WIDTH = 0.5;
-export const LARGE_GRID_WIDTH = 1;
-export const SMALL_GRID_OPACITY = 0.5;
-export const LARGE_GRID_OPACITY = 0.7;
+export const GRID_SNAP_THRESHOLD = 10;
 
+// Grid appearance constants
+export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
+export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
+
+// Grid stroke width constants
 export const GRID_CONSTANTS = {
   SMALL: {
-    SIZE: SMALL_GRID_SIZE,
-    COLOR: SMALL_GRID_COLOR,
-    WIDTH: SMALL_GRID_WIDTH,
-    OPACITY: SMALL_GRID_OPACITY
+    WIDTH: 0.5,
+    OPACITY: 0.4
   },
   LARGE: {
-    SIZE: LARGE_GRID_SIZE,
-    COLOR: LARGE_GRID_COLOR,
-    WIDTH: LARGE_GRID_WIDTH,
-    OPACITY: LARGE_GRID_OPACITY
+    WIDTH: 1,
+    OPACITY: 0.6
   }
 };
+
+// Grid creation constants
+export const GRID_CREATION_DEBOUNCE = 200;
+export const GRID_MAX_LINES = 2000;
