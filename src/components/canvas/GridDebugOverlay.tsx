@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import * as gridConstants from '@/constants/gridConstants';
-
-interface GridDebugOverlayProps {
-  canvas: FabricCanvas | null;
-  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  showGridInfo?: boolean;
-  showPerformance?: boolean;
-}
 
 interface GridStats {
   gridObjects: number;
   canvasWidth: number;
   canvasHeight: number;
   visibleGridLines: number;
+}
+
+interface GridDebugOverlayProps {
+  canvas: ExtendedCanvas | null;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  showGridInfo?: boolean;
+  showPerformance?: boolean;
 }
 
 export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
@@ -29,14 +30,13 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
     visibleGridLines: 0
   });
 
-  // Update statistics
   useEffect(() => {
     if (!canvas) return;
     
     const updateStats = () => {
       const allObjects = canvas.getObjects();
       const gridObjects = allObjects.filter(obj => 
-        obj.get('objectType') === 'grid' || 
+        obj.objectType === 'grid' || 
         (obj as FabricObject & { gridObject?: boolean }).gridObject === true
       );
       
@@ -60,31 +60,27 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       clearInterval(interval);
     };
   }, [canvas]);
-  
-  // Position classes
+
   const positionClasses = {
     'top-left': 'top-4 left-4',
     'top-right': 'top-4 right-4',
     'bottom-left': 'bottom-4 left-4',
     'bottom-right': 'bottom-4 right-4'
   };
-  
-  // If canvas is null or debugging is not enabled
+
   if (!canvas || (!showGridInfo && !showPerformance)) {
     return null;
   }
-  
-  // Auto-fix grid if configured
+
   const handleFixGrid = () => {
     if (!canvas) return;
     
     const gridAutoFix = gridConstants.GRID_AUTO_FIX;
     if (!gridAutoFix) return;
     
-    // Logic for fixing grid would go here
     console.log('Auto-fixing grid');
   };
-  
+
   return (
     <div 
       className={`fixed z-50 p-2 bg-black/70 text-white text-xs rounded-md ${positionClasses[position]}`}

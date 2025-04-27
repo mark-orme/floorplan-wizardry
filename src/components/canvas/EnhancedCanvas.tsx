@@ -1,6 +1,6 @@
-
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, IEvent, Object as FabricObject } from 'fabric';
+import { ExtendedCanvas, FabricEventHandler, FabricObjectEvent } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasProps {
@@ -9,10 +9,10 @@ interface EnhancedCanvasProps {
   drawingMode?: boolean;
   brushColor?: string;
   brushWidth?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
-  onObjectAdded?: (e: { target: FabricObject }) => void;
-  onObjectModified?: (e: { target: FabricObject }) => void;
-  onObjectRemoved?: (e: { target: FabricObject }) => void;
+  onCanvasReady?: (canvas: ExtendedCanvas) => void;
+  onObjectAdded?: FabricEventHandler<FabricObjectEvent>;
+  onObjectModified?: FabricEventHandler<FabricObjectEvent>;
+  onObjectRemoved?: FabricEventHandler<FabricObjectEvent>;
 }
 
 export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
@@ -27,34 +27,32 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   onObjectRemoved
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasInstanceRef = useRef<FabricCanvas | null>(null);
+  const canvasInstanceRef = useRef<ExtendedCanvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
 
     try {
-      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff'
-      });
+      }) as ExtendedCanvas;
 
       canvasInstanceRef.current = fabricCanvas;
       setIsLoading(false);
 
-      // Set up event handlers
       if (onObjectAdded) {
-        fabricCanvas.on('object:added', onObjectAdded);
+        fabricCanvas.on('object:added', onObjectAdded as FabricEventHandler);
       }
 
       if (onObjectModified) {
-        fabricCanvas.on('object:modified', onObjectModified);
+        fabricCanvas.on('object:modified', onObjectModified as FabricEventHandler);
       }
 
       if (onObjectRemoved) {
-        fabricCanvas.on('object:removed', onObjectRemoved);
+        fabricCanvas.on('object:removed', onObjectRemoved as FabricEventHandler);
       }
 
       if (onCanvasReady) {
@@ -62,17 +60,16 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       }
 
       return () => {
-        // Remove event handlers
         if (onObjectAdded) {
-          fabricCanvas.off('object:added', onObjectAdded);
+          fabricCanvas.off('object:added', onObjectAdded as FabricEventHandler);
         }
 
         if (onObjectModified) {
-          fabricCanvas.off('object:modified', onObjectModified);
+          fabricCanvas.off('object:modified', onObjectModified as FabricEventHandler);
         }
 
         if (onObjectRemoved) {
-          fabricCanvas.off('object:removed', onObjectRemoved);
+          fabricCanvas.off('object:removed', onObjectRemoved as FabricEventHandler);
         }
 
         fabricCanvas.dispose();
@@ -84,22 +81,18 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     }
   }, [width, height, onCanvasReady, onObjectAdded, onObjectModified, onObjectRemoved]);
 
-  // Update drawing mode and brush settings
   useEffect(() => {
     const canvas = canvasInstanceRef.current;
     if (!canvas) return;
 
-    // Update drawing mode
     canvas.isDrawingMode = drawingMode;
     canvas.selection = !drawingMode;
 
     if (drawingMode) {
-      // Drawing mode - setup brush
       canvas.selection = false;
       canvas.defaultCursor = 'crosshair';
       canvas.hoverCursor = 'crosshair';
     } else {
-      // Selection mode
       canvas.isDrawingMode = false;
       canvas.freeDrawingBrush.color = brushColor;
       canvas.freeDrawingBrush.width = brushWidth;
@@ -107,7 +100,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     }
   }, [drawingMode, brushColor, brushWidth]);
 
-  // Update canvas dimensions
   useEffect(() => {
     const canvas = canvasInstanceRef.current;
     if (!canvas) return;

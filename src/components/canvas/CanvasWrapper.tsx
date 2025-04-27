@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvas } from '@/components/Canvas';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
 /**
@@ -17,16 +17,12 @@ export const CanvasWrapper: React.FC = () => {
     if (!canvasRef.current) return;
 
     try {
-      console.log('Initializing canvas...');
-      
-      // Create a new Fabric.js canvas
-      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new FabricCanvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',
-      });
+      }) as ExtendedCanvas;
       
-      // Set the canvas in the context
       setCanvas(fabricCanvas);
       setIsLoading(false);
       
@@ -34,7 +30,6 @@ export const CanvasWrapper: React.FC = () => {
       toast.success('Canvas ready');
       
       return () => {
-        // Clean up on unmount
         fabricCanvas.dispose();
         setCanvas(null);
       };
