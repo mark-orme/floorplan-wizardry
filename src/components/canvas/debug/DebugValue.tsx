@@ -1,56 +1,38 @@
 
-/**
- * Debug value component
- * @module components/canvas/debug/DebugValue
- */
 import React from 'react';
 
-export interface DebugValueProps {
-  /** Value label */
+interface DebugValueProps {
   label: string;
-  /** Value to display */
-  value: string | number | boolean | null | undefined;
-  /** Whether the value is important */
+  value: any;
   important?: boolean;
 }
 
-/**
- * Debug value component
- * @param props Component props
- * @returns Rendered component
- */
 export const DebugValue: React.FC<DebugValueProps> = ({
   label,
   value,
   important = false
 }) => {
-  // Format value for display
-  let displayValue: string;
-  let valueClass = '';
-  
-  if (value === undefined) {
-    displayValue = 'undefined';
-    valueClass = 'text-gray-400';
-  } else if (value === null) {
-    displayValue = 'null';
-    valueClass = 'text-gray-400';
-  } else if (typeof value === 'boolean') {
-    displayValue = value ? 'true' : 'false';
-    valueClass = value ? 'text-green-600' : 'text-red-600';
-  } else if (typeof value === 'number') {
-    displayValue = value.toString();
-    valueClass = 'text-blue-600';
-  } else {
-    displayValue = value.toString();
-  }
-  
+  const getDisplayValue = () => {
+    if (value === undefined) return 'undefined';
+    if (value === null) return 'null';
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value).substring(0, 30);
+      } catch (e) {
+        return '[Object]';
+      }
+    }
+    return String(value);
+  };
+
   return (
-    <div className="flex justify-between py-1">
-      <span className={`text-gray-600 ${important ? 'font-medium' : ''}`}>
+    <div className="flex justify-between text-xs">
+      <span className={`font-medium ${important ? 'text-blue-600' : 'text-gray-700'}`}>
         {label}:
       </span>
-      <span className={valueClass}>
-        {displayValue}
+      <span className={important ? 'font-semibold text-blue-700' : 'text-gray-600'}>
+        {getDisplayValue()}
       </span>
     </div>
   );

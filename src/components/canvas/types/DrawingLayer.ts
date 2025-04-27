@@ -6,7 +6,5 @@ export interface DrawingLayer {
   name: string;
   visible: boolean;
   locked: boolean;
-  color?: string;
-  type?: 'internal' | 'external' | 'extension' | 'note' | 'measurement';
   objects: FabricObject[];
 }

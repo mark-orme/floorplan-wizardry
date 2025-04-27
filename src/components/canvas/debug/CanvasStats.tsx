@@ -1,8 +1,4 @@
 
-/**
- * Canvas stats component
- * @module components/canvas/debug/CanvasStats
- */
 import React from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DebugValue } from './DebugValue';
@@ -32,8 +28,9 @@ export const CanvasStats: React.FC<CanvasStatsProps> = ({
   }
   
   const objectCount = canvas.getObjects().length;
-  const activeObject = canvas.getActiveObject();
-  const selectionExists = !!activeObject;
+  const activeObjects = canvas.getActiveObjects();
+  const selectionExists = activeObjects.length > 0;
+  const activeObject = selectionExists ? activeObjects[0] : null;
   const isDrawingMode = canvas.isDrawingMode;
   
   return (
@@ -62,11 +59,11 @@ export const CanvasStats: React.FC<CanvasStatsProps> = ({
         label="Drawing Mode"
         value={isDrawingMode}
       />
-      {selectionExists && (
+      {selectionExists && activeObject && (
         <>
           <DebugValue
             label="Selected Type"
-            value={activeObject.type}
+            value={(activeObject as any).type}
           />
           <DebugValue
             label="Selected Left"

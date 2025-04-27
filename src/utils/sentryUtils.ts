@@ -1,38 +1,15 @@
 
-/**
- * Sentry utils for error handling
- * @module utils/sentryUtils
- */
+export interface CaptureMessageOptions {
+  level: 'info' | 'warning' | 'error';
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+}
 
-/**
- * Capture error and send to monitoring service
- * 
- * @param {Error} error - Error to capture
- * @param {Record<string, any>} [context] - Additional context data
- */
-export const captureError = (error: Error, context?: Record<string, any>) => {
-  // This is a stub for now - in a real app, would connect to Sentry
-  console.error('Error captured:', error.message, context);
+export const captureMessage = (message: string, options?: CaptureMessageOptions): void => {
+  // Stub implementation since Sentry may not be available
+  console.log(`[${options?.level || 'info'}] ${message}`, options?.extra || {});
 };
 
-/**
- * Log warning to monitoring service
- * 
- * @param {string} message - Warning message
- * @param {Record<string, any>} [context] - Additional context data
- */
-export const logWarning = (message: string, context?: Record<string, any>) => {
-  // This is a stub for now - in a real app, would connect to Sentry
-  console.warn('Warning:', message, context);
-};
-
-/**
- * Capture message and send to monitoring service
- * 
- * @param {string} message - Message to capture
- * @param {Record<string, any>} [context] - Additional context data
- */
-export const captureMessage = (message: string, context?: Record<string, any>) => {
-  // This is a stub for now - in a real app, would connect to Sentry
-  console.log('Message captured:', message, context);
+export const captureError = (error: Error, options?: CaptureMessageOptions): void => {
+  console.error(`[${options?.level || 'error'}] Error:`, error, options?.extra || {});
 };

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Canvas } from 'fabric/fabric-impl';
+import { fabric } from "fabric";
 import { toast } from 'sonner';
 import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
@@ -9,7 +9,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/FloorPlan';
 
 interface CanvasControllerEnhancedProps {
-  onCanvasReady?: (canvas: Canvas) => void;
+  onCanvasReady?: (canvas: fabric.Canvas) => void;
   onError?: (error: Error) => void;
   initialTool?: DrawingMode;
   width?: number;
@@ -27,7 +27,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
 }) => {
   // Canvas refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<Canvas | null>(null);
+  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);
@@ -44,14 +44,15 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   
   // Initialize controller dependencies
   const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
-    fabricCanvasRef,
-    canvasRef
+    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<fabric.Canvas>,
+    canvasRef,
+    canvasDimensions: { width, height },
+    debugInfo: { fpsCounter: false, gridHelper: false, objectCounter: false, renderingStats: false, canvasEvents: false, memoryUsage: false, errorReporting: true, canvasDimensions: { width, height } },
+    setDebugInfo: () => {},
+    setHasError: () => {},
+    setErrorMessage: () => {},
+    zoomLevel: 1
   });
-  
-  // Stub for drawing state since we don't have the proper type yet
-  const drawingStateStub = {
-    setDrawingState
-  };
   
   // Initialize canvas
   useEffect(() => {
@@ -59,7 +60,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
     
     try {
       // Use the window.fabric to access the fabric library properly
-      const canvas = new window.fabric.Canvas(canvasRef.current, {
+      const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
@@ -92,49 +93,6 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       }
     }
   }, [width, height, onCanvasReady, onError, createGrid]);
-  
-  // Let's comment out the problematic floor plans sections for now to get the build working
-  /*
-  // Drawing state handling
-  useCanvasControllerDrawingState({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    lineThickness,
-    lineColor,
-    deleteSelectedObjects: () => {},
-    setDrawingState
-  });
-  
-  // Floor plans handling
-  const { 
-    drawFloorPlan,
-    handleFloorSelect,
-    handleAddFloor,
-    loadData
-  } = useCanvasControllerFloorPlans({
-    fabricCanvasRef,
-    gridLayerRef,
-    floorPlans,
-    currentFloor,
-    isLoading,
-    setGia,
-    setFloorPlans,
-    setCurrentFloor,
-    clearDrawings: () => {},
-    createGrid,
-    recalculateGIA: () => {}
-  });
-  
-  // Load floor plans
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-  */
   
   return (
     <div className="canvas-controller-enhanced">

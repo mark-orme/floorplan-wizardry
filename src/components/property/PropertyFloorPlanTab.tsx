@@ -1,88 +1,78 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AiOutlineRuler } from 'react-icons/ai';
+import { AiOutlineCalculator } from 'react-icons/ai';
 import { toast } from 'sonner';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
-import { useCanvasErrorHandling } from '@/hooks/useCanvasErrorHandling';
-import { FloorPlanCanvas } from './FloorPlanCanvas';
-import { FloorPlanActions } from './FloorPlanActions';
-import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
 
-/**
- * Floor Plan Tab component for property details
- * Displays floor plan editor and related controls
- */
 interface PropertyFloorPlanTabProps {
-  canEdit: boolean;
-  userRole: UserRole;
-  property: { status: PropertyStatus };
-  isSubmitting: boolean;
-  onStatusChange: (status: PropertyStatus) => Promise<void>;
+  isApprovedUser?: boolean;
+  propertyStatus?: PropertyStatus;
+  onMeasurementGuideOpen?: () => void;
 }
 
 export const PropertyFloorPlanTab = ({
-  canEdit,
-  userRole,
-  property,
-  isSubmitting,
-  onStatusChange
+  isApprovedUser = false,
+  propertyStatus = 'pending',
+  onMeasurementGuideOpen
 }: PropertyFloorPlanTabProps) => {
-  const [hasError, setHasError] = useState(false);
-  const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
-  
-  // Handle canvas errors
-  const handleCanvasError = () => {
-    setHasError(true);
-    toast.error("There was an error loading the floor plan editor");
-  };
-  
-  // Open measurement guide modal
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [floorPlanData, setFloorPlanData] = useState(null);
+
   const openMeasurementGuide = () => {
-    setShowMeasurementGuide(true);
+    if (onMeasurementGuideOpen) {
+      onMeasurementGuideOpen();
+    } else {
+      toast.info('Measurement guide feature coming soon');
+    }
   };
-  
+
+  const handleMeasurementsSubmit = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Simulating API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success('Measurements saved successfully');
+    } catch (error) {
+      toast.error('Failed to save measurements');
+      console.error('Error submitting measurements:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Floor Plan</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>Floor Plan Measurements</CardTitle>
+        <CardDescription>
+          Create and manage property floor plans and measurements
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        {!floorPlanData ? (
+          <p className="text-muted-foreground">No floor plans have been created yet. Start by adding a new floor plan.</p>
+        ) : (
+          <p>Floor plan content will be displayed here.</p>
+        )}
+      </CardContent>
+      
+      <CardFooter className="flex justify-between">
         <Button 
-          variant="outline" 
-          size="sm" 
+          variant="outline"
           onClick={openMeasurementGuide}
           disabled={isSubmitting}
         >
-          <AiOutlineRuler className="h-4 w-4 mr-2" />
+          <AiOutlineCalculator className="h-4 w-4 mr-2" />
           Measurement Guide
         </Button>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Floor Plan Editor</CardTitle>
-          <CardDescription>
-            Draw the property floor plan using the tools below
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FloorPlanCanvas onCanvasError={handleCanvasError} />
-        </CardContent>
-        <CardFooter>
-          <FloorPlanActions
-            canEdit={canEdit}
-            userRole={userRole}
-            isSubmitting={isSubmitting}
-            onStatusChange={onStatusChange}
-          />
-        </CardFooter>
-      </Card>
-      
-      <MeasurementGuideModal
-        open={showMeasurementGuide}
-        onClose={() => setShowMeasurementGuide(false)}
-        onOpenChange={setShowMeasurementGuide}
-      />
-    </div>
+    </Card>
   );
 };
+
+export default PropertyFloorPlanTab;

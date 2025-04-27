@@ -19,8 +19,8 @@ export const useLayerLocking = ({ fabricCanvasRef, setLayers }: UseLayerLockingP
           const newLockState = !layer.locked;
           
           layer.objects.forEach(obj => {
-            obj.set('selectable', !newLockState);
-            obj.set('evented', !newLockState);
+            (obj as any).selectable = !newLockState;
+            (obj as any).evented = !newLockState;
           });
           
           return {
@@ -38,4 +38,3 @@ export const useLayerLocking = ({ fabricCanvasRef, setLayers }: UseLayerLockingP
 
   return { toggleLayerLock };
 };
-

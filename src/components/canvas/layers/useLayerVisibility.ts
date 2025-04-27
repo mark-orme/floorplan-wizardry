@@ -19,7 +19,7 @@ export const useLayerVisibility = ({ fabricCanvasRef, setLayers }: UseLayerVisib
           const newVisibility = !layer.visible;
           
           layer.objects.forEach(obj => {
-            obj.set('visible', newVisibility);
+            (obj as any).visible = newVisibility;
           });
           
           return {
@@ -37,4 +37,3 @@ export const useLayerVisibility = ({ fabricCanvasRef, setLayers }: UseLayerVisib
 
   return { toggleLayerVisibility };
 };
-

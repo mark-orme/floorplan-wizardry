@@ -1,17 +1,17 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createGrid } from '@/utils/grid/gridRenderers';
-import { setGridVisibility } from '@/utils/grid/gridVisibility';
+import { fabric } from 'fabric';
+import { captureMessage } from '@/utils/sentryUtils';
 import { toast } from 'sonner';
 import { GridMonitor } from './GridMonitor';
-import { GridLine } from '@/utils/grid/gridTypes';
+
+type GridLine = fabric.Object & { visible?: boolean };
 
 interface SimpleGridProps {
-  canvas: FabricCanvas;
+  canvas: fabric.Canvas;
   showControls?: boolean;
   defaultVisible?: boolean;
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
+  onGridCreated?: (gridObjects: fabric.Object[]) => void;
 }
 
 export const SimpleGrid: React.FC<SimpleGridProps> = ({
@@ -97,12 +97,39 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
     }
   };
   
-  // Log a message when component unmounts
-  useEffect(() => {
-    return () => {
-      console.log('SimpleGrid: Component unmounting');
-    };
-  }, []);
+  // Create a simple grid
+  const createGrid = (canvas: fabric.Canvas): fabric.Object[] => {
+    const gridObjects: fabric.Object[] = [];
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    const gridSize = 50;
+    
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += gridSize) {
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: '#e0e0e0',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x <= width; x += gridSize) {
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: '#e0e0e0',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    return gridObjects;
+  };
   
   // Return monitor component if controls are shown
   if (showControls) {
