@@ -1,21 +1,27 @@
 
 /**
- * Sentry utility functions for error tracking
- * This is a simple mock implementation
+ * Sentry utils for error handling
+ * @module utils/sentryUtils
  */
 
-export interface CaptureOptions {
-  level?: 'info' | 'warning' | 'error' | 'fatal';
-  tags?: Record<string, string>;
-  extra?: Record<string, any>;
-}
-
-export const captureMessage = (message: string, options?: CaptureOptions): string => {
-  console.log(`[${options?.level || 'info'}] ${message}`, options?.extra || '');
-  return 'mocked-event-id';
+/**
+ * Capture error and send to monitoring service
+ * 
+ * @param {Error} error - Error to capture
+ * @param {Record<string, any>} [context] - Additional context data
+ */
+export const captureError = (error: Error, context?: Record<string, any>) => {
+  // This is a stub for now - in a real app, would connect to Sentry
+  console.error('Error captured:', error.message, context);
 };
 
-export const captureException = (error: Error, options?: CaptureOptions): string => {
-  console.error(`[${options?.level || 'error'}] Exception:`, error, options?.extra || '');
-  return 'mocked-exception-id';
+/**
+ * Log warning to monitoring service
+ * 
+ * @param {string} message - Warning message
+ * @param {Record<string, any>} [context] - Additional context data
+ */
+export const logWarning = (message: string, context?: Record<string, any>) => {
+  // This is a stub for now - in a real app, would connect to Sentry
+  console.warn('Warning:', message, context);
 };

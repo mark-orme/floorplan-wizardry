@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   AiOutlineSelect,
   AiOutlineEdit,
 } from 'react-icons/ai';
-import { FiType, FiMove } from 'react-icons/fi';
-import { AiOutlineFont, AiOutlineHolderOutline, AiOutlineHighlight } from 'react-icons/ai';
+import { FiType } from 'react-icons/fi';
+import { AiOutlineHighlight } from 'react-icons/ai';
+import { BiSolidHandLeft } from 'react-icons/bi';
 
 interface ToolSelectorProps {
   activeTool: string;
@@ -19,8 +21,8 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   const tools = [
     { id: 'select', icon: <AiOutlineSelect size={18} />, label: 'Select' },
     { id: 'pencil', icon: <AiOutlineEdit size={18} />, label: 'Pencil' },
-    { id: 'text', icon: <AiOutlineFont size={18} />, label: 'Text' },
-    { id: 'hand', icon: <AiOutlineHolderOutline size={18} />, label: 'Pan' },
+    { id: 'text', icon: <FiType size={18} />, label: 'Text' },
+    { id: 'hand', icon: <BiSolidHandLeft size={18} />, label: 'Pan' },
     { id: 'eraser', icon: <AiOutlineHighlight size={18} />, label: 'Eraser' }
   ];
   

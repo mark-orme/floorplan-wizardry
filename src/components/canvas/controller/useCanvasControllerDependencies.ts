@@ -5,8 +5,8 @@
  */
 import { useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { useCanvasDependencies } from "@/hooks/useCanvasDependencies";
-import { DebugInfoState } from "@/types";
+import { useCanvasDependencies } from "@/hooks/canvas/useCanvasDependencies";
+import { DebugInfoState } from "@/types/canvas/DebugInfoState";
 
 /**
  * Props interface for useCanvasControllerDependencies hook

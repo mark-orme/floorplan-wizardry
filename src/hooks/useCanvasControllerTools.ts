@@ -10,6 +10,12 @@ import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEven
 import { toast } from 'sonner';
 import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 
+// Stub creator functions for missing imports
+const createStub = (name: string) => {
+  console.warn(`Warning: ${name} is a stub and does not provide actual functionality`);
+  return {};
+};
+
 interface CanvasControllerToolsOptions {
   enableVirtualization?: boolean;
 }
