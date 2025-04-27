@@ -15,9 +15,14 @@ export interface TestUser {
   label?: string;
 }
 
+interface SortableUser {
+  email: string;
+  [key: string]: unknown;
+}
+
 // Export the TestUserCreator class with static methods
 export class TestUserCreator {
-  static createDummyUser(overrides = {}): TestUser {
+  static createDummyUser(overrides: Partial<TestUser> = {}): TestUser {
     const defaultUser: TestUser = {
       id: 'test-user-id',
       email: 'test.user@example.com',
@@ -31,18 +36,18 @@ export class TestUserCreator {
     };
   }
 
-  static validateUserEmail(user: any): boolean {
+  static validateUserEmail(user: SortableUser): boolean {
     const adaptedUser = adaptUserWithEmail(user);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(adaptedUser.email);
   }
 
-  static getDisplayName(user: any): string {
+  static getDisplayName(user: SortableUser): string {
     const adaptedUser = adaptUserWithEmail(user);
     return adaptedUser.name || adaptedUser.email.split('@')[0];
   }
 
-  static sortUsersByEmail(users: any[]): any[] {
+  static sortUsersByEmail(users: SortableUser[]): SortableUser[] {
     return [...users].sort((a, b) => {
       const userA = adaptUserWithEmail(a);
       const userB = adaptUserWithEmail(b);
@@ -50,14 +55,14 @@ export class TestUserCreator {
     });
   }
 
-  static filterUsersByDomain(users: any[], domain: string): any[] {
+  static filterUsersByDomain(users: SortableUser[], domain: string): SortableUser[] {
     return users.filter(user => {
       const adaptedUser = adaptUserWithEmail(user);
       return adaptedUser.email.endsWith(`@${domain}`);
     });
   }
 
-  static findUserByEmail(users: any[], email: string): any {
+  static findUserByEmail(users: SortableUser[], email: string): SortableUser | undefined {
     return users.find(user => {
       const adaptedUser = adaptUserWithEmail(user);
       return adaptedUser.email === email;

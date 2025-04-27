@@ -1,6 +1,6 @@
 
 // Add missing window property types
 interface Window {
-  __app_state?: any;
-  __canvas_state?: any;
+  __app_state?: Record<string, unknown>;
+  __canvas_state?: Record<string, unknown>;
 }
