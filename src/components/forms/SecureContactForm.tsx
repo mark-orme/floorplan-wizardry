@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { contactFormSchema } from '@/schemas/form-schemas';
+
+const contactFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  subject: z.string().min(3, { message: 'Subject must be at least 3 characters' }),
+  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
+});
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 

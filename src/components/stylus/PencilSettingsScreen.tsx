@@ -1,125 +1,89 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { CalibrationCanvas } from './CalibrationCanvas';
-import { PressureCalibrationGraph } from './PressureCalibrationGraph';
-import { TiltCalibrationGraph } from './TiltCalibrationGraph';
-import { DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
-import { stylusProfileService } from '@/services/StylusProfileService';
-import { initPointProcessor, processPoints } from '@/utils/wasm/pointProcessor';
 
-export interface PencilCalibrationDialogProps {
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalibrationCanvas } from './CalibrationCanvas';
+
+interface PencilCalibrationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function PencilCalibrationDialog({
-  open,
+export const PencilCalibrationDialog: React.FC<PencilCalibrationDialogProps> = ({ 
+  open, 
   onOpenChange
-}: PencilCalibrationDialogProps) {
-  const [pressurePoints, setPressurePoints] = useState<Array<{pressure: number, thickness: number}>>([]);
-  const [tiltPoints, setTiltPoints] = useState<Array<{tilt: number, effect: number}>>([]);
-  const [useTilt, setUseTilt] = useState(false);
-  const [calibrationStep, setCalibrationStep] = useState<'start' | 'draw' | 'adjust'>('start');
-
-  const handlePressureSample = (pressure: number, thickness: number) => {
-    setPressurePoints(prev => [...prev, { pressure, thickness }]);
-  };
-
-  const handleTiltSample = (tiltX: number, tiltY: number) => {
-    if (!useTilt) return;
-    const tiltAngle = Math.atan2(tiltY, tiltX) * (180 / Math.PI);
-    const tiltMagnitude = Math.sqrt(tiltX * tiltX + tiltY * tiltY);
-    setTiltPoints(prev => [...prev, { tilt: tiltAngle, effect: tiltMagnitude }]);
-  };
-
-  const handleSaveProfile = async () => {
-    await initPointProcessor();
-    const processedPressurePoints = processPoints(
-      pressurePoints.map(p => ({ x: p.pressure, y: p.thickness }))
-    );
-
-    const profile = {
-      ...DEFAULT_STYLUS_PROFILE,
-      pressureCurve: processedPressurePoints.map(p => p.y),
-      tiltCurve: useTilt ? tiltPoints.map(p => p.effect) : undefined,
-      lastCalibrated: new Date()
-    };
-    
-    await stylusProfileService.saveProfile(profile);
+}) => {
+  const [pressureSensitivity, setPressureSensitivity] = React.useState(0.5);
+  const [tiltSensitivity, setTiltSensitivity] = React.useState(0.5);
+  
+  const handleSave = () => {
+    console.log('Saved pencil settings:', { pressureSensitivity, tiltSensitivity });
     onOpenChange(false);
   };
-
-  const handleReset = () => {
-    setPressurePoints([]);
-    setTiltPoints([]);
-    setCalibrationStep('start');
-  };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Pencil Calibration</DialogTitle>
+          <DialogTitle>Pencil Settings</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-6">
-          {calibrationStep === 'start' && (
-            <div className="space-y-4">
-              <p>Calibrate your pencil pressure and tilt sensitivity for better drawing experience.</p>
-              <Button onClick={() => setCalibrationStep('draw')}>Start Calibration</Button>
-            </div>
-          )}
-
-          {calibrationStep === 'draw' && (
-            <CalibrationCanvas 
-              onPressureSample={handlePressureSample}
-              onTiltSample={handleTiltSample}
-            />
-          )}
-
-          {pressurePoints.length > 0 && (
-            <>
-              <PressureCalibrationGraph
-                pressurePoints={pressurePoints}
-                onPointsUpdated={setPressurePoints}
+        
+        <Tabs defaultValue="pressure">
+          <TabsList className="w-full">
+            <TabsTrigger value="pressure">Pressure Sensitivity</TabsTrigger>
+            <TabsTrigger value="tilt">Tilt Sensitivity</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pressure" className="space-y-4 my-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Pressure Sensitivity</label>
+              <Slider
+                value={[pressureSensitivity]}
+                onValueChange={(values) => setPressureSensitivity(values[0])}
+                max={1}
+                step={0.01}
               />
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="use-tilt"
-                  checked={useTilt}
-                  onCheckedChange={setUseTilt}
-                />
-                <Label htmlFor="use-tilt">Use tilt for line width</Label>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Low</span>
+                <span>High</span>
               </div>
-
-              {useTilt && (
-                <TiltCalibrationGraph
-                  tiltPoints={tiltPoints}
-                  onPointsUpdated={setTiltPoints}
-                />
-              )}
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={handleReset}>
-                  Reset
-                </Button>
-                <Button onClick={handleSaveProfile}>
-                  Save Profile
-                </Button>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <h4 className="font-medium mb-2 text-sm">Test Pressure Sensitivity</h4>
+              <CalibrationCanvas />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tilt" className="space-y-4 my-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Tilt Sensitivity</label>
+              <Slider
+                value={[tiltSensitivity]}
+                onValueChange={(values) => setTiltSensitivity(values[0])}
+                max={1}
+                step={0.01}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Low</span>
+                <span>High</span>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <h4 className="font-medium mb-2 text-sm">Test Tilt Sensitivity</h4>
+              <CalibrationCanvas />
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave}>Save Settings</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+};

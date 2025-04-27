@@ -39,8 +39,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     toggleVirtualization,
     refreshVirtualization
   } = useVirtualizedCanvas(fabricCanvasRef, {
-    enabled: true,
-    autoToggle: true
+    enabled: true
   });
   
   useEffect(() => {
@@ -55,7 +54,9 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         enableRetinaScaling: true
       }) as ExtendedFabricCanvas;
       
-      canvas.skipOffscreen = true;
+      if (canvas) {
+        canvas.skipOffscreen = true;
+      }
       
       fabricCanvasRef.current = canvas;
       setIsReady(true);
@@ -87,11 +88,11 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     }
   }, [width, height, isReady, refreshVirtualization]);
   
-  const performanceDisplay = showPerformanceMetrics && (
+  const performanceDisplay = showPerformanceMetrics && performanceMetrics && (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
-      <div>FPS: {performanceMetrics?.fps || 0}</div>
-      <div>Objects: {performanceMetrics?.objectCount || 0}</div>
-      <div>Visible: {performanceMetrics?.visibleObjectCount || 0}</div>
+      <div>FPS: {performanceMetrics.fps || 0}</div>
+      <div>Objects: {performanceMetrics.objectCount || 0}</div>
+      <div>Visible: {performanceMetrics.visibleObjectCount || 0}</div>
       <div>Worker: {workerReady ? 'Ready' : 'Initializing'}</div>
       <button
         onClick={() => toggleVirtualization()}

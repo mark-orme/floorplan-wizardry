@@ -1,8 +1,16 @@
 
 export enum UserRole {
-  USER = 'USER',
-  MANAGER = 'MANAGER',
-  PHOTOGRAPHER = 'PHOTOGRAPHER',
-  PROCESSING_MANAGER = 'PROCESSING_MANAGER',
-  ADMIN = 'ADMIN'
+  USER = 'user',
+  MANAGER = 'manager',
+  PHOTOGRAPHER = 'photographer',
+  PROCESSING_MANAGER = 'processing_manager',
+  ADMIN = 'admin'
+}
+
+export enum PropertyStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  ARCHIVED = 'archived',
+  DELETED = 'deleted'
 }

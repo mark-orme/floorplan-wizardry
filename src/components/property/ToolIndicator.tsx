@@ -1,7 +1,15 @@
 
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Icons } from '@/constants/iconMappings';
+import { 
+  AiOutlineSelect, 
+  AiOutlineEdit, 
+  AiOutlineMinus, 
+  AiOutlineHome, 
+  AiOutlineDelete, 
+  AiOutlineHold, 
+  AiOutlineWarning 
+} from 'react-icons/ai';
 
 interface ToolIndicatorProps {
   activeTool: DrawingMode;
@@ -25,13 +33,13 @@ export const ToolIndicator: React.FC<ToolIndicatorProps> = ({
 
   const getToolIcon = () => {
     switch(activeTool) {
-      case DrawingMode.SELECT: return <Icons.select className="h-4 w-4" />;
-      case DrawingMode.DRAW: return <Icons.edit className="h-4 w-4" />;
-      case DrawingMode.STRAIGHT_LINE: return <Icons.minus className="h-4 w-4" />;
-      case DrawingMode.WALL: return <Icons.home className="h-4 w-4" />;
-      case DrawingMode.ERASER: return <Icons.delete className="h-4 w-4" />;
-      case DrawingMode.HAND: return <Icons.holder className="h-4 w-4" />;
-      default: return <Icons.warning className="h-4 w-4" />;
+      case DrawingMode.SELECT: return <AiOutlineSelect className="h-4 w-4" />;
+      case DrawingMode.DRAW: return <AiOutlineEdit className="h-4 w-4" />;
+      case DrawingMode.STRAIGHT_LINE: return <AiOutlineMinus className="h-4 w-4" />;
+      case DrawingMode.WALL: return <AiOutlineHome className="h-4 w-4" />;
+      case DrawingMode.ERASER: return <AiOutlineDelete className="h-4 w-4" />;
+      case DrawingMode.HAND: return <AiOutlineHold className="h-4 w-4" />;
+      default: return <AiOutlineWarning className="h-4 w-4" />;
     }
   };
 

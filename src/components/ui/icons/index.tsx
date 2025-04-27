@@ -1,27 +1,74 @@
 
 import React from 'react';
-import * as LucideIcons from 'lucide-react';
 
-// Re-export all icons from lucide-react
-export const Home = LucideIcons.Home;
-export const Grid = LucideIcons.Grid;
-export const EyeOff = LucideIcons.EyeOff;
-export const RefreshCw = LucideIcons.RefreshCw;
-export const Layers = LucideIcons.Layers;
-export const PlusCircle = LucideIcons.PlusCircle;
-export const Trash = LucideIcons.Trash;
-export const Trash2 = LucideIcons.Trash; // Use Trash instead of Trash2
-export const Eye = LucideIcons.Eye;
-export const Lock = LucideIcons.Lock;
-export const Unlock = LucideIcons.Unlock;
-export const Database = LucideIcons.Database;
-export const Loader2 = LucideIcons.Loader2;
-export const RulerSquare = LucideIcons.Ruler; // Use Ruler instead of RulerSquare
-export const Eraser = LucideIcons.Eraser;
-export const Type = LucideIcons.Type;
-export const Calculator = LucideIcons.Calculator;
-export const Hammer = LucideIcons.Hammer;
-export const MousePointer = LucideIcons.MousePointer;
-export const Pencil = LucideIcons.Pencil;
-export const Ruler = LucideIcons.Ruler;
-export const Square = LucideIcons.Square;
+// Create mocks for all the icons we need
+const createIconComponent = (name: string) => {
+  const IconComponent = ({ size = 24, color = "currentColor", ...props }: {
+    size?: number;
+    color?: string;
+    [key: string]: any;
+  }) => {
+    return (
+      <svg 
+        width={size} 
+        height={size} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        {...props}
+      >
+        <rect x="0" y="0" width="24" height="24" fill="none" stroke="none" />
+        <text x="12" y="12" fontSize="8" textAnchor="middle" dominantBaseline="middle" fill={color}>{name}</text>
+      </svg>
+    );
+  };
+  
+  IconComponent.displayName = name;
+  return IconComponent;
+};
+
+// Create mock icons for all the icons we need
+export const Eye = createIconComponent('Eye');
+export const EyeOff = createIconComponent('EyeOff');
+export const Lock = createIconComponent('Lock');
+export const Unlock = createIconComponent('Unlock');
+export const Trash = createIconComponent('Trash');
+export const Trash2 = createIconComponent('Trash2');
+export const Layers = createIconComponent('Layers');
+export const PlusCircle = createIconComponent('PlusCircle');
+export const Grid = createIconComponent('Grid');
+export const RefreshCw = createIconComponent('RefreshCw');
+export const Home = createIconComponent('Home');
+export const Bug = createIconComponent('Bug');
+export const Calculator = createIconComponent('Calculator');
+export const Eraser = createIconComponent('Eraser');
+export const Hammer = createIconComponent('Hammer');
+export const MousePointer = createIconComponent('MousePointer');
+export const Pencil = createIconComponent('Pencil');
+export const Ruler = createIconComponent('Ruler');
+export const RulerSquare = createIconComponent('RulerSquare');
+export const Square = createIconComponent('Square');
+export const Type = createIconComponent('Type');
+export const Database = createIconComponent('Database');
+export const Menu = createIconComponent('Menu');
+export const Building = createIconComponent('Building');
+export const FileText = createIconComponent('FileText');
+export const Maximize2 = createIconComponent('Maximize2');
+export const Loader2 = createIconComponent('Loader2');
+export const Plus = createIconComponent('Plus');
+export const Hand = createIconComponent('Hand');
+export const Undo2 = createIconComponent('Undo2');
+export const Redo2 = createIconComponent('Redo2');
+export const Save = createIconComponent('Save');
+export const ZoomIn = createIconComponent('ZoomIn');
+export const ZoomOut = createIconComponent('ZoomOut');
+export const Pointer = createIconComponent('Pointer');
+export const Download = createIconComponent('Download');
+export const Search = createIconComponent('Search');
+export const MoreHorizontal = createIconComponent('MoreHorizontal');
+export const PaintBucket = createIconComponent('PaintBucket');
+export const Palette = createIconComponent('Palette');
+export const Minus = createIconComponent('Minus');

@@ -7,6 +7,7 @@ export interface ExtendedFabricCanvas extends FabricCanvas {
   skipTargetFind: boolean;
   _activeObject: any;
   _objects: any[];
+  skipOffscreen?: boolean;
 }
 
 export interface FabricEventHandler<T = any> {
@@ -18,7 +19,7 @@ export interface FabricObjectEvent {
 }
 
 export interface FloorPlanMetadata {
-  level: number;
+  level?: number;
   name: string;
   updated: string;
   created: string;
@@ -29,11 +30,18 @@ export interface FloorPlanMetadata {
 export interface PerformanceMetrics {
   fps: number;
   objectCount: number;
-  visibleObjectCount: number;
+  visibleObjectCount?: number;
   renderTime: number;
 }
 
 export interface UseVirtualizedCanvasOptions {
   enabled: boolean;
   autoToggle?: boolean;
+}
+
+export enum PropertyStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  ARCHIVED = 'archived'
 }

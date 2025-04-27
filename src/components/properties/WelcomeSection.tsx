@@ -1,7 +1,7 @@
 
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AiOutlineLogin, AiOutlineSwapRight } from 'react-icons/ai';
+import { AiOutlineLogin, AiOutlineArrowRight } from 'react-icons/ai';
 
 interface WelcomeSectionProps {
   onSignIn: () => void;
@@ -21,7 +21,7 @@ export const WelcomeSection = ({ onSignIn, onGoToFloorplans }: WelcomeSectionPro
           Sign In
         </Button>
         <Button variant="outline" onClick={onGoToFloorplans}>
-          <AiOutlineSwapRight className="mr-2 h-4 w-4" />
+          <AiOutlineArrowRight className="mr-2 h-4 w-4" />
           Go to Floor Plan Editor
         </Button>
       </div>
