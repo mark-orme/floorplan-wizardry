@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { captureMessage, CaptureMessageOptions } from '@/utils/sentryUtils';
+import { captureMessage } from '@/utils/sentryUtils';
 
 interface UseControllerErrorHandlingProps {
   componentName?: string;

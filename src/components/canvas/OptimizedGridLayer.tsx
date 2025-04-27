@@ -1,5 +1,6 @@
+
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import logger from '@/utils/logger';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
@@ -33,14 +34,11 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
       // Create vertical lines
       for (let x = 0; x <= width; x += gridSize) {
         const isLargeLine = x % (gridSize * 5) === 0;
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
-          objectType: 'grid',
-          isGrid: true,
-          isLargeGrid: isLargeLine,
           visible
         });
         
@@ -51,14 +49,11 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
       // Create horizontal lines
       for (let y = 0; y <= height; y += gridSize) {
         const isLargeLine = y % (gridSize * 5) === 0;
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
-          objectType: 'grid',
-          isGrid: true,
-          isLargeGrid: isLargeLine,
           visible
         });
         
@@ -90,9 +85,7 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
     if (!canvas || gridObjects.length === 0) return;
     
     gridObjects.forEach(obj => {
-      if (obj && typeof obj.set === 'function') {
-        obj.set('visible', visible);
-      }
+      obj.set({ visible });
     });
     
     canvas.requestRenderAll();

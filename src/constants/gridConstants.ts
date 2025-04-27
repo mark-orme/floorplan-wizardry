@@ -14,11 +14,11 @@ export const SMALL_GRID_COLOR = '#e0e0e0';
 export const LARGE_GRID_COLOR = '#c0c0c0';
 export const SMALL_GRID_OPACITY = 0.5;
 export const LARGE_GRID_OPACITY = 0.7;
+export const GRID_SIZE = SMALL_GRID_SIZE;
 
 // Grid configuration
 export const GRID_SEND_TO_BACK = true;
 export const GRID_AUTO_FIX = true;
-export const GRID_SIZE = SMALL_GRID_SIZE;
 
 export const GRID_CONSTANTS = {
   SMALL: {

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas, Object as FabricObject } from "fabric";
-import GridRenderer from "./GridRenderer";
+import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
@@ -60,7 +60,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     const checkGridVisibility = () => {
       if (fabricCanvas && gridObjects.length > 0) {
         const visibleGridObjects = gridObjects.filter(obj => 
-          obj.visible && fabricCanvas.contains(obj)
+          obj && obj.visible && fabricCanvas.contains(obj)
         );
         
         if (visibleGridObjects.length < gridObjects.length * 0.5) {

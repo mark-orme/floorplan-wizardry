@@ -1,10 +1,12 @@
 
-/**
- * Grid components module
- * Re-exports all grid-related components
- * @module components/canvas/grid
- */
+import { SimpleGrid } from './SimpleGrid';
+import GridManager from './GridManager';
+import GridRenderer from './GridRenderer';
+import { MemoizedGrid } from './MemoizedGrid';
 
-export { GridDebugPanel } from './GridDebugPanel';
-export { GridLayer } from './GridLayer';
-export { GridRenderer } from './GridRenderer';
+export {
+  SimpleGrid,
+  GridManager,
+  GridRenderer,
+  MemoizedGrid
+};

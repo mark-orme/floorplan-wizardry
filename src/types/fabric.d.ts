@@ -1,10 +1,16 @@
 
 // Extended fabric.js type definitions
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line, ILineOptions } from 'fabric';
 
 declare module 'fabric' {
   // Export existing types more explicitly
   export { Canvas, Object, Line };
+  
+  interface IObjectOptions {
+    objectType?: string;
+    isGrid?: boolean;
+    isLargeGrid?: boolean;
+  }
   
   interface Canvas {
     // Properties
@@ -20,6 +26,10 @@ declare module 'fabric' {
     width: number;
     height: number;
     allowTouchScrolling: boolean;
+    skipTargetFind: boolean;
+    _activeObject: FabricObject | null;
+    _objects: FabricObject[];
+    initialize: Function;
 
     // Methods
     add(...objects: FabricObject[]): Canvas;
@@ -51,10 +61,6 @@ declare module 'fabric' {
     // For advanced features
     forEachObject(callback: (obj: FabricObject) => void): void;
     getContext(): CanvasRenderingContext2D;
-    initialize: Function;
-    skipTargetFind: boolean;
-    _activeObject: FabricObject | null;
-    _objects: FabricObject[];
   }
   
   interface Object {
@@ -66,6 +72,7 @@ declare module 'fabric' {
     // Methods
     set(options: Record<string, any>): FabricObject;
     setOptions(options: Record<string, any>): FabricObject;
+    setCoords(): FabricObject;
     
     // For advanced features
     _controlsVisibility: Record<string, boolean>;

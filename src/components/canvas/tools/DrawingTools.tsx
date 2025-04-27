@@ -1,11 +1,12 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  AiOutlineSelect, 
-  AiOutlineEdit, 
-  AiOutlineDelete 
-} from 'react-icons/ai';
+  MousePointer, 
+  Pencil, 
+  Eraser 
+} from 'lucide-react';
 
 interface DrawingToolsProps {
   activeTool: DrawingMode;
@@ -23,7 +24,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.SELECT)}
           className="flex items-center gap-2"
         >
-          <AiOutlineSelect size={16} />
+          <MousePointer size={16} />
           Select
         </Button>
         <Button
@@ -32,7 +33,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.DRAW)}
           className="flex items-center gap-2"
         >
-          <AiOutlineEdit size={16} />
+          <Pencil size={16} />
           Draw
         </Button>
         <Button
@@ -41,7 +42,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.ERASER)}
           className="flex items-center gap-2"
         >
-          <AiOutlineDelete size={16} />
+          <Eraser size={16} />
           Eraser
         </Button>
       </div>

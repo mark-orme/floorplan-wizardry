@@ -73,7 +73,6 @@ class Logger {
   }
 }
 
-const logger = new Logger({ prefix: 'Canvas' });
 export const gridLogger = new Logger({ prefix: 'Grid' });
-
+const logger = new Logger({ prefix: 'Canvas' });
 export default logger;

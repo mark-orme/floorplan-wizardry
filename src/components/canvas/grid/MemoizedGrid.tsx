@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState, memo } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS, SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 
 interface MemoizedGridProps {
@@ -31,15 +31,12 @@ const MemoizedGridComponent = ({
       // Create vertical grid lines
       for (let x = 0; x <= width; x += gridSize) {
         const isLargeLine = x % LARGE_GRID_SIZE === 0;
-        const line = new fabric.Line([x, 0, x, height], {
+        const line = new Line([x, 0, x, height], {
           stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
-          objectType: 'grid',
-          visible,
-          isGrid: true,
-          isLargeGrid: isLargeLine
+          visible
         });
         
         canvas.add(line);
@@ -49,15 +46,12 @@ const MemoizedGridComponent = ({
       // Create horizontal grid lines
       for (let y = 0; y <= height; y += gridSize) {
         const isLargeLine = y % LARGE_GRID_SIZE === 0;
-        const line = new fabric.Line([0, y, width, y], {
+        const line = new Line([0, y, width, y], {
           stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
-          objectType: 'grid',
-          visible,
-          isGrid: true,
-          isLargeGrid: isLargeLine
+          visible
         });
         
         canvas.add(line);
@@ -87,9 +81,7 @@ const MemoizedGridComponent = ({
     if (!canvas || gridObjects.length === 0) return;
     
     gridObjects.forEach(obj => {
-      if (obj && typeof obj.set === 'function') {
-        obj.set('visible', visible);
-      }
+      obj.set({ visible });
     });
     
     canvas.requestRenderAll();

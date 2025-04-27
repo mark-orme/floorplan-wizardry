@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 interface GridManagerProps {
@@ -10,7 +10,7 @@ interface GridManagerProps {
   onChange?: (grid: FabricObject[]) => void;
 }
 
-export const GridManager = ({ 
+const GridManager = ({ 
   canvas, 
   spacing = 20, 
   visible = true,
@@ -38,14 +38,11 @@ export const GridManager = ({
     // Create horizontal and vertical grid lines
     for (let x = 0; x <= width; x += spacing) {
       const isLargeLine = x % (spacing * 5) === 0;
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
         strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
         selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true,
-        isLargeGrid: isLargeLine
+        evented: false
       });
       
       canvas.add(line);
@@ -54,14 +51,11 @@ export const GridManager = ({
     
     for (let y = 0; y <= height; y += spacing) {
       const isLargeLine = y % (spacing * 5) === 0;
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
         strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
         selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true,
-        isLargeGrid: isLargeLine
+        evented: false
       });
       
       canvas.add(line);
@@ -84,9 +78,7 @@ export const GridManager = ({
     if (!canvas || gridObjects.length === 0) return;
     
     gridObjects.forEach(obj => {
-      if (obj && typeof obj.set === 'function') {
-        obj.set({ visible });
-      }
+      obj.set({ visible });
     });
     
     canvas.requestRenderAll();
@@ -94,3 +86,5 @@ export const GridManager = ({
   
   return null;
 };
+
+export default GridManager;

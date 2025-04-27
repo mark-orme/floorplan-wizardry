@@ -1,5 +1,5 @@
 
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, Line } from 'fabric';
 import { GRID_CONSTANTS, SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 
 export class SimpleGrid {
@@ -42,14 +42,11 @@ export class SimpleGrid {
     // Create vertical lines
     for (let x = 0; x <= width; x += this.spacing) {
       const isLargeLine = x % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = new fabric.Line([x, 0, x, height], {
+      const line = new Line([x, 0, x, height], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true,
-        isLargeGrid: isLargeLine
+        evented: false
       });
       
       this.canvas.add(line);
@@ -59,14 +56,11 @@ export class SimpleGrid {
     // Create horizontal lines
     for (let y = 0; y <= height; y += this.spacing) {
       const isLargeLine = y % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = new fabric.Line([0, y, width, y], {
+      const line = new Line([0, y, width, y], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
-        evented: false,
-        objectType: 'grid',
-        isGrid: true,
-        isLargeGrid: isLargeLine
+        evented: false
       });
       
       this.canvas.add(line);
@@ -81,9 +75,7 @@ export class SimpleGrid {
   
   setVisible(visible: boolean) {
     this.gridObjects.forEach(obj => {
-      if (obj && typeof obj.set === 'function') {
-        obj.set('visible', visible);
-      }
+      obj.set({ visible });
     });
     
     this.canvas.requestRenderAll();
