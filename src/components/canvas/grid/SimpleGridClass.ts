@@ -2,20 +2,16 @@
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
+import { SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
 
-// Define grid constants
 export const GRID_CONSTANTS = {
   SMALL: {
-    WIDTH: 0.5
+    WIDTH: SMALL_GRID_WIDTH
   },
   LARGE: {
-    WIDTH: 1
+    WIDTH: LARGE_GRID_WIDTH
   }
 };
-
-export const SMALL_GRID_SIZE = 20;
-export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
-export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
 
 export class SimpleGrid {
   canvas: FabricCanvas;
@@ -42,8 +38,8 @@ export class SimpleGrid {
     this.spacing = options.spacing || SMALL_GRID_SIZE;
     this.smallColor = options.smallColor || SMALL_GRID_COLOR;
     this.largeColor = options.largeColor || LARGE_GRID_COLOR;
-    this.smallWidth = options.smallWidth || GRID_CONSTANTS.SMALL.WIDTH;
-    this.largeWidth = options.largeWidth || GRID_CONSTANTS.LARGE.WIDTH;
+    this.smallWidth = options.smallWidth || SMALL_GRID_WIDTH;
+    this.largeWidth = options.largeWidth || LARGE_GRID_WIDTH;
     this.largeSpacingMultiplier = options.largeSpacingMultiplier || 5;
   }
   

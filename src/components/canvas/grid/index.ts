@@ -1,6 +1,6 @@
 
 import { SimpleGrid } from './SimpleGrid';
-import GridManager from './GridManager';
+import { GridManager } from './GridManager';
 import GridRenderer from './GridRenderer';
 import { MemoizedGrid } from './MemoizedGrid';
 

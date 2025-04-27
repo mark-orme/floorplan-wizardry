@@ -34,3 +34,6 @@ export function createFabricLine(
 export interface ExtendedCanvas extends FabricCanvas {
   allowTouchScrolling?: boolean;
 }
+
+// Type alias for FabricCanvas to help with imports
+export type FabricCanvas = FabricCanvas;

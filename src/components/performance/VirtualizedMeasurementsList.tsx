@@ -1,41 +1,34 @@
-
 import React from 'react';
-import { PerformanceMeasurement } from '@/utils/performance';
-import { VirtualizedList } from '@/components/VirtualizedList';
+import VirtualizedList from "@/components/VirtualizedList";
 
-interface VirtualizedMeasurementsListProps {
-  measurements: PerformanceMeasurement[];
+interface Measurement {
+  id: string;
+  value: number;
+  unit: string;
+  timestamp: Date;
 }
 
-export const VirtualizedMeasurementsList: React.FC<VirtualizedMeasurementsListProps> = ({ 
-  measurements 
-}) => {
-  const renderMeasurementRow = (
-    measurement: PerformanceMeasurement, 
-    index: number, 
-    style: React.CSSProperties
-  ) => (
-    <div style={style} className="flex border-b">
-      <div className="py-2 w-1/3">{measurement.name}</div>
-      <div className="py-2 w-1/3">{measurement.duration.toFixed(2)}ms</div>
-      <div className="py-2 w-1/3">{new Date(measurement.startTime).toLocaleTimeString()}</div>
-    </div>
-  );
+interface VirtualizedMeasurementsListProps {
+  measurements: Measurement[];
+  height?: number;
+}
 
+export const VirtualizedMeasurementsList: React.FC<VirtualizedMeasurementsListProps> = ({
+  measurements,
+  height = 300
+}) => {
+  // Component implementation
   return (
-    <div className="w-full">
-      <div className="flex border-b font-medium bg-background">
-        <div className="py-2 w-1/3">Operation</div>
-        <div className="py-2 w-1/3">Duration</div>
-        <div className="py-2 w-1/3">Time</div>
-      </div>
-      <VirtualizedList
-        items={measurements}
-        renderItem={renderMeasurementRow}
-        itemHeight={36}
-        maxHeight={200}
-        className="border rounded-md"
-      />
-    </div>
+    <VirtualizedList 
+      data={measurements}
+      height={height}
+      rowHeight={40}
+      renderRow={(item) => (
+        <div className="flex justify-between p-2 border-b">
+          <span>{item.value} {item.unit}</span>
+          <span>{item.timestamp.toLocaleString()}</span>
+        </div>
+      )}
+    />
   );
 };

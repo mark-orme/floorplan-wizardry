@@ -3,21 +3,7 @@ import React, { useEffect, useRef, useState, memo } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createFabricLine } from '@/types/fabric-extended';
 import type { ExtendedFabricObject } from '@/types/fabric-extended';
-
-// Define grid constants
-const SMALL_GRID_SIZE = 20;
-const LARGE_GRID_SIZE = 100;
-const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
-const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
-
-const GRID_CONSTANTS = {
-  SMALL: {
-    WIDTH: 0.5
-  },
-  LARGE: {
-    WIDTH: 1
-  }
-};
+import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
 
 interface MemoizedGridProps {
   canvas: FabricCanvas | null;
@@ -49,7 +35,7 @@ const MemoizedGridComponent = ({
         const isLargeLine = x % LARGE_GRID_SIZE === 0;
         const line = createFabricLine([x, 0, x, height], {
           stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
-          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
           selectable: false,
           evented: false,
           visible
@@ -64,7 +50,7 @@ const MemoizedGridComponent = ({
         const isLargeLine = y % LARGE_GRID_SIZE === 0;
         const line = createFabricLine([0, y, width, y], {
           stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
-          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
           selectable: false,
           evented: false,
           visible

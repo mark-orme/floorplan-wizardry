@@ -1,38 +1,58 @@
 
-import { UserRole } from '@/lib/supabase';
-import { PropertyActions } from './PropertyActions';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface PropertyHeaderProps {
-  isAuthenticated: boolean;
-  userRole: UserRole | null;
-  onAddProperty: () => void;
-  onGoToFloorplans: () => void;
+// Define UserRole as an enum
+enum UserRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  USER = 'user'
 }
 
-export const PropertyHeader = ({ 
-  isAuthenticated, 
-  userRole, 
-  onAddProperty, 
-  onGoToFloorplans 
-}: PropertyHeaderProps) => {
-  return (
-    <div className="flex justify-between items-center mb-6">
-      <div>
-        <h1 className="text-2xl font-bold">Properties</h1>
-        <p className="text-muted-foreground">
-          {!isAuthenticated && 'Sign in to manage properties'}
-          {isAuthenticated && userRole === UserRole.PHOTOGRAPHER && 'Manage your properties'}
-          {isAuthenticated && userRole === UserRole.PROCESSING_MANAGER && 'Properties waiting for review'}
-          {isAuthenticated && userRole === UserRole.MANAGER && 'All properties in the system'}
-        </p>
-      </div>
+interface PropertyHeaderProps {
+  title: string;
+  description?: string;
+  userRole?: string;
+  onAddProperty?: () => void;
+  onTabChange?: (tab: string) => void;
+  activeTab?: string;
+}
 
-      <PropertyActions 
-        isAuthenticated={isAuthenticated}
-        userRole={userRole}
-        onAddProperty={onAddProperty}
-        onGoToFloorplans={onGoToFloorplans}
-      />
+export const PropertyHeader: React.FC<PropertyHeaderProps> = ({
+  title,
+  description,
+  userRole = UserRole.USER,
+  onAddProperty,
+  onTabChange,
+  activeTab = 'all'
+}) => {
+  const canAddProperty = userRole === UserRole.ADMIN || userRole === UserRole.MANAGER;
+
+  return (
+    <div className="pb-4 border-b mb-6 space-y-2">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          {description && <p className="text-muted-foreground">{description}</p>}
+        </div>
+        
+        {canAddProperty && onAddProperty && (
+          <Button onClick={onAddProperty}>
+            Add Property
+          </Button>
+        )}
+      </div>
+      
+      {onTabChange && (
+        <Tabs defaultValue={activeTab} onValueChange={onTabChange} className="w-full">
+          <TabsList>
+            <TabsTrigger value="all">All Properties</TabsTrigger>
+            <TabsTrigger value="mine">My Properties</TabsTrigger>
+            <TabsTrigger value="shared">Shared With Me</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
     </div>
   );
 };

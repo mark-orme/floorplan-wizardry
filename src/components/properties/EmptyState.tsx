@@ -1,52 +1,46 @@
 
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowLeftRight } from 'lucide-react';
+import { PlusCircle, ArrowRight } from 'lucide-react';
 
 interface EmptyStateProps {
-  searchTerm: string;
-  onAddProperty: () => void;
-  onAddTestData: () => void;
-  onGoToFloorplans: () => void;
+  title: string;
+  description: string;
+  action?: () => void;
+  actionLabel?: string;
+  secondaryAction?: () => void;
+  secondaryActionLabel?: string;
 }
 
-export const EmptyState = ({ 
-  searchTerm, 
-  onAddProperty, 
-  onAddTestData, 
-  onGoToFloorplans 
-}: EmptyStateProps) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({
+  title,
+  description,
+  action,
+  actionLabel = 'Create',
+  secondaryAction,
+  secondaryActionLabel = 'View Guide'
+}) => {
   return (
-    <div className="text-center py-8 border rounded-lg bg-muted/50">
-      <p className="text-muted-foreground">
-        {searchTerm 
-          ? 'No properties match your search' 
-          : 'No properties found. Create your first property!'}
-      </p>
-      {!searchTerm && (
-        <div className="mt-4 flex flex-wrap justify-center gap-3">
-          <Button 
-            variant="default" 
-            onClick={onAddProperty}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Property
+    <div className="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-sm">
+      <div className="p-4 bg-primary/10 rounded-full">
+        <PlusCircle size={24} className="text-primary" />
+      </div>
+      <h3 className="mt-4 text-lg font-medium">{title}</h3>
+      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+      <div className="flex gap-2 mt-6">
+        {action && (
+          <Button onClick={action} className="flex items-center gap-2">
+            <PlusCircle size={16} />
+            {actionLabel}
           </Button>
-          <Button 
-            variant="secondary" 
-            onClick={onAddTestData}
-          >
-            Add Test Data
+        )}
+        {secondaryAction && (
+          <Button variant="outline" onClick={secondaryAction} className="flex items-center gap-2">
+            <ArrowRight size={16} />
+            {secondaryActionLabel}
           </Button>
-          <Button
-            variant="outline"
-            onClick={onGoToFloorplans}
-          >
-            <ArrowLeftRight className="mr-2 h-4 w-4" />
-            Go to Floor Plan Editor
-          </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

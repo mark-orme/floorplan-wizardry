@@ -7,3 +7,12 @@ export interface FloorPlan {
   updatedAt: Date;
   canvasData?: string;
 }
+
+export interface FloorPlanMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  thumbnail?: string;
+}

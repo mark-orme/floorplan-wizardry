@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Canvas } from 'fabric';
 import { SimpleGrid } from './SimpleGrid';
@@ -29,3 +30,5 @@ export const GridManager: React.FC<GridManagerProps> = ({
     />
   );
 };
+
+export default GridManager;
