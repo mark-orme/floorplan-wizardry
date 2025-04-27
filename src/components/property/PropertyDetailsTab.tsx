@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Edit, Send, Check } from 'lucide-react';
+import { AiOutlineEdit, AiOutlineSend, AiOutlineCheck } from 'react-icons/ai';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 import { useNavigate } from 'react-router-dom';
@@ -85,7 +85,7 @@ export const PropertyDetailsTab = ({
               size="sm" 
               onClick={() => navigate(`/properties/${propertyId}/edit`)}
             >
-              <Edit className="mr-2 h-4 w-4" />
+              <AiOutlineEdit className="mr-2 h-4 w-4" />
               Edit Details
             </Button>
           )}
@@ -96,7 +96,7 @@ export const PropertyDetailsTab = ({
               onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
               size="sm"
             >
-              <Send className="mr-2 h-4 w-4" />
+              <AiOutlineSend className="mr-2 h-4 w-4" />
               Submit for Review
             </Button>
           )}
@@ -106,7 +106,7 @@ export const PropertyDetailsTab = ({
               variant="default"
               size="sm"
             >
-              <Check className="mr-2 h-4 w-4" />
+              <AiOutlineCheck className="mr-2 h-4 w-4" />
               Mark as Completed
             </Button>
           )}

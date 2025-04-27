@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CirclePlus, ArrowRight } from 'lucide-react';
+import { AiOutlinePlusCircle, AiOutlineArrowRight } from 'react-icons/ai';
 
 interface PropertyActionsProps {
   onAddNew: () => void;
@@ -15,13 +15,13 @@ export const PropertyActions: React.FC<PropertyActionsProps> = ({
   return (
     <div className="flex gap-2 flex-wrap">
       <Button variant="default" size="sm" onClick={onAddNew} className="flex items-center gap-2">
-        <CirclePlus size={16} />
+        <AiOutlinePlusCircle size={16} />
         Add Property
       </Button>
       
       {onViewAll && (
         <Button variant="outline" size="sm" onClick={onViewAll} className="flex items-center gap-2">
-          <ArrowRight size={16} />
+          <AiOutlineArrowRight size={16} />
           View All
         </Button>
       )}

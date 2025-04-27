@@ -1,6 +1,6 @@
 
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { AiOutlineSearch } from 'react-icons/ai';
 
 interface PropertySearchProps {
   searchTerm: string;
@@ -11,7 +11,7 @@ export const PropertySearch = ({ searchTerm, onSearchChange }: PropertySearchPro
   return (
     <div className="mb-6">
       <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <AiOutlineSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by order ID, address or client..."
           className="pl-8"

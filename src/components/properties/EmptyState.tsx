@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, ArrowRight } from 'lucide-react';
+import { AiOutlinePlusCircle, AiOutlineArrowRight } from 'react-icons/ai';
 
 interface EmptyStateProps {
   title: string;
@@ -23,20 +23,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-sm">
       <div className="p-4 bg-primary/10 rounded-full">
-        <PlusCircle size={24} className="text-primary" />
+        <AiOutlinePlusCircle size={24} className="text-primary" />
       </div>
       <h3 className="mt-4 text-lg font-medium">{title}</h3>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       <div className="flex gap-2 mt-6">
         {action && (
           <Button onClick={action} className="flex items-center gap-2">
-            <PlusCircle size={16} />
+            <AiOutlinePlusCircle size={16} />
             {actionLabel}
           </Button>
         )}
         {secondaryAction && (
           <Button variant="outline" onClick={secondaryAction} className="flex items-center gap-2">
-            <ArrowRight size={16} />
+            <AiOutlineArrowRight size={16} />
             {secondaryActionLabel}
           </Button>
         )}

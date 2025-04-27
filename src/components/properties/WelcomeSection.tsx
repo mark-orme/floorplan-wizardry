@@ -1,7 +1,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogIn, ArrowLeftRight } from 'lucide-react';
+import { AiOutlineLogin, AiOutlineSwapRight } from 'react-icons/ai';
 
 interface WelcomeSectionProps {
   onSignIn: () => void;
@@ -17,11 +17,11 @@ export const WelcomeSection = ({ onSignIn, onGoToFloorplans }: WelcomeSectionPro
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button onClick={onSignIn}>
-          <LogIn className="mr-2 h-4 w-4" />
+          <AiOutlineLogin className="mr-2 h-4 w-4" />
           Sign In
         </Button>
         <Button variant="outline" onClick={onGoToFloorplans}>
-          <ArrowLeftRight className="mr-2 h-4 w-4" />
+          <AiOutlineSwapRight className="mr-2 h-4 w-4" />
           Go to Floor Plan Editor
         </Button>
       </div>

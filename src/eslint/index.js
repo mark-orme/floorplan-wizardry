@@ -25,6 +25,7 @@ const aiDevRules = require('./typescript/ai-dev-rules');
 const fabricEventTypingRules = require('./typescript/fabric-event-typing-rules');
 const strictFabricTypes = require('./typescript/strict-fabric-types');
 const aiCodeSafetyRules = require('./typescript/ai-code-safety-rules');
+const lucideReactPreventionRule = require('./lucide-react-prevention');
 
 // Export all rule sets and configurations
 module.exports = {
@@ -46,5 +47,6 @@ module.exports = {
   aiDevRules,
   fabricEventTypingRules,
   strictFabricTypes,
-  aiCodeSafetyRules
+  aiCodeSafetyRules,
+  lucideReactPreventionRule
 };

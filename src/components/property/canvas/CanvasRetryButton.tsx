@@ -4,7 +4,7 @@
  * Displays error state and retry button for canvas initialization failures
  * @module components/property/canvas/CanvasRetryButton
  */
-import { RefreshCw } from "lucide-react";
+import { AiOutlineReload } from "react-icons/ai";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -34,7 +34,7 @@ export const CanvasRetryButton = ({ errorMessage, onRetry }: CanvasRetryButtonPr
       )}
       
       <Button onClick={onRetry} variant="outline">
-        <RefreshCw className="mr-2 h-4 w-4" />
+        <AiOutlineReload className="mr-2 h-4 w-4" />
         Try Again
       </Button>
     </div>

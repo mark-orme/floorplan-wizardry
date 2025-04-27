@@ -5,7 +5,7 @@
  */
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Send } from "lucide-react";
+import { AiOutlineEye, AiOutlineSend } from 'react-icons/ai';
 import { UserRole } from "@/lib/supabase";
 import { PropertyStatus } from "@/types/propertyTypes";
 import { handleError } from "@/utils/errorHandling";
@@ -50,7 +50,7 @@ export const FloorPlanActions = ({
       <div>
         {!canEdit && (
           <Badge variant="outline">
-            <Eye className="h-3 w-3 mr-1" />
+            <AiOutlineEye className="h-3 w-3 mr-1" />
             View Only
           </Badge>
         )}
@@ -61,7 +61,7 @@ export const FloorPlanActions = ({
           variant="default" 
           onClick={() => handleStatusChange(PropertyStatus.PENDING_REVIEW)}
         >
-          <Send className="h-4 w-4 mr-2" />
+          <AiOutlineSend className="h-4 w-4 mr-2" />
           Submit for Review
         </Button>
       )}

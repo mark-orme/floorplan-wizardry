@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Grid } from 'lucide-react';
+import { AiOutlineArrowLeft, AiOutlineAppstore } from 'react-icons/ai';
 
 interface PropertyFormHeaderProps {
   navigateBack: () => void;
@@ -12,11 +12,11 @@ export const PropertyFormHeader = ({ navigateBack, navigateToFloorplans }: Prope
   return (
     <div className="flex items-center gap-3 mb-6">
       <Button variant="outline" size="sm" onClick={navigateBack}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <AiOutlineArrowLeft className="mr-2 h-4 w-4" />
         Back to Properties
       </Button>
       <Button variant="outline" size="sm" onClick={navigateToFloorplans}>
-        <Grid className="mr-2 h-4 w-4" />
+        <AiOutlineAppstore className="mr-2 h-4 w-4" />
         Floor Plan Editor
       </Button>
     </div>
