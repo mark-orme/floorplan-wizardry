@@ -19,7 +19,7 @@ import {
   AiOutlineCloseCircle,
   AiOutlineKey,
   AiOutlineClockCircle,
-  AiOutlineSquare,
+  AiOutlineUpSquare, // Changed from AiOutlineSquare
   AiOutlineHolder,
   AiOutlineUpload,
   AiOutlineDownload,
@@ -29,7 +29,7 @@ import {
   AiOutlineZoomOut,
   AiOutlineSync,
   AiOutlineTable,
-  AiOutlinePalette,
+  AiOutlineAlert, // Changed from AiOutlinePalette
   AiOutlinePlus,
   AiOutlineMinus,
   AiOutlineBgColors,
@@ -58,7 +58,7 @@ export const Icons = {
   close: AiOutlineCloseCircle,
   key: AiOutlineKey,
   clock: AiOutlineClockCircle,
-  square: AiOutlineSquare,
+  square: AiOutlineUpSquare, // Changed from AiOutlineSquare
   holder: AiOutlineHolder,
   upload: AiOutlineUpload,
   download: AiOutlineDownload,
@@ -67,7 +67,7 @@ export const Icons = {
   zoomIn: AiOutlineZoomIn,
   zoomOut: AiOutlineZoomOut,
   sync: AiOutlineSync,
-  palette: AiOutlinePalette,
+  palette: AiOutlineAlert, // Changed from AiOutlinePalette
   minus: AiOutlineMinus,
   paintBucket: AiOutlineBgColors,
   save: AiOutlineSave,

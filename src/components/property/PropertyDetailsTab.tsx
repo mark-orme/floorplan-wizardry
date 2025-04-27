@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -79,7 +78,7 @@ export const PropertyDetailsTab = ({
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
         <div>
-          {userRole === UserRole.MANAGER && propertyId && (
+          {userRole === 'manager' && propertyId && (
             <Button 
               variant="outline" 
               size="sm" 
@@ -91,7 +90,7 @@ export const PropertyDetailsTab = ({
           )}
         </div>
         <div className="flex gap-2">
-          {userRole === UserRole.PHOTOGRAPHER && property.status === PropertyStatus.DRAFT && (
+          {userRole === 'photographer' && property.status === PropertyStatus.DRAFT && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
               size="sm"
@@ -100,7 +99,7 @@ export const PropertyDetailsTab = ({
               Submit for Review
             </Button>
           )}
-          {userRole === UserRole.PROCESSING_MANAGER && property.status === PropertyStatus.PENDING_REVIEW && (
+          {userRole === 'processing_manager' && property.status === PropertyStatus.PENDING_REVIEW && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.COMPLETED)}
               variant="default"
@@ -110,7 +109,7 @@ export const PropertyDetailsTab = ({
               Mark as Completed
             </Button>
           )}
-          {userRole === UserRole.MANAGER && property.status !== PropertyStatus.DRAFT && (
+          {userRole === 'manager' && property.status !== PropertyStatus.DRAFT && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.DRAFT)}
               variant="outline"

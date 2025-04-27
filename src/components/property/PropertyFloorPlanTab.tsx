@@ -1,77 +1,60 @@
 
-import { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AiOutlineCalculator } from 'react-icons/ai';
-import { toast } from 'sonner';
+import { AiOutlineEdit } from 'react-icons/ai';
 import { PropertyStatus } from '@/types/propertyTypes';
 
 interface PropertyFloorPlanTabProps {
+  canEdit?: boolean;
   isApprovedUser?: boolean;
   propertyStatus?: PropertyStatus;
   onMeasurementGuideOpen?: () => void;
 }
 
-export const PropertyFloorPlanTab = ({
+export const PropertyFloorPlanTab: React.FC<PropertyFloorPlanTabProps> = ({
+  canEdit = false,
   isApprovedUser = false,
-  propertyStatus = PropertyStatus.PENDING,
+  propertyStatus,
   onMeasurementGuideOpen
-}: PropertyFloorPlanTabProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [floorPlanData, setFloorPlanData] = useState(null);
-
-  const openMeasurementGuide = () => {
-    if (onMeasurementGuideOpen) {
-      onMeasurementGuideOpen();
-    } else {
-      toast.info('Measurement guide feature coming soon');
-    }
-  };
-
-  const handleMeasurementsSubmit = async () => {
-    setIsSubmitting(true);
-    
-    try {
-      // Simulating API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Measurements saved successfully');
-    } catch (error) {
-      toast.error('Failed to save measurements');
-      console.error('Error submitting measurements:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+}) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Floor Plan Measurements</CardTitle>
+        <CardTitle>Floor Plan Editor</CardTitle>
         <CardDescription>
-          Create and manage property floor plans and measurements
+          Create and edit the floor plan for this property
         </CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        {!floorPlanData ? (
-          <p className="text-muted-foreground">No floor plans have been created yet. Start by adding a new floor plan.</p>
-        ) : (
-          <p>Floor plan content will be displayed here.</p>
-        )}
+      <CardContent className="min-h-[300px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">
+            Click the button below to start editing the floor plan
+          </p>
+          <Button 
+            disabled={!canEdit || propertyStatus === PropertyStatus.COMPLETED} 
+            onClick={() => { console.log("Open floor plan editor"); }}
+          >
+            <AiOutlineEdit className="mr-2 h-4 w-4" />
+            Edit Floor Plan
+          </Button>
+          {onMeasurementGuideOpen && (
+            <Button 
+              variant="outline"
+              onClick={onMeasurementGuideOpen}
+              className="ml-2"
+            >
+              Measurement Guide
+            </Button>
+          )}
+        </div>
       </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        <Button 
-          variant="outline"
-          onClick={openMeasurementGuide}
-          disabled={isSubmitting}
-        >
-          <AiOutlineCalculator className="h-4 w-4 mr-2" />
-          Measurement Guide
-        </Button>
+      <CardFooter>
+        <p className="text-sm text-muted-foreground">
+          {!canEdit && "You don't have permission to edit the floor plan"}
+          {canEdit && propertyStatus === PropertyStatus.COMPLETED && "This property is marked as completed and cannot be edited"}
+        </p>
       </CardFooter>
     </Card>
   );
 };
-
-export default PropertyFloorPlanTab;

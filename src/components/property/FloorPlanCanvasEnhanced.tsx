@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
@@ -91,7 +92,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
       <div>FPS: {performanceMetrics.fps || 0}</div>
       <div>Objects: {performanceMetrics.objectCount || 0}</div>
-      <div>Visible: {performanceMetrics.visibleObjectCount || 0}</div>
+      <div>Visible: {performanceMetrics.visibleObjectCount !== undefined ? performanceMetrics.visibleObjectCount : 'N/A'}</div>
       <div>Worker: {workerReady ? 'Ready' : 'Initializing'}</div>
       <button
         onClick={() => toggleVirtualization()}

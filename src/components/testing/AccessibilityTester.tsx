@@ -1,87 +1,59 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 
 interface AccessibilityTesterProps {
   children: React.ReactNode;
-  showResults?: boolean;
+  showResults: boolean;
   autoRun?: boolean;
 }
 
-export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({
+export const AccessibilityTester: React.FC<AccessibilityTesterProps> = ({ 
   children,
-  showResults = false,
-  autoRun = false
+  showResults,
+  autoRun = false 
 }) => {
-  const [results, setResults] = useState<any[] | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
+  const [results, setResults] = React.useState<any[]>([]);
 
-  const runTests = async () => {
-    setIsRunning(true);
-    try {
-      // Simulate running accessibility tests
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setResults([
-        { id: 1, passed: true, rule: 'aria-roles', impact: 'serious' },
-        { id: 2, passed: true, rule: 'color-contrast', impact: 'critical' }
-      ]);
-    } catch (error) {
-      console.error('Error running accessibility tests:', error);
-      setResults([]);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  useEffect(() => {
-    if (autoRun && showResults) {
+  const runTests = React.useCallback(() => {
+    // Mock accessibility test implementation
+    console.log('Running accessibility tests');
+    setResults([
+      { id: 1, rule: 'aria-labels', status: 'pass' },
+      { id: 2, rule: 'color-contrast', status: 'pass' }
+    ]);
+  }, []);
+  
+  React.useEffect(() => {
+    if (autoRun) {
       runTests();
     }
-  }, [autoRun, showResults]);
+  }, [autoRun, runTests]);
 
   return (
-    <div className="accessibility-tester">
+    <div className="relative">
       {children}
       
       {showResults && (
-        <div className="mt-4 p-4 border rounded bg-muted/20">
+        <div className="mt-4 p-4 border rounded-md">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium">Accessibility Test Results</h3>
-            <Button 
-              onClick={runTests}
-              disabled={isRunning}
-              size="sm"
-            >
-              {isRunning ? 'Running...' : 'Run Tests'}
-            </Button>
+            <h2 className="text-lg font-medium">Accessibility Results</h2>
+            <Button onClick={runTests}>Run Tests</Button>
           </div>
           
-          {results && (
-            <div className="text-sm">
-              {results.length === 0 ? (
-                <p>No accessibility issues found</p>
-              ) : (
-                <ul className="space-y-2">
-                  {results.map(result => (
-                    <li key={result.id} className="flex items-center gap-2">
-                      {result.passed ? (
-                        <span className="text-green-500">✓</span>
-                      ) : (
-                        <span className="text-red-500">✗</span>
-                      )}
-                      <span>{result.rule}</span>
-                      <span className={`px-2 py-0.5 rounded text-xs ${
-                        result.impact === 'critical' ? 'bg-red-100 text-red-800' : 
-                        result.impact === 'serious' ? 'bg-orange-100 text-orange-800' : 
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {result.impact}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          {results.length > 0 ? (
+            <ul className="space-y-2">
+              {results.map(result => (
+                <li key={result.id} className="flex items-center gap-2">
+                  <span className={result.status === 'pass' ? 'text-green-500' : 'text-red-500'}>
+                    {result.status === 'pass' ? '✓' : '✗'}
+                  </span>
+                  <span>{result.rule}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">No tests have been run yet.</p>
           )}
         </div>
       )}

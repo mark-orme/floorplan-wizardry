@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { AiOutlineAppstore as Grid, AiOutlineHome as Home } from 'react-icons/ai';
+import { AiOutlineAppstore, AiOutlineHome } from 'react-icons/ai';
 import LoadingErrorWrapper from '@/components/LoadingErrorWrapper';
 import { type UserRole } from '@/types/roles';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
 import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyStatus } from '@/types/propertyTypes';
 
 interface PropertyDetailContentProps {
@@ -61,6 +62,7 @@ export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
         </TabsContent>
         <TabsContent value="floorplan">
           <PropertyFloorPlanTab
+            canEdit={canEdit}
             isApprovedUser={isApprovedUser}
             propertyStatus={property.status}
             onMeasurementGuideOpen={onMeasurementGuideOpen}

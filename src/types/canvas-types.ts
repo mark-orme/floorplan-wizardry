@@ -1,47 +1,15 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 
-export interface ExtendedFabricCanvas extends FabricCanvas {
-  wrapperEl: HTMLElement;
-  initialize: () => void;
-  skipTargetFind: boolean;
-  _activeObject: any;
-  _objects: any[];
+export interface ExtendedFabricCanvas extends fabric.Canvas {
   skipOffscreen?: boolean;
 }
 
-export interface FabricEventHandler<T = any> {
-  (e: { target: T }): void;
-}
-
-export interface FabricObjectEvent {
-  target: any;
-}
-
-export interface FloorPlanMetadata {
-  level?: number;
-  name: string;
-  updated: string;
-  created: string;
-  area?: number;
-  roomCount?: number;
-}
-
 export interface PerformanceMetrics {
-  fps: number;
-  objectCount: number;
+  fps?: number;
+  objectCount?: number;
   visibleObjectCount?: number;
-  renderTime: number;
-}
-
-export interface UseVirtualizedCanvasOptions {
-  enabled: boolean;
-  autoToggle?: boolean;
-}
-
-export enum PropertyStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  ACTIVE = 'active',
-  ARCHIVED = 'archived'
+  renderTime?: number;
+  updateTime?: number;
+  lastFrameTime?: number;
 }
