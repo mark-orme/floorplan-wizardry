@@ -1,166 +1,91 @@
 
-import React, { useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from "fabric";
-import { GRID_CONSTANTS } from "@/constants/gridConstants";
-import logger from "@/utils/logger";
-import { toast } from "sonner";
-import { captureMessage } from "@/utils/sentryUtils";
-import { ensureGridIsPresent } from "@/utils/grid/gridVisibilityManager";
+import { useEffect, useRef, useState } from 'react';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
 interface GridRendererProps {
-  canvas: FabricCanvas;
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
-  showGrid?: boolean;
+  canvas: Canvas | null;
+  gridSize?: number;
+  visible?: boolean;
+  onRender?: (objects: FabricObject[]) => void;
 }
 
-export class GridRenderer {
-  private canvas: FabricCanvas;
-  private gridObjects: FabricObject[] = [];
-  private showGrid: boolean;
-  private onGridCreated?: (gridObjects: FabricObject[]) => void;
-  private initialized = false;
-  private monitoringCleanup: (() => void) | null = null;
-
-  constructor({ 
-    canvas, 
-    onGridCreated, 
-    showGrid = true 
-  }: GridRendererProps) {
-    this.canvas = canvas;
-    this.showGrid = showGrid;
-    this.onGridCreated = onGridCreated;
+const GridRenderer = ({
+  canvas,
+  gridSize = 20,
+  visible = true,
+  onRender
+}: GridRendererProps) => {
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const createdRef = useRef(false);
+  
+  // Create grid when canvas is ready
+  useEffect(() => {
+    if (!canvas || createdRef.current) return;
     
-    // Create grid immediately
-    if (this.showGrid) {
-      this.createGrid();
-      
-      // Set up monitoring
-      this.setupMonitoring();
-    }
-  }
-
-  private setupMonitoring(): void {
-    // Set up internal monitoring instead of using external function
-    const intervalId = setInterval(() => {
-      this.checkAndFixGrid();
-    }, 3000);
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    const objects: FabricObject[] = [];
     
-    // Store cleanup function
-    this.monitoringCleanup = () => {
-      clearInterval(intervalId);
-    };
-  }
-
-  private createGrid(): FabricObject[] {
-    try {
-      // Use our ensureGridIsPresent utility for robust grid creation
-      const result = ensureGridIsPresent(this.canvas);
-      
-      // Store grid objects reference
-      this.gridObjects = result.gridObjects;
-      
-      // Set initialization flag
-      this.initialized = result.success && result.gridObjects.length > 0;
-      
-      // Call callback if provided
-      if (this.initialized && this.onGridCreated) {
-        this.onGridCreated(this.gridObjects);
-      }
-      
-      // Log result
-      if (result.action === 'created') {
-        logger.info(`Grid created with ${result.gridObjects.length} lines`);
-      } else if (result.action === 'fixed') {
-        logger.info(`Fixed visibility for ${result.gridObjects.length} grid objects`);
-      }
-      
-      return this.gridObjects;
-    } catch (error) {
-      logger.error("Error creating grid:", error);
-      console.error("[CRITICAL] Grid creation failed:", error);
-      
-      captureMessage("Grid creation failed", {
-        level: 'error',
-        tags: { component: "GridRenderer" },
-        extra: { error: String(error) }
+    // Create vertical lines
+    for (let x = 0; x <= canvasWidth; x += gridSize) {
+      const isLargeLine = x % (gridSize * 5) === 0;
+      const line = new fabric.Line([x, 0, x, canvasHeight], {
+        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        visible
       });
       
-      // Only show toast if this is not a follow-up attempt
-      if (!this.initialized) {
-        toast.error("Grid creation failed. Please refresh the page.");
-      }
+      canvas.add(line);
+      objects.push(line);
+    }
+    
+    // Create horizontal lines
+    for (let y = 0; y <= canvasHeight; y += gridSize) {
+      const isLargeLine = y % (gridSize * 5) === 0;
+      const line = new fabric.Line([0, y, canvasWidth, y], {
+        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        visible
+      });
       
-      return [];
+      canvas.add(line);
+      objects.push(line);
     }
-  }
-
-  // Method to update grid if canvas size changes
-  public updateGrid(): void {
-    this.initialized = false; // Reset initialization flag
-    this.createGrid();
-  }
-
-  // Method to toggle grid visibility
-  public toggleVisibility(visible: boolean): void {
-    this.showGrid = visible;
-    this.gridObjects.forEach(obj => {
-      obj.set('visible', visible);
-    });
-    this.canvas.requestRenderAll();
-  }
-  
-  // Method to check grid existence and recreate if missing
-  public checkAndFixGrid(): void {
-    // Use our grid visibility manager to check and fix
-    const result = ensureGridIsPresent(this.canvas);
     
-    if (result.action !== 'none') {
-      // Update grid objects reference
-      this.gridObjects = result.gridObjects;
-      logger.info(`Grid ${result.action === 'created' ? 'created' : 'fixed'} with ${result.gridObjects.length} objects`);
+    // Send grid to back
+    objects.forEach(obj => canvas.sendToBack(obj));
+    
+    setGridObjects(objects);
+    createdRef.current = true;
+    
+    if (onRender) {
+      onRender(objects);
     }
-  }
+    
+    canvas.requestRenderAll();
+  }, [canvas, gridSize, visible, onRender]);
   
-  // Clean up resources
-  public destroy(): void {
-    if (this.monitoringCleanup) {
-      this.monitoringCleanup();
-      this.monitoringCleanup = null;
-    }
-  }
-}
-
-// React component wrapper for class-based implementation
-export const GridRendererComponent: React.FC<GridRendererProps> = React.memo(({
-  canvas,
-  onGridCreated,
-  showGrid = true
-}) => {
-  // Keep references to grid objects
-  const gridRendererRef = useRef<GridRenderer | null>(null);
-  
-  // Create the grid when the component mounts or canvas changes
+  // Update grid visibility
   useEffect(() => {
-    if (!canvas || !showGrid) return;
+    if (!canvas || gridObjects.length === 0) return;
     
-    // Create grid renderer instance
-    gridRendererRef.current = new GridRenderer({
-      canvas,
-      onGridCreated,
-      showGrid
+    gridObjects.forEach(obj => {
+      if (obj && typeof obj.set === 'function') {
+        obj.set('visible', visible);
+      }
     });
     
-    // Clean up function
-    return () => {
-      if (gridRendererRef.current) {
-        gridRendererRef.current.destroy();
-      }
-    };
-  }, [canvas, showGrid, onGridCreated]);
+    canvas.requestRenderAll();
+  }, [canvas, gridObjects, visible]);
   
-  return null; // This component doesn't render anything
-});
+  return null;
+};
 
-GridRendererComponent.displayName = 'GridRendererComponent';
-
-export default GridRendererComponent;
+export default GridRenderer;

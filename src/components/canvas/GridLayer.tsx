@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Canvas, Object as FabricObject } from "fabric";
 import GridRenderer from "./GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
-  fabricCanvas: FabricCanvas;
+  fabricCanvas: Canvas;
   dimensions: { width: number; height: number };
   showDebug?: boolean;
 }
@@ -60,7 +60,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     const checkGridVisibility = () => {
       if (fabricCanvas && gridObjects.length > 0) {
         const visibleGridObjects = gridObjects.filter(obj => 
-          (obj as any).visible && fabricCanvas.contains(obj)
+          obj.visible && fabricCanvas.contains(obj)
         );
         
         if (visibleGridObjects.length < gridObjects.length * 0.5) {
@@ -77,6 +77,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       clearInterval(intervalId);
     };
   }, [fabricCanvas, gridObjects]);
+  
+  if (!fabricCanvas) return null;
   
   return (
     <GridRenderer 

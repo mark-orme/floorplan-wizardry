@@ -1,65 +1,70 @@
 
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
-/**
- * Creates a simple grid for canvas
- * @param canvas - The canvas to create grid for
- * @param gridSize - Size of grid cells
- * @param color - Color of grid lines
- * @returns Array of grid line objects
- */
-export function createSimpleGrid(canvas: FabricCanvas, gridSize: number = 50, color: string = '#e0e0e0'): any[] {
+export const createSimpleGrid = (
+  canvas: Canvas, 
+  gridSize: number = 20, 
+  color: string = '#e0e0e0'
+): FabricObject[] => {
   if (!canvas) return [];
   
-  const width = canvas.width || 800;
-  const height = canvas.height || 600;
-  const gridObjects = [];
+  const gridObjects: FabricObject[] = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
   
   // Create vertical lines
-  for (let i = 0; i <= width; i += gridSize) {
-    const line = new Line([i, 0, i, height], {
-      stroke: color,
+  for (let x = 0; x <= width; x += gridSize) {
+    const isLargeLine = x % (gridSize * 5) === 0;
+    const line = new fabric.Line([x, 0, x, height], {
+      stroke: isLargeLine ? '#c0c0c0' : color,
+      strokeWidth: isLargeLine ? 1 : 0.5,
       selectable: false,
       evented: false,
-      strokeWidth: 1,
-      opacity: 0.5,
-      objectCaching: false
+      objectType: 'grid'
     });
     
+    canvas.add(line);
     gridObjects.push(line);
   }
   
   // Create horizontal lines
-  for (let i = 0; i <= height; i += gridSize) {
-    const line = new Line([0, i, width, i], {
-      stroke: color,
+  for (let y = 0; y <= height; y += gridSize) {
+    const isLargeLine = y % (gridSize * 5) === 0;
+    const line = new fabric.Line([0, y, width, y], {
+      stroke: isLargeLine ? '#c0c0c0' : color,
+      strokeWidth: isLargeLine ? 1 : 0.5,
       selectable: false,
       evented: false,
-      strokeWidth: 1,
-      opacity: 0.5,
-      objectCaching: false
+      objectType: 'grid'
     });
     
+    canvas.add(line);
     gridObjects.push(line);
   }
   
-  return gridObjects;
-}
-
-/**
- * Ensures grid is visible on canvas
- * @param canvas - The canvas containing grid
- * @param gridObjects - Array of grid objects
- */
-export function ensureGridVisible(canvas: FabricCanvas, gridObjects: any[]): void {
-  if (!canvas || !gridObjects.length) return;
-  
+  // Send grid to back
   gridObjects.forEach(obj => {
-    if (!canvas.contains(obj)) {
-      canvas.add(obj);
-    }
     canvas.sendToBack(obj);
   });
   
-  canvas.requestRenderAll();
-}
+  return gridObjects;
+};
+
+export const ensureGridVisible = (canvas: Canvas, gridObjects: FabricObject[]) => {
+  if (!canvas || gridObjects.length === 0) return;
+  
+  let needsRender = false;
+  
+  gridObjects.forEach(obj => {
+    if (obj && !obj.visible) {
+      if (typeof obj.set === 'function') {
+        obj.set('visible', true);
+        needsRender = true;
+      }
+    }
+  });
+  
+  if (needsRender) {
+    canvas.requestRenderAll();
+  }
+};

@@ -1,63 +1,35 @@
+
 /**
- * Hook for setting up the canvas controller
- * Initializes canvas, grid, and history
+ * Hook for canvas initialization and setup
  * @module useCanvasControllerSetup
  */
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { Canvas, Object as FabricObject } from "fabric";
+import { DrawingMode } from "@/constants/drawingModes";
+import { useGrid } from "@/hooks/useGrid";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 import { useDrawingHistory } from "@/hooks/useDrawingHistory";
-import { useGrid } from "@/hooks/useGrid";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useFloorPlanState } from "@/hooks/useFloorPlanState";
-import { useSyncedFloorPlans } from "@/hooks/useSyncedFloorPlans";
-import { FloorPlan } from "@/types/floor-plan/typesBarrel";
 
-interface CanvasReferences {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas>;
-  canvas: FabricCanvas;
-  fabricRef?: any; // Add missing fabricRef property
-}
-
-/**
- * Props for the useCanvasControllerSetup hook
- * @interface UseCanvasControllerSetupProps
- */
 interface UseCanvasControllerSetupProps {
-  /** Reference to the HTML canvas element */
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  /** Initial drawing tool */
   initialTool?: DrawingMode;
-  /** Initial line thickness */
   initialLineThickness?: number;
-  /** Initial line color */
   initialLineColor?: string;
-  /** Initial zoom level */
   initialZoomLevel?: number;
-  /** Initial floor plans */
-  initialFloorPlans?: FloorPlan[];
+  initialFloorPlans?: any[];
 }
 
-/**
- * Hook that sets up the canvas controller
- * Initializes canvas, grid, drawing history, and floor plan state
- * 
- * @param {UseCanvasControllerSetupProps} props - Hook properties
- * @returns {Object} Canvas setup functions and references
- */
 export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) => {
   const {
     canvasRef,
     initialTool = DrawingMode.SELECT,
     initialLineThickness = 2,
     initialLineColor = "#000000",
-    initialZoomLevel = 1,
-    initialFloorPlans = []
+    initialZoomLevel = 1
   } = props;
   
   // Initialize state variables
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [tool, setTool] = useState<DrawingMode>(initialTool);
   const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
   const [lineThickness, setLineThickness] = useState<number>(initialLineThickness);
@@ -67,29 +39,18 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   const [currentFloor, setCurrentFloor] = useState(0);
   
   // Create references
-  const fabricCanvasRef = useRef<FabricCanvas>(null as any);
+  const fabricCanvasRef = useRef<Canvas | null>(null);
   const gridLayerRef = useRef<FabricObject[]>([]);
   
-  // Initialize drawing history hook
+  // Initialize drawing history
   const {
+    saveState,
     undo,
     redo,
-    saveState,
     canUndo,
-    canRedo,
-    handleUndo,
-    handleRedo,
-    saveCurrentState
-  } = useDrawingHistory({ 
+    canRedo
+  } = useDrawingHistory({
     fabricCanvasRef
-  });
-  
-  // Initialize floor plan state hook
-  const {
-    floorPlans,
-    setFloorPlans
-  } = useSyncedFloorPlans({
-    initialFloorPlans: initialFloorPlans
   });
   
   // Initialize grid hook
@@ -100,7 +61,9 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     snapToGrid
   } = useGrid({ 
     fabricCanvasRef, 
-    gridLayerRef 
+    gridLayerRef,
+    initialGridSize: 50,
+    initialVisible: true 
   });
   
   // Initialize canvas interaction hook
@@ -114,16 +77,16 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   } = useCanvasInteraction({
     fabricCanvasRef,
     tool,
-    saveCurrentState: saveState // Use the renamed function
+    saveCurrentState: saveState
   });
   
   /**
    * Function to handle canvas ready event
    * Initializes the Fabric canvas and sets up event listeners
    * 
-   * @param {FabricCanvas} fabricCanvas - Fabric canvas instance
+   * @param {Canvas} fabricCanvas - Fabric canvas instance
    */
-  const handleCanvasReady = useCallback((fabricCanvas: FabricCanvas) => {
+  const handleCanvasReady = useCallback((fabricCanvas: Canvas) => {
     // Set fabric canvas reference
     fabricCanvasRef.current = fabricCanvas;
     
@@ -138,7 +101,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     gridLayerRef.current = gridObjects;
     
     // Save initial canvas state
-    saveState(); // Use the renamed function
+    saveState();
   }, [createGrid, saveState, setupSelectionMode]);
   
   /**
@@ -168,6 +131,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   return {
     canvasRef,
     fabricCanvasRef,
+    fabricRef: fabricCanvasRef,
     canvas,
     tool,
     setTool,
@@ -189,20 +153,14 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
     deleteSelectedObjects,
     enablePointSelection,
     setupSelectionMode,
+    handleUndo: undo,
+    handleRedo: redo,
     canUndo,
     canRedo,
-    undo,
-    redo,
-    saveState,
-    // For backwards compatibility
-    handleUndo,
-    handleRedo,
-    saveCurrentState,
+    saveCurrentState: saveState,
     handleCanvasReady,
     handleCanvasInitError,
     handleCanvasRetry,
-    floorPlans,
-    setFloorPlans,
     gia,
     setGia,
     currentFloor,

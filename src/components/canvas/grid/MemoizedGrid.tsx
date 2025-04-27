@@ -1,209 +1,101 @@
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Canvas as FabricCanvas, Line, Object as FabricObject } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { batchCanvasOperations, requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
+import React, { useEffect, useRef, useState, memo } from 'react';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS, SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 
 interface MemoizedGridProps {
-  canvas: FabricCanvas;
+  canvas: Canvas | null;
   gridSize?: number;
-  largeGridSize?: number;
-  smallGridColor?: string;
-  largeGridColor?: string;
-  showGrid?: boolean;
-  onGridCreated?: (gridObjects: FabricObject[]) => void;
+  visible?: boolean;
+  onCreated?: (gridObjects: FabricObject[]) => void;
 }
 
-/**
- * Highly optimized memoized grid component 
- * Renders grid with batched operations and minimal re-renders
- */
-export const MemoizedGrid = React.memo(({
-  canvas,
-  gridSize = GRID_CONSTANTS.GRID_SIZE,
-  largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE,
-  smallGridColor = GRID_CONSTANTS.SMALL_GRID_COLOR,
-  largeGridColor = GRID_CONSTANTS.LARGE_GRID_COLOR,
-  showGrid = true,
-  onGridCreated
+const MemoizedGridComponent = ({ 
+  canvas, 
+  gridSize = SMALL_GRID_SIZE, 
+  visible = true, 
+  onCreated 
 }: MemoizedGridProps) => {
-  // Reference to grid objects
-  const gridObjectsRef = useRef<FabricObject[]>([]);
-  const isGridCreatedRef = useRef(false);
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const isCreatedRef = useRef(false);
   
-  // Memoize grid creation function to prevent unnecessary recreations
-  const createGrid = useCallback(() => {
-    if (!canvas || isGridCreatedRef.current) return;
+  // Create grid when canvas is ready
+  useEffect(() => {
+    if (!canvas || isCreatedRef.current) return;
     
-    // Remove any existing grid objects
-    const existingGridObjects = canvas.getObjects().filter(
-      obj => (obj as any).isGrid === true
-    );
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    const newGridObjects: FabricObject[] = [];
     
-    if (existingGridObjects.length > 0) {
-      canvas.remove(...existingGridObjects);
-    }
-    
-    // Create all grid operations
-    const operations: Array<(canvas: FabricCanvas) => void> = [];
-    const gridObjects: FabricObject[] = [];
-    const width = canvas.width || 2000;
-    const height = canvas.height || 2000;
-    
-    // Calculate grid dimensions
-    const gridWidth = Math.ceil(width / gridSize) + 1;
-    const gridHeight = Math.ceil(height / gridSize) + 1;
-    
-    // Create vertical grid lines
-    for (let i = 0; i <= gridWidth; i++) {
-      const x = i * gridSize;
-      const isLargeGrid = i % (largeGridSize / gridSize) === 0;
+    try {
+      // Create vertical grid lines
+      for (let x = 0; x <= width; x += gridSize) {
+        const isLargeLine = x % LARGE_GRID_SIZE === 0;
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          visible,
+          isGrid: true,
+          isLargeGrid: isLargeLine
+        });
+        
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
       
-      const line = new Line([x, 0, x, height], {
-        stroke: isLargeGrid ? largeGridColor : smallGridColor,
-        strokeWidth: isLargeGrid ? 1 : 0.5,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        visible: showGrid
+      // Create horizontal grid lines
+      for (let y = 0; y <= height; y += gridSize) {
+        const isLargeLine = y % LARGE_GRID_SIZE === 0;
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+          strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          visible,
+          isGrid: true,
+          isLargeGrid: isLargeLine
+        });
+        
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
+      
+      // Send grid to back
+      newGridObjects.forEach(obj => {
+        canvas.sendToBack(obj);
       });
       
-      // Mark as grid object
-      (line as any).isGrid = true;
-      (line as any).isLargeGrid = isLargeGrid;
+      setGridObjects(newGridObjects);
+      isCreatedRef.current = true;
       
-      gridObjects.push(line);
-      operations.push(canvas => canvas.add(line));
+      if (onCreated) {
+        onCreated(newGridObjects);
+      }
+      
+      canvas.requestRenderAll();
+    } catch (error) {
+      console.error('Error creating grid:', error);
     }
+  }, [canvas, gridSize, visible, onCreated]);
+  
+  // Update grid visibility when visible prop changes
+  useEffect(() => {
+    if (!canvas || gridObjects.length === 0) return;
     
-    // Create horizontal grid lines
-    for (let i = 0; i <= gridHeight; i++) {
-      const y = i * gridSize;
-      const isLargeGrid = i % (largeGridSize / gridSize) === 0;
-      
-      const line = new Line([0, y, width, y], {
-        stroke: isLargeGrid ? largeGridColor : smallGridColor,
-        strokeWidth: isLargeGrid ? 1 : 0.5,
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        visible: showGrid
-      });
-      
-      // Mark as grid object
-      (line as any).isGrid = true;
-      (line as any).isLargeGrid = isLargeGrid;
-      
-      gridObjects.push(line);
-      operations.push(canvas => canvas.add(line));
-    }
-    
-    // Batch all grid creation operations
-    batchCanvasOperations(canvas, operations);
-    
-    // Store grid objects reference
-    gridObjectsRef.current = gridObjects;
-    isGridCreatedRef.current = true;
-    
-    // Send grid objects to parent via callback
-    if (onGridCreated) {
-      onGridCreated(gridObjects);
-    }
-    
-    // Move grid to back
     gridObjects.forEach(obj => {
-      canvas.sendToBack(obj);
+      if (obj && typeof obj.set === 'function') {
+        obj.set('visible', visible);
+      }
     });
     
-    // Request a render
-    requestOptimizedRender(canvas, 'grid-creation');
-    
-    console.log(`Grid created with ${gridObjects.length} lines`);
-  }, [
-    canvas, 
-    gridSize, 
-    largeGridSize, 
-    smallGridColor, 
-    largeGridColor, 
-    showGrid, 
-    onGridCreated
-  ]);
+    canvas.requestRenderAll();
+  }, [canvas, gridObjects, visible]);
   
-  // Update grid visibility when showGrid changes
-  useEffect(() => {
-    if (!canvas || gridObjectsRef.current.length === 0) return;
-    
-    const gridObjects = gridObjectsRef.current;
-    
-    // Batch visibility update operations
-    batchCanvasOperations(canvas, [
-      canvas => {
-        gridObjects.forEach(obj => {
-          obj.set('visible', showGrid);
-        });
-      }
-    ]);
-    
-  }, [canvas, showGrid]);
-  
-  // Create grid on mount
-  useEffect(() => {
-    if (canvas) {
-      // Use requestAnimationFrame for better timing
-      requestAnimationFrame(() => {
-        createGrid();
-      });
-    }
-    
-    return () => {
-      // Clean up grid on unmount
-      if (canvas && gridObjectsRef.current.length > 0) {
-        canvas.remove(...gridObjectsRef.current);
-        isGridCreatedRef.current = false;
-      }
-    };
-  }, [canvas, createGrid]);
-  
-  // Handle zoom changes
-  useEffect(() => {
-    if (!canvas || gridObjectsRef.current.length === 0) return;
-    
-    const handleZoom = () => {
-      const zoom = canvas.getZoom();
-      const gridObjects = gridObjectsRef.current;
-      
-      // Batch zoom adjustment operations
-      batchCanvasOperations(canvas, [
-        canvas => {
-          gridObjects.forEach(obj => {
-            const isLargeGrid = (obj as any).isLargeGrid;
-            const baseWidth = isLargeGrid ? 1 : 0.5;
-            
-            // Adjust width inversely with zoom to maintain visual consistency
-            obj.set('strokeWidth', baseWidth / Math.max(0.5, zoom));
-          });
-        }
-      ]);
-    };
-    
-    canvas.on('zoom:changed', handleZoom);
-    
-    return () => {
-      canvas.off('zoom:changed', handleZoom);
-    };
-  }, [canvas]);
-  
-  // Nothing to render - this is a controller component
   return null;
-}, (prevProps, nextProps) => {
-  // Only re-render if these specific props change
-  return (
-    prevProps.canvas === nextProps.canvas &&
-    prevProps.gridSize === nextProps.gridSize &&
-    prevProps.showGrid === nextProps.showGrid
-  );
-});
+};
 
-MemoizedGrid.displayName = 'MemoizedGrid';
-
-export default MemoizedGrid;
+export const MemoizedGrid = memo(MemoizedGridComponent);

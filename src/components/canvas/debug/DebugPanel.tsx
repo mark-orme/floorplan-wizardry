@@ -48,7 +48,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
             <div>{debugInfo.canvasDimensions?.height ?? 0}px</div>
             
             <div>Grid Objects:</div>
-            <div>{debugInfo.gridObjectCount}</div>
+            <div>{debugInfo.gridObjectCount ?? 0}</div>
             
             <div>Has Error:</div>
             <div>{debugInfo.hasError ? "❌ Yes" : "✅ No"}</div>
@@ -56,7 +56,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
           
           {debugInfo.hasError && (
             <div className="mt-2 p-2 bg-red-900/50 rounded text-red-200">
-              {debugInfo.errorMessage}
+              {debugInfo.errorMessage ?? "Unknown error"}
             </div>
           )}
           

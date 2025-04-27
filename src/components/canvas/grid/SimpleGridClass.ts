@@ -1,214 +1,110 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS, SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 
-/**
- * Options for SimpleGrid class
- */
-export interface SimpleGridOptions {
-  canvas: FabricCanvas;
-  showControls?: boolean;
-  defaultVisible?: boolean;
-  gridSize?: number;
-  smallGridColor?: string;
-  largeGridColor?: string;
-}
-
-/**
- * SimpleGrid class for creating and managing grid
- */
-export class SimpleGridClass {
-  private canvas: FabricCanvas;
-  private gridObjects: FabricObject[] = [];
-  private isVisible: boolean;
-  private options: Required<Omit<SimpleGridOptions, 'canvas'>>;
-
-  /**
-   * Create a new SimpleGrid instance
-   * @param options Grid options
-   */
-  constructor(options: SimpleGridOptions) {
-    this.canvas = options.canvas;
-    
-    // Set default options
-    this.options = {
-      showControls: options.showControls || false,
-      defaultVisible: options.defaultVisible !== undefined ? options.defaultVisible : true,
-      gridSize: options.gridSize || GRID_CONSTANTS.SMALL_GRID_SIZE,
-      smallGridColor: options.smallGridColor || GRID_CONSTANTS.SMALL_GRID_COLOR,
-      largeGridColor: options.largeGridColor || GRID_CONSTANTS.LARGE_GRID_COLOR
-    };
-    
-    this.isVisible = this.options.defaultVisible;
-    
-    // Create grid
-    this.create();
+export class SimpleGrid {
+  canvas: Canvas;
+  gridObjects: FabricObject[] = [];
+  spacing: number;
+  smallColor: string;
+  largeColor: string;
+  smallWidth: number;
+  largeWidth: number;
+  largeSpacingMultiplier: number;
+  
+  constructor(
+    canvas: Canvas,
+    options: {
+      spacing?: number;
+      smallColor?: string;
+      largeColor?: string;
+      smallWidth?: number;
+      largeWidth?: number;
+      largeSpacingMultiplier?: number;
+    } = {}
+  ) {
+    this.canvas = canvas;
+    this.spacing = options.spacing || SMALL_GRID_SIZE;
+    this.smallColor = options.smallColor || SMALL_GRID_COLOR;
+    this.largeColor = options.largeColor || LARGE_GRID_COLOR;
+    this.smallWidth = options.smallWidth || GRID_CONSTANTS.SMALL.WIDTH;
+    this.largeWidth = options.largeWidth || GRID_CONSTANTS.LARGE.WIDTH;
+    this.largeSpacingMultiplier = options.largeSpacingMultiplier || 5;
   }
   
-  /**
-   * Create grid on canvas
-   */
-  private create(): void {
-    if (!this.canvas) return;
+  create() {
+    // Clean up any existing grid
+    this.destroy();
     
-    try {
-      // Get canvas dimensions
-      const width = this.canvas.width || 800;
-      const height = this.canvas.height || 600;
+    const width = this.canvas.getWidth();
+    const height = this.canvas.getHeight();
+    
+    // Create vertical lines
+    for (let x = 0; x <= width; x += this.spacing) {
+      const isLargeLine = x % (this.spacing * this.largeSpacingMultiplier) === 0;
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: isLargeLine ? this.largeColor : this.smallColor,
+        strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      });
       
-      // Clear any existing grid
-      this.clear();
-      
-      // Create small grid lines
-      for (let i = 0; i <= width; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-        const line = new Line([i, 0, i, height], {
-          stroke: this.options.smallGridColor,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        });
-        this.canvas.add(line);
-        this.gridObjects.push(line);
-      }
-      
-      for (let i = 0; i <= height; i += GRID_CONSTANTS.SMALL_GRID_SIZE) {
-        const line = new Line([0, i, width, i], {
-          stroke: this.options.smallGridColor,
-          strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        });
-        this.canvas.add(line);
-        this.gridObjects.push(line);
-      }
-      
-      // Create large grid lines
-      for (let i = 0; i <= width; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([i, 0, i, height], {
-          stroke: this.options.largeGridColor,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        });
-        this.canvas.add(line);
-        this.gridObjects.push(line);
-      }
-      
-      for (let i = 0; i <= height; i += GRID_CONSTANTS.LARGE_GRID_SIZE) {
-        const line = new Line([0, i, width, i], {
-          stroke: this.options.largeGridColor,
-          strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
-          selectable: false,
-          evented: false,
-          objectType: 'grid',
-          isGrid: true
-        });
-        this.canvas.add(line);
-        this.gridObjects.push(line);
-      }
-      
-      // Set visibility based on options
-      if (!this.isVisible) {
-        this.hide();
-      }
-      
-      // Force render
-      this.canvas.requestRenderAll();
-      
-      console.log(`Created grid with ${this.gridObjects.length} objects`);
-    } catch (error) {
-      console.error("Error creating grid:", error);
+      this.canvas.add(line);
+      this.gridObjects.push(line);
     }
-  }
-  
-  /**
-   * Show grid
-   */
-  public show(): void {
-    if (!this.canvas) return;
     
-    this.gridObjects.forEach(obj => {
-      obj.visible = true;
-    });
-    
-    this.isVisible = true;
-    this.canvas.requestRenderAll();
-  }
-  
-  /**
-   * Hide grid
-   */
-  public hide(): void {
-    if (!this.canvas) return;
-    
-    this.gridObjects.forEach(obj => {
-      obj.visible = false;
-    });
-    
-    this.isVisible = false;
-    this.canvas.requestRenderAll();
-  }
-  
-  /**
-   * Toggle grid visibility
-   */
-  public toggle(): void {
-    if (this.isVisible) {
-      this.hide();
-    } else {
-      this.show();
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += this.spacing) {
+      const isLargeLine = y % (this.spacing * this.largeSpacingMultiplier) === 0;
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: isLargeLine ? this.largeColor : this.smallColor,
+        strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      });
+      
+      this.canvas.add(line);
+      this.gridObjects.push(line);
     }
-  }
-  
-  /**
-   * Clear grid from canvas
-   */
-  public clear(): void {
-    if (!this.canvas) return;
     
-    this.gridObjects.forEach(obj => {
-      if (this.canvas.contains(obj)) {
-        this.canvas.remove(obj);
-      }
-    });
+    // Send grid to back
+    this.sendToBack();
     
-    this.gridObjects = [];
-    this.canvas.requestRenderAll();
-  }
-  
-  /**
-   * Check if grid is visible
-   */
-  public isGridVisible(): boolean {
-    return this.isVisible;
-  }
-  
-  /**
-   * Get grid objects
-   */
-  public getObjects(): FabricObject[] {
     return this.gridObjects;
   }
   
-  /**
-   * Reset grid (clear and recreate)
-   */
-  public reset(): void {
-    this.clear();
-    this.create();
+  setVisible(visible: boolean) {
+    this.gridObjects.forEach(obj => {
+      if (obj && typeof obj.set === 'function') {
+        obj.set('visible', visible);
+      }
+    });
+    
+    this.canvas.requestRenderAll();
   }
   
-  /**
-   * Cleanup and destroy grid
-   */
-  public destroy(): void {
-    this.clear();
+  sendToBack() {
+    this.gridObjects.forEach(obj => {
+      this.canvas.sendToBack(obj);
+    });
+  }
+  
+  destroy() {
+    this.gridObjects.forEach(obj => {
+      this.canvas.remove(obj);
+    });
+    
     this.gridObjects = [];
+  }
+  
+  update() {
+    this.destroy();
+    this.create();
   }
 }

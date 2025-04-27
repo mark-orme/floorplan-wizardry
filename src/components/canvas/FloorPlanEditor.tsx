@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas } from 'fabric';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -24,14 +24,14 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
   height = 600,
   onSave
 }) => {
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<DrawingMode>(DrawingMode.SELECT);
   const [lineColor, setLineColor] = useState('#000000');
   const [lineThickness, setLineThickness] = useState(2);
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   
   // Handle canvas initialization
-  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
+  const handleCanvasReady = (fabricCanvas: Canvas) => {
     setCanvas(fabricCanvas);
     toast.success('Floor plan editor ready');
   };

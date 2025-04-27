@@ -1,167 +1,96 @@
 
-import React, { useEffect, useRef, useLayoutEffect } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createCompleteGrid, createBasicEmergencyGrid } from '@/utils/grid/gridRenderers';
-import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
 
-/**
- * Props for GridManager component
- */
 interface GridManagerProps {
-  canvas: FabricCanvas;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  visible: boolean;
-  onGridCreated?: (objects: FabricObject[]) => void;
+  canvas: Canvas | null;
+  spacing?: number;
+  visible?: boolean;
+  onChange?: (grid: FabricObject[]) => void;
 }
 
-/**
- * Grid manager component
- * Handles grid creation and maintenance
- */
-export const GridManager: React.FC<GridManagerProps> = ({
-  canvas,
-  gridLayerRef,
-  visible,
-  onGridCreated
-}) => {
-  const gridCreatedRef = useRef(false);
-  const gridCreationAttemptsRef = useRef(0);
-  const MAX_RETRY_ATTEMPTS = 5;
-  const RETRY_DELAY = 300; // ms
+export const GridManager = ({ 
+  canvas, 
+  spacing = 20, 
+  visible = true,
+  onChange 
+}: GridManagerProps) => {
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
   
-  // Create grid using layout effect to ensure DOM measurements are complete
-  useLayoutEffect(() => {
-    if (!canvas || gridCreatedRef.current) return;
-    
-    // Check if canvas has valid dimensions
-    if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
-      console.warn("Canvas has zero dimensions, scheduling retry...", {
-        width: canvas.width,
-        height: canvas.height,
-        attempt: gridCreationAttemptsRef.current + 1
-      });
-      
-      // Increment attempts counter
-      gridCreationAttemptsRef.current += 1;
-      
-      // If we haven't exceeded max attempts, schedule retry
-      if (gridCreationAttemptsRef.current < MAX_RETRY_ATTEMPTS) {
-        const timerId = setTimeout(() => attemptGridCreation(), RETRY_DELAY);
-        return () => clearTimeout(timerId);
-      } else {
-        console.error("Maximum grid creation attempts reached with zero dimensions");
-        toast.error("Could not initialize grid - please refresh the page");
-        return;
-      }
-    }
-    
-    // If we have dimensions, create the grid immediately
-    attemptGridCreation();
-  }, [canvas]);
-  
-  // Attempt to create the grid
-  const attemptGridCreation = () => {
-    if (!canvas || gridCreatedRef.current) return;
-    
-    try {
-      console.log("Creating grid on canvas with dimensions:", {
-        width: canvas.width, 
-        height: canvas.height
-      });
-      
-      // Check if canvas has valid dimensions
-      if (!canvas.width || !canvas.height || canvas.width === 0 || canvas.height === 0) {
-        console.error("Grid creation failed: Canvas has zero dimensions");
-        return;
-      }
-      
-      // Clear existing grid objects
-      if (gridLayerRef.current.length > 0) {
-        gridLayerRef.current.forEach(obj => {
-          if (canvas.contains(obj)) {
-            canvas.remove(obj);
-          }
-        });
-        gridLayerRef.current = [];
-      }
-      
-      // Create complete grid
-      const gridObjects = createCompleteGrid(canvas);
-      
-      // If grid creation failed, try emergency grid
-      if (!gridObjects || gridObjects.length === 0) {
-        console.warn("Complete grid creation failed, trying emergency grid");
-        
-        const emergencyGrid = createBasicEmergencyGrid(canvas);
-        if (emergencyGrid.length > 0) {
-          gridLayerRef.current = emergencyGrid;
-          gridCreatedRef.current = true;
-          
-          if (onGridCreated) {
-            onGridCreated(emergencyGrid);
-          }
-          
-          console.log("Emergency grid created successfully with", emergencyGrid.length, "objects");
-        } else {
-          console.error("Both regular and emergency grid creation failed");
-          toast.error("Failed to create grid");
-        }
-      } else {
-        // Grid created successfully
-        gridLayerRef.current = gridObjects;
-        gridCreatedRef.current = true;
-        
-        if (onGridCreated) {
-          onGridCreated(gridObjects);
-        }
-        
-        console.log("Grid created successfully with", gridObjects.length, "objects");
-      }
-      
-      // Update grid visibility
-      updateGridVisibility(visible);
-      
-      // Force render to ensure grid is visible
-      canvas.requestRenderAll();
-      
-    } catch (error) {
-      console.error("Error creating grid:", error);
-      
-      // Try emergency grid on error
-      try {
-        if (canvas) {
-          console.log("Attempting emergency grid creation");
-          const emergencyGrid = createBasicEmergencyGrid(canvas);
-          if (emergencyGrid.length > 0) {
-            gridLayerRef.current = emergencyGrid;
-            gridCreatedRef.current = true;
-            
-            if (onGridCreated) {
-              onGridCreated(emergencyGrid);
-            }
-          }
-        }
-      } catch (emergencyError) {
-        console.error("Emergency grid creation also failed:", emergencyError);
-      }
-    }
-  };
-  
-  // Update grid visibility when visible prop changes
+  // Create grid when canvas is ready
   useEffect(() => {
-    updateGridVisibility(visible);
-  }, [visible]);
-  
-  // Helper function to update grid visibility
-  const updateGridVisibility = (isVisible: boolean) => {
-    if (!canvas || gridLayerRef.current.length === 0) return;
+    if (!canvas) return;
     
-    gridLayerRef.current.forEach(obj => {
-      obj.set('visible', isVisible);
+    // Remove any existing grid
+    gridObjects.forEach(obj => canvas.remove(obj));
+    
+    if (!visible) {
+      setGridObjects([]);
+      if (onChange) onChange([]);
+      return;
+    }
+    
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    const objects: FabricObject[] = [];
+    
+    // Create horizontal and vertical grid lines
+    for (let x = 0; x <= width; x += spacing) {
+      const isLargeLine = x % (spacing * 5) === 0;
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      });
+      
+      canvas.add(line);
+      objects.push(line);
+    }
+    
+    for (let y = 0; y <= height; y += spacing) {
+      const isLargeLine = y % (spacing * 5) === 0;
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
+        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        selectable: false,
+        evented: false,
+        objectType: 'grid',
+        isGrid: true,
+        isLargeGrid: isLargeLine
+      });
+      
+      canvas.add(line);
+      objects.push(line);
+    }
+    
+    // Send grid to back
+    objects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
+    
+    setGridObjects(objects);
+    if (onChange) onChange(objects);
+    
+    canvas.requestRenderAll();
+  }, [canvas, spacing, visible, onChange]);
+  
+  // Update grid visibility
+  useEffect(() => {
+    if (!canvas || gridObjects.length === 0) return;
+    
+    gridObjects.forEach(obj => {
+      if (obj && typeof obj.set === 'function') {
+        obj.set({ visible });
+      }
     });
     
     canvas.requestRenderAll();
-  };
+  }, [canvas, gridObjects, visible]);
   
-  return null; // This component doesn't render anything
+  return null;
 };

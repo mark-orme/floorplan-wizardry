@@ -3,50 +3,37 @@
  * Hook for managing canvas tools and interactions
  */
 import { useState, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { createGrid } from '@/utils/grid/gridRenderers';
+import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
+import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
 import { toast } from 'sonner';
+import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 
-interface UseCanvasControllerToolsOptions {
+interface CanvasControllerToolsOptions {
   enableVirtualization?: boolean;
 }
 
-// Simplified virtualization hook functions
-const useVirtualizedCanvas = (canvasRef: any, options: any = {}) => {
-  return {
-    performanceMetrics: {
-      fps: 60,
-      renderDuration: 0,
-      objectCount: 0,
-      throttled: false,
-      lastUpdate: Date.now()
-    },
-    refreshVirtualization: () => {}
-  };
-};
-
-// Utility functions (placeholders for now)
-const isPressureSupported = () => false;
-const isTiltSupported = () => false;
-
-export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: UseCanvasControllerToolsOptions = {}) => {
+// Renamed from useCanvasControllerTools to avoid conflict
+export const useCanvasToolManager = (canvas: Canvas | null, options: CanvasControllerToolsOptions = {}) => {
   const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
   const [lineColor, setLineColor] = useState<string>("#000000");
   const [lineThickness, setLineThickness] = useState<number>(2);
   const gridObjectsRef = useRef<any[]>([]);
-  const canvasRef = useRef<FabricCanvas | null>(canvas);
-  const [virtualizationEnabled, setVirtualizationEnabled] = useState(false);
+  const canvasRef = useRef<Canvas | null>(canvas);
 
   // Initialize canvas virtualization
   const {
-    performanceMetrics,
-    refreshVirtualization
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
   } = useVirtualizedCanvas(canvasRef, {
-    enabled: options.enableVirtualization ?? true
+    enabled: options.enableVirtualization ?? true,
+    objectThreshold: 100
   });
 
-  const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
+  const handleCanvasReady = useCallback((canvas: Canvas) => {
     try {
       // Set fabricCanvasRef for external use
       canvasRef.current = canvas;
@@ -75,20 +62,17 @@ export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: U
       // Create grid for the canvas
       if (true) {
         console.log("Creating grid for canvas");
-        const gridObjects = createGrid(canvas);
+        const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
         gridObjectsRef.current = gridObjects;
       }
 
       // Make sure touch events work well on mobile
-      // Safely access the allowTouchScrolling property
-      if ((canvas as any).allowTouchScrolling !== undefined) {
-        (canvas as any).allowTouchScrolling = tool === DrawingMode.HAND;
-      }
+      canvas.allowTouchScrolling = tool === DrawingMode.HAND;
 
       // Apply custom CSS to the canvas container to make it touch-friendly
-      if ((canvas as any).wrapperEl) {
-        (canvas as any).wrapperEl.classList.add('touch-manipulation');
-        (canvas as any).wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
+      if (canvas.wrapperEl) {
+        canvas.wrapperEl.classList.add('touch-manipulation');
+        canvas.wrapperEl.style.touchAction = tool === DrawingMode.HAND ? 'manipulation' : 'none';
       }
     } catch (error) {
       console.error("Error in canvas initialization:", error);
@@ -100,14 +84,14 @@ export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: U
     const canvas = canvasRef.current;
     if (canvas && gridObjectsRef.current.length > 0) {
       gridObjectsRef.current.forEach(obj => {
-        if (obj) {
+        if (obj && typeof obj.set === 'function') {
           obj.set('visible', showGrid);
         }
       });
       canvas.requestRenderAll();
     } else if (canvas && showGrid && gridObjectsRef.current.length === 0) {
       // Create grid if it doesn't exist and should be shown
-      const gridObjects = createGrid(canvas);
+      const gridObjects = createSimpleGrid(canvas, 50, '#e0e0e0');
       gridObjectsRef.current = gridObjects;
     }
   }, []);
@@ -128,10 +112,6 @@ export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: U
     canvas.requestRenderAll();
   }, [tool, lineColor, lineThickness]);
 
-  const toggleVirtualization = useCallback(() => {
-    setVirtualizationEnabled(prev => !prev);
-  }, []);
-
   return {
     tool,
     setTool,
@@ -149,5 +129,5 @@ export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: U
   };
 };
 
-// Export alias for backward compatibility
-export { useCanvasControllerTools as useCanvasToolManager };
+// Export the renamed function to avoid conflicts
+export { useCanvasToolManager as useCanvasControllerTools };

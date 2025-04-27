@@ -18,6 +18,7 @@ export const LARGE_GRID_OPACITY = 0.7;
 // Grid configuration
 export const GRID_SEND_TO_BACK = true;
 export const GRID_AUTO_FIX = true;
+export const GRID_SIZE = SMALL_GRID_SIZE;
 
 export const GRID_CONSTANTS = {
   SMALL: {
@@ -33,5 +34,12 @@ export const GRID_CONSTANTS = {
     OPACITY: LARGE_GRID_OPACITY
   },
   SEND_TO_BACK: GRID_SEND_TO_BACK,
-  AUTO_FIX: GRID_AUTO_FIX
+  AUTO_FIX: GRID_AUTO_FIX,
+  SMALL_GRID_SIZE,
+  LARGE_GRID_SIZE,
+  SMALL_GRID_COLOR,
+  LARGE_GRID_COLOR,
+  SMALL_GRID_WIDTH,
+  LARGE_GRID_WIDTH,
+  GRID_SIZE
 };

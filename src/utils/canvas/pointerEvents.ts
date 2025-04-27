@@ -1,85 +1,68 @@
 
-/**
- * Pointer events utility for canvas input handling
- */
+// Utility functions to detect input capabilities
 
 /**
- * Check if pressure sensitivity is supported in the browser
+ * Check if pressure sensitivity is supported
  * @returns True if pressure is supported
  */
-export function isPressureSupported(): boolean {
-  try {
-    // Check if PointerEvent exists
-    if (typeof PointerEvent === 'undefined') return false;
-    
-    return 'pressure' in PointerEvent.prototype;
-  } catch (err) {
-    console.error('Error checking pressure support:', err);
-    return false;
-  }
-}
+export const isPressureSupported = (): boolean => {
+  return (
+    typeof window !== 'undefined' && 
+    'PointerEvent' in window && 
+    'pressure' in PointerEvent.prototype
+  );
+};
 
 /**
- * Check if tilt sensitivity is supported in the browser
+ * Check if tilt input is supported
  * @returns True if tilt is supported
  */
-export function isTiltSupported(): boolean {
-  try {
-    // Check if PointerEvent exists
-    if (typeof PointerEvent === 'undefined') return false;
-    
-    return 'tiltX' in PointerEvent.prototype && 'tiltY' in PointerEvent.prototype;
-  } catch (err) {
-    console.error('Error checking tilt support:', err);
-    return false;
-  }
-}
+export const isTiltSupported = (): boolean => {
+  return (
+    typeof window !== 'undefined' && 
+    'PointerEvent' in window && 
+    'tiltX' in PointerEvent.prototype && 
+    'tiltY' in PointerEvent.prototype
+  );
+};
 
 /**
- * Check if the pointer event is from a stylus/pen
- * @param event Pointer event to check
- * @returns True if the event is from a stylus/pen
+ * Check if the current device supports touch input
+ * @returns True if touch is supported
  */
-export function isStylus(event: PointerEvent): boolean {
+export const isTouchSupported = (): boolean => {
+  return (
+    typeof window !== 'undefined' && 
+    ('ontouchstart' in window || 
+    (window.navigator.maxTouchPoints > 0))
+  );
+};
+
+/**
+ * Check if the current pointer event is from a pen/stylus
+ * @param event PointerEvent to check
+ * @returns True if the event is from a pen
+ */
+export const isPenPointer = (event: PointerEvent): boolean => {
   return event.pointerType === 'pen';
-}
+};
 
 /**
- * Get pressure from pointer event (normalized between 0-1)
- * @param event Pointer event
- * @returns Pressure value between 0-1
+ * Get normalized pressure value from pointer event
+ * @param event PointerEvent with pressure
+ * @returns Normalized pressure between 0 and 1
  */
-export function getPressure(event: PointerEvent): number {
-  // Most devices report 0.5 for no pressure, 
-  // so we normalize values to get better range
-  if (isPressureSupported() && event.pressure !== 0.5) {
-    return Math.max(0, Math.min(1, event.pressure));
+export const getNormalizedPressure = (event: PointerEvent): number => {
+  // Default pressure is 0.5 if not supported
+  if (!isPressureSupported() || typeof event.pressure !== 'number') {
+    return 0.5;
   }
   
-  return 0.5; // Default pressure
-}
-
-/**
- * Extract tilt information from pointer event
- * @param event Pointer event
- * @returns Object containing tilt values and calculated angle
- */
-export function getTilt(event: PointerEvent): { tiltX: number; tiltY: number; tiltAngle: number } {
-  if (isTiltSupported()) {
-    const tiltX = event.tiltX || 0;
-    const tiltY = event.tiltY || 0;
-    const tiltAngle = Math.atan2(tiltY, tiltX) * (180 / Math.PI);
-    
-    return {
-      tiltX,
-      tiltY,
-      tiltAngle
-    };
+  // Most systems report pressure between 0 and 1
+  // Some report 0 when hovering and 0.5 when touching
+  if (event.pressure === 0 && event.buttons > 0) {
+    return 0.5;
   }
   
-  return {
-    tiltX: 0,
-    tiltY: 0,
-    tiltAngle: 0
-  };
-}
+  return Math.min(Math.max(event.pressure, 0), 1);
+};

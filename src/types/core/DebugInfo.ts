@@ -10,6 +10,12 @@ export interface DebugInfoState {
   canvasDimensions: { width: number; height: number };
   canvasInitialized?: boolean;
   lastInitTime?: number;
+  dimensionsSet?: boolean;
+  gridCreated?: boolean;
+  eventHandlersSet?: boolean;
+  gridObjectCount?: number;
+  hasError?: boolean;
+  errorMessage?: string;
 }
 
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {

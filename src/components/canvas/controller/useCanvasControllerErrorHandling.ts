@@ -1,30 +1,35 @@
 
 import { useCallback } from 'react';
-import { FloorPlan } from '@/types/core';
-import { captureError } from '@/utils/sentryUtils';
+import { captureMessage, CaptureMessageOptions } from '@/utils/sentryUtils';
 
-interface ErrorHandlingProps {
-  currentFloorPlan: FloorPlan | null;
-  onError: (error: Error) => void;
+interface UseControllerErrorHandlingProps {
+  componentName?: string;
+  onError?: (error: Error) => void;
 }
 
+/**
+ * Hook for handling canvas controller errors
+ */
 export const useCanvasControllerErrorHandling = ({
-  currentFloorPlan,
+  componentName = 'CanvasController',
   onError
-}: ErrorHandlingProps) => {
-  const handleError = useCallback((error: Error) => {
-    console.error('Canvas Controller Error:', error);
-    onError(error);
+}: UseControllerErrorHandlingProps = {}) => {
+  const handleError = useCallback((error: Error, source?: string) => {
+    console.error(`[${componentName}] ${source ? `(${source})` : ''}: ${error.message}`, error);
 
-    captureError(error, {
-      context: 'canvas-controller',
-      floorPlanId: currentFloorPlan?.id
+    // Capture error for monitoring
+    captureMessage(`Canvas error: ${error.message}`, {
+      level: 'error',
+      tags: { component: componentName, source }
     });
-  }, [currentFloorPlan, onError]);
+
+    // Call onError callback if provided
+    if (onError) {
+      onError(error);
+    }
+  }, [componentName, onError]);
 
   return {
     handleError
   };
 };
-
-export default useCanvasControllerErrorHandling;

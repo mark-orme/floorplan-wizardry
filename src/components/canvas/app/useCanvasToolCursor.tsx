@@ -1,10 +1,10 @@
 
 import { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface UseCanvasToolCursorProps {
-  fabricCanvas: FabricCanvas | null;
+  fabricCanvas: Canvas | null;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   tool: DrawingMode;
   lineThickness?: number;

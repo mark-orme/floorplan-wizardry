@@ -1,8 +1,11 @@
 
 // Extended fabric.js type definitions
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 
 declare module 'fabric' {
+  // Export existing types more explicitly
+  export { Canvas, Object, Line };
+  
   interface Canvas {
     // Properties
     isDrawingMode: boolean;
@@ -16,6 +19,7 @@ declare module 'fabric' {
     wrapperEl: HTMLElement;
     width: number;
     height: number;
+    allowTouchScrolling: boolean;
 
     // Methods
     add(...objects: FabricObject[]): Canvas;
@@ -43,5 +47,29 @@ declare module 'fabric' {
     fire(eventName: string, options?: any): Canvas;
     dispose(): void;
     clear(): Canvas;
+    
+    // For advanced features
+    forEachObject(callback: (obj: FabricObject) => void): void;
+    getContext(): CanvasRenderingContext2D;
+    initialize: Function;
+    skipTargetFind: boolean;
+    _activeObject: FabricObject | null;
+    _objects: FabricObject[];
+  }
+  
+  interface Object {
+    // Key properties
+    visible: boolean;
+    selectable: boolean;
+    evented: boolean;
+    
+    // Methods
+    set(options: Record<string, any>): FabricObject;
+    setOptions(options: Record<string, any>): FabricObject;
+    
+    // For advanced features
+    _controlsVisibility: Record<string, boolean>;
+    controls: Record<string, any>;
+    initialize: Function;
   }
 }

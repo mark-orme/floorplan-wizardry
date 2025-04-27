@@ -1,8 +1,9 @@
 
 import { useEffect } from 'react';
+import { Canvas } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { GRID_CONSTANTS, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
 import logger from '@/utils/logger';
 
 interface CanvasInitializerProps {
@@ -75,12 +76,14 @@ const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
       };
       const isLargeGrid = fabricObj.isLargeGrid;
       const baseWidth = isLargeGrid ? 
-        GRID_CONSTANTS.LARGE_GRID_WIDTH : 
-        GRID_CONSTANTS.SMALL_GRID_WIDTH;
+        LARGE_GRID_WIDTH : 
+        SMALL_GRID_WIDTH;
       
       // Inverse relationship with zoom to maintain visual consistency
       // Cast the object before calling .set() to fix the typing issue
-      (fabricObj as any).set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
+      if (fabricObj && typeof fabricObj.set === 'function') {
+        fabricObj.set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
+      }
     });
     
     canvas.requestRenderAll();

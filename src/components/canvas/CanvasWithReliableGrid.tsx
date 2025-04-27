@@ -16,11 +16,13 @@ export function CanvasWithReliableGrid({
 }: CanvasWithReliableGridProps) {
   return (
     <>
-      <SimpleGridLayer 
-        canvas={canvas}
-        gridSize={gridSize}
-        visible={showGrid}
-      />
+      {canvas && (
+        <SimpleGridLayer 
+          canvas={canvas}
+          gridSize={gridSize}
+          visible={showGrid}
+        />
+      )}
     </>
   );
 }

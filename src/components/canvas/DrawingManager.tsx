@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
@@ -9,7 +9,7 @@ import BrushCursorPreview from '@/components/canvas/BrushCursorPreview';
 import MeasurementGuideModal from '@/components/MeasurementGuideModal';
 
 interface DrawingManagerProps {
-  canvas: FabricCanvas | null;
+  canvas: Canvas | null;
   activeTool: DrawingMode;
   lineColor: string;
   lineThickness: number;
