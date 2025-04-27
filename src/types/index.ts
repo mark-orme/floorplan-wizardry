@@ -1,16 +1,9 @@
 
-/**
- * Type definitions index
- * Re-exports all type definitions for easier imports
- */
-
-// Re-export using 'export type' syntax for isolated modules
-export type { Point } from './core/Point';
-export type { FloorPlan } from './floorPlan';
+// Export all types from their respective modules
+export * from './canvas';
 export * from './drawingTypes';
-export * from './fabricTypes';
-
-// Export core types
-export * from './core';
-// Export floor plan types
-export * from './floor-plan';
+export * from './canvasStateTypes';
+export * from './core/Point';
+export * from './canvas/DebugInfoState';
+export * from './security';
+export * from './FloorPlan';

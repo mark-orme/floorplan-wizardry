@@ -25,3 +25,14 @@ export const logWarning = (message: string, context?: Record<string, any>) => {
   // This is a stub for now - in a real app, would connect to Sentry
   console.warn('Warning:', message, context);
 };
+
+/**
+ * Capture message and send to monitoring service
+ * 
+ * @param {string} message - Message to capture
+ * @param {Record<string, any>} [context] - Additional context data
+ */
+export const captureMessage = (message: string, context?: Record<string, any>) => {
+  // This is a stub for now - in a real app, would connect to Sentry
+  console.log('Message captured:', message, context);
+};
