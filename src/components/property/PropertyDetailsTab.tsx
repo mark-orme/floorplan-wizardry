@@ -1,9 +1,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { AiOutlineEdit, AiOutlineSend, AiOutlineCheck } from 'react-icons/ai';
-import { UserRole } from '@/lib/supabase';
-import { PropertyStatus } from '@/types/propertyTypes';
+import { Icons } from '@/components/icons';
+import { UserRole, PropertyStatus } from '@/types/roles';
 import { useNavigate } from 'react-router-dom';
 
 interface PropertyDetailsTabProps {
@@ -78,38 +77,38 @@ export const PropertyDetailsTab = ({
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
         <div>
-          {userRole === 'manager' && propertyId && (
+          {userRole === UserRole.MANAGER && propertyId && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => navigate(`/properties/${propertyId}/edit`)}
             >
-              <AiOutlineEdit className="mr-2 h-4 w-4" />
+              <Icons.pencil className="mr-2 h-4 w-4" />
               Edit Details
             </Button>
           )}
         </div>
         <div className="flex gap-2">
-          {userRole === 'photographer' && property.status === PropertyStatus.DRAFT && (
+          {userRole === UserRole.PHOTOGRAPHER && property.status === PropertyStatus.DRAFT && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
               size="sm"
             >
-              <AiOutlineSend className="mr-2 h-4 w-4" />
+              <Icons.send className="mr-2 h-4 w-4" />
               Submit for Review
             </Button>
           )}
-          {userRole === 'processing_manager' && property.status === PropertyStatus.PENDING_REVIEW && (
+          {userRole === UserRole.PROCESSING_MANAGER && property.status === PropertyStatus.PENDING_REVIEW && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.COMPLETED)}
               variant="default"
               size="sm"
             >
-              <AiOutlineCheck className="mr-2 h-4 w-4" />
+              <Icons.checkCircle className="mr-2 h-4 w-4" />
               Mark as Completed
             </Button>
           )}
-          {userRole === 'manager' && property.status !== PropertyStatus.DRAFT && (
+          {userRole === UserRole.MANAGER && property.status !== PropertyStatus.DRAFT && (
             <Button 
               onClick={() => onStatusChange(PropertyStatus.DRAFT)}
               variant="outline"

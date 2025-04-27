@@ -1,12 +1,10 @@
-
 import React from 'react';
 import { Icons } from '@/components/icons';
 import LoadingErrorWrapper from '@/components/LoadingErrorWrapper';
-import { UserRole } from '@/types/roles';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
 import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PropertyStatus } from '@/types/propertyTypes';
+import { PropertyStatus, UserRole } from '@/types/roles';
 
 interface PropertyDetailContentProps {
   property: {
@@ -24,13 +22,6 @@ interface PropertyDetailContentProps {
   isLoading: boolean;
   error: Error | null;
   onStatusChange: (status: PropertyStatus) => Promise<void>;
-  onMeasurementGuideOpen?: () => void;
-}
-
-interface PropertyFloorPlanTabProps {
-  canEdit?: boolean;
-  isApprovedUser?: boolean;
-  propertyStatus?: PropertyStatus;
   onMeasurementGuideOpen?: () => void;
 }
 
@@ -68,8 +59,8 @@ export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
         </TabsContent>
         <TabsContent value="floorplan">
           <PropertyFloorPlanTab
-            canEdit={canEdit}
-            isApprovedUser={isApprovedUser}
+            canEdit={userRole === UserRole.MANAGER}
+            isApprovedUser={userRole === UserRole.MANAGER || userRole === UserRole.ADMIN}
             propertyStatus={property.status}
             onMeasurementGuideOpen={onMeasurementGuideOpen}
           />

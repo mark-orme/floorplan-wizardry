@@ -8,9 +8,10 @@ export enum UserRole {
 }
 
 export enum PropertyStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  ACTIVE = 'active',
-  ARCHIVED = 'archived',
-  DELETED = 'deleted'
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  IN_REVIEW = 'IN_REVIEW',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED'
 }
