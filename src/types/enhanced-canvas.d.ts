@@ -12,6 +12,7 @@ declare module 'fabric' {
       width: number;
     };
     wrapperEl: HTMLElement;
+    upperCanvasEl?: HTMLCanvasElement;
     getPointer(e: Event): { x: number; y: number };
     on(event: string, handler: Function): Canvas;
     off(event: string, handler: Function): Canvas;
@@ -24,6 +25,7 @@ declare module 'fabric' {
     height: number;
     setWidth(value: number): Canvas;
     setHeight(value: number): Canvas;
+    setDimensions?(options: { width: number; height: number }): Canvas;
     backgroundColor: string;
     contains(obj: FabricObject): boolean;
     add(...objects: FabricObject[]): Canvas;

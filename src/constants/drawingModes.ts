@@ -16,7 +16,10 @@ export enum DrawingMode {
   MEASURE = 'measure',
   DRAW = 'draw',
   ERASER = 'eraser',
-  TEXT = 'text'
+  TEXT = 'text',
+  STRAIGHT_LINE = 'straight_line',
+  PAN = 'pan',
+  HAND = 'hand'
 }
 
 export const DEFAULT_DRAWING_MODE = DrawingMode.SELECT;
