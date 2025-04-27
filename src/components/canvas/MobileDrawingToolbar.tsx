@@ -1,19 +1,20 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  FiMousePointer,
-  FiEdit2,
-  FiType,
-  FiHand,
-  FiEraser,
-  FiUndo2,
-  FiRedo2,
-  FiRuler,
-  FiTrash2,
-  FiZoomIn,
-  FiZoomOut,
-  FiMenu
-} from 'react-icons/fi';
+  AiOutlineSelect,
+  AiOutlineEdit,
+  AiOutlineFont,
+  AiOutlineHolderOutline,
+  AiOutlineHighlight,
+  AiOutlineUndo,
+  AiOutlineRedo,
+  AiOutlineColumnWidth,
+  AiOutlineDelete,
+  AiOutlineZoomIn,
+  AiOutlineZoomOut,
+  AiOutlineMenu
+} from 'react-icons/ai';
 
 interface MobileDrawingToolbarProps {
   onToolSelect: (tool: string) => void;
@@ -45,24 +46,24 @@ export const MobileDrawingToolbar: React.FC<MobileDrawingToolbarProps> = ({
           variant={isDrawingMode ? 'default' : 'outline'}
           onClick={() => onToolSelect(isDrawingMode ? 'select' : 'draw')}
         >
-          {isDrawingMode ? <FiMousePointer size={20} /> : <FiEdit2 size={20} />}
+          {isDrawingMode ? <AiOutlineSelect size={20} /> : <AiOutlineEdit size={20} />}
         </Button>
         <Button onClick={onZoomIn}>
-          <FiZoomIn size={20} />
+          <AiOutlineZoomIn size={20} />
         </Button>
         <Button onClick={onZoomOut}>
-          <FiZoomOut size={20} />
+          <AiOutlineZoomOut size={20} />
         </Button>
       </div>
       <div className="actions flex items-center space-x-2">
         <Button onClick={onUndo} disabled={!canUndo}>
-          <FiUndo2 size={20} />
+          <AiOutlineUndo size={20} />
         </Button>
         <Button onClick={onRedo} disabled={!canRedo}>
-          <FiRedo2 size={20} />
+          <AiOutlineRedo size={20} />
         </Button>
         <Button onClick={onClear}>
-          <FiTrash2 size={20} />
+          <AiOutlineDelete size={20} />
         </Button>
       </div>
     </div>

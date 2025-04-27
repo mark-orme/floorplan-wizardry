@@ -1,12 +1,13 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  FiMousePointer,
-  FiEdit2,
-  FiType,
-  FiHand,
-  FiEraser
-} from 'react-icons/fi';
+  AiOutlineSelect,
+  AiOutlineEdit,
+  AiOutlineFont,
+  AiOutlineHolderOutline,
+  AiOutlineHighlight
+} from 'react-icons/ai';
 
 interface ToolSelectorProps {
   activeTool: string;
@@ -18,11 +19,11 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   onToolSelect
 }) => {
   const tools = [
-    { id: 'select', icon: <FiMousePointer size={18} />, label: 'Select' },
-    { id: 'pencil', icon: <FiEdit2 size={18} />, label: 'Pencil' },
-    { id: 'text', icon: <FiType size={18} />, label: 'Text' },
-    { id: 'hand', icon: <FiHand size={18} />, label: 'Pan' },
-    { id: 'eraser', icon: <FiEraser size={18} />, label: 'Eraser' }
+    { id: 'select', icon: <AiOutlineSelect size={18} />, label: 'Select' },
+    { id: 'pencil', icon: <AiOutlineEdit size={18} />, label: 'Pencil' },
+    { id: 'text', icon: <AiOutlineFont size={18} />, label: 'Text' },
+    { id: 'hand', icon: <AiOutlineHolderOutline size={18} />, label: 'Pan' },
+    { id: 'eraser', icon: <AiOutlineHighlight size={18} />, label: 'Eraser' }
   ];
   
   return (
