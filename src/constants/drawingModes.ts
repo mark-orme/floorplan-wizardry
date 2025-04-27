@@ -3,6 +3,7 @@ export enum DrawingMode {
   SELECT = 'select',
   DRAW = 'draw',
   PENCIL = 'pencil',
+  HAND = 'hand',
   STRAIGHT_LINE = 'straight_line',
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
@@ -14,10 +15,12 @@ export enum DrawingMode {
   MEASURE = 'measure',
   ERASER = 'eraser',
   PAN = 'pan',
-  HAND = 'hand',
   LINE = 'line',
   RECT = 'rect',
   ERASE = 'erase',
   ZOOM = 'zoom',
-  SHAPE = 'shape'
+  SHAPE = 'shape',
+  DIMENSION = 'dimension',
+  STAIR = 'stair',
+  COLUMN = 'column'
 }
