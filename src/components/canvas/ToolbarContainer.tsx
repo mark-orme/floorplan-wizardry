@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AiOutlineSelect,
@@ -10,9 +9,9 @@ import {
   AiOutlineTable,
   AiOutlineDelete,
   AiOutlineWifi,
-  AiOutlineDisconnect,
-  AiOutlineFont
+  AiOutlineDisconnect
 } from 'react-icons/ai';
+import { FiType } from 'react-icons/fi';
 import { Button } from '@/components/ui/button';
 
 interface ToolbarContainerProps {
@@ -72,7 +71,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={() => onToolSelect('text')}
         title="Text"
       >
-        <AiOutlineFont className="h-4 w-4" />
+        <FiType className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>

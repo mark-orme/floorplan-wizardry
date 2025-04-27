@@ -1,20 +1,16 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   AiOutlineSelect,
   AiOutlineEdit,
-  AiOutlineFont,
-  AiOutlineHolderOutline,
-  AiOutlineHighlight,
   AiOutlineUndo,
   AiOutlineRedo,
-  AiOutlineColumnWidth,
   AiOutlineDelete,
   AiOutlineZoomIn,
   AiOutlineZoomOut,
   AiOutlineMenu
 } from 'react-icons/ai';
+import { FiType, FiMove } from 'react-icons/fi';
 
 interface MobileDrawingToolbarProps {
   onToolSelect: (tool: string) => void;

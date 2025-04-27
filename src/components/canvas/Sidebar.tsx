@@ -1,7 +1,7 @@
-
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { AiOutlinePlus, AiOutlineHome } from 'react-icons/ai';
+import { FiPlus } from 'react-icons/fi';
+import { MdOutlineApartment } from 'react-icons/md';
 
 interface SidebarProps {
   children?: ReactNode;

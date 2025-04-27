@@ -1,13 +1,11 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   AiOutlineSelect,
   AiOutlineEdit,
-  AiOutlineFont,
-  AiOutlineHolderOutline,
-  AiOutlineHighlight
 } from 'react-icons/ai';
+import { FiType, FiMove } from 'react-icons/fi';
+import { AiOutlineFont, AiOutlineHolderOutline, AiOutlineHighlight } from 'react-icons/ai';
 
 interface ToolSelectorProps {
   activeTool: string;
