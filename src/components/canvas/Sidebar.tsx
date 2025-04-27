@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Building } from 'lucide-react';
-import { FloorPlan } from '@/types/floorPlan';
+import { PlusIcon as Plus, BuildingIcon as Building } from 'lucide-react';
+import { FloorPlan } from '@/types/FloorPlan';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 

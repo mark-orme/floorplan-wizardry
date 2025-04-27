@@ -2,13 +2,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  MousePointer,
-  Pencil,
-  Type,
-  Hand,
+  MousePointer2 as MousePointer,
+  PenLine as Pencil,
+  Text as Type,
+  HandMetal as Hand,
   Eraser,
-  Undo2,
-  Redo2,
+  Undo as Undo2,
+  Redo as Redo2,
   Ruler,
   Trash,
   ZoomIn,

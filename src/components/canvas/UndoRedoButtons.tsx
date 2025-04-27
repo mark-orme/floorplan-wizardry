@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCcw as RefreshCw } from 'lucide-react';
 
 interface UndoRedoButtonsProps {
   /** Whether undo is available */

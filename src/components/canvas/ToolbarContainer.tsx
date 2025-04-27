@@ -1,199 +1,156 @@
+
 import React from 'react';
-import { 
-  MousePointer, 
-  Pencil, 
-  Undo2, 
-  Redo2, 
-  ZoomIn, 
-  ZoomOut, 
-  Grid, 
-  Trash, 
-  Wifi, 
+import {
+  MousePointer2 as MousePointer,
+  PenLine as Pencil,
+  Undo as Undo2,
+  Redo as Redo2,
+  ZoomIn,
+  ZoomOut,
+  LayoutGrid as Grid,
+  Trash,
+  Wifi,
   WifiOff,
-  Type
+  Text as Type
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DrawingMode } from '@/constants/drawingModes';
-import { formatDistanceToNow } from 'date-fns';
 
 interface ToolbarContainerProps {
-  tool: DrawingMode;
-  setTool: (tool: DrawingMode) => void;
+  onToolSelect: (tool: string) => void;
   onUndo: () => void;
   onRedo: () => void;
-  onZoom: (direction: "in" | "out") => void;
   onClear: () => void;
-  onDelete: () => void;
-  gia: number;
-  lineThickness: number;
-  lineColor: string;
-  showGrid: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
   onToggleGrid: () => void;
-  onLineThicknessChange: (thickness: number) => void;
-  onLineColorChange: (color: string) => void;
+  onToggleSync: () => void;
+  activeTool: string;
   canUndo: boolean;
   canRedo: boolean;
-  isOffline: boolean;
-  lastSaved: Date | null;
+  showGrid: boolean;
+  synced: boolean;
 }
 
 export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
-  tool,
-  setTool,
+  onToolSelect,
   onUndo,
   onRedo,
-  onZoom,
   onClear,
-  onDelete,
-  gia,
-  lineThickness,
-  lineColor,
-  showGrid,
+  onZoomIn,
+  onZoomOut,
   onToggleGrid,
-  onLineThicknessChange,
-  onLineColorChange,
+  onToggleSync,
+  activeTool,
   canUndo,
   canRedo,
-  isOffline,
-  lastSaved
+  showGrid,
+  synced
 }) => {
-  const formatTime = (date: Date | null) => {
-    if (!date) return 'Never';
-    try {
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (err) {
-      return 'Unknown';
-    }
-  };
-
   return (
-    <div className="flex flex-col sm:flex-row items-center bg-white shadow-sm rounded-lg p-2 gap-2">
-      <div className="drawing-tools flex space-x-1">
-        <Button
-          variant={tool === DrawingMode.SELECT ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setTool(DrawingMode.SELECT)}
-          className="flex items-center"
-          title="Select (V)"
-        >
-          <MousePointer size={16} />
-          <span className="ml-1 hidden sm:inline">Select</span>
-        </Button>
-        
-        <Button
-          variant={tool === DrawingMode.PENCIL ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setTool(DrawingMode.PENCIL)}
-          className="flex items-center"
-          title="Draw (B)"
-        >
-          <Pencil size={16} />
-          <span className="ml-1 hidden sm:inline">Draw</span>
-        </Button>
-        
-        <Button
-          variant={tool === DrawingMode.TEXT ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setTool(DrawingMode.TEXT)}
-          className="flex items-center"
-          title="Text (T)"
-        >
-          <Type size={16} />
-          <span className="ml-1 hidden sm:inline">Text</span>
-        </Button>
-      </div>
+    <div className="toolbar-container p-2 bg-white border-b flex items-center space-x-1">
+      <Button 
+        variant={activeTool === 'select' ? 'default' : 'outline'}
+        size="icon" 
+        onClick={() => onToolSelect('select')}
+        title="Select"
+      >
+        <MousePointer className="h-4 w-4" />
+      </Button>
       
-      <div className="flex items-center space-x-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleGrid()}
-          className={`flex items-center ${!showGrid ? 'opacity-50' : ''}`}
-          title="Toggle Grid (G)"
-        >
-          <Grid size={16} />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onZoom("in")}
-          className="flex items-center"
-          title="Zoom In (+)"
-        >
-          <ZoomIn size={16} />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onZoom("out")}
-          className="flex items-center"
-          title="Zoom Out (-)"
-        >
-          <ZoomOut size={16} />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClear}
-          className="flex items-center"
-          title="Clear All"
-        >
-          <Trash size={16} />
-        </Button>
-      </div>
+      <Button 
+        variant={activeTool === 'draw' ? 'default' : 'outline'}
+        size="icon"
+        onClick={() => onToolSelect('draw')}
+        title="Draw"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
       
-      <div className="flex items-center space-x-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="flex items-center"
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo2 size={16} />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRedo}
-          disabled={!canRedo}
-          className="flex items-center"
-          title="Redo (Ctrl+Y)"
-        >
-          <Redo2 size={16} />
-        </Button>
-      </div>
+      <Button 
+        variant={activeTool === 'text' ? 'default' : 'outline'}
+        size="icon"
+        onClick={() => onToolSelect('text')}
+        title="Text"
+      >
+        <Type className="h-4 w-4" />
+      </Button>
       
-      <div className="ml-auto flex items-center space-x-2">
-        {isOffline ? (
-          <div className="text-red-500 flex items-center">
-            <WifiOff size={16} className="mr-1" />
-            <span className="text-xs">Offline</span>
-          </div>
+      <div className="h-6 border-r mx-1"></div>
+      
+      <Button 
+        variant="outline"
+        size="icon"
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo"
+      >
+        <Undo2 className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline"
+        size="icon"
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo"
+      >
+        <Redo2 className="h-4 w-4" />
+      </Button>
+      
+      <div className="h-6 border-r mx-1"></div>
+      
+      <Button 
+        variant="outline"
+        size="icon"
+        onClick={onZoomIn}
+        title="Zoom In"
+      >
+        <ZoomIn className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant="outline"
+        size="icon"
+        onClick={onZoomOut}
+        title="Zoom Out"
+      >
+        <ZoomOut className="h-4 w-4" />
+      </Button>
+      
+      <Button 
+        variant={showGrid ? 'default' : 'outline'}
+        size="icon"
+        onClick={onToggleGrid}
+        title={showGrid ? 'Hide Grid' : 'Show Grid'}
+      >
+        <Grid className="h-4 w-4" />
+      </Button>
+      
+      <div className="h-6 border-r mx-1"></div>
+      
+      <Button 
+        variant="outline" 
+        size="icon"
+        onClick={onClear}
+        title="Clear Canvas"
+      >
+        <Trash className="h-4 w-4" />
+      </Button>
+      
+      <div className="flex-1"></div>
+      
+      <Button
+        variant={synced ? 'default' : 'outline'}
+        size="icon"
+        onClick={onToggleSync}
+        title={synced ? 'Disable Sync' : 'Enable Sync'}
+      >
+        {synced ? (
+          <Wifi className="h-4 w-4" />
         ) : (
-          <div className="text-green-500 flex items-center">
-            <Wifi size={16} className="mr-1" />
-            <span className="text-xs">Connected</span>
-          </div>
+          <WifiOff className="h-4 w-4" />
         )}
-        
-        {lastSaved && (
-          <div className="text-xs text-gray-500 hidden sm:block">
-            Saved: {formatTime(lastSaved)}
-          </div>
-        )}
-        
-        {gia > 0 && (
-          <div className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-            GIA: {gia.toFixed(2)} m²
-          </div>
-        )}
-      </div>
+      </Button>
     </div>
   );
 };

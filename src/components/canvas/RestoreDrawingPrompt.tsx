@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon as Loader2 } from "lucide-react";
 
 interface RestoreDrawingPromptProps {
   timeElapsed: string;

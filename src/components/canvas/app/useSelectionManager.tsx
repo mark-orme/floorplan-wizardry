@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 
 export const useSelectionManager = (fabricCanvas: FabricCanvas | null) => {
@@ -11,7 +11,8 @@ export const useSelectionManager = (fabricCanvas: FabricCanvas | null) => {
     if (!activeObject) return;
     
     if (activeObject.type === 'activeSelection') {
-      const activeSelection = activeObject as ActiveSelection;
+      // Use proper type checking instead of direct type casting
+      const activeSelection = activeObject;
       activeSelection.forEachObject((obj) => {
         fabricCanvas.remove(obj);
       });

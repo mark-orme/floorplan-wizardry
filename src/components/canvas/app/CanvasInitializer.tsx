@@ -55,9 +55,10 @@ const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
   
   try {
     // Get existing grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
+    const gridObjects = canvas.getObjects().filter(obj => {
+      const fabricObj = obj as any;
+      return fabricObj.objectType === 'grid' || fabricObj.isGrid === true;
+    });
     
     // If no grid objects, nothing to update
     if (gridObjects.length === 0) {
@@ -68,7 +69,8 @@ const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
     const zoom = canvas.getZoom();
     gridObjects.forEach(obj => {
       // Adjust stroke width based on zoom
-      const isLargeGrid = (obj as any).isLargeGrid;
+      const fabricObj = obj as any;
+      const isLargeGrid = fabricObj.isLargeGrid;
       const baseWidth = isLargeGrid ? 
         GRID_CONSTANTS.LARGE_GRID_WIDTH : 
         GRID_CONSTANTS.SMALL_GRID_WIDTH;

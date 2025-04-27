@@ -1,8 +1,14 @@
 
 import React from 'react';
-import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react';
+import { 
+  Eye, 
+  EyeOff, 
+  Lock, 
+  Unlock, 
+  Trash2 
+} from 'lucide-react';
 import { DrawingLayer } from './types/DrawingLayer';
-import { VirtualizedList } from '@/components/VirtualizedList';
+import VirtualizedList from '@/components/VirtualizedList';
 import logger from '@/utils/logger';
 
 interface VirtualizedLayerListProps {

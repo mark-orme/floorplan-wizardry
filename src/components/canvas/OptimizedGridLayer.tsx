@@ -28,6 +28,13 @@ const logger = {
   }
 };
 
+// Define a custom interface for grid line objects
+interface CustomFabricObject extends FabricObject {
+  objectType?: string;
+  isGrid?: boolean;
+  isLargeGrid?: boolean;
+}
+
 interface OptimizedGridLayerProps {
   canvas: ExtendedCanvas | null;
   visible?: boolean;
@@ -82,6 +89,11 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
           }
         );
         
+        // Properly cast the object to apply custom properties
+        const customLine = line as unknown as CustomFabricObject;
+        customLine.objectType = 'grid';
+        customLine.isGrid = true;
+        
         canvas.add(line);
         gridLinesRef.current.push(line);
       }
@@ -98,6 +110,11 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
             evented: false
           }
         );
+        
+        // Properly cast the object to apply custom properties
+        const customLine = line as unknown as CustomFabricObject;
+        customLine.objectType = 'grid';
+        customLine.isGrid = true;
         
         canvas.add(line);
         gridLinesRef.current.push(line);
@@ -118,12 +135,11 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
           }
         );
         
-        // Fixed the object.set usage
-        line.set({
-          objectType: 'grid',
-          isGrid: true,
-          isLargeGrid: true
-        });
+        // Properly cast the object to apply custom properties
+        const customLine = line as unknown as CustomFabricObject;
+        customLine.objectType = 'grid';
+        customLine.isGrid = true;
+        customLine.isLargeGrid = true;
         
         canvas.add(line);
         gridLinesRef.current.push(line);

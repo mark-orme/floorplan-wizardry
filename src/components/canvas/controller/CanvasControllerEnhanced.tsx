@@ -6,7 +6,7 @@ import { useCanvasControllerDependencies } from './useCanvasControllerDependenci
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan } from '@/types/floorPlan';
+import { FloorPlan } from '@/types/FloorPlan';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;

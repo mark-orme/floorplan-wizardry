@@ -1,6 +1,10 @@
 
 import React, { useState } from 'react';
-import { FileText, Maximize2, ChevronDown } from 'lucide-react';
+import { 
+  FileText, 
+  Maximize2,
+  ChevronDown 
+} from 'lucide-react';
 import { PaperSize } from '@/hooks/usePaperSizeManager';
 
 interface PaperSizeSelectorProps {

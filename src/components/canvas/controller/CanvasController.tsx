@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useRef } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { DebugInfoState } from "@/types/core/DebugInfo";
-import { FloorPlan } from "@/types/floorPlan";
+import { FloorPlan } from "@/types/FloorPlan";
 import { ZoomDirection } from "@/types/drawingTypes";
 
 /**
