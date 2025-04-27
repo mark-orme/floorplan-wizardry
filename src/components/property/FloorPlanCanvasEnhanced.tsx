@@ -8,6 +8,7 @@ import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
 import { ExtendedFabricCanvas, PerformanceMetrics } from '@/types/canvas-types';
 
+// Updated interface to match PerformanceMetrics from canvas-types
 interface FloorPlanCanvasEnhancedProps {
   width?: number;
   height?: number;
@@ -33,12 +34,13 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   
   const { isReady: workerReady } = useGeometryWorker();
   
+  // Type assertion for useVirtualizedCanvas to accept ExtendedFabricCanvas
   const {
     performanceMetrics,
     virtualizationEnabled,
     toggleVirtualization,
     refreshVirtualization
-  } = useVirtualizedCanvas(fabricCanvasRef, {
+  } = useVirtualizedCanvas(fabricCanvasRef as any, {
     enabled: true
   });
   
@@ -52,17 +54,20 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         backgroundColor: "#ffffff",
         renderOnAddRemove: false,
         enableRetinaScaling: true
-      }) as unknown as ExtendedFabricCanvas;
+      });
       
-      if (canvas) {
-        canvas.skipOffscreen = true;
+      // Type assertion to ensure it matches ExtendedFabricCanvas
+      const extendedCanvas = canvas as unknown as ExtendedFabricCanvas;
+      
+      if (extendedCanvas) {
+        extendedCanvas.skipOffscreen = true;
       }
       
-      fabricCanvasRef.current = canvas;
+      fabricCanvasRef.current = extendedCanvas;
       setIsReady(true);
       
       if (onCanvasReady) {
-        onCanvasReady(canvas);
+        onCanvasReady(extendedCanvas);
       }
       
       const csrfToken = getCSRFToken();
@@ -92,7 +97,9 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
       <div>FPS: {performanceMetrics.fps || 0}</div>
       <div>Objects: {performanceMetrics.objectCount || 0}</div>
-      <div>Visible: {performanceMetrics.visibleObjectCount !== undefined ? performanceMetrics.visibleObjectCount : 'N/A'}</div>
+      <div>Visible: {typeof performanceMetrics.visibleObjectCount !== 'undefined' 
+        ? performanceMetrics.visibleObjectCount 
+        : 'N/A'}</div>
       <div>Worker: {workerReady ? 'Ready' : 'Initializing'}</div>
       <button
         onClick={() => toggleVirtualization()}

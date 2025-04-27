@@ -4,8 +4,8 @@
  * @module features/canvas
  */
 
-// Import from the existing component locations
-export { CanvasApp } from '@/components/canvas/CanvasApp';
+// Import from the existing component locations with fixed default import
+export { default as CanvasApp } from '@/components/canvas/CanvasApp';
 export { Toolbar } from '@/components/canvas/Toolbar';
 export { CanvasContainer } from '@/components/canvas/CanvasContainer';
 export { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
