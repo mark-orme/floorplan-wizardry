@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { 
   FileText, 
-  Maximize2,
+  Maximize,
   ChevronDown 
 } from 'lucide-react';
 import { PaperSize } from '@/hooks/usePaperSizeManager';
@@ -33,7 +33,7 @@ export const PaperSizeSelector: React.FC<PaperSizeSelectorProps> = ({
         >
           {infiniteCanvas ? (
             <>
-              <Maximize2 className="h-4 w-4" />
+              <Maximize className="h-4 w-4" />
               <span>Infinite Canvas</span>
             </>
           ) : (
@@ -56,7 +56,7 @@ export const PaperSizeSelector: React.FC<PaperSizeSelectorProps> = ({
                 setIsOpen(false);
               }}
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize className="h-4 w-4" />
               {infiniteCanvas ? 'Switch to Paper Size' : 'Switch to Infinite Canvas'}
             </button>
             

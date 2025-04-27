@@ -2,10 +2,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  MousePointer2 as MousePointer,
-  PenLine as Pencil,
-  Text as Type,
-  HandMetal as Hand,
+  MousePointer,
+  Pencil,
+  Type,
+  Hand,
   Eraser
 } from 'lucide-react';
 

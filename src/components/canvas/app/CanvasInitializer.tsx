@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
@@ -69,14 +69,17 @@ const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
     const zoom = canvas.getZoom();
     gridObjects.forEach(obj => {
       // Adjust stroke width based on zoom
-      const fabricObj = obj as any;
+      const fabricObj = obj as unknown as { 
+        isLargeGrid?: boolean;
+        set: (props: Record<string, any>) => void;
+      };
       const isLargeGrid = fabricObj.isLargeGrid;
       const baseWidth = isLargeGrid ? 
         GRID_CONSTANTS.LARGE_GRID_WIDTH : 
         GRID_CONSTANTS.SMALL_GRID_WIDTH;
       
       // Inverse relationship with zoom to maintain visual consistency
-      obj.set('strokeWidth', baseWidth / Math.max(0.5, zoom));
+      fabricObj.set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
     });
     
     canvas.requestRenderAll();

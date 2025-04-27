@@ -7,18 +7,19 @@ export const useSelectionManager = (fabricCanvas: FabricCanvas | null) => {
   const deleteSelectedObjects = () => {
     if (!fabricCanvas) return;
     
-    const activeObject = fabricCanvas.getActiveObject();
-    if (!activeObject) return;
+    // Use getActiveObjects to get the active object(s)
+    const activeObjects = fabricCanvas.getActiveObjects();
+    if (!activeObjects || activeObjects.length === 0) return;
     
-    if (activeObject.type === 'activeSelection') {
-      // Use proper type checking instead of direct type casting
-      const activeSelection = activeObject;
-      activeSelection.forEachObject((obj) => {
+    // If there's only one active object
+    if (activeObjects.length === 1) {
+      fabricCanvas.remove(activeObjects[0]);
+    } else {
+      // Multiple objects are selected
+      activeObjects.forEach((obj) => {
         fabricCanvas.remove(obj);
       });
       fabricCanvas.discardActiveObject();
-    } else {
-      fabricCanvas.remove(activeObject);
     }
     
     // Use optimized render instead of direct rendering

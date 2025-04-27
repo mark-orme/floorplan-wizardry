@@ -1,17 +1,17 @@
 
 import React from 'react';
 import {
-  MousePointer2 as MousePointer,
-  PenLine as Pencil,
-  Undo as Undo2,
-  Redo as Redo2,
+  MousePointer,
+  Pencil,
+  Undo,
+  Redo,
   ZoomIn,
   ZoomOut,
-  LayoutGrid as Grid,
+  LayoutGrid,
   Trash,
   Wifi,
   WifiOff,
-  Text as Type
+  Type
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -84,7 +84,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         disabled={!canUndo}
         title="Undo"
       >
-        <Undo2 className="h-4 w-4" />
+        <Undo className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -94,7 +94,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         disabled={!canRedo}
         title="Redo"
       >
-        <Redo2 className="h-4 w-4" />
+        <Redo className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>
@@ -123,7 +123,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={onToggleGrid}
         title={showGrid ? 'Hide Grid' : 'Show Grid'}
       >
-        <Grid className="h-4 w-4" />
+        <LayoutGrid className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>

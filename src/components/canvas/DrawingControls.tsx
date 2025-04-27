@@ -48,26 +48,28 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
   isOffline,
   lastSaved
 }) => {
+  const handleZoomIn = () => onZoom("in");
+  const handleZoomOut = () => onZoom("out");
+  const handleToggleSync = () => {
+    // This is just a placeholder since we don't have the actual sync toggle function
+    console.log("Toggle sync");
+  };
+
   return (
     <ToolbarContainer 
-      tool={tool}
-      setTool={setTool}
+      onToolSelect={(toolName: string) => setTool(toolName as DrawingMode)}
       onUndo={onUndo}
       onRedo={onRedo}
-      onZoom={onZoom}
       onClear={onClear}
-      onDelete={onDelete}
-      gia={gia}
-      lineThickness={lineThickness}
-      lineColor={lineColor}
-      showGrid={showGrid}
+      onZoomIn={handleZoomIn}
+      onZoomOut={handleZoomOut}
       onToggleGrid={onToggleGrid}
-      onLineThicknessChange={onLineThicknessChange}
-      onLineColorChange={onLineColorChange}
+      onToggleSync={handleToggleSync}
+      activeTool={tool}
       canUndo={canUndo}
       canRedo={canRedo}
-      isOffline={isOffline}
-      lastSaved={lastSaved}
+      showGrid={showGrid}
+      synced={!isOffline}
     />
   );
 };

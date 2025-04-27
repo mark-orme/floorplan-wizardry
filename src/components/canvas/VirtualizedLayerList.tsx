@@ -8,7 +8,6 @@ import {
   Trash2 
 } from 'lucide-react';
 import { DrawingLayer } from './types/DrawingLayer';
-import VirtualizedList from '@/components/VirtualizedList';
 import logger from '@/utils/logger';
 
 interface VirtualizedLayerListProps {
@@ -20,6 +19,27 @@ interface VirtualizedLayerListProps {
   onDeleteLayer: (layerId: string) => void;
   listHeight: number;
 }
+
+interface VirtualizedListProps {
+  items: any[];
+  renderItem: (item: any, index: number, style: React.CSSProperties) => React.ReactNode;
+  maxHeight: number;
+  className?: string;
+}
+
+// Mock implementation of VirtualizedList
+const VirtualizedList: React.FC<VirtualizedListProps> = ({ 
+  items, 
+  renderItem, 
+  maxHeight, 
+  className 
+}) => {
+  return (
+    <div style={{ maxHeight, overflowY: 'auto' }} className={className}>
+      {items.map((item, index) => renderItem(item, index, {}))}
+    </div>
+  );
+};
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   layers,
@@ -40,6 +60,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
       }`}
       role="option"
       aria-selected={activeLayerId === layer.id}
+      key={layer.id}
     >
       <button
         onClick={() => onToggleVisibility(layer.id)}

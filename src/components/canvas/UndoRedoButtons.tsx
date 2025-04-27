@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw as RefreshCw } from 'lucide-react';
+import { RotateCcw, RotateCw } from 'lucide-react';
 
 interface UndoRedoButtonsProps {
   /** Whether undo is available */
@@ -34,7 +34,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         title="Undo (Ctrl+Z)"
         aria-label="Undo"
       >
-        <RefreshCw className="h-4 w-4 rotate-[225deg]" />
+        <RotateCcw className="h-4 w-4" />
       </Button>
       
       <Button
@@ -45,7 +45,7 @@ export const UndoRedoButtons: React.FC<UndoRedoButtonsProps> = ({
         title="Redo (Ctrl+Shift+Z)"
         aria-label="Redo"
       >
-        <RefreshCw className="h-4 w-4 rotate-[135deg]" />
+        <RotateCw className="h-4 w-4" />
       </Button>
     </div>
   );

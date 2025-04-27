@@ -2,13 +2,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  MousePointer2 as MousePointer,
-  PenLine as Pencil,
-  Text as Type,
-  HandMetal as Hand,
+  MousePointer,
+  Pencil,
+  Type,
+  Hand,
   Eraser,
-  Undo as Undo2,
-  Redo as Redo2,
+  Undo,
+  Redo,
   Ruler,
   Trash,
   ZoomIn,
@@ -57,10 +57,10 @@ export const MobileDrawingToolbar: React.FC<MobileDrawingToolbarProps> = ({
       </div>
       <div className="actions flex items-center space-x-2">
         <Button onClick={onUndo} disabled={!canUndo}>
-          <Undo2 size={20} />
+          <Undo size={20} />
         </Button>
         <Button onClick={onRedo} disabled={!canRedo}>
-          <Redo2 size={20} />
+          <Redo size={20} />
         </Button>
         <Button onClick={onClear}>
           <Trash size={20} />
