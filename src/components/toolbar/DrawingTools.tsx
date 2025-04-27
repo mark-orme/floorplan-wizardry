@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Icons } from '@/constants/iconMappings';
+import { Icons } from '@/components/icons';
 import { DrawingMode } from '@/constants/drawingModes';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
@@ -17,19 +17,19 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
   const tools = [
     {
       tool: DrawingMode.SELECT,
-      icon: <Icons.select size={20} />,
+      icon: <Icons.mousePointer size={20} />,
       label: 'Select',
       tooltip: 'Select objects'
     },
     {
       tool: DrawingMode.DRAW,
-      icon: <Icons.edit size={20} />,
+      icon: <Icons.pencil size={20} />,
       label: 'Freehand',
       tooltip: 'Draw freehand'
     },
     {
       tool: DrawingMode.STRAIGHT_LINE,
-      icon: <Icons.minus size={20} />,
+      icon: <Icons.penLine size={20} />,
       label: 'Line',
       tooltip: 'Draw straight line'
     },

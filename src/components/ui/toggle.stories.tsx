@@ -1,7 +1,6 @@
-
 import { Meta, StoryObj } from '@storybook/react';
 import { Toggle } from './toggle';
-import { AiOutlineSetting, AiOutlineSun, AiOutlineMoon } from 'react-icons/ai';
+import { Icons } from '@/components/icons';
 
 const meta: Meta<typeof Toggle> = {
   title: 'UI/Toggle',
@@ -71,21 +70,20 @@ export const Large: Story = {
 
 export const WithIcon: Story = {
   args: {
-    children: <AiOutlineSetting className="h-4 w-4" />,
+    children: <Icons.settings className="h-4 w-4" />,
     'aria-label': 'Toggle settings',
   },
 };
 
 export const ThemeToggle: Story = {
   render: () => {
-    // Storybook version, normally you'd use useState here
     return (
       <div className="flex space-x-2">
         <Toggle aria-label="Toggle light mode">
-          <AiOutlineSun className="h-4 w-4" />
+          <Icons.sun className="h-4 w-4" />
         </Toggle>
         <Toggle pressed aria-label="Toggle dark mode">
-          <AiOutlineMoon className="h-4 w-4" />
+          <Icons.moon className="h-4 w-4" />
         </Toggle>
       </div>
     );

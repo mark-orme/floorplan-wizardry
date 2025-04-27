@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { AiOutlineAppstore, AiOutlineHome } from 'react-icons/ai';
+import { Icons } from '@/components/icons';
 import LoadingErrorWrapper from '@/components/LoadingErrorWrapper';
-import { type UserRole } from '@/types/roles';
+import { UserRole } from '@/types/roles';
 import { PropertyDetailsTab } from './PropertyDetailsTab';
 import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,8 +49,14 @@ export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
     <LoadingErrorWrapper isLoading={isLoading} error={error}>
       <Tabs defaultValue="details" className="w-full space-y-4">
         <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="floorplan">Floor Plan</TabsTrigger>
+          <TabsTrigger value="details">
+            <Icons.home className="w-4 h-4 mr-2" />
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="floorplan">
+            <Icons.grid className="w-4 h-4 mr-2" />
+            Floor Plan
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="details">
           <PropertyDetailsTab
