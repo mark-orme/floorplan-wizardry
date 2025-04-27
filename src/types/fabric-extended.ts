@@ -7,6 +7,8 @@ export interface ExtendedFabricObject extends FabricObject {
   isGrid?: boolean;
   isLargeGrid?: boolean;
   visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
   set: (options: Record<string, any>) => FabricObject;
 }
 
@@ -16,13 +18,14 @@ export interface ExtendedLineOptions extends ILineOptions {
   visible?: boolean;
   stroke?: string;
   strokeWidth?: number;
+  selectable?: boolean;
+  evented?: boolean;
 }
 
 export function createFabricLine(
   points: number[], 
   options: ExtendedLineOptions = {}
 ): FabricObject {
-  // Create a line using the provided points [x1, y1, x2, y2]
   return new Line(points, options);
 }
 

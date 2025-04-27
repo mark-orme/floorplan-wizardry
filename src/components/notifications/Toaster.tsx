@@ -5,7 +5,6 @@ import { useTheme } from 'next-themes';
 interface ToasterProps {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
   theme?: 'light' | 'dark' | 'system';
-  richColors?: boolean;
   className?: string;
   toastOptions?: {
     duration?: number;
@@ -17,7 +16,6 @@ interface ToasterProps {
 export function Toaster({
   position = 'bottom-right',
   theme: themeOverride,
-  richColors = false,
   className,
   toastOptions = {},
 }: ToasterProps) {
@@ -27,7 +25,6 @@ export function Toaster({
     <SonnerToaster
       position={position}
       theme={theme as 'light' | 'dark' | 'system'}
-      richColors={richColors}
       className={className}
       toastOptions={toastOptions}
     />
