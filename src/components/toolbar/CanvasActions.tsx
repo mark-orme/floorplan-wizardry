@@ -1,20 +1,21 @@
+
 /**
  * Canvas actions component for the drawing toolbar
  * @module components/toolbar/CanvasActions
  */
 import React from 'react';
 import {
-  Trash,
-  Save,
-  Upload,
-  Download,
-  ArrowUndo as Undo,
-  ArrowRedo as Redo,
-  ZoomIn,
-  ZoomOut,
-  RefreshCcw,
-  LayoutGrid as Grid
-} from 'lucide-react';
+  AiOutlineDelete as Trash,
+  AiOutlineSave as Save,
+  AiOutlineUpload as Upload,
+  AiOutlineDownload as Download,
+  AiOutlineUndo as Undo,
+  AiOutlineRedo as Redo,
+  AiOutlineZoomIn as ZoomIn,
+  AiOutlineZoomOut as ZoomOut,
+  AiOutlineReload as RefreshCw,
+  AiOutlineAppstore as Grid
+} from 'react-icons/ai';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
 
@@ -154,7 +155,7 @@ export const CanvasActions: React.FC<CanvasActionsProps> = ({
       {/* Reset zoom */}
       {onResetZoom && (
         <ToolbarButton
-          icon={<RefreshCcw size={20} />}
+          icon={<RefreshCw size={20} />}
           label="Reset Zoom"
           tooltip="Reset zoom"
           onClick={onResetZoom}

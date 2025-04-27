@@ -6,7 +6,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AiOutlineEye, AiOutlineSend } from 'react-icons/ai';
-import { UserRole } from "@/lib/supabase";
 import { PropertyStatus } from "@/types/propertyTypes";
 import { handleError } from "@/utils/errorHandling";
 import { toast } from "sonner";
@@ -15,7 +14,7 @@ interface FloorPlanActionsProps {
   /** Whether the current user can edit the property */
   canEdit: boolean;
   /** The role of the current user */
-  userRole: UserRole;
+  userRole: string;
   /** Whether a status change submission is in progress */
   isSubmitting: boolean;
   /** Handler for property status changes */
@@ -55,7 +54,7 @@ export const FloorPlanActions = ({
           </Badge>
         )}
       </div>
-      {(userRole === UserRole.MANAGER || userRole === UserRole.PHOTOGRAPHER) && (
+      {(userRole === 'MANAGER' || userRole === 'PHOTOGRAPHER') && (
         <Button 
           disabled={isSubmitting} 
           variant="default" 

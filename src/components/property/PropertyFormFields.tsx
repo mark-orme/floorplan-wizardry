@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import {
   Form,
@@ -19,12 +20,10 @@ export const PropertyFormSchema = z.object({
 export type PropertyFormValues = z.infer<typeof PropertyFormSchema>;
 
 interface PropertyFormFieldsProps {
-  form: UseFormReturnType;
-}
-
-interface UseFormReturnType {
-  control: any;
-  [key: string]: any;
+  form: {
+    control: any;
+    [key: string]: any;
+  };
 }
 
 export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {

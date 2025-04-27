@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, useState } from "react";
-import { Canvas as FabricCanvas } from "fabric";
+import { fabric } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
 import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
@@ -46,13 +47,13 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     if (!canvasRef.current) return;
     
     try {
-      const canvas = new FabricCanvas(canvasRef.current, {
+      const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: "#ffffff",
         renderOnAddRemove: false,
         enableRetinaScaling: true
-      });
+      }) as ExtendedFabricCanvas;
       
       canvas.skipOffscreen = true;
       

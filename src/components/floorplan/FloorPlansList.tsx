@@ -1,3 +1,4 @@
+
 import { FloorPlanMetadata } from '@/types/canvas-types';
 import React from 'react';
 

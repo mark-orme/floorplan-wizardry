@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiOutlineCalculator } from 'react-icons/ai';
 import { toast } from 'sonner';
-import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
 
 interface PropertyFloorPlanTabProps {
@@ -15,7 +14,7 @@ interface PropertyFloorPlanTabProps {
 
 export const PropertyFloorPlanTab = ({
   isApprovedUser = false,
-  propertyStatus = 'pending',
+  propertyStatus = PropertyStatus.PENDING,
   onMeasurementGuideOpen
 }: PropertyFloorPlanTabProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);

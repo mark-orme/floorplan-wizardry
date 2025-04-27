@@ -4,7 +4,7 @@
  * Renders HTML content safely with DOMPurify sanitization
  */
 import React from 'react';
-import { sanitizeHtml, sanitizeRichHtml } from '@/utils/security/htmlSanitization';
+import { sanitizeHtml } from '@/utils/security/htmlSanitization';
 
 interface SafeHtmlProps {
   /** HTML content to render safely */
@@ -27,7 +27,7 @@ export const SafeHtml: React.FC<SafeHtmlProps> = ({
   as: Component = 'div'
 }) => {
   // Sanitize HTML based on allowRich setting
-  const sanitizedHtml = allowRich ? sanitizeRichHtml(html) : sanitizeHtml(html);
+  const sanitizedHtml = sanitizeHtml(html);
   
   return (
     <Component 

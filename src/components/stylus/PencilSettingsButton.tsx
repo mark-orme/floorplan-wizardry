@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PencilCalibrationDialog } from './PencilSettingsScreen';
-import { Pencil } from 'lucide-react';
+import { AiOutlineEdit } from 'react-icons/ai';
 
 interface PencilSettingsButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
@@ -19,7 +19,7 @@ export function PencilSettingsButton({ variant = 'outline', className }: PencilS
         className={className}
         onClick={() => setIsOpen(true)}
       >
-        <Pencil className="h-4 w-4 mr-2" />
+        <AiOutlineEdit className="h-4 w-4 mr-2" />
         Pencil Settings
       </Button>
       
