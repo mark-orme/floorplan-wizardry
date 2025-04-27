@@ -12,14 +12,14 @@ export interface ToolbarButtonProps {
   disabled?: boolean;
 }
 
-export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
+export const ToolbarButton = ({
   icon,
   label,
   tooltip,
   onClick,
   active = false,
   disabled = false
-}) => {
+}: ToolbarButtonProps) => {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -42,5 +42,3 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     </TooltipProvider>
   );
 };
-
-export default ToolbarButton;

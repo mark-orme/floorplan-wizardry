@@ -32,7 +32,9 @@ import {
   AiOutlinePalette,
   AiOutlinePlus,
   AiOutlineMinus,
-  AiOutlineBgColors
+  AiOutlineBgColors,
+  AiOutlineSave,
+  AiOutlineEdit as AiOutlinePencil
 } from 'react-icons/ai';
 
 export const Icons = {
@@ -68,6 +70,8 @@ export const Icons = {
   palette: AiOutlinePalette,
   minus: AiOutlineMinus,
   paintBucket: AiOutlineBgColors,
+  save: AiOutlineSave,
+  pencil: AiOutlinePencil
 };
 
 export type IconName = keyof typeof Icons;
