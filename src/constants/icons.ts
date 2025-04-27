@@ -11,7 +11,7 @@ import {
   AiOutlineSend,
   AiOutlineAppstore,
   AiOutlineHome,
-  AiOutlineUpSquare, // Changed from AiOutlineSquare
+  AiOutlineContainer, // Changed from AiOutlineUpSquare
   AiOutlineLoading,
   AiOutlineReload,
   AiOutlineSafety,
@@ -33,7 +33,7 @@ export const Icons = {
   Send: AiOutlineSend,
   Grid: AiOutlineAppstore,
   Home: AiOutlineHome,
-  Square: AiOutlineUpSquare, // Changed from AiOutlineSquare
+  Square: AiOutlineContainer, // Changed from AiOutlineUpSquare
   Loading: AiOutlineLoading,
   Reload: AiOutlineReload,
   Shield: AiOutlineSafety,

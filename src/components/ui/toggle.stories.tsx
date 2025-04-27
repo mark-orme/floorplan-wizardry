@@ -1,7 +1,7 @@
 
 import { Meta, StoryObj } from '@storybook/react';
 import { Toggle } from './toggle';
-import { Settings, Sun, Moon } from 'lucide-react';
+import { AiOutlineSetting, AiOutlineSun, AiOutlineMoon } from 'react-icons/ai';
 
 const meta: Meta<typeof Toggle> = {
   title: 'UI/Toggle',
@@ -71,7 +71,7 @@ export const Large: Story = {
 
 export const WithIcon: Story = {
   args: {
-    children: <Settings className="h-4 w-4" />,
+    children: <AiOutlineSetting className="h-4 w-4" />,
     'aria-label': 'Toggle settings',
   },
 };
@@ -82,10 +82,10 @@ export const ThemeToggle: Story = {
     return (
       <div className="flex space-x-2">
         <Toggle aria-label="Toggle light mode">
-          <Sun className="h-4 w-4" />
+          <AiOutlineSun className="h-4 w-4" />
         </Toggle>
         <Toggle pressed aria-label="Toggle dark mode">
-          <Moon className="h-4 w-4" />
+          <AiOutlineMoon className="h-4 w-4" />
         </Toggle>
       </div>
     );

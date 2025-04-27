@@ -1,8 +1,18 @@
+
 import * as React from "react"
 import { OTPInput, OTPInputContext } from "input-otp"
-import { Dot } from "lucide-react"
+import { AiOutlineEllipsis } from "react-icons/ai"
 
 import { cn } from "@/lib/utils"
+
+// Define the types for the slots to avoid TypeScript errors
+interface OTPInputContextType {
+  slots: {
+    char: string;
+    hasFakeCaret: boolean;
+    isActive: boolean;
+  }[];
+}
 
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
@@ -32,8 +42,8 @@ const InputOTPSlot = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & { index: number }
 >(({ index, className, ...props }, ref) => {
-  const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
+  const inputOTPContext = React.useContext(OTPInputContext) as OTPInputContextType;
+  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index] || { char: '', hasFakeCaret: false, isActive: false };
 
   return (
     <div
@@ -61,7 +71,7 @@ const InputOTPSeparator = React.forwardRef<
   React.ComponentPropsWithoutRef<"div">
 >(({ ...props }, ref) => (
   <div ref={ref} role="separator" {...props}>
-    <Dot />
+    <AiOutlineEllipsis className="h-4 w-4" />
   </div>
 ))
 InputOTPSeparator.displayName = "InputOTPSeparator"
