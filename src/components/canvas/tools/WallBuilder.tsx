@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Hammer } from 'lucide-react';
+import { AiOutlineBuild } from 'react-icons/ai';
 
 interface WallBuilderProps {
   activeTool: DrawingMode;
@@ -20,7 +19,7 @@ const WallBuilder: React.FC<WallBuilderProps> = ({ activeTool, onSelectTool }) =
           onClick={() => onSelectTool(DrawingMode.WALL)}
           className="flex items-center gap-2"
         >
-          <Hammer size={16} />
+          <AiOutlineBuild size={16} />
           Wall Tool
         </Button>
       </div>
@@ -28,7 +27,6 @@ const WallBuilder: React.FC<WallBuilderProps> = ({ activeTool, onSelectTool }) =
   );
 };
 
-// For plugin registration
 const plugin = {
   id: 'wall-builder',
   name: 'Wall Builder',

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Grid, RotateCcw } from 'lucide-react';
+import { AiOutlineTable, AiOutlineRedo } from 'react-icons/ai';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SnapSettingsControlsProps {
@@ -28,7 +28,7 @@ export const SnapSettingsControls: React.FC<SnapSettingsControlsProps> = ({
               onClick={toggleSnap}
               className={snapEnabled ? "bg-green-500 hover:bg-green-600" : ""}
             >
-              <Grid className="h-4 w-4" />
+              <AiOutlineTable className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
@@ -46,7 +46,7 @@ export const SnapSettingsControls: React.FC<SnapSettingsControlsProps> = ({
               onClick={toggleAngles}
               className={anglesEnabled ? "bg-blue-500 hover:bg-blue-600" : ""}
             >
-              <RotateCcw className="h-4 w-4" />
+              <AiOutlineRedo className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
