@@ -1,108 +1,92 @@
 
 import React from 'react';
-import { 
-  Eye, 
-  EyeOff, 
-  Lock, 
-  Unlock, 
-  Trash2 
-} from 'lucide-react';
-import { DrawingLayer } from './types/DrawingLayer';
-import logger from '@/utils/logger';
+import { Button } from '@/components/ui/button';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { LockIcon, UnlockIcon } from 'lucide-react';
+import { Trash2Icon } from 'lucide-react';
+
+interface LayerItem {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+}
 
 interface VirtualizedLayerListProps {
-  layers: DrawingLayer[];
-  activeLayerId: string;
-  onLayerClick: (layerId: string) => void;
-  onToggleVisibility: (layerId: string) => void;
-  onToggleLock: (layerId: string) => void;
-  onDeleteLayer: (layerId: string) => void;
-  listHeight: number;
+  layers: LayerItem[];
+  onToggleLayerVisibility: (id: string) => void;
+  onToggleLayerLock: (id: string) => void;
+  onDeleteLayer: (id: string) => void;
+  onSelectLayer: (id: string) => void;
+  selectedLayerId?: string;
 }
-
-interface VirtualizedListProps {
-  items: any[];
-  renderItem: (item: any, index: number, style: React.CSSProperties) => React.ReactNode;
-  maxHeight: number;
-  className?: string;
-}
-
-// Mock implementation of VirtualizedList
-const VirtualizedList: React.FC<VirtualizedListProps> = ({ 
-  items, 
-  renderItem, 
-  maxHeight, 
-  className 
-}) => {
-  return (
-    <div style={{ maxHeight, overflowY: 'auto' }} className={className}>
-      {items.map((item, index) => renderItem(item, index, {}))}
-    </div>
-  );
-};
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   layers,
-  activeLayerId,
-  onLayerClick,
-  onToggleVisibility,
-  onToggleLock,
+  onToggleLayerVisibility,
+  onToggleLayerLock,
   onDeleteLayer,
-  listHeight
+  onSelectLayer,
+  selectedLayerId
 }) => {
-  logger.debug('Rendering layer list', { layerCount: layers.length });
-
-  const renderLayer = (layer: DrawingLayer, _index: number, style: React.CSSProperties) => (
-    <div 
-      style={style}
-      className={`flex items-center gap-2 px-2 py-1 ${
-        activeLayerId === layer.id ? 'bg-blue-100' : 'hover:bg-gray-100'
-      }`}
-      role="option"
-      aria-selected={activeLayerId === layer.id}
-      key={layer.id}
-    >
-      <button
-        onClick={() => onToggleVisibility(layer.id)}
-        className="p-1 rounded hover:bg-gray-200"
-        title={layer.visible ? 'Hide layer' : 'Show layer'}
-      >
-        {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-      </button>
-      
-      <button
-        onClick={() => onToggleLock(layer.id)}
-        className="p-1 rounded hover:bg-gray-200"
-        title={layer.locked ? 'Unlock layer' : 'Lock layer'}
-      >
-        {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
-      </button>
-      
-      <div 
-        className="flex-1 cursor-pointer truncate"
-        onClick={() => onLayerClick(layer.id)}
-      >
-        {layer.name}
-      </div>
-      
-      {layers.length > 1 && (
-        <button
-          onClick={() => onDeleteLayer(layer.id)}
-          className="p-1 rounded hover:bg-red-100 hover:text-red-600"
-          title="Delete layer"
-        >
-          <Trash2 size={14} />
-        </button>
-      )}
-    </div>
-  );
-
   return (
-    <VirtualizedList
-      items={layers}
-      renderItem={renderLayer}
-      maxHeight={listHeight}
-      className="scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400"
-    />
+    <div className="layer-list overflow-y-auto max-h-[300px]">
+      {layers.map(layer => (
+        <div
+          key={layer.id}
+          className={`layer-item flex items-center justify-between p-2 hover:bg-gray-100 transition-colors ${
+            selectedLayerId === layer.id ? 'bg-blue-100' : ''
+          }`}
+          onClick={() => onSelectLayer(layer.id)}
+        >
+          <div className="layer-name truncate flex-1">{layer.name}</div>
+          <div className="layer-actions flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLayerVisibility(layer.id);
+              }}
+              title={layer.visible ? 'Hide Layer' : 'Show Layer'}
+            >
+              {layer.visible ? (
+                <EyeIcon className="h-4 w-4" />
+              ) : (
+                <EyeOffIcon className="h-4 w-4" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLayerLock(layer.id);
+              }}
+              title={layer.locked ? 'Unlock Layer' : 'Lock Layer'}
+            >
+              {layer.locked ? (
+                <LockIcon className="h-4 w-4" />
+              ) : (
+                <UnlockIcon className="h-4 w-4" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteLayer(layer.id);
+              }}
+              title="Delete Layer"
+            >
+              <Trash2Icon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };

@@ -2,18 +2,18 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  MousePointer,
-  Pencil,
-  Type,
-  Hand,
-  Eraser,
-  Undo,
-  Redo,
-  Ruler,
-  Trash,
-  ZoomIn,
-  ZoomOut,
-  Menu
+  MousePointerIcon,
+  PencilIcon,
+  TypeIcon,
+  HandIcon,
+  EraserIcon,
+  UndoIcon,
+  RedoIcon,
+  RulerIcon,
+  TrashIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+  MenuIcon
 } from 'lucide-react';
 
 interface MobileDrawingToolbarProps {
@@ -46,24 +46,24 @@ export const MobileDrawingToolbar: React.FC<MobileDrawingToolbarProps> = ({
           variant={isDrawingMode ? 'default' : 'outline'}
           onClick={() => onToolSelect(isDrawingMode ? 'select' : 'draw')}
         >
-          {isDrawingMode ? <MousePointer size={20} /> : <Pencil size={20} />}
+          {isDrawingMode ? <MousePointerIcon size={20} /> : <PencilIcon size={20} />}
         </Button>
         <Button onClick={onZoomIn}>
-          <ZoomIn size={20} />
+          <ZoomInIcon size={20} />
         </Button>
         <Button onClick={onZoomOut}>
-          <ZoomOut size={20} />
+          <ZoomOutIcon size={20} />
         </Button>
       </div>
       <div className="actions flex items-center space-x-2">
         <Button onClick={onUndo} disabled={!canUndo}>
-          <Undo size={20} />
+          <UndoIcon size={20} />
         </Button>
         <Button onClick={onRedo} disabled={!canRedo}>
-          <Redo size={20} />
+          <RedoIcon size={20} />
         </Button>
         <Button onClick={onClear}>
-          <Trash size={20} />
+          <TrashIcon size={20} />
         </Button>
       </div>
     </div>

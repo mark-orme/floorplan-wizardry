@@ -79,7 +79,8 @@ const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
         GRID_CONSTANTS.SMALL_GRID_WIDTH;
       
       // Inverse relationship with zoom to maintain visual consistency
-      fabricObj.set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
+      // Cast the object before calling .set() to fix the typing issue
+      (fabricObj as any).set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
     });
     
     canvas.requestRenderAll();
