@@ -1,7 +1,6 @@
-
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { PlusIcon, BuildingIcon } from 'lucide-react';
+import { Plus, Building } from 'lucide-react';
 
 interface SidebarProps {
   children?: ReactNode;
