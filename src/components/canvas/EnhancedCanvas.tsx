@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasProps {
@@ -10,9 +10,9 @@ interface EnhancedCanvasProps {
   brushColor?: string;
   brushWidth?: number;
   onCanvasReady?: (canvas: FabricCanvas) => void;
-  onObjectAdded?: (e: any) => void;
-  onObjectModified?: (e: any) => void;
-  onObjectRemoved?: (e: any) => void;
+  onObjectAdded?: (e: { target: FabricObject }) => void;
+  onObjectModified?: (e: { target: FabricObject }) => void;
+  onObjectRemoved?: (e: { target: FabricObject }) => void;
 }
 
 export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({

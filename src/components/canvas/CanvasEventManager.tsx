@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from '@/utils/toastUtils';
+import { Point } from '@/types/core/Point';
+import { FabricCanvasMouseEvent } from '@/types/fabricEvents';
 
 interface CanvasEventManagerProps {
   canvas: FabricCanvas;
@@ -36,18 +38,18 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     if (!canvas) return;
     
     // Mouse down handler
-    const handleMouseDown = (e: any) => {
+    const handleMouseDown = (e: FabricCanvasMouseEvent) => {
       console.log('Mouse down', e);
       // Implementation would go here
     };
     
     // Mouse move handler
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: FabricCanvasMouseEvent) => {
       // Implementation would go here
     };
     
     // Mouse up handler
-    const handleMouseUp = (e: any) => {
+    const handleMouseUp = (e: FabricCanvasMouseEvent) => {
       saveCurrentState();
       if (onDrawingComplete) {
         onDrawingComplete();
@@ -55,7 +57,7 @@ export const CanvasEventManager: React.FC<CanvasEventManagerProps> = ({
     };
     
     // Selection handler
-    const handleSelectionCreated = (e: any) => {
+    const handleSelectionCreated = (e: { target: FabricObject }) => {
       console.log('Selection created', e);
     };
     

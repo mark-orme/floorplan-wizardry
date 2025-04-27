@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
 
 interface BrushCursorPreviewProps {
   canvas: FabricCanvas;
@@ -13,12 +14,12 @@ const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   size,
   color
 }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
   
   useEffect(() => {
     if (!canvas) return;
     
-    const handleMouseMove = (e: any) => {
+    const handleMouseMove = (e: { e: MouseEvent }) => {
       const pointer = canvas.getPointer(e.e);
       setPosition(pointer);
     };
