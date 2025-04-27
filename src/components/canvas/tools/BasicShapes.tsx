@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Square, Circle } from 'lucide-react';
+import { IconMap } from '@/utils/icon-mapper';
 
 interface BasicShapesProps {
   activeTool: DrawingMode;
@@ -20,7 +20,7 @@ const BasicShapes: React.FC<BasicShapesProps> = ({ activeTool, onSelectTool }) =
           onClick={() => onSelectTool(DrawingMode.RECTANGLE)}
           className="flex items-center gap-2"
         >
-          <Square size={16} />
+          <IconMap.Square size={16} />
           Rectangle
         </Button>
         <Button
@@ -29,7 +29,7 @@ const BasicShapes: React.FC<BasicShapesProps> = ({ activeTool, onSelectTool }) =
           onClick={() => onSelectTool(DrawingMode.CIRCLE)}
           className="flex items-center gap-2"
         >
-          <Circle size={16} />
+          <IconMap.Square size={16} className="rounded-full" />
           Circle
         </Button>
       </div>

@@ -1,7 +1,8 @@
 
 import { useEffect, useState } from 'react';
-import { Canvas, Line as FabricLine } from 'fabric';
-import type { Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { createFabricLine } from '@/types/fabric-extended';
+import type { ExtendedFabricObject } from '@/types/fabric-extended';
 
 interface GridManagerProps {
   canvas: Canvas | null;
@@ -16,25 +17,25 @@ const GridManager = ({
   visible = true,
   onChange
 }: GridManagerProps) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
 
   useEffect(() => {
     if (!canvas) return;
 
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const objects: FabricObject[] = [];
+    const objects: ExtendedFabricObject[] = [];
 
     try {
       // Create grid lines
       for (let x = 0; x <= width; x += spacing) {
         const isLargeLine = x % (spacing * 5) === 0;
-        const line = new FabricLine([x, 0, x, height], {
+        const line = createFabricLine([x, 0, x, height], {
           stroke: isLargeLine ? '#c0c0c0' : '#e0e0e0',
           strokeWidth: isLargeLine ? 1 : 0.5,
           selectable: false,
           evented: false
-        });
+        }) as ExtendedFabricObject;
         
         canvas.add(line);
         objects.push(line);
@@ -42,12 +43,12 @@ const GridManager = ({
 
       for (let y = 0; y <= height; y += spacing) {
         const isLargeLine = y % (spacing * 5) === 0;
-        const line = new FabricLine([0, y, width, y], {
+        const line = createFabricLine([0, y, width, y], {
           stroke: isLargeLine ? '#c0c0c0' : '#e0e0e0',
           strokeWidth: isLargeLine ? 1 : 0.5,
           selectable: false,
           evented: false
-        });
+        }) as ExtendedFabricObject;
         
         canvas.add(line);
         objects.push(line);
@@ -72,7 +73,7 @@ const GridManager = ({
     if (!canvas) return;
     
     gridObjects.forEach(obj => {
-      obj.set('visible', visible);
+      obj.set({ visible });
     });
     
     canvas.requestRenderAll();

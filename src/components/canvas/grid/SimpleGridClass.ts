@@ -1,10 +1,12 @@
 
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { createFabricLine } from '@/types/fabric-extended';
+import type { ExtendedFabricObject } from '@/types/fabric-extended';
 import { GRID_CONSTANTS, SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 
 export class SimpleGrid {
   canvas: Canvas;
-  gridObjects: FabricObject[] = [];
+  gridObjects: ExtendedFabricObject[] = [];
   spacing: number;
   smallColor: string;
   largeColor: string;
@@ -42,12 +44,12 @@ export class SimpleGrid {
     // Create vertical lines
     for (let x = 0; x <= width; x += this.spacing) {
       const isLargeLine = x % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = new Line([x, 0, x, height], {
+      const line = createFabricLine([x, 0, x, height], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
         evented: false
-      });
+      }) as ExtendedFabricObject;
       
       this.canvas.add(line);
       this.gridObjects.push(line);
@@ -56,12 +58,12 @@ export class SimpleGrid {
     // Create horizontal lines
     for (let y = 0; y <= height; y += this.spacing) {
       const isLargeLine = y % (this.spacing * this.largeSpacingMultiplier) === 0;
-      const line = new Line([0, y, width, y], {
+      const line = createFabricLine([0, y, width, y], {
         stroke: isLargeLine ? this.largeColor : this.smallColor,
         strokeWidth: isLargeLine ? this.largeWidth : this.smallWidth,
         selectable: false,
         evented: false
-      });
+      }) as ExtendedFabricObject;
       
       this.canvas.add(line);
       this.gridObjects.push(line);

@@ -1,8 +1,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 import logger from '@/utils/logger';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { createFabricLine } from '@/types/fabric-extended';
+import type { ExtendedFabricObject } from '@/types/fabric-extended';
 
 interface OptimizedGridLayerProps {
   canvas: Canvas | null;
@@ -17,7 +19,7 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
   visible = true,
   onGridCreated
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
   const isInitializedRef = useRef(false);
   
   // Create grid when canvas is ready
@@ -29,18 +31,18 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
       
       const width = canvas.getWidth();
       const height = canvas.getHeight();
-      const objects: FabricObject[] = [];
+      const objects: ExtendedFabricObject[] = [];
       
       // Create vertical lines
       for (let x = 0; x <= width; x += gridSize) {
         const isLargeLine = x % (gridSize * 5) === 0;
-        const line = new Line([x, 0, x, height], {
+        const line = createFabricLine([x, 0, x, height], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
           visible
-        });
+        }) as ExtendedFabricObject;
         
         canvas.add(line);
         objects.push(line);
@@ -49,13 +51,13 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
       // Create horizontal lines
       for (let y = 0; y <= height; y += gridSize) {
         const isLargeLine = y % (gridSize * 5) === 0;
-        const line = new Line([0, y, width, y], {
+        const line = createFabricLine([0, y, width, y], {
           stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
           strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
           selectable: false,
           evented: false,
           visible
-        });
+        }) as ExtendedFabricObject;
         
         canvas.add(line);
         objects.push(line);

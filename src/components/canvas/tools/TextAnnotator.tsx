@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { TextIcon } from 'lucide-react';
+import { IconMap } from '@/utils/icon-mapper';
 
 interface TextAnnotatorProps {
   activeTool: DrawingMode;
@@ -19,7 +20,7 @@ const TextAnnotator: React.FC<TextAnnotatorProps> = ({ activeTool, onSelectTool 
           onClick={() => onSelectTool(DrawingMode.TEXT)}
           className="flex items-center gap-2"
         >
-          <TextIcon size={16} />
+          <IconMap.TextIcon size={16} />
           Add Text
         </Button>
       </div>

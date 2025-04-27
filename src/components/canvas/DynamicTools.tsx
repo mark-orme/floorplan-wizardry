@@ -1,17 +1,6 @@
 
 import React from "react";
-// Fix the import to use our mock icons
-import { 
-  Calculator, 
-  Eraser, 
-  Hammer, 
-  Home, 
-  MousePointer, 
-  Pencil, 
-  Ruler, 
-  Square, 
-  Type 
-} from "@/components/ui/icons";
+import { IconMap } from "@/utils/icon-mapper";
 import { Button } from "@/components/ui/button";
 import { DrawingMode } from "@/constants/drawingModes";
 
@@ -24,6 +13,8 @@ export const DynamicTools: React.FC<DynamicToolsProps> = ({
   activeTool,
   setActiveTool
 }) => {
+  const { MousePointer, Pencil, Eraser, Square, TextIcon, Calculator } = IconMap;
+  
   return (
     <div className="flex flex-wrap gap-2">
       <Button 
@@ -62,7 +53,7 @@ export const DynamicTools: React.FC<DynamicToolsProps> = ({
         variant={activeTool === DrawingMode.TEXT ? "default" : "outline"}
         onClick={() => setActiveTool(DrawingMode.TEXT)}
       >
-        <Type className="w-4 h-4 mr-2" />
+        <TextIcon className="w-4 h-4 mr-2" />
         Text
       </Button>
       
@@ -70,7 +61,7 @@ export const DynamicTools: React.FC<DynamicToolsProps> = ({
         variant={activeTool === DrawingMode.MEASURE ? "default" : "outline"}
         onClick={() => setActiveTool(DrawingMode.MEASURE)}
       >
-        <Ruler className="w-4 h-4 mr-2" />
+        <Calculator className="w-4 h-4 mr-2" />
         Measure
       </Button>
     </div>

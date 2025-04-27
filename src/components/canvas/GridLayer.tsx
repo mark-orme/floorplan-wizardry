@@ -1,9 +1,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas } from "fabric";
 import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
+import { ExtendedFabricObject } from "@/types/fabric-extended";
 
 interface GridLayerProps {
   fabricCanvas: Canvas;
@@ -16,7 +17,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   dimensions,
   showDebug = false
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
   // Add ref to track if grid has been initialized
   const gridInitializedRef = useRef(false);
   const dimensionsRef = useRef(dimensions);
@@ -27,7 +28,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [dimensions]);
   
   // Handle grid creation
-  const handleGridCreated = (objects: FabricObject[]) => {
+  const handleGridCreated = (objects: ExtendedFabricObject[]) => {
     if (!gridInitializedRef.current) {
       logger.info(`Grid created with ${objects.length} objects`);
       setGridObjects(objects);

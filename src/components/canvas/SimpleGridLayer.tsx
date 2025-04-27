@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas, Line as FabricLine } from 'fabric';
-import type { Object as FabricObject } from 'fabric';
+import { Canvas } from 'fabric';
+import { createFabricLine } from '@/types/fabric-extended';
+import type { ExtendedFabricObject } from '@/types/fabric-extended';
 
 interface SimpleGridLayerProps {
   canvas: Canvas;
@@ -14,35 +15,37 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
   gridSize = 20,
   visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
 
   useEffect(() => {
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const newObjects: FabricObject[] = [];
+    const newObjects: ExtendedFabricObject[] = [];
 
     // Create vertical lines
     for (let x = 0; x <= width; x += gridSize) {
-      const line = new FabricLine([x, 0, x, height], {
+      const line = createFabricLine([x, 0, x, height], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
         visible
-      });
+      }) as ExtendedFabricObject;
+      
       canvas.add(line);
       newObjects.push(line);
     }
 
     // Create horizontal lines
     for (let y = 0; y <= height; y += gridSize) {
-      const line = new FabricLine([0, y, width, y], {
+      const line = createFabricLine([0, y, width, y], {
         stroke: '#e0e0e0',
         strokeWidth: 0.5,
         selectable: false,
         evented: false,
         visible
-      });
+      }) as ExtendedFabricObject;
+      
       canvas.add(line);
       newObjects.push(line);
     }
@@ -59,7 +62,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
   useEffect(() => {
     gridObjects.forEach(obj => {
-      obj.set('visible', visible);
+      obj.set({ visible });
     });
     canvas.requestRenderAll();
   }, [canvas, visible, gridObjects]);
