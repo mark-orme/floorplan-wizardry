@@ -1,10 +1,9 @@
-
 /**
  * Hook for canvas initialization and setup
  * @module useCanvasControllerSetup
  */
 import { useRef, useEffect, useState, useCallback } from "react";
-import { Canvas, Object as FabricObject } from "fabric";
+import { Canvas } from "fabric";
 import { DrawingMode } from "@/constants/drawingModes";
 import { useGrid } from "@/hooks/useGrid";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";

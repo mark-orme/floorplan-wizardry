@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas } from 'fabric';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';

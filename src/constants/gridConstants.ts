@@ -4,7 +4,7 @@ export const SMALL_GRID_SIZE = 20;
 export const LARGE_GRID_SIZE = 100;
 export const GRID_SNAP_THRESHOLD = 10;
 
-// Grid appearance constants
+// Grid appearance constants 
 export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
 export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
 
@@ -21,7 +21,7 @@ export const GRID_CONSTANTS = {
   },
   LARGE: {
     SIZE: LARGE_GRID_SIZE,
-    WIDTH: LARGE_GRID_WIDTH,
+    WIDTH: LARGE_GRID_WIDTH, 
     COLOR: LARGE_GRID_COLOR,
     OPACITY: 0.6
   }

@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  MousePointer, 
-  Pencil, 
+  Mouse as MousePointer, 
+  PenTool as Pencil, 
   Eraser 
 } from 'lucide-react';
 

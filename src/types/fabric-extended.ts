@@ -9,6 +9,8 @@ export interface ExtendedFabricObject extends FabricObject {
   visible?: boolean;
   selectable?: boolean;
   evented?: boolean;
+  stroke?: string;
+  strokeWidth?: number;
   set: (options: Record<string, any>) => FabricObject;
 }
 
