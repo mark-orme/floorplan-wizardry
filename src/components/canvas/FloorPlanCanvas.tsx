@@ -17,7 +17,7 @@ export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasError 
         width: 800,
         height: 600,
         backgroundColor: '#ffffff'
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
 
       return () => {
         canvas.dispose();

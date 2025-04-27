@@ -1,6 +1,5 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 
 interface PerformanceMetrics {

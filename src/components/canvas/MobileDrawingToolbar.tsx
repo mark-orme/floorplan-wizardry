@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,7 +43,7 @@ export const MobileDrawingToolbar: React.FC<MobileDrawingToolbarProps> = ({
     <div className="mobile-toolbar flex justify-between items-center bg-gray-100 p-2">
       <div className="tools flex items-center space-x-2">
         <Button
-          variant={isDrawingMode ? 'contained' : 'outlined'}
+          variant={isDrawingMode ? 'default' : 'outline'}
           onClick={() => onToolSelect(isDrawingMode ? 'select' : 'draw')}
         >
           {isDrawingMode ? <MousePointer size={20} /> : <Pencil size={20} />}

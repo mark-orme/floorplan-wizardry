@@ -1,6 +1,7 @@
+
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, IEvent, Object as FabricObject } from 'fabric';
-import { ExtendedCanvas, FabricEventHandler, FabricObjectEvent } from '@/types/canvas/ExtendedCanvas';
+import { Object as FabricObject } from 'fabric';
+import { ExtendedCanvas, FabricEventHandler } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasProps {
@@ -10,9 +11,9 @@ interface EnhancedCanvasProps {
   brushColor?: string;
   brushWidth?: number;
   onCanvasReady?: (canvas: ExtendedCanvas) => void;
-  onObjectAdded?: FabricEventHandler<FabricObjectEvent>;
-  onObjectModified?: FabricEventHandler<FabricObjectEvent>;
-  onObjectRemoved?: FabricEventHandler<FabricObjectEvent>;
+  onObjectAdded?: FabricEventHandler;
+  onObjectModified?: FabricEventHandler;
+  onObjectRemoved?: FabricEventHandler;
 }
 
 export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
@@ -34,25 +35,25 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     if (!canvasRef.current) return;
 
     try {
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff'
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
 
       canvasInstanceRef.current = fabricCanvas;
       setIsLoading(false);
 
       if (onObjectAdded) {
-        fabricCanvas.on('object:added', onObjectAdded as FabricEventHandler);
+        fabricCanvas.on('object:added', onObjectAdded);
       }
 
       if (onObjectModified) {
-        fabricCanvas.on('object:modified', onObjectModified as FabricEventHandler);
+        fabricCanvas.on('object:modified', onObjectModified);
       }
 
       if (onObjectRemoved) {
-        fabricCanvas.on('object:removed', onObjectRemoved as FabricEventHandler);
+        fabricCanvas.on('object:removed', onObjectRemoved);
       }
 
       if (onCanvasReady) {
@@ -61,15 +62,15 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
 
       return () => {
         if (onObjectAdded) {
-          fabricCanvas.off('object:added', onObjectAdded as FabricEventHandler);
+          fabricCanvas.off('object:added', onObjectAdded);
         }
 
         if (onObjectModified) {
-          fabricCanvas.off('object:modified', onObjectModified as FabricEventHandler);
+          fabricCanvas.off('object:modified', onObjectModified);
         }
 
         if (onObjectRemoved) {
-          fabricCanvas.off('object:removed', onObjectRemoved as FabricEventHandler);
+          fabricCanvas.off('object:removed', onObjectRemoved);
         }
 
         fabricCanvas.dispose();

@@ -6,6 +6,10 @@ export interface ExtendedCanvas extends Canvas {
   upperCanvasEl?: HTMLCanvasElement;
 }
 
-export interface FabricEventHandler<T = Event> {
+export interface FabricEventHandler<T = any> {
   (e: { target: FabricObject }): void;
+}
+
+export interface FabricObjectEvent {
+  target: FabricObject;
 }

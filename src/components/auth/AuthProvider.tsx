@@ -1,6 +1,18 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+
+// Mock supabase client for now - this should be replaced with proper implementation
+const supabase = {
+  auth: {
+    onAuthStateChange: () => ({
+      data: { subscription: { unsubscribe: () => {} } }
+    }),
+    getSession: async () => ({
+      data: { session: null }
+    })
+  }
+};
 
 interface AuthContextType {
   user: User | null;

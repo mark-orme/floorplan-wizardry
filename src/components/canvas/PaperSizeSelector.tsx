@@ -29,18 +29,18 @@ export const PaperSizeSelector: React.FC<PaperSizeSelectorProps> = ({
         >
           {infiniteCanvas ? (
             <>
-              <Maximize2 size={16} />
+              <Maximize2 className="h-4 w-4" />
               <span>Infinite Canvas</span>
             </>
           ) : (
             <>
-              <FileText size={16} />
+              <FileText className="h-4 w-4" />
               <span>
                 {currentPaperSize.name} ({currentPaperSize.orientation})
               </span>
             </>
           )}
-          <ChevronDown size={14} />
+          <ChevronDown className="h-3 w-3" />
         </button>
         
         {isOpen && (
@@ -52,7 +52,7 @@ export const PaperSizeSelector: React.FC<PaperSizeSelectorProps> = ({
                 setIsOpen(false);
               }}
             >
-              <Maximize2 size={16} />
+              <Maximize2 className="h-4 w-4" />
               {infiniteCanvas ? 'Switch to Paper Size' : 'Switch to Infinite Canvas'}
             </button>
             

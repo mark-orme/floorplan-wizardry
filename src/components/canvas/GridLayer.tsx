@@ -60,7 +60,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     const checkGridVisibility = () => {
       if (fabricCanvas && gridObjects.length > 0) {
         const visibleGridObjects = gridObjects.filter(obj => 
-          obj.visible && fabricCanvas.contains(obj)
+          (obj as any).visible && fabricCanvas.contains(obj)
         );
         
         if (visibleGridObjects.length < gridObjects.length * 0.5) {

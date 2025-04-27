@@ -1,5 +1,5 @@
+
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { useCanvas } from '@/components/Canvas';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
@@ -17,11 +17,11 @@ export const CanvasWrapper: React.FC = () => {
     if (!canvasRef.current) return;
 
     try {
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
       
       setCanvas(fabricCanvas);
       setIsLoading(false);

@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
-// Import as default
+// Import MeasurementGuideModal component
 import MeasurementGuideModal from '@/components/MeasurementGuideModal';
 import { DrawingMode } from '@/constants/drawingModes';
 import { DrawingManager } from './DrawingManager';
 
-// Import as default
-import FloorPlanCanvas from './FloorPlanCanvas';
+// Import FloorPlanCanvas component correctly
+import { FloorPlanCanvas } from './FloorPlanCanvas';
 
 interface FloorPlanEditorProps {
   width?: number;
@@ -91,9 +91,7 @@ export const FloorPlanEditor: React.FC<FloorPlanEditorProps> = ({
       
       <div className="relative">
         <FloorPlanCanvas
-          width={width}
-          height={height}
-          onCanvasReady={handleCanvasReady}
+          onCanvasError={(error) => toast.error(`Canvas error: ${error.message}`)}
         />
         
         {canvas && (

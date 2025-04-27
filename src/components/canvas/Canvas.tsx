@@ -1,9 +1,23 @@
+
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
-export const Canvas: React.FC = () => {
+export interface CanvasProps {
+  width?: number;
+  height?: number;
+  onCanvasReady?: (canvas: ExtendedCanvas) => void;
+  onError?: (error: Error) => void;
+  showGridDebug?: boolean;
+}
+
+export const Canvas: React.FC<CanvasProps> = ({
+  width = 800,
+  height = 600,
+  onCanvasReady,
+  onError,
+  showGridDebug = false,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<ExtendedCanvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,23 +26,24 @@ export const Canvas: React.FC = () => {
     if (!canvasRef.current) return;
     
     try {
-      const fabricCanvas = new FabricCanvas(canvasRef.current, {
-        width: 800,
-        height: 600,
+      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+        width,
+        height,
         backgroundColor: '#ffffff',
-      }) as ExtendedCanvas;
+      }) as unknown as ExtendedCanvas;
       
       setCanvas(fabricCanvas);
+      onCanvasReady?.(fabricCanvas);
       setIsLoading(false);
       
       return () => {
         fabricCanvas.dispose();
       };
     } catch (error) {
-      console.error('Failed to initialize canvas:', error);
+      onError?.(error instanceof Error ? error : new Error('Canvas initialization failed'));
       setIsLoading(false);
     }
-  }, []);
+  }, [width, height, onCanvasReady, onError]);
 
   return (
     <div className="relative">

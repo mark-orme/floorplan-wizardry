@@ -51,7 +51,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.1",
-    "date-fns": "^3.3.1",
+    "date-fns": "^4.1.0",
     "fabric": "^5.3.0",
     "i18next": "^23.7.16",
     "lovable-tagger": "^1.1.8",

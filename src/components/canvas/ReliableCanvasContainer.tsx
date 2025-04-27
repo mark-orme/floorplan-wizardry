@@ -5,10 +5,45 @@
  * @module ReliableCanvasContainer
  */
 import React, { useState, useEffect } from 'react';
-import { BasicCanvasElement } from './BasicCanvasElement';
-import { createFabricCanvas, validateFabricCanvas } from '@/utils/fabricCanvasCreator';
 import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
+
+// Create minimal BasicCanvasElement since it's missing
+const BasicCanvasElement: React.FC<{
+  width?: number;
+  height?: number;
+  onCanvasReady: (canvas: HTMLCanvasElement) => void;
+}> = ({ width = 800, height = 600, onCanvasReady }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  React.useEffect(() => {
+    if (canvasRef.current) {
+      onCanvasReady(canvasRef.current);
+    }
+  }, [onCanvasReady]);
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className="border border-gray-200 shadow-md"
+    />
+  );
+};
+
+// Helper functions
+const createFabricCanvas = (element: HTMLCanvasElement, width: number, height: number): FabricCanvas => {
+  return new window.fabric.Canvas(element, {
+    width,
+    height,
+    backgroundColor: '#ffffff'
+  });
+};
+
+const validateFabricCanvas = (canvas: FabricCanvas): boolean => {
+  return canvas && typeof canvas.renderAll === 'function';
+};
 
 // Constants
 const CANVAS_CHECK_INTERVAL = 1000; // ms

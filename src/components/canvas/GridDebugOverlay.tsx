@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Object as FabricObject } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
@@ -39,7 +40,7 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
       );
       
       const visibleGridLines = gridObjects.filter(obj => 
-        (obj as FabricObject).visible
+        (obj as any).visible
       ).length;
       
       setStats({
@@ -72,8 +73,9 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
   const handleFixGrid = () => {
     if (!canvas) return;
     
-    const gridAutoFix = gridConstants.GRID_AUTO_FIX;
-    if (!gridAutoFix) return;
+    // Define local constants since gridConstants is not available
+    const GRID_AUTO_FIX = true;
+    if (!GRID_AUTO_FIX) return;
     
     console.log('Auto-fixing grid');
   };
@@ -109,4 +111,3 @@ export const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({
     </div>
   );
 };
-

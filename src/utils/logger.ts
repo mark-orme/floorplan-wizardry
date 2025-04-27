@@ -1,61 +1,53 @@
 
 /**
- * Logger Utility
- * Provides standardized logging functionality
- * @module utils/logger
+ * Logger utility for consistent application logging
  */
 
-const LOG_LEVEL = {
-  DEBUG: 0,
-  INFO: 1,
-  WARN: 2,
-  ERROR: 3
-};
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-// Get log level from environment or default to INFO
-const currentLogLevel = LOG_LEVEL.INFO;
-
-/**
- * Logger interface
- */
-interface Logger {
-  debug: (message: string, ...args: any[]) => void;
-  info: (message: string, ...args: any[]) => void;
-  warn: (message: string, ...args: any[]) => void;
-  error: (message: string, ...args: any[]) => void;
+interface LogOptions {
+  tags?: string[];
+  data?: Record<string, unknown>;
 }
 
-/**
- * Create logger instance
- */
-const createLogger = (): Logger => {
-  return {
-    debug: (message: string, ...args: any[]) => {
-      if (currentLogLevel <= LOG_LEVEL.DEBUG) {
-        console.debug(`[DEBUG] ${message}`, ...args);
-      }
-    },
-    
-    info: (message: string, ...args: any[]) => {
-      if (currentLogLevel <= LOG_LEVEL.INFO) {
-        console.info(`[INFO] ${message}`, ...args);
-      }
-    },
-    
-    warn: (message: string, ...args: any[]) => {
-      if (currentLogLevel <= LOG_LEVEL.WARN) {
-        console.warn(`[WARN] ${message}`, ...args);
-      }
-    },
-    
-    error: (message: string, ...args: any[]) => {
-      if (currentLogLevel <= LOG_LEVEL.ERROR) {
-        console.error(`[ERROR] ${message}`, ...args);
-      }
-    }
-  };
+const logger = {
+  debug: (message: string, data?: any) => {
+    console.debug(`[DEBUG] ${message}`, data || '');
+  },
+  
+  info: (message: string, data?: any) => {
+    console.info(`[INFO] ${message}`, data || '');
+  },
+  
+  warn: (message: string, data?: any) => {
+    console.warn(`[WARNING] ${message}`, data || '');
+  },
+  
+  error: (message: string, error?: Error | unknown) => {
+    console.error(`[ERROR] ${message}`, error || '');
+  },
+  
+  log: (level: LogLevel, message: string, options?: LogOptions) => {
+    const tagString = options?.tags ? `[${options.tags.join(',')}] ` : '';
+    console[level](`[${level.toUpperCase()}] ${tagString}${message}`, options?.data || '');
+  }
 };
 
-const logger = createLogger();
-
 export default logger;
+
+/**
+ * Grid-specific logger
+ */
+export const gridLogger = {
+  info: (message: string, data?: any) => {
+    logger.info(`[GRID] ${message}`, data);
+  },
+  
+  warn: (message: string, data?: any) => {
+    logger.warn(`[GRID] ${message}`, data);
+  },
+  
+  error: (message: string, error?: Error) => {
+    logger.error(`[GRID] ${message}`, error);
+  }
+};

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
@@ -94,7 +95,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     if (!canvas) return;
     
     gridObjects.forEach(obj => {
-      obj.set('visible', visible);
+      (obj as any).set('visible', visible);
     });
     
     canvas.renderAll();
