@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { AiOutlineCalculator } from 'react-icons/ai';
+import { AiOutlineAreaChart } from 'react-icons/ai';
 
 interface AreaCalculatorProps {
   activeTool: DrawingMode;
@@ -11,7 +12,7 @@ interface AreaCalculatorProps {
 const AreaCalculator: React.FC<AreaCalculatorProps> = ({ activeTool, onSelectTool }) => {
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium">Area Calculation</h3>
+      <h3 className="text-sm font-medium">Area Tools</h3>
       <div className="grid grid-cols-1 gap-2">
         <Button
           variant={activeTool === DrawingMode.ROOM ? "default" : "outline"}
@@ -19,7 +20,7 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({ activeTool, onSelectToo
           onClick={() => onSelectTool(DrawingMode.ROOM)}
           className="flex items-center gap-2"
         >
-          <AiOutlineCalculator size={16} />
+          <AiOutlineAreaChart size={16} />
           Calculate Area
         </Button>
       </div>
@@ -30,10 +31,9 @@ const AreaCalculator: React.FC<AreaCalculatorProps> = ({ activeTool, onSelectToo
 const plugin = {
   id: 'area-calculator',
   name: 'Area Calculator',
-  description: 'Tools for calculating floor area',
+  description: 'Tools for area measurement',
   mode: DrawingMode.ROOM,
-  version: '1.0.0',
-  experimental: true
+  version: '1.0.0'
 };
 
 export default AreaCalculator;

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
     setGridVisible(newVisibility);
     
     gridObjects.forEach(obj => {
-      obj.set('visible', newVisibility);
+      obj.set({ visible: newVisibility });
     });
     
     canvas.requestRenderAll();

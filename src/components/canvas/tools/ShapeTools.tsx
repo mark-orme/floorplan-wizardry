@@ -3,10 +3,10 @@ import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  Circle, 
-  Square, 
-  Type
-} from 'lucide-react';
+  AiOutlineSquare, 
+  AiOutlineCircle, 
+  AiOutlineFont
+} from 'react-icons/ai';
 
 interface ShapeToolsProps {
   activeTool: DrawingMode;
@@ -36,7 +36,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleRectangleClick}
           title="Rectangle"
         >
-          <Square className="h-4 w-4" />
+          <AiOutlineSquare className="h-4 w-4" />
           <span className="sr-only">Rectangle</span>
         </Button>
         <Button 
@@ -45,7 +45,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleCircleClick}
           title="Circle"
         >
-          <Circle className="h-4 w-4" />
+          <AiOutlineCircle className="h-4 w-4" />
           <span className="sr-only">Circle</span>
         </Button>
         <Button 
@@ -54,7 +54,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleTextClick}
           title="Text"
         >
-          <Type className="h-4 w-4" />
+          <AiOutlineFont className="h-4 w-4" />
           <span className="sr-only">Text</span>
         </Button>
       </div>

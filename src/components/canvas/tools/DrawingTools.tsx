@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { AiOutlineEdit, AiOutlineMouse, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineEdit, AiOutlineSelect, AiOutlineDelete } from 'react-icons/ai';
 
 interface DrawingToolsProps {
   activeTool: DrawingMode;
@@ -19,7 +20,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.SELECT)}
           className="flex items-center gap-2"
         >
-          <AiOutlineMouse size={16} />
+          <AiOutlineSelect size={16} />
           Select
         </Button>
         <Button

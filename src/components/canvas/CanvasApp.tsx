@@ -1,6 +1,19 @@
 
+import React from 'react';
+
 /**
- * STUB: Disabled for clean build due to missing React/Fabric/JSX.
+ * Canvas Application Component
+ * This is a stub component that will be replaced with actual implementation
  */
-const CanvasApp = () => "CanvasApp unavailable: React/Fabric/JSX missing.";
+const CanvasApp: React.FC = () => {
+  return (
+    <div className="canvas-app-container">
+      <div className="text-center p-4 bg-gray-50 rounded">
+        <p>Canvas application is not fully initialized.</p>
+        <p className="text-sm text-gray-500">React/Fabric/JSX libraries are required.</p>
+      </div>
+    </div>
+  );
+};
+
 export default CanvasApp;

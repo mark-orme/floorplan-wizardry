@@ -1,27 +1,14 @@
 
-/**
- * Grid Renderers
- * Provides functions for creating and rendering grid lines
- * @module utils/grid/gridRenderers
- */
-import { Canvas, Object as FabricObject, Line } from 'fabric';
-import { GridLine, GridOptions, GridObject } from './gridTypes';
+import { Canvas as FabricCanvas, Line } from 'fabric';
+import { GridOptions } from './gridTypes';
 
 /**
- * Creates a grid on the canvas
- * @param canvas Fabric.js canvas
+ * Create a simple grid of lines
+ * @param canvas The canvas to create the grid on
  * @param options Grid options
- * @returns Array of grid objects created
+ * @returns Array of created grid lines
  */
-export function createGrid(
-  canvas: Canvas, 
-  options: GridOptions = {}
-): GridLine[] {
-  if (!canvas) {
-    console.warn('Cannot create grid: Canvas is null');
-    return [];
-  }
-
+export function createGrid(canvas: FabricCanvas, options: GridOptions = {}) {
   const {
     spacing = 50,
     color = '#e0e0e0',
@@ -29,113 +16,165 @@ export function createGrid(
     strokeWidth = 1,
     visible = true
   } = options;
-
-  const gridLines: GridLine[] = [];
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
   
-  try {
-    // Create vertical lines
-    for (let x = 0; x <= canvasWidth; x += spacing) {
-      const line = new window.fabric.Line([x, 0, x, canvasHeight], {
-        stroke: color,
-        strokeWidth,
-        opacity,
-        selectable: false,
-        evented: false,
-        visible,
-        gridObject: true,
-        gridType: 'vertical'
-      }) as GridLine;
-      
-      canvas.add(line);
-      gridLines.push(line);
-    }
-    
-    // Create horizontal lines
-    for (let y = 0; y <= canvasHeight; y += spacing) {
-      const line = new window.fabric.Line([0, y, canvasWidth, y], {
-        stroke: color,
-        strokeWidth,
-        opacity,
-        selectable: false,
-        evented: false,
-        visible,
-        gridObject: true,
-        gridType: 'horizontal'
-      }) as GridLine;
-      
-      canvas.add(line);
-      gridLines.push(line);
-    }
-    
-    // Ensure grid is behind other objects
-    gridLines.forEach(line => {
-      canvas.sendToBack(line);
+  const gridLines = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
+  // Create horizontal lines
+  for (let y = 0; y <= height; y += spacing) {
+    const line = new window.fabric.Line([0, y, width, y], {
+      stroke: color,
+      strokeWidth,
+      opacity,
+      selectable: false,
+      evented: false,
+      visible,
+      gridObject: true,
+      gridType: 'horizontal'
     });
     
-    canvas.requestRenderAll();
+    canvas.add(line);
+    gridLines.push(line);
+  }
+  
+  // Create vertical lines
+  for (let x = 0; x <= width; x += spacing) {
+    const line = new window.fabric.Line([x, 0, x, height], {
+      stroke: color,
+      strokeWidth,
+      opacity,
+      selectable: false,
+      evented: false,
+      visible,
+      gridObject: true,
+      gridType: 'vertical'
+    });
     
-    return gridLines;
-  } catch (error) {
-    console.error('Error creating grid:', error);
-    return [];
-  }
-}
-
-/**
- * Update grid visibility
- * @param canvas Fabric.js canvas
- * @param gridLines Grid lines to update
- * @param visible Whether grid should be visible
- */
-export function updateGridVisibility(
-  canvas: Canvas, 
-  gridLines: GridLine[], 
-  visible: boolean
-): void {
-  if (!canvas) {
-    console.warn('Cannot update grid visibility: Canvas is null');
-    return;
+    canvas.add(line);
+    gridLines.push(line);
   }
   
+  // Ensure grid is behind other objects
   gridLines.forEach(line => {
-    line.set('visible', visible);
+    canvas.sendToBack(line);
   });
   
   canvas.requestRenderAll();
+  
+  return gridLines;
 }
 
 /**
- * Remove grid lines from canvas
- * @param canvas Fabric.js canvas
- * @param gridLines Grid lines to remove
+ * Create a complete grid with major and minor lines
+ * @param canvas The canvas to create the grid on
+ * @param options Grid options
+ * @returns Array of created grid lines
  */
-export function removeGrid(
-  canvas: Canvas, 
-  gridLines: GridLine[]
-): void {
-  if (!canvas) {
-    console.warn('Cannot remove grid: Canvas is null');
-    return;
+export function createCompleteGrid(canvas: FabricCanvas, options: GridOptions = {}) {
+  const {
+    spacing = 50,
+    color = '#e0e0e0',
+    opacity = 0.5,
+    majorSpacing = 5, // How many minor lines between major lines
+    majorColor = '#c0c0c0',
+    majorOpacity = 0.7,
+    strokeWidth = 1,
+    majorStrokeWidth = 2,
+    visible = true
+  } = options;
+  
+  const gridLines = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
+  // Create horizontal lines
+  for (let y = 0; y <= height; y += spacing) {
+    const isMajorLine = (y / spacing) % majorSpacing === 0;
+    const line = new window.fabric.Line([0, y, width, y], {
+      stroke: isMajorLine ? majorColor : color,
+      strokeWidth: isMajorLine ? majorStrokeWidth : strokeWidth,
+      opacity: isMajorLine ? majorOpacity : opacity,
+      selectable: false,
+      evented: false,
+      visible,
+      gridObject: true,
+      gridType: isMajorLine ? 'horizontalMajor' : 'horizontal'
+    });
+    
+    canvas.add(line);
+    gridLines.push(line);
   }
   
+  // Create vertical lines
+  for (let x = 0; x <= width; x += spacing) {
+    const isMajorLine = (x / spacing) % majorSpacing === 0;
+    const line = new window.fabric.Line([x, 0, x, height], {
+      stroke: isMajorLine ? majorColor : color,
+      strokeWidth: isMajorLine ? majorStrokeWidth : strokeWidth,
+      opacity: isMajorLine ? majorOpacity : opacity,
+      selectable: false,
+      evented: false,
+      visible,
+      gridObject: true,
+      gridType: isMajorLine ? 'verticalMajor' : 'vertical'
+    });
+    
+    canvas.add(line);
+    gridLines.push(line);
+  }
+  
+  // Ensure grid is behind other objects
   gridLines.forEach(line => {
-    canvas.remove(line);
+    canvas.sendToBack(line);
   });
   
   canvas.requestRenderAll();
+  
+  return gridLines;
 }
 
 /**
- * Check if an object is a grid object
- * @param obj Object to check
- * @returns Whether object is a grid object
+ * Create a basic emergency grid when main grid fails
+ * @param canvas The canvas to create the grid on
+ * @returns Array of created grid lines
  */
-export function isGridObject(obj: FabricObject): boolean {
-  return obj && (
-    (obj as GridObject).gridObject === true || 
-    (obj as { objectType?: string }).objectType === 'grid' ||
-    (obj as { isGrid?: boolean }).isGrid === true
-  );
+export function createBasicEmergencyGrid(canvas: FabricCanvas) {
+  const gridLines = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  const spacing = 100;
+  
+  // Create simplified grid with minimal properties
+  try {
+    // Create horizontal lines
+    for (let y = 0; y <= height; y += spacing) {
+      const line = new window.fabric.Line([0, y, width, y], {
+        stroke: '#dddddd',
+        opacity: 0.3,
+        selectable: false,
+      });
+      
+      canvas.add(line);
+      gridLines.push(line);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x <= width; x += spacing) {
+      const line = new window.fabric.Line([x, 0, x, height], {
+        stroke: '#dddddd',
+        opacity: 0.3,
+        selectable: false,
+      });
+      
+      canvas.add(line);
+      gridLines.push(line);
+    }
+    
+    canvas.requestRenderAll();
+  } catch (e) {
+    console.error('Failed to create emergency grid:', e);
+  }
+  
+  return gridLines;
 }

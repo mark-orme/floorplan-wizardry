@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { createGrid } from '@/utils/grid/gridRenderers';
-import { ensureGridVisibility } from '@/utils/grid/gridVisibility';
+import { setGridVisibility } from '@/utils/grid/gridVisibility';
 import { toast } from 'sonner';
 import { GridMonitor } from './GridMonitor';
+import { GridLine } from '@/utils/grid/gridTypes';
 
 interface SimpleGridProps {
   canvas: FabricCanvas;
@@ -19,7 +20,7 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
   defaultVisible = true,
   onGridCreated
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<GridLine[]>([]);
   const [isVisible, setIsVisible] = useState(defaultVisible);
   const [creationComplete, setCreationComplete] = useState(false);
   
@@ -31,7 +32,7 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
       console.log('SimpleGrid: Creating grid on canvas');
       
       // Create the grid
-      const objects = createGrid(canvas);
+      const objects = createGrid(canvas) as GridLine[];
       
       setGridObjects(objects);
       setCreationComplete(true);
@@ -39,7 +40,9 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
       // Set initial visibility
       if (objects.length > 0) {
         objects.forEach(obj => {
-          obj.visible = defaultVisible;
+          if (obj) {
+            obj.visible = defaultVisible;
+          }
         });
         canvas.requestRenderAll();
         
@@ -71,11 +74,13 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
       });
       
       // Create new grid
-      const newObjects = createGrid(canvas);
+      const newObjects = createGrid(canvas) as GridLine[];
       
       // Set visibility and update state
       newObjects.forEach(obj => {
-        obj.visible = isVisible;
+        if (obj) {
+          obj.visible = isVisible;
+        }
       });
       
       setGridObjects(newObjects);

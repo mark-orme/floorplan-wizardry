@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Canvas } from 'fabric';
+import { Canvas } from 'fabric/fabric-impl';
 import { toast } from 'sonner';
 import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
@@ -58,7 +58,8 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
     if (!canvasRef.current) return;
     
     try {
-      const canvas = new fabric.Canvas(canvasRef.current, {
+      // Use the window.fabric to access the fabric library properly
+      const canvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',

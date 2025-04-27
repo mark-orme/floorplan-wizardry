@@ -1,101 +1,203 @@
-
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { PerformanceMetrics } from '@/types/core/DebugInfo';
 
 interface UseVirtualizedCanvasOptions {
   enabled?: boolean;
-  maxFps?: number;
-  throttleRenders?: boolean;
+  throttleRenderTime?: number;
+  minFps?: number;
+  objectThreshold?: number;
 }
 
-export function useVirtualizedCanvas(
+/**
+ * Hook for optimizing canvas performance with virtualization
+ */
+export const useVirtualizedCanvas = (
   canvasRef: React.MutableRefObject<FabricCanvas | null>,
   options: UseVirtualizedCanvasOptions = {}
-) {
+) => {
   const {
     enabled = true,
-    maxFps = 60,
-    throttleRenders = true
+    throttleRenderTime = 16, // 60fps target
+    minFps = 30,
+    objectThreshold = 100
   } = options;
   
+  const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
+  
+  // Performance metrics
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
-    fps: 0,
+    fps: 60,
     renderDuration: 0,
     objectCount: 0,
     throttled: false,
-    lastUpdate: 0
+    lastUpdate: Date.now()
   });
   
-  const animationFrameRef = useRef<number | null>(null);
+  // Keep track of frames
+  const framesRef = useRef<{ timestamp: number; duration: number }[]>([]);
   const lastRenderTimeRef = useRef<number>(0);
-  const frameCountRef = useRef<number>(0);
-  const lastFpsUpdateRef = useRef<number>(0);
+  const rafIdRef = useRef<number | null>(null);
   
-  // Set up virtualization
+  // Setup performance monitoring
   useEffect(() => {
-    if (!enabled) return;
+    if (!virtualizationEnabled) return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Enhance canvas with virtualization
-    const updatePerformanceMetrics = () => {
-      const now = performance.now();
-      frameCountRef.current++;
-      
-      // Update FPS every second
-      if (now - lastFpsUpdateRef.current > 1000) {
-        setPerformanceMetrics(prev => ({
-          ...prev,
-          fps: Math.round(frameCountRef.current * 1000 / (now - lastFpsUpdateRef.current)),
-          objectCount: canvas.getObjects().length,
-          lastUpdate: now
-        }));
-        
-        frameCountRef.current = 0;
-        lastFpsUpdateRef.current = now;
-      }
-    };
+    // Track render times
+    const originalRenderAll = canvas.renderAll.bind(canvas);
     
-    // Set up render loop
-    const renderLoop = (timestamp: number) => {
-      if (throttleRenders) {
-        const elapsed = timestamp - lastRenderTimeRef.current;
-        const frameTime = 1000 / maxFps;
-        
-        if (elapsed < frameTime) {
-          animationFrameRef.current = requestAnimationFrame(renderLoop);
-          return;
-        }
+    canvas.renderAll = function() {
+      const startTime = performance.now();
+      const result = originalRenderAll();
+      const endTime = performance.now();
+      
+      const duration = endTime - startTime;
+      lastRenderTimeRef.current = duration;
+      
+      framesRef.current.push({
+        timestamp: Date.now(),
+        duration
+      });
+      
+      // Keep only last 60 frames
+      if (framesRef.current.length > 60) {
+        framesRef.current.shift();
       }
       
-      lastRenderTimeRef.current = timestamp;
-      updatePerformanceMetrics();
-      
-      animationFrameRef.current = requestAnimationFrame(renderLoop);
+      return result;
     };
     
-    animationFrameRef.current = requestAnimationFrame(renderLoop);
+    // Periodic metrics update
+    const updateMetrics = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      // Get current object count
+      const objectCount = canvas.getObjects().length;
+      
+      // Calculate metrics
+      const frames = framesRef.current.slice(-30); // last 30 frames
+      const avgDuration = frames.length > 0
+        ? frames.reduce((sum, frame) => sum + frame.duration, 0) / frames.length
+        : 0;
+      const avgFps = avgDuration > 0 ? 1000 / avgDuration : 60;
+      
+      // Update metrics
+      setPerformanceMetrics({
+        fps: Math.round(avgFps),
+        renderDuration: Math.round(avgDuration),
+        objectCount,
+        throttled: avgFps < minFps,
+        lastUpdate: Date.now()
+      });
+      
+      // Apply optimizations if needed
+      if (objectCount > objectThreshold && avgFps < minFps) {
+        applyOptimizations(canvas);
+      }
+      
+      rafIdRef.current = requestAnimationFrame(updateMetrics);
+    };
+    
+    rafIdRef.current = requestAnimationFrame(updateMetrics);
     
     return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
+      // Restore original renderAll
+      if (canvas && originalRenderAll) {
+        canvas.renderAll = originalRenderAll;
+      }
+      
+      // Cancel animation frame
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [canvasRef, enabled, maxFps, throttleRenders]);
+  }, [virtualizationEnabled, canvasRef, minFps, objectThreshold]);
   
-  // Method to refresh virtualization
+  // Apply performance optimizations
+  const applyOptimizations = (canvas: FabricCanvas) => {
+    // Skip rendering objects that are outside the viewport
+    const objects = canvas.getObjects();
+    const viewportTransform = canvas.viewportTransform;
+    
+    if (!viewportTransform) return;
+    
+    const zoom = viewportTransform[0];
+    const vpt = {
+      tl: {
+        x: -viewportTransform[4] / zoom,
+        y: -viewportTransform[5] / zoom
+      },
+      br: {
+        x: (canvas.width! - viewportTransform[4]) / zoom,
+        y: (canvas.height! - viewportTransform[5]) / zoom
+      }
+    };
+    
+    objects.forEach(obj => {
+      if (!obj.aCoords) return;
+      
+      // Check if object is in viewport
+      const objBounds = {
+        tl: { x: obj.aCoords.tl.x, y: obj.aCoords.tl.y },
+        br: { x: obj.aCoords.br.x, y: obj.aCoords.br.y }
+      };
+      
+      const isInViewport = 
+        objBounds.br.x >= vpt.tl.x &&
+        objBounds.tl.x <= vpt.br.x &&
+        objBounds.br.y >= vpt.tl.y &&
+        objBounds.tl.y <= vpt.br.y;
+      
+      // Set visibility based on viewport
+      if (obj.visible !== isInViewport) {
+        obj.visible = isInViewport;
+      }
+    });
+  };
+  
+  // Toggle virtualization
+  const toggleVirtualization = () => {
+    setVirtualizationEnabled(prev => !prev);
+  };
+  
+  // Function to refresh virtualization settings
   const refreshVirtualization = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Force refresh by triggering a render
-    canvas.requestRenderAll();
+    // Get current object count
+    const objectCount = canvas.getObjects().length;
+    
+    // Calculate new metrics
+    const timestamps = framesRef.current.slice(-30); // last 30 frames
+    const avgDuration = timestamps.length > 0
+      ? timestamps.reduce((sum, frame) => sum + frame.duration, 0) / timestamps.length
+      : 0;
+    const avgFps = avgDuration > 0 ? 1000 / avgDuration : 60;
+    
+    // Update metrics
+    setPerformanceMetrics({
+      fps: Math.round(avgFps),
+      renderDuration: Math.round(avgDuration),
+      objectCount,
+      throttled: avgFps < minFps,
+      lastUpdate: Date.now()
+    });
+    
+    // Apply optimizations if needed
+    if (virtualizationEnabled && objectCount > objectThreshold && avgFps < minFps) {
+      applyOptimizations(canvas);
+    }
   };
   
   return {
-    performanceMetrics,
-    refreshVirtualization
+    virtualizationEnabled,
+    toggleVirtualization,
+    refreshVirtualization,
+    performanceMetrics
   };
-}
+};

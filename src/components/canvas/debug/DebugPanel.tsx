@@ -61,7 +61,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
           )}
           
           <div className="mt-2 text-gray-400">
-            Last Init: {debugInfo.lastInitTime > 0 ? `${Date.now() - debugInfo.lastInitTime}ms ago` : 'N/A'}
+            Last Init: {debugInfo.lastInitTime && debugInfo.lastInitTime > 0 ? `${Date.now() - debugInfo.lastInitTime}ms ago` : 'N/A'}
           </div>
         </CardContent>
       </Card>
