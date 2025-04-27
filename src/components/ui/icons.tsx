@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // Mock components for lucide icons
@@ -36,6 +35,7 @@ export const EyeOff = createIconComponent('EyeOff');
 export const Lock = createIconComponent('Lock');
 export const Unlock = createIconComponent('Unlock');
 export const Trash = createIconComponent('Trash');
+export const Trash2 = createIconComponent('Trash2');
 export const Layers = createIconComponent('Layers');
 export const PlusCircle = createIconComponent('PlusCircle');
 export const Grid = createIconComponent('Grid');
@@ -48,5 +48,7 @@ export const Hammer = createIconComponent('Hammer');
 export const MousePointer = createIconComponent('MousePointer');
 export const Pencil = createIconComponent('Pencil');
 export const Ruler = createIconComponent('Ruler');
+export const RulerSquare = createIconComponent('RulerSquare');
 export const Square = createIconComponent('Square');
 export const Type = createIconComponent('Type');
+export const Database = createIconComponent('Database');
