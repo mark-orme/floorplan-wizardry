@@ -1,11 +1,12 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  MousePointer,
-  Pencil,
-  Type,
-  Hand,
-  Eraser
+  MousePointerIcon,
+  PencilIcon,
+  TypeIcon,
+  HandIcon,
+  EraserIcon
 } from 'lucide-react';
 
 interface ToolSelectorProps {
@@ -18,11 +19,11 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   onToolSelect
 }) => {
   const tools = [
-    { id: 'select', icon: <MousePointer size={18} />, label: 'Select' },
-    { id: 'pencil', icon: <Pencil size={18} />, label: 'Pencil' },
-    { id: 'text', icon: <Type size={18} />, label: 'Text' },
-    { id: 'hand', icon: <Hand size={18} />, label: 'Pan' },
-    { id: 'eraser', icon: <Eraser size={18} />, label: 'Eraser' }
+    { id: 'select', icon: <MousePointerIcon size={18} />, label: 'Select' },
+    { id: 'pencil', icon: <PencilIcon size={18} />, label: 'Pencil' },
+    { id: 'text', icon: <TypeIcon size={18} />, label: 'Text' },
+    { id: 'hand', icon: <HandIcon size={18} />, label: 'Pan' },
+    { id: 'eraser', icon: <EraserIcon size={18} />, label: 'Eraser' }
   ];
   
   return (

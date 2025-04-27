@@ -1,16 +1,17 @@
+
 import React from 'react';
 import {
-  MousePointer,
-  Pencil,
-  Undo2,
-  Redo2,
-  ZoomIn,
-  ZoomOut,
-  LayoutGrid,
-  Trash,
-  Wifi,
-  WifiOff,
-  Type
+  MousePointerIcon,
+  PencilIcon,
+  Undo2Icon,
+  Redo2Icon,
+  ZoomInIcon,
+  ZoomOutIcon,
+  LayoutGridIcon,
+  TrashIcon,
+  WifiIcon,
+  WifiOffIcon,
+  TypeIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -53,7 +54,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={() => onToolSelect('select')}
         title="Select"
       >
-        <MousePointer className="h-4 w-4" />
+        <MousePointerIcon className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -62,7 +63,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={() => onToolSelect('draw')}
         title="Draw"
       >
-        <Pencil className="h-4 w-4" />
+        <PencilIcon className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -71,7 +72,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={() => onToolSelect('text')}
         title="Text"
       >
-        <Type className="h-4 w-4" />
+        <TypeIcon className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>
@@ -83,7 +84,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         disabled={!canUndo}
         title="Undo"
       >
-        <Undo2 className="h-4 w-4" />
+        <Undo2Icon className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -93,7 +94,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         disabled={!canRedo}
         title="Redo"
       >
-        <Redo2 className="h-4 w-4" />
+        <Redo2Icon className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>
@@ -104,7 +105,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={onZoomIn}
         title="Zoom In"
       >
-        <ZoomIn className="h-4 w-4" />
+        <ZoomInIcon className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -113,7 +114,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={onZoomOut}
         title="Zoom Out"
       >
-        <ZoomOut className="h-4 w-4" />
+        <ZoomOutIcon className="h-4 w-4" />
       </Button>
       
       <Button 
@@ -122,7 +123,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={onToggleGrid}
         title={showGrid ? 'Hide Grid' : 'Show Grid'}
       >
-        <LayoutGrid className="h-4 w-4" />
+        <LayoutGridIcon className="h-4 w-4" />
       </Button>
       
       <div className="h-6 border-r mx-1"></div>
@@ -133,7 +134,7 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         onClick={onClear}
         title="Clear Canvas"
       >
-        <Trash className="h-4 w-4" />
+        <TrashIcon className="h-4 w-4" />
       </Button>
       
       <div className="flex-1"></div>
@@ -145,9 +146,9 @@ export const ToolbarContainer: React.FC<ToolbarContainerProps> = ({
         title={synced ? 'Disable Sync' : 'Enable Sync'}
       >
         {synced ? (
-          <Wifi className="h-4 w-4" />
+          <WifiIcon className="h-4 w-4" />
         ) : (
-          <WifiOff className="h-4 w-4" />
+          <WifiOffIcon className="h-4 w-4" />
         )}
       </Button>
     </div>
