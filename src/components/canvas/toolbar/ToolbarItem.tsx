@@ -1,57 +1,58 @@
 
-/**
- * Canvas toolbar item component
- * @module components/canvas/toolbar/ToolbarItem
- */
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export interface ToolbarItemProps {
-  /** Item icon */
+interface ToolbarItemProps {
+  label?: string;
   icon: React.ReactNode;
-  /** Item label */
-  label: string;
-  /** Whether the item is active */
+  tooltip?: string;
   active?: boolean;
-  /** Click handler */
   onClick?: () => void;
-  /** Additional CSS classes */
-  className?: string;
-  /** Whether the item is disabled */
   disabled?: boolean;
+  danger?: boolean;
 }
 
-/**
- * Canvas toolbar item component
- * @param props Component props
- * @returns Rendered component
- */
 export const ToolbarItem: React.FC<ToolbarItemProps> = ({
-  icon,
   label,
+  icon,
+  tooltip,
   active = false,
   onClick,
-  className,
-  disabled = false
+  disabled = false,
+  danger = false
 }) => {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex flex-col items-center justify-center p-2 rounded-md transition-colors',
-        active
-          ? 'bg-primary text-primary-foreground'
-          : 'text-foreground hover:bg-accent hover:text-accent-foreground',
-        disabled && 'opacity-50 cursor-not-allowed',
-        className
-      )}
+  const button = (
+    <Button
+      variant={active ? 'default' : 'outline'}
+      size="sm"
       onClick={onClick}
       disabled={disabled}
-      title={label}
-      aria-label={label}
+      className={`
+        flex items-center justify-center
+        ${danger ? 'text-red-500 hover:text-red-600' : ''}
+        ${active ? 'bg-primary text-primary-foreground' : ''}
+      `}
     >
       {icon}
-      <span className="text-xs mt-1">{label}</span>
-    </button>
+      {label && <span className="ml-2">{label}</span>}
+    </Button>
   );
+
+  if (tooltip) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {button}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return button;
 };

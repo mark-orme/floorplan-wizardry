@@ -1,10 +1,18 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { fabric } from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
+import { 
+  SMALL_GRID_SIZE, 
+  LARGE_GRID_SIZE,
+  SMALL_GRID_COLOR, 
+  LARGE_GRID_COLOR,
+  SMALL_GRID_WIDTH, 
+  LARGE_GRID_WIDTH
+} from '@/constants/gridConstants';
 
 interface GridRendererProps {
-  canvas: FabricCanvas | null;
+  canvas: fabric.Canvas | null;
   gridSize?: number;
   color?: string;
   opacity?: number;
@@ -18,7 +26,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
   opacity = 0.5,
   visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
   
   // Create grid
   useEffect(() => {
@@ -29,15 +37,17 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       canvas.remove(obj);
     });
     
-    const newGridObjects: FabricObject[] = [];
+    const newGridObjects: fabric.Object[] = [];
     const canvasWidth = canvas.getWidth();
     const canvasHeight = canvas.getHeight();
     
     try {
       // Create vertical lines
       for (let x = 0; x <= canvasWidth; x += gridSize) {
-        const line = new window.fabric.Line([x, 0, x, canvasHeight], {
-          stroke: color,
+        const isLargeLine = x % LARGE_GRID_SIZE === 0;
+        const line = new fabric.Line([x, 0, x, canvasHeight], {
+          stroke: isLargeLine ? LARGE_GRID_COLOR : color,
+          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
           opacity: opacity,
           selectable: false,
           evented: false,
@@ -49,8 +59,10 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       
       // Create horizontal lines
       for (let y = 0; y <= canvasHeight; y += gridSize) {
-        const line = new window.fabric.Line([0, y, canvasWidth, y], {
-          stroke: color,
+        const isLargeLine = y % LARGE_GRID_SIZE === 0;
+        const line = new fabric.Line([0, y, canvasWidth, y], {
+          stroke: isLargeLine ? LARGE_GRID_COLOR : color,
+          strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
           opacity: opacity,
           selectable: false,
           evented: false,
@@ -95,7 +107,9 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     if (!canvas) return;
     
     gridObjects.forEach(obj => {
-      (obj as any).set('visible', visible);
+      if (obj) {
+        (obj as any).visible = visible;
+      }
     });
     
     canvas.renderAll();

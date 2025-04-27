@@ -1,14 +1,19 @@
 
 import React, { useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { fabric } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AiOutlineTable, AiOutlineReload, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import { 
+  AiOutlineTable, 
+  AiOutlineReload, 
+  AiOutlineEye, 
+  AiOutlineEyeInvisible 
+} from 'react-icons/ai';
 
 interface GridMonitorProps {
-  canvas: FabricCanvas;
-  gridObjects: FabricObject[];
+  canvas: fabric.Canvas;
+  gridObjects: fabric.Object[];
   createGrid: () => void;
   visible?: boolean;
 }
@@ -30,7 +35,9 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
     setGridVisible(newVisibility);
     
     gridObjects.forEach(obj => {
-      (obj as any).visible = newVisibility;
+      if (obj) {
+        (obj as any).visible = newVisibility;
+      }
     });
     
     canvas.requestRenderAll();

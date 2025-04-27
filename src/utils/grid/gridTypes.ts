@@ -1,26 +1,19 @@
 
-import { Object as FabricObject } from 'fabric';
+import { fabric } from 'fabric';
 
-/**
- * Grid line type with grid-specific properties
- */
-export interface GridLine extends FabricObject {
-  gridObject?: boolean;
-  gridType?: 'horizontal' | 'vertical' | 'horizontalMajor' | 'verticalMajor';
-  visible?: boolean;
+export type GridLine = fabric.Line;
+
+export interface GridOptions {
+  size: number;
+  color: string;
+  majorSize: number;
+  majorColor: string;
+  opacity: number;
+  majorOpacity: number;
 }
 
-/**
- * Grid options for customizing grid appearance
- */
-export interface GridOptions {
-  spacing?: number;
-  color?: string;
-  opacity?: number;
-  strokeWidth?: number;
-  visible?: boolean;
-  majorSpacing?: number;
-  majorColor?: string;
-  majorOpacity?: number;
-  majorStrokeWidth?: number;
+export interface GridState {
+  visible: boolean;
+  options: GridOptions;
+  objects: GridLine[];
 }

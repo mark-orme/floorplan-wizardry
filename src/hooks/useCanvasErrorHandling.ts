@@ -1,27 +1,48 @@
 
 import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { captureError } from '@/utils/sentryUtils';
 
-interface UseCanvasErrorHandlingProps {
+interface UseCanvasErrorHandlingOptions {
   onCanvasError?: (error: Error) => void;
+  showToast?: boolean;
+  logToConsole?: boolean;
+  captureToSentry?: boolean;
 }
 
-/**
- * Hook for centralizing canvas error handling
- */
-export const useCanvasErrorHandling = ({ 
-  onCanvasError 
-}: UseCanvasErrorHandlingProps) => {
-  /**
-   * Handle canvas errors
-   */
+export const useCanvasErrorHandling = (options: UseCanvasErrorHandlingOptions = {}) => {
+  const {
+    onCanvasError,
+    showToast = true,
+    logToConsole = true,
+    captureToSentry = true
+  } = options;
+
   const handleCanvasError = useCallback((error: Error) => {
-    console.error('Canvas error:', error);
-    
-    // Call provided error handler if available
+    // Custom handler if provided
     if (onCanvasError) {
       onCanvasError(error);
     }
-  }, [onCanvasError]);
+    
+    // Log to console
+    if (logToConsole) {
+      console.error('Canvas error:', error);
+    }
+    
+    // Show toast notification
+    if (showToast) {
+      toast.error(`Canvas error: ${error.message}`);
+    }
+    
+    // Send to error tracking
+    if (captureToSentry) {
+      captureError(error, { 
+        level: 'error',
+        tags: { component: 'Canvas' },
+        extra: { message: error.message }
+      });
+    }
+  }, [onCanvasError, showToast, logToConsole, captureToSentry]);
   
   return {
     handleCanvasError

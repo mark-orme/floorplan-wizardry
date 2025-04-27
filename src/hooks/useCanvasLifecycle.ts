@@ -1,11 +1,11 @@
 
-import { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useEffect, useState } from 'react';
+import { fabric } from 'fabric';
 import { toast } from 'sonner';
 
 interface UseCanvasLifecycleOptions {
-  onInit?: (canvas: FabricCanvas) => void;
-  onDestroy?: (canvas: FabricCanvas) => void;
+  onInit?: (canvas: fabric.Canvas) => void;
+  onDestroy?: (canvas: fabric.Canvas) => void;
   onError?: (error: Error) => void;
   width?: number;
   height?: number;
@@ -25,7 +25,7 @@ export const useCanvasLifecycle = (canvasRef: React.RefObject<HTMLCanvasElement>
     backgroundColor = '#ffffff'
   } = options;
   
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
@@ -34,7 +34,7 @@ export const useCanvasLifecycle = (canvasRef: React.RefObject<HTMLCanvasElement>
     if (!canvasRef.current || isInitialized) return;
     
     try {
-      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor,

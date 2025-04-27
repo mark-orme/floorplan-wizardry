@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { VirtualizedLayerList } from '../VirtualizedLayerList';
-import { DrawingLayer } from '../types/DrawingLayer';
+import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
+import { VirtualizedLayerList } from './VirtualizedLayerList';
 
 interface LayerListContainerProps {
   layers: DrawingLayer[];
@@ -10,21 +10,27 @@ interface LayerListContainerProps {
   onToggleVisibility: (layerId: string) => void;
   onToggleLock: (layerId: string) => void;
   onDeleteLayer: (layerId: string) => void;
+  listHeight: number;
 }
 
-export const LayerListContainer: React.FC<LayerListContainerProps> = ({
-  layers,
-  activeLayerId,
-  onLayerClick,
-  onToggleVisibility,
-  onToggleLock,
-  onDeleteLayer
-}) => {
+export const LayerListContainer: React.FC<LayerListContainerProps> = (props) => {
+  const {
+    layers,
+    activeLayerId,
+    onLayerClick,
+    onToggleVisibility,
+    onToggleLock,
+    onDeleteLayer,
+    listHeight
+  } = props;
+  
   return (
-    <div className="max-h-[50vh] overflow-hidden border border-gray-200 rounded-md">
-      <div className="p-2 bg-gray-50 font-medium border-b border-gray-200">
-        Layers ({layers.length})
+    <div className="layers-container border rounded-md p-2 bg-background">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-medium">Layers</h3>
+        <span className="text-xs text-muted-foreground">{layers.length} layers</span>
       </div>
+      
       <VirtualizedLayerList
         layers={layers}
         activeLayerId={activeLayerId}
@@ -32,7 +38,7 @@ export const LayerListContainer: React.FC<LayerListContainerProps> = ({
         onToggleVisibility={onToggleVisibility}
         onToggleLock={onToggleLock}
         onDeleteLayer={onDeleteLayer}
-        listHeight={Math.min(layers.length * 40 + 2, 300)} /* Ensure height is appropriate */
+        listHeight={listHeight}
       />
     </div>
   );

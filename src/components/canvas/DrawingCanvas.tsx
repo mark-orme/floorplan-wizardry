@@ -1,13 +1,13 @@
 
-import { useRef, useEffect } from 'react';
-import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
+import React, { useRef, useEffect } from 'react';
+import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
 
 interface DrawingCanvasProps {
   width?: number;
   height?: number;
   className?: string;
-  onCanvasReady?: (canvas: ExtendedCanvas) => void;
+  onCanvasReady?: (canvas: fabric.Canvas) => void;
   onCanvasError?: (error: Error) => void;
 }
 
@@ -24,11 +24,11 @@ export const DrawingCanvas = ({
     if (!canvasRef.current) return;
 
     try {
-      const canvas = new window.fabric.Canvas(canvasRef.current, {
+      const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff'
-      }) as unknown as ExtendedCanvas;
+      });
 
       onCanvasReady?.(canvas);
 

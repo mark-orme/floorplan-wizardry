@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
-import { GridLine } from '@/utils/grid/gridTypes';
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
 
@@ -86,8 +85,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeWidth: lineWidth,
         selectable: false,
         evented: false,
-        strokeDashArray: isLargeLine ? [] : [5, 5],
-        objectType: 'grid'
+        strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
       canvas.add(line);
@@ -105,8 +103,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeWidth: lineWidth,
         selectable: false,
         evented: false,
-        strokeDashArray: isLargeLine ? [] : [5, 5],
-        objectType: 'grid'
+        strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
       canvas.add(line);

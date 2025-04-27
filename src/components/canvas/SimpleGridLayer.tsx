@@ -1,10 +1,10 @@
 
 import { useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 import { useGrid } from '@/hooks/useGrid';
 
 export interface SimpleGridLayerProps {
-  canvas: FabricCanvas;  
+  canvas: fabric.Canvas;  
   gridSize?: number;
   visible?: boolean;
 }
@@ -19,7 +19,7 @@ export const SimpleGridLayer = ({ canvas, gridSize = 50, visible = true }: Simpl
     
     lines.forEach(line => {
       canvas.add(line);
-      (canvas as any).bringToBack(line);
+      canvas.sendToBack(line);
     });
 
     return () => {

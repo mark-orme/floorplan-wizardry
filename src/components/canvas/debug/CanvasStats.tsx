@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 import { DebugValue } from './DebugValue';
 
 export interface CanvasStatsProps {
   /** Fabric canvas instance */
-  canvas: FabricCanvas | null;
+  canvas: fabric.Canvas | null;
   /** Current zoom level */
   zoomLevel: number;
 }
@@ -67,11 +67,11 @@ export const CanvasStats: React.FC<CanvasStatsProps> = ({
           />
           <DebugValue
             label="Selected Left"
-            value={Math.round(activeObject.left ?? 0)}
+            value={Math.round((activeObject as any).left ?? 0)}
           />
           <DebugValue
             label="Selected Top"
-            value={Math.round(activeObject.top ?? 0)}
+            value={Math.round((activeObject as any).top ?? 0)}
           />
         </>
       )}

@@ -3,9 +3,9 @@ import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  AiOutlineSquare, 
-  AiOutlineCircle, 
-  AiOutlineFont
+  AiOutlineAppstore, 
+  AiOutlineBorder, 
+  AiOutlineEdit 
 } from 'react-icons/ai';
 
 interface ShapeToolsProps {
@@ -36,7 +36,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleRectangleClick}
           title="Rectangle"
         >
-          <AiOutlineSquare className="h-4 w-4" />
+          <AiOutlineAppstore className="h-4 w-4" />
           <span className="sr-only">Rectangle</span>
         </Button>
         <Button 
@@ -45,7 +45,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleCircleClick}
           title="Circle"
         >
-          <AiOutlineCircle className="h-4 w-4" />
+          <AiOutlineBorder className="h-4 w-4" />
           <span className="sr-only">Circle</span>
         </Button>
         <Button 
@@ -54,7 +54,7 @@ const ShapeTools: React.FC<ShapeToolsProps> = ({ activeTool, onSelectTool }) => 
           onClick={handleTextClick}
           title="Text"
         >
-          <AiOutlineFont className="h-4 w-4" />
+          <AiOutlineEdit className="h-4 w-4" />
           <span className="sr-only">Text</span>
         </Button>
       </div>

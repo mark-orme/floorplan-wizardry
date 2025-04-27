@@ -1,6 +1,6 @@
 
 import { useCallback, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 
 interface UseCanvasZoomOptions {
   minZoom?: number;
@@ -12,7 +12,7 @@ interface UseCanvasZoomOptions {
  * Hook for canvas zoom functionality
  */
 export const useCanvasZoom = (
-  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  canvasRef: React.MutableRefObject<fabric.Canvas | null>,
   options: UseCanvasZoomOptions = {}
 ) => {
   const { 

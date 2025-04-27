@@ -5,8 +5,7 @@
  */
 
 // Core canvas components
-import CanvasApp from './CanvasApp';
-export { CanvasApp };
+export { default as CanvasApp } from './CanvasApp';
 export { Canvas } from './Canvas';
 export { SimpleGridLayer } from './SimpleGridLayer';
 export { ColorPicker } from './ColorPicker';
@@ -14,9 +13,13 @@ export { GridManager } from './GridManager';
 export { GridLayerManager } from './GridLayerManager';
 
 // Toolbar components
-export { ToolSettings } from './toolbar/ToolSettings';
-export { ToolbarGroup } from './toolbar/ToolbarGroup';
 export { ToolbarItem } from './toolbar/ToolbarItem';
+export { ToolbarSection } from './toolbar/ToolbarSection';
+
+// Grid components
+export { SimpleGrid } from './grid/SimpleGrid';
+export { GridRenderer } from './GridRenderer';
+export { GridLayer } from './grid/GridLayer';
 
 // Tool components
 export { default as BasicShapes } from './tools/BasicShapes';
@@ -29,8 +32,6 @@ export { default as ShapeTools } from './tools/ShapeTools';
 // Export components
 export { ExportPdfButton } from './export/ExportPdfButton';
 
-// Grid components
-export * from './grid';
-
 // Debug components
-export { DebugPanel } from './debug/DebugPanel';
+export { DebugValue } from './debug/DebugValue';
+export { CanvasStats } from './debug/CanvasStats';

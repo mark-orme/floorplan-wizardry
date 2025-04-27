@@ -2,11 +2,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { fabric } from "fabric";
 import { toast } from 'sonner';
-import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
-import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
-import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
 import { DrawingMode } from '@/constants/drawingModes';
 import { FloorPlan } from '@/types/FloorPlan';
+import { useGrid } from '@/hooks/useGrid';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: fabric.Canvas) => void;
@@ -42,24 +40,15 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   // History
   const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
-  // Initialize controller dependencies
-  const { gridLayerRef, createGrid } = useCanvasControllerDependencies({
-    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<fabric.Canvas>,
-    canvasRef,
-    canvasDimensions: { width, height },
-    debugInfo: { fpsCounter: false, gridHelper: false, objectCounter: false, renderingStats: false, canvasEvents: false, memoryUsage: false, errorReporting: true, canvasDimensions: { width, height } },
-    setDebugInfo: () => {},
-    setHasError: () => {},
-    setErrorMessage: () => {},
-    zoomLevel: 1
-  });
+  // Initialize grid utilities
+  const { createGrid } = useGrid();
+  const gridLayerRef = useRef<fabric.Object[]>([]);
   
   // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
     try {
-      // Use the window.fabric to access the fabric library properly
       const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,

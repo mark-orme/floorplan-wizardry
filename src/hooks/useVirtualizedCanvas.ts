@@ -1,116 +1,103 @@
 
-import { useCallback, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 
-interface UseVirtualizedCanvasOptions {
-  enabled?: boolean;
-  objectThreshold?: number;
-  autoToggle?: boolean;
-}
-
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
   fps: number;
   objectCount: number;
   visibleObjectCount: number;
   renderTime: number;
+  lastUpdateTime: number;
+}
+
+interface UseVirtualizedCanvasOptions {
+  enabled?: boolean;
+  autoToggle?: boolean;
+  visibilityThreshold?: number;
+  refreshInterval?: number;
 }
 
 export const useVirtualizedCanvas = (
   canvasRef: React.MutableRefObject<fabric.Canvas | null>,
   options: UseVirtualizedCanvasOptions = {}
 ) => {
-  const { 
+  const {
     enabled = true,
-    objectThreshold = 100,
-    autoToggle = false
+    autoToggle = true,
+    visibilityThreshold = 100,
+    refreshInterval = 1000
   } = options;
   
   const [virtualizationEnabled, setVirtualizationEnabled] = useState(enabled);
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
+    fps: 0,
+    objectCount: 0,
+    visibleObjectCount: 0,
+    renderTime: 0,
+    lastUpdateTime: Date.now()
+  });
   
-  // Toggle virtualization on/off
-  const toggleVirtualization = useCallback(() => {
-    setVirtualizationEnabled(prev => !prev);
-  }, []);
-  
-  // Refresh virtualization settings
-  const refreshVirtualization = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    // Update metrics
-    const objectCount = canvas.getObjects().length;
-    const visibleObjectCount = canvas.getObjects().filter(obj => (obj as any).visible !== false).length;
-    
-    setPerformanceMetrics(prev => ({
-      fps: prev?.fps || 0,
-      objectCount,
-      visibleObjectCount,
-      renderTime: prev?.renderTime || 0
-    }));
-    
-    // Auto-toggle based on object count
-    if (autoToggle && objectCount > objectThreshold && !virtualizationEnabled) {
-      setVirtualizationEnabled(true);
-    }
-  }, [canvasRef, virtualizationEnabled, autoToggle, objectThreshold]);
-  
-  // Apply virtualization when enabled status changes
   useEffect(() => {
+    if (!canvasRef.current || !enabled) return;
+    
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    // Apply virtualization settings
-    if ('skipOffscreen' in canvas) {
-      (canvas as any).skipOffscreen = virtualizationEnabled;
-    }
-    
-    canvas.requestRenderAll();
-  }, [canvasRef, virtualizationEnabled]);
-  
-  // Update performance metrics periodically
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
     let frameCount = 0;
     let lastTime = performance.now();
-    let frameID: number;
     
     const updateMetrics = () => {
       const now = performance.now();
       const elapsed = now - lastTime;
       
-      // Update once per second
-      if (elapsed >= 1000) {
+      if (elapsed >= refreshInterval) {
+        const objects = canvas.getObjects();
+        const objectCount = objects.length;
+        const visibleObjectCount = objects.filter(obj => (obj as any).visible !== false).length;
         const fps = Math.round((frameCount * 1000) / elapsed);
-        const objectCount = canvas.getObjects().length;
-        const visibleObjectCount = canvas.getObjects().filter(obj => (obj as any).visible !== false).length;
         
         setPerformanceMetrics({
           fps,
           objectCount,
           visibleObjectCount,
-          renderTime: elapsed / frameCount
+          renderTime: elapsed / frameCount,
+          lastUpdateTime: Date.now()
         });
         
+        // Auto toggle virtualization based on object count
+        if (autoToggle) {
+          setVirtualizationEnabled(objectCount > visibilityThreshold);
+        }
+        
+        // Reset counters
         frameCount = 0;
         lastTime = now;
       }
-      
-      frameCount++;
-      frameID = requestAnimationFrame(updateMetrics);
     };
     
-    frameID = requestAnimationFrame(updateMetrics);
+    const handleRender = () => {
+      frameCount++;
+      updateMetrics();
+    };
     
-    return () => cancelAnimationFrame(frameID);
-  }, [canvasRef]);
+    canvas.on('after:render', handleRender);
+    
+    return () => {
+      canvas.off('after:render', handleRender);
+    };
+  }, [canvasRef, enabled, autoToggle, visibilityThreshold, refreshInterval]);
+  
+  const toggleVirtualization = () => {
+    setVirtualizationEnabled(prev => !prev);
+  };
+  
+  const refreshVirtualization = () => {
+    if (!canvasRef.current) return;
+    canvasRef.current.requestRenderAll();
+  };
   
   return {
+    performanceMetrics,
     virtualizationEnabled,
     toggleVirtualization,
-    refreshVirtualization,
-    performanceMetrics
+    refreshVirtualization
   };
 };

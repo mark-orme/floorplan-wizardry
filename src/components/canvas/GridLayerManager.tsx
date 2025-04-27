@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { fabric } from 'fabric';
 import { SimpleGrid } from './grid/SimpleGrid';
 
 interface GridLayerManagerProps {
-  canvas: FabricCanvas | null;
+  canvas: fabric.Canvas | null;
   showGrid: boolean;
-  onGridCreated: (objects: FabricObject[]) => void;
+  onGridCreated: (objects: fabric.Object[]) => void;
 }
 
 /**

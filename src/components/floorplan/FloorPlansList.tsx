@@ -1,112 +1,97 @@
 
-/**
- * Floor Plans List Component
- * Displays a grid of floor plans with actions
- */
-import { FloorPlan } from '@/types/floorPlan';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Trash, Edit } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
+import { AiOutlineEye, AiOutlineDelete, AiOutlineEdit } from 'react-icons/ai';
+import { FloorPlanMetadata } from '@/types/FloorPlan';
+
+// Helper function to format dates
+const formatDate = (date: Date | string): string => {
+  if (!date) return 'Unknown date';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 
 interface FloorPlansListProps {
-  floorPlans: FloorPlan[];
-  isLoading: boolean;
-  onFloorPlanClick: (id: string) => void;
-  onDeleteFloorPlan: (id: string) => Promise<boolean>;
+  floorPlans: FloorPlanMetadata[];
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export function FloorPlansList({
+export const FloorPlansList: React.FC<FloorPlansListProps> = ({
   floorPlans,
-  isLoading,
-  onFloorPlanClick,
-  onDeleteFloorPlan
-}: FloorPlansListProps) {
-  const handleDelete = async (id: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    
-    if (confirm('Are you sure you want to delete this floor plan?')) {
-      try {
-        const success = await onDeleteFloorPlan(id);
-        if (success) {
-          toast.success('Floor plan deleted successfully');
-        } else {
-          toast.error('Failed to delete floor plan');
-        }
-      } catch (error) {
-        toast.error('An error occurred while deleting the floor plan');
-      }
-    }
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <Card key={i} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader>
-              <Skeleton className="h-6 w-3/4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-40 w-full" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-9 w-full" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-  
+  onView,
+  onEdit,
+  onDelete
+}) => {
   if (floorPlans.length === 0) {
     return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No floor plans yet</h3>
-        <p className="text-gray-500">
-          Create your first floor plan by clicking the 'Create New' button above.
-        </p>
-      </div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Floor Plans</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center py-8 text-muted-foreground">
+            No floor plans created yet. Create your first floor plan to get started.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
-  
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {floorPlans.map(floorPlan => (
-        <Card 
-          key={floorPlan.id} 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => onFloorPlanClick(floorPlan.id)}
-        >
-          <CardHeader>
-            <CardTitle>{floorPlan.name || 'Untitled Floor Plan'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
-              <span className="text-gray-500">Floor Plan Preview</span>
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              Last updated: {formatDate(floorPlan.updatedAt)}
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" size="sm" onClick={() => onFloorPlanClick(floorPlan.id)}>
-              <Eye className="h-4 w-4 mr-2" />
-              View
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              onClick={(e) => handleDelete(floorPlan.id, e)}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Floor Plans ({floorPlans.length})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {floorPlans.map((plan) => (
+            <div 
+              key={plan.id}
+              className="flex items-center justify-between border-b pb-3"
             >
-              <Trash className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+              <div>
+                <h3 className="font-medium">{plan.name}</h3>
+                <p className="text-sm text-muted-foreground">Level {plan.level}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onView(plan.id)}
+                >
+                  <AiOutlineEye className="h-4 w-4 mr-1" />
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(plan.id)}
+                >
+                  <AiOutlineEdit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDelete(plan.id)}
+                >
+                  <AiOutlineDelete className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default FloorPlansList;

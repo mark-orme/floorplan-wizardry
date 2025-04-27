@@ -1,169 +1,113 @@
 
-/**
- * Hook for managing drawing history (undo/redo functionality)
- * @module hooks/useDrawingHistory
- */
-import { useRef, useCallback, useState } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { ICanvasMock } from '@/types/testing/ICanvasMock';
+import { useState, useCallback } from 'react';
+import { fabric } from 'fabric';
 
-type CanvasType = FabricCanvas | ICanvasMock;
-
-export interface UseDrawingHistoryProps {
-  fabricCanvasRef: React.MutableRefObject<CanvasType | null>;
-  clearDrawings?: () => void;
-  recalculateGIA?: () => void;
+interface UseDrawingHistoryProps {
+  fabricCanvasRef: React.MutableRefObject<fabric.Canvas | null>;
+  maxHistorySize?: number;
 }
 
-export interface UseDrawingHistoryResult {
-  canUndo: boolean;
-  canRedo: boolean;
-  undo: () => void;
-  redo: () => void;
-  saveState: () => void;
-  
-  // Backwards compatibility with existing code
-  handleUndo: () => void;
-  handleRedo: () => void;
-  saveCurrentState: () => void;
-}
-
-/**
- * Hook for managing drawing history (undo/redo functionality)
- * @param props Hook properties
- * @returns History state and functions
- */
 export const useDrawingHistory = ({
   fabricCanvasRef,
-  clearDrawings,
-  recalculateGIA
-}: UseDrawingHistoryProps): UseDrawingHistoryResult => {
-  // Create a reference to store the history states
-  const historyRef = useRef<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>({ past: [], future: [] });
-  
-  // State to track if undo/redo is possible
+  maxHistorySize = 30
+}: UseDrawingHistoryProps) => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-
-  // Function to save current canvas state
+  const [history, setHistory] = useState<{
+    past: string[];
+    future: string[];
+  }>({
+    past: [],
+    future: []
+  });
+  
   const saveState = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Get all objects on the canvas
-    const objects = canvas.getObjects();
-    
-    // Create a clone of the objects
-    const clonedObjects = [...objects];
-    
-    // Add to past states and clear future
-    historyRef.current.past.push(clonedObjects);
-    historyRef.current.future = [];
-    
-    // Update state
-    setCanUndo(true);
-    setCanRedo(false);
-  }, [fabricCanvasRef]);
-
-  // Function to handle undo operation
+    try {
+      // Get the current canvas state as JSON
+      const json = canvas.toJSON(['id', 'name', 'customType']);
+      const jsonString = JSON.stringify(json);
+      
+      setHistory(prevHistory => {
+        const newPast = [...prevHistory.past, jsonString].slice(-maxHistorySize);
+        
+        // When we perform a new action, future becomes empty
+        return {
+          past: newPast,
+          future: []
+        };
+      });
+      
+      setCanUndo(true);
+      setCanRedo(false);
+    } catch (error) {
+      console.error('Error saving canvas state:', error);
+    }
+  }, [fabricCanvasRef, maxHistorySize]);
+  
   const undo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    const { past, future } = historyRef.current;
+    if (!canvas || history.past.length <= 1) return;
     
-    if (!canvas || past.length === 0) return;
-    
-    // Get current state and add to future
-    const currentObjects = canvas.getObjects();
-    future.unshift([...currentObjects]);
-    
-    // Get previous state
-    const previousState = past.pop();
-    
-    // Clear canvas
-    if (clearDrawings) {
-      clearDrawings();
-    } else {
-      // Remove all objects from canvas
-      const objectsToRemove = [...canvas.getObjects()];
-      objectsToRemove.forEach((obj) => canvas.remove(obj));
+    try {
+      const newPast = [...history.past];
+      const current = newPast.pop(); // Current state (to be undone)
+      const previous = newPast[newPast.length - 1]; // Previous state to restore
+      
+      if (current && previous) {
+        // Load the previous state
+        canvas.loadFromJSON(JSON.parse(previous), () => {
+          canvas.renderAll();
+        });
+        
+        // Update history
+        setHistory({
+          past: newPast,
+          future: [current, ...history.future].slice(0, maxHistorySize)
+        });
+        
+        setCanUndo(newPast.length > 1);
+        setCanRedo(true);
+      }
+    } catch (error) {
+      console.error('Error during undo:', error);
     }
-    
-    // Add previous state objects
-    if (previousState) {
-      previousState.forEach((obj) => canvas.add(obj));
-    }
-    
-    // Update canvas
-    canvas.requestRenderAll();
-    
-    // Recalculate GIA if needed
-    if (recalculateGIA) {
-      recalculateGIA();
-    }
-    
-    // Update state
-    setCanUndo(past.length > 0);
-    setCanRedo(true);
-  }, [fabricCanvasRef, clearDrawings, recalculateGIA]);
-
-  // Function to handle redo operation
+  }, [fabricCanvasRef, history, maxHistorySize]);
+  
   const redo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    const { past, future } = historyRef.current;
+    if (!canvas || history.future.length === 0) return;
     
-    if (!canvas || future.length === 0) return;
-    
-    // Get current state and add to past
-    const currentObjects = canvas.getObjects();
-    past.push([...currentObjects]);
-    
-    // Get next state
-    const nextState = future.shift();
-    
-    // Clear canvas
-    if (clearDrawings) {
-      clearDrawings();
-    } else {
-      // Remove all objects from canvas
-      const objectsToRemove = [...canvas.getObjects()];
-      objectsToRemove.forEach((obj) => canvas.remove(obj));
+    try {
+      const [next, ...newFuture] = history.future;
+      
+      if (next) {
+        // Load the next state
+        canvas.loadFromJSON(JSON.parse(next), () => {
+          canvas.renderAll();
+        });
+        
+        // Update history
+        setHistory({
+          past: [...history.past, next].slice(-maxHistorySize),
+          future: newFuture
+        });
+        
+        setCanUndo(true);
+        setCanRedo(newFuture.length > 0);
+      }
+    } catch (error) {
+      console.error('Error during redo:', error);
     }
-    
-    // Add next state objects
-    if (nextState) {
-      nextState.forEach((obj) => canvas.add(obj));
-    }
-    
-    // Update canvas
-    canvas.requestRenderAll();
-    
-    // Recalculate GIA if needed
-    if (recalculateGIA) {
-      recalculateGIA();
-    }
-    
-    // Update state
-    setCanUndo(true);
-    setCanRedo(future.length > 0);
-  }, [fabricCanvasRef, clearDrawings, recalculateGIA]);
-
-  // For backwards compatibility
-  const handleUndo = undo;
-  const handleRedo = redo;
-  const saveCurrentState = saveState;
-
+  }, [fabricCanvasRef, history, maxHistorySize]);
+  
   return {
-    canUndo,
-    canRedo,
+    saveState,
     undo,
     redo,
-    saveState,
-    // For backwards compatibility
-    handleUndo,
-    handleRedo,
-    saveCurrentState
+    canUndo,
+    canRedo
   };
 };
