@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { AiOutlineAppstore, AiOutlineReload, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import { AiOutlineTable, AiOutlineReload, AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 
 interface GridMonitorProps {
   canvas: FabricCanvas;
@@ -39,7 +38,7 @@ export const GridMonitor: React.FC<GridMonitorProps> = ({
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-white rounded-md shadow-md p-3 text-xs">
       <div className="flex items-center mb-2 font-semibold">
-        <AiOutlineAppstore className="w-4 h-4 mr-1" />
+        <AiOutlineTable className="w-4 h-4 mr-1" />
         Grid Monitor
         <Badge variant="outline" className="ml-2">
           {gridObjects.length} objects

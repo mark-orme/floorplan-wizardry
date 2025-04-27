@@ -1,8 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { AiOutlineSquare, AiOutlineCircle } from 'react-icons/ai';
+import { 
+  AiOutlineBorder,
+  AiOutlineQuestionCircle 
+} from 'react-icons/ai';
 
 interface BasicShapesProps {
   activeTool: DrawingMode;
@@ -20,7 +22,7 @@ const BasicShapes: React.FC<BasicShapesProps> = ({ activeTool, onSelectTool }) =
           onClick={() => onSelectTool(DrawingMode.RECTANGLE)}
           className="flex items-center gap-2"
         >
-          <AiOutlineSquare size={16} />
+          <AiOutlineBorder size={16} />
           Rectangle
         </Button>
         <Button
@@ -29,7 +31,7 @@ const BasicShapes: React.FC<BasicShapesProps> = ({ activeTool, onSelectTool }) =
           onClick={() => onSelectTool(DrawingMode.CIRCLE)}
           className="flex items-center gap-2"
         >
-          <AiOutlineCircle size={16} />
+          <AiOutlineQuestionCircle size={16} />
           Circle
         </Button>
       </div>

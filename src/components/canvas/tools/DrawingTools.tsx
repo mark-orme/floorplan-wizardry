@@ -1,8 +1,11 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { AiOutlineEdit, AiOutlineSelect, AiOutlineDelete } from 'react-icons/ai';
+import { 
+  AiOutlineSelect, 
+  AiOutlineEdit, 
+  AiOutlineDelete 
+} from 'react-icons/ai';
 
 interface DrawingToolsProps {
   activeTool: DrawingMode;

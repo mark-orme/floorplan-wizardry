@@ -1,10 +1,6 @@
 import React from 'react';
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
-import { MdPalette } from 'react-icons/md';
+import { AiOutlineBgColors } from 'react-icons/ai';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToolbarItem } from './ToolbarItem';
 
 export interface ColorPickerProps {
@@ -44,7 +40,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       <PopoverTrigger asChild>
         <div className="relative">
           <ToolbarItem
-            icon={<MdPalette size={16} />}
+            icon={<AiOutlineBgColors size={16} />}
             label="Color"
           />
           <div

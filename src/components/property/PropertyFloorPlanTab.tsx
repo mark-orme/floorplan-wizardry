@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Ruler } from 'lucide-react';
+import { AiOutlineRuler } from 'react-icons/ai';
 import { toast } from 'sonner';
 import { UserRole } from '@/lib/supabase';
 import { PropertyStatus } from '@/types/propertyTypes';
@@ -54,7 +53,7 @@ export const PropertyFloorPlanTab = ({
           onClick={openMeasurementGuide}
           disabled={isSubmitting}
         >
-          <Ruler className="h-4 w-4 mr-2" />
+          <AiOutlineRuler className="h-4 w-4 mr-2" />
           Measurement Guide
         </Button>
       </div>
