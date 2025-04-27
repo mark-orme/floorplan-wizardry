@@ -65,3 +65,5 @@ export const Redo2 = createIconComponent('Redo2');
 export const Save = createIconComponent('Save');
 export const ZoomIn = createIconComponent('ZoomIn');
 export const ZoomOut = createIconComponent('ZoomOut');
+export const Pointer = createIconComponent('Pointer');
+export const Download = createIconComponent('Download');

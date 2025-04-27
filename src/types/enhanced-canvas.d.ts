@@ -32,5 +32,12 @@ declare module 'fabric' {
     remove(...objects: FabricObject[]): Canvas;
     getWidth(): number;
     getHeight(): number;
+    setZoom(zoom: number): Canvas;
+    getZoom(): number;
+    dispose(): void;
+    discardActiveObject(options?: any): Canvas;
+    getActiveObjects(): FabricObject[];
+    toJSON(propertiesToInclude?: string[]): any;
+    clear(): Canvas;
   }
 }
