@@ -7,10 +7,9 @@ import {
   AiOutlineRedo,
   AiOutlineDelete,
   AiOutlineZoomIn,
-  AiOutlineZoomOut,
-  AiOutlineMenu
+  AiOutlineZoomOut
 } from 'react-icons/ai';
-import { FiType, FiMove } from 'react-icons/fi';
+import { FiType } from 'react-icons/fi';
 
 interface MobileDrawingToolbarProps {
   onToolSelect: (tool: string) => void;

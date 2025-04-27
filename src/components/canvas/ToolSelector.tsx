@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import {
   AiOutlineSelect,
   AiOutlineEdit,
+  AiOutlineHighlight
 } from 'react-icons/ai';
 import { FiType } from 'react-icons/fi';
-import { AiOutlineHighlight } from 'react-icons/ai';
 import { BiSolidHandLeft } from 'react-icons/bi';
 
 interface ToolSelectorProps {
