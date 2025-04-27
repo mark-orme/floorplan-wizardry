@@ -1,37 +1,35 @@
 
-import { Toaster as Sonner } from 'sonner';
+import { Toaster as SonnerToaster } from 'sonner';
 import { useTheme } from 'next-themes';
 
 interface ToasterProps {
-  position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
-  closeButton?: boolean;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'top-center' | 'bottom-center';
+  theme?: 'light' | 'dark' | 'system';
   richColors?: boolean;
+  className?: string;
+  toastOptions?: {
+    duration?: number;
+    className?: string;
+    style?: React.CSSProperties;
+  };
 }
 
 export function Toaster({
-  position = 'top-right',
-  closeButton = true,
-  richColors = true,
-}: ToasterProps = {}) {
-  const { theme } = useTheme();
+  position = 'bottom-right',
+  theme: themeOverride,
+  richColors = false,
+  className,
+  toastOptions = {},
+}: ToasterProps) {
+  const { theme = themeOverride } = useTheme();
 
   return (
-    <Sonner
+    <SonnerToaster
       position={position}
       theme={theme as 'light' | 'dark' | 'system'}
-      closeButton={closeButton}
       richColors={richColors}
-      className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast: 'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-          description: 'group-[.toast]:text-muted-foreground',
-          actionButton: 'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-          cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-        },
-      }}
+      className={className}
+      toastOptions={toastOptions}
     />
   );
 }
-
-export default Toaster;

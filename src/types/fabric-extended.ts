@@ -6,12 +6,16 @@ export interface ExtendedFabricObject extends FabricObject {
   id?: string;
   isGrid?: boolean;
   isLargeGrid?: boolean;
+  visible?: boolean;
+  set: (options: Record<string, any>) => FabricObject;
 }
 
 export interface ExtendedLineOptions extends ILineOptions {
   isGrid?: boolean;
   isLargeGrid?: boolean;
   visible?: boolean;
+  stroke?: string;
+  strokeWidth?: number;
 }
 
 export function createFabricLine(

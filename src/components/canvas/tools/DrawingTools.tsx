@@ -3,8 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
 import { 
-  MousePointer, 
-  Pencil, 
+  Mouse, 
+  Pen, 
   Eraser 
 } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.SELECT)}
           className="flex items-center gap-2"
         >
-          <MousePointer size={16} />
+          <Mouse size={16} />
           Select
         </Button>
         <Button
@@ -33,7 +33,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.DRAW)}
           className="flex items-center gap-2"
         >
-          <Pencil size={16} />
+          <Pen size={16} />
           Draw
         </Button>
         <Button

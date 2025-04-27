@@ -9,14 +9,19 @@ export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
 export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
 
 // Grid stroke width constants
+export const SMALL_GRID_WIDTH = 0.5;
+export const LARGE_GRID_WIDTH = 1;
+
 export const GRID_CONSTANTS = {
   SMALL: {
     WIDTH: 0.5,
-    OPACITY: 0.4
+    OPACITY: 0.4,
+    COLOR: 'rgba(200, 200, 200, 0.2)'
   },
   LARGE: {
     WIDTH: 1,
-    OPACITY: 0.6
+    OPACITY: 0.6,
+    COLOR: 'rgba(180, 180, 180, 0.5)'
   }
 };
 
