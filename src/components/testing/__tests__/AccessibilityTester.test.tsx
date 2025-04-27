@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import { AccessibilityTester } from '../AccessibilityTester';
 
 describe('AccessibilityTester', () => {
@@ -35,7 +35,7 @@ describe('AccessibilityTester', () => {
   });
   
   it('should auto-run tests when autoRun is true', () => {
-    const mockRunTests = jest.fn();
+    const mockRunTests = vi.fn();
     
     render(
       <AccessibilityTester showResults={true} autoRun={true}>
@@ -43,8 +43,6 @@ describe('AccessibilityTester', () => {
       </AccessibilityTester>
     );
     
-    // Since we can't directly test the implementation details,
-    // we're just checking if the component renders with autoRun=true
     expect(screen.getByText('Run Tests')).toBeInTheDocument();
   });
 });

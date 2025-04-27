@@ -1,19 +1,14 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { DrawingMode } from '@/constants/drawingModes';
-import { 
-  AiOutlineSelect, 
-  AiOutlineEdit, 
-  AiOutlineDelete 
-} from 'react-icons/ai';
+import { Icons } from '@/constants/icons';
 
 interface DrawingToolsProps {
   activeTool: DrawingMode;
   onSelectTool: (tool: DrawingMode) => void;
 }
 
-const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool }) => {
+export const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool }) => {
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-medium">Drawing Tools</h3>
@@ -24,7 +19,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.SELECT)}
           className="flex items-center gap-2"
         >
-          <AiOutlineSelect size={16} />
+          <Icons.Select size={16} />
           Select
         </Button>
         <Button
@@ -33,7 +28,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.DRAW)}
           className="flex items-center gap-2"
         >
-          <AiOutlineEdit size={16} />
+          <Icons.Edit size={16} />
           Draw
         </Button>
         <Button
@@ -42,7 +37,7 @@ const DrawingTools: React.FC<DrawingToolsProps> = ({ activeTool, onSelectTool })
           onClick={() => onSelectTool(DrawingMode.ERASER)}
           className="flex items-center gap-2"
         >
-          <AiOutlineDelete size={16} />
+          <Icons.Delete size={16} />
           Eraser
         </Button>
       </div>

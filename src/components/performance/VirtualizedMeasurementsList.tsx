@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { VirtualizedList } from "@/components/VirtualizedList";
+import VirtualizedList from "@/components/VirtualizedList";
 
 interface Measurement {
   id: string;

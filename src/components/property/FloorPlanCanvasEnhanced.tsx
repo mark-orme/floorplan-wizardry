@@ -5,11 +5,12 @@ import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
 import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
+import { ExtendedFabricCanvas, PerformanceMetrics } from '@/types/canvas-types';
 
 interface FloorPlanCanvasEnhancedProps {
   width?: number;
   height?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
+  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
   onCanvasError?: (error: Error) => void;
   showPerformanceMetrics?: boolean;
 }
@@ -22,7 +23,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   showPerformanceMetrics = process.env.NODE_ENV === 'development'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
   const [isReady, setIsReady] = useState(false);
   
   const { handleCanvasError } = useCanvasErrorHandling({

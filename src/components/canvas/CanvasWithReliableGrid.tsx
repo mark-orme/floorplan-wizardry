@@ -1,10 +1,10 @@
-
 import { useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { SimpleGridLayer } from './SimpleGridLayer';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface CanvasWithReliableGridProps {
-  canvas: FabricCanvas | null;
+  canvas: ExtendedFabricCanvas | null;
   gridSize?: number;
   showGrid?: boolean;
 }

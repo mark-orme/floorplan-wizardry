@@ -1,4 +1,3 @@
-
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,19 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { contactFormSchema } from '@/schemas/form-schemas';
 
-const formSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  subject: z.string().min(5, { message: 'Subject must be at least 5 characters' }),
-  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export const SecureContactForm = () => {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -27,7 +20,7 @@ export const SecureContactForm = () => {
     }
   });
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = (data: ContactFormValues) => {
     console.log('Form submitted:', data);
     // Handle form submission securely
   };
