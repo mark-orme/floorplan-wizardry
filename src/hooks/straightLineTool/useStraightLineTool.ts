@@ -1,353 +1,257 @@
-
-/**
- * Hook for creating and managing straight line drawing tool
- * @module hooks/straightLineTool/useStraightLineTool
- */
-import { useCallback, useEffect, useState, useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas, Line, Text } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { InputMethod, useLineInputMethod } from './useLineInputMethod';
+import { useLineDrawing } from './useLineDrawing';
+import { useLineEvents } from './useStraightLineEvents';
+import { UseStraightLineToolProps } from './useStraightLineTool.d';
+import { useLinePreview } from './useLinePreview';
+import { useMeasurementUpdates } from './useMeasurementUpdates';
 import { MeasurementData } from './types';
-import { FabricCanvasMouseEvent } from '@/types/fabricEvents';
 
-interface StraightLineMeasurement {
-  distance: number;
-  angle: number;
-  snapped: boolean;
-}
+// Add this type definition at the top of the file
+type FabricCanvasMouseEvent = {
+  e: MouseEvent;
+};
 
-interface UseStraightLineToolProps {
-  canvas?: FabricCanvas | null;
-  isActive?: boolean;
-  lineColor?: string;
-  lineThickness?: number;
-  snapToGrid?: boolean;
-  snapThreshold?: number;
-  saveCurrentState?: () => void;
-}
-
-/**
- * Hook for straight line drawing tool
- * @param {UseStraightLineToolProps} props - Tool configuration
- */
 export const useStraightLineTool = ({
-  canvas = null,
   isActive = false,
-  lineColor = '#000000',
-  lineThickness = 2,
-  snapToGrid = false,
-  snapThreshold = 10,
-  saveCurrentState
+  isEnabled = false,
+  canvas,
+  lineColor = 'black',
+  lineThickness = 5,
+  saveCurrentState,
 }: UseStraightLineToolProps) => {
-  // State
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<Point | null>(null);
-  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
-  const [currentLine, setCurrentLine] = useState<Line | null>(null);
-  const [snapEnabled, setSnapEnabled] = useState(snapToGrid);
-  const [anglesEnabled, setAnglesEnabled] = useState(false);
-  const [shiftPressed, setShiftPressed] = useState(false);
-  const [measurement, setMeasurement] = useState<StraightLineMeasurement>({
-    distance: 0,
-    angle: 0,
-    snapped: false
-  });
-
-  // Get input method from hook
-  const { inputMethod } = useLineInputMethod();
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [anglesEnabled, setAnglesEnabled] = useState(true);
+  const [measurementData, setMeasurementData] = useState<MeasurementData | null>(null);
+  const lineRef = useRef<Line | null>(null);
+  const tooltipRef = useRef<Text | null>(null);
   
-  // Handle tool activation/deactivation
+  const fabricCanvasRef = useRef<FabricCanvas | null>(canvas || null);
   useEffect(() => {
-    if (!isActive && isDrawing) {
-      cancelDrawing();
-    }
-  }, [isActive]);
+    fabricCanvasRef.current = canvas || null;
+  }, [canvas]);
   
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (currentLine && canvas) {
-        canvas.remove(currentLine);
-      }
-    };
-  }, []);
-
+  const {
+    createLine,
+    updateLine,
+    createOrUpdateTooltip,
+    finalizeLine,
+    removeLine
+  } = useLineDrawing(fabricCanvasRef, lineColor, lineThickness, saveCurrentState || (() => {}));
+  
+  const { renderLinePreview } = useLinePreview(fabricCanvasRef, lineColor, lineThickness);
+  
+  const { renderTooltip } = useMeasurementUpdates(
+    fabricCanvasRef,
+    tooltipRef,
+    measurementData
+  );
+  
   /**
-   * Calculate distance and angle between two points
-   */
-  const calculateMeasurement = useCallback((start: Point, end: Point): StraightLineMeasurement => {
-    if (!start || !end) {
-      return { distance: 0, angle: 0, snapped: false };
-    }
-    
-    // Calculate distance using Pythagorean theorem
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate angle (in degrees)
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    angle = (angle < 0 ? angle + 360 : angle);
-    
-    // Snap angle to nearest 45 degrees if angles enabled
-    let snapped = false;
-    if (anglesEnabled || shiftPressed) {
-      const snapAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-      const closestAngle = snapAngles.reduce((prev, curr) => {
-        return (Math.abs(curr - angle) < Math.abs(prev - angle) ? curr : prev);
-      });
-      
-      if (Math.abs(closestAngle - angle) < 10) {  // 10 degree threshold for snapping
-        angle = closestAngle;
-        snapped = true;
-      }
-    }
-    
-    return { distance, angle, snapped };
-  }, [anglesEnabled, shiftPressed]);
-
-  /**
-   * Start drawing a line
+   * Start drawing
    */
   const startDrawing = useCallback((point: Point) => {
-    if (!canvas || !isActive) return;
-    
-    console.log('Starting line drawing at', point);
-    
     setIsDrawing(true);
-    setStartPoint(point);
-    setCurrentPoint(point);
     
-    const line = new Line([point.x, point.y, point.x, point.y], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      selectable: false,
-      evented: false
-    });
+    // Create line
+    const { x, y } = point;
+    const line = createLine(x, y);
+    lineRef.current = line;
     
-    canvas.add(line);
-    setCurrentLine(line);
-    
-    // Reset measurement
-    setMeasurement({ distance: 0, angle: 0, snapped: false });
-  }, [canvas, isActive, lineColor, lineThickness]);
+    // Disable selection
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.selection = false;
+    }
+  }, [createLine]);
   
   /**
-   * Continue drawing - update the line as the pointer moves
+   * Continue drawing
    */
   const continueDrawing = useCallback((point: Point) => {
-    if (!canvas || !isActive || !isDrawing || !currentLine || !startPoint) return;
+    if (!isDrawing || !lineRef.current) return;
     
-    let endPoint = { ...point };
+    // Update line and get measurements
+    const { x: startX, y: startY } = {
+      x: lineRef.current.x1 || 0,
+      y: lineRef.current.y1 || 0
+    };
     
-    // Apply angle constraints if needed
-    if (anglesEnabled || shiftPressed) {
-      const dx = point.x - startPoint.x;
-      const dy = point.y - startPoint.y;
-      let angle = Math.atan2(dy, dx);
-      
-      // Snap to nearest 45 degree increment
-      const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      endPoint = {
-        x: startPoint.x + distance * Math.cos(snapAngle),
-        y: startPoint.y + distance * Math.sin(snapAngle)
-      };
-    }
+    const measurements = updateLine(lineRef.current, startX, startY, point.x, point.y);
+    if (!measurements) return;
     
-    // Update line coordinates
-    currentLine.set({
-      x1: startPoint.x,
-      y1: startPoint.y,
-      x2: endPoint.x,
-      y2: endPoint.y
-    });
+    setMeasurementData(measurements);
     
-    // Update current point and measurement
-    setCurrentPoint(endPoint);
-    const newMeasurement = calculateMeasurement(startPoint, endPoint);
-    setMeasurement(newMeasurement);
+    // Update tooltip
+    const { distance } = measurements;
+    const { x: endX, y: endY } = { x: point.x, y: point.y };
+    const text = `${distance.toFixed(2)}px`;
     
-    canvas.renderAll();
-  }, [canvas, isActive, isDrawing, currentLine, startPoint, anglesEnabled, shiftPressed, calculateMeasurement]);
-
-  /**
-   * Complete drawing - finalize the line
-   */
-  const completeDrawing = useCallback((point: Point) => {
-    if (!canvas || !isActive || !isDrawing || !startPoint) return;
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2 - 10;
     
-    console.log('Completing line drawing at', point);
+    createOrUpdateTooltip(tooltipRef, text, midX, midY);
     
-    // Get end point from current state
-    const endPoint = currentPoint || point;
-    
-    // Minimum line length check to prevent accidental clicks
-    const dx = endPoint.x - startPoint.x;
-    const dy = endPoint.y - startPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance < 5) {
-      // Line too short, cancel it
-      cancelDrawing();
-      return;
-    }
-    
-    // Finalize the line
-    if (currentLine) {
-      currentLine.set({
-        selectable: true,
-        evented: true
-      });
-      
-      canvas.renderAll();
-      
-      // Save state if callback provided
-      if (saveCurrentState) {
-        saveCurrentState();
-      }
-    }
-    
-    // Reset state
-    setIsDrawing(false);
-    setCurrentLine(null);
-  }, [canvas, isActive, isDrawing, startPoint, currentPoint, saveCurrentState]);
-
-  /**
-   * Cancel drawing - remove the current line
-   */
-  const cancelDrawing = useCallback(() => {
-    if (canvas && currentLine) {
-      canvas.remove(currentLine);
-      canvas.renderAll();
-    }
-    
-    // Reset state
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    setCurrentLine(null);
-    setMeasurement({ distance: 0, angle: 0, snapped: false });
-  }, [canvas, currentLine]);
-
-  /**
-   * Toggle snap to grid
-   */
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
+    // Request render
+    fabricCanvasRef.current?.requestRenderAll();
+  }, [isDrawing, updateLine, createOrUpdateTooltip]);
   
   /**
-   * Toggle angle constraints
+   * Complete drawing
+   */
+  const completeDrawing = useCallback((point: Point) => {
+    setIsDrawing(false);
+    
+    if (!lineRef.current) return;
+    
+    // Finalize line
+    finalizeLine(lineRef.current);
+    
+    // Reset selection
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.selection = true;
+    }
+    
+    // Clear
+    lineRef.current = null;
+    tooltipRef.current = null;
+    setMeasurementData(null);
+  }, [finalizeLine]);
+  
+  /**
+   * Cancel drawing
+   */
+  const cancelDrawing = useCallback(() => {
+    setIsDrawing(false);
+    
+    if (!lineRef.current) return;
+    
+    // Remove line
+    removeLine(lineRef.current);
+    
+    // Reset selection
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.selection = true;
+    }
+    
+    // Clear
+    lineRef.current = null;
+    tooltipRef.current = null;
+    setMeasurementData(null);
+  }, [removeLine]);
+  
+  /**
+   * Toggle snap
+   */
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(!snapEnabled);
+  }, [snapEnabled]);
+  
+  /**
+   * Toggle angles
    */
   const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-  }, []);
+    setAnglesEnabled(!anglesEnabled);
+  }, [anglesEnabled]);
 
+  // Modify the handleMouseDown function to use the new type
+  const handleMouseDown = useCallback((event: FabricCanvasMouseEvent) => {
+    if (!fabricCanvasRef.current || !isActive || !event.e) return;
+    
+    const pointer = fabricCanvasRef.current.getPointer(event.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    startDrawing(point);
+  }, [fabricCanvasRef, isActive, startDrawing]);
+  
   /**
-   * Handle key down events
+   * Handle mouse move event
+   */
+  const handleMouseMove = useCallback((event: FabricCanvasMouseEvent) => {
+    if (!fabricCanvasRef.current || !isActive || !isDrawing || !event.e) return;
+    
+    // Prevent default behavior
+    if (event.e && event.e.preventDefault) {
+      event.e.preventDefault();
+    }
+    
+    // Get pointer coordinates
+    const pointer = fabricCanvasRef.current.getPointer(event.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Continue drawing
+    continueDrawing(point);
+  }, [fabricCanvasRef, isActive, isDrawing, continueDrawing]);
+  
+  /**
+   * Handle mouse up event
+   */
+  const handleMouseUp = useCallback((event: FabricCanvasMouseEvent) => {
+    if (!fabricCanvasRef.current || !isActive || !isDrawing || !event.e) return;
+    
+    // Prevent default behavior
+    if (event.e && event.e.preventDefault) {
+      event.e.preventDefault();
+    }
+    
+    // Get pointer coordinates
+    const pointer = fabricCanvasRef.current.getPointer(event.e);
+    const point = { x: pointer.x, y: pointer.y };
+    
+    // Complete drawing
+    completeDrawing(point);
+  }, [fabricCanvasRef, isActive, isDrawing, completeDrawing]);
+  
+  /**
+   * Handle keyboard events (Escape to cancel)
    */
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      setShiftPressed(true);
-    } else if (e.key === 'Escape' && isDrawing) {
+    if (e.key === 'Escape' && isDrawing) {
       cancelDrawing();
     }
   }, [isDrawing, cancelDrawing]);
-
+  
   /**
-   * Handle key up events
+   * Set up event listeners when component mounts
    */
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Shift') {
-      setShiftPressed(false);
-    }
-  }, []);
-
-  /**
-   * End drawing - alias for complete drawing
-   */
-  const endDrawing = useCallback(() => {
-    if (currentPoint) {
-      completeDrawing(currentPoint);
-    }
-  }, [currentPoint, completeDrawing]);
-
-  /**
-   * Render measurement tooltip
-   */
-  const renderTooltip = useCallback(() => {
-    if (!isDrawing || !measurement) return null;
-    
-    const distanceText = `${Math.round(measurement.distance)}px`;
-    const angleText = `${Math.round(measurement.angle)}°`;
-    
-    return (
-      <div className="absolute bg-white border border-gray-200 rounded px-2 py-1 text-sm shadow-md z-50">
-        <div>Distance: {distanceText}</div>
-        <div>Angle: {angleText}</div>
-      </div>
-    );
-  }, [isDrawing, measurement]);
-
-  // Set up event listeners for canvas
   useEffect(() => {
-    if (!canvas || !isActive) return;
-    
-    const handleMouseDown = (event: FabricCanvasMouseEvent) => {
-      if (!event.e) return;
-      const pointer = canvas.getPointer(event.e);
-      startDrawing({ x: pointer.x, y: pointer.y });
-    };
-    
-    const handleMouseMove = (event: FabricCanvasMouseEvent) => {
-      if (!isDrawing || !event.e) return;
-      const pointer = canvas.getPointer(event.e);
-      continueDrawing({ x: pointer.x, y: pointer.y });
-    };
-    
-    const handleMouseUp = () => {
-      if (isDrawing) {
-        endDrawing();
-      }
-    };
+    if (!fabricCanvasRef.current || !isActive) return;
     
     // Add event listeners
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    canvas.on('mouse:up', handleMouseUp);
+    fabricCanvasRef.current.on('mouse:down', handleMouseDown);
+    fabricCanvasRef.current.on('mouse:move', handleMouseMove);
+    fabricCanvasRef.current.on('mouse:up', handleMouseUp);
     document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
     
-    // Remove event listeners on cleanup
     return () => {
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      canvas.off('mouse:up', handleMouseUp);
+      // Clean up event listeners
+      fabricCanvasRef.current?.off('mouse:down', handleMouseDown);
+      fabricCanvasRef.current?.off('mouse:move', handleMouseMove);
+      fabricCanvasRef.current?.off('mouse:up', handleMouseUp);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [canvas, isActive, isDrawing, startDrawing, continueDrawing, endDrawing, handleKeyDown, handleKeyUp]);
+  }, [
+    fabricCanvasRef,
+    isActive,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleKeyDown
+  ]);
 
-  // Return the hook API
   return {
+    isEnabled,
     isDrawing,
-    currentLine,
-    startPoint,
-    currentPoint,
-    measurement,
     snapEnabled,
     anglesEnabled,
-    inputMethod,
+    measurementData,
+    toggleSnap,
+    toggleAngles,
     startDrawing,
     continueDrawing,
     completeDrawing,
     cancelDrawing,
-    toggleSnap,
-    toggleAngles,
-    handleKeyDown,
-    handleKeyUp,
     renderTooltip
   };
 };
