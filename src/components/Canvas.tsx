@@ -1,6 +1,6 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { toast } from 'sonner';
 
 export interface CanvasProps {
@@ -19,40 +19,30 @@ export const Canvas: React.FC<CanvasProps> = ({
   showGridDebug = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedCanvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     
     try {
-      // Create Fabric canvas instance
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
-        width,
-        height,
+        width: 800,
+        height: 600,
         backgroundColor: '#ffffff',
-      });
+      }) as ExtendedCanvas;
       
       setCanvas(fabricCanvas);
       setIsLoading(false);
       
-      // Notify parent component that canvas is ready
-      if (onCanvasReady) {
-        onCanvasReady(fabricCanvas);
-      }
-      
       return () => {
         fabricCanvas.dispose();
-        setCanvas(null);
       };
     } catch (error) {
       console.error('Failed to initialize canvas:', error);
       setIsLoading(false);
-      if (onError && error instanceof Error) {
-        onError(error);
-      }
     }
-  }, [canvasRef, width, height, onCanvasReady, onError]);
+  }, []);
 
   return (
     <div className="relative">
@@ -71,11 +61,10 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 };
 
-// Create a context for canvas
 export const CanvasContext = React.createContext<{
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  canvas: FabricCanvas | null;
-  setCanvas: React.Dispatch<React.SetStateAction<FabricCanvas | null>>;
+  canvas: ExtendedCanvas | null;
+  setCanvas: React.Dispatch<React.SetStateAction<ExtendedCanvas | null>>;
 }>({
   canvasRef: { current: null },
   canvas: null,
@@ -86,7 +75,7 @@ export const useCanvas = () => React.useContext(CanvasContext);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedCanvas | null>(null);
   
   return (
     <CanvasContext.Provider value={{ canvasRef, canvas, setCanvas }}>

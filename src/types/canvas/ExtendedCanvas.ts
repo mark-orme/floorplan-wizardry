@@ -1,15 +1,11 @@
 
-import { Canvas as FabricCanvas, IEvent, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
-export interface ExtendedCanvas extends FabricCanvas {
+export interface ExtendedCanvas extends Canvas {
   wrapperEl: HTMLElement;
   upperCanvasEl?: HTMLCanvasElement;
 }
 
 export interface FabricEventHandler<T = Event> {
-  (e: IEvent<T>): void;
-}
-
-export interface FabricObjectEvent {
-  target: FabricObject;
+  (e: { target: FabricObject }): void;
 }

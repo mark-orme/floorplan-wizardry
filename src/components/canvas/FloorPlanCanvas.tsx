@@ -1,51 +1,38 @@
 
 import React, { useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 
 interface FloorPlanCanvasProps {
-  width?: number;
-  height?: number;
-  onCanvasReady?: (canvas: FabricCanvas) => void;
+  onCanvasError?: (error: Error) => void;
 }
 
-export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({
-  width = 800,
-  height = 600,
-  onCanvasReady
-}) => {
+export const FloorPlanCanvas: React.FC<FloorPlanCanvasProps> = ({ onCanvasError }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasInstanceRef = useRef<FabricCanvas | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Initialize canvas
-    const canvas = new window.fabric.Canvas(canvasRef.current, {
-      width,
-      height,
-      backgroundColor: '#ffffff'
-    });
-    
-    canvasInstanceRef.current = canvas;
-    
-    if (onCanvasReady) {
-      onCanvasReady(canvas);
+    try {
+      const canvas = new window.fabric.Canvas(canvasRef.current, {
+        width: 800,
+        height: 600,
+        backgroundColor: '#ffffff'
+      }) as ExtendedCanvas;
+
+      return () => {
+        canvas.dispose();
+      };
+    } catch (error) {
+      onCanvasError?.(error instanceof Error ? error : new Error('Canvas initialization failed'));
     }
-    
-    return () => {
-      canvas.dispose();
-      canvasInstanceRef.current = null;
-    };
-  }, [width, height, onCanvasReady]);
+  }, [onCanvasError]);
 
   return (
-    <div className="relative">
+    <div className="w-full h-[500px] border border-gray-200 rounded-md bg-gray-50 flex items-center justify-center">
       <canvas
         ref={canvasRef}
-        className="border border-gray-300 shadow-md"
+        className="w-full h-full"
       />
     </div>
   );
 };
-
-export default FloorPlanCanvas;

@@ -1,6 +1,5 @@
 
 import { useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +24,7 @@ export const DrawingCanvas = ({
     if (!canvasRef.current) return;
 
     try {
-      const canvas = new FabricCanvas(canvasRef.current, {
+      const canvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff'
