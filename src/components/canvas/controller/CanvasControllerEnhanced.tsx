@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Canvas } from 'fabric';
 import { toast } from 'sonner';
 import { useCanvasControllerDependencies } from './useCanvasControllerDependencies';
 import { useCanvasControllerDrawingState } from './useCanvasControllerDrawingState';
 import { useCanvasControllerFloorPlans } from './useCanvasControllerFloorPlans';
 import { DrawingMode } from '@/constants/drawingModes';
-import { FloorPlan } from '@/types/floorPlan';
+import { FloorPlan } from '@/types/FloorPlan';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: Canvas) => void;
@@ -58,7 +58,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
     if (!canvasRef.current) return;
     
     try {
-      const canvas = new Canvas(canvasRef.current, {
+      const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
