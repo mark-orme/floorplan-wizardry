@@ -1,5 +1,6 @@
 
 import * as React from "react"
+import { forwardRef } from "react"
 import { AiOutlineMenuFold as GripVertical } from "react-icons/ai"
 import * as ResizablePrimitive from "react-resizable-panels"
 

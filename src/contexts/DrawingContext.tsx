@@ -20,6 +20,7 @@ interface DrawingContextType {
   addToUndoStack: (cmd: any) => void;
   canvas?: FabricCanvas;  
   activeTool?: DrawingMode;
+  setActiveTool?: (tool: DrawingMode) => void;
 }
 
 export const DrawingContext = createContext<DrawingContextType>({
@@ -38,6 +39,7 @@ export const DrawingContext = createContext<DrawingContextType>({
   setCanRedo: () => {},
   addToUndoStack: () => {},
   activeTool: DrawingMode.SELECT,
+  setActiveTool: () => {},
 });
 
 export const useDrawingContext = (): DrawingContextType => {

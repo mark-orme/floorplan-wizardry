@@ -2,18 +2,19 @@
 import { renderHook } from '@testing-library/react-hooks';
 import { useDrawingActions } from '../useDrawingActions';
 import { toast } from 'sonner';
+import { vi } from 'vitest';
 
 // Mock dependencies
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
-    info: jest.fn(),
-    success: jest.fn()
+    info: vi.fn(),
+    success: vi.fn()
   }
 }));
 
 describe('useDrawingActions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return drawing action handlers', () => {

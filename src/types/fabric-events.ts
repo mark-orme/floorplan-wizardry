@@ -73,3 +73,6 @@ export enum FabricEventNames {
   KEY_DOWN = 'key:down',
   KEY_UP = 'key:up'
 }
+
+// Export FabricEventNames as FabricEventTypes for backward compatibility
+export const FabricEventTypes = FabricEventNames;

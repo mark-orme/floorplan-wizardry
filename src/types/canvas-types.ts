@@ -1,103 +1,34 @@
 
 import { Canvas, Object as FabricObject } from 'fabric';
+import { ExtendedFabricCanvas } from './ExtendedFabricCanvas';
 
 /**
- * Extended Fabric object with custom properties
+ * Extended Fabric Object interface
  */
 export interface ExtendedFabricObject extends FabricObject {
-  id?: string;
+  /** Type of object */
   objectType?: string;
-  gridType?: 'small' | 'large';
-  isGrid?: boolean;
-  isLargeGrid?: boolean;
+  /** Whether the object is visible */
   visible?: boolean;
-  selectable?: boolean;
-  evented?: boolean;
-  set: (options: Record<string, any>) => FabricObject;
+  /** Whether the object is a grid element */
+  isGrid?: boolean;
+  /** Whether the object is a large grid element */
+  isLargeGrid?: boolean;
 }
 
 /**
- * Extended Fabric canvas with additional properties needed for our application
+ * Helper function to cast a canvas to ExtendedFabricCanvas
  */
-export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl: HTMLElement;
-  upperCanvasEl?: HTMLCanvasElement;
-  skipOffscreen?: boolean;
-  allowTouchScrolling?: boolean;
-  initialize?: () => void;
-  skipTargetFind?: boolean;
-  _activeObject?: FabricObject | null;
-  _objects?: FabricObject[];
-  getActiveObjects: () => FabricObject[];
-  getActiveObject?: () => FabricObject | null;
-  getElement?: () => HTMLCanvasElement;
-  renderOnAddRemove?: boolean;
-  loadFromJSON?: (json: any, callback?: () => void) => Canvas;
-  sendObjectToBack?: (object: FabricObject) => Canvas;
-  fire?: (eventName: string, options?: any) => Canvas;
-  forEachObject?: (callback: (obj: FabricObject) => void) => void;
-  viewportTransform?: number[];
+export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
+  if (!canvas) return null;
+  return canvas as ExtendedFabricCanvas;
 }
 
 /**
- * Helper function to safely cast a Fabric Canvas to our extended type
+ * Helper function to cast an object to ExtendedFabricObject
  */
-export function asExtendedCanvas(canvas: Canvas): ExtendedFabricCanvas {
-  return canvas as unknown as ExtendedFabricCanvas;
+export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
+  return obj as T & ExtendedFabricObject;
 }
 
-/**
- * Helper function to safely cast canvas objects
- */
-export function asExtendedObject(object: FabricObject): ExtendedFabricObject {
-  return object as ExtendedFabricObject;
-}
-
-/**
- * Property status enumeration
- */
-export enum PropertyStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  IN_REVIEW = 'in_review',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  PENDING_REVIEW = 'pending_review',
-  COMPLETED = 'completed'
-}
-
-/**
- * Floor plan metadata interface
- */
-export interface FloorPlanMetadata {
-  level: number;
-  name: string;
-  created: string;
-  updated: string;
-  description?: string;
-}
-
-/**
- * Performance metrics interface
- */
-export interface PerformanceMetrics {
-  fps: number;
-  renderTime: number;
-  objectCount: number;
-  visibleObjectCount?: number;
-  memoryUsage?: number;
-}
-
-/**
- * Resizing state interface
- */
-export interface ResizingState {
-  width: number;
-  height: number;
-  scale: number;
-  aspectRatio: number;
-  isResizing: boolean;
-  initialResizeComplete: boolean;
-  resizeInProgress: boolean;
-  lastResizeTime: number;
-}
+export type { ExtendedFabricCanvas };

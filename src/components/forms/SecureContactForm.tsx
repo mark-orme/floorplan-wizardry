@@ -6,25 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import extendedZod from '@/utils/zod-extended';
+import * as z from 'zod';
 
-// Create the form schema using our extended zod
-const formSchema = extendedZod.object({
-  name: extendedZod.string().min(2, {
+// Create the form schema using standard zod
+const formSchema = z.object({
+  name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  email: extendedZod.string().min(2, {
+  email: z.string().min(2, {
     message: "Email is required",
   }).email({
     message: "Must be a valid email address",
   }),
-  message: extendedZod.string().min(10, {
+  message: z.string().min(10, {
     message: "Message must be at least 10 characters.",
   }),
 });
 
 // Define the form values type
-type FormValues = extendedZod.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 export function SecureContactForm() {
   // Initialize form with zodResolver

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
+import { asExtendedCanvas, asExtendedObject } from '@/utils/canvas/canvasTypeUtils';
 
 interface SimpleGridLayerProps {
   canvas: fabric.Canvas | null;
@@ -29,6 +29,8 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
     const width = canvas.getWidth();
     const height = canvas.getHeight();
     const extendedCanvas = asExtendedCanvas(canvas);
+    if (!extendedCanvas) return;
+    
     const newObjects: fabric.Object[] = [];
 
     // Create horizontal lines
@@ -63,7 +65,9 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     // Send all grid objects to the back
     newObjects.forEach(obj => {
-      extendedCanvas.sendToBack(obj);
+      if (extendedCanvas.sendToBack) {
+        extendedCanvas.sendToBack(obj);
+      }
     });
 
     setGridObjects(newObjects);
@@ -85,7 +89,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     gridObjects.forEach(obj => {
       const extObj = asExtendedObject(obj);
-      extObj.set({ visible });
+      extObj.visible = visible;
     });
 
     canvas.renderAll();

@@ -52,6 +52,7 @@ export interface DrawingState {
   creatingShape?: boolean;
   midPoint?: Point | null;
   selectionActive?: boolean;
+  fillColor?: string;
 }
 
 /**

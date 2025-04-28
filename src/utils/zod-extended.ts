@@ -10,4 +10,7 @@ export const extendedZod = {
   infer: z.infer
 };
 
+// Re-export z directly for convenience
+export { z };
+
 export default extendedZod;

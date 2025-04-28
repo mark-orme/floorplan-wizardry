@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
-import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 import { toast } from 'sonner';
 
 /**
@@ -28,16 +28,8 @@ export const CanvasWrapper: React.FC = () => {
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
       // Ensure required properties exist
-      if (!extendedCanvas.getElement) {
+      if (extendedCanvas && !extendedCanvas.getElement) {
         extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
-      }
-      
-      // Add getActiveObject for compatibility
-      if (!extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
-        extendedCanvas.getActiveObject = () => {
-          const activeObjects = extendedCanvas.getActiveObjects();
-          return activeObjects && activeObjects.length > 0 ? activeObjects[0] : null;
-        };
       }
       
       setCanvas(extendedCanvas);
