@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-// Update test utilities to include getByTestId method
+// Extended screen with missing methods
 const enhancedScreen = {
   ...screen,
   getByTestId: (testId: string): HTMLElement => {

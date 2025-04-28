@@ -35,7 +35,10 @@ export const stylingIconMap = {
   redo: Redo2
 };
 
-export default {
+// Export as default for components that import Icons
+const Icons = {
   ...toolToIconMap,
   ...stylingIconMap
 };
+
+export default Icons;

@@ -1,63 +1,28 @@
+import { fabric } from 'fabric';
 
-import { Canvas as FabricCanvas, Object as FabricObject, Line, ILineOptions } from "fabric";
-
-/**
- * Extended Fabric canvas with additional properties
- */
-export interface ExtendedFabricCanvas extends FabricCanvas {
-  // Properties required by ExtendedCanvas
-  wrapperEl: HTMLElement;
-  initialize: () => void;
-  skipTargetFind: boolean;
-  _activeObject: any;
-  _objects: any[];
-  
-  // Additional properties for virtualization
-  skipOffscreen?: boolean;
-  allowTouchScrolling?: boolean;
+export interface ExtendedFabricCanvas extends fabric.Canvas {
+  wrapperEl: HTMLDivElement;
+  // Add any other missing properties here
 }
 
-/**
- * Performance metrics for canvas
- */
-export interface PerformanceMetrics {
-  fps: number;
-  renderTime: number;
-  objectCount: number;
-  visibleObjectCount?: number;
+export const asExtendedCanvas = (canvas: fabric.Canvas): ExtendedFabricCanvas => {
+  return canvas as ExtendedFabricCanvas;
+};
+
+// Add PropertyStatus if needed
+export enum PropertyStatus {
+  DRAFT = 'draft',
+  PENDING_REVIEW = 'pending_review',
+  COMPLETED = 'completed',
+  ARCHIVED = 'archived'
 }
 
-/**
- * Extended object interface
- */
-export interface ExtendedFabricObject extends FabricObject {
-  objectType?: string;
-  id?: string;
-  isGrid?: boolean;
-  isLargeGrid?: boolean;
-  visible?: boolean;
-  selectable?: boolean;
-  evented?: boolean;
-  set: (options: Record<string, any>) => FabricObject;
+// Add FloorPlanMetadata export
+export interface FloorPlanMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  thumbnail?: string;
 }
-
-/**
- * Extended line options
- */
-export interface ExtendedLineOptions extends ILineOptions {
-  isGrid?: boolean;
-  isLargeGrid?: boolean;
-  visible?: boolean;
-  stroke?: string;
-  strokeWidth?: number;
-  selectable?: boolean;
-  evented?: boolean;
-}
-
-/**
- * Helper function to safely cast canvas objects
- */
-export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
-  return canvas as unknown as ExtendedFabricCanvas;
-}
-

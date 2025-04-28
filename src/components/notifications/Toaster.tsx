@@ -11,6 +11,10 @@ export const Toaster: React.FC = () => {
     <SonnerToaster 
       position="top-right"
       className="border border-border"
+      toastOptions={{
+        duration: 5000,
+        style: { background: "white", color: "black" }
+      }}
     />
   );
 };

@@ -1,9 +1,10 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
 import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
-import { ExtendedFabricCanvas } from "@/types/canvas-types";
+import { ExtendedFabricCanvas } from "@/types/ExtendedFabricCanvas";
 
 interface GridLayerProps {
   fabricCanvas: ExtendedFabricCanvas;
