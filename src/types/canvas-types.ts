@@ -15,11 +15,11 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 export interface ExtendedFabricCanvas extends FabricCanvas {
-  wrapperEl: HTMLDivElement; // Using HTMLDivElement to match the expected type
+  wrapperEl: HTMLDivElement;
   upperCanvasEl?: HTMLCanvasElement;
   skipOffscreen?: boolean;
   allowTouchScrolling?: boolean;
-  initialize: () => void; // Making initialize required
+  initialize: () => void;
   skipTargetFind?: boolean;
   renderOnAddRemove?: boolean;
   fire?: (eventName: string, options?: any) => FabricCanvas;
@@ -58,18 +58,18 @@ export interface FloorPlanMetadata {
   name: string;
   created: string; 
   updated: string;
-  description?: string; // Add description field
-  updatedAt?: string;  // Add updatedAt field for backwards compatibility
+  description?: string;
+  updatedAt?: string; // For backwards compatibility
 }
 
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING = 'pending',
-  PENDING_REVIEW = 'in_review', // Add missing status
+  PENDING_REVIEW = 'in_review',
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  COMPLETED = 'completed' // Add missing status
+  COMPLETED = 'completed'
 }
 
 /**

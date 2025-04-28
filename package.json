@@ -48,6 +48,7 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
+    "@sentry/react": "^7.105.0",
     "@storybook/react": "^8.6.12",
     "@supabase/supabase-js": "^2.39.3",
     "@testing-library/react-hooks": "^8.0.1",

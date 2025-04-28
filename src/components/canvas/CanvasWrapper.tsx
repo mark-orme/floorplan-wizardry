@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
-import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
+import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 /**
@@ -21,9 +21,12 @@ export const CanvasWrapper: React.FC = () => {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',
-      }) as unknown as ExtendedCanvas;
+      });
       
-      setCanvas(fabricCanvas);
+      // Use the asExtendedCanvas helper to properly type the canvas
+      const extendedCanvas = asExtendedCanvas(fabricCanvas);
+      
+      setCanvas(extendedCanvas);
       setIsLoading(false);
       
       console.log('Canvas initialized successfully!');

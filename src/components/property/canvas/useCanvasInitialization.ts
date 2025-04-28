@@ -4,7 +4,7 @@ import logger from '@/utils/logger';
 
 // Create a basic captureError function as fallback
 const captureError = (error: Error, context?: Record<string, any>) => {
-  logger.error('Canvas Error:', error, context);
+  logger.error('Canvas Error:', error);
   console.error('Canvas Error:', error, context);
 };
 
