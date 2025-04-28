@@ -1,68 +1,68 @@
 import React from 'react';
 import { Icons } from '@/components/icons';
-import LoadingErrorWrapper from '@/components/LoadingErrorWrapper';
-import { PropertyDetailsTab } from './PropertyDetailsTab';
-import { PropertyFloorPlanTab } from './PropertyFloorPlanTab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PropertyStatus, UserRole } from '@/types/roles';
 
 interface PropertyDetailContentProps {
   property: {
-    id: string;
-    order_id: string;
-    client_name: string;
     address: string;
-    branch_name?: string;
-    created_at: string;
-    updated_at: string;
-    notes?: string;
-    status: PropertyStatus;
+    area: number;
+    orderId: string;
+    clientName: string;
+    price: number;
+    status: string;
+    location: string;
+    isActive: boolean;
   };
-  userRole: UserRole;
-  isLoading: boolean;
-  error: Error | null;
-  onStatusChange: (status: PropertyStatus) => Promise<void>;
-  onMeasurementGuideOpen?: () => void;
+  onEdit: () => void;
 }
 
 export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
   property,
-  userRole,
-  isLoading,
-  error,
-  onStatusChange,
-  onMeasurementGuideOpen
+  onEdit
 }) => {
   return (
-    <LoadingErrorWrapper isLoading={isLoading} error={error}>
-      <Tabs defaultValue="details" className="w-full space-y-4">
-        <TabsList>
-          <TabsTrigger value="details">
-            <Icons.home className="w-4 h-4 mr-2" />
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="floorplan">
-            <Icons.grid className="w-4 h-4 mr-2" />
-            Floor Plan
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="details">
-          <PropertyDetailsTab
-            property={property}
-            userRole={userRole}
-            propertyId={property.id}
-            onStatusChange={onStatusChange}
-          />
-        </TabsContent>
-        <TabsContent value="floorplan">
-          <PropertyFloorPlanTab
-            canEdit={userRole === UserRole.MANAGER}
-            isApprovedUser={userRole === UserRole.MANAGER || userRole === UserRole.ADMIN}
-            propertyStatus={property.status}
-            onMeasurementGuideOpen={onMeasurementGuideOpen}
-          />
-        </TabsContent>
-      </Tabs>
-    </LoadingErrorWrapper>
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Icons.home className="h-5 w-5" />
+        <h2 className="text-xl font-semibold">{property.address}</h2>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Icons.grid className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Area</span>
+          <p>{property.area} sqm</p>
+        </div>
+        <div>
+          <Icons.key className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Order ID</span>
+          <p>{property.orderId}</p>
+        </div>
+        <div>
+          <Icons.send className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Client Name</span>
+          <p>{property.clientName}</p>
+        </div>
+        <div>
+          <Icons.plusCircle className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Price</span>
+          <p>${property.price}</p>
+        </div>
+        <div>
+          <Icons.checkCircle className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Status</span>
+          <p>{property.status}</p>
+        </div>
+        <div>
+          <Icons.arrowRightLeft className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Location</span>
+          <p>{property.location}</p>
+        </div>
+        <div>
+          <Icons.shield className="h-4 w-4 mb-1" />
+          <span className="text-sm text-gray-600">Is Active</span>
+          <p>{property.isActive ? 'Yes' : 'No'}</p>
+        </div>
+      </div>
+    </div>
   );
 };
