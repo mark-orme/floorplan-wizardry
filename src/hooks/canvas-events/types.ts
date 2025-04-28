@@ -47,6 +47,8 @@ export interface UseObjectEventsProps extends BaseEventProps {
   onObjectAdded?: (e: any) => void;
   onObjectModified?: (e: any) => void;
   onObjectRemoved?: (e: any) => void;
+  lineColor?: string;
+  lineThickness?: number;
 }
 
 export interface UseBrushSettingsProps extends BaseEventProps {
@@ -56,8 +58,8 @@ export interface UseBrushSettingsProps extends BaseEventProps {
 }
 
 export interface UseCanvasHandlersProps extends BaseEventProps {
-  lineColor: string;
-  lineThickness: number;
+  lineColor?: string;
+  lineThickness?: number;
   onDrawingComplete?: () => void;
   eventTypes?: string[];
   handlers?: Record<string, (e: any) => void>;
@@ -80,8 +82,8 @@ export interface UseZoomTrackingProps {
 export interface UseZoomTrackingResult {
   zoom: number;
   setZoom: (zoom: number) => void;
-  zoomIn: () => void;
-  zoomOut: () => void;
+  zoomIn: (factor?: number) => void;
+  zoomOut: (factor?: number) => void;
   resetZoom: () => void;
   currentZoom?: number;
   register?: () => void;
@@ -123,4 +125,3 @@ export const ZOOM_LEVEL_CONSTANTS = {
   MAX_ZOOM: 10.0,
   ZOOM_STEP: 0.1
 };
-

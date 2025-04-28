@@ -1,35 +1,34 @@
 
-import * as z from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import extendedZod from '@/utils/zod-extended';
 
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-
-const formSchema = z.object({
-  name: z.string().min(2, {
+// Create the form schema using our extended zod
+const formSchema = extendedZod.object({
+  name: extendedZod.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
+  email: extendedZod.string().min(2, {
+    message: "Email is required",
+  }).email({
+    message: "Must be a valid email address",
   }),
-  message: z.string().min(10, {
+  message: extendedZod.string().min(10, {
     message: "Message must be at least 10 characters.",
   }),
 });
 
+// Define the form values type
+type FormValues = extendedZod.infer<typeof formSchema>;
+
 export function SecureContactForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Initialize form with zodResolver
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -38,10 +37,11 @@ export function SecureContactForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  // Form submission handler
+  const onSubmit = (values: FormValues) => {
     console.log("Form submitted:", values);
-    // Handle form submission
-  }
+    // Add API submission logic here
+  };
 
   return (
     <Form {...form}>
@@ -67,11 +67,8 @@ export function SecureContactForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="your.email@example.com" type="email" {...field} />
+                <Input type="email" placeholder="your.email@example.com" {...field} />
               </FormControl>
-              <FormDescription>
-                We'll never share your email with anyone else.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -84,14 +81,18 @@ export function SecureContactForm() {
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea placeholder="Your message here..." rows={5} {...field} />
+                <Textarea 
+                  placeholder="Enter your message here..." 
+                  className="min-h-[120px]"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         
-        <Button type="submit">Send Message</Button>
+        <Button type="submit" className="w-full">Send Message</Button>
       </form>
     </Form>
   );

@@ -1,93 +1,95 @@
 
-import React, { useEffect, useState } from 'react';
-import { SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
+import React, { useEffect, useRef, useState } from 'react';
+import { fabric } from 'fabric';
+import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface SimpleGridLayerProps {
-  canvas: ExtendedFabricCanvas;
+  canvas: fabric.Canvas | null;
   gridSize?: number;
+  largeGridSize?: number;
+  gridColor?: string;
+  largeGridColor?: string;
   visible?: boolean;
-  largeGridInterval?: number;
 }
 
 export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
   canvas,
-  gridSize = 20,
-  visible = true,
-  largeGridInterval = 100
+  gridSize = 10,
+  largeGridSize = 50,
+  gridColor = '#e0e0e0',
+  largeGridColor = '#c0c0c0',
+  visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<ExtendedFabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || initialized.current) return;
 
-    // Remove any existing grid
-    gridObjects.forEach(obj => {
-      canvas.remove(obj);
-    });
-
-    const newGridObjects: ExtendedFabricObject[] = [];
     const width = canvas.getWidth();
     const height = canvas.getHeight();
+    const extendedCanvas = asExtendedCanvas(canvas);
+    const newObjects: fabric.Object[] = [];
 
     // Create horizontal lines
     for (let y = 0; y <= height; y += gridSize) {
-      const isLargeLine = y % largeGridInterval === 0;
-      const line = new window.fabric.Line([0, y, width, y], {
-        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
-        strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
+      const isLarge = y % largeGridSize === 0;
+      const lineProps = {
+        stroke: isLarge ? largeGridColor : gridColor,
+        strokeWidth: isLarge ? 0.5 : 0.2,
         selectable: false,
         evented: false,
-        visible
-      }) as ExtendedFabricObject;
-      
-      canvas.add(line);
-      newGridObjects.push(line);
+      };
+
+      const line = new fabric.Line([0, y, width, y], lineProps);
+      extendedCanvas.add(line);
+      newObjects.push(line);
     }
 
     // Create vertical lines
     for (let x = 0; x <= width; x += gridSize) {
-      const isLargeLine = x % largeGridInterval === 0;
-      const line = new window.fabric.Line([x, 0, x, height], {
-        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
-        strokeWidth: isLargeLine ? LARGE_GRID_WIDTH : SMALL_GRID_WIDTH,
+      const isLarge = x % largeGridSize === 0;
+      const lineProps = {
+        stroke: isLarge ? largeGridColor : gridColor,
+        strokeWidth: isLarge ? 0.5 : 0.2,
         selectable: false,
         evented: false,
-        visible
-      }) as ExtendedFabricObject;
-      
-      canvas.add(line);
-      newGridObjects.push(line);
+      };
+
+      const line = new fabric.Line([x, 0, x, height], lineProps);
+      extendedCanvas.add(line);
+      newObjects.push(line);
     }
 
-    // Send all grid objects to back
-    newGridObjects.forEach(obj => {
-      canvas.sendToBack(obj);
+    // Send all grid objects to the back
+    newObjects.forEach(obj => {
+      extendedCanvas.sendToBack(obj);
     });
 
-    setGridObjects(newGridObjects);
+    setGridObjects(newObjects);
+    initialized.current = true;
+    extendedCanvas.renderAll();
 
     return () => {
       if (canvas) {
-        newGridObjects.forEach(obj => {
+        newObjects.forEach(obj => {
           canvas.remove(obj);
         });
+        canvas.renderAll();
       }
     };
-  }, [canvas, gridSize, largeGridInterval]);
+  }, [canvas, gridSize, largeGridSize, gridColor, largeGridColor]);
 
-  // Update visibility when it changes
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || !gridObjects.length) return;
 
     gridObjects.forEach(obj => {
-      if (obj) {
-        obj.visible = visible;
-      }
+      const extObj = asExtendedObject(obj);
+      extObj.set({ visible });
     });
 
-    canvas.requestRenderAll();
-  }, [canvas, visible, gridObjects]);
+    canvas.renderAll();
+  }, [canvas, gridObjects, visible]);
 
   return null;
 };

@@ -1,7 +1,8 @@
 
-import * as z from "zod";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import extendedZod from "@/utils/zod-extended";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,21 +16,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-const formSchema = z.object({
-  username: z.string().min(2, {
+const formSchema = extendedZod.object({
+  username: extendedZod.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
 });
 
 export function ValidationDemoForm() {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<extendedZod.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: extendedZod.infer<typeof formSchema>) {
     console.log(values);
   }
 

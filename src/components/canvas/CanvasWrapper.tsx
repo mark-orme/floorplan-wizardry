@@ -32,10 +32,11 @@ export const CanvasWrapper: React.FC = () => {
         extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
       }
       
-      if (!extendedCanvas.getActiveObjects && extendedCanvas.getActiveObject) {
-        extendedCanvas.getActiveObjects = () => {
-          const activeObject = extendedCanvas.getActiveObject();
-          return activeObject ? [activeObject] : [];
+      // Add getActiveObject for compatibility
+      if (!extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
+        extendedCanvas.getActiveObject = () => {
+          const activeObjects = extendedCanvas.getActiveObjects();
+          return activeObjects && activeObjects.length > 0 ? activeObjects[0] : null;
         };
       }
       

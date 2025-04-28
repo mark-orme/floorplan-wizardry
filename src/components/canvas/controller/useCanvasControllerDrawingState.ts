@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing drawing state in the canvas controller
  * @module useCanvasControllerDrawingState
@@ -7,7 +8,7 @@ import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
-import { DrawingState } from "@/types/drawingTypes";
+import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
 import { asDrawingTool } from "@/types/core/DrawingToolAdapter";
 import { DrawingMode } from "@/constants/drawingModes";
 
@@ -90,8 +91,13 @@ export const useCanvasControllerDrawingState = (
   
   // Update the controller drawing state whenever it changes
   useEffect(() => {
-    setDrawingState(drawingState);
+    if (drawingState) {
+      setDrawingState(drawingState as DrawingState);
+    } else {
+      // If drawing state is null, create a default state
+      setDrawingState(createDefaultDrawingState());
+    }
   }, [drawingState, setDrawingState]);
   
-  return { drawingState: null };
+  return { drawingState };
 };

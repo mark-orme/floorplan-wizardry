@@ -10,7 +10,7 @@ import {
   SMALL_GRID_WIDTH, 
   LARGE_GRID_WIDTH
 } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
+import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface GridRendererProps {
   canvas: ExtendedFabricCanvas | null;
@@ -109,8 +109,8 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     
     gridObjects.forEach(obj => {
       if (obj) {
-        // Use proper set method that's safe for all types
-        (obj as ExtendedFabricObject).set({ visible });
+        const extObj = asExtendedObject(obj);
+        extObj.set({ visible });
       }
     });
     

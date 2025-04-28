@@ -18,7 +18,9 @@ export const useObjectEvents = ({
   onObjectAdded,
   onObjectModified,
   onObjectRemoved,
-  saveCurrentState
+  saveCurrentState,
+  lineColor = '#000000',
+  lineThickness = 1
 }: UseObjectEventsProps): EventHandlerResult => {
   // Create event handlers
   const handleObjectAdded = useCallback((e: any) => {
@@ -66,6 +68,8 @@ export const useObjectEvents = ({
     fabricCanvasRef,
     tool,
     eventTypes,
-    handlers
+    handlers,
+    lineColor,
+    lineThickness
   });
 };

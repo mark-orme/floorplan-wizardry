@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
-import { asExtendedCanvas, ExtendedFabricCanvas } from "@/types/canvas-types";
+import { asExtendedCanvas, ExtendedFabricCanvas, asExtendedObject } from "@/types/canvas-types";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {

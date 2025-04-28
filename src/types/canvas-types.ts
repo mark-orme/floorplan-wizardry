@@ -10,6 +10,10 @@ export interface ExtendedFabricObject extends FabricObject {
   gridType?: 'small' | 'large';
   isGrid?: boolean;
   isLargeGrid?: boolean;
+  visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
+  set: (options: Record<string, any>) => FabricObject;
 }
 
 /**
@@ -25,6 +29,7 @@ export interface ExtendedFabricCanvas extends Canvas {
   _activeObject?: FabricObject | null;
   _objects?: FabricObject[];
   getActiveObjects: () => FabricObject[];
+  getActiveObject?: () => FabricObject | null;
   getElement?: () => HTMLCanvasElement;
   renderOnAddRemove?: boolean;
   loadFromJSON?: (json: any, callback?: () => void) => Canvas;

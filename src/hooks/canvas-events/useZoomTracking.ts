@@ -1,171 +1,72 @@
 
 /**
- * Hook for tracking zoom events and operations
+ * Hook for tracking zoom level in canvas
  * @module canvas-events/useZoomTracking
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ZOOM_LEVEL_CONSTANTS, UseZoomTrackingProps, UseZoomTrackingResult } from './types';
+import { useState, useCallback, useEffect } from 'react';
+import { UseZoomTrackingProps, UseZoomTrackingResult, ZOOM_LEVEL_CONSTANTS } from './types';
 
 /**
- * Hook for tracking and managing canvas zoom operations
- * @param {UseZoomTrackingProps} props The zoom tracking props
- * @returns {UseZoomTrackingResult} Zoom tracking result with zoom operations
+ * Hook for tracking zoom level in canvas
+ * @param {UseZoomTrackingProps} props - Hook properties
+ * @returns {UseZoomTrackingResult} - Zoom tracking functions and state
  */
 export const useZoomTracking = ({
   fabricCanvasRef,
-  tool,
+  initialZoom = ZOOM_LEVEL_CONSTANTS.DEFAULT,
+  minZoom = ZOOM_LEVEL_CONSTANTS.MIN,
+  maxZoom = ZOOM_LEVEL_CONSTANTS.MAX,
   updateZoomLevel
 }: UseZoomTrackingProps): UseZoomTrackingResult => {
-  const [currentZoom, setCurrentZoom] = useState(ZOOM_LEVEL_CONSTANTS.DEFAULT);
-  const zoomFunctionsInitialized = useRef(false);
-
-  /**
-   * Register zoom-related event handlers
-   */
-  const register = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Update zoom level when canvas is zoomed
-    const canvas = fabricCanvasRef.current;
-    
-    // Add zoom change listener using a standard Fabric event
-    // Create a custom event emitter for zoom changes
-    canvas.on('mouse:wheel', () => {
-      if (updateZoomLevel) {
-        updateZoomLevel();
-      }
-      setCurrentZoom(canvas.getZoom());
-      
-      // You can emit a custom event here if needed
-      if (canvas.fire) {
-        canvas.fire('custom:zoom-changed', {});
-      }
-    });
-    
-    // Flag that handlers are registered
-    zoomFunctionsInitialized.current = true;
-  }, [fabricCanvasRef, updateZoomLevel]);
+  const [zoom, setZoomState] = useState<number>(initialZoom);
   
-  /**
-   * Unregister zoom-related event handlers
-   */
-  const unregister = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    // Remove zoom change listener
+  // Update zoom level in canvas
+  const setZoom = useCallback((newZoom: number) => {
     const canvas = fabricCanvasRef.current;
-    canvas.off('zoom:changed');
+    if (!canvas) return;
     
-    // Reset flag
-    zoomFunctionsInitialized.current = false;
-  }, [fabricCanvasRef]);
-  
-  /**
-   * Clean up event handlers
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
-  /**
-   * Zoom in operation
-   */
-  const zoomIn = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    // Clamp zoom level
+    const clampedZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
     
-    const canvas = fabricCanvasRef.current;
-    const zoom = Math.min(
-      canvas.getZoom() + ZOOM_LEVEL_CONSTANTS.STEP,
-      ZOOM_LEVEL_CONSTANTS.MAX
-    );
+    // Apply zoom to canvas
+    canvas.setZoom(clampedZoom);
+    setZoomState(clampedZoom);
     
-    canvas.setZoom(zoom);
-    canvas.requestRenderAll();
-    setCurrentZoom(zoom);
-    
-    // Trigger update zoom level callback
+    // Notify parent about zoom change
     if (updateZoomLevel) {
       updateZoomLevel();
     }
-  }, [fabricCanvasRef, updateZoomLevel]);
+    
+    // Return canvas for method chaining
+    return canvas;
+  }, [fabricCanvasRef, minZoom, maxZoom, updateZoomLevel]);
   
-  /**
-   * Zoom out operation
-   */
-  const zoomOut = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const zoom = Math.max(
-      canvas.getZoom() - ZOOM_LEVEL_CONSTANTS.STEP,
-      ZOOM_LEVEL_CONSTANTS.MIN
-    );
-    
-    canvas.setZoom(zoom);
-    canvas.requestRenderAll();
-    setCurrentZoom(zoom);
-    
-    // Trigger update zoom level callback
-    if (updateZoomLevel) {
-      updateZoomLevel();
-    }
-  }, [fabricCanvasRef, updateZoomLevel]);
+  // Zoom in by factor
+  const zoomIn = useCallback((factor = ZOOM_LEVEL_CONSTANTS.STEP) => {
+    setZoom(zoom + factor);
+  }, [zoom, setZoom]);
   
-  /**
-   * Reset zoom to default level
-   */
+  // Zoom out by factor
+  const zoomOut = useCallback((factor = ZOOM_LEVEL_CONSTANTS.STEP) => {
+    setZoom(zoom - factor);
+  }, [zoom, setZoom]);
+  
+  // Reset zoom to initial level
   const resetZoom = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    canvas.setZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT);
-    canvas.requestRenderAll();
-    setCurrentZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT);
-    
-    // Trigger update zoom level callback
-    if (updateZoomLevel) {
-      updateZoomLevel();
-    }
-  }, [fabricCanvasRef, updateZoomLevel]);
+    setZoom(initialZoom);
+  }, [initialZoom, setZoom]);
   
-  /**
-   * Set zoom to specific level
-   * @param {number} level Zoom level to set
-   */
-  const setZoom = useCallback((level: number) => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const zoom = Math.max(
-      Math.min(level, ZOOM_LEVEL_CONSTANTS.MAX),
-      ZOOM_LEVEL_CONSTANTS.MIN
-    );
-    
-    canvas.setZoom(zoom);
-    canvas.requestRenderAll();
-    setCurrentZoom(zoom);
-    
-    // Trigger update zoom level callback
-    if (updateZoomLevel) {
-      updateZoomLevel();
-    }
-  }, [fabricCanvasRef, updateZoomLevel]);
-  
-  // Register zoom handlers when component mounts
+  // Initialize zoom level
   useEffect(() => {
-    register();
-    return cleanup;
-  }, [register, cleanup]);
+    setZoom(initialZoom);
+  }, [initialZoom, setZoom]);
   
   return {
-    zoom: currentZoom,
+    zoom,
     setZoom,
     zoomIn,
     zoomOut,
     resetZoom,
-    currentZoom,
-    register,
-    unregister,
-    cleanup
+    currentZoom: zoom
   };
 };

@@ -42,9 +42,10 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
   // Initialize grid utilities
+  const gridLayerRef = useRef<fabric.Object[]>([]);
   const { createGrid } = useGrid({
     fabricCanvasRef,
-    gridLayerRef: useRef<fabric.Object[]>([]),
+    gridLayerRef,
     initialGridSize: 20,
     initialVisible: true
   });
@@ -65,6 +66,14 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       
       // Cast to extended canvas for type safety
       const extendedCanvas = asExtendedCanvas(canvas);
+      
+      // Add necessary properties and methods
+      if (!extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
+        extendedCanvas.getActiveObject = () => {
+          const activeObjects = extendedCanvas.getActiveObjects();
+          return activeObjects.length > 0 ? activeObjects[0] : null;
+        };
+      }
       
       // Store reference
       fabricCanvasRef.current = extendedCanvas;

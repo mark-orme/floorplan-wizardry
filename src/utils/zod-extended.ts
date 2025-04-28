@@ -1,7 +1,7 @@
 
 import * as z from 'zod';
 
-// Extended Zod utility functions
+// Extended Zod utility functions 
 export const extendedZod = {
   object: z.object,
   string: z.string,
