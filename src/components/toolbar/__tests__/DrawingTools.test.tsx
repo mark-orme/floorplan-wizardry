@@ -29,7 +29,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const buttons = screen.getAllByRole('button');
+    const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
     
     buttons.forEach(button => {

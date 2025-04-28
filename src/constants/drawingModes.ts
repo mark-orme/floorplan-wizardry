@@ -14,5 +14,5 @@ export enum DrawingMode {
   MEASURE = 'MEASURE',
   PENCIL = 'PENCIL',
   TEXT = 'TEXT',
-  PAN = 'PAN', // Added missing PAN mode
+  PAN = 'PAN',
 }

@@ -1,25 +1,26 @@
+
 import { 
-  AiOutlineMouse as MousePointer,
-  AiOutlinePencil as Pencil,
-  AiOutlineSquare as Square,
-  AiOutlineLine as Line,
+  AiOutlineArrowRight as ArrowRight,
+  AiOutlineEye as Eye,
+  AiOutlinePicture as Square,
+  AiOutlineEdit as Pencil,
+  AiOutlineHdd as Hand,
   AiOutlineDelete as Eraser,
-  AiOutlineHand as Hand,
   AiOutlineTable as LayoutGrid,
   AiOutlinePlus as Plus,
   AiOutlineMinus as Minus,
   AiOutlineUndo as Undo2,
   AiOutlineRedo as Redo2,
   AiOutlineSwap as MoveHorizontal,
-  AiOutlineDash as PenLine
+  AiOutlineDash as PenLine,
+  AiOutlineBgColors as Palette
 } from 'react-icons/ai';
 
-// Map drawing modes to their respective icons
 export const toolToIconMap = {
-  SELECT: MousePointer,
+  SELECT: Eye,
   DRAW: Pencil,
   RECTANGLE: Square,
-  LINE: Line,
+  LINE: PenLine,
   STRAIGHT_LINE: PenLine,
   ERASER: Eraser,
   HAND: Hand,
@@ -27,7 +28,6 @@ export const toolToIconMap = {
   PAN: MoveHorizontal
 };
 
-// Export styling icon mappings
 export const stylingIconMap = {
   increase: Plus,
   decrease: Minus,
