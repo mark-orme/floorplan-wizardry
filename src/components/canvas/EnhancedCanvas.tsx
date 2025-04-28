@@ -1,6 +1,6 @@
-
 import React, { useRef, useEffect, useState } from 'react';
-import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
+import { IEvent } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasProps {
@@ -38,43 +38,41 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         width,
         height,
         backgroundColor: '#ffffff'
-      });
+      }) as unknown as ExtendedFabricCanvas;
 
-      // Use the asExtendedCanvas utility to properly type our canvas
-      const extendedCanvas = asExtendedCanvas(fabricCanvas);
-      canvasInstanceRef.current = extendedCanvas;
+      canvasInstanceRef.current = fabricCanvas;
       setIsLoading(false);
 
       if (onObjectAdded) {
-        extendedCanvas.on('object:added', onObjectAdded);
+        fabricCanvas.on('object:added', onObjectAdded);
       }
 
       if (onObjectModified) {
-        extendedCanvas.on('object:modified', onObjectModified);
+        fabricCanvas.on('object:modified', onObjectModified);
       }
 
       if (onObjectRemoved) {
-        extendedCanvas.on('object:removed', onObjectRemoved);
+        fabricCanvas.on('object:removed', onObjectRemoved);
       }
 
       if (onCanvasReady) {
-        onCanvasReady(extendedCanvas);
+        onCanvasReady(fabricCanvas);
       }
 
       return () => {
         if (onObjectAdded) {
-          extendedCanvas.off('object:added', onObjectAdded);
+          fabricCanvas.off('object:added', onObjectAdded);
         }
 
         if (onObjectModified) {
-          extendedCanvas.off('object:modified', onObjectModified);
+          fabricCanvas.off('object:modified', onObjectModified);
         }
 
         if (onObjectRemoved) {
-          extendedCanvas.off('object:removed', onObjectRemoved);
+          fabricCanvas.off('object:removed', onObjectRemoved);
         }
 
-        extendedCanvas.dispose();
+        fabricCanvas.dispose();
       };
     } catch (error) {
       console.error('Failed to initialize enhanced canvas:', error);

@@ -1,9 +1,27 @@
-
 import * as React from "react"
-import { Grip } from "lucide-react"
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
+
+// Define the Grip icon directly
+const GripIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="9" cy="9" r="1" />
+    <circle cx="9" cy="15" r="1" />
+    <circle cx="15" cy="9" r="1" />
+    <circle cx="15" cy="15" r="1" />
+  </svg>
+)
 
 const ResizablePanelGroup = React.forwardRef<
   React.ElementRef<typeof ResizablePrimitive.PanelGroup>,
@@ -50,7 +68,7 @@ const ResizableHandle = React.forwardRef<
   >
     {withHandle && (
       <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
-        <Grip className="h-2.5 w-2.5" />
+        <GripIcon className="h-2.5 w-2.5" />
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>

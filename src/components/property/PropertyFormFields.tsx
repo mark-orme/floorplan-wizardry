@@ -1,16 +1,24 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import * as z from 'zod';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-import { z } from 'zod';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-
-export const PropertyFormSchema = z.object({
-  order_id: z.string().min(3, { message: "Order ID is required" }),
+// Define the schema
+const propertyFormSchema = z.object({
+  orderId: z.string().min(3, { message: "Order ID is required" }),
   address: z.string().min(5, { message: "Address is required" }),
-  client_name: z.string().min(2, { message: "Client name is required" }),
-  branch_name: z.string().optional()
+  clientName: z.string().min(2, { message: "Client name is required" }),
+  price: z.string().min(1, { message: "Price is required" }),
+  status: z.string().min(1, { message: "Status is required" }),
+  location: z.string().min(1, { message: "Location is required" }),
+  isActive: z.boolean()
 });
 
-export type PropertyFormValues = z.infer<typeof PropertyFormSchema>;
+// Infer types
+type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
 interface PropertyFormFieldsProps {
   form: {
@@ -24,7 +32,7 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
     <>
       <FormField
         control={form.control}
-        name="order_id"
+        name="orderId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Order ID</FormLabel>
@@ -52,7 +60,7 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
 
       <FormField
         control={form.control}
-        name="client_name"
+        name="clientName"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Client Name</FormLabel>
@@ -66,12 +74,62 @@ export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
 
       <FormField
         control={form.control}
-        name="branch_name"
+        name="price"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Branch Name (Optional)</FormLabel>
+            <FormLabel>Price</FormLabel>
             <FormControl>
-              <Input placeholder="e.g. Downtown Office" {...field} />
+              <Input placeholder="e.g. 1000" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Status</FormLabel>
+            <FormControl>
+              <Input placeholder="e.g. Active" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="location"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Location</FormLabel>
+            <FormControl>
+              <Input placeholder="e.g. Downtown" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="isActive"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Active</FormLabel>
+            <FormControl>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Yes</SelectItem>
+                  <SelectItem value="false">No</SelectItem>
+                </SelectContent>
+              </Select>
             </FormControl>
             <FormMessage />
           </FormItem>

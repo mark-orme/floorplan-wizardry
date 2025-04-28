@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import CanvasFallback from "@/components/canvas/CanvasFallback";
 import { Canvas, CanvasProps } from '@/components/Canvas';
 import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
-import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 export { default as CanvasFallback } from '@/components/canvas/CanvasFallback';
 
@@ -133,7 +132,7 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
       <Canvas 
         width={width}
         height={height}
-        onCanvasReady={handleCanvasReady as any}
+        onCanvasReady={handleCanvasReady}
         onError={handleCanvasError}
         showGridDebug={showGridDebug}
         key={`canvas-instance-${retryCount}`}

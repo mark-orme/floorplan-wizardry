@@ -12,7 +12,6 @@ export const Toaster: React.FC = () => {
       position="top-right"
       theme="light"
       duration={5000}
-      className="border border-border"
     />
   );
 };

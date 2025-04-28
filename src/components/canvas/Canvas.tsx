@@ -1,6 +1,5 @@
-
 import React, { useRef, useEffect, useState } from 'react';
-import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 export interface CanvasProps {
@@ -31,17 +30,14 @@ export const Canvas: React.FC<CanvasProps> = ({
         width,
         height,
         backgroundColor: '#ffffff',
-      });
+      }) as unknown as ExtendedFabricCanvas;
       
-      // Use the asExtendedCanvas utility to properly type our canvas
-      const extendedCanvas = asExtendedCanvas(fabricCanvas);
-      
-      setCanvas(extendedCanvas);
-      onCanvasReady?.(extendedCanvas); // Pass the properly typed canvas
+      setCanvas(fabricCanvas);
+      onCanvasReady?.(fabricCanvas); // Pass the properly typed canvas
       setIsLoading(false);
       
       return () => {
-        extendedCanvas.dispose();
+        fabricCanvas.dispose();
       };
     } catch (error) {
       onError?.(error instanceof Error ? error : new Error('Canvas initialization failed'));

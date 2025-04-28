@@ -5,7 +5,7 @@ import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
 import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
-import { asExtendedCanvas, type ExtendedFabricCanvas } from '@/types/canvas-types';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface FloorPlanCanvasEnhancedProps {
   width?: number;
@@ -51,19 +51,17 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         backgroundColor: "#ffffff",
         renderOnAddRemove: false,
         enableRetinaScaling: true
-      });
+      }) as unknown as ExtendedFabricCanvas;
 
-      const extendedCanvas = asExtendedCanvas(canvas as unknown as ExtendedFabricCanvas);
-      
-      if (extendedCanvas) {
-        extendedCanvas.skipOffscreen = true;
+      if (canvas) {
+        canvas.skipOffscreen = true;
       }
       
-      fabricCanvasRef.current = extendedCanvas;
+      fabricCanvasRef.current = canvas;
       setIsReady(true);
       
       if (onCanvasReady) {
-        onCanvasReady(extendedCanvas);
+        onCanvasReady(canvas);
       }
       
       const csrfToken = getCSRFToken();
