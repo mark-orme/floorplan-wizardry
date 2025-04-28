@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import { Canvas } from '@/components/Canvas';
 import { toast } from 'sonner';
 
@@ -15,15 +15,15 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   height = 600,
   storageKey = 'canvas_data'
 }) => {
-  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
 
   // Handle canvas initialization
-  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
+  const handleCanvasReady = (fabricCanvas: ExtendedFabricCanvas) => {
     setCanvas(fabricCanvas);
     
     // Try to load saved data
     const savedData = localStorage.getItem(storageKey);
-    if (savedData) {
+    if (savedData && fabricCanvas.loadFromJSON) {
       try {
         fabricCanvas.loadFromJSON(savedData, () => {
           fabricCanvas.renderAll();
@@ -40,7 +40,7 @@ export const CanvasWithPersistence: React.FC<CanvasWithPersistenceProps> = ({
   useEffect(() => {
     if (!canvas) return;
     
-    const handleCanvasChange = () => {
+    const handleCanvasChange = (e: {target?: any}) => {
       const json = canvas.toJSON();
       localStorage.setItem(storageKey, JSON.stringify(json));
     };

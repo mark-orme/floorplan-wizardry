@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/button';
 
 export interface StyleOptionsProps {
   color?: string;
-  lineColor?: string; // Added this prop
+  lineColor?: string;
   onColorChange?: (color: string) => void;
   thickness?: number;
-  lineThickness?: number; // Added this prop
+  lineThickness?: number;
   onThicknessChange?: (thickness: number) => void;
   minThickness?: number;
   maxThickness?: number;

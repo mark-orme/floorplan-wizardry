@@ -10,7 +10,7 @@ import {
   SMALL_GRID_WIDTH, 
   LARGE_GRID_WIDTH
 } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
+import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/ExtendedFabricCanvas';
 
 interface GridRendererProps {
   canvas: ExtendedFabricCanvas | null;

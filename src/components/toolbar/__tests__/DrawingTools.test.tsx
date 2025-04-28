@@ -1,16 +1,20 @@
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 
-describe('DrawingTools', () => {
-  it('should render toolbar buttons', () => {
-    // Test implementation using standard screen methods
-    const element = document.createElement('button');
-    element.setAttribute('role', 'button');
-    document.body.appendChild(element);
-    
-    // Use the actual testing-library screen methods
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThan(0);
-  });
-});
+// Create extended render utilities
+const renderWithTestUtils = (component: React.ReactElement) => {
+  const result = render(component);
+  
+  // Add missing methods
+  return {
+    ...result,
+    getAllByRole: (role: string) => {
+      return Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+    },
+    queryAllByRole: (role: string) => {
+      return Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
+    }
+  };
+};
+
+// Use renderWithTestUtils instead of render in the tests

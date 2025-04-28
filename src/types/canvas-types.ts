@@ -1,5 +1,6 @@
 
 import { Object as FabricObject } from 'fabric';
+import { ExtendedFabricCanvas, ExtendedFabricObject as EFO } from './ExtendedFabricCanvas';
 
 /**
  * Extended Fabric Object with additional properties
@@ -7,55 +8,34 @@ import { Object as FabricObject } from 'fabric';
 export interface ExtendedFabricObject extends FabricObject {
   set: (options: Record<string, any>) => FabricObject;
   visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
 }
 
 /**
- * Extended Fabric Canvas with additional properties
+ * Re-export ExtendedFabricCanvas for consistency
  */
-export interface ExtendedFabricCanvas {
-  wrapperEl: HTMLElement;
-  initialize: () => void;
-  skipTargetFind: boolean;
-  _activeObject: any;
-  _objects: any[];
-  isDrawingMode?: boolean;
-  selection?: boolean;
-  defaultCursor?: string;
-  hoverCursor?: string;
-  freeDrawingBrush?: {
-    color: string;
-    width: number;
-  };
-  getPointer?: (e: Event) => { x: number; y: number };
-  on: (event: string, handler: Function) => any;
-  off: (event: string, handler: Function) => any;
-  renderAll: () => any;
-  requestRenderAll: () => any;
-  getObjects: () => FabricObject[];
-  width: number;
-  height: number;
-  setWidth: (value: number) => any;
-  setHeight: (value: number) => any;
-  backgroundColor: string;
-  contains: (obj: FabricObject) => boolean;
-  add: (...objects: FabricObject[]) => any;
-  remove: (...objects: FabricObject[]) => any;
-  getWidth: () => number;
-  getHeight: () => number;
-  setZoom: (zoom: number) => any;
-  getZoom: () => number;
-  dispose: () => void;
-  discardActiveObject: (options?: any) => any;
-  getActiveObjects: () => FabricObject[];
-  toJSON: (propertiesToInclude?: string[]) => any;
-  clear: () => any;
-  sendToBack: (obj: FabricObject) => any;
-  renderOnAddRemove?: boolean;
-  fire?: (eventName: string, options?: any) => any;
-}
+export type { ExtendedFabricCanvas } from './ExtendedFabricCanvas';
+
+/**
+ * Helper to cast a standard Canvas to our extended type
+ */
+export const asExtendedCanvas = (canvas: any): ExtendedFabricCanvas => {
+  return canvas as ExtendedFabricCanvas;
+};
 
 export enum PropertyStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
-  ARCHIVED = 'archived'
+  ARCHIVED = 'archived',
+  PENDING_REVIEW = 'pending_review',
+  COMPLETED = 'completed'
 }
+
+export type FloorPlanMetadata = {
+  id: string;
+  name: string;
+  created: string;
+  modified: string;
+  status: PropertyStatus;
+};

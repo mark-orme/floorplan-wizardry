@@ -12,6 +12,14 @@ const enhancedScreen = {
   },
   queryByTestId: (testId: string): HTMLElement | null => {
     return document.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null;
+  },
+  getAllByRole: (role: string): HTMLElement[] => {
+    const elements = document.querySelectorAll(`[role="${role}"]`);
+    return Array.from(elements) as HTMLElement[];
+  },
+  queryAllByRole: (role: string): HTMLElement[] => {
+    const elements = document.querySelectorAll(`[role="${role}"]`);
+    return Array.from(elements) as HTMLElement[];
   }
 };
 
