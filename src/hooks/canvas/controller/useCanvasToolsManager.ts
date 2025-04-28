@@ -1,13 +1,14 @@
+
 import {
   AiOutlineAppstore as Square,
   AiOutlineFileText as Type,
-  AiOutlineMouse as MousePointer,
+  AiOutlineMore as MousePointer,
   AiOutlineEdit as Pencil,
-  AiOutlineHand as Hand,
+  AiOutlineHdd as Hand,
   AiOutlineDelete as Eraser
 } from 'react-icons/ai';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useDrawingContext } from '../useDrawingContext';
+import { useDrawingContext } from '@/hooks/useDrawingContext';
 
 export const useCanvasToolsManager = () => {
   const { setActiveTool } = useDrawingContext();

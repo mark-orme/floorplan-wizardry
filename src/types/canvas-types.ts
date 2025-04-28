@@ -3,26 +3,35 @@ import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 export interface ExtendedFabricObject extends FabricObject {
   visible?: boolean;
+  objectType?: string;
+  gridType?: 'small' | 'large';
   selectable?: boolean;
   evented?: boolean;
   left?: number;
   top?: number;
   width?: number;
   height?: number;
-  objectType?: string;
-  gridType?: 'small' | 'large';
   [key: string]: any;
 }
 
 export interface ExtendedFabricCanvas extends FabricCanvas {
+  // Make these optional so raw fabric.Canvas still type-checks
   wrapperEl?: HTMLDivElement;
   upperCanvasEl?: HTMLCanvasElement;
+  initialize?: () => void;
+  
+  // Methods used in various hooks
   skipOffscreen?: boolean;
   allowTouchScrolling?: boolean;
-  initialize?: () => void;
   skipTargetFind?: boolean;
   renderOnAddRemove?: boolean;
-  fire?: (eventName: string, options?: any) => FabricCanvas;
+  fire?: (eventName: string, options?: any, target?: any) => FabricCanvas;
+  forEachObject?: (callback: (obj: any) => void, context?: any) => void;
+  viewportTransform?: number[];
+  _activeObject?: any;
+  _objects?: any[];
+  
+  // Canvas methods to ensure they're available
   on: (event: string, handler: (e: { target?: any }) => void) => FabricCanvas;
   off: (event: string, handler: (e: { target?: any }) => void) => FabricCanvas;
   renderAll: () => FabricCanvas;
@@ -48,24 +57,28 @@ export interface ExtendedFabricCanvas extends FabricCanvas {
   loadFromJSON?: (json: any, callback?: () => void) => FabricCanvas;
   bringForward?: (obj: any) => FabricCanvas;
   bringToFront?: (obj: any) => FabricCanvas;
-  _activeObject?: any;
-  _objects?: any[];
+  getActiveObject?: () => any;
 }
 
-// Update the FloorPlanMetadata interface to include the description field
+export interface PerformanceMetrics {
+  fps: number;
+  renderTime: number;
+  objectCount: number;
+  visibleObjectCount?: number;
+  memoryUsage?: number;
+}
+
 export interface FloorPlanMetadata {
   level: number;
   name: string;
-  created: string; 
+  created: string;
   updated: string;
   description?: string;
-  updatedAt?: string; // For backwards compatibility
 }
 
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING = 'pending',
-  PENDING_REVIEW = 'in_review',
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
   REJECTED = 'rejected',
@@ -73,7 +86,7 @@ export enum PropertyStatus {
 }
 
 /**
- * Helper function to cast a Canvas to ExtendedFabricCanvas
+ * Helper function to safely cast a Canvas to ExtendedFabricCanvas
  */
 export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
   return canvas as unknown as ExtendedFabricCanvas;
@@ -81,3 +94,36 @@ export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
 
 // For backwards compatibility
 export type ExtendedCanvas = ExtendedFabricCanvas;
+
+// Add missing type definitions
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint?: { x: number; y: number };
+  currentPoint?: { x: number; y: number };
+  distance?: number;
+  cursorPosition?: { x: number; y: number };
+}
+
+// Add canvas dimensions and debug info types
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+  zoom: number;
+}
+
+export interface DebugInfoState {
+  fps: number;
+  objectCount: number;
+  visibleCount: number;
+  renderTime: number;
+  canvasReady?: boolean;
+}
+
+// Add default canvas state
+export const DEFAULT_CANVAS_STATE = {
+  drawingMode: 'select',
+  lineColor: '#000000',
+  lineThickness: 2,
+  fillColor: 'rgba(0,0,0,0.1)',
+  zoom: 1,
+};
