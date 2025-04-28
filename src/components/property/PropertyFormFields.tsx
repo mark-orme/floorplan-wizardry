@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useContext } from 'react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,7 +37,7 @@ export const PropertyFormField: React.FC<PropertyFormFieldProps> = ({
     case "text":
       return (
         <FormField
-          control={useFormContext => useContext.control}
+          control={formContext => formContext.control}
           name={name}
           render={({ field }) => (
             <FormItem>
@@ -53,7 +54,7 @@ export const PropertyFormField: React.FC<PropertyFormFieldProps> = ({
     case "checkbox":
       return (
         <FormField
-          control={useFormContext => useContext.control}
+          control={formContext => formContext.control}
           name={name}
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
@@ -74,7 +75,7 @@ export const PropertyFormField: React.FC<PropertyFormFieldProps> = ({
     case "textarea":
       return (
         <FormField
-          control={useFormContext => useContext.control}
+          control={formContext => formContext.control}
           name={name}
           render={({ field }) => (
             <FormItem>

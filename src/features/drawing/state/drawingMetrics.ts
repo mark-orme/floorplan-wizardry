@@ -11,6 +11,8 @@ export interface DrawingMetrics {
   timeSpent: number;
   lastToolUsed: DrawingMode | null;
   lastObjectType: string | null;
+  toolSwitchCount?: number; // For backward compatibility with tests
+  toolUsageDuration?: Record<string, number>; // For backward compatibility with tests
 }
 
 // Initialize metrics
@@ -23,17 +25,30 @@ let metrics: DrawingMetrics = {
   redoCount: 0,
   timeSpent: 0,
   lastToolUsed: null,
-  lastObjectType: null
+  lastObjectType: null,
+  toolSwitchCount: 0,
+  toolUsageDuration: {}
 };
 
 // Register tool change
 export const registerToolChange = (tool: DrawingMode) => {
   metrics.toolChanges++;
   metrics.lastToolUsed = tool;
+  
+  // For backward compatibility with tests
+  metrics.toolSwitchCount = metrics.toolChanges;
+  
+  if (!metrics.toolUsageDuration) {
+    metrics.toolUsageDuration = {};
+  }
+  
+  if (!metrics.toolUsageDuration[tool]) {
+    metrics.toolUsageDuration[tool] = 0;
+  }
 };
 
 // Register object created
-export const registerObjectCreated = (objectType: string) => {
+export const registerObjectCreated = (objectType: string = 'default') => {
   metrics.objectsCreated++;
   metrics.lastObjectType = objectType;
 };
@@ -64,12 +79,13 @@ export const resetDrawingMetrics = () => {
     redoCount: 0,
     timeSpent: 0,
     lastToolUsed: null,
-    lastObjectType: null
+    lastObjectType: null,
+    toolSwitchCount: 0,
+    toolUsageDuration: {}
   };
 };
 
 export default {
-  DrawingMetrics,
   registerToolChange,
   registerObjectCreated,
   registerObjectDeleted,
