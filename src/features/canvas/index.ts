@@ -1,18 +1,19 @@
 
 /**
- * Canvas feature exports
+ * Canvas feature module
  * @module features/canvas
  */
 
-// Import from the existing component locations with fixed default import
-export { default as CanvasApp } from '@/components/canvas/CanvasApp';
-export { Toolbar } from '@/components/canvas/Toolbar';
-export { CanvasContainer } from '@/components/canvas/CanvasContainer';
-export { CanvasControllerProvider } from '@/components/canvas/controller/CanvasController';
+// Re-export canvas components and hooks
+export { default as CanvasApp } from '@/components/CanvasApp';
+export { FloorPlanCanvasEnhanced } from '@/components/property/FloorPlanCanvasEnhanced';
+export { StyleOptions } from '@/components/toolbar/StyleOptions';
 
-// Re-export hooks
-export { useCanvasContext, CanvasProvider } from '@/contexts/CanvasContext';
-export { useDrawingContext, DrawingProvider } from '@/contexts/DrawingContext';
+// Export canvas constants
+export * from '@/constants/drawingModes';
 
-// Re-export types
-export { DrawingMode } from '@/constants/drawingModes';
+// Export canvas types
+export * from '@/types/canvas';
+
+// Export canvas hooks
+export * from '@/hooks/canvas';

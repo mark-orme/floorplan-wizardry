@@ -1,67 +1,77 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Replace import.meta with environment variables from process.env
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
-
-interface SupabaseContextType {
-  supabase: SupabaseClient;
-  user: any; // Replace with a proper type when available
-  loading: boolean;
-  error: Error | null;
+// Define environment variables for TypeScript
+interface ImportMetaEnv {
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
 }
 
-const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
+interface SupabaseContextValue {
+  supabase: SupabaseClient | null;
+  user: any | null;
+  loading: boolean;
+}
 
-export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
-  const [supabase] = useState(() => createClient(supabaseUrl, supabaseAnonKey));
-  const [user, setUser] = useState<any>(null);
+const SupabaseContext = createContext<SupabaseContextValue>({
+  supabase: null,
+  user: null,
+  loading: true,
+});
+
+export const useSupabase = () => useContext(SupabaseContext);
+
+export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          setUser(session.user);
-        } else {
-          setUser(null);
-        }
+    try {
+      // Handle environment variables for different environments
+      // Using optional chaining to prevent errors when variables are undefined
+      const supabaseUrl = import.meta?.env?.VITE_SUPABASE_URL || '';
+      const supabaseAnonKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || '';
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.warn('Supabase credentials not available');
         setLoading(false);
+        return;
       }
-    );
+      
+      const client = createClient(supabaseUrl, supabaseAnonKey);
+      setSupabase(client);
 
-    // Initial session check
-    supabase.auth.getSession().then(
-      ({ data: { session } }) => {
+      // Set up auth state listener
+      const { data: authListener } = client.auth.onAuthStateChange(async (event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
-      },
-      (error) => {
-        setError(error);
-        setLoading(false);
-      }
-    );
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+      // Initialize user
+      const initialSession = async () => {
+        const { data } = await client.auth.getSession();
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      };
+      
+      initialSession();
+
+      return () => {
+        authListener?.subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error initializing Supabase client:', error);
+      setLoading(false);
+    }
+  }, []);
 
   return (
-    <SupabaseContext.Provider value={{ supabase, user, loading, error }}>
+    <SupabaseContext.Provider value={{ supabase, user, loading }}>
       {children}
     </SupabaseContext.Provider>
   );
 };
 
-export const useSupabase = () => {
-  const context = useContext(SupabaseContext);
-  if (context === undefined) {
-    throw new Error('useSupabase must be used within a SupabaseProvider');
-  }
-  return context;
-};
+export default SupabaseContext;

@@ -1,30 +1,17 @@
 
 import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
-import { AiOutlineEllipsis } from "react-icons/ai"
+import { OTPInput, SlotProps } from "input-otp"
+import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/lib/utils"
-
-// Define the types for the slots to avoid TypeScript errors
-interface OTPInputContextType {
-  slots: {
-    char: string;
-    hasFakeCaret: boolean;
-    isActive: boolean;
-  }[];
-}
 
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
->(({ className, containerClassName, ...props }, ref) => (
+>(({ className, ...props }, ref) => (
   <OTPInput
     ref={ref}
-    containerClassName={cn(
-      "flex items-center gap-2 has-[:disabled]:opacity-50",
-      containerClassName
-    )}
-    className={cn("disabled:cursor-not-allowed", className)}
+    containerClassName={cn("flex items-center gap-2", className)}
     {...props}
   />
 ))
@@ -40,25 +27,28 @@ InputOTPGroup.displayName = "InputOTPGroup"
 
 const InputOTPSlot = React.forwardRef<
   React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div"> & { index: number }
->(({ index, className, ...props }, ref) => {
-  const inputOTPContext = React.useContext(OTPInputContext) as OTPInputContextType;
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index] || { char: '', hasFakeCaret: false, isActive: false };
-
+  SlotProps & React.ComponentPropsWithoutRef<"div">
+>(({ char, hasFakeCaret, isActive, className, ...props }, ref) => {
   return (
     <div
       ref={ref}
       className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md",
+        "relative flex h-10 w-10 items-center justify-center rounded-md border border-input text-sm shadow-sm transition-all",
         isActive && "z-10 ring-2 ring-ring ring-offset-background",
         className
       )}
       {...props}
     >
-      {char}
+      {char ? (
+        <span>{char}</span>
+      ) : (
+        <span className="pointer-events-none select-none text-muted-foreground">
+          ‿
+        </span>
+      )}
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <div className="animate-caret-blink h-4 w-px bg-foreground duration-1000" />
         </div>
       )}
     </div>
@@ -71,7 +61,7 @@ const InputOTPSeparator = React.forwardRef<
   React.ComponentPropsWithoutRef<"div">
 >(({ ...props }, ref) => (
   <div ref={ref} role="separator" {...props}>
-    <AiOutlineEllipsis className="h-4 w-4" />
+    <span className="text-muted-foreground">-</span>
   </div>
 ))
 InputOTPSeparator.displayName = "InputOTPSeparator"

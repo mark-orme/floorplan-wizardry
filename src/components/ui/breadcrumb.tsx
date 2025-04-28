@@ -1,8 +1,9 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { AiOutlineEllipsis } from "react-icons/ai"
+import { ChevronRight, AiOutlineMoreHorizontal as MoreHorizontalIcon } from "react-icons/ai"
+
 import { cn } from "@/lib/utils"
-import { Icons } from '@/components/icons';
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -44,7 +45,7 @@ const BreadcrumbLink = React.forwardRef<
   React.ComponentPropsWithoutRef<"a"> & {
     asChild?: boolean
   }
->(({ asChild, className, ...props }, ref) => {
+>(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "a"
 
   return (
@@ -76,14 +77,14 @@ const BreadcrumbSeparator = ({
   children,
   className,
   ...props
-}: React.ComponentProps<"li">) => (
+}: React.ComponentPropsWithoutRef<"li">) => (
   <li
     role="presentation"
     aria-hidden="true"
     className={cn("[&>svg]:size-3.5", className)}
     {...props}
   >
-    {children}
+    {children ?? <ChevronRight />}
   </li>
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
@@ -91,18 +92,18 @@ BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
 const BreadcrumbEllipsis = ({
   className,
   ...props
-}: React.ComponentProps<"span">) => (
+}: React.ComponentPropsWithoutRef<"span">) => (
   <span
     role="presentation"
     aria-hidden="true"
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
-    <Icons.moreHorizontal className="h-4 w-4" />
+    <MoreHorizontalIcon className="h-4 w-4" />
     <span className="sr-only">More</span>
   </span>
 )
-BreadcrumbEllipsis.displayName = "BreadcrumbElipssis"
+BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis"
 
 export {
   Breadcrumb,

@@ -1,3 +1,4 @@
+
 /**
  * Safe HTML Component
  * Renders HTML content safely with DOMPurify sanitization

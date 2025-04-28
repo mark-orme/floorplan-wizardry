@@ -1,6 +1,10 @@
 
 import React from 'react';
-import { Icons } from '@/components/icons';
+import { 
+  AiOutlineBgColors as PaletteIcon,
+  AiOutlinePlus as PlusIcon,
+  AiOutlineMinus as MinusIcon 
+} from 'react-icons/ai';
 import { HexColorPicker } from 'react-colorful';
 import { Button } from '@/components/ui/button';
 
@@ -31,7 +35,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
           size="icon"
           onClick={() => setShowColorPicker(!showColorPicker)}
         >
-          <Icons.palette className="h-4 w-4" />
+          <PaletteIcon className="h-4 w-4" />
         </Button>
         {showColorPicker && (
           <div className="absolute top-full mt-2 z-50">
@@ -46,7 +50,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
           onClick={() => onThicknessChange(Math.max(minThickness, thickness - 1))}
           disabled={thickness <= minThickness}
         >
-          <Icons.minus className="h-4 w-4" />
+          <MinusIcon className="h-4 w-4" />
         </Button>
         <span className="min-w-[2rem] text-center">{thickness}</span>
         <Button
@@ -55,7 +59,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
           onClick={() => onThicknessChange(Math.min(maxThickness, thickness + 1))}
           disabled={thickness >= maxThickness}
         >
-          <Icons.plus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
         </Button>
       </div>
     </div>

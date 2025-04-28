@@ -1,15 +1,9 @@
 
 import * as React from "react"
-import { AiOutlineLeft, AiOutlineRight, AiOutlineEllipsis } from "react-icons/ai"
+import { AiOutlineChevronLeft, AiOutlineChevronRight, AiOutlineMoreHorizontal } from "react-icons/ai"
 
 import { cn } from "@/lib/utils"
-
-const buttonVariants = {
-  outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-  ghost: "hover:bg-accent hover:text-accent-foreground",
-  default: "bg-primary text-primary-foreground hover:bg-primary/90",
-  icon: "h-9 w-9 p-0"
-}
+import { buttonVariants, ButtonProps } from "@/components/ui/button"
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -43,8 +37,8 @@ PaginationItem.displayName = "PaginationItem"
 
 type PaginationLinkProps = {
   isActive?: boolean
-  size?: "default" | "sm" | "lg" | "icon"
-} & React.ComponentProps<"a">
+} & Pick<ButtonProps, "size"> &
+  React.ComponentProps<"a">
 
 const PaginationLink = ({
   className,
@@ -55,9 +49,10 @@ const PaginationLink = ({
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-      buttonVariants[isActive ? "outline" : "ghost"],
-      size === "icon" && "h-9 w-9 p-0",
+      buttonVariants({
+        variant: isActive ? "outline" : "ghost",
+        size,
+      }),
       className
     )}
     {...props}
@@ -75,7 +70,7 @@ const PaginationPrevious = ({
     className={cn("gap-1 pl-2.5", className)}
     {...props}
   >
-    <AiOutlineLeft className="h-4 w-4" />
+    <AiOutlineChevronLeft className="h-4 w-4" />
     <span>Previous</span>
   </PaginationLink>
 )
@@ -92,7 +87,7 @@ const PaginationNext = ({
     {...props}
   >
     <span>Next</span>
-    <AiOutlineRight className="h-4 w-4" />
+    <AiOutlineChevronRight className="h-4 w-4" />
   </PaginationLink>
 )
 PaginationNext.displayName = "PaginationNext"
@@ -106,7 +101,7 @@ const PaginationEllipsis = ({
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
-    <AiOutlineEllipsis className="h-4 w-4" />
+    <AiOutlineMoreHorizontal className="h-4 w-4" />
     <span className="sr-only">More pages</span>
   </span>
 )

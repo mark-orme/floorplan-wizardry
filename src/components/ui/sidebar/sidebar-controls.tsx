@@ -1,10 +1,13 @@
+
 import * as React from "react"
-import { AiOutlineMenuFold } from "react-icons/ai"
+import { AiOutlineMenuFold, AiOutlineMenu } from "react-icons/ai"
 import { Icons } from '@/components/icons'
 
-import { useSidebar } from "./use-sidebar"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+// Temporary implementation as use-sidebar is missing
+const useSidebar = () => {
+  const [collapsed, setCollapsed] = React.useState(false);
+  return { collapsed, setCollapsed };
+}
 
 interface SidebarTriggerProps extends React.HTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode
@@ -26,7 +29,7 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, SidebarTriggerProps>(
         <Tooltip>
           <TooltipTrigger asChild>
             <div>
-              {children ?? <Icons.panelLeft className="h-5 w-5" />}
+              {children ?? (collapsed ? <AiOutlineMenu className="h-5 w-5" /> : <AiOutlineMenuFold className="h-5 w-5" />)}
             </div>
           </TooltipTrigger>
           <TooltipContent side="right">
@@ -41,3 +44,7 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, SidebarTriggerProps>(
 SidebarTrigger.displayName = "SidebarTrigger"
 
 export { SidebarTrigger }
+
+// Import missing dependencies to make the code work
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
