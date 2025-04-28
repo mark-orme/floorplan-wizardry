@@ -6,13 +6,13 @@ import { AccessibilityTester } from '../AccessibilityTester';
 
 describe('AccessibilityTester', () => {
   it('should render with children', () => {
-    const { getByText } = render(
+    render(
       <AccessibilityTester showResults={true}>
-        <div>Test Content</div>
+        <div data-testid="test-content">Test Content</div>
       </AccessibilityTester>
     );
     
-    expect(getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByTestId('test-content')).toBeInTheDocument();
   });
   
   it('should not show results when showResults is false', () => {

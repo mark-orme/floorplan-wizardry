@@ -1,5 +1,4 @@
 
-// Use vi instead of jest for Vitest compatibility
 import { vi } from 'vitest';
 
 export const useSyncedFloorPlans = () => {

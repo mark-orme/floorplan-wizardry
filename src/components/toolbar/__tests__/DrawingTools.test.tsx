@@ -31,7 +31,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const buttons = screen.getAllByRole('button');
+    const buttons = screen.queryAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
     
     buttons.forEach(button => {
@@ -50,7 +50,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const activeButton = screen.getAllByRole('button').find(button => {
+    const activeButton = screen.queryAllByRole('button').find(button => {
       return button.getAttribute('data-tool') === ACTIVE_TOOL ||
              button.getAttribute('aria-pressed') === 'true' ||
              button.getAttribute('data-state') === 'active';
