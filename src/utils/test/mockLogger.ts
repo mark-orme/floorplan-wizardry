@@ -1,4 +1,6 @@
 
+import { vi } from 'vitest';
+
 /**
  * Mock logger for testing
  */

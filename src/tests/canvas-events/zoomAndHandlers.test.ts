@@ -5,12 +5,13 @@ import { createRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { MockCanvas } from '@/utils/test/createMockCanvas';
+import { vi } from 'vitest';
 
 // Mock FabricCanvas with properly typed mock
 const createMockFabricCanvas = (): Partial<FabricCanvas> => ({
-  on: jest.fn(),
-  off: jest.fn(),
-  getZoom: jest.fn().mockReturnValue(1),
+  on: vi.fn(),
+  off: vi.fn(),
+  getZoom: vi.fn().mockReturnValue(1),
 });
 
 // Create properly typed canvas ref
@@ -33,7 +34,7 @@ describe('useZoomTracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT, // Use enum instead of string literal
-      updateZoomLevel: jest.fn()
+      updateZoomLevel: vi.fn()
     }));
 
     expect(result.current.register).toBeDefined();
@@ -46,7 +47,7 @@ describe('useZoomTracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT, // Use enum instead of string literal
-      updateZoomLevel: jest.fn()
+      updateZoomLevel: vi.fn()
     }));
 
     expect(result.current.unregister).toBeDefined();
@@ -58,7 +59,7 @@ describe('useZoomTracking', () => {
     const { result } = renderHook(() => useZoomTracking({
       fabricCanvasRef: mockFabricCanvasRef,
       tool: DrawingMode.SELECT, // Use enum instead of string literal
-      updateZoomLevel: jest.fn()
+      updateZoomLevel: vi.fn()
     }));
 
     expect(result.current.cleanup).toBeDefined();

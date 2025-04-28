@@ -1,6 +1,7 @@
 
 import { render, fireEvent, screen } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react-hooks';
+import { vi } from 'vitest';
 
 // Re-export testing utilities
 export { renderHook, act, render, fireEvent, screen };
