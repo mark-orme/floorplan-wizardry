@@ -1,141 +1,94 @@
-
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { FormFieldType } from "@/types/forms";
 import { z } from 'zod';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 
-// Define the schema
-const propertyFormSchema = z.object({
-  orderId: z.string().min(3, { message: "Order ID is required" }),
-  address: z.string().min(5, { message: "Address is required" }),
-  clientName: z.string().min(2, { message: "Client name is required" }),
-  price: z.string().min(1, { message: "Price is required" }),
-  status: z.string().min(1, { message: "Status is required" }),
-  location: z.string().min(1, { message: "Location is required" }),
-  isActive: z.boolean()
+// Define the schema for property form validation
+export const propertyFormSchema = z.object({
+  title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
+  address: z.string().min(5, { message: 'Address must be at least 5 characters' }),
+  postcode: z.string().min(5, { message: 'Postcode must be at least 5 characters' }),
+  type: z.string().min(3, { message: 'Type must be at least 3 characters' }),
+  price: z.string().min(1, { message: 'Price is required' }),
+  bedrooms: z.string().min(1, { message: 'Number of bedrooms is required' }),
+  hasGarden: z.boolean().optional(),
 });
 
-// Infer types
-type PropertyFormValues = z.infer<typeof propertyFormSchema>;
+export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
-interface PropertyFormFieldsProps {
-  form: {
-    control: any;
-    [key: string]: any;
-  };
+interface PropertyFormFieldProps {
+  type: FormFieldType;
+  name: keyof PropertyFormValues;
+  label: string;
+  description?: string;
 }
 
-export const PropertyFormFields = ({ form }: PropertyFormFieldsProps) => {
-  return (
-    <>
-      <FormField
-        control={form.control}
-        name="orderId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Order ID</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. ORD-12345" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="address"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Property Address</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. 123 Main St, City" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="clientName"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Client Name</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. John Smith" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="price"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Price</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. 1000" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="status"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Status</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. Active" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="location"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Location</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g. Downtown" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="isActive"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Active</FormLabel>
-            <FormControl>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an option" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Yes</SelectItem>
-                  <SelectItem value="false">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </>
-  );
+export const PropertyFormField: React.FC<PropertyFormFieldProps> = ({
+  type,
+  name,
+  label,
+  description
+}) => {
+  switch (type) {
+    case "text":
+      return (
+        <FormField
+          control={useFormContext => useContext.control}
+          name={name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{label}</FormLabel>
+              <FormControl>
+                <Input placeholder={label} {...field} />
+              </FormControl>
+              {description && <FormDescription>{description}</FormDescription>}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    case "checkbox":
+      return (
+        <FormField
+          control={useFormContext => useContext.control}
+          name={name}
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>{label}</FormLabel>
+                {description && <FormDescription>{description}</FormDescription>}
+              </div>
+            </FormItem>
+          )}
+        />
+      );
+    case "textarea":
+      return (
+        <FormField
+          control={useFormContext => useContext.control}
+          name={name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{label}</FormLabel>
+              <FormControl>
+                <Textarea placeholder={label} {...field} />
+              </FormControl>
+              {description && <FormDescription>{description}</FormDescription>}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    default:
+      return null;
+  }
 };

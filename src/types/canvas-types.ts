@@ -15,11 +15,11 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 export interface ExtendedFabricCanvas extends FabricCanvas {
-  wrapperEl: HTMLDivElement;
+  wrapperEl?: HTMLDivElement;
   upperCanvasEl?: HTMLCanvasElement;
   skipOffscreen?: boolean;
   allowTouchScrolling?: boolean;
-  initialize: () => void;
+  initialize?: () => void;
   skipTargetFind?: boolean;
   renderOnAddRemove?: boolean;
   fire?: (eventName: string, options?: any) => FabricCanvas;

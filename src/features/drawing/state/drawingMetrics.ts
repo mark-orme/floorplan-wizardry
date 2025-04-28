@@ -1,79 +1,79 @@
 
-// Drawing metrics types and utilities
+import { DrawingMode } from '@/constants/drawingModes';
 
 export interface DrawingMetrics {
-  objectCount: number;
   toolChanges: number;
   objectsCreated: number;
   objectsDeleted: number;
   objectsModified: number;
-  lastToolUsed: string | null;
-  sessionStartTime: number;
-  lastInteraction: number;
+  undoCount: number;
+  redoCount: number;
+  timeSpent: number;
+  lastToolUsed: DrawingMode | null;
+  lastObjectType: string | null;
 }
 
-// Initial metrics state
-const initialMetrics: DrawingMetrics = {
-  objectCount: 0,
+// Initialize metrics
+let metrics: DrawingMetrics = {
   toolChanges: 0,
   objectsCreated: 0,
   objectsDeleted: 0,
   objectsModified: 0,
+  undoCount: 0,
+  redoCount: 0,
+  timeSpent: 0,
   lastToolUsed: null,
-  sessionStartTime: Date.now(),
-  lastInteraction: Date.now()
+  lastObjectType: null
 };
 
-// Current metrics
-let currentMetrics: DrawingMetrics = { ...initialMetrics };
-
 // Register tool change
-export function registerToolChange(toolName: string): void {
-  currentMetrics.toolChanges++;
-  currentMetrics.lastToolUsed = toolName;
-  currentMetrics.lastInteraction = Date.now();
-}
+export const registerToolChange = (tool: DrawingMode) => {
+  metrics.toolChanges++;
+  metrics.lastToolUsed = tool;
+};
 
 // Register object created
-export function registerObjectCreated(): void {
-  currentMetrics.objectsCreated++;
-  currentMetrics.objectCount++;
-  currentMetrics.lastInteraction = Date.now();
-}
+export const registerObjectCreated = (objectType: string) => {
+  metrics.objectsCreated++;
+  metrics.lastObjectType = objectType;
+};
 
 // Register object deleted
-export function registerObjectDeleted(): void {
-  currentMetrics.objectsDeleted++;
-  currentMetrics.objectCount = Math.max(0, currentMetrics.objectCount - 1);
-  currentMetrics.lastInteraction = Date.now();
-}
+export const registerObjectDeleted = () => {
+  metrics.objectsDeleted++;
+};
 
 // Register object modified
-export function registerObjectModified(): void {
-  currentMetrics.objectsModified++;
-  currentMetrics.lastInteraction = Date.now();
-}
+export const registerObjectModified = () => {
+  metrics.objectsModified++;
+};
 
-// Get current metrics
-export function getDrawingMetrics(): DrawingMetrics {
-  return { ...currentMetrics };
-}
+// Get drawing metrics
+export const getDrawingMetrics = (): DrawingMetrics => {
+  return { ...metrics };
+};
 
-// Reset metrics
-export function resetDrawingMetrics(): void {
-  currentMetrics = {
-    ...initialMetrics,
-    sessionStartTime: Date.now()
+// Reset drawing metrics
+export const resetDrawingMetrics = () => {
+  metrics = {
+    toolChanges: 0,
+    objectsCreated: 0,
+    objectsDeleted: 0,
+    objectsModified: 0,
+    undoCount: 0,
+    redoCount: 0,
+    timeSpent: 0,
+    lastToolUsed: null,
+    lastObjectType: null
   };
-}
+};
 
-// Export class for compatibility
-export class DrawingMetrics {
-  static getMetrics(): DrawingMetrics {
-    return getDrawingMetrics();
-  }
-  
-  static reset(): void {
-    resetDrawingMetrics();
-  }
-}
+export default {
+  DrawingMetrics,
+  registerToolChange,
+  registerObjectCreated,
+  registerObjectDeleted,
+  registerObjectModified,
+  getDrawingMetrics,
+  resetDrawingMetrics
+};
