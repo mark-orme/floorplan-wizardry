@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, useState } from 'react';
-import { IEvent } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
@@ -39,6 +40,11 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         height,
         backgroundColor: '#ffffff'
       }) as unknown as ExtendedFabricCanvas;
+
+      // Initialize explicitly to satisfy the type constraint
+      if (!fabricCanvas.initialize) {
+        fabricCanvas.initialize = () => {};
+      }
 
       canvasInstanceRef.current = fabricCanvas;
       setIsLoading(false);

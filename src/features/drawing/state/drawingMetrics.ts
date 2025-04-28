@@ -1,92 +1,79 @@
 
-import { DrawingMode } from '@/constants/drawingModes';
+// Drawing metrics types and utilities
 
-// Define the shape of our drawing state
-interface DrawingMetrics {
-  pointCount: number;
-  strokeCount: number;
-  currentTool: DrawingMode;
-  isDrawing: boolean;
-  timestamp: number;
+export interface DrawingMetrics {
+  objectCount: number;
+  toolChanges: number;
+  objectsCreated: number;
+  objectsDeleted: number;
+  objectsModified: number;
+  lastToolUsed: string | null;
+  sessionStartTime: number;
+  lastInteraction: number;
 }
 
 // Initial metrics state
 const initialMetrics: DrawingMetrics = {
-  pointCount: 0,
-  strokeCount: 0,
-  currentTool: DrawingMode.SELECT,
-  isDrawing: false,
-  timestamp: Date.now()
+  objectCount: 0,
+  toolChanges: 0,
+  objectsCreated: 0,
+  objectsDeleted: 0,
+  objectsModified: 0,
+  lastToolUsed: null,
+  sessionStartTime: Date.now(),
+  lastInteraction: Date.now()
 };
 
-// Action types
-type MetricsAction = 
-  | { type: 'TOOL_CHANGED'; payload: DrawingMode }
-  | { type: 'DRAWING_STARTED' }
-  | { type: 'DRAWING_ENDED'; payload: { pointCount: number } }
-  | { type: 'POINT_ADDED' }
-  | { type: 'RESET_METRICS' };
+// Current metrics
+let currentMetrics: DrawingMetrics = { ...initialMetrics };
 
-// Ensure DrawingMode includes PAN
-if (!Object.values(DrawingMode).includes('PAN' as any)) {
-  // Add PAN to DrawingMode if it doesn't exist
-  (DrawingMode as any).PAN = 'PAN';
+// Register tool change
+export function registerToolChange(toolName: string): void {
+  currentMetrics.toolChanges++;
+  currentMetrics.lastToolUsed = toolName;
+  currentMetrics.lastInteraction = Date.now();
 }
 
-// Reducer function
-function metricsReducer(state: DrawingMetrics, action: MetricsAction): DrawingMetrics {
-  switch (action.type) {
-    case 'TOOL_CHANGED':
-      return {
-        ...state,
-        currentTool: action.payload,
-        timestamp: Date.now()
-      };
-    case 'DRAWING_STARTED':
-      return {
-        ...state,
-        isDrawing: true,
-        timestamp: Date.now()
-      };
-    case 'DRAWING_ENDED':
-      return {
-        ...state,
-        isDrawing: false,
-        pointCount: state.pointCount + action.payload.pointCount,
-        strokeCount: state.strokeCount + 1,
-        timestamp: Date.now()
-      };
-    case 'POINT_ADDED':
-      return {
-        ...state,
-        pointCount: state.pointCount + 1,
-        timestamp: Date.now()
-      };
-    case 'RESET_METRICS':
-      return {
-        ...initialMetrics,
-        timestamp: Date.now()
-      };
-    default:
-      return state;
-  }
+// Register object created
+export function registerObjectCreated(): void {
+  currentMetrics.objectsCreated++;
+  currentMetrics.objectCount++;
+  currentMetrics.lastInteraction = Date.now();
 }
 
-// Data transformer for analytics
-function transformMetricsForAnalytics(metrics: DrawingMetrics) {
-  return {
-    averagePointsPerStroke: metrics.strokeCount > 0 
-      ? metrics.pointCount / metrics.strokeCount 
-      : 0,
-    currentTool: metrics.currentTool,
-    isDrawing: metrics.isDrawing,
-    lastUpdated: new Date(metrics.timestamp).toISOString()
+// Register object deleted
+export function registerObjectDeleted(): void {
+  currentMetrics.objectsDeleted++;
+  currentMetrics.objectCount = Math.max(0, currentMetrics.objectCount - 1);
+  currentMetrics.lastInteraction = Date.now();
+}
+
+// Register object modified
+export function registerObjectModified(): void {
+  currentMetrics.objectsModified++;
+  currentMetrics.lastInteraction = Date.now();
+}
+
+// Get current metrics
+export function getDrawingMetrics(): DrawingMetrics {
+  return { ...currentMetrics };
+}
+
+// Reset metrics
+export function resetDrawingMetrics(): void {
+  currentMetrics = {
+    ...initialMetrics,
+    sessionStartTime: Date.now()
   };
 }
 
-export {
-  type DrawingMetrics,
-  initialMetrics,
-  metricsReducer,
-  transformMetricsForAnalytics
-};
+// Export class for compatibility
+export class DrawingMetrics {
+  static getMetrics(): DrawingMetrics {
+    return getDrawingMetrics();
+  }
+  
+  static reset(): void {
+    resetDrawingMetrics();
+  }
+}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AiOutlineEdit } from 'react-icons/ai';
-import { PropertyStatus } from '@/types/roles';
+import { PropertyStatus } from '@/types/canvas-types';
 
 interface PropertyFloorPlanTabProps {
   canEdit?: boolean;

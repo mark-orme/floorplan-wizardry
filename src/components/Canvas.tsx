@@ -1,12 +1,12 @@
+
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 export interface CanvasProps {
   width?: number;
   height?: number;
-  onCanvasReady?: (canvas: ExtendedCanvas) => void;
+  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
   onError?: (error: Error) => void;
   showGridDebug?: boolean;
 }
@@ -19,7 +19,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   showGridDebug = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<ExtendedCanvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +30,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         width,
         height,
         backgroundColor: '#ffffff',
-      }) as unknown as ExtendedCanvas;
+      }) as unknown as ExtendedFabricCanvas;
+      
+      // Initialize explicitly to satisfy the type constraint
+      if (!fabricCanvas.initialize) {
+        fabricCanvas.initialize = () => {};
+      }
       
       setCanvas(fabricCanvas);
       onCanvasReady?.(fabricCanvas);
@@ -64,8 +69,8 @@ export const Canvas: React.FC<CanvasProps> = ({
 
 export const CanvasContext = React.createContext<{
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  canvas: ExtendedCanvas | null;
-  setCanvas: React.Dispatch<React.SetStateAction<ExtendedCanvas | null>>;
+  canvas: ExtendedFabricCanvas | null;
+  setCanvas: React.Dispatch<React.SetStateAction<ExtendedFabricCanvas | null>>;
 }>({
   canvasRef: { current: null },
   canvas: null,
@@ -76,7 +81,7 @@ export const useCanvas = () => React.useContext(CanvasContext);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<ExtendedCanvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
   
   return (
     <CanvasContext.Provider value={{ canvasRef, canvas, setCanvas }}>

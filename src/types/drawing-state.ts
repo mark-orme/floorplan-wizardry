@@ -10,21 +10,27 @@ export interface Point {
 
 export interface DrawingState {
   isDrawing: boolean;
-  startPoint: Point;
-  currentPoint: Point;
+  startPoint: Point | null;
+  pathStartPoint: Point | null; 
+  currentPoint: Point | null;
   points: Point[];
-  distance: number;
-  cursorPosition: Point;
+  distance: number | null;
+  cursorPosition: Point | null;
+  isEnabled: boolean;
+  currentZoom: number;
 }
 
 export function createDefaultDrawingState(): DrawingState {
   return {
     isDrawing: false,
-    startPoint: { x: 0, y: 0 },
-    currentPoint: { x: 0, y: 0 },
+    startPoint: null,
+    pathStartPoint: null,
+    currentPoint: null,
     points: [],
-    distance: 0,
-    cursorPosition: { x: 0, y: 0 }
+    distance: null,
+    cursorPosition: null,
+    isEnabled: true,
+    currentZoom: 1
   };
 }
 

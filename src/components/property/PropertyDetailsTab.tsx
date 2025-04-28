@@ -1,9 +1,23 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Icons } from '@/components/icons';
-import { UserRole, PropertyStatus } from '@/types/roles';
+import { PropertyStatus } from '@/types/canvas-types';
 import { useNavigate } from 'react-router-dom';
+
+// Define UserRole type
+export type UserRole = 'admin' | 'manager' | 'user' | 'guest' | 'photographer' | 'processing_manager';
+
+// Export as a constant for usage as values
+export const UserRole = {
+  ADMIN: 'admin' as UserRole,
+  MANAGER: 'manager' as UserRole,
+  USER: 'user' as UserRole,
+  GUEST: 'guest' as UserRole,
+  PHOTOGRAPHER: 'photographer' as UserRole,
+  PROCESSING_MANAGER: 'processing_manager' as UserRole
+};
 
 interface PropertyDetailsTabProps {
   property: {

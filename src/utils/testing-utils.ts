@@ -1,9 +1,9 @@
 
+import { render, fireEvent, screen } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { render, fireEvent } from '@testing-library/react';
 
 // Re-export testing utilities
-export { renderHook, act, render, fireEvent };
+export { renderHook, act, render, fireEvent, screen };
 
 // Mock canvas factory
 export const createMockCanvas = () => {
@@ -39,7 +39,8 @@ export const createMockCanvas = () => {
     getZoom: jest.fn().mockReturnValue(1),
     sendToBack: jest.fn(),
     fire: jest.fn(),
-    dispose: jest.fn()
+    dispose: jest.fn(),
+    initialize: jest.fn()
   };
   
   return mockCanvas;
@@ -61,3 +62,17 @@ export const enhancedQueries = {
   queryAllByRole: (container: HTMLElement, role: string) =>
     Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[]
 };
+
+// Mock jest features for tests
+export const mockJest = {
+  fn: jest.fn,
+  mock: jest.mock,
+  mocked: jest.mocked
+};
+
+// Mock testing functions to satisfy test modules
+export const testUtils = {
+  renderHook,
+  act
+};
+

@@ -1,35 +1,8 @@
+
 import * as React from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+import { ChevronLeft, ChevronRight, MoreHorizontal as MoreDots } from "lucide-react" // Fixed import
 import { cn } from "@/lib/utils"
-
-// Create simple arrow SVG components to replace missing icons
-const ChevronLeftIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-);
-
-const ChevronRightIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18l6-6-6-6" />
-  </svg>
-);
-
-const MoreHorizontalIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="1" />
-    <circle cx="19" cy="12" r="1" />
-    <circle cx="5" cy="12" r="1" />
-  </svg>
-);
-
-// Define interface for PaginationLink to avoid prop issues
-interface PaginationLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  isActive?: boolean;
-}
+import { ButtonProps } from "@/components/ui/button"
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -43,7 +16,7 @@ Pagination.displayName = "Pagination"
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
-  React.HTMLAttributes<HTMLUListElement>
+  React.ComponentProps<"ul">
 >(({ className, ...props }, ref) => (
   <ul
     ref={ref}
@@ -55,22 +28,29 @@ PaginationContent.displayName = "PaginationContent"
 
 const PaginationItem = React.forwardRef<
   HTMLLIElement,
-  React.HTMLAttributes<HTMLLIElement>
+  React.ComponentProps<"li">
 >(({ className, ...props }, ref) => (
   <li ref={ref} className={cn("", className)} {...props} />
 ))
 PaginationItem.displayName = "PaginationItem"
 
+type PaginationLinkProps = {
+  isActive?: boolean
+} & React.ComponentProps<"a">
+
 const PaginationLink = ({
   className,
   isActive,
+  size = "icon",
   ...props
-}: PaginationLinkProps) => (
+}: PaginationLinkProps & { size?: "default" | "icon" }) => (
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      "flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted",
-      isActive && "bg-muted font-medium",
+      "inline-flex items-center justify-center rounded-md border border-input bg-background p-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      {
+        "bg-accent text-accent-foreground": isActive
+      },
       className
     )}
     {...props}
@@ -110,20 +90,27 @@ const PaginationNext = ({
 )
 PaginationNext.displayName = "PaginationNext"
 
-const PaginationEllipsis = ({ className }: { className?: string }) => (
-  <div className={cn("flex h-9 w-9 items-center justify-center", className)}>
-    <MoreHorizontalIcon />
+const PaginationEllipsis = ({
+  className,
+  ...props
+}: React.ComponentProps<"span">) => (
+  <span
+    aria-hidden
+    className={cn("flex h-9 w-9 items-center justify-center", className)}
+    {...props}
+  >
+    <MoreDots className="h-4 w-4" />
     <span className="sr-only">More pages</span>
-  </div>
+  </span>
 )
 PaginationEllipsis.displayName = "PaginationEllipsis"
 
 export {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
   PaginationLink,
-  PaginationNext,
+  PaginationItem,
   PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
 }

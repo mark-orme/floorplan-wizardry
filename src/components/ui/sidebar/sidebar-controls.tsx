@@ -1,50 +1,101 @@
 
-import * as React from "react"
-import { AiOutlineMenuFold, AiOutlineMenu } from "react-icons/ai"
-import { Icons } from '@/components/icons'
+import React from 'react';
+import { cn } from "@/lib/utils";
 
-// Temporary implementation as use-sidebar is missing
-const useSidebar = () => {
-  const [collapsed, setCollapsed] = React.useState(false);
-  return { collapsed, setCollapsed };
+export interface SidebarItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  icon?: React.ReactNode;
+  label: string;
+  active?: boolean;
+  expanded?: boolean;
 }
 
-interface SidebarTriggerProps extends React.HTMLAttributes<HTMLButtonElement> {
-  children?: React.ReactNode
+export const SidebarItem: React.FC<SidebarItemProps> = ({
+  icon,
+  label,
+  active = false,
+  expanded = true,
+  className,
+  ...props
+}) => {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer hover:bg-accent",
+        active && "bg-accent text-accent-foreground",
+        className
+      )}
+      {...props}
+    >
+      {icon && <div className="flex-shrink-0">{icon}</div>}
+      {expanded && <span>{label}</span>}
+    </div>
+  );
+};
+
+export interface SidebarSectionProps extends React.HTMLAttributes<HTMLDivElement> {
+  title?: string;
 }
 
-const SidebarTrigger = React.forwardRef<HTMLButtonElement, SidebarTriggerProps>(
-  ({ className, children, ...props }, ref) => {
-    const { collapsed, setCollapsed } = useSidebar()
+export const SidebarSection: React.FC<SidebarSectionProps> = ({
+  title,
+  children,
+  className,
+  ...props
+}) => {
+  return (
+    <div className={cn("py-2", className)} {...props}>
+      {title && <h4 className="mb-1 px-3 text-xs font-medium text-muted-foreground">{title}</h4>}
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+};
 
-    return (
-      <Button
-        ref={ref}
-        variant="outline"
-        size="icon"
-        className={className}
-        onClick={() => setCollapsed(!collapsed)}
-        {...props}
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              {children ?? (collapsed ? <AiOutlineMenu className="h-5 w-5" /> : <AiOutlineMenuFold className="h-5 w-5" />)}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {collapsed ? "Expand" : "Collapse"} sidebar
-          </TooltipContent>
-        </Tooltip>
-      </Button>
-    )
-  }
-)
+export interface SidebarToggleProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  expanded: boolean;
+  onToggle: () => void;
+}
 
-SidebarTrigger.displayName = "SidebarTrigger"
+export const SidebarToggle: React.FC<SidebarToggleProps> = ({
+  expanded,
+  onToggle,
+  className,
+  ...props
+}) => {
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent",
+        className
+      )}
+      {...props}
+    >
+      {expanded ? (
+        <span>←</span>
+      ) : (
+        <span>→</span>
+      )}
+    </button>
+  );
+};
 
-export { SidebarTrigger }
+// Add placeholders for the missing components
+export const SidebarRail: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+  children,
+  className,
+  ...props
+}) => (
+  <div className={cn("w-10 border-r flex-shrink-0", className)} {...props}>
+    {children}
+  </div>
+);
 
-// Import missing dependencies to make the code work
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+export const SidebarInset: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+  children,
+  className,
+  ...props
+}) => (
+  <div className={cn("p-2", className)} {...props}>
+    {children}
+  </div>
+);

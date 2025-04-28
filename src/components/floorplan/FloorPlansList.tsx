@@ -22,7 +22,7 @@ export const FloorPlansList: React.FC<FloorPlansListProps> = ({ floorPlans, onSe
           <h3 className="font-medium">Floor Plan {plan.metadata.name}</h3>
           <p className="text-sm text-gray-600">{plan.metadata.description || 'No description'}</p>
           <p className="text-xs text-gray-400">
-            Updated: {new Date(plan.metadata.updatedAt).toLocaleDateString()}
+            Updated: {new Date(plan.metadata.updated).toLocaleDateString()}
           </p>
         </button>
       ))}

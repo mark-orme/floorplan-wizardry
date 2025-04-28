@@ -15,11 +15,11 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 export interface ExtendedFabricCanvas extends FabricCanvas {
-  wrapperEl: HTMLDivElement;
+  wrapperEl: HTMLDivElement; // Using HTMLDivElement to match the expected type
   upperCanvasEl?: HTMLCanvasElement;
   skipOffscreen?: boolean;
   allowTouchScrolling?: boolean;
-  initialize?: () => void;
+  initialize: () => void; // Making initialize required
   skipTargetFind?: boolean;
   renderOnAddRemove?: boolean;
   fire?: (eventName: string, options?: any) => FabricCanvas;
@@ -52,28 +52,24 @@ export interface ExtendedFabricCanvas extends FabricCanvas {
   _objects?: any[];
 }
 
-export interface ExtendedCanvas extends ExtendedFabricCanvas {
-  // Kept for backward compatibility
-  wrapperEl: HTMLDivElement;
-  initialize: () => void;
-  skipTargetFind: boolean;
-  _activeObject: any;
-  _objects: any[];
-}
-
+// Update the FloorPlanMetadata interface to include the description field
 export interface FloorPlanMetadata {
   level: number;
   name: string;
-  created: string;
+  created: string; 
   updated: string;
+  description?: string; // Add description field
+  updatedAt?: string;  // Add updatedAt field for backwards compatibility
 }
 
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING = 'pending',
+  PENDING_REVIEW = 'in_review', // Add missing status
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
+  COMPLETED = 'completed' // Add missing status
 }
 
 /**
@@ -82,3 +78,6 @@ export enum PropertyStatus {
 export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
   return canvas as unknown as ExtendedFabricCanvas;
 }
+
+// For backwards compatibility
+export type ExtendedCanvas = ExtendedFabricCanvas;
