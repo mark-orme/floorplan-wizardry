@@ -1,28 +1,28 @@
 
-// Grid size constants
+/**
+ * Grid constants for visual representations
+ */
+
+// Small grid
 export const SMALL_GRID_SIZE = 20;
-export const LARGE_GRID_SIZE = 100;
-export const GRID_SNAP_THRESHOLD = 10;
-
-// Grid appearance constants 
-export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
-export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
-
-// Grid stroke width constants
+export const SMALL_GRID_COLOR = '#e0e0e0';
 export const SMALL_GRID_WIDTH = 0.5;
+
+// Large grid (every 5 small grid lines)
+export const LARGE_GRID_SIZE = 100; // 5 * SMALL_GRID_SIZE
+export const LARGE_GRID_COLOR = '#c0c0c0';
 export const LARGE_GRID_WIDTH = 1;
 
+// Export as a single object for easier importing
 export const GRID_CONSTANTS = {
   SMALL: {
     SIZE: SMALL_GRID_SIZE,
-    WIDTH: SMALL_GRID_WIDTH,
     COLOR: SMALL_GRID_COLOR,
-    OPACITY: 0.4
+    WIDTH: SMALL_GRID_WIDTH
   },
   LARGE: {
     SIZE: LARGE_GRID_SIZE,
-    WIDTH: LARGE_GRID_WIDTH, 
     COLOR: LARGE_GRID_COLOR,
-    OPACITY: 0.6
+    WIDTH: LARGE_GRID_WIDTH
   }
 };

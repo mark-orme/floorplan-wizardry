@@ -1,16 +1,11 @@
 
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas, ExtendedFabricObject, PerformanceMetrics } from '@/types/canvas-types';
 
 interface UseVirtualizedCanvasOptions {
   enabled?: boolean;
   objectThreshold?: number;
-}
-
-interface PerformanceMetrics {
-  fps: number;
-  renderTime: number;
-  objectCount: number;
 }
 
 /**
@@ -18,15 +13,17 @@ interface PerformanceMetrics {
  * Improves performance for canvases with many objects
  */
 export function useVirtualizedCanvas(
-  canvasRef: React.MutableRefObject<FabricCanvas | null>,
+  canvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>,
   options: UseVirtualizedCanvasOptions = {}
 ) {
   const [virtualizationEnabled, setVirtualizationEnabled] = useState(options.enabled ?? false);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     fps: 0,
     renderTime: 0,
-    objectCount: 0
+    objectCount: 0,
+    visibleObjectCount: 0
   });
+  
   const lastRenderTimeRef = useRef(0);
   const frameCountRef = useRef(0);
   const lastFpsUpdateRef = useRef(0);
@@ -46,7 +43,8 @@ export function useVirtualizedCanvas(
     // Track metrics
     setPerformanceMetrics(prev => ({
       ...prev,
-      objectCount
+      objectCount,
+      visibleObjectCount: objectCount // Default to all objects visible
     }));
     
     // Trigger a render
@@ -59,6 +57,7 @@ export function useVirtualizedCanvas(
     
     const canvas = canvasRef.current;
     let animFrameId: number;
+    let visibleCount = 0;
 
     const measurePerformance = () => {
       const now = performance.now();
@@ -68,7 +67,8 @@ export function useVirtualizedCanvas(
       if (now - lastFpsUpdateRef.current > 1000) {
         setPerformanceMetrics(prev => ({
           ...prev,
-          fps: frameCountRef.current
+          fps: frameCountRef.current,
+          visibleObjectCount: visibleCount
         }));
         frameCountRef.current = 0;
         lastFpsUpdateRef.current = now;
@@ -82,6 +82,9 @@ export function useVirtualizedCanvas(
           renderTime
         }));
       }
+      
+      // Count visible objects
+      visibleCount = canvas.getObjects().filter(obj => obj.visible).length;
       
       lastRenderTimeRef.current = now;
       animFrameId = requestAnimationFrame(measurePerformance);

@@ -6,9 +6,8 @@ import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
 import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
-import { ExtendedFabricCanvas, PerformanceMetrics } from '@/types/canvas-types';
+import { ExtendedFabricCanvas, PerformanceMetrics, asExtendedCanvas } from '@/types/canvas-types';
 
-// Updated interface to match PerformanceMetrics from canvas-types
 interface FloorPlanCanvasEnhancedProps {
   width?: number;
   height?: number;
@@ -34,13 +33,12 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
   
   const { isReady: workerReady } = useGeometryWorker();
   
-  // Type assertion for useVirtualizedCanvas to accept ExtendedFabricCanvas
   const {
     performanceMetrics,
     virtualizationEnabled,
     toggleVirtualization,
     refreshVirtualization
-  } = useVirtualizedCanvas(fabricCanvasRef as any, {
+  } = useVirtualizedCanvas(fabricCanvasRef, {
     enabled: true
   });
   
@@ -56,8 +54,8 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         enableRetinaScaling: true
       });
       
-      // Type assertion to ensure it matches ExtendedFabricCanvas
-      const extendedCanvas = canvas as unknown as ExtendedFabricCanvas;
+      // Use type casting helper
+      const extendedCanvas = asExtendedCanvas(canvas);
       
       if (extendedCanvas) {
         extendedCanvas.skipOffscreen = true;

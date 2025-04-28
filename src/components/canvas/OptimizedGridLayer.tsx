@@ -3,9 +3,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import logger from '@/utils/logger';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
 
 interface OptimizedGridLayerProps {
-  canvas: fabric.Canvas | null;
+  canvas: ExtendedFabricCanvas | null;
   gridSize?: number;
   visible?: boolean;
   onGridCreated?: (objects: fabric.Object[]) => void;
@@ -86,7 +87,7 @@ export const OptimizedGridLayer: React.FC<OptimizedGridLayerProps> = ({
     
     gridObjects.forEach(obj => {
       if (obj) {
-        obj.set({ visible });
+        (obj as ExtendedFabricObject).set({ visible });
       }
     });
     

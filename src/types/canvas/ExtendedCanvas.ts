@@ -1,7 +1,12 @@
 
 import { Canvas } from 'fabric';
+import { ExtendedFabricCanvas } from '../canvas-types';
 
-export interface ExtendedCanvas extends Canvas {
+/**
+ * @deprecated Use ExtendedFabricCanvas from '@/types/canvas-types' instead
+ */
+export interface ExtendedCanvas extends ExtendedFabricCanvas {
+  // Kept for backward compatibility
   wrapperEl: HTMLElement;
   initialize: () => void;
   skipTargetFind: boolean;

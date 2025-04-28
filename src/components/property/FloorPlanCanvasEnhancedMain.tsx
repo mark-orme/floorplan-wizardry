@@ -1,12 +1,12 @@
 
 import React from 'react';
 import { CanvasControllerEnhanced } from '@/components/canvas/controller/CanvasControllerEnhanced';
-import { fabric } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface FloorPlanCanvasEnhancedMainProps {
   width: number;
   height: number;
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
+  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
   onCanvasError?: (error: Error) => void;
   showPerformanceMetrics?: boolean;
   showSecurityInfo?: boolean;
