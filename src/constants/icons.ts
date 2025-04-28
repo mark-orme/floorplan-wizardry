@@ -16,10 +16,10 @@ import {
   AiOutlineBgColors as Palette,
   AiOutlineSearch as Search,
   AiOutlineMenu as MenuIcon,
-  AiOutlineMenuFold as PanelLeft,
-  AiOutlineMore as MoreHorizontal,
-  AiOutlineMoreHorizontal as MoreHorizontalIcon,
-  AiOutlineGrip as GripVertical
+  AiOutlineFolderOpen as PanelLeft,
+  AiOutlineEllipsis as MoreHorizontal,
+  AiOutlineEllipsis as MoreHorizontalIcon,
+  AiOutlineOrderedList as GripVertical
 } from 'react-icons/ai';
 
 export const Icons = {

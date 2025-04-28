@@ -1,6 +1,6 @@
 
 import { Input } from '@/components/ui/input';
-import { AiOutlineSearch } from 'react-icons/ai';
+import Icons from '@/constants/iconMappings';
 
 interface PropertySearchProps {
   searchTerm: string;
@@ -11,7 +11,7 @@ export const PropertySearch = ({ searchTerm, onSearchChange }: PropertySearchPro
   return (
     <div className="mb-6">
       <div className="relative">
-        <AiOutlineSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Icons.search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by order ID, address or client..."
           className="pl-8"

@@ -11,6 +11,7 @@ export interface ExtendedFabricObject extends FabricObject {
   isGrid?: boolean;
   isLargeGrid?: boolean;
   objectType?: string;
+  set?: (key: string | Record<string, any>, value?: any) => FabricObject;
 }
 
 // Define property status enum

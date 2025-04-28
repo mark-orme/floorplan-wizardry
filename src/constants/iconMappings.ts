@@ -13,7 +13,16 @@ import {
   AiOutlineRedo as Redo2,
   AiOutlineSwap as MoveHorizontal,
   AiOutlineDash as PenLine,
-  AiOutlineBgColors as Palette
+  AiOutlineBgColors as Palette,
+  AiOutlineSearch as Search,
+  AiOutlineMenu as Menu,
+  AiOutlineReload as Reload,
+  AiOutlineZoomIn as ZoomIn,
+  AiOutlineZoomOut as ZoomOut,
+  AiOutlineDownload as Download,
+  AiOutlineUpload as Upload,
+  AiOutlineSave as Save,
+  AiOutlineDelete as Delete
 } from 'react-icons/ai';
 
 export const toolToIconMap = {
@@ -38,7 +47,17 @@ export const stylingIconMap = {
 // Export as default for components that import Icons
 const Icons = {
   ...toolToIconMap,
-  ...stylingIconMap
+  ...stylingIconMap,
+  grid: LayoutGrid,
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
+  reload: Reload,
+  delete: Delete,
+  save: Save,
+  upload: Upload,
+  download: Download,
+  search: Search,
+  menu: Menu
 };
 
 export default Icons;

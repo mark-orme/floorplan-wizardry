@@ -11,10 +11,10 @@ export const Toaster: React.FC = () => {
     <SonnerToaster 
       position="top-right"
       className="border border-border"
-      toastOptions={{
-        duration: 5000,
-        style: { background: "white", color: "black" }
-      }}
+      theme="light"
+      duration={5000}
+      // Styling is applied directly, not through toastOptions
+      style={{ background: "white", color: "black" }}
     />
   );
 };
