@@ -33,9 +33,6 @@ export const PropertyDetailContent: React.FC<PropertyDetailContentProps> = ({
   onStatusChange,
   onMeasurementGuideOpen
 }) => {
-  const isApprovedUser = userRole === 'manager' || userRole === 'admin';
-  const canEdit = userRole === 'manager';
-
   return (
     <LoadingErrorWrapper isLoading={isLoading} error={error}>
       <Tabs defaultValue="details" className="w-full space-y-4">

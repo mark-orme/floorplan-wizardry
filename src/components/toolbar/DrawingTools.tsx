@@ -24,14 +24,14 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
     {
       tool: DrawingMode.DRAW,
       icon: <Icons.pencil size={20} />,
-      label: 'Freehand',
+      label: 'Draw',
       tooltip: 'Draw freehand'
     },
     {
       tool: DrawingMode.STRAIGHT_LINE,
       icon: <Icons.penLine size={20} />,
       label: 'Line',
-      tooltip: 'Draw straight line'
+      tooltip: 'Draw line'
     },
     {
       tool: DrawingMode.RECTANGLE,
@@ -40,7 +40,7 @@ export const DrawingTools: React.FC<DrawingToolsProps> = ({
       tooltip: 'Draw rectangle'
     }
   ];
-  
+
   return (
     <ToolbarSection title="Drawing Tools">
       {tools.map(({ tool, icon, label, tooltip }) => (

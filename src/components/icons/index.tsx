@@ -10,8 +10,8 @@ import {
   AiOutlineDelete as AiOutlineEraser,
   AiOutlineAppstore as AiOutlineGrid,
   AiOutlineHome,
-  AiOutlineSquare,
-  AiOutlineHand,
+  AiOutlineContainer as AiOutlineSquare,
+  AiOutlineSave as AiOutlineHand,
   AiOutlineEye,
   AiOutlineSend,
   AiOutlinePlusCircle,
@@ -68,6 +68,6 @@ export const Icons = {
   search: AiOutlineSearch,
   panelLeft: AiOutlinePanelLeft,
   palette: AiOutlinePalette,
-  plus: AiOutlinePlusCircle,
+  plus: AiOutlinePlus,
   minus: AiOutlineMinus,
 };
