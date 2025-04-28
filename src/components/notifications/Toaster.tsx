@@ -11,10 +11,6 @@ export const Toaster: React.FC = () => {
     <SonnerToaster 
       position="top-right"
       className="border border-border"
-      style={{
-        background: 'var(--background)',
-        color: 'var(--foreground)'
-      }}
     />
   );
 };

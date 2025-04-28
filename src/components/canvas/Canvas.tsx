@@ -26,7 +26,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     try {
-      // Create Canvas instance and convert to ExtendedFabricCanvas
+      // Create Canvas instance and explicitly convert to ExtendedFabricCanvas type
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,
@@ -41,7 +41,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       setIsLoading(false);
       
       return () => {
-        fabricCanvas.dispose();
+        extendedCanvas.dispose();
       };
     } catch (error) {
       onError?.(error instanceof Error ? error : new Error('Canvas initialization failed'));

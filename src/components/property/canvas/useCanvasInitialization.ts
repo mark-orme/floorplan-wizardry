@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import logger from '@/utils/logger';
 
@@ -18,6 +19,7 @@ export const useCanvasInitialization = () => {
         setIsInitialized(true);
       } catch (error) {
         initAttempts.current += 1;
+        // Fix the captureError call to use only 2 arguments
         captureError(error instanceof Error ? error : new Error('Unknown error during canvas initialization'), {
           component: 'useCanvasInitialization',
           attempts: initAttempts.current

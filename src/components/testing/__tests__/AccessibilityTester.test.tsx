@@ -2,15 +2,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-// Update test utilities to include missing methods
+// Update test utilities to include getByTestId method
 const enhancedScreen = {
   ...screen,
-  getByTestId: screen.getByTestId || ((testId: string) => {
-    // Fallback implementation
-    const elements = document.querySelectorAll(`[data-testid="${testId}"]`);
-    if (elements.length > 0) return elements[0] as HTMLElement;
-    throw new Error(`Unable to find element by test id: ${testId}`);
-  })
+  getByTestId: (testId: string): HTMLElement => {
+    const element = document.querySelector(`[data-testid="${testId}"]`);
+    if (element) return element as HTMLElement;
+    throw new Error(`Unable to find element with data-testid: ${testId}`);
+  },
+  queryByTestId: (testId: string): HTMLElement | null => {
+    return document.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null;
+  }
 };
 
 describe('AccessibilityTester', () => {

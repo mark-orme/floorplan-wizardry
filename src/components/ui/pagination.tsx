@@ -1,13 +1,30 @@
 
 import * as React from "react"
-import { AiOutlineLeft, AiOutlineRight, AiOutlineEllipsis } from "react-icons/ai"
-
 import { cn } from "@/lib/utils"
 
-// Define buttonVariants if needed
-const buttonVariants = (props: any) => {
-  return cn("inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50", props?.variant === "outline" ? "border border-input bg-background hover:bg-accent hover:text-accent-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90", props?.size === "icon" ? "h-9 w-9" : "h-9 px-4", props?.className);
-};
+// Create simple custom icons for pagination
+const ChevronLeftIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
+
+const ChevronRightIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18l6-6-6-6" />
+  </svg>
+);
+
+const DotsHorizontalIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+    <circle cx="5" cy="12" r="1" />
+  </svg>
+);
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -17,7 +34,6 @@ const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
     {...props}
   />
 )
-Pagination.displayName = "Pagination"
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
@@ -41,50 +57,27 @@ PaginationItem.displayName = "PaginationItem"
 
 type PaginationLinkProps = {
   isActive?: boolean
-} & Pick<React.ComponentPropsWithoutRef<typeof PaginationButtonLink>, "size"> &
+} & Pick<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick"> &
   React.ComponentProps<"a">
 
 const PaginationLink = ({
   className,
   isActive,
-  size = "icon",
   ...props
 }: PaginationLinkProps) => (
   <a
     aria-current={isActive ? "page" : undefined}
     className={cn(
-      buttonVariants({
-        variant: isActive ? "outline" : "ghost",
-        size,
-      }),
+      "inline-flex h-10 w-10 items-center justify-center rounded-md border border-input bg-background text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      {
+        "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground": isActive,
+      },
       className
     )}
     {...props}
   />
 )
 PaginationLink.displayName = "PaginationLink"
-
-// Helper component for buttonVariants type compatibility
-const PaginationButtonLink = ({
-  className,
-  variant = "outline",
-  size = "icon",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "outline" | "ghost";
-  size?: "icon" | "default";
-}) => (
-  <button
-    className={cn(
-      buttonVariants({
-        variant,
-        size,
-        className,
-      })
-    )}
-    {...props}
-  />
-)
 
 const PaginationPrevious = ({
   className,
@@ -96,7 +89,7 @@ const PaginationPrevious = ({
     className={cn("gap-1 pl-2.5", className)}
     {...props}
   >
-    <AiOutlineLeft className="h-4 w-4" />
+    <ChevronLeftIcon className="h-4 w-4" />
     <span>Previous</span>
   </PaginationLink>
 )
@@ -113,7 +106,7 @@ const PaginationNext = ({
     {...props}
   >
     <span>Next</span>
-    <AiOutlineRight className="h-4 w-4" />
+    <ChevronRightIcon className="h-4 w-4" />
   </PaginationLink>
 )
 PaginationNext.displayName = "PaginationNext"
@@ -127,7 +120,7 @@ const PaginationEllipsis = ({
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
-    <AiOutlineEllipsis className="h-4 w-4" />
+    <DotsHorizontalIcon className="h-4 w-4" />
     <span className="sr-only">More pages</span>
   </span>
 )

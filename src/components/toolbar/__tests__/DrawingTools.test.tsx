@@ -8,8 +8,15 @@ import { DrawingMode } from '@/constants/drawingModes';
 // Create enhanced screen with missing methods
 const enhancedScreen = {
   ...screen,
-  queryAllByRole: (role: string) => {
+  queryAllByRole: (role: string): HTMLElement[] => {
     const elements = document.querySelectorAll(`[role="${role}"]`);
+    return Array.from(elements) as HTMLElement[];
+  },
+  getAllByRole: (role: string): HTMLElement[] => {
+    const elements = document.querySelectorAll(`[role="${role}"]`);
+    if (elements.length === 0) {
+      throw new Error(`Unable to find elements with role: ${role}`);
+    }
     return Array.from(elements) as HTMLElement[];
   }
 };
