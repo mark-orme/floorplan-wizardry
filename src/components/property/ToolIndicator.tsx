@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Icons } from '@/components/icons';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -7,9 +6,7 @@ interface ToolIndicatorProps {
   activeTool: DrawingMode;
 }
 
-export const ToolIndicator: React.FC<ToolIndicatorProps> = ({
-  activeTool
-}) => {
+export const ToolIndicator: React.FC<ToolIndicatorProps> = ({ activeTool }) => {
   const getToolName = () => {
     switch(activeTool) {
       case DrawingMode.SELECT: return 'Select';

@@ -9,7 +9,7 @@ import {
   AiOutlineHome as Home,
   AiOutlineContainer as Square,
   AiOutlineSave as Hand,
-  AiOutlinePalette,
+  AiOutlineBgColors as Palette,
   AiOutlinePlus as Plus,
   AiOutlineMinus as Minus,
   AiOutlineEye as Eye,
@@ -26,6 +26,12 @@ import {
   AiOutlineReload as RefreshCw,
   AiOutlineClockCircle as Clock,
   AiOutlineSetting as Settings,
+  AiOutlineSun as Sun,
+  AiOutlineMoon as Moon,
+  AiOutlineSearch as Search,
+  AiOutlineMenu as GripVertical,
+  AiOutlineMenuFold as PanelLeft,
+  AiOutlineEllipsis as MoreHorizontal,
 } from 'react-icons/ai';
 
 export const Icons = {
@@ -37,7 +43,7 @@ export const Icons = {
   home: Home,
   square: Square,
   hand: Hand,
-  palette: AiOutlinePalette,
+  palette: Palette,
   plus: Plus,
   minus: Minus,
   eye: Eye,
@@ -54,21 +60,22 @@ export const Icons = {
   refresh: RefreshCw,
   clock: Clock,
   settings: Settings,
+  sun: Sun,
+  moon: Moon,
+  search: Search,
+  gripVertical: GripVertical,
+  panelLeft: PanelLeft,
+  moreHorizontal: MoreHorizontal,
 };
 
 export type IconName = keyof typeof Icons;
 
-// Convenience wrapper for icon components
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
   name: IconName;
   size?: number;
 }
 
-export const Icon: React.FC<IconProps> = ({
-  name,
-  size = 24,
-  ...props
-}) => {
+export const Icon: React.FC<IconProps> = ({ name, size = 24, ...props }) => {
   const IconComponent = Icons[name];
   return <IconComponent size={size} {...props} />;
 };

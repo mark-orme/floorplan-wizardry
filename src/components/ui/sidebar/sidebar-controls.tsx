@@ -1,6 +1,6 @@
-
 import * as React from "react"
 import { AiOutlineMenuFold } from "react-icons/ai"
+import { Icons } from '@/components/icons';
 
 import { useSidebar } from "./use-sidebar"
 import { Button } from "@/components/ui/button"
@@ -26,7 +26,7 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, SidebarTriggerProps>(
         <Tooltip>
           <TooltipTrigger asChild>
             <div>
-              {children ?? <AiOutlineMenuFold className="h-5 w-5" />}
+              {children ?? <Icons.panelLeft className="h-5 w-5" />}
             </div>
           </TooltipTrigger>
           <TooltipContent side="right">
