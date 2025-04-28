@@ -1,10 +1,6 @@
 
 /**
- * Core geometry interfaces and types
- */
-
-/**
- * Point interface representing x,y coordinates
+ * Point interface
  */
 export interface Point {
   x: number;
@@ -12,7 +8,7 @@ export interface Point {
 }
 
 /**
- * Size interface representing width and height
+ * Size interface
  */
 export interface Size {
   width: number;
@@ -22,21 +18,11 @@ export interface Size {
 /**
  * Rectangle interface
  */
-export interface Rect {
+export interface Rectangle {
   x: number;
   y: number;
   width: number;
   height: number;
-}
-
-/**
- * Line interface
- */
-export interface Line {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
 }
 
 /**
@@ -49,8 +35,11 @@ export interface Circle {
 }
 
 /**
- * Polygon interface
+ * Line interface
  */
-export interface Polygon {
-  points: Point[];
+export interface Line {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
 }

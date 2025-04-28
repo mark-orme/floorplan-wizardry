@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
-import { asExtendedCanvas, ExtendedFabricCanvas } from '@/types/canvas-types';
-import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 /**
@@ -33,7 +32,10 @@ export const CanvasWrapper: React.FC = () => {
       }
       
       if (!extendedCanvas.getActiveObjects) {
-        extendedCanvas.getActiveObjects = () => [];
+        extendedCanvas.getActiveObjects = () => {
+          const activeObject = extendedCanvas.getActiveObject?.();
+          return activeObject ? [activeObject] : [];
+        };
       }
       
       setCanvas(extendedCanvas);

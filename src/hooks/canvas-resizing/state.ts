@@ -1,27 +1,72 @@
 
 /**
- * Canvas resizing state module
- * Manages global resizing state to track operation status
- * @module canvas-resizing/state
+ * Canvas resizing state
  */
-import { ResizingState } from "./types";
 
 /**
- * Global resizing state used across resize operations
- * Helps track resize status across hook instances
+ * Interface for canvas resizing state
  */
-export const resizingState: ResizingState = {
+export interface ResizingState {
+  width: number;
+  height: number;
+  scale: number;
+  aspectRatio: number;
+  isResizing: boolean;
+  initialResizeComplete: boolean;
+  resizeInProgress: boolean;
+  lastResizeTime: number;
+}
+
+/**
+ * Default resizing state
+ */
+export const DEFAULT_RESIZING_STATE: ResizingState = {
+  width: 800,
+  height: 600,
+  scale: 1,
+  aspectRatio: 4 / 3,
+  isResizing: false,
   initialResizeComplete: false,
   resizeInProgress: false,
   lastResizeTime: 0
 };
 
 /**
- * Reset the resizing state to initial values
- * Used to force a fresh resize operation
+ * Function to reset resizing state
+ * @param state Current resizing state
+ * @returns Reset resizing state
  */
-export const resetResizingState = (): void => {
-  resizingState.initialResizeComplete = false;
-  resizingState.resizeInProgress = false;
-  resizingState.lastResizeTime = 0;
-};
+export function resetResizingState(state: ResizingState): ResizingState {
+  return {
+    ...state,
+    isResizing: false,
+    initialResizeComplete: true,
+    resizeInProgress: false,
+    lastResizeTime: Date.now()
+  };
+}
+
+/**
+ * Function to update resizing state
+ * @param state Current resizing state
+ * @param dimensions New dimensions
+ * @returns Updated resizing state
+ */
+export function updateResizingState(
+  state: ResizingState,
+  dimensions: { width?: number; height?: number; scale?: number }
+): ResizingState {
+  const newWidth = dimensions.width ?? state.width;
+  const newHeight = dimensions.height ?? state.height;
+  
+  return {
+    ...state,
+    width: newWidth,
+    height: newHeight,
+    scale: dimensions.scale ?? state.scale,
+    aspectRatio: newWidth / newHeight,
+    isResizing: true,
+    resizeInProgress: true,
+    lastResizeTime: Date.now()
+  };
+}

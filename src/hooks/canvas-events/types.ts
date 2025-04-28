@@ -26,6 +26,10 @@ export interface UseKeyboardEventsProps extends BaseEventProps {
   deleteSelectedObjects?: () => void;
   undo?: () => void;
   redo?: () => void;
+  handleUndo?: () => void;
+  handleRedo?: () => void;
+  handleEscape?: () => void;
+  handleDelete?: () => void;
 }
 
 export interface UseMouseEventsProps extends BaseEventProps {
@@ -34,9 +38,76 @@ export interface UseMouseEventsProps extends BaseEventProps {
   isSnapping?: boolean;
   gridSize?: number;
   snapToGrid?: (point: Point) => Point;
+  handleMouseDown?: (e: any) => void;
+  handleMouseMove?: (e: any) => void;
+  handleMouseUp?: (e: any) => void;
+}
+
+export interface UseObjectEventsProps extends BaseEventProps {
+  onObjectAdded?: (e: any) => void;
+  onObjectModified?: (e: any) => void;
+  onObjectRemoved?: (e: any) => void;
+}
+
+export interface UseBrushSettingsProps extends BaseEventProps {
+  lineColor: string;
+  lineThickness: number;
+  usePressure?: boolean;
+}
+
+export interface UseCanvasHandlersProps extends BaseEventProps {
+  lineColor: string;
+  lineThickness: number;
+  onDrawingComplete?: () => void;
 }
 
 export interface DrawingPathState {
   isDrawing: boolean;
   currentPath: FabricObject | null;
 }
+
+export interface UseZoomTrackingProps {
+  fabricCanvasRef: MutableRefObject<ExtendedFabricCanvas | null>;
+  initialZoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
+}
+
+export interface UseZoomTrackingResult {
+  zoom: number;
+  setZoom: (zoom: number) => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+}
+
+export type ZoomDirection = 'in' | 'out';
+
+export interface ZoomOptions {
+  center?: Point;
+  duration?: number;
+}
+
+export interface CanvasEvents {
+  [key: string]: (e: any) => void;
+}
+
+export interface EventHandlerMap {
+  [key: string]: (e: any) => void;
+}
+
+export interface EditableFabricObject extends FabricObject {
+  set: (options: Record<string, any>) => FabricObject;
+}
+
+export interface TargetEvent {
+  target: FabricObject;
+}
+
+export const ZOOM_LEVEL_CONSTANTS = {
+  DEFAULT: 1.0,
+  MIN: 0.1,
+  MAX: 10.0,
+  STEP: 0.1,
+  LARGE_STEP: 0.5
+};

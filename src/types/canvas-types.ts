@@ -62,5 +62,30 @@ export interface FloorPlanMetadata {
   name: string;
   created: string;
   updated: string;
-  description?: string; // Add description property
+  description?: string;
+}
+
+/**
+ * Performance metrics interface
+ */
+export interface PerformanceMetrics {
+  fps: number;
+  renderTime: number;
+  objectCount: number;
+  visibleObjectCount?: number;
+  memoryUsage?: number;
+}
+
+/**
+ * Resizing state interface
+ */
+export interface ResizingState {
+  width: number;
+  height: number;
+  scale: number;
+  aspectRatio: number;
+  isResizing: boolean;
+  initialResizeComplete: boolean;
+  resizeInProgress: boolean;
+  lastResizeTime: number;
 }

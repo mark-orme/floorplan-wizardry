@@ -1,13 +1,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
-import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
+import { asExtendedCanvas } from "@/types/canvas-types";
 import logger from "@/utils/logger";
-import { ExtendedFabricCanvas } from "@/types/ExtendedFabricCanvas";
 
 interface GridLayerProps {
-  fabricCanvas: ExtendedFabricCanvas;
+  fabricCanvas: fabric.Canvas;
   dimensions: { width: number; height: number };
   showDebug?: boolean;
 }
@@ -42,6 +41,88 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     }
   };
   
+  // Create grid on component mount
+  useEffect(() => {
+    if (!fabricCanvas) return;
+    
+    try {
+      console.log('Creating grid layer...');
+      
+      // Clear any existing grid
+      gridObjects.forEach(obj => {
+        fabricCanvas.remove(obj);
+      });
+      
+      // Create new grid
+      const newGridObjects = createGrid(fabricCanvas, dimensions);
+      setGridObjects(newGridObjects);
+      
+      // Clean up when component unmounts
+      return () => {
+        newGridObjects.forEach(obj => {
+          fabricCanvas.remove(obj);
+        });
+      };
+    } catch (error) {
+      console.error('Error creating grid:', error);
+    }
+  }, [fabricCanvas, dimensions.width, dimensions.height]);
+  
+  // Helper function to create grid
+  function createGrid(canvas: fabric.Canvas, dimensions: { width: number; height: number }): fabric.Object[] {
+    const gridObjects: fabric.Object[] = [];
+    
+    // Create horizontal lines
+    for (let y = 0; y <= dimensions.height; y += 20) {
+      const isLargeLine = y % 100 === 0;
+      const lineWidth = isLargeLine ? 1 : 0.5;
+      const lineColor = isLargeLine ? '#c0c0c0' : '#e0e0e0';
+      
+      const line = new fabric.Line([0, y, dimensions.width, y], {
+        stroke: lineColor,
+        strokeWidth: lineWidth,
+        selectable: false,
+        evented: false,
+        strokeDashArray: isLargeLine ? [] : [5, 5]
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create vertical lines
+    for (let x = 0; x <= dimensions.width; x += 20) {
+      const isLargeLine = x % 100 === 0;
+      const lineWidth = isLargeLine ? 1 : 0.5;
+      const lineColor = isLargeLine ? '#c0c0c0' : '#e0e0e0';
+      
+      const line = new fabric.Line([x, 0, x, dimensions.height], {
+        stroke: lineColor,
+        strokeWidth: lineWidth,
+        selectable: false,
+        evented: false,
+        strokeDashArray: isLargeLine ? [] : [5, 5]
+      });
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Convert to extended canvas to access sendToBack safely
+    const extendedCanvas = asExtendedCanvas(canvas);
+    
+    // Set all grid objects to back
+    gridObjects.forEach(obj => {
+      if (extendedCanvas.sendToBack) {
+        extendedCanvas.sendToBack(obj);
+      }
+    });
+    
+    canvas.requestRenderAll();
+    
+    return gridObjects;
+  }
+  
   useEffect(() => {
     if (fabricCanvas && gridObjects.length > 0) {
       const width = dimensionsRef.current.width;
@@ -52,34 +133,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     }
   }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]);
   
-  useEffect(() => {
-    const checkGridVisibility = () => {
-      if (fabricCanvas && gridObjects.length > 0) {
-        const visibleGridObjects = gridObjects.filter(obj => 
-          obj && obj.visible && fabricCanvas.contains(obj)
-        );
-        
-        if (visibleGridObjects.length < gridObjects.length * 0.5) {
-          logger.warn("Grid visibility issue detected, forcing re-render");
-          fabricCanvas.requestRenderAll();
-        }
-      }
-    };
-    
-    const intervalId = setInterval(checkGridVisibility, 5000);
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [fabricCanvas, gridObjects]);
-  
-  if (!fabricCanvas) return null;
-  
-  return (
-    <GridRenderer 
-      canvas={fabricCanvas}
-      gridSize={50}
-      visible={true}
-    />
-  );
+  // This component doesn't render any DOM elements
+  return null;
 };

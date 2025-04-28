@@ -1,6 +1,6 @@
 
 /**
- * Point interface representing x,y coordinates
+ * Point interface
  */
 export interface Point {
   x: number;

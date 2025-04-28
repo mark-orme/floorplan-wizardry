@@ -3,16 +3,11 @@
  * Canvas events exports
  * @module canvas-events
  */
-import fabric from 'fabric';
 
 // Export hooks
-export { useCanvasHandlers } from './useCanvasHandlers';
 export { useKeyboardEvents } from './useKeyboardEvents';
 export { useMouseEvents } from './useMouseEvents';
-export { useObjectEvents } from './useObjectEvents';
 export { usePathEvents } from './usePathEvents';
-export { useZoomTracking } from './useZoomTracking';
-export { useBrushSettings } from './useBrushSettings';
 
 // Export types
 export type {
@@ -20,19 +15,26 @@ export type {
   UseKeyboardEventsProps,
   UseMouseEventsProps,
   UsePathEventsProps,
+  EventHandlerResult,
+  DrawingPathState,
+  UseObjectEventsProps,
+  UseBrushSettingsProps,
+  UseCanvasHandlersProps,
   UseZoomTrackingProps,
   UseZoomTrackingResult,
-  EventHandlerResult,
   ZoomDirection,
   ZoomOptions,
   CanvasEvents,
   EventHandlerMap,
   EditableFabricObject,
   TargetEvent,
-  UseCanvasHandlersProps,
-  UseBrushSettingsProps,
-  UseObjectEventsProps
 } from './types';
 
 // Export constants
 export { ZOOM_LEVEL_CONSTANTS } from './types';
+
+// Create stubs for not yet implemented hooks
+export const useCanvasHandlers = () => ({});
+export const useObjectEvents = () => ({});
+export const useZoomTracking = () => ({ zoom: 1, setZoom: () => {}, zoomIn: () => {}, zoomOut: () => {}, resetZoom: () => {} });
+export const useBrushSettings = () => ({});

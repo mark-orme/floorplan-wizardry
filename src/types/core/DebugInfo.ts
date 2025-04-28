@@ -1,30 +1,30 @@
 
+/**
+ * Debug info types
+ */
+
 export interface DebugInfoState {
-  fpsCounter: boolean;
-  gridHelper: boolean;
-  objectCounter: boolean;
-  renderingStats: boolean;
-  canvasEvents: boolean;
-  memoryUsage: boolean;
-  errorReporting: boolean;
   canvasDimensions: { width: number; height: number };
-  canvasInitialized?: boolean;
-  lastInitTime?: number;
-  dimensionsSet?: boolean;
-  gridCreated?: boolean;
-  eventHandlersSet?: boolean;
-  gridObjectCount?: number;
-  hasError?: boolean;
-  errorMessage?: string;
+  objectCount: number;
+  selectedObjectCount: number;
+  lastRenderTime: number;
+  isGridVisible: boolean;
+  zoomLevel: number;
+  currentTool: string;
+  isLoading: boolean;
+  hasError: boolean;
+  errorMessage: string;
 }
 
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {
-  fpsCounter: false,
-  gridHelper: false,
-  objectCounter: false,
-  renderingStats: false,
-  canvasEvents: false,
-  memoryUsage: false,
-  errorReporting: true,
-  canvasDimensions: { width: 800, height: 600 }
+  canvasDimensions: { width: 0, height: 0 },
+  objectCount: 0,
+  selectedObjectCount: 0,
+  lastRenderTime: 0,
+  isGridVisible: true,
+  zoomLevel: 1,
+  currentTool: 'select',
+  isLoading: false,
+  hasError: false,
+  errorMessage: ''
 };
