@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/ExtendedFabricCanvas';
+import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
 
 interface SimpleGridLayerProps {
   canvas: ExtendedFabricCanvas;

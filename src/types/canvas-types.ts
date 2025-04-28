@@ -11,6 +11,11 @@ export interface ExtendedFabricObject extends FabricObject {
   evented?: boolean;
   objectType?: string;
   gridType?: 'small' | 'large';
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  [key: string]: any;
 }
 
 /**
@@ -68,7 +73,11 @@ export enum PropertyStatus {
   PUBLISHED = 'published',
   ARCHIVED = 'archived',
   PENDING_REVIEW = 'pending_review',
-  COMPLETED = 'completed'
+  COMPLETED = 'completed',
+  PENDING = 'pending',
+  IN_REVIEW = 'in_review',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
 }
 
 export type FloorPlanMetadata = {
@@ -77,8 +86,10 @@ export type FloorPlanMetadata = {
   created: string;
   modified: string;
   status: PropertyStatus;
-  description?: string;  // Adding missing property
-  updatedAt?: string;    // Adding missing property
+  description?: string;
+  updatedAt?: string;
+  level?: number;
+  updated?: string;
 };
 
 /**
@@ -87,3 +98,7 @@ export type FloorPlanMetadata = {
 export const asExtendedCanvas = (canvas: any): ExtendedFabricCanvas => {
   return canvas as ExtendedFabricCanvas;
 };
+
+// Export type aliases for backward compatibility
+export type ExtendedCanvas = ExtendedFabricCanvas;
+export type FabricExtendedCanvas = ExtendedFabricCanvas;

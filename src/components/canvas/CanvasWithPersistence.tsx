@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
-import { Canvas } from '@/components/Canvas';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { Canvas } from '@/components/canvas/Canvas';
 import { toast } from 'sonner';
 
 interface CanvasWithPersistenceProps {
