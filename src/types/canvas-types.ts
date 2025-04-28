@@ -1,28 +1,31 @@
-import { fabric } from 'fabric';
 
-export interface ExtendedFabricCanvas extends fabric.Canvas {
-  wrapperEl: HTMLDivElement;
-  // Add any other missing properties here
+import { Object as FabricObject } from 'fabric';
+import { ExtendedFabricCanvas } from './ExtendedFabricCanvas';
+
+// Re-export ExtendedFabricCanvas
+export { ExtendedFabricCanvas, asExtendedCanvas } from './ExtendedFabricCanvas';
+
+// Define ExtendedFabricObject type
+export interface ExtendedFabricObject extends FabricObject {
+  id?: string;
+  isGrid?: boolean;
+  isLargeGrid?: boolean;
+  objectType?: string;
 }
 
-export const asExtendedCanvas = (canvas: fabric.Canvas): ExtendedFabricCanvas => {
-  return canvas as ExtendedFabricCanvas;
-};
-
-// Add PropertyStatus if needed
+// Define property status enum
 export enum PropertyStatus {
   DRAFT = 'draft',
   PENDING_REVIEW = 'pending_review',
   COMPLETED = 'completed',
-  ARCHIVED = 'archived'
+  REJECTED = 'rejected'
 }
 
-// Add FloorPlanMetadata export
+// Define FloorPlanMetadata type
 export interface FloorPlanMetadata {
-  id: string;
   name: string;
   description?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  thumbnail?: string;
+  level?: number;
+  updatedAt: number | string;
+  createdAt?: number | string;
 }

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Icons } from '@/constants/iconMappings';
+import Icons from '@/constants/iconMappings';
 import { ToolbarButton } from './ToolbarButton';
 import { ToolbarSection } from './ToolbarSection';
 

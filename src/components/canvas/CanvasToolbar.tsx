@@ -1,9 +1,4 @@
 
-/**
- * Drawing toolbar component
- * Combines various toolbar sections
- * @module components/DrawingToolbar
- */
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { DrawingTools } from '@/components/toolbar/DrawingTools';

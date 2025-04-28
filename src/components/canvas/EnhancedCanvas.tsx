@@ -45,15 +45,15 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       setIsLoading(false);
 
       if (onObjectAdded) {
-        fabricCanvas.on('object:added', onObjectAdded);
+        fabricCanvas.on('object:added', onObjectAdded as any);
       }
 
       if (onObjectModified) {
-        fabricCanvas.on('object:modified', onObjectModified);
+        fabricCanvas.on('object:modified', onObjectModified as any);
       }
 
       if (onObjectRemoved) {
-        fabricCanvas.on('object:removed', onObjectRemoved);
+        fabricCanvas.on('object:removed', onObjectRemoved as any);
       }
 
       if (onCanvasReady) {
@@ -62,15 +62,15 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
 
       return () => {
         if (onObjectAdded) {
-          fabricCanvas.off('object:added', onObjectAdded);
+          fabricCanvas.off('object:added', onObjectAdded as any);
         }
 
         if (onObjectModified) {
-          fabricCanvas.off('object:modified', onObjectModified);
+          fabricCanvas.off('object:modified', onObjectModified as any);
         }
 
         if (onObjectRemoved) {
-          fabricCanvas.off('object:removed', onObjectRemoved);
+          fabricCanvas.off('object:removed', onObjectRemoved as any);
         }
 
         fabricCanvas.dispose();
