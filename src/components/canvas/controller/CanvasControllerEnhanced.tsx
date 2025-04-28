@@ -62,8 +62,8 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       // Store reference
       fabricCanvasRef.current = canvas;
       
-      // Create grid - ensure createGrid accepts ExtendedFabricCanvas
-      const gridObjects = createGrid(canvas);
+      // Create grid - convert canvas to the expected type
+      const gridObjects = createGrid(canvas as any);
       gridLayerRef.current = gridObjects;
       
       // Notify parent
