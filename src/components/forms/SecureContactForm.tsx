@@ -1,40 +1,47 @@
-
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { z } from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 
-const contactFormSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  subject: z.string().min(3, { message: 'Subject must be at least 3 characters' }),
-  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: 'Name must be at least 2 characters.',
+  }),
+  email: z.string().email({
+    message: 'Please enter a valid email address.',
+  }),
+  message: z.string().min(10, {
+    message: 'Message must be at least 10 characters.',
+  }),
 });
 
-type ContactFormValues = z.infer<typeof contactFormSchema>;
-
-export const SecureContactForm = () => {
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema),
+export function SecureContactForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       email: '',
-      subject: '',
-      message: ''
-    }
+      message: '',
+    },
   });
 
-  const onSubmit = (data: ContactFormValues) => {
-    console.log('Form submitted:', data);
-    // Handle form submission securely
-  };
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -42,13 +49,12 @@ export const SecureContactForm = () => {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your name" {...field} />
+                <Input placeholder="Your name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
         <FormField
           control={form.control}
           name="email"
@@ -56,27 +62,12 @@ export const SecureContactForm = () => {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="Enter your email" type="email" {...field} />
+                <Input placeholder="Your email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
-        <FormField
-          control={form.control}
-          name="subject"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Subject</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter subject" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
         <FormField
           control={form.control}
           name="message"
@@ -84,18 +75,18 @@ export const SecureContactForm = () => {
             <FormItem>
               <FormLabel>Message</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter your message" className="min-h-32" {...field} />
+                <Textarea
+                  placeholder="Write your message here."
+                  className="resize-none"
+                  {...field}
+                />
               </FormControl>
-              <FormDescription>
-                Your message will be encrypted for security.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        
-        <Button type="submit" className="w-full">Submit Securely</Button>
+        <Button type="submit">Submit</Button>
       </form>
     </Form>
   );
-};
+}

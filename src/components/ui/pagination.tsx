@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal as DotsHorizontalIcon } from "lucide-react"
+import { AiOutlineLeft as ChevronLeft, AiOutlineRight as ChevronRight, AiOutlineEllipsis as DotsHorizontalIcon } from "react-icons/ai"
 
 import { cn } from "@/lib/utils"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"

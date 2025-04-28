@@ -1,95 +1,108 @@
-
-import React, { useContext } from 'react';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { FormFieldType } from "@/types/forms";
 import { z } from 'zod';
-
-// Define the schema for property form validation
-export const propertyFormSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
-  address: z.string().min(5, { message: 'Address must be at least 5 characters' }),
-  postcode: z.string().min(5, { message: 'Postcode must be at least 5 characters' }),
-  type: z.string().min(3, { message: 'Type must be at least 3 characters' }),
-  price: z.string().min(1, { message: 'Price is required' }),
-  bedrooms: z.string().min(1, { message: 'Number of bedrooms is required' }),
-  hasGarden: z.boolean().optional(),
-});
-
-export type PropertyFormValues = z.infer<typeof propertyFormSchema>;
+import React from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { FormFieldType } from '@/types/forms';
 
 interface PropertyFormFieldProps {
   type: FormFieldType;
-  name: keyof PropertyFormValues;
+  name: string;
   label: string;
-  description?: string;
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  register: any;
+  errors: any;
+  required?: boolean;
 }
 
-export const PropertyFormField: React.FC<PropertyFormFieldProps> = ({
+export const PropertyFormFields: React.FC<PropertyFormFieldProps> = ({
   type,
   name,
   label,
-  description
+  placeholder,
+  options,
+  register,
+  errors,
+  required = false
 }) => {
-  switch (type) {
-    case "text":
-      return (
-        <FormField
-          control={formContext => formContext.control}
-          name={name}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{label}</FormLabel>
-              <FormControl>
-                <Input placeholder={label} {...field} />
-              </FormControl>
-              {description && <FormDescription>{description}</FormDescription>}
-              <FormMessage />
-            </FormItem>
-          )}
+  return (
+    <div className="grid w-full gap-2">
+      <Label htmlFor={name}>{label}</Label>
+      {type === 'text' && (
+        <Input
+          type="text"
+          id={name}
+          placeholder={placeholder}
+          {...register(name, { required })}
         />
-      );
-    case "checkbox":
-      return (
-        <FormField
-          control={formContext => formContext.control}
-          name={name}
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>{label}</FormLabel>
-                {description && <FormDescription>{description}</FormDescription>}
-              </div>
-            </FormItem>
-          )}
+      )}
+      {type === 'textarea' && (
+        <Textarea
+          id={name}
+          placeholder={placeholder}
+          {...register(name, { required })}
         />
-      );
-    case "textarea":
-      return (
-        <FormField
-          control={formContext => formContext.control}
-          name={name}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{label}</FormLabel>
-              <FormControl>
-                <Textarea placeholder={label} {...field} />
-              </FormControl>
-              {description && <FormDescription>{description}</FormDescription>}
-              <FormMessage />
-            </FormItem>
-          )}
+      )}
+      {type === 'checkbox' && (
+        <Checkbox
+          id={name}
+          {...register(name, { required })}
         />
-      );
-    default:
-      return null;
-  }
+      )}
+      {type === 'select' && options && (
+        <Select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={placeholder || label} {...register(name, { required })} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      {type === 'date' && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={'outline'}
+              className={cn(
+                'w-full justify-start text-left font-normal',
+                !errors[name] && 'text-muted-foreground'
+              )}
+            >
+              {errors[name] ? (
+                format(errors[name], 'PPP')
+              ) : (
+                <span>{placeholder || 'Pick a date'}</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={errors[name]}
+              onSelect={(date) => {
+                register(name).onChange(date);
+              }}
+              disabled={(date) =>
+                date > new Date()
+              }
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+      {errors[name] && (
+        <p className="text-sm text-red-500">{errors[name]?.message}</p>
+      )}
+    </div>
+  );
 };
