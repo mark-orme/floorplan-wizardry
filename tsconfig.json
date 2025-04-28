@@ -3,6 +3,7 @@
   "compilerOptions": {
     // Use the new JSX transform so you don’t need `import React...`
     "jsx": "react-jsx",
+    "module": "ESNext",           
 
     // Standard Node module resolution
     "moduleResolution": "node",
