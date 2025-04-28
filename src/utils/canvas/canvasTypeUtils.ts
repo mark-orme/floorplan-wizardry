@@ -1,39 +1,56 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import { ExtendedFabricObject } from '@/types/canvas-types';
 
 /**
- * Safely cast any Fabric Canvas to ExtendedFabricCanvas type
- * @param canvas The canvas to cast
- * @returns The canvas as ExtendedFabricCanvas
+ * Helper function to cast a canvas to ExtendedFabricCanvas
  */
-export function asExtendedCanvas(canvas: FabricCanvas | null): ExtendedFabricCanvas | null {
+export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
   if (!canvas) return null;
-  
-  const extendedCanvas = canvas as ExtendedFabricCanvas;
-  
-  // Ensure required properties exist
-  if (!extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
-    extendedCanvas.getActiveObject = () => {
-      const activeObjects = extendedCanvas.getActiveObjects();
-      return activeObjects && activeObjects.length > 0 ? activeObjects[0] : null;
-    };
-  }
-  
-  return extendedCanvas;
+  return canvas as unknown as ExtendedFabricCanvas;
 }
 
 /**
- * Cast a Fabric Object to extended type with additional properties
- * @param obj The object to cast
- * @returns The object with extended properties
+ * Helper function to cast an object to ExtendedFabricObject
  */
-export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & { 
-  visible?: boolean; 
-  forEachObject?: (callback: (obj: FabricObject) => void) => void;
-} {
-  return obj as T & { 
-    visible?: boolean;
-    forEachObject?: (callback: (obj: FabricObject) => void) => void;
-  };
+export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
+  return obj as T & ExtendedFabricObject;
+}
+
+/**
+ * Helper function to safely access extended canvas properties
+ * @param canvas The canvas to access properties from
+ * @param property The property to access
+ * @param defaultValue The default value to return if property doesn't exist
+ */
+export function getExtendedCanvasProperty<T>(canvas: Canvas | null, property: keyof ExtendedFabricCanvas, defaultValue: T): T {
+  if (!canvas) return defaultValue;
+  
+  const extCanvas = canvas as unknown as ExtendedFabricCanvas;
+  return (extCanvas[property] as unknown as T) ?? defaultValue;
+}
+
+/**
+ * Helper function to safely set extended canvas properties
+ */
+export function setExtendedCanvasProperty(
+  canvas: Canvas | null, 
+  property: keyof ExtendedFabricCanvas, 
+  value: any
+): void {
+  if (!canvas) return;
+  
+  const extCanvas = canvas as unknown as ExtendedFabricCanvas;
+  (extCanvas[property] as any) = value;
+}
+
+/**
+ * Helper function to safely access object properties
+ */
+export function getExtendedObjectProperty<T>(obj: FabricObject | null, property: keyof ExtendedFabricObject, defaultValue: T): T {
+  if (!obj) return defaultValue;
+  
+  const extObj = obj as unknown as ExtendedFabricObject;
+  return (extObj[property] as unknown as T) ?? defaultValue;
 }

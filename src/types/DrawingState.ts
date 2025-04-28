@@ -43,6 +43,12 @@ export interface DrawingState {
   stylusDetected?: boolean;
   pathDragging?: boolean;
   creatingShape?: boolean;
+  
+  // Properties for compatibility with useCanvasControllerDrawingState
+  currentLayerId?: string;
+  selectedObjects?: string[];
+  fillColor?: string;
+  snapToGrid?: boolean;
 }
 
 /**
@@ -61,5 +67,9 @@ export const createDefaultDrawingState = (): DrawingState => ({
   currentZoom: 1,
   lineColor: '#000000',
   lineThickness: 2,
-  isSnapping: false
+  isSnapping: false,
+  currentLayerId: 'default',
+  selectedObjects: [],
+  fillColor: 'transparent',
+  snapToGrid: false
 });
