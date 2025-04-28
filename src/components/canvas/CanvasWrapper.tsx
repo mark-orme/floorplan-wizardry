@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
-import { asExtendedCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas, ExtendedFabricCanvas } from '@/types/canvas-types';
+import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 
 /**

@@ -1,9 +1,11 @@
+
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface UseCanvasToolManagerProps {
-  canvas: FabricCanvas | null;
+  canvas: FabricCanvas | ExtendedFabricCanvas | null;
   tool: DrawingMode;
   lineColor: string;
   lineThickness: number;
@@ -28,8 +30,10 @@ export function useCanvasToolManager({
       case DrawingMode.PENCIL:
       case DrawingMode.DRAW:
         canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.color = lineColor;
-        canvas.freeDrawingBrush.width = lineThickness;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = lineColor;
+          canvas.freeDrawingBrush.width = lineThickness;
+        }
         break;
       
       case DrawingMode.SELECT:

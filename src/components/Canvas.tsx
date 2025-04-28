@@ -1,5 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
@@ -19,7 +20,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   showGridDebug = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<FabricCanvas | ExtendedFabricCanvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 export const CanvasContext = React.createContext<{
   canvasRef: React.RefObject<HTMLCanvasElement>;
   canvas: ExtendedFabricCanvas | null;
-  setCanvas: React.Dispatch<React.SetStateAction<ExtendedFabricCanvas | null>>;
+  setCanvas: React.Dispatch<React.SetStateAction<ExtendedFabricCanvas | FabricCanvas | null>>;
 }>({
   canvasRef: { current: null },
   canvas: null,
@@ -81,10 +82,10 @@ export const useCanvas = () => React.useContext(CanvasContext);
 
 export const CanvasProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
+  const [canvas, setCanvas] = useState<FabricCanvas | ExtendedFabricCanvas | null>(null);
   
   return (
-    <CanvasContext.Provider value={{ canvasRef, canvas, setCanvas }}>
+    <CanvasContext.Provider value={{ canvasRef, canvas: canvas as ExtendedFabricCanvas | null, setCanvas }}>
       {children}
     </CanvasContext.Provider>
   );

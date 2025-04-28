@@ -82,7 +82,10 @@ export enum PropertyStatus {
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
   REJECTED = 'rejected',
-  COMPLETED = 'completed'
+  COMPLETED = 'completed',
+  PENDING_REVIEW = 'pending_review',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
 }
 
 /**
