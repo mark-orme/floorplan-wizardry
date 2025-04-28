@@ -18,7 +18,7 @@ export const SecurityCheckList: React.FC<SecurityCheckListProps> = ({ checks }) 
         <li key={index} className="flex items-center gap-2">
           {check.status === 'loading' && <Icons.loader className="animate-spin" />}
           {check.status === 'success' && <Icons.checkCircle className="text-green-500" />}
-          {check.status === 'error' && <Icons.alertTriangle className="text-red-500" />}
+          {check.status === 'error' && <Icons.shieldAlert className="text-red-500" />}
           <span>{check.message}</span>
         </li>
       ))}

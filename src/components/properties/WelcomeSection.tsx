@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AiOutlineLogin, AiOutlineArrowRight } from 'react-icons/ai';
+import { Icons } from '@/components/icons';
 
 interface WelcomeSectionProps {
   onSignIn: () => void;
@@ -17,11 +17,11 @@ export const WelcomeSection = ({ onSignIn, onGoToFloorplans }: WelcomeSectionPro
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button onClick={onSignIn}>
-          <AiOutlineLogin className="mr-2 h-4 w-4" />
+          <Icons.logIn className="mr-2 h-4 w-4" />
           Sign In
         </Button>
         <Button variant="outline" onClick={onGoToFloorplans}>
-          <AiOutlineArrowRight className="mr-2 h-4 w-4" />
+          <Icons.arrowRightLeft className="mr-2 h-4 w-4" />
           Go to Floor Plan Editor
         </Button>
       </div>
