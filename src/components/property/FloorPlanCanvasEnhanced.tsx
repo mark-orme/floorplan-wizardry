@@ -46,6 +46,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     if (!canvasRef.current) return;
     
     try {
+      // Create the fabric canvas with appropriate initialization
       const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
@@ -54,7 +55,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         enableRetinaScaling: true
       });
       
-      // Use type casting helper
+      // Use the helper function to properly convert to our ExtendedFabricCanvas type
       const extendedCanvas = asExtendedCanvas(canvas);
       
       if (extendedCanvas) {
@@ -95,7 +96,7 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     <div className="absolute bottom-4 right-4 bg-white/80 text-xs p-2 rounded shadow">
       <div>FPS: {performanceMetrics.fps || 0}</div>
       <div>Objects: {performanceMetrics.objectCount || 0}</div>
-      <div>Visible: {typeof performanceMetrics.visibleObjectCount !== 'undefined' 
+      <div>Visible: {performanceMetrics.visibleObjectCount !== undefined 
         ? performanceMetrics.visibleObjectCount 
         : 'N/A'}</div>
       <div>Worker: {workerReady ? 'Ready' : 'Initializing'}</div>

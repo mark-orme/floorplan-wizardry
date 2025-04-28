@@ -10,13 +10,19 @@ export interface ExtendedFabricObject extends FabricObject {
 export interface ExtendedFabricCanvas extends FabricCanvas {
   wrapperEl: HTMLElement;
   upperCanvasEl?: HTMLCanvasElement;
+  skipOffscreen?: boolean;
+  allowTouchScrolling?: boolean;
+  initialize?: () => void;
+  skipTargetFind?: boolean;
+  _activeObject?: any;
+  _objects?: any[];
 }
 
 export interface PerformanceMetrics {
   fps: number;
   renderTime: number;
   objectCount: number;
-  visibleObjectCount: number;
+  visibleObjectCount?: number;
   memoryUsage?: number;
 }
 
