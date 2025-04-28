@@ -1,28 +1,23 @@
-
 import { render } from '@testing-library/react';
 
-// Create extended render utilities
-const renderWithTestUtils = (component: React.ReactElement) => {
-  const result = render(component);
+export const renderWithTestUtils = (component: React.ReactElement) => {
+  const utils = render(component);
   
   return {
-    ...result,
-    getAllByRole: (role: string) => {
-      return Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
-    },
-    queryAllByRole: (role: string) => {
-      return Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[];
-    },
+    ...utils,
     getByTestId: (testId: string) => {
       const element = document.querySelector(`[data-testid="${testId}"]`);
       if (!element) {
-        throw new Error(`Unable to find an element with the testId: ${testId}`);
+        throw new Error(`Unable to find element with testId: ${testId}`);
       }
       return element as HTMLElement;
     },
-    queryByTestId: (testId: string) => {
-      return document.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null;
-    }
+    queryByTestId: (testId: string) => 
+      document.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null,
+    getAllByRole: (role: string) => 
+      Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[],
+    queryAllByRole: (role: string) => 
+      Array.from(document.querySelectorAll(`[role="${role}"]`)) as HTMLElement[]
   };
 };
 

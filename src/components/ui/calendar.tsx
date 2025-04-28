@@ -1,7 +1,6 @@
-
 import * as React from "react"
 import { DayPicker } from "react-day-picker"
-
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
@@ -12,21 +11,6 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
-  // Create simple custom icons for navigation since ChevronLeft/ChevronRight might be missing
-  const ChevronLeftIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  );
-  
-  const ChevronRightIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" 
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  );
-
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -64,14 +48,14 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        // Use custom icon components rather than potentially missing imports
-        IconLeft: ChevronLeftIcon,
-        IconRight: ChevronRightIcon,
+        IconLeft: ChevronLeft,
+        IconRight: ChevronRight
       }}
       {...props}
     />
   )
 }
+
 Calendar.displayName = "Calendar"
 
 export { Calendar }

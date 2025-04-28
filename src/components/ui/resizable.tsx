@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { AiOutlineMenu as GripIcon } from "react-icons/ai"
+import { Grip } from "lucide-react"
 import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
@@ -50,7 +50,7 @@ const ResizableHandle = React.forwardRef<
   >
     {withHandle && (
       <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
-        <GripIcon className="h-2.5 w-2.5" />
+        <Grip className="h-2.5 w-2.5" />
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>

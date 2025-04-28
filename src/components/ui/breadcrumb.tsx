@@ -1,7 +1,6 @@
-
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { AiOutlineRight } from "react-icons/ai"
+import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -68,7 +67,7 @@ const BreadcrumbSeparator = ({
     className={cn("[&>svg]:size-3.5", className)}
     {...props}
   >
-    {children ?? <AiOutlineRight />}
+    {children ?? <ChevronRight />}
   </span>
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
