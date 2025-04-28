@@ -13,8 +13,6 @@ export const Toaster: React.FC = () => {
       className="border border-border"
       theme="light"
       duration={5000}
-      // Styling is applied directly, not through toastOptions
-      style={{ background: "white", color: "black" }}
     />
   );
 };

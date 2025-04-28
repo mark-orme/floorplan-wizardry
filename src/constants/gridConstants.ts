@@ -22,5 +22,16 @@ export const GRID_CONSTANTS = {
   DEFAULT_GRID_OPACITY: 0.4,
   MAJOR_GRID_INTERVAL: 5,
   MAJOR_GRID_COLOR: 'rgba(180, 180, 180, 0.5)',
-  MAJOR_GRID_OPACITY: 0.6
+  MAJOR_GRID_OPACITY: 0.6,
+  // Add these properties to fix the errors
+  SMALL: {
+    SIZE: 50,
+    COLOR: '#e0e0e0',
+    WIDTH: 0.5
+  },
+  LARGE: {
+    SIZE: 250,
+    COLOR: '#c0c0c0', 
+    WIDTH: 1
+  }
 };

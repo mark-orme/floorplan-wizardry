@@ -9,6 +9,7 @@ export interface ExtendedFabricCanvas extends Canvas {
   _activeObject: any;
   _objects: any[];
   allowTouchScrolling?: boolean;
+  skipOffscreen?: boolean; // Added this property that was missing
 }
 
 /**

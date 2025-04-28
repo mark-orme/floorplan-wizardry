@@ -8,24 +8,33 @@ import {
 import { HexColorPicker } from 'react-colorful';
 import { Button } from '@/components/ui/button';
 
-interface StyleOptionsProps {
-  color: string;
-  onColorChange: (color: string) => void;
-  thickness: number;
-  onThicknessChange: (thickness: number) => void;
+export interface StyleOptionsProps {
+  color?: string;
+  lineColor?: string; // Added this prop
+  onColorChange?: (color: string) => void;
+  thickness?: number;
+  lineThickness?: number; // Added this prop
+  onThicknessChange?: (thickness: number) => void;
   minThickness?: number;
   maxThickness?: number;
 }
 
 export const StyleOptions: React.FC<StyleOptionsProps> = ({
   color,
+  lineColor,
   onColorChange,
   thickness,
+  lineThickness,
   onThicknessChange,
   minThickness = 1,
   maxThickness = 10
 }) => {
   const [showColorPicker, setShowColorPicker] = React.useState(false);
+  
+  // Use the first available color prop
+  const actualColor = color || lineColor || '#000000';
+  // Use the first available thickness prop
+  const actualThickness = thickness || lineThickness || 2;
 
   return (
     <div className="flex items-center gap-4">
@@ -39,7 +48,7 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
         </Button>
         {showColorPicker && (
           <div className="absolute top-full mt-2 z-50">
-            <HexColorPicker color={color} onChange={onColorChange} />
+            <HexColorPicker color={actualColor} onChange={onColorChange} />
           </div>
         )}
       </div>
@@ -47,17 +56,17 @@ export const StyleOptions: React.FC<StyleOptionsProps> = ({
         <Button
           variant="outline"
           size="icon"
-          onClick={() => onThicknessChange(Math.max(minThickness, thickness - 1))}
-          disabled={thickness <= minThickness}
+          onClick={() => onThicknessChange?.(Math.max(minThickness, actualThickness - 1))}
+          disabled={actualThickness <= minThickness}
         >
           <MinusIcon className="h-4 w-4" />
         </Button>
-        <span className="min-w-[2rem] text-center">{thickness}</span>
+        <span className="min-w-[2rem] text-center">{actualThickness}</span>
         <Button
           variant="outline"
           size="icon"
-          onClick={() => onThicknessChange(Math.min(maxThickness, thickness + 1))}
-          disabled={thickness >= maxThickness}
+          onClick={() => onThicknessChange?.(Math.min(maxThickness, actualThickness + 1))}
+          disabled={actualThickness >= maxThickness}
         >
           <PlusIcon className="h-4 w-4" />
         </Button>
