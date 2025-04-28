@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/ExtendedFabricCanvas';
+import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasProps {

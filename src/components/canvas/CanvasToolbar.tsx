@@ -7,10 +7,14 @@ import { CanvasActions } from '@/components/toolbar/CanvasActions';
 
 // Define StyleOptionsProps interface to match the component's expectations
 export interface StyleOptionsProps {
+  color?: string;
   lineColor?: string;
-  lineThickness?: number;
   onColorChange?: (color: string) => void;
+  thickness?: number;
+  lineThickness?: number;
   onThicknessChange?: (thickness: number) => void;
+  minThickness?: number;
+  maxThickness?: number;
 }
 
 export interface DrawingToolbarProps {

@@ -10,9 +10,9 @@ export const Toaster: React.FC = () => {
   return (
     <SonnerToaster 
       position="top-right"
-      className="border border-border"
       theme="light"
       duration={5000}
+      className="border border-border"
     />
   );
 };
