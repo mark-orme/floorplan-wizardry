@@ -1,42 +1,28 @@
 
 import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingTool } from '@/types/core/DrawingTool';
 
 /**
- * Adapter function to ensure type safety when using DrawingMode
- * in components that expect a specific subset of modes
- * @param mode DrawingMode to validate
- * @returns The validated DrawingMode
+ * Adapter function to convert between different DrawingMode formats
  */
-export function asDrawingTool(mode: DrawingMode): DrawingMode {
-  // This function doesn't actually transform the value,
-  // it just provides type checking at compile time
-  return mode;
+export function asDrawingTool(mode: DrawingMode): DrawingTool {
+  return mode as unknown as DrawingTool;
 }
 
 /**
- * Check if a mode requires precise input (like a stylus)
- * @param mode DrawingMode to check
- * @returns True if the mode benefits from precise input
+ * Convert drawing tool to string representation
  */
-export function requiresPreciseInput(mode: DrawingMode): boolean {
-  return [
-    DrawingMode.STRAIGHT_LINE, 
-    DrawingMode.LINE, 
-    DrawingMode.WALL, 
-    DrawingMode.RECT, 
-    DrawingMode.RECTANGLE, 
-    DrawingMode.CIRCLE
-  ].includes(mode);
+export function drawingToolToString(tool: DrawingTool): string {
+  return tool.toString();
 }
 
 /**
- * Check if a mode supports pressure sensitivity
- * @param mode DrawingMode to check
- * @returns True if the mode supports pressure sensitivity
+ * Get display name for a drawing tool
  */
-export function supportsPressure(mode: DrawingMode): boolean {
-  return [
-    DrawingMode.DRAW, 
-    DrawingMode.PENCIL
-  ].includes(mode);
+export function getDrawingToolName(tool: DrawingTool): string {
+  if (typeof tool === 'string') {
+    return tool.charAt(0).toUpperCase() + tool.slice(1).toLowerCase();
+  }
+  
+  return 'Unknown Tool';
 }

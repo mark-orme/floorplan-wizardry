@@ -1,10 +1,10 @@
-
-import { useState, useCallback } from 'react';
-import { fabric } from 'fabric';
+import { useCallback, useRef } from 'react';
+import { FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface UseCanvasInteractionProps {
-  fabricCanvasRef: React.MutableRefObject<fabric.Canvas | null>;
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
   tool: DrawingMode;
   saveCurrentState: () => void;
 }
@@ -14,80 +14,81 @@ export const useCanvasInteraction = ({
   tool,
   saveCurrentState
 }: UseCanvasInteractionProps) => {
-  const [isInteracting, setIsInteracting] = useState(false);
-  
-  const startInteraction = useCallback(() => {
-    setIsInteracting(true);
-  }, []);
-  
-  const endInteraction = useCallback(() => {
-    if (isInteracting) {
-      setIsInteracting(false);
-      saveCurrentState();
-    }
-  }, [isInteracting, saveCurrentState]);
-  
+  const isDragging = useRef(false);
+  const lastPosition = useRef({ x: 0, y: 0 });
+
+  const handleObjectSelected = useCallback((opt: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || tool !== DrawingMode.SELECT) return;
+
+    // Implementation goes here
+    console.log('Object selected', opt.target);
+    saveCurrentState();
+  }, [fabricCanvasRef, tool, saveCurrentState]);
+
+  const handleObjectModified = useCallback((opt: any) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Implementation goes here
+    console.log('Object modified', opt.target);
+    saveCurrentState();
+  }, [fabricCanvasRef, saveCurrentState]);
+
   const deleteSelectedObjects = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
+
     const activeObjects = canvas.getActiveObjects();
-    if (activeObjects.length === 0) return;
-    
-    canvas.discardActiveObject();
-    
-    activeObjects.forEach(obj => {
-      canvas.remove(obj);
-    });
-    
-    canvas.requestRenderAll();
-    saveCurrentState();
+    if (activeObjects.length > 0) {
+      activeObjects.forEach((obj: FabricObject) => {
+        canvas.remove(obj);
+      });
+      canvas.discardActiveObject().renderAll();
+      saveCurrentState();
+    }
   }, [fabricCanvasRef, saveCurrentState]);
-  
+
   const enablePointSelection = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
-    canvas.defaultCursor = 'default';
-    canvas.hoverCursor = 'move';
-    
+
     canvas.selection = true;
-    
-    // Make all objects selectable
-    canvas.getObjects().forEach(obj => {
-      // Skip grid objects
-      if ((obj as any).gridObject) return;
-      
+    canvas.forEachObject((obj: FabricObject) => {
       obj.selectable = true;
-      (obj as any).evented = true;
     });
   }, [fabricCanvasRef]);
-  
+
   const setupSelectionMode = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
-    // Set drawing mode based on the tool
-    canvas.isDrawingMode = tool === DrawingMode.DRAW;
-    
-    // Enable selection for select mode
+
+    canvas.off('object:selected');
+    canvas.off('object:modified');
+
     if (tool === DrawingMode.SELECT) {
       enablePointSelection();
+      canvas.on('object:selected', handleObjectSelected);
+      canvas.on('object:modified', handleObjectModified);
     } else {
-      // Disable selection for drawing modes
       canvas.selection = false;
-      canvas.defaultCursor = 'crosshair';
+      canvas.forEachObject((obj: FabricObject) => {
+        obj.selectable = false;
+      });
     }
-    
-    // Set brush properties for drawing mode
-    if (tool === DrawingMode.DRAW && canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = '#000000';
-      canvas.freeDrawingBrush.width = 2;
-    }
-    
-    canvas.requestRenderAll();
-  }, [fabricCanvasRef, tool, enablePointSelection]);
-  
+  }, [fabricCanvasRef, tool, enablePointSelection, handleObjectSelected, handleObjectModified]);
+
+  const startInteraction = useCallback((event: any) => {
+    isDragging.current = true;
+    lastPosition.current = { x: event.e.clientX, y: event.e.clientY };
+  }, []);
+
+  const endInteraction = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  const isInteracting = isDragging.current;
+
   return {
     isInteracting,
     startInteraction,

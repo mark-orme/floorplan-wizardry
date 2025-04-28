@@ -49,7 +49,9 @@ export enum PropertyStatus {
   PENDING = 'pending',
   IN_REVIEW = 'in_review',
   APPROVED = 'approved',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
+  PENDING_REVIEW = 'pending_review',
+  COMPLETED = 'completed'
 }
 
 /**
@@ -60,4 +62,5 @@ export interface FloorPlanMetadata {
   name: string;
   created: string;
   updated: string;
+  description?: string; // Add description property
 }

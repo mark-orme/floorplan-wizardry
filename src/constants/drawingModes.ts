@@ -15,5 +15,15 @@ export enum DrawingMode {
   POLYGON = 'polygon',
   WALL = 'wall',
   DOOR = 'door',
-  WINDOW = 'window'
+  WINDOW = 'window',
+  PENCIL = 'pencil',
+  ROOM = 'room',
+  HAND = 'hand',
+  STRAIGHT_LINE = 'straight_line',
+  RECTANGLE = 'rectangle',
+  DIMENSION = 'dimension',
+  STAIR = 'stair',
+  COLUMN = 'column',
+  ERASE = 'erase',
+  SHAPE = 'shape'
 }
