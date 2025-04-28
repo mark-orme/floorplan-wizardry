@@ -32,6 +32,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         backgroundColor: '#ffffff',
       });
       
+      // Convert to extended canvas
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
       setCanvas(extendedCanvas);

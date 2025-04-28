@@ -40,3 +40,10 @@ export enum PropertyStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected'
 }
+
+/**
+ * Helper function to safely cast canvas objects
+ */
+export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
+  return canvas as unknown as ExtendedFabricCanvas;
+}

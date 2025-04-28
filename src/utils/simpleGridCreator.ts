@@ -1,72 +1,94 @@
 
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { createFabricLine } from '@/types/fabric-extended';
-import type { ExtendedFabricObject } from '@/types/fabric-extended';
-import { SMALL_GRID_COLOR } from '@/constants/gridConstants';
 
 /**
- * Creates a simple grid of lines on the canvas
- * @param canvas The Fabric.js canvas
- * @param gridSize The size of the grid cells
- * @param color The color of the grid lines
- * @returns Array of the created grid objects
+ * Creates a simple grid on the canvas
  */
-export function createSimpleGrid(
-  canvas: FabricCanvas, 
-  gridSize = 20, 
-  color = SMALL_GRID_COLOR
-): FabricObject[] {
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
-  const objects: ExtendedFabricObject[] = [];
-
-  // Create vertical lines
-  for (let x = 0; x <= width; x += gridSize) {
-    const isLargeLine = x % (gridSize * 5) === 0;
-    const line = createFabricLine([x, 0, x, height], {
-      stroke: isLargeLine ? '#c0c0c0' : color,
-      strokeWidth: isLargeLine ? 1 : 0.5,
-      selectable: false,
-      evented: false,
-      isGrid: true,
-      isLargeGrid: isLargeLine
-    }) as ExtendedFabricObject;
-    
-    canvas.add(line);
-    objects.push(line);
+export const createSimpleGrid = (
+  canvas: FabricCanvas,
+  gridSize: number = 20,
+  color: string = '#e0e0e0',
+  largeGridSize: number = 100,
+  largeColor: string = '#c0c0c0'
+): FabricObject[] => {
+  const gridObjects: FabricObject[] = [];
+  
+  if (!canvas) {
+    console.warn('Cannot create grid: Canvas is null');
+    return gridObjects;
   }
-
-  // Create horizontal lines
-  for (let y = 0; y <= height; y += gridSize) {
-    const isLargeLine = y % (gridSize * 5) === 0;
-    const line = createFabricLine([0, y, width, y], {
-      stroke: isLargeLine ? '#c0c0c0' : color,
-      strokeWidth: isLargeLine ? 1 : 0.5,
-      selectable: false,
-      evented: false,
-      isGrid: true,
-      isLargeGrid: isLargeLine
-    }) as ExtendedFabricObject;
+  
+  try {
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
     
-    canvas.add(line);
-    objects.push(line);
-  }
-
-  return objects;
-}
-
-/**
- * Ensures grid is visible
- * @param gridObjects Array of grid objects
- * @param visible Whether grid should be visible
- */
-export function ensureGridVisible(
-  gridObjects: FabricObject[],
-  visible = true
-): void {
-  gridObjects.forEach(obj => {
-    if (obj && typeof obj.set === 'function') {
-      obj.set('visible', visible);
+    // Create vertical grid lines
+    for (let x = 0; x <= width; x += gridSize) {
+      const isLargeLine = x % largeGridSize === 0;
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: isLargeLine ? largeColor : color,
+        strokeWidth: isLargeLine ? 1 : 0.5,
+        selectable: false,
+        evented: false
+      });
+      
+      canvas.add(line);
+      canvas.sendToBack(line);
+      gridObjects.push(line);
     }
+    
+    // Create horizontal grid lines
+    for (let y = 0; y <= height; y += gridSize) {
+      const isLargeLine = y % largeGridSize === 0;
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: isLargeLine ? largeColor : color,
+        strokeWidth: isLargeLine ? 1 : 0.5,
+        selectable: false,
+        evented: false
+      });
+      
+      canvas.add(line);
+      canvas.sendToBack(line);
+      gridObjects.push(line);
+    }
+    
+    canvas.renderAll();
+  } catch (error) {
+    console.error('Error creating grid:', error);
+  }
+  
+  return gridObjects;
+};
+
+/**
+ * Clears grid from canvas
+ */
+export const clearGrid = (canvas: FabricCanvas, gridObjects: FabricObject[]): void => {
+  if (!canvas) return;
+  
+  gridObjects.forEach(obj => {
+    canvas.remove(obj);
   });
-}
+  
+  canvas.renderAll();
+};
+
+/**
+ * Ensures grid is visible by setting opacity
+ */
+export const ensureGridVisible = (canvas: FabricCanvas, gridObjects: FabricObject[], visible: boolean = true): void => {
+  if (!canvas) return;
+  
+  gridObjects.forEach(obj => {
+    obj.set({ opacity: visible ? 1 : 0 });
+  });
+  
+  canvas.renderAll();
+};
+
+/**
+ * Validates if canvas is ready for grid creation
+ */
+export const isCanvasValidForGrid = (canvas: any): boolean => {
+  return canvas && typeof canvas.getWidth === 'function' && typeof canvas.getHeight === 'function';
+};

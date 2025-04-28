@@ -10,11 +10,11 @@ export const Toaster: React.FC = () => {
   return (
     <SonnerToaster 
       position="top-right"
-      toastOptions={{
-        style: { background: 'var(--background)', color: 'var(--foreground)' },
-        className: 'border border-border',
-        // Modern sonner API uses closeButton boolean property
-        closeButton: true
+      className="border border-border"
+      closeButton
+      style={{
+        background: 'var(--background)',
+        color: 'var(--foreground)'
       }}
     />
   );

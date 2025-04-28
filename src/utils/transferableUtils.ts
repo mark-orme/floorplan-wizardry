@@ -1,33 +1,49 @@
 
 /**
- * Utilities for working with transferable objects in web workers
- * @module utils/transferableUtils
+ * Utilities for working with transferable objects
  */
 
+interface TransferableCanvasState {
+  data: ArrayBuffer;
+  transferables: ArrayBuffer[];
+}
+
 /**
- * Create a transferable canvas state
- * @param canvasJson Canvas JSON state
+ * Converts a canvas JSON state into a transferable format for workers
+ * @param canvasJson The JSON representation of the canvas
  * @returns Object with data and transferables
  */
-export function createTransferableCanvasState(canvasJson: any) {
-  // Create array buffer for transferable data
-  const data = {
-    json: JSON.stringify(canvasJson),
-    timestamp: Date.now()
+export const createTransferableCanvasState = (canvasJson: any): TransferableCanvasState => {
+  // Convert JSON to string
+  const jsonString = JSON.stringify(canvasJson);
+  
+  // Convert string to Uint8Array
+  const encoder = new TextEncoder();
+  const encodedData = encoder.encode(jsonString);
+  
+  // Return the buffer and transferables
+  return {
+    data: encodedData.buffer,
+    transferables: [encodedData.buffer]
   };
-  
-  // In a real implementation, we would create transferable objects
-  // like ArrayBuffers, but this is simplified for example
-  const transferables: ArrayBuffer[] = [];
-  
-  return { data, transferables };
-}
+};
 
 /**
- * Parse a transferable canvas state
- * @param data Transferable data
- * @returns Parsed canvas state
+ * Decodes a transferable canvas state back to JSON
+ * @param buffer ArrayBuffer containing encoded canvas state
+ * @returns Parsed JSON object
  */
-export function parseTransferableCanvasState(data: any) {
-  return JSON.parse(data.json);
-}
+export const decodeTransferableCanvasState = (buffer: ArrayBuffer): any => {
+  const decoder = new TextDecoder();
+  const jsonString = decoder.decode(buffer);
+  return JSON.parse(jsonString);
+};
+
+/**
+ * Creates a structured clone of an object for transferring
+ * @param data Any serializable object
+ * @returns Structured clone of the data
+ */
+export const createStructuredClone = <T>(data: T): T => {
+  return structuredClone ? structuredClone(data) : JSON.parse(JSON.stringify(data));
+};

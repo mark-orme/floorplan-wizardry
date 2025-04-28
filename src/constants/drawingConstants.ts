@@ -1,95 +1,31 @@
 
 /**
- * Drawing constants for line styles and behaviors
- * @module constants/drawingConstants
+ * Drawing-related constants
  */
 
-/**
- * Polyline style constants
- */
-export const POLYLINE_STYLES = {
-  /** Default stroke color */
-  DEFAULT_STROKE_COLOR: '#000000',
-  
-  /** Default stroke width */
-  DEFAULT_STROKE_WIDTH: 2,
-  
-  /** Default fill color */
-  DEFAULT_FILL: 'transparent',
-  
-  /** Default opacity */
-  DEFAULT_OPACITY: 1,
-  
-  /** Wall stroke color */
-  WALL_STROKE_COLOR: '#333333',
-  
-  /** Wall stroke width */
-  WALL_STROKE_WIDTH: 4,
-  
-  /** Wall fill color */
-  WALL_FILL: 'rgba(200, 200, 200, 0.3)',
-  
-  /** Wall opacity */
-  WALL_OPACITY: 1,
-  
-  /** Room stroke color */
-  ROOM_STROKE_COLOR: '#666666',
-  
-  /** Room stroke width */
-  ROOM_STROKE_WIDTH: 2,
-  
-  /** Room fill color */
-  ROOM_FILL: 'rgba(230, 230, 255, 0.3)',
-  
-  /** Room opacity */
-  ROOM_OPACITY: 0.7,
-  
-  /** Default line cap style */
-  DEFAULT_LINE_CAP: 'round',
-  
-  /** Default line join style */
-  DEFAULT_LINE_JOIN: 'round'
-};
+// Drawing defaults
+export const DEFAULT_LINE_COLOR = '#000000';
+export const DEFAULT_FILL_COLOR = 'rgba(0, 0, 0, 0.1)';
+export const DEFAULT_STROKE_WIDTH = 2;
+export const DEFAULT_FONT_SIZE = 16;
+export const DEFAULT_FONT_FAMILY = 'Arial, sans-serif';
 
-/**
- * Line drawing constants
- */
-export const LINE_CONSTANTS = {
-  /** Minimum length for a valid line */
-  MIN_LENGTH: 5,
-  
-  /** Snapping distance in pixels */
-  SNAP_DISTANCE: 10,
-  
-  /** Minimum angle change for corner detection */
-  CORNER_ANGLE_THRESHOLD: 20,
-  
-  /** Straightening threshold in degrees */
-  STRAIGHTEN_THRESHOLD: 5
-};
+// Drawing limits
+export const MIN_STROKE_WIDTH = 0.5;
+export const MAX_STROKE_WIDTH = 20;
+export const MIN_FONT_SIZE = 8;
+export const MAX_FONT_SIZE = 72;
+export const MAX_ZOOM = 10;
+export const MIN_ZOOM = 0.1;
 
-/**
- * Drawing mode enumeration
- */
-export enum DrawingMode {
-  /** Free-hand drawing mode */
-  Freehand = "freehand",
-  /** Straight line drawing mode */
-  StraightLine = "straight-line",
-  /** Wall drawing mode */
-  Wall = "wall",
-  /** Room drawing mode */
-  Room = "room",
-  /** Selection mode */
-  Select = "select",
-  /** Hand/pan mode */
-  Hand = "hand",
-  /** Measurement mode */
-  Measure = "measure",
-  /** Text mode */
-  Text = "text",
-  /** Eraser mode */
-  Eraser = "eraser",
-  /** No drawing mode */
-  None = "none"
-}
+// Drawing modes (re-exported from drawingModes.ts)
+// export { DrawingMode } from './drawingModes';
+
+// Performance settings
+export const CANVAS_RENDER_THROTTLE_MS = 16; // ~60fps
+export const CANVAS_STATE_UPDATE_DEBOUNCE_MS = 300;
+export const HISTORY_MAX_SIZE = 50;
+
+// Canvas dimension defaults
+export const DEFAULT_CANVAS_WIDTH = 800;
+export const DEFAULT_CANVAS_HEIGHT = 600;
