@@ -1,60 +1,30 @@
 
 import { vi } from 'vitest';
-import { Canvas as FabricCanvas } from 'fabric';
 
 /**
- * Create a mock canvas reference for testing
- * @returns A mock canvas ref that can be used in tests
+ * Creates a mock canvas reference for testing
  */
 export function createCanvasRef() {
   return {
     current: {
-      getObjects: vi.fn().mockReturnValue([]),
-      clear: vi.fn(),
       add: vi.fn(),
-      renderAll: vi.fn(),
-      discardActiveObject: vi.fn(),
       remove: vi.fn(),
-      // Add required Canvas properties
-      enablePointerEvents: true,
-      _willAddMouseDown: false,
-      _dropTarget: null,
-      _isClick: false,
-      _objects: [],
-      getHandlers: vi.fn().mockReturnValue([]),
-      triggerEvent: vi.fn(),
-      withImplementation: vi.fn().mockImplementation((fn) => {
-        if (fn) {
-          try { fn(); } catch (e) {}
-        }
-        return Promise.resolve();
-      })
+      clear: vi.fn(),
+      renderAll: vi.fn(),
+      loadFromJSON: vi.fn(),
+      getObjects: vi.fn().mockReturnValue([]),
+      toJSON: vi.fn().mockReturnValue({})
     }
   };
 }
 
 /**
- * Create a mock history reference for testing
- * @returns A mock history ref with past and future arrays
+ * Creates a mock history object for testing
  */
-export function createHistoryRef() {
+export function createMockHistory() {
   return {
-    current: {
-      past: [],
-      future: []
-    }
-  };
-}
-
-/**
- * Create a mock object
- * @param id Object identifier
- * @returns A mock object with common properties
- */
-export function createMockObject(id: string) {
-  return {
-    id,
-    type: 'mock',
-    toObject: () => ({ id, type: 'mock' })
+    past: [],
+    present: null,
+    future: []
   };
 }

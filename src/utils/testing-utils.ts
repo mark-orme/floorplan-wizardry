@@ -8,16 +8,16 @@ export { renderHook, act, render, fireEvent, screen };
 // Mock canvas factory
 export const createMockCanvas = () => {
   const mockCanvas = {
-    on: jest.fn(),
-    off: jest.fn(),
-    add: jest.fn(),
-    remove: jest.fn(),
-    getObjects: jest.fn().mockReturnValue([]),
-    renderAll: jest.fn(),
-    requestRenderAll: jest.fn(),
-    getActiveObjects: jest.fn().mockReturnValue([]),
-    discardActiveObject: jest.fn(),
-    contains: jest.fn().mockReturnValue(false),
+    on: vi.fn(),
+    off: vi.fn(),
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
     isDrawingMode: false,
     selection: true,
     defaultCursor: 'default',
@@ -26,21 +26,21 @@ export const createMockCanvas = () => {
       color: '#000000',
       width: 1
     },
-    getPointer: jest.fn().mockReturnValue({ x: 0, y: 0 }),
-    getElement: jest.fn().mockReturnValue({}),
-    loadFromJSON: jest.fn(),
-    toJSON: jest.fn().mockReturnValue({}),
-    getWidth: jest.fn().mockReturnValue(800),
-    getHeight: jest.fn().mockReturnValue(600),
-    setWidth: jest.fn(),
-    setHeight: jest.fn(),
-    item: jest.fn(),
-    setZoom: jest.fn(),
-    getZoom: jest.fn().mockReturnValue(1),
-    sendToBack: jest.fn(),
-    fire: jest.fn(),
-    dispose: jest.fn(),
-    initialize: jest.fn()
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    getElement: vi.fn().mockReturnValue({}),
+    loadFromJSON: vi.fn(),
+    toJSON: vi.fn().mockReturnValue({}),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    item: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    sendToBack: vi.fn(),
+    fire: vi.fn(),
+    dispose: vi.fn(),
+    initialize: vi.fn()
   };
   
   return mockCanvas;
@@ -63,11 +63,11 @@ export const enhancedQueries = {
     Array.from(container.querySelectorAll(`[role="${role}"]`)) as HTMLElement[]
 };
 
-// Mock jest features for tests
+// Mock testing functions to satisfy test modules
 export const mockJest = {
-  fn: jest.fn,
-  mock: jest.mock,
-  mocked: jest.mocked
+  fn: vi.fn,
+  mock: vi.mock,
+  mocked: vi.mocked
 };
 
 // Mock testing functions to satisfy test modules
@@ -75,4 +75,3 @@ export const testUtils = {
   renderHook,
   act
 };
-
