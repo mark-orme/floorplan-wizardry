@@ -1,6 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { fabric } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
@@ -8,7 +9,7 @@ import type { FloorPlan } from '@/types/FloorPlan';
 import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 
 interface CanvasControllerEnhancedProps {
-  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
+  onCanvasReady?: (canvas: FabricCanvas | ExtendedFabricCanvas) => void;
   onError?: (error: Error) => void;
   initialTool?: DrawingMode;
   width?: number;
@@ -26,7 +27,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
 }) => {
   // Canvas refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | ExtendedFabricCanvas | null>(null);
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);

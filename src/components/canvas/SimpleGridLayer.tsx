@@ -1,10 +1,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import { asExtendedCanvas, asExtendedObject } from '@/utils/canvas/canvasTypeUtils';
 
 interface SimpleGridLayerProps {
-  canvas: fabric.Canvas | null;
+  canvas: FabricCanvas | ExtendedFabricCanvas | null;
   gridSize?: number;
   largeGridSize?: number;
   gridColor?: string;
@@ -44,7 +46,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([0, y, width, y], lineProps);
-      extendedCanvas.add(line);
+      canvas.add(line);
       newObjects.push(line);
     }
 
@@ -59,20 +61,20 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([x, 0, x, height], lineProps);
-      extendedCanvas.add(line);
+      canvas.add(line);
       newObjects.push(line);
     }
 
     // Send all grid objects to the back
     newObjects.forEach(obj => {
-      if (extendedCanvas.sendToBack) {
-        extendedCanvas.sendToBack(obj);
+      if (canvas.sendToBack) {
+        canvas.sendToBack(obj);
       }
     });
 
     setGridObjects(newObjects);
     initialized.current = true;
-    extendedCanvas.renderAll();
+    canvas.renderAll();
 
     return () => {
       if (canvas) {
@@ -89,7 +91,12 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     gridObjects.forEach(obj => {
       const extObj = asExtendedObject(obj);
-      extObj.visible = visible;
+      if (extObj && typeof extObj.set === 'function') {
+        extObj.set('visible', visible);
+      } else {
+        // Fallback for objects that don't have set method
+        (obj as any).visible = visible;
+      }
     });
 
     canvas.renderAll();

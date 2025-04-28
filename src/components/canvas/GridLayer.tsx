@@ -1,12 +1,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { fabric } from "fabric";
+import { Canvas as FabricCanvas, fabric } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
 import { asExtendedCanvas, ExtendedFabricCanvas, asExtendedObject } from "@/types/canvas-types";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
-  fabricCanvas: fabric.Canvas;
+  fabricCanvas: FabricCanvas | ExtendedFabricCanvas;
   dimensions: { width: number; height: number };
   showDebug?: boolean;
 }
@@ -70,7 +70,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [fabricCanvas, dimensions.width, dimensions.height]);
   
   // Helper function to create grid
-  function createGrid(canvas: ExtendedFabricCanvas, dimensions: { width: number; height: number }): fabric.Object[] {
+  function createGrid(canvas: ExtendedFabricCanvas | FabricCanvas, dimensions: { width: number; height: number }): fabric.Object[] {
     const gridObjects: fabric.Object[] = [];
     
     // Create horizontal lines

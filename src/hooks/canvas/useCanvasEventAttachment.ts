@@ -68,40 +68,24 @@ export const useCanvasEventAttachment = (
       // Make sure selection is disabled in drawing modes
       canvas.selection = false;
       
-      // Use extended canvas to access forEachObject
-      const extCanvas = asExtendedCanvas(canvas);
-      if (extCanvas) {
-        // Using a workaround for forEachObject
-        const objects = extCanvas.getObjects();
-        if (objects) {
-          objects.forEach(obj => {
-            const extObj = asExtendedObject(obj);
-            if (extObj) {
-              extObj.selectable = false;
-              extObj.evented = false;
-            }
-          });
-        }
-      }
+      // Manually handle objects since forEachObject might not be available
+      const objects = canvas.getObjects ? canvas.getObjects() : [];
+      objects.forEach(obj => {
+        // Set properties directly
+        (obj as any).selectable = false;
+        (obj as any).evented = false;
+      });
     } else if (canvas) {
       // Re-enable selection in select mode
       canvas.selection = true;
       
-      // Use extended canvas to access forEachObject
-      const extCanvas = asExtendedCanvas(canvas);
-      if (extCanvas) {
-        // Using a workaround for forEachObject
-        const objects = extCanvas.getObjects();
-        if (objects) {
-          objects.forEach(obj => {
-            const extObj = asExtendedObject(obj);
-            if (extObj) {
-              extObj.selectable = true;
-              extObj.evented = true;
-            }
-          });
-        }
-      }
+      // Manually handle objects since forEachObject might not be available
+      const objects = canvas.getObjects ? canvas.getObjects() : [];
+      objects.forEach(obj => {
+        // Set properties directly
+        (obj as any).selectable = true;
+        (obj as any).evented = true;
+      });
     }
     
     // Cleanup on unmount or tool change

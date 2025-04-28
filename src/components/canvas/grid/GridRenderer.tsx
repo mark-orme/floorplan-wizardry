@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import { Canvas as FabricCanvas, fabric } from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
 import { 
   SMALL_GRID_SIZE, 
@@ -13,7 +13,7 @@ import {
 import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface GridRendererProps {
-  canvas: ExtendedFabricCanvas | null;
+  canvas: FabricCanvas | ExtendedFabricCanvas | null;
   gridSize?: number;
   color?: string;
   opacity?: number;
@@ -109,8 +109,8 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     
     gridObjects.forEach(obj => {
       if (obj) {
-        const extObj = asExtendedObject(obj);
-        extObj.set({ visible });
+        // Direct property assignment instead of using set method
+        (obj as any).visible = visible;
       }
     });
     

@@ -31,15 +31,16 @@ export const Canvas: React.FC<CanvasProps> = ({
         width,
         height,
         backgroundColor: '#ffffff',
-      }) as unknown as ExtendedFabricCanvas;
+      });
       
       // Initialize explicitly to satisfy the type constraint
-      if (!fabricCanvas.initialize) {
-        fabricCanvas.initialize = () => {};
+      const extendedCanvas = fabricCanvas as unknown as ExtendedFabricCanvas;
+      if (!extendedCanvas.initialize) {
+        extendedCanvas.initialize = () => {};
       }
       
-      setCanvas(fabricCanvas);
-      onCanvasReady?.(fabricCanvas);
+      setCanvas(extendedCanvas);
+      onCanvasReady?.(extendedCanvas);
       setIsLoading(false);
       
       return () => {

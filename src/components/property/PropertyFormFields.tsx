@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import * as z from 'zod';
 
 interface PropertyFormFieldsProps {
   propertyData: any;

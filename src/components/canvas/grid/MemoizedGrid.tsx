@@ -83,8 +83,8 @@ const MemoizedGridComponent = ({
     
     gridObjects.forEach(obj => {
       if (obj) {
-        const extObj = asExtendedObject(obj);
-        extObj.set({ visible });
+        // Directly modify the visible property
+        (obj as any).visible = visible;
       }
     });
     
