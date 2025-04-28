@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { DebugInfoState } from '@/types/core/DebugInfo';
+import { DebugInfoState, DEFAULT_DEBUG_STATE } from '@/types/core/DebugInfo';
 import { EmergencyCanvasError } from './EmergencyCanvasError';
 
 interface EmergencyCanvasProviderProps {
@@ -22,15 +22,9 @@ export const EmergencyCanvasProvider: React.FC<EmergencyCanvasProviderProps> = (
   const [errorMessage, setErrorMessage] = useState('');
   const [retryAttempts, setRetryAttempts] = useState(0);
   
-  // Simulated debug info
+  // Use the default debug info with updated dimensions
   const debugInfo: DebugInfoState = {
-    fpsCounter: false,
-    gridHelper: false,
-    objectCounter: false,
-    renderingStats: false,
-    canvasEvents: false,
-    memoryUsage: false,
-    errorReporting: true,
+    ...DEFAULT_DEBUG_STATE,
     canvasDimensions: { width, height },
     canvasInitialized: false,
     lastInitTime: Date.now()

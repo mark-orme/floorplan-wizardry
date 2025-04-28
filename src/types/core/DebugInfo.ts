@@ -14,6 +14,16 @@ export interface DebugInfoState {
   isLoading: boolean;
   hasError: boolean;
   errorMessage: string;
+  // Additional properties for the emergency provider
+  fpsCounter?: boolean;
+  gridHelper?: boolean;
+  objectCounter?: boolean;
+  renderingStats?: boolean;
+  canvasEvents?: boolean;
+  memoryUsage?: boolean;
+  errorReporting?: boolean;
+  canvasInitialized?: boolean;
+  lastInitTime?: number;
 }
 
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {
@@ -26,5 +36,12 @@ export const DEFAULT_DEBUG_STATE: DebugInfoState = {
   currentTool: 'select',
   isLoading: false,
   hasError: false,
-  errorMessage: ''
+  errorMessage: '',
+  fpsCounter: false,
+  gridHelper: false,
+  objectCounter: false,
+  renderingStats: false,
+  canvasEvents: false,
+  memoryUsage: false,
+  errorReporting: true
 };

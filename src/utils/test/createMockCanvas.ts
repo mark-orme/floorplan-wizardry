@@ -28,7 +28,9 @@ export const createMockCanvas = () => {
     getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
     forEachObject: vi.fn((callback) => {
       callback({ selectable: true });
-    })
+    }),
+    isDrawingMode: false,
+    selection: true
   };
 };
 
@@ -63,9 +65,33 @@ export interface MockCanvas {
   requestRenderAll: ReturnType<typeof vi.fn>;
   getPointer: ReturnType<typeof vi.fn>;
   isDrawingMode: boolean;
+  selection: boolean;
 }
 
 /**
  * Return the mock canvas with proper typing
  */
 export { createMockCanvas as MockCanvas };
+
+/**
+ * Helper function to create a mock withImplementation function
+ */
+export const createWithImplementationMock = () => {
+  return vi.fn().mockImplementation((callback?: Function) => {
+    if (callback) callback();
+    return Promise.resolve();
+  });
+};
+
+/**
+ * Helper to convert Jest mock functions to Vitest mock functions
+ * This helps with migrating tests
+ */
+export const jestToVitest = {
+  fn: vi.fn,
+  mock: vi.mock,
+  spyOn: vi.spyOn,
+  mockImplementation: vi.fn().mockImplementation,
+  runAllTimers: () => vi.runAllTimers(),
+  mocked: vi.mocked
+};

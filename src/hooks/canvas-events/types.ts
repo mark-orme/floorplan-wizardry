@@ -59,6 +59,8 @@ export interface UseCanvasHandlersProps extends BaseEventProps {
   lineColor: string;
   lineThickness: number;
   onDrawingComplete?: () => void;
+  eventTypes?: string[];
+  handlers?: Record<string, (e: any) => void>;
 }
 
 export interface DrawingPathState {
@@ -71,6 +73,8 @@ export interface UseZoomTrackingProps {
   initialZoom?: number;
   minZoom?: number;
   maxZoom?: number;
+  tool?: DrawingMode;
+  updateZoomLevel?: () => void;
 }
 
 export interface UseZoomTrackingResult {
@@ -79,6 +83,10 @@ export interface UseZoomTrackingResult {
   zoomIn: () => void;
   zoomOut: () => void;
   resetZoom: () => void;
+  currentZoom?: number;
+  register?: () => void;
+  unregister?: () => void;
+  cleanup?: () => void;
 }
 
 export type ZoomDirection = 'in' | 'out';
@@ -109,5 +117,10 @@ export const ZOOM_LEVEL_CONSTANTS = {
   MIN: 0.1,
   MAX: 10.0,
   STEP: 0.1,
-  LARGE_STEP: 0.5
+  LARGE_STEP: 0.5,
+  DEFAULT_ZOOM: 1.0,
+  MIN_ZOOM: 0.1,
+  MAX_ZOOM: 10.0,
+  ZOOM_STEP: 0.1
 };
+

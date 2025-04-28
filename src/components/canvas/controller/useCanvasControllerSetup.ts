@@ -9,6 +9,7 @@ import { DrawingMode } from "@/constants/drawingModes";
 import { useGrid } from "@/hooks/useGrid";
 import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
 import { useDrawingHistory } from "@/hooks/useDrawingHistory";
+import { asExtendedCanvas, ExtendedFabricCanvas } from "@/types/canvas-types";
 
 interface UseCanvasControllerSetupProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -29,7 +30,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   } = props;
   
   // Initialize state variables
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
   const [tool, setTool] = useState<DrawingMode>(initialTool);
   const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
   const [lineThickness, setLineThickness] = useState<number>(initialLineThickness);
@@ -39,7 +40,7 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
   const [currentFloor, setCurrentFloor] = useState(0);
   
   // Create references
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
   const gridLayerRef = useRef<fabric.Object[]>([]);
   
   // Initialize drawing history
@@ -87,18 +88,19 @@ export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) =
    * @param {fabric.Canvas} fabricCanvas - Fabric canvas instance
    */
   const handleCanvasReady = useCallback((fabricCanvas: fabric.Canvas) => {
-    // Set fabric canvas reference
-    fabricCanvasRef.current = fabricCanvas;
+    // Cast to ExtendedFabricCanvas and set fabric canvas reference
+    const extendedCanvas = asExtendedCanvas(fabricCanvas);
+    fabricCanvasRef.current = extendedCanvas;
     
     // Set canvas state
-    setCanvas(fabricCanvas);
+    setCanvas(extendedCanvas);
     
     // Set up selection mode
     setupSelectionMode();
     
     // Create initial grid
-    const gridObjects = createGrid(fabricCanvas);
-    gridLayerRef.current = gridObjects;
+    const gridObjects = createGrid(extendedCanvas);
+    gridLayerRef.current = gridObjects as fabric.Object[];
     
     // Save initial canvas state
     saveState();

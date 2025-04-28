@@ -1,9 +1,10 @@
+
 /**
  * Hook for tracking zoom events and operations
  * @module canvas-events/useZoomTracking
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EventHandlerResult, UseZoomTrackingProps, UseZoomTrackingResult, ZOOM_LEVEL_CONSTANTS } from './types';
+import { ZOOM_LEVEL_CONSTANTS, UseZoomTrackingProps, UseZoomTrackingResult } from './types';
 
 /**
  * Hook for tracking and managing canvas zoom operations
@@ -15,7 +16,7 @@ export const useZoomTracking = ({
   tool,
   updateZoomLevel
 }: UseZoomTrackingProps): UseZoomTrackingResult => {
-  const [currentZoom, setCurrentZoom] = useState(ZOOM_LEVEL_CONSTANTS.DEFAULT_ZOOM);
+  const [currentZoom, setCurrentZoom] = useState(ZOOM_LEVEL_CONSTANTS.DEFAULT);
   const zoomFunctionsInitialized = useRef(false);
 
   /**
@@ -36,7 +37,9 @@ export const useZoomTracking = ({
       setCurrentZoom(canvas.getZoom());
       
       // You can emit a custom event here if needed
-      canvas.fire('custom:zoom-changed');
+      if (canvas.fire) {
+        canvas.fire('custom:zoom-changed', {});
+      }
     });
     
     // Flag that handlers are registered
@@ -72,8 +75,8 @@ export const useZoomTracking = ({
     
     const canvas = fabricCanvasRef.current;
     const zoom = Math.min(
-      canvas.getZoom() + ZOOM_LEVEL_CONSTANTS.ZOOM_STEP,
-      ZOOM_LEVEL_CONSTANTS.MAX_ZOOM
+      canvas.getZoom() + ZOOM_LEVEL_CONSTANTS.STEP,
+      ZOOM_LEVEL_CONSTANTS.MAX
     );
     
     canvas.setZoom(zoom);
@@ -94,8 +97,8 @@ export const useZoomTracking = ({
     
     const canvas = fabricCanvasRef.current;
     const zoom = Math.max(
-      canvas.getZoom() - ZOOM_LEVEL_CONSTANTS.ZOOM_STEP,
-      ZOOM_LEVEL_CONSTANTS.MIN_ZOOM
+      canvas.getZoom() - ZOOM_LEVEL_CONSTANTS.STEP,
+      ZOOM_LEVEL_CONSTANTS.MIN
     );
     
     canvas.setZoom(zoom);
@@ -115,9 +118,9 @@ export const useZoomTracking = ({
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
-    canvas.setZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT_ZOOM);
+    canvas.setZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT);
     canvas.requestRenderAll();
-    setCurrentZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT_ZOOM);
+    setCurrentZoom(ZOOM_LEVEL_CONSTANTS.DEFAULT);
     
     // Trigger update zoom level callback
     if (updateZoomLevel) {
@@ -134,8 +137,8 @@ export const useZoomTracking = ({
     
     const canvas = fabricCanvasRef.current;
     const zoom = Math.max(
-      Math.min(level, ZOOM_LEVEL_CONSTANTS.MAX_ZOOM),
-      ZOOM_LEVEL_CONSTANTS.MIN_ZOOM
+      Math.min(level, ZOOM_LEVEL_CONSTANTS.MAX),
+      ZOOM_LEVEL_CONSTANTS.MIN
     );
     
     canvas.setZoom(zoom);
@@ -155,13 +158,14 @@ export const useZoomTracking = ({
   }, [register, cleanup]);
   
   return {
-    register,
-    unregister,
-    cleanup,
+    zoom: currentZoom,
+    setZoom,
     zoomIn,
     zoomOut,
     resetZoom,
-    setZoom,
-    currentZoom
+    currentZoom,
+    register,
+    unregister,
+    cleanup
   };
 };

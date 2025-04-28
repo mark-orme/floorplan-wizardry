@@ -14,8 +14,8 @@ import { EventHandlerResult, UseCanvasHandlersProps } from './types';
 export const useCanvasHandlers = ({
   fabricCanvasRef,
   tool,
-  eventTypes,
-  handlers
+  eventTypes = [],
+  handlers = {}
 }: UseCanvasHandlersProps): EventHandlerResult => {
   // Use a ref to track registered handlers to prevent unnecessary re-registrations
   const registeredHandlersRef = useRef<Record<string, boolean>>({});

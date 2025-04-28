@@ -1,87 +1,53 @@
 
 /**
- * Hook for handling brush settings on canvas
+ * Hook for managing brush settings in drawing mode
  * @module canvas-events/useBrushSettings
  */
-import { useCallback, useEffect } from 'react';
-import fabric from 'fabric';
+import { useEffect } from 'react';
+import { UseBrushSettingsProps } from './types';
 import { DrawingMode } from '@/constants/drawingModes';
-import { EventHandlerResult, UseBrushSettingsProps } from './types';
 
 /**
- * Hook for handling brush settings on canvas
+ * Hook for managing brush settings in drawing mode
  * @param {UseBrushSettingsProps} props Brush settings props
- * @returns {EventHandlerResult} Event handler result
+ * @returns {void} No return value
  */
 export const useBrushSettings = ({
   fabricCanvasRef,
   tool,
   lineColor,
-  lineThickness
-}: UseBrushSettingsProps): EventHandlerResult => {
-  /**
-   * Update brush settings
-   */
-  const updateBrushSettings = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
-    
+  lineThickness,
+  usePressure = false
+}: UseBrushSettingsProps): void => {
+  // Update brush settings when tool, line color, or line thickness change
+  useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = lineColor;
-      canvas.freeDrawingBrush.width = lineThickness;
-    }
-  }, [fabricCanvasRef, lineColor, lineThickness]);
-  
-  /**
-   * Update drawing mode based on tool
-   */
-  const updateDrawingMode = useCallback(() => {
-    if (!fabricCanvasRef.current) return;
+    if (!canvas) return;
     
-    const canvas = fabricCanvasRef.current;
+    // Set drawing mode
     canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
-    // Update brush settings if in drawing mode
-    if (canvas.isDrawingMode) {
-      updateBrushSettings();
+    // Configure brush
+    if (canvas.freeDrawingBrush) {
+      // Set brush color
+      canvas.freeDrawingBrush.color = lineColor;
+      
+      // Set brush width
+      canvas.freeDrawingBrush.width = lineThickness;
+      
+      // Apply pressure sensitivity if available
+      if (usePressure && 'setPressure' in canvas.freeDrawingBrush) {
+        (canvas.freeDrawingBrush as any).setPressure(true);
+      }
     }
-  }, [fabricCanvasRef, tool, updateBrushSettings]);
-  
-  /**
-   * Register brush events
-   */
-  const register = useCallback(() => {
-    updateDrawingMode();
-    updateBrushSettings();
-  }, [updateDrawingMode, updateBrushSettings]);
-  
-  /**
-   * Unregister brush events
-   */
-  const unregister = useCallback(() => {
-    // Nothing to unregister for brush settings
-  }, []);
-  
-  /**
-   * Clean up resources
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
-  // Update brush settings when props change
-  useEffect(() => {
-    updateBrushSettings();
-  }, [updateBrushSettings]);
-  
-  // Update drawing mode when tool changes
-  useEffect(() => {
-    updateDrawingMode();
-  }, [updateDrawingMode]);
-  
-  return {
-    register,
-    unregister,
-    cleanup
-  };
+    
+    // Set cursor style
+    if (tool === DrawingMode.DRAW) {
+      canvas.defaultCursor = 'crosshair';
+      canvas.hoverCursor = 'crosshair';
+    } else {
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
+    }
+  }, [fabricCanvasRef, tool, lineColor, lineThickness, usePressure]);
 };

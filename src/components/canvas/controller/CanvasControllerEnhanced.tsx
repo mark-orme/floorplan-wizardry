@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
 import type { FloorPlan } from '@/types/FloorPlan';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
@@ -42,8 +42,12 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
   // Initialize grid utilities
-  const { createGrid } = useGrid();
-  const gridLayerRef = useRef<fabric.Object[]>([]);
+  const { createGrid } = useGrid({
+    fabricCanvasRef,
+    gridLayerRef: useRef<fabric.Object[]>([]),
+    initialGridSize: 20,
+    initialVisible: true
+  });
   
   // Initialize canvas
   useEffect(() => {
@@ -57,18 +61,20 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
         backgroundColor: '#ffffff',
         selection: true,
         renderOnAddRemove: true
-      }) as unknown as ExtendedFabricCanvas;
+      });
+      
+      // Cast to extended canvas for type safety
+      const extendedCanvas = asExtendedCanvas(canvas);
       
       // Store reference
-      fabricCanvasRef.current = canvas;
+      fabricCanvasRef.current = extendedCanvas;
       
-      // Create grid - convert canvas to the expected type
-      const gridObjects = createGrid(canvas as any);
-      gridLayerRef.current = gridObjects;
+      // Create grid
+      createGrid(extendedCanvas);
       
       // Notify parent
       if (onCanvasReady) {
-        onCanvasReady(canvas);
+        onCanvasReady(extendedCanvas);
       }
       
       // Clean up

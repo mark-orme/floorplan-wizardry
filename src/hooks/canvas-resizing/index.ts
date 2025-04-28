@@ -1,18 +1,21 @@
 
 /**
- * Canvas resizing hooks index module
- * Re-exports functionality from specialized modules
+ * Canvas resizing functionality
  * @module canvas-resizing
  */
 
-// Export types
-export type { UseCanvasResizingProps, ResizingState, CanvasResizingResult } from './types';
+// Export state
+export { DEFAULT_RESIZING_STATE, type ResizingState } from './state';
 
-// Export constants
-export * from './constants';
-
-// Export core hook
+// Export hooks
+export { useResizeLogic } from './useResizeLogic';
 export { useCanvasResizing } from './useCanvasResizing';
+export { useResponsiveCanvas } from './useResponsiveCanvas';
+export { useContainerResizeEffect } from './useContainerResizeEffect';
 
-// Export state management
-export { resizingState, resetResizingState } from './state';
+// Export utility functions
+export {
+  calculateCanvasDimensions,
+  calculateCanvasScale,
+  applyCanvasResize
+} from './utils';

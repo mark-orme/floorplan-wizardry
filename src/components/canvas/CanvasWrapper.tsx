@@ -17,13 +17,14 @@ export const CanvasWrapper: React.FC = () => {
     if (!canvasRef.current) return;
 
     try {
+      // Use Canvas constructor from fabric
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',
       });
       
-      // Use the asExtendedCanvas helper to properly type the canvas
+      // Cast to Extended Canvas type
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
       // Ensure required properties exist
@@ -31,9 +32,9 @@ export const CanvasWrapper: React.FC = () => {
         extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
       }
       
-      if (!extendedCanvas.getActiveObjects) {
+      if (!extendedCanvas.getActiveObjects && extendedCanvas.getActiveObject) {
         extendedCanvas.getActiveObjects = () => {
-          const activeObject = extendedCanvas.getActiveObject?.();
+          const activeObject = extendedCanvas.getActiveObject();
           return activeObject ? [activeObject] : [];
         };
       }

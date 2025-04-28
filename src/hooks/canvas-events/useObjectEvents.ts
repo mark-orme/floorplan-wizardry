@@ -1,81 +1,67 @@
 
 /**
- * Hook for handling canvas object events
+ * Hook for handling object events on canvas
  * @module canvas-events/useObjectEvents
  */
 import { useCallback } from 'react';
+import { EventHandlerResult, UseObjectEventsProps } from './types';
 import { useCanvasHandlers } from './useCanvasHandlers';
-import { UseObjectEventsProps, EventHandlerResult } from './types';
-import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Hook for handling object-related canvas events
- * 
- * @param {UseObjectEventsProps} props - Properties for the hook
- * @returns {EventHandlerResult} - Event handler result
+ * Hook for handling object events on canvas
+ * @param {UseObjectEventsProps} props - Object events props
+ * @returns {EventHandlerResult} Event handler result
  */
 export const useObjectEvents = ({
   fabricCanvasRef,
   tool,
+  onObjectAdded,
+  onObjectModified,
+  onObjectRemoved,
   saveCurrentState
 }: UseObjectEventsProps): EventHandlerResult => {
-  /**
-   * Handle object modified event
-   */
-  const handleObjectModified = useCallback((): void => {
-    saveCurrentState();
-  }, [saveCurrentState]);
-  
-  /**
-   * Handle object added event
-   */
-  const handleObjectAdded = useCallback((): void => {
-    // Only save state for non-drawing tools
-    if (tool !== DrawingMode.DRAW && tool !== DrawingMode.LINE) {
+  // Create event handlers
+  const handleObjectAdded = useCallback((e: any) => {
+    if (onObjectAdded) {
+      onObjectAdded(e);
+    }
+    
+    // Save state if needed
+    if (saveCurrentState) {
       saveCurrentState();
     }
-  }, [tool, saveCurrentState]);
+  }, [onObjectAdded, saveCurrentState]);
   
-  /**
-   * Handle object removed event
-   */
-  const handleObjectRemoved = useCallback((): void => {
-    saveCurrentState();
-  }, [saveCurrentState]);
+  const handleObjectModified = useCallback((e: any) => {
+    if (onObjectModified) {
+      onObjectModified(e);
+    }
+    
+    // Save state if needed
+    if (saveCurrentState) {
+      saveCurrentState();
+    }
+  }, [onObjectModified, saveCurrentState]);
   
-  /**
-   * Handle object selected event
-   */
-  const handleObjectSelected = useCallback((): void => {
-    // Handle selection if needed
-  }, []);
+  const handleObjectRemoved = useCallback((e: any) => {
+    if (onObjectRemoved) {
+      onObjectRemoved(e);
+    }
+    
+    // Save state if needed
+    if (saveCurrentState) {
+      saveCurrentState();
+    }
+  }, [onObjectRemoved, saveCurrentState]);
   
-  /**
-   * Handle selection cleared event
-   */
-  const handleSelectionCleared = useCallback((): void => {
-    // Handle selection clearing if needed
-  }, []);
-  
-  // Define event types to listen for
-  const eventTypes = [
-    'object:modified',
-    'object:added',
-    'object:removed',
-    'object:selected',
-    'selection:cleared'
-  ];
-  
-  // Define handlers map
+  const eventTypes = ['object:added', 'object:modified', 'object:removed'];
   const handlers = {
-    'object:modified': handleObjectModified,
     'object:added': handleObjectAdded,
-    'object:removed': handleObjectRemoved,
-    'object:selected': handleObjectSelected,
-    'selection:cleared': handleSelectionCleared
+    'object:modified': handleObjectModified,
+    'object:removed': handleObjectRemoved
   };
   
-  // Set up handlers with useCanvasHandlers
+  // Use common canvas handlers
   return useCanvasHandlers({
     fabricCanvasRef,
     tool,

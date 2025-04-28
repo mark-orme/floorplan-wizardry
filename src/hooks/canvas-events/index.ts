@@ -8,6 +8,10 @@
 export { useKeyboardEvents } from './useKeyboardEvents';
 export { useMouseEvents } from './useMouseEvents';
 export { usePathEvents } from './usePathEvents';
+export { useCanvasHandlers } from './useCanvasHandlers';
+export { useObjectEvents } from './useObjectEvents';
+export { useZoomTracking } from './useZoomTracking';
+export { useBrushSettings } from './useBrushSettings';
 
 // Export types
 export type {
@@ -32,9 +36,3 @@ export type {
 
 // Export constants
 export { ZOOM_LEVEL_CONSTANTS } from './types';
-
-// Create stubs for not yet implemented hooks
-export const useCanvasHandlers = () => ({});
-export const useObjectEvents = () => ({});
-export const useZoomTracking = () => ({ zoom: 1, setZoom: () => {}, zoomIn: () => {}, zoomOut: () => {}, resetZoom: () => {} });
-export const useBrushSettings = () => ({});

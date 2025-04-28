@@ -50,6 +50,8 @@ export interface DrawingState {
   stylusDetected?: boolean;
   pathDragging?: boolean;
   creatingShape?: boolean;
+  midPoint?: Point | null;
+  selectionActive?: boolean;
 }
 
 /**

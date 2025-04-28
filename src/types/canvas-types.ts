@@ -7,31 +7,31 @@ import { Canvas, Object as FabricObject } from 'fabric';
 export interface ExtendedFabricObject extends FabricObject {
   id?: string;
   objectType?: string;
+  gridType?: 'small' | 'large';
   isGrid?: boolean;
   isLargeGrid?: boolean;
-  wrapperEl?: HTMLDivElement;
-  visible?: boolean;
-  set: (options: Record<string, any>) => FabricObject;
 }
 
 /**
  * Extended Fabric canvas with additional properties needed for our application
  */
 export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl: HTMLDivElement; 
-  skipTargetFind: boolean;
-  allowTouchScrolling?: boolean;
+  wrapperEl: HTMLElement;
+  upperCanvasEl?: HTMLCanvasElement;
   skipOffscreen?: boolean;
-  renderOnAddRemove?: boolean;
-  fire?: (eventName: string, options?: any) => Canvas;
-  forEachObject?: (callback: (obj: FabricObject) => void) => void;
-  getActiveObject?: () => FabricObject | null;
-  viewportTransform?: number[];
+  allowTouchScrolling?: boolean;
   initialize?: () => void;
+  skipTargetFind?: boolean;
   _activeObject?: FabricObject | null;
   _objects?: FabricObject[];
   getActiveObjects: () => FabricObject[];
-  getElement: () => HTMLCanvasElement;
+  getElement?: () => HTMLCanvasElement;
+  renderOnAddRemove?: boolean;
+  loadFromJSON?: (json: any, callback?: () => void) => Canvas;
+  sendObjectToBack?: (object: FabricObject) => Canvas;
+  fire?: (eventName: string, options?: any) => Canvas;
+  forEachObject?: (callback: (obj: FabricObject) => void) => void;
+  viewportTransform?: number[];
 }
 
 /**
@@ -39,6 +39,13 @@ export interface ExtendedFabricCanvas extends Canvas {
  */
 export function asExtendedCanvas(canvas: Canvas): ExtendedFabricCanvas {
   return canvas as unknown as ExtendedFabricCanvas;
+}
+
+/**
+ * Helper function to safely cast canvas objects
+ */
+export function asExtendedObject(object: FabricObject): ExtendedFabricObject {
+  return object as ExtendedFabricObject;
 }
 
 /**
