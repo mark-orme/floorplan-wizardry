@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
@@ -26,7 +25,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     try {
-      // Create Canvas instance and explicitly convert to ExtendedFabricCanvas type
+      // Create Canvas instance and explicitly cast to ExtendedFabricCanvas type
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,

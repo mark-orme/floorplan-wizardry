@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
@@ -8,8 +7,16 @@ const AlertDialog = AlertDialogPrimitive.Root
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 
-// Fix: Remove className prop which is being incorrectly passed
-const AlertDialogPortal = AlertDialogPrimitive.Portal
+const AlertDialogPortal = ({
+  children,
+  ...props
+}: AlertDialogPortalProps) => (
+  <AlertDialogPrimitive.Portal {...props}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      {children}
+    </div>
+  </AlertDialogPrimitive.Portal>
+)
 
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
@@ -96,7 +103,6 @@ const AlertDialogDescription = React.forwardRef<
 ))
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName
 
-// Fix: Use buttons without buttonVariants function call
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>

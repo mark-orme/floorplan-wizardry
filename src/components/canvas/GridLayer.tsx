@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { fabric } from "fabric";
 import GridRenderer from "./grid/GridRenderer";
@@ -18,16 +17,13 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   showDebug = false
 }) => {
   const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
-  // Add ref to track if grid has been initialized
   const gridInitializedRef = useRef(false);
   const dimensionsRef = useRef(dimensions);
   
-  // Update dimensions ref when dimensions change
   useEffect(() => {
     dimensionsRef.current = dimensions;
   }, [dimensions]);
   
-  // Handle grid creation
   const handleGridCreated = (objects: fabric.Object[]) => {
     if (!gridInitializedRef.current) {
       logger.info(`Grid created with ${objects.length} objects`);
@@ -45,7 +41,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     }
   };
   
-  // Update grid when dimensions change substantially
   useEffect(() => {
     if (fabricCanvas && gridObjects.length > 0) {
       const width = dimensionsRef.current.width;
@@ -56,7 +51,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     }
   }, [dimensions.width, dimensions.height, fabricCanvas, gridObjects.length]);
   
-  // Safeguard to verify grid exists and is visible
   useEffect(() => {
     const checkGridVisibility = () => {
       if (fabricCanvas && gridObjects.length > 0) {
@@ -71,7 +65,6 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       }
     };
     
-    // Check grid visibility periodically
     const intervalId = setInterval(checkGridVisibility, 5000);
     
     return () => {
