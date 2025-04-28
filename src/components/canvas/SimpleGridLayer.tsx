@@ -82,7 +82,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     gridObjects.forEach(obj => {
       if (obj) {
-        obj.set({ visible });
+        obj.visible = visible;
       }
     });
 

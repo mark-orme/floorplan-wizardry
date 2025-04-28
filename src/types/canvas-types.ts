@@ -10,6 +10,8 @@ export interface ExtendedFabricObject extends FabricObject {
   isGrid?: boolean;
   isLargeGrid?: boolean;
   wrapperEl?: HTMLDivElement;
+  visible?: boolean;
+  set: (options: Record<string, any>) => FabricObject;
 }
 
 /**
@@ -28,6 +30,8 @@ export interface ExtendedFabricCanvas extends Canvas {
   initialize?: () => void;
   _activeObject?: FabricObject | null;
   _objects?: FabricObject[];
+  getActiveObjects: () => FabricObject[];
+  getElement: () => HTMLCanvasElement;
 }
 
 /**
@@ -35,4 +39,25 @@ export interface ExtendedFabricCanvas extends Canvas {
  */
 export function asExtendedCanvas(canvas: Canvas): ExtendedFabricCanvas {
   return canvas as unknown as ExtendedFabricCanvas;
+}
+
+/**
+ * Property status enumeration
+ */
+export enum PropertyStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  IN_REVIEW = 'in_review',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
+}
+
+/**
+ * Floor plan metadata interface
+ */
+export interface FloorPlanMetadata {
+  level: number;
+  name: string;
+  created: string;
+  updated: string;
 }

@@ -1,42 +1,47 @@
 
 /**
- * Sentry utilities for error tracking
+ * Simple Sentry utility functions
  */
 
-/**
- * Capture message in Sentry
- * @param message Message to capture
- * @param options Additional options
- */
-export const captureMessage = (message: string, options?: any) => {
-  // In a real implementation, this would send to Sentry
-  console.log('[Sentry] Message:', message, options);
-};
+interface CaptureOptions {
+  level?: 'info' | 'warning' | 'error' | 'fatal';
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+}
 
 /**
- * Capture error in Sentry
- * @param error Error object or message
- * @param context Additional context
+ * Capture a message for monitoring
  */
-export const captureError = (error: Error | string, context?: Record<string, any>) => {
-  const errorObj = typeof error === 'string' ? new Error(error) : error;
+export function captureMessage(message: string, options: CaptureOptions = {}) {
+  // In a real implementation, this would use Sentry.captureMessage
+  // For now, just log to console with some formatting
+  const { level = 'info', tags = {}, extra = {} } = options;
   
-  // In a real implementation, this would send to Sentry
-  console.error('[Sentry] Error:', errorObj, context);
-};
+  console[level === 'fatal' ? 'error' : level](`[${level.toUpperCase()}] ${message}`, {
+    tags,
+    extra
+  });
+}
 
 /**
- * Start transaction in Sentry
- * @param name Transaction name
- * @param options Additional options
+ * Capture an error for monitoring
  */
-export const startTransaction = (name: string, options?: any) => {
-  // In a real implementation, this would start a Sentry transaction
-  console.log('[Sentry] Start Transaction:', name, options);
+export function captureException(error: Error, options: CaptureOptions = {}) {
+  // In a real implementation, this would use Sentry.captureException
+  // For now, just log to console with some formatting
+  const { level = 'error', tags = {}, extra = {} } = options;
   
-  return {
-    finish: (status?: string) => {
-      console.log('[Sentry] Finish Transaction:', name, status);
-    }
-  };
-};
+  console.error(`[${level.toUpperCase()}] Error:`, error, {
+    tags,
+    extra
+  });
+}
+
+/**
+ * Add a breadcrumb for error tracking
+ */
+export function addBreadcrumb(message: string, category: string, data?: Record<string, any>) {
+  // In a real implementation, this would use Sentry.addBreadcrumb
+  // For now, just log to console
+  console.debug(`[BREADCRUMB][${category}] ${message}`, data || {});
+}

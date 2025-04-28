@@ -1,104 +1,59 @@
 
-import { Canvas } from 'fabric';
-import { captureMessage } from '@/utils/sentryUtils';
+/**
+ * Canvas render optimization utilities
+ * Helps batch and optimize render calls for better performance
+ */
 
-// Throttling for canvas renders
-let canvasRenderScheduled = false;
+import { Canvas as FabricCanvas } from 'fabric';
+
+// Track pending render requests
+let renderRequested = false;
+let renderTimeout: NodeJS.Timeout | null = null;
+let renderDebounceTime = 10; // ms
 
 /**
  * Request an optimized render of the canvas
- * @param canvas The fabric canvas
- * @param source Source of the render request for debugging
+ * Debounces multiple render calls to improve performance
+ * 
+ * @param canvas The fabric canvas to render
+ * @param source Optional source identifier for debugging
  */
-export function requestOptimizedRender(canvas: Canvas, source?: string) {
+export const requestOptimizedRender = (
+  canvas: FabricCanvas | null, 
+  source: string = 'unknown'
+): void => {
   if (!canvas) return;
   
-  if (canvasRenderScheduled) return;
-  
-  canvasRenderScheduled = true;
-  
-  window.requestAnimationFrame(() => {
-    if (canvas) {
-      try {
-        canvas.renderAll();
-      } catch (error) {
-        captureMessage(`Error rendering canvas: ${error}`, {
-          level: 'error',
-          tags: { component: 'RenderOptimizer', source }
-        });
-      }
-    }
-    canvasRenderScheduled = false;
-  });
-}
-
-// Track performance metrics
-let lastRenderTime = 0;
-let frameCount = 0;
-let fps = 0;
-let lastFpsUpdateTime = 0;
-
-/**
- * Update FPS counter
- */
-function updateFps() {
-  const now = performance.now();
-  frameCount++;
-  
-  if (now - lastFpsUpdateTime >= 1000) {
-    fps = Math.round((frameCount * 1000) / (now - lastFpsUpdateTime));
-    frameCount = 0;
-    lastFpsUpdateTime = now;
+  // Clear any pending render timeout
+  if (renderTimeout) {
+    clearTimeout(renderTimeout);
+    renderTimeout = null;
   }
   
-  lastRenderTime = now;
-  
-  return fps;
-}
-
-/**
- * Get current FPS
- * @returns Current FPS value
- */
-export function getCurrentFps() {
-  return fps;
-}
-
-/**
- * Setup render monitoring for a canvas
- * @param canvas The fabric canvas to monitor
- */
-export function setupRenderMonitoring(canvas: Canvas) {
-  if (!canvas) return;
-  
-  // Track rendering performance
-  canvas.on('after:render', () => {
-    updateFps();
-  });
-  
-  // Log slow renders
-  const originalRenderAll = canvas.renderAll.bind(canvas);
-  
-  canvas.renderAll = function() {
-    const start = performance.now();
-    const result = originalRenderAll();
-    const end = performance.now();
+  // Schedule a new render
+  if (!renderRequested) {
+    renderRequested = true;
     
-    if (end - start > 16) { // 60fps threshold (16ms per frame)
-      captureMessage('Slow canvas render detected', {
-        level: 'warning',
-        tags: { component: 'RenderMonitor' },
-        extra: { 
-          renderTime: end - start,
-          objectCount: canvas.getObjects().length
+    renderTimeout = setTimeout(() => {
+      if (canvas) {
+        // Check if requestRenderAll is available, fall back to renderAll if not
+        if (typeof canvas.requestRenderAll === 'function') {
+          canvas.requestRenderAll();
+        } else if (typeof canvas.renderAll === 'function') {
+          canvas.renderAll();
         }
-      });
-    }
-    
-    return result;
-  };
-  
-  return {
-    getCurrentFps
-  };
-}
+      }
+      renderRequested = false;
+      renderTimeout = null;
+    }, renderDebounceTime);
+  }
+};
+
+/**
+ * Set the debounce time for render optimization
+ * 
+ * @param time Debounce time in milliseconds
+ */
+export const setRenderDebounceTime = (time: number): void => {
+  renderDebounceTime = time;
+};

@@ -34,3 +34,21 @@ export interface UseCanvasResizingProps {
   options?: CanvasResizingOptions;
   debugInfo?: MutableRefObject<DebugInfoState>;
 }
+
+/**
+ * Canvas resizing state
+ */
+export interface ResizingState {
+  isResizing: boolean;
+  dimensions: CanvasDimensions;
+  prevDimensions: CanvasDimensions | null;
+}
+
+/**
+ * Canvas resizing result
+ */
+export interface CanvasResizingResult {
+  isResizing: boolean;
+  dimensions: CanvasDimensions;
+  resize: (dimensions: Partial<CanvasDimensions>) => void;
+}

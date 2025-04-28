@@ -1,16 +1,10 @@
 
 /**
- * Bounding box representing a rectangular area
+ * Core geometry interfaces and types
  */
-export interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
 
 /**
- * Point interface for coordinates
+ * Point interface representing x,y coordinates
  */
 export interface Point {
   x: number;
@@ -18,43 +12,45 @@ export interface Point {
 }
 
 /**
- * Canvas dimensions interface
+ * Size interface representing width and height
  */
-export interface CanvasDimensions {
+export interface Size {
   width: number;
   height: number;
 }
 
 /**
- * Transform matrix for 2D transformations
- * [a, b, c, d, tx, ty]
- * where:
- * a, d: scale x, y
- * b, c: skew
- * tx, ty: translate
+ * Rectangle interface
  */
-export type TransformMatrix = [number, number, number, number, number, number];
-
-/**
- * Line segment between two points
- */
-export interface LineSegment {
-  start: Point;
-  end: Point;
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /**
- * Transform object for handling object transformations
+ * Line interface
  */
-export interface Transform {
-  matrix: TransformMatrix;
-  flipX?: boolean;
-  flipY?: boolean;
-  angle?: number;
-  scaleX?: number;
-  scaleY?: number;
-  skewX?: number;
-  skewY?: number;
-  translateX?: number;
-  translateY?: number;
+export interface Line {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/**
+ * Circle interface
+ */
+export interface Circle {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+/**
+ * Polygon interface
+ */
+export interface Polygon {
+  points: Point[];
 }

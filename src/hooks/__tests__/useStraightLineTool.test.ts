@@ -2,8 +2,8 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { Point } from '@/types/core/Point';
-import { MockCanvas } from '@/utils/test/createMockCanvas';
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { MockCanvas, createMockCanvas } from '@/utils/test/createMockCanvas';
+import { Canvas, Object as FabricObject } from 'fabric';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Create strongly typed mocks
@@ -23,19 +23,7 @@ describe('useStraightLineTool', () => {
   let saveStateMock: ReturnType<typeof vi.fn>;
   
   beforeEach(() => {
-    mockCanvas = {
-      on: vi.fn(),
-      off: vi.fn(),
-      add: vi.fn(),
-      remove: vi.fn(),
-      getObjects: vi.fn().mockReturnValue([]),
-      getActiveObjects: vi.fn().mockReturnValue([]),
-      renderAll: vi.fn(),
-      requestRenderAll: vi.fn(),
-      getPointer: vi.fn().mockReturnValue({ x: 100, y: 100 }),
-      selection: true
-    } as MockCanvas;
-    
+    mockCanvas = createMockCanvas();
     saveStateMock = vi.fn();
   });
   
@@ -43,7 +31,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as Canvas,
+        canvas: mockCanvas as unknown as Canvas,
         saveCurrentState: saveStateMock
       })
     );
@@ -56,7 +44,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: false,
-        canvas: mockCanvas as Canvas, 
+        canvas: mockCanvas as unknown as Canvas, 
         saveCurrentState: saveStateMock
       })
     );
@@ -69,7 +57,7 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => 
       useStraightLineTool({
         isActive: true,
-        canvas: mockCanvas as Canvas,
+        canvas: mockCanvas as unknown as Canvas,
         saveCurrentState: saveStateMock
       })
     );

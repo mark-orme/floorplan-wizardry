@@ -27,6 +27,15 @@ export const CanvasWrapper: React.FC = () => {
       // Use the asExtendedCanvas helper to properly type the canvas
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
+      // Ensure required properties exist
+      if (!extendedCanvas.getElement) {
+        extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
+      }
+      
+      if (!extendedCanvas.getActiveObjects) {
+        extendedCanvas.getActiveObjects = () => [];
+      }
+      
       setCanvas(extendedCanvas);
       setIsLoading(false);
       

@@ -1,133 +1,137 @@
 
-/**
- * Canvas Interaction Hook
- * Manages interaction with the canvas including selection, dragging, and point handling
- */
-import { useCallback, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/core/Geometry';
+import { useCallback, useEffect, MutableRefObject } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
 
-export interface CanvasInteractionOptions {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
-  canvas?: React.MutableRefObject<FabricCanvas | null> | FabricCanvas | null; // Added for test compatibility
-  tool?: DrawingMode;
-  saveCurrentState?: () => void;
-  onInteractionStart?: () => void;
-  onInteractionEnd?: () => void;
-}
-
-export interface UseCanvasInteractionResult {
-  isInteracting: boolean;
-  startInteraction: () => void;
-  endInteraction: () => void;
-  deleteSelectedObjects: () => void;
-  enablePointSelection: () => void;
-  setupSelectionMode: () => void;
+interface UseCanvasInteractionProps {
+  canvasRef: MutableRefObject<ExtendedFabricCanvas | null>;
+  onSelectionChange?: (selected: boolean) => void;
+  onObjectModified?: (e: any) => void;
+  onObjectRemoved?: (e: any) => void;
+  onObjectAdded?: (e: any) => void;
+  onCanvasClicked?: (e: any) => void;
+  selectable?: boolean;
 }
 
 export const useCanvasInteraction = ({
-  fabricCanvasRef,
-  canvas,
-  tool = DrawingMode.SELECT,
-  saveCurrentState,
-  onInteractionStart,
-  onInteractionEnd
-}: CanvasInteractionOptions): UseCanvasInteractionResult => {
-  // Create a mutable reference if canvas is provided directly
-  const canvasRef = useCallback(() => {
-    if (fabricCanvasRef?.current) return fabricCanvasRef;
-    
-    // If canvas is a direct FabricCanvas instance
-    if (canvas instanceof FabricCanvas) {
-      return { current: canvas };
+  canvasRef,
+  onSelectionChange,
+  onObjectModified,
+  onObjectRemoved,
+  onObjectAdded,
+  onCanvasClicked,
+  selectable = true
+}: UseCanvasInteractionProps) => {
+  const handleSelectionCreated = useCallback((e: any) => {
+    if (onSelectionChange) {
+      onSelectionChange(true);
     }
-    
-    // If canvas is a ref
-    if (canvas && 'current' in canvas) {
-      return canvas;
+  }, [onSelectionChange]);
+
+  const handleSelectionCleared = useCallback((e: any) => {
+    if (onSelectionChange) {
+      onSelectionChange(false);
     }
-    
-    // Default empty ref
-    return { current: null };
-  }, [fabricCanvasRef, canvas])();
+  }, [onSelectionChange]);
 
-  const [isInteracting, setIsInteracting] = useState(false);
+  const handleObjectModified = useCallback((e: any) => {
+    if (onObjectModified) {
+      onObjectModified(e);
+    }
+  }, [onObjectModified]);
 
-  const startInteraction = useCallback(() => {
-    setIsInteracting(true);
-    onInteractionStart?.();
-  }, [onInteractionStart]);
+  const handleObjectRemoved = useCallback((e: any) => {
+    if (onObjectRemoved) {
+      onObjectRemoved(e);
+    }
+  }, [onObjectRemoved]);
 
-  const endInteraction = useCallback(() => {
-    setIsInteracting(false);
-    onInteractionEnd?.();
-  }, [onInteractionEnd]);
+  const handleObjectAdded = useCallback((e: any) => {
+    if (onObjectAdded) {
+      onObjectAdded(e);
+    }
+  }, [onObjectAdded]);
+
+  const handleMouseDown = useCallback((e: any) => {
+    if (onCanvasClicked && !e.target) {
+      onCanvasClicked(e);
+    }
+  }, [onCanvasClicked]);
 
   const deleteSelectedObjects = useCallback(() => {
-    const canvas = canvasRef?.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const activeObjects = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
-    if (activeObjects.length === 0) return;
-
-    // Save state before deletion
-    if (saveCurrentState) {
-      saveCurrentState();
+    
+    const activeObjects = canvas.getActiveObjects?.() || [];
+    
+    if (activeObjects.length > 0) {
+      activeObjects.forEach((obj) => {
+        if (canvas.remove) {
+          canvas.remove(obj);
+        }
+      });
+      
+      if (canvas.discardActiveObject) {
+        canvas.discardActiveObject();
+      }
+      
+      if (canvas.requestRenderAll) {
+        canvas.requestRenderAll();
+      }
     }
-
-    // Remove all selected objects
-    canvas.remove(...activeObjects);
-    canvas.discardActiveObject();
-    canvas.requestRenderAll();
-  }, [canvasRef, saveCurrentState]);
-
-  const enablePointSelection = useCallback(() => {
-    const canvas = canvasRef?.current;
-    if (!canvas) return;
-
-    canvas.selection = false; // Disable group selection
-    canvas.forEachObject(obj => {
-      obj.selectable = true;
-      obj.evented = true;
-    });
-    canvas.requestRenderAll();
   }, [canvasRef]);
 
-  const setupSelectionMode = useCallback(() => {
-    const canvas = canvasRef?.current;
+  const setObjectsSelectable = useCallback((selectable: boolean) => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
-
-    if (tool === DrawingMode.SELECT) {
-      canvas.isDrawingMode = false;
-      enablePointSelection();
-    } else {
-      canvas.isDrawingMode = tool === DrawingMode.DRAW || tool === DrawingMode.PENCIL;
-      canvas.selection = false;
-      canvas.forEachObject(obj => {
-        obj.selectable = false;
-        obj.evented = false;
+    
+    if (canvas.forEachObject) {
+      canvas.forEachObject((obj) => {
+        obj.selectable = selectable;
+        (obj as ExtendedFabricObject).evented = selectable;
       });
     }
-    canvas.requestRenderAll();
-  }, [canvasRef, tool, enablePointSelection]);
-
-  // Set up cleanup on unmount
-  useEffect(() => {
-    return () => {
-      const canvas = canvasRef?.current;
-      if (canvas) {
-        canvas.off();
-      }
-    };
+    
+    if (canvas.requestRenderAll) {
+      canvas.requestRenderAll();
+    }
   }, [canvasRef]);
 
+  useEffect(() => {
+    setObjectsSelectable(selectable);
+  }, [selectable, setObjectsSelectable]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.on?.('selection:created', handleSelectionCreated);
+    canvas.on?.('selection:cleared', handleSelectionCleared);
+    canvas.on?.('object:modified', handleObjectModified);
+    canvas.on?.('object:removed', handleObjectRemoved);
+    canvas.on?.('object:added', handleObjectAdded);
+    canvas.on?.('mouse:down', handleMouseDown);
+
+    return () => {
+      canvas.off?.('selection:created', handleSelectionCreated);
+      canvas.off?.('selection:cleared', handleSelectionCleared);
+      canvas.off?.('object:modified', handleObjectModified);
+      canvas.off?.('object:removed', handleObjectRemoved);
+      canvas.off?.('object:added', handleObjectAdded);
+      canvas.off?.('mouse:down', handleMouseDown);
+    };
+  }, [
+    canvasRef,
+    handleSelectionCreated,
+    handleSelectionCleared,
+    handleObjectModified,
+    handleObjectRemoved,
+    handleObjectAdded,
+    handleMouseDown
+  ]);
+
   return {
-    isInteracting,
-    startInteraction,
-    endInteraction,
     deleteSelectedObjects,
-    enablePointSelection,
-    setupSelectionMode
+    setObjectsSelectable
   };
 };

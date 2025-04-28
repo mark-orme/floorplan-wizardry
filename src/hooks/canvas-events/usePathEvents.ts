@@ -4,7 +4,7 @@
  * @module canvas-events/usePathEvents
  */
 import { useCallback, useEffect } from 'react';
-import fabric from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { EventHandlerResult, UsePathEventsProps } from './types';
 
@@ -30,7 +30,7 @@ export const usePathEvents = ({
     // Save current state before making changes
     saveCurrentState();
     
-    const path = e.path as fabric.Path;
+    const path = e.path as FabricObject;
     
     // Pass path to processing function if provided
     if (processCreatedPath) {
