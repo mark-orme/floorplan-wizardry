@@ -1,97 +1,94 @@
 
-/**
- * Tests for useSnapToGrid hook
- */
-import { describe, test, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useSnapToGrid } from '../useSnapToGrid';
-import { Point } from '@/types/core/Geometry';
+import { vi } from 'vitest';
 
-describe('useSnapToGrid hook', () => {
-  test('should return correct initial state', () => {
+describe('useSnapToGrid', () => {
+  it('should initialize with default options', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
     expect(result.current.snapEnabled).toBe(true);
-    expect(typeof result.current.toggleSnapToGrid).toBe('function');
-    expect(typeof result.current.snapPointToGrid).toBe('function');
-    expect(typeof result.current.snapLineToGrid).toBe('function');
-    expect(typeof result.current.isSnappedToGrid).toBe('function');
+    expect(result.current.snapThreshold).toBe(10);
+    expect(result.current.gridSize).toBe(20);
   });
   
-  test('should toggle snap', () => {
-    const { result } = renderHook(() => useSnapToGrid());
+  it('should toggle snap to grid', () => {
+    const { result } = renderHook(() => useSnapToGrid({
+      initialSnapEnabled: true
+    }));
     
-    // Initially true
-    expect(result.current.snapEnabled).toBe(true);
-    
-    // Toggle it off
     act(() => {
-      result.current.toggleSnapToGrid();
+      result.current.toggleSnap();
     });
     
     expect(result.current.snapEnabled).toBe(false);
     
-    // Toggle it back on
     act(() => {
-      result.current.toggleSnapToGrid();
+      result.current.toggleSnap();
     });
     
     expect(result.current.snapEnabled).toBe(true);
   });
   
-  test('should snap points to grid when enabled', () => {
+  it('should set snap enabled state directly', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
-    // Create a point that's slightly off grid
-    const point: Point = { x: 9.3, y: 11.7 };
-    
-    // Should snap to closest grid point
-    let snappedPoint = result.current.snapPointToGrid(point);
-    expect(snappedPoint.x).toBe(10);
-    expect(snappedPoint.y).toBe(10);
-  });
-  
-  test('should not snap points when disabled', () => {
-    const { result } = renderHook(() => useSnapToGrid());
-    
-    // Turn off snapping
     act(() => {
-      result.current.toggleSnapToGrid();
+      result.current.setSnapEnabled(false);
     });
     
-    // Create a point that's slightly off grid
-    const point: Point = { x: 9.3, y: 11.7 };
-    
-    // Should not snap
-    let snappedPoint = result.current.snapPointToGrid(point);
-    expect(snappedPoint.x).toBe(9.3);
-    expect(snappedPoint.y).toBe(11.7);
+    expect(result.current.snapEnabled).toBe(false);
   });
   
-  test('should correctly identify if a point is on grid', () => {
-    const { result } = renderHook(() => useSnapToGrid());
+  it('should snap a point to the grid when enabled', () => {
+    const { result } = renderHook(() => useSnapToGrid({
+      gridSize: 10,
+      snapThreshold: 5
+    }));
     
-    // Create points
-    const onGridPoint: Point = { x: 10, y: 10 };
-    const offGridPoint: Point = { x: 13, y: 17 };
-    const nearGridPoint: Point = { x: 9.8, y: 10.2 }; // Within threshold
-    
-    expect(result.current.isSnappedToGrid(onGridPoint)).toBe(true);
-    expect(result.current.isSnappedToGrid(offGridPoint)).toBe(false);
-    expect(result.current.isSnappedToGrid(nearGridPoint)).toBe(true);
+    // Point is close to grid point (10, 10)
+    const snappedPoint = result.current.snapPointToGrid({ x: 12, y: 8 });
+    expect(snappedPoint).toEqual({ x: 10, y: 10 });
   });
   
-  test('should snap lines to grid', () => {
+  it('should not snap a point when disabled', () => {
+    const { result } = renderHook(() => useSnapToGrid({
+      initialSnapEnabled: false,
+      gridSize: 10
+    }));
+    
+    const snappedPoint = result.current.snapPointToGrid({ x: 12, y: 8 });
+    expect(snappedPoint).toEqual({ x: 12, y: 8 }); // No snapping
+  });
+  
+  it('should not snap when point is far from grid point', () => {
+    const { result } = renderHook(() => useSnapToGrid({
+      gridSize: 10,
+      snapThreshold: 2
+    }));
+    
+    // Point is too far from grid point to snap (threshold is 2)
+    const snappedPoint = result.current.snapPointToGrid({ x: 14, y: 14 });
+    expect(snappedPoint).toEqual({ x: 14, y: 14 }); // No snapping
+  });
+  
+  it('should update grid size', () => {
     const { result } = renderHook(() => useSnapToGrid());
     
-    const start: Point = { x: 9.3, y: 11.7 };
-    const end: Point = { x: 19.7, y: 21.3 };
+    act(() => {
+      result.current.setGridSize(50);
+    });
     
-    const snappedLine = result.current.snapLineToGrid(start, end);
+    expect(result.current.gridSize).toBe(50);
+  });
+  
+  it('should update snap threshold', () => {
+    const { result } = renderHook(() => useSnapToGrid());
     
-    expect(snappedLine.start.x).toBe(10);
-    expect(snappedLine.start.y).toBe(10);
-    expect(snappedLine.end.x).toBe(20);
-    expect(snappedLine.end.y).toBe(20);
+    act(() => {
+      result.current.setSnapThreshold(15);
+    });
+    
+    expect(result.current.snapThreshold).toBe(15);
   });
 });

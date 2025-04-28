@@ -1,96 +1,157 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { FloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { createEmptyFloorPlan } from '@/types/floor-plan/unifiedTypes';
-import { toast } from 'sonner';
+
+interface FloorPlan {
+  id: string;
+  name: string;
+  data: any;
+}
+
+interface CustomApis {
+  fetchFloorPlans?: (projectId: string) => Promise<FloorPlan[]>;
+  createFloorPlan?: (projectId: string, name: string) => Promise<FloorPlan>;
+  updateFloorPlan?: (projectId: string, planId: string, data: Partial<FloorPlan>) => Promise<FloorPlan>;
+  deleteFloorPlan?: (projectId: string, planId: string) => Promise<{ success: boolean }>;
+}
 
 interface UseSyncedFloorPlansProps {
-  initialFloorPlans?: FloorPlan[];
-  loadFloorPlans?: () => Promise<FloorPlan[]>;
-  saveFloorPlans?: (floorPlans: FloorPlan[]) => Promise<void>;
+  projectId: string;
+  customApis?: CustomApis;
+  pollingInterval?: number;
 }
 
 export const useSyncedFloorPlans = ({
-  initialFloorPlans = [],
-  loadFloorPlans = async () => initialFloorPlans,
-  saveFloorPlans = async () => {}
+  projectId,
+  customApis = {},
+  pollingInterval = 30000
 }: UseSyncedFloorPlansProps) => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
-  const [isLoading, setIsLoading] = useState(false);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchFloorPlans = async () => {
+  // Default API implementations
+  const defaultFetchFloorPlans = useCallback(async (projectId: string): Promise<FloorPlan[]> => {
+    const response = await fetch(`/api/projects/${projectId}/floor-plans`);
+    if (!response.ok) throw new Error('Failed to fetch floor plans');
+    return response.json();
+  }, []);
+
+  const defaultCreateFloorPlan = useCallback(async (projectId: string, name: string): Promise<FloorPlan> => {
+    const response = await fetch(`/api/projects/${projectId}/floor-plans`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    if (!response.ok) throw new Error('Failed to create floor plan');
+    return response.json();
+  }, []);
+
+  const defaultUpdateFloorPlan = useCallback(async (
+    projectId: string, 
+    planId: string, 
+    data: Partial<FloorPlan>
+  ): Promise<FloorPlan> => {
+    const response = await fetch(`/api/projects/${projectId}/floor-plans/${planId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Failed to update floor plan');
+    return response.json();
+  }, []);
+
+  const defaultDeleteFloorPlan = useCallback(async (
+    projectId: string, 
+    planId: string
+  ): Promise<{ success: boolean }> => {
+    const response = await fetch(`/api/projects/${projectId}/floor-plans/${planId}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error('Failed to delete floor plan');
+    return { success: true };
+  }, []);
+
+  // Use custom APIs or defaults
+  const fetchFloorPlans = customApis.fetchFloorPlans || defaultFetchFloorPlans;
+  const createFloorPlan = customApis.createFloorPlan || defaultCreateFloorPlan;
+  const updateFloorPlan = customApis.updateFloorPlan || defaultUpdateFloorPlan;
+  const deleteFloorPlan = customApis.deleteFloorPlan || defaultDeleteFloorPlan;
+
+  // Load floor plans
+  const loadFloorPlans = useCallback(async () => {
+    try {
       setIsLoading(true);
       setError(null);
-      try {
-        const loadedFloorPlans = await loadFloorPlans();
-        setFloorPlans(loadedFloorPlans);
-      } catch (e: any) {
-        setError(e.message || 'Failed to load floor plans');
-        toast.error('Failed to load floor plans');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFloorPlans();
-  }, [loadFloorPlans]);
-
-  const syncFloorPlans = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await saveFloorPlans(floorPlans);
-      toast.success('Floor plans saved successfully');
-    } catch (e: any) {
-      setError(e.message || 'Failed to sync floor plans');
-      toast.error('Failed to sync floor plans');
+      const data = await fetchFloorPlans(projectId);
+      setFloorPlans(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, [floorPlans, saveFloorPlans]);
+  }, [fetchFloorPlans, projectId]);
 
-  const addFloorPlan = useCallback(() => {
-    const newFloorPlan = createEmptyFloorPlan();
-    setFloorPlans(prev => [...prev, newFloorPlan]);
-  }, []);
-  
-  // Alias for createFloorPlan to maintain compatibility with tests
-  const createFloorPlan = useCallback((data: Partial<FloorPlan> = {}) => {
-    const newFloorPlan = createEmptyFloorPlan();
-    // Apply any custom data
-    const customizedFloorPlan = { ...newFloorPlan, ...data };
-    setFloorPlans(prev => [...prev, customizedFloorPlan]);
-    return customizedFloorPlan;
-  }, []);
-
-  const updateFloorPlan = useCallback((index: number, updatedFloorPlan: FloorPlan) => {
-    setFloorPlans(prev => {
-      const newFloorPlans = [...prev];
-      newFloorPlans[index] = updatedFloorPlan;
-      return newFloorPlans;
-    });
-  }, []);
-
-  // Support for both index-based and id-based deletion
-  const deleteFloorPlan = useCallback((indexOrId: number | string) => {
-    if (typeof indexOrId === 'number') {
-      setFloorPlans(prev => prev.filter((_, i) => i !== indexOrId));
-    } else {
-      setFloorPlans(prev => prev.filter(plan => plan.id !== indexOrId));
+  // Create a new floor plan
+  const handleCreateFloorPlan = useCallback(async (name: string) => {
+    try {
+      const newPlan = await createFloorPlan(projectId, name);
+      setFloorPlans(prev => [...prev, newPlan]);
+      return newPlan;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create floor plan');
+      return null;
     }
-  }, []);
+  }, [createFloorPlan, projectId]);
+
+  // Update an existing floor plan
+  const handleUpdateFloorPlan = useCallback(async (planId: string, data: Partial<FloorPlan>) => {
+    try {
+      const updatedPlan = await updateFloorPlan(projectId, planId, data);
+      setFloorPlans(prev => 
+        prev.map(plan => plan.id === planId ? { ...plan, ...updatedPlan } : plan)
+      );
+      return updatedPlan;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update floor plan');
+      return null;
+    }
+  }, [updateFloorPlan, projectId]);
+
+  // Delete a floor plan
+  const handleDeleteFloorPlan = useCallback(async (planId: string) => {
+    try {
+      await deleteFloorPlan(projectId, planId);
+      setFloorPlans(prev => prev.filter(plan => plan.id !== planId));
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete floor plan');
+      return false;
+    }
+  }, [deleteFloorPlan, projectId]);
+
+  // Initial load
+  useEffect(() => {
+    loadFloorPlans();
+  }, [loadFloorPlans]);
+
+  // Polling for updates
+  useEffect(() => {
+    if (!pollingInterval) return;
+    
+    const interval = setInterval(() => {
+      loadFloorPlans();
+    }, pollingInterval);
+    
+    return () => clearInterval(interval);
+  }, [loadFloorPlans, pollingInterval]);
 
   return {
     floorPlans,
-    setFloorPlans,
     isLoading,
     error,
-    syncFloorPlans,
-    addFloorPlan,
-    createFloorPlan,
-    updateFloorPlan,
-    deleteFloorPlan,
+    refreshFloorPlans: loadFloorPlans,
+    createFloorPlan: handleCreateFloorPlan,
+    updateFloorPlan: handleUpdateFloorPlan,
+    deleteFloorPlan: handleDeleteFloorPlan
   };
 };

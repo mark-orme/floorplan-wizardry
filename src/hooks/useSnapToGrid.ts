@@ -1,71 +1,55 @@
 
 import { useState, useCallback } from 'react';
-import { Point } from '@/types/core/Point';
 
-interface UseSnapToGridProps {
-  gridSize?: number;
-  enabled?: boolean;
+interface SnapToGridOptions {
   initialSnapEnabled?: boolean;
+  gridSize?: number;
+  snapThreshold?: number;
 }
 
-export const useSnapToGrid = ({ 
-  gridSize = 20, 
-  enabled = true,
-  initialSnapEnabled = true
-}: UseSnapToGridProps = {}) => {
-  // State for snap to grid functionality
+export const useSnapToGrid = (options: SnapToGridOptions = {}) => {
+  const {
+    initialSnapEnabled = true,
+    gridSize: initialGridSize = 20,
+    snapThreshold: initialSnapThreshold = 10
+  } = options;
+
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  
-  /**
-   * Toggle snap to grid on/off
-   */
-  const toggleSnapToGrid = useCallback(() => {
+  const [gridSize, setGridSize] = useState(initialGridSize);
+  const [snapThreshold, setSnapThreshold] = useState(initialSnapThreshold);
+
+  const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
-  
-  /**
-   * Snap a point to the nearest grid intersection
-   */
-  const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled || !enabled) return point;
+
+  const snapPointToGrid = useCallback((point: { x: number; y: number }) => {
+    if (!snapEnabled) return point;
+
+    const { x, y } = point;
     
+    // Calculate nearest grid points
+    const nearestX = Math.round(x / gridSize) * gridSize;
+    const nearestY = Math.round(y / gridSize) * gridSize;
+    
+    // Calculate distances to nearest grid points
+    const distX = Math.abs(x - nearestX);
+    const distY = Math.abs(y - nearestY);
+    
+    // Only snap if within threshold
     return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
+      x: distX <= snapThreshold ? nearestX : x,
+      y: distY <= snapThreshold ? nearestY : y
     };
-  }, [gridSize, snapEnabled, enabled]);
-  
-  /**
-   * Snap both ends of a line to the grid
-   */
-  const snapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled || !enabled) return { start, end };
-    
-    return {
-      start: snapPointToGrid(start),
-      end: snapPointToGrid(end)
-    };
-  }, [snapPointToGrid, snapEnabled, enabled]);
-  
-  /**
-   * Check if point is snapped to grid
-   */
-  const isSnappedToGrid = useCallback((point: Point, threshold = 2): boolean => {
-    if (!snapEnabled) return false;
-    
-    const snappedPoint = snapPointToGrid(point);
-    const dx = Math.abs(point.x - snappedPoint.x);
-    const dy = Math.abs(point.y - snappedPoint.y);
-    
-    return dx <= threshold && dy <= threshold;
-  }, [snapPointToGrid, snapEnabled]);
-  
+  }, [snapEnabled, gridSize, snapThreshold]);
+
   return {
     snapEnabled,
-    toggleSnapToGrid,
-    snapPointToGrid,
-    snapLineToGrid,
-    isSnappedToGrid,
-    gridSize
+    setSnapEnabled,
+    gridSize,
+    setGridSize,
+    snapThreshold,
+    setSnapThreshold,
+    toggleSnap,
+    snapPointToGrid
   };
 };

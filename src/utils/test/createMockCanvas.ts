@@ -17,7 +17,18 @@ export const createMockCanvas = () => {
     sendToBack: vi.fn(),
     sendObjectToBack: vi.fn(),
     getZoom: vi.fn().mockReturnValue(1),
-    setZoom: vi.fn()
+    setZoom: vi.fn(),
+    fire: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    dispose: vi.fn(),
+    getActiveObject: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    forEachObject: vi.fn((callback) => {
+      callback({ selectable: true });
+    })
   };
 };
 
@@ -37,3 +48,24 @@ export const createMockObject = (type: string, props: Record<string, any> = {}) 
     ...props
   };
 };
+
+/**
+ * MockCanvas type for testing
+ */
+export interface MockCanvas {
+  on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
+  add: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
+  getObjects: ReturnType<typeof vi.fn>;
+  dispose: ReturnType<typeof vi.fn>;
+  renderAll: ReturnType<typeof vi.fn>;
+  requestRenderAll: ReturnType<typeof vi.fn>;
+  getPointer: ReturnType<typeof vi.fn>;
+  isDrawingMode: boolean;
+}
+
+/**
+ * Return the mock canvas with proper typing
+ */
+export { createMockCanvas as MockCanvas };

@@ -41,7 +41,8 @@ export const createMockCanvas = () => {
     sendToBack: vi.fn(),
     fire: vi.fn(),
     dispose: vi.fn(),
-    initialize: vi.fn()
+    initialize: vi.fn(),
+    getActiveObject: vi.fn()
   };
   
   return mockCanvas;
@@ -71,8 +72,13 @@ export const mockJest = {
   mocked: vi.mocked
 };
 
-// Mock testing functions to satisfy test modules
+// Provide Vitest testing utilities
 export const testUtils = {
   renderHook,
-  act
+  act,
+  vi
 };
+
+// Export MockCanvas type
+export type { MockCanvasInterface } from '../tests/vitest-globals.d';
+export { MockCanvas } from './test/createMockCanvas';

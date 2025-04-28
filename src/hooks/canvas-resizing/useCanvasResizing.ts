@@ -1,120 +1,87 @@
 
-/**
- * Main canvas resizing hook
- * Manages canvas resizing with event handlers and state tracking
- * @module canvas-resizing/useCanvasResizing
- */
-import { useEffect, useRef, useCallback } from "react";
-import { CanvasDimensions } from "@/types/drawingTypes";
-import { UseCanvasResizingProps, CanvasResizingResult } from "./types";
-import { resizingState } from "./state";
-import { useResizeLogic } from "./useResizeLogic";
-import { throttle } from "@/utils/throttleUtils";
-import {
-  RESIZE_DEBOUNCE_DELAY,
-  INITIAL_RESIZE_DELAY
-} from "./constants";
+import { useCallback, useEffect, useState } from 'react';
+import { debounce } from '@/utils/debounce';
+import { UseCanvasResizingProps, CanvasDimensions } from './types';
 
-/**
- * Hook for handling canvas resizing operations
- * Manages window resize events and initial sizing
- * 
- * @param props - Canvas resizing properties
- * @returns Object with updateCanvasDimensions function
- */
 export const useCanvasResizing = ({
-  canvasRef,
   fabricCanvasRef,
-  setCanvasDimensions: setDimensions,
-  setDebugInfo,
-  setHasError,
-  setErrorMessage,
-  createGrid
-}: UseCanvasResizingProps): CanvasResizingResult => {
-  const resizeTimeoutRef = useRef<number | null>(null);
-  const lastDimensionsRef = useRef<CanvasDimensions>({width: 0, height: 0});
-  const initialResizeCompleteRef = useRef<boolean>(resizingState.initialResizeComplete);
-  const resizeInProgressRef = useRef<boolean>(resizingState.resizeInProgress);
-  const initialResizeTimerRef = useRef<number | null>(null);
-  const resizeCountRef = useRef<number>(0);
-  const lastResizeTimeRef = useRef<number>(resizingState.lastResizeTime);
-  const eventCleanupRef = useRef<(() => void) | null>(null);
+  options = {},
+  debugInfo
+}: UseCanvasResizingProps) => {
+  const {
+    minWidth = 100,
+    minHeight = 100,
+    maxWidth = 3000,
+    maxHeight = 2000,
+    preserveAspectRatio = false,
+    onResize,
+    onResizeComplete,
+    debounceDelay = 200
+  } = options;
 
-  // Use the resize logic hook
-  const { updateCanvasDimensions } = useResizeLogic({
-    canvasRef,
-    fabricCanvasRef,
-    setDimensions,
-    setDebugInfo,
-    setHasError,
-    setErrorMessage,
-    createGrid,
-    lastDimensionsRef,
-    initialResizeCompleteRef,
-    resizeInProgressRef,
-    lastResizeTimeRef,
-    resizeCountRef
+  const [dimensions, setDimensions] = useState<CanvasDimensions>({
+    width: fabricCanvasRef.current?.getWidth() || 800,
+    height: fabricCanvasRef.current?.getHeight() || 600
   });
 
-  // Create throttled resize handler
-  const throttledResizeHandler = useCallback(
-    throttle(() => {
-      if (!resizeInProgressRef.current) {
-        updateCanvasDimensions();
+  const updateCanvasSize = useCallback(
+    (width: number, height: number) => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+
+      // Ensure dimensions are within limits
+      width = Math.max(minWidth, Math.min(maxWidth, width));
+      height = Math.max(minHeight, Math.min(maxHeight, height));
+
+      // Update canvas size
+      canvas.setWidth(width);
+      canvas.setHeight(height);
+
+      // Update dimensions state
+      setDimensions({ width, height });
+
+      // Call onResize callback if provided
+      onResize?.({ width, height });
+
+      // Update debug info if provided
+      if (debugInfo?.current) {
+        debugInfo.current.width = width;
+        debugInfo.current.height = height;
       }
-    }, RESIZE_DEBOUNCE_DELAY),
-    [updateCanvasDimensions]
+
+      // Render canvas
+      canvas.renderAll();
+    },
+    [fabricCanvasRef, minWidth, maxWidth, minHeight, maxHeight, onResize, debugInfo]
   );
 
-  // Set up event listeners for window resize
+  const handleResize = useCallback(
+    debounce(
+      (width: number, height: number) => {
+        updateCanvasSize(width, height);
+        onResizeComplete?.({ width, height });
+      },
+      debounceDelay
+    ),
+    [updateCanvasSize, onResizeComplete, debounceDelay]
+  );
+
+  // Initialize canvas size
   useEffect(() => {
-    // Add event listener for resize
-    window.addEventListener('resize', throttledResizeHandler);
-    
-    // Store cleanup function
-    eventCleanupRef.current = () => {
-      window.removeEventListener('resize', throttledResizeHandler);
-    };
-    
-    // Initial update with a delay to ensure DOM is ready
-    // Only run this once per component lifecycle
-    if (!initialResizeTimerRef.current && !initialResizeCompleteRef.current) {
-      initialResizeTimerRef.current = window.setTimeout(() => {
-        updateCanvasDimensions();
-        initialResizeTimerRef.current = null;
-      }, INITIAL_RESIZE_DELAY);
-    }
-    
-    return () => {
-      // Remove resize event listener
-      if (eventCleanupRef.current) {
-        eventCleanupRef.current();
-      }
-      
-      // Clear any pending timeouts
-      if (resizeTimeoutRef.current !== null) {
-        window.clearTimeout(resizeTimeoutRef.current);
-        resizeTimeoutRef.current = null;
-      }
-      if (initialResizeTimerRef.current !== null) {
-        clearTimeout(initialResizeTimerRef.current);
-        initialResizeTimerRef.current = null;
-      }
-    };
-  }, [updateCanvasDimensions, throttledResizeHandler]);
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
 
-  // Cancel resize function
-  const cancelResize = useCallback(() => {
-    if (resizeTimeoutRef.current !== null) {
-      window.clearTimeout(resizeTimeoutRef.current);
-      resizeTimeoutRef.current = null;
-    }
-    resizeInProgressRef.current = false;
-    resizingState.resizeInProgress = false;
-  }, []);
+    const initialWidth = canvas.getWidth() || 800;
+    const initialHeight = canvas.getHeight() || 600;
 
-  return { 
-    updateCanvasDimensions,
-    cancelResize
+    if (initialWidth !== dimensions.width || initialHeight !== dimensions.height) {
+      updateCanvasSize(initialWidth, initialHeight);
+    }
+  }, [fabricCanvasRef, dimensions.width, dimensions.height, updateCanvasSize]);
+
+  return {
+    dimensions,
+    updateCanvasSize,
+    handleResize
   };
 };

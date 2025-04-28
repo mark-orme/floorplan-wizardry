@@ -1,119 +1,125 @@
 
-/**
- * Tests for the useDrawingState hook
- * @module hooks/__tests__/useDrawingState.test
- */
-import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
-import { useDrawingState } from '../useDrawingState';
-import { Point } from '@/types';
+import { useDrawingState } from '../drawing/useDrawingState';
+import { vi } from 'vitest';
+import { DrawingState } from '@/types/DrawingState';
 
-describe('useDrawingState Hook', () => {
+// Mock uuid generation
+vi.mock('uuid', () => ({
+  v4: () => 'test-uuid-1234'
+}));
+
+describe('useDrawingState', () => {
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useDrawingState());
     
-    expect(result.current.drawingState).toEqual({
-      isDrawing: false,
-      startPoint: null,
-      currentPoint: null,
-      cursorPosition: null,
-      midPoint: null,
-      selectionActive: false,
-      currentZoom: 1,
-      points: [],
-      distance: null,
-      zoomLevel: 1,
-      lastX: 0,
-      lastY: 0,
-      startX: 0,
-      startY: 0,
-      endX: 0,
-      endY: 0,
-      snapToGrid: true,
-      toolType: 'line',
+    expect(result.current.activeColor).toBe('#000000');
+    expect(result.current.activeThickness).toBe(2);
+    expect(result.current.activeType).toBe('line');
+    expect(result.current.currentStroke).toBeNull();
+    expect(result.current.isDrawing).toBe(false);
+  });
+  
+  it('should start a stroke correctly', () => {
+    const { result } = renderHook(() => useDrawingState());
+    
+    act(() => {
+      result.current.startStroke({ x: 10, y: 20 });
+    });
+    
+    expect(result.current.isDrawing).toBe(true);
+    expect(result.current.currentStroke).toEqual({
+      id: 'test-uuid-1234',
+      points: [{ x: 10, y: 20 }],
+      color: '#000000',
+      thickness: 2,
       width: 2,
-      color: '#000000'
+      type: 'line'
     });
   });
   
-  it('should update state when starting to draw', () => {
+  it('should update a stroke correctly', () => {
     const { result } = renderHook(() => useDrawingState());
-    const x = 100;
-    const y = 100;
     
     act(() => {
-      result.current.startDrawing(x, y);
+      result.current.startStroke({ x: 10, y: 20 });
     });
     
-    expect(result.current.drawingState.isDrawing).toBe(true);
-    expect(result.current.drawingState.startPoint?.x).toBe(x);
-    expect(result.current.drawingState.startPoint?.y).toBe(y);
+    act(() => {
+      result.current.updateStroke({ x: 30, y: 40 });
+    });
+    
+    expect(result.current.currentStroke?.points).toEqual([
+      { x: 10, y: 20 },
+      { x: 30, y: 40 }
+    ]);
   });
   
-  it('should update drawing state with new points', () => {
+  it('should not update a stroke if not drawing', () => {
     const { result } = renderHook(() => useDrawingState());
-    const startX = 100;
-    const startY = 100;
-    const nextX = 120;
-    const nextY = 120;
     
-    act(() => {
-      result.current.startDrawing(startX, startY);
-      result.current.updateDrawing(nextX, nextY);
-    });
+    const updatedStroke = result.current.updateStroke({ x: 30, y: 40 });
     
-    expect(result.current.drawingState.currentPoint?.x).toBe(nextX);
-    expect(result.current.drawingState.currentPoint?.y).toBe(nextY);
-    expect(result.current.drawingState.points.length).toBe(2);
+    expect(updatedStroke).toBeNull();
+    expect(result.current.currentStroke).toBeNull();
   });
   
-  it('should end drawing correctly', () => {
+  it('should end a stroke correctly', () => {
     const { result } = renderHook(() => useDrawingState());
-    const x = 100;
-    const y = 100;
     
     act(() => {
-      result.current.startDrawing(x, y);
-      result.current.endDrawing(x + 50, y + 50);
+      result.current.startStroke({ x: 10, y: 20 });
     });
     
-    expect(result.current.drawingState.isDrawing).toBe(false);
-    expect(result.current.drawingState.points.length).toBe(2);
+    let finishedStroke;
+    act(() => {
+      finishedStroke = result.current.endStroke();
+    });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.currentStroke).toBeNull();
+    expect(finishedStroke).toEqual({
+      id: 'test-uuid-1234',
+      points: [{ x: 10, y: 20 }],
+      color: '#000000',
+      thickness: 2,
+      width: 2,
+      type: 'line'
+    });
   });
   
-  it('should reset drawing state', () => {
+  it('should cancel a stroke correctly', () => {
     const { result } = renderHook(() => useDrawingState());
-    const x = 100;
-    const y = 100;
     
     act(() => {
-      result.current.startDrawing(x, y);
-      result.current.resetDrawing();
+      result.current.startStroke({ x: 10, y: 20 });
     });
     
-    expect(result.current.drawingState.isDrawing).toBe(false);
-    expect(result.current.drawingState.startPoint).toBeNull();
+    act(() => {
+      result.current.cancelStroke();
+    });
+    
+    expect(result.current.isDrawing).toBe(false);
+    expect(result.current.currentStroke).toBeNull();
   });
   
-  it('should update distance measurement', () => {
+  it('should allow changing active color', () => {
     const { result } = renderHook(() => useDrawingState());
-    const distance = 42.5;
     
     act(() => {
-      result.current.updateDistance(distance);
+      result.current.setActiveColor('#ff0000');
     });
     
-    expect(result.current.drawingState.distance).toBe(distance);
+    expect(result.current.activeColor).toBe('#ff0000');
   });
   
-  it('should update cursor position', () => {
+  it('should allow changing active thickness', () => {
     const { result } = renderHook(() => useDrawingState());
-    const position = { x: 150, y: 150 } as Point;
     
     act(() => {
-      result.current.updateCursorPosition(position);
+      result.current.setActiveThickness(5);
     });
     
-    expect(result.current.drawingState.cursorPosition).toEqual(position);
+    expect(result.current.activeThickness).toBe(5);
   });
 });

@@ -1,4 +1,6 @@
 
+import { ZoomDirection } from './drawingStateTypes';
+
 export enum ZoomDirection {
   IN = 'in',
   OUT = 'out',
@@ -72,4 +74,54 @@ export const DEFAULT_DRAWING_STATE: DrawingState = {
   snapToGrid: true,
   currentLayerId: 'default',
   selectedObjects: []
+};
+
+/**
+ * Canvas dimensions interface
+ */
+export interface CanvasDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Debug info state interface
+ */
+export interface DebugInfoState {
+  fps?: number;
+  objects?: number;
+  visible?: number;
+  width?: number;
+  height?: number;
+  zoom?: number;
+  isDrawingMode?: boolean;
+  canvasReady?: boolean;
+}
+
+/**
+ * State for canvas controller
+ */
+export interface CanvasControllerState {
+  width: number;
+  height: number;
+  zoom: number;
+  tool: string;
+  isDrawing: boolean;
+  showGrid: boolean;
+  showRulers: boolean;
+  snap: boolean;
+}
+
+/**
+ * Default canvas controller state
+ */
+export const DEFAULT_CANVAS_STATE: CanvasControllerState = {
+  width: 800,
+  height: 600,
+  zoom: 1,
+  tool: 'select',
+  isDrawing: false,
+  showGrid: true,
+  showRulers: false,
+  snap: true
 };

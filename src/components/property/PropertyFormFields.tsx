@@ -1,107 +1,93 @@
-import { z } from 'zod';
+
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { FormFieldType } from '@/types/forms';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 
-interface PropertyFormFieldProps {
-  type: FormFieldType;
-  name: string;
-  label: string;
-  placeholder?: string;
-  options?: { value: string; label: string }[];
-  register: any;
-  errors: any;
-  required?: boolean;
+interface PropertyFormFieldsProps {
+  propertyData: any;
+  onChange: (field: string, value: any) => void;
+  onSubmit?: () => void;
+  showAdvanced?: boolean;
 }
 
-export const PropertyFormFields: React.FC<PropertyFormFieldProps> = ({
-  type,
-  name,
-  label,
-  placeholder,
-  options,
-  register,
-  errors,
-  required = false
+export const PropertyFormFields: React.FC<PropertyFormFieldsProps> = ({
+  propertyData,
+  onChange,
+  onSubmit,
+  showAdvanced = false
 }) => {
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    onChange(e.target.name, e.target.value);
+  };
+  
+  const handleSelectChange = (field: string, value: string) => {
+    onChange(field, value);
+  };
+  
+  const handleCheckboxChange = (field: string, checked: boolean) => {
+    onChange(field, checked);
+  };
+  
   return (
-    <div className="grid w-full gap-2">
-      <Label htmlFor={name}>{label}</Label>
-      {type === 'text' && (
-        <Input
-          type="text"
-          id={name}
-          placeholder={placeholder}
-          {...register(name, { required })}
-        />
-      )}
-      {type === 'textarea' && (
-        <Textarea
-          id={name}
-          placeholder={placeholder}
-          {...register(name, { required })}
-        />
-      )}
-      {type === 'checkbox' && (
-        <Checkbox
-          id={name}
-          {...register(name, { required })}
-        />
-      )}
-      {type === 'select' && options && (
-        <Select>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={placeholder || label} {...register(name, { required })} />
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="address">Address</Label>
+          <Input 
+            id="address" 
+            name="address" 
+            value={propertyData.address || ''} 
+            onChange={handleTextChange} 
+            placeholder="Enter address"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="postcode">Post Code</Label>
+          <Input 
+            id="postcode" 
+            name="postcode" 
+            value={propertyData.postcode || ''} 
+            onChange={handleTextChange} 
+            placeholder="Enter post code"
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="propertyType">Property Type</Label>
+        <Select 
+          value={propertyData.propertyType || ''} 
+          onValueChange={(value) => handleSelectChange('propertyType', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select property type" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-            ))}
+            <SelectItem value="detached">Detached</SelectItem>
+            <SelectItem value="semiDetached">Semi-Detached</SelectItem>
+            <SelectItem value="terraced">Terraced</SelectItem>
+            <SelectItem value="flat">Flat/Apartment</SelectItem>
           </SelectContent>
         </Select>
-      )}
-      {type === 'date' && (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={'outline'}
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !errors[name] && 'text-muted-foreground'
-              )}
-            >
-              {errors[name] ? (
-                format(errors[name], 'PPP')
-              ) : (
-                <span>{placeholder || 'Pick a date'}</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={errors[name]}
-              onSelect={(date) => {
-                register(name).onChange(date);
-              }}
-              disabled={(date) =>
-                date > new Date()
-              }
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      )}
-      {errors[name] && (
-        <p className="text-sm text-red-500">{errors[name]?.message}</p>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        {onSubmit && (
+          <Button type="button" onClick={onSubmit}>Save Property</Button>
+        )}
+        <Button type="button" variant="outline">Cancel</Button>
+      </div>
+      
+      {showAdvanced && (
+        <div className="pt-4 border-t mt-4">
+          <h3 className="text-lg font-medium mb-3">Advanced Settings</h3>
+          {/* Additional advanced fields would go here */}
+        </div>
       )}
     </div>
   );
