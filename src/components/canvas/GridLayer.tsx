@@ -55,7 +55,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       
       // Create new grid by explicitly casting fabricCanvas to ExtendedFabricCanvas
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
-      const newGridObjects = createGrid(extendedCanvas, dimensions);
+      const newGridObjects = createGrid(extendedCanvas || fabricCanvas, dimensions);
       setGridObjects(newGridObjects);
       
       // Clean up when component unmounts
@@ -70,7 +70,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [fabricCanvas, dimensions.width, dimensions.height]);
   
   // Helper function to create grid
-  function createGrid(canvas: ExtendedFabricCanvas | FabricCanvas, dimensions: { width: number; height: number }): fabric.Object[] {
+  function createGrid(canvas: FabricCanvas | ExtendedFabricCanvas, dimensions: { width: number; height: number }): fabric.Object[] {
     const gridObjects: fabric.Object[] = [];
     
     // Create horizontal lines

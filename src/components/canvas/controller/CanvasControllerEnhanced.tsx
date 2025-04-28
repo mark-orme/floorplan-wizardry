@@ -69,7 +69,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       const extendedCanvas = asExtendedCanvas(canvas);
       
       // Add necessary properties and methods
-      if (!extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
+      if (extendedCanvas && !extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
         extendedCanvas.getActiveObject = () => {
           const activeObjects = extendedCanvas.getActiveObjects();
           return activeObjects.length > 0 ? activeObjects[0] : null;
@@ -77,14 +77,14 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       }
       
       // Store reference
-      fabricCanvasRef.current = extendedCanvas;
+      fabricCanvasRef.current = extendedCanvas || canvas;
       
       // Create grid
-      createGrid(extendedCanvas);
+      createGrid(extendedCanvas || canvas);
       
       // Notify parent
       if (onCanvasReady) {
-        onCanvasReady(extendedCanvas);
+        onCanvasReady(extendedCanvas || canvas);
       }
       
       // Clean up

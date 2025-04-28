@@ -1,49 +1,45 @@
 
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
+/**
+ * Extended type for fabric objects
+ */
 export interface ExtendedFabricObject extends FabricObject {
-  visible?: boolean;
   objectType?: string;
-  gridType?: 'small' | 'large';
-}
-
-export interface ExtendedFabricCanvas extends FabricCanvas {
-  wrapperEl: HTMLElement;
-  upperCanvasEl?: HTMLCanvasElement;
-  skipOffscreen?: boolean;
-  allowTouchScrolling?: boolean;
-  initialize?: () => void;
-  skipTargetFind?: boolean;
-  _activeObject?: any;
-  _objects?: any[];
-}
-
-export interface PerformanceMetrics {
-  fps: number;
-  renderTime: number;
-  objectCount: number;
-  visibleObjectCount?: number;
-  memoryUsage?: number;
-}
-
-export interface FloorPlanMetadata {
-  level: number;
-  name: string;
-  created: string;
-  updated: string;
-}
-
-export enum PropertyStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  IN_REVIEW = 'in_review',
-  APPROVED = 'approved',
-  REJECTED = 'rejected'
+  id?: string;
+  isGrid?: boolean;
+  isLargeGrid?: boolean;
+  visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
+  stroke?: string;
+  strokeWidth?: number;
+  set: (options: Record<string, any>) => FabricObject;
 }
 
 /**
- * Helper function to safely cast canvas objects
+ * FloorPlan metadata type
  */
-export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
-  return canvas as unknown as ExtendedFabricCanvas;
+export interface FloorPlanMetadata {
+  id: string;
+  name: string;
+  created: string;
+  modified: string;
+  size: number;
+}
+
+/**
+ * Property status type
+ */
+export type PropertyStatus = 'active' | 'inactive' | 'pending' | 'sold' | 'archived';
+
+/**
+ * Helper functions for typecasting fabric objects
+ */
+export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
+  return obj as T & ExtendedFabricObject;
+}
+
+export function asExtendedCanvas(canvas: Canvas): Canvas {
+  return canvas;
 }
