@@ -1,14 +1,13 @@
 
-/**
- * FloorPlan data structure
- */
 export interface FloorPlan {
   id: string;
-  /** matches the UI's use */
   name: string;
-  // Additional properties as needed
+  created?: string;
+  modified?: string;
   data?: any;
-  created?: Date;
-  modified?: Date;
-  isActive?: boolean;
+  thumbnail?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  index?: number;
 }

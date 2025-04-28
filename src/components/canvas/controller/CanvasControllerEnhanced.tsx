@@ -1,12 +1,13 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { Canvas as FabricCanvas } from 'fabric';
+import type { Canvas as FabricCanvas } from 'fabric';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
 import type { FloorPlan } from '@/types/FloorPlan';
-import { ExtendedFabricCanvas, asExtendedCanvas } from '@/types/canvas-types';
+import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import { asExtendedCanvas } from '@/types/canvas-types';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: FabricCanvas | ExtendedFabricCanvas) => void;
@@ -56,7 +57,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
     if (!canvasRef.current) return;
     
     try {
-      // Create canvas and cast to ExtendedFabricCanvas
+      // Create canvas
       const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
@@ -69,22 +70,24 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       const extendedCanvas = asExtendedCanvas(canvas);
       
       // Add necessary properties and methods
-      if (extendedCanvas && !extendedCanvas.getActiveObject && extendedCanvas.getActiveObjects) {
+      if (extendedCanvas && !extendedCanvas.getActiveObject) {
         extendedCanvas.getActiveObject = () => {
-          const activeObjects = extendedCanvas.getActiveObjects();
+          const activeObjects = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
           return activeObjects.length > 0 ? activeObjects[0] : null;
         };
       }
       
       // Store reference
-      fabricCanvasRef.current = extendedCanvas || canvas;
+      fabricCanvasRef.current = canvas;
       
       // Create grid
-      createGrid(extendedCanvas || canvas);
+      if (createGrid) {
+        createGrid(canvas);
+      }
       
       // Notify parent
       if (onCanvasReady) {
-        onCanvasReady(extendedCanvas || canvas);
+        onCanvasReady(canvas);
       }
       
       // Clean up

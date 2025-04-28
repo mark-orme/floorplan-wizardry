@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, fabric } from "fabric";
+import { Canvas as FabricCanvas, fabric, Object as FabricObject } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
-import { asExtendedCanvas, ExtendedFabricCanvas, asExtendedObject } from "@/types/canvas-types";
+import { ExtendedFabricCanvas, asExtendedObject } from "@/types/canvas-types";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
@@ -16,7 +16,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   dimensions,
   showDebug = false
 }) => {
-  const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
+  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
   const gridInitializedRef = useRef(false);
   const dimensionsRef = useRef(dimensions);
   
@@ -24,7 +24,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     dimensionsRef.current = dimensions;
   }, [dimensions]);
   
-  const handleGridCreated = (objects: fabric.Object[]) => {
+  const handleGridCreated = (objects: FabricObject[]) => {
     if (!gridInitializedRef.current) {
       logger.info(`Grid created with ${objects.length} objects`);
       setGridObjects(objects);
@@ -53,9 +53,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         fabricCanvas.remove(obj);
       });
       
-      // Create new grid by explicitly casting fabricCanvas to ExtendedFabricCanvas
-      const extendedCanvas = asExtendedCanvas(fabricCanvas);
-      const newGridObjects = createGrid(extendedCanvas || fabricCanvas, dimensions);
+      // Create new grid with the raw canvas
+      const newGridObjects = createGrid(fabricCanvas, dimensions);
       setGridObjects(newGridObjects);
       
       // Clean up when component unmounts
@@ -70,8 +69,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [fabricCanvas, dimensions.width, dimensions.height]);
   
   // Helper function to create grid
-  function createGrid(canvas: FabricCanvas | ExtendedFabricCanvas, dimensions: { width: number; height: number }): fabric.Object[] {
-    const gridObjects: fabric.Object[] = [];
+  function createGrid(canvas: FabricCanvas | ExtendedFabricCanvas, dimensions: { width: number; height: number }): FabricObject[] {
+    const gridObjects: FabricObject[] = [];
     
     // Create horizontal lines
     for (let y = 0; y <= dimensions.height; y += 20) {
@@ -109,7 +108,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
       gridObjects.push(line);
     }
     
-    // Set all grid objects to back
+    // Set all grid objects to back if sendToBack exists
     if (canvas.sendToBack) {
       gridObjects.forEach(obj => {
         canvas.sendToBack(obj);

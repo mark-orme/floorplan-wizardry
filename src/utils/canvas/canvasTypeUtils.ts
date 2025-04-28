@@ -1,7 +1,7 @@
 
 import { Canvas, Object as FabricObject } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
-import { ExtendedFabricObject } from '@/types/canvas-types';
+import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import type { ExtendedFabricObject } from '@/types/canvas-types';
 
 /**
  * Helper function to cast a canvas to ExtendedFabricCanvas

@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import { Canvas as FabricCanvas } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import { asExtendedCanvas, asExtendedObject } from '@/utils/canvas/canvasTypeUtils';
 
 interface SimpleGridLayerProps {
@@ -90,12 +90,16 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
     if (!canvas || !gridObjects.length) return;
 
     gridObjects.forEach(obj => {
+      // Make sure visible property is set directly
+      (obj as any).visible = visible;
+      
+      // Try to use the extended object if available
       const extObj = asExtendedObject(obj);
-      if (extObj && typeof extObj.set === 'function') {
-        extObj.set('visible', visible);
-      } else {
-        // Fallback for objects that don't have set method
-        (obj as any).visible = visible;
+      if (extObj) {
+        // Handle set property not existing on some objects
+        if (typeof extObj.set === 'function') {
+          extObj.set({ visible });
+        }
       }
     });
 
