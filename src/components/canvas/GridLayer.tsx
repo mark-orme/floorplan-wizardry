@@ -4,9 +4,10 @@ import { fabric } from "fabric";
 import GridRenderer from "./grid/GridRenderer";
 import { captureMessage } from "@/utils/sentryUtils";
 import logger from "@/utils/logger";
+import { ExtendedFabricCanvas } from "@/types/canvas-types";
 
 interface GridLayerProps {
-  fabricCanvas: fabric.Canvas;
+  fabricCanvas: ExtendedFabricCanvas;
   dimensions: { width: number; height: number };
   showDebug?: boolean;
 }

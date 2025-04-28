@@ -1,8 +1,7 @@
 
 import * as React from "react"
-import { GripVertical } from "lucide-react"
-import * as ResizablePrimitive from "react-resizable-panels"
 import { AiOutlineMenu as GripIcon } from "react-icons/ai"
+import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
 

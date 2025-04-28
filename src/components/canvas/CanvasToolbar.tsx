@@ -1,3 +1,4 @@
+
 /**
  * Drawing toolbar component
  * Combines various toolbar sections
@@ -8,6 +9,14 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { DrawingTools } from '@/components/toolbar/DrawingTools';
 import { StyleOptions } from '@/components/toolbar/StyleOptions';
 import { CanvasActions } from '@/components/toolbar/CanvasActions';
+
+// Define StyleOptionsProps interface to match the component's expectations
+export interface StyleOptionsProps {
+  lineColor?: string;
+  lineThickness?: number;
+  onColorChange?: (color: string) => void;
+  onThicknessChange?: (thickness: number) => void;
+}
 
 export interface DrawingToolbarProps {
   /** Active drawing tool */

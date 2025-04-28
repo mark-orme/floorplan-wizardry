@@ -1,24 +1,27 @@
 
+import React from 'react';
 import { Input } from '@/components/ui/input';
-import { Icons } from '@/constants/iconMappings';
+import { AiOutlineSearch } from 'react-icons/ai';
 
-interface PropertySearchProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
-}
+export const PropertySearch: React.FC<{
+  onSearch: (term: string) => void;
+  placeholder?: string;
+}> = ({ 
+  onSearch,
+  placeholder = "Search properties..." 
+}) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearch(e.target.value);
+  };
 
-export const PropertySearch = ({ searchTerm, onSearchChange }: PropertySearchProps) => {
   return (
-    <div className="mb-6">
-      <div className="relative">
-        <Icons.search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by order ID, address or client..."
-          className="pl-8"
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
+    <div className="relative">
+      <AiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        className="pl-9"
+        placeholder={placeholder}
+        onChange={handleInputChange}
+      />
     </div>
   );
 };

@@ -3,19 +3,30 @@ import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+
+// Define buttonVariants if needed
+const buttonVariants = (props: any) => {
+  return cn("inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50", props?.variant === "destructive" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90", props?.className);
+};
+
+const AlertDialogPortalWrapper = ({ 
+  children,
+  ...props
+}: AlertDialogPrimitive.AlertDialogPortalProps & { className?: string }) => {
+  // Destructure className from props to avoid passing it to the AlertDialogPortal
+  const { className, ...portalProps } = props;
+  return (
+    <AlertDialogPrimitive.Portal {...portalProps}>
+      {children}
+    </AlertDialogPrimitive.Portal>
+  );
+};
 
 const AlertDialog = AlertDialogPrimitive.Root
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 
-const AlertDialogPortal = ({
-  className,
-  ...props
-}: AlertDialogPrimitive.AlertDialogPortalProps) => (
-  <AlertDialogPrimitive.Portal className={cn(className)} {...props} />
-)
-AlertDialogPortal.displayName = AlertDialogPrimitive.Portal.displayName
+const AlertDialogPortal = AlertDialogPortalWrapper
 
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,

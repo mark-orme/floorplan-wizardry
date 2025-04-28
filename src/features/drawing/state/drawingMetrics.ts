@@ -27,6 +27,12 @@ type MetricsAction =
   | { type: 'POINT_ADDED' }
   | { type: 'RESET_METRICS' };
 
+// Ensure DrawingMode includes PAN
+if (!Object.values(DrawingMode).includes('PAN' as any)) {
+  // Add PAN to DrawingMode if it doesn't exist
+  (DrawingMode as any).PAN = 'PAN';
+}
+
 // Reducer function
 function metricsReducer(state: DrawingMetrics, action: MetricsAction): DrawingMetrics {
   switch (action.type) {

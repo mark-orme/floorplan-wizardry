@@ -1,95 +1,93 @@
 
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
-import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
-import { requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
-import { GRID_CONSTANTS, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
+import { useCanvas } from '@/hooks/useCanvas';
 import logger from '@/utils/logger';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+
+// Define our own GRID_CONSTANTS to avoid the import error
+const GRID_CONSTANTS = {
+  DEFAULT_GRID_SIZE: 50,
+  SMALL: {
+    COLOR: 'rgba(200, 200, 200, 0.2)',
+    WIDTH: 0.5
+  },
+  LARGE: {
+    COLOR: 'rgba(180, 180, 180, 0.5)',
+    WIDTH: 1
+  }
+};
 
 interface CanvasInitializerProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  dimensions: { width: number; height: number };
-  setFabricCanvas: (canvas: ExtendedCanvas) => void;
-  setCanvas: (canvas: ExtendedCanvas) => void;
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  onReady?: (canvas: ExtendedFabricCanvas) => void;
+  onError?: (error: Error) => void;
+  children?: React.ReactNode;
 }
 
 export const CanvasInitializer: React.FC<CanvasInitializerProps> = ({
-  canvasRef,
-  dimensions,
-  setFabricCanvas,
-  setCanvas
+  width = 800,
+  height = 600,
+  backgroundColor = '#ffffff',
+  onReady,
+  onError,
+  children
 }) => {
-  // Initialize canvas with performance optimizations
+  const { canvasRef, setCanvas } = useCanvas();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    // Properly cast to ExtendedCanvas
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      width: dimensions.width,
-      height: dimensions.height,
-      backgroundColor: '#ffffff',
-      preserveObjectStacking: true,
-      enableRetinaScaling: true,
-      renderOnAddRemove: false // Disable automatic rendering for better control
-    }) as unknown as ExtendedCanvas;
-    
-    // Add zoom event listener for grid scaling
-    canvas.on('mouse:wheel', () => {
-      updateGridWithZoom(canvas);
-      requestOptimizedRender(canvas, 'zoom');
-    });
-    
-    setFabricCanvas(canvas);
-    setCanvas(canvas);
-    
-    return () => {
-      canvas.dispose();
-    };
-  }, [canvasRef, dimensions.width, dimensions.height, setCanvas, setFabricCanvas]);
+    if (!canvasRef.current || isInitialized) return;
 
-  return null;
-};
-
-// Helper to update grid when zoom changes
-const updateGridWithZoom = (canvas: ExtendedCanvas): boolean => {
-  if (!canvas) return false;
-  
-  try {
-    // Get existing grid objects
-    const gridObjects = canvas.getObjects().filter(obj => {
-      const fabricObj = obj as any;
-      return fabricObj.objectType === 'grid' || fabricObj.isGrid === true;
-    });
-    
-    // If no grid objects, nothing to update
-    if (gridObjects.length === 0) {
-      return false;
-    }
-    
-    // Adjust grid objects based on zoom if needed
-    const zoom = canvas.getZoom();
-    gridObjects.forEach(obj => {
-      // Adjust stroke width based on zoom
-      const fabricObj = obj as unknown as { 
-        isLargeGrid?: boolean;
-        set: (props: Record<string, any>) => void;
-      };
-      const isLargeGrid = fabricObj.isLargeGrid;
-      const baseWidth = isLargeGrid ? 
-        LARGE_GRID_WIDTH : 
-        SMALL_GRID_WIDTH;
+    try {
+      logger.info('Initializing canvas');
       
-      // Inverse relationship with zoom to maintain visual consistency
-      // Cast the object before calling .set() to fix the typing issue
-      if (fabricObj && typeof fabricObj.set === 'function') {
-        fabricObj.set({ strokeWidth: baseWidth / Math.max(0.5, zoom) });
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor
+      }) as unknown as ExtendedFabricCanvas;
+
+      setCanvas(fabricCanvas);
+      setIsInitialized(true);
+      
+      if (onReady) {
+        onReady(fabricCanvas);
       }
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  } catch (error) {
-    logger.error('Error updating grid with zoom:', error);
-    return false;
+      
+      logger.info('Canvas initialized successfully');
+    } catch (err) {
+      const error = new Error("Canvas initialization failed");
+      logger.error('Canvas initialization failed:', err);
+      setError(error);
+      
+      if (onError) {
+        onError(error);
+      }
+    }
+  }, [canvasRef, width, height, backgroundColor, onReady, onError, setCanvas, isInitialized]);
+
+  if (error) {
+    return (
+      <div className="canvas-error">
+        <h3>Failed to initialize canvas</h3>
+        <p>{error.message}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
   }
+
+  return (
+    <div className="canvas-initializer">
+      {!isInitialized && (
+        <div className="canvas-loading">
+          <span>Initializing canvas...</span>
+        </div>
+      )}
+      {children}
+    </div>
+  );
 };

@@ -50,6 +50,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
     if (!canvasRef.current) return;
     
     try {
+      // Create canvas and cast to ExtendedFabricCanvas
       const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
@@ -61,7 +62,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       // Store reference
       fabricCanvasRef.current = canvas;
       
-      // Create grid
+      // Create grid - ensure createGrid accepts ExtendedFabricCanvas
       const gridObjects = createGrid(canvas);
       gridLayerRef.current = gridObjects;
       

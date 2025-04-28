@@ -11,7 +11,6 @@ export const Toaster: React.FC = () => {
     <SonnerToaster 
       position="top-right"
       className="border border-border"
-      closeButton
       style={{
         background: 'var(--background)',
         color: 'var(--foreground)'

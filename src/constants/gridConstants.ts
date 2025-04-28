@@ -11,3 +11,18 @@ export const LARGE_GRID_WIDTH = 1;
 
 // Grid visibility default
 export const DEFAULT_GRID_VISIBLE = true;
+
+// Add missing GRID_CONSTANTS
+export const GRID_CONSTANTS = {
+  SMALL: {
+    COLOR: SMALL_GRID_COLOR,
+    WIDTH: SMALL_GRID_WIDTH,
+    SIZE: SMALL_GRID_SIZE
+  },
+  LARGE: {
+    COLOR: LARGE_GRID_COLOR,
+    WIDTH: LARGE_GRID_WIDTH,
+    SIZE: LARGE_GRID_SIZE
+  },
+  DEFAULT_VISIBLE: DEFAULT_GRID_VISIBLE
+};

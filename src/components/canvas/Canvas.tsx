@@ -26,17 +26,18 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     try {
+      // Create Canvas instance and convert to ExtendedFabricCanvas
       const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',
       });
       
-      // Convert to extended canvas
+      // Use the asExtendedCanvas utility to properly type our canvas
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
       setCanvas(extendedCanvas);
-      onCanvasReady?.(extendedCanvas);
+      onCanvasReady?.(extendedCanvas); // Pass the properly typed canvas
       setIsLoading(false);
       
       return () => {

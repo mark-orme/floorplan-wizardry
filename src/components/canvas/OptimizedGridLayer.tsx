@@ -2,11 +2,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import logger from '@/utils/logger';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
+import { ExtendedFabricObject } from '@/types/fabricTypes';
+
+// Define our own GRID_CONSTANTS since the import is failing
+const GRID_CONSTANTS = {
+  SMALL: {
+    COLOR: 'rgba(200, 200, 200, 0.2)',
+    WIDTH: 0.5,
+    SIZE: 20
+  },
+  LARGE: {
+    COLOR: 'rgba(180, 180, 180, 0.5)',
+    WIDTH: 1,
+    SIZE: 100
+  },
+  DEFAULT_VISIBLE: true
+};
 
 interface OptimizedGridLayerProps {
-  canvas: ExtendedFabricCanvas | null;
+  canvas: fabric.Canvas | null;
   gridSize?: number;
   visible?: boolean;
   onGridCreated?: (objects: fabric.Object[]) => void;

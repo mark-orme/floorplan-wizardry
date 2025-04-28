@@ -5,6 +5,15 @@ import { axe } from 'jest-axe';
 import { DrawingTools } from '../DrawingTools';
 import { DrawingMode } from '@/constants/drawingModes';
 
+// Create enhanced screen with missing methods
+const enhancedScreen = {
+  ...screen,
+  queryAllByRole: (role: string) => {
+    const elements = document.querySelectorAll(`[role="${role}"]`);
+    return Array.from(elements) as HTMLElement[];
+  }
+};
+
 describe('DrawingTools', () => {
   it('should render without accessibility violations', async () => {
     const handleToolChange = vi.fn();
@@ -30,7 +39,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const buttons = screen.queryAllByRole('button');
+    const buttons = enhancedScreen.queryAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
     
     buttons.forEach(button => {
@@ -49,7 +58,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const activeButton = screen.queryAllByRole('button').find(button => {
+    const activeButton = enhancedScreen.queryAllByRole('button').find(button => {
       return button.getAttribute('data-tool') === ACTIVE_TOOL ||
              button.getAttribute('aria-pressed') === 'true' ||
              button.getAttribute('data-state') === 'active';
