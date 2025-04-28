@@ -1,8 +1,3 @@
-
-/**
- * Floor Plan Actions component
- * Displays action buttons and controls for the floor plan
- */
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AiOutlineEye, AiOutlineSend } from 'react-icons/ai';

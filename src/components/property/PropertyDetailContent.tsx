@@ -1,5 +1,6 @@
 
-import React from 'react';
+import { type UserRole } from '@/types/roles';
+import { type PropertyStatus } from '@/types/roles';
 import { Icons } from '@/components/icons';
 
 interface PropertyDetailContentProps {

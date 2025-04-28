@@ -1,15 +1,13 @@
-
 /**
  * Safe HTML Component
  * Renders HTML content safely with DOMPurify sanitization
  */
 import React from 'react';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
-// Creating a mock sanitizeHtml function since the actual implementation is missing
 const sanitizeHtml = (html: string): string => {
-  // In a real implementation, this would use DOMPurify or another sanitization library
-  return html; // Basic implementation that doesn't actually sanitize
+  return DOMPurify.sanitize(html);
 };
 
 export interface SafeHtmlProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -1,9 +1,8 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Icons } from '@/components/icons';
-import { UserRole, PropertyStatus } from '@/types/roles';
+import { type UserRole, type PropertyStatus } from '@/types/roles';
 import { useNavigate } from 'react-router-dom';
 
 interface PropertyDetailsTabProps {

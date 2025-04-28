@@ -1,4 +1,3 @@
-
 /**
  * Drawing metrics tracking
  * Tracks drawing tool usage and object operations
@@ -161,3 +160,19 @@ export function resetDrawingMetrics(): void {
 export function getDrawingSessionId(): string {
   return metricsState.sessionId;
 }
+
+export const calculateDrawingMetrics = (state: unknown) => {
+  const currentTool = (state as { currentTool?: DrawingMode }).currentTool;
+  return {
+    toolSwitchCount: metricsState.toolSwitchCount,
+    toolUsageDuration: metricsState.toolUsageDuration,
+    objectsCreated: metricsState.objectsCreated,
+    objectsModified: metricsState.objectsModified,
+    objectsDeleted: metricsState.objectsDeleted,
+    lastToolChange: metricsState.lastToolChange,
+    currentTool: currentTool || metricsState.currentTool,
+    sessionStart: metricsState.sessionStart,
+    sessionId: metricsState.sessionId,
+    drawingEvents: metricsState.drawingEvents
+  };
+};

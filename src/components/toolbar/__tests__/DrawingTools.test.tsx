@@ -1,6 +1,4 @@
-
 import { describe, it, expect, vi } from 'vitest';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { axe } from 'jest-axe';
 import { DrawingTools } from '../DrawingTools';
@@ -31,7 +29,7 @@ describe('DrawingTools', () => {
       />
     );
     
-    const buttons = screen.queryAllByRole('button');
+    const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
     
     buttons.forEach(button => {

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { fabric } from "fabric";
 import { useVirtualizedCanvas } from "@/hooks/useVirtualizedCanvas";
@@ -6,7 +5,7 @@ import { useCanvasErrorHandling } from "@/hooks/useCanvasErrorHandling";
 import { useGeometryWorker } from "@/hooks/useGeometryWorker";
 import { getCSRFToken } from "@/utils/security/csrfHandler";
 import { toast } from "sonner";
-import { ExtendedFabricCanvas, PerformanceMetrics, asExtendedCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas, type ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface FloorPlanCanvasEnhancedProps {
   width?: number;
@@ -46,7 +45,6 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
     if (!canvasRef.current) return;
     
     try {
-      // Create the fabric canvas with appropriate initialization
       const canvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
@@ -54,9 +52,8 @@ export const FloorPlanCanvasEnhanced: React.FC<FloorPlanCanvasEnhancedProps> = (
         renderOnAddRemove: false,
         enableRetinaScaling: true
       });
-      
-      // Use the helper function to properly convert to our ExtendedFabricCanvas type
-      const extendedCanvas = asExtendedCanvas(canvas);
+
+      const extendedCanvas = asExtendedCanvas(canvas as unknown as ExtendedFabricCanvas);
       
       if (extendedCanvas) {
         extendedCanvas.skipOffscreen = true;

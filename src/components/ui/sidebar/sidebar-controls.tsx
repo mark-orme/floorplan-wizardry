@@ -1,6 +1,6 @@
 import * as React from "react"
 import { AiOutlineMenuFold } from "react-icons/ai"
-import { Icons } from '@/components/icons';
+import { Icons } from '@/components/icons'
 
 import { useSidebar } from "./use-sidebar"
 import { Button } from "@/components/ui/button"

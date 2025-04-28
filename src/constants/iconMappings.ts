@@ -1,19 +1,18 @@
-
 import { 
-  MousePointer, 
-  Pencil, 
-  Square, 
-  Line, 
-  Eraser, 
-  Hand, 
-  LayoutGrid, 
-  Plus, 
-  Minus, 
-  Undo2, 
-  Redo2,
-  MoveHorizontal,
-  PenLine
-} from 'lucide-react';
+  AiOutlineMouse as MousePointer,
+  AiOutlinePencil as Pencil,
+  AiOutlineSquare as Square,
+  AiOutlineLine as Line,
+  AiOutlineDelete as Eraser,
+  AiOutlineHand as Hand,
+  AiOutlineTable as LayoutGrid,
+  AiOutlinePlus as Plus,
+  AiOutlineMinus as Minus,
+  AiOutlineUndo as Undo2,
+  AiOutlineRedo as Redo2,
+  AiOutlineSwap as MoveHorizontal,
+  AiOutlineDash as PenLine
+} from 'react-icons/ai';
 
 // Map drawing modes to their respective icons
 export const toolToIconMap = {
