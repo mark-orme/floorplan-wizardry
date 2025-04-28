@@ -10,6 +10,10 @@ export interface ExtendedFabricCanvas extends Canvas {
   _objects: any[];
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean; // Added this property that was missing
+  renderOnAddRemove?: boolean; // Add missing property
+  fire?: (eventName: string, options?: any) => Canvas; // Add missing fire method
+  getWidth(): number;
+  getHeight(): number;
 }
 
 /**
