@@ -19,10 +19,10 @@ export const FloorPlansList: React.FC<FloorPlansListProps> = ({ floorPlans, onSe
           onClick={() => onSelect(plan.id)}
           className="p-4 border rounded-lg hover:bg-gray-50"
         >
-          <h3 className="font-medium">Floor Plan {plan.metadata.name}</h3>
+          <h3 className="font-medium">Floor Plan {plan.metadata.name || 'Untitled'}</h3>
           <p className="text-sm text-gray-600">{plan.metadata.description || 'No description'}</p>
           <p className="text-xs text-gray-400">
-            Updated: {new Date(plan.metadata.updated || plan.metadata.modified || '').toLocaleDateString()}
+            Updated: {new Date(plan.metadata.updatedAt || plan.metadata.updated || plan.metadata.modified || '').toLocaleDateString()}
           </p>
         </button>
       ))}

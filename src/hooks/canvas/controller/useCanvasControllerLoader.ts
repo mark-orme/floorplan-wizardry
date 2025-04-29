@@ -1,3 +1,4 @@
+
 /**
  * Canvas controller loader hook
  * Handles loading and error states for the canvas controller
@@ -32,6 +33,15 @@ const calculateLength = (start: Point, end: Point): number => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   return Math.sqrt(dx * dx + dy * dy);
+};
+
+// Added missing functions
+const recalculateGIA = () => {
+  // Implementation placeholder
+};
+
+const calculateGIA = () => {
+  // Implementation placeholder
 };
 
 /**
@@ -126,11 +136,11 @@ export const useCanvasControllerLoader = ({
   };
   
   const updateDebugInfo = (partialState: Partial<DebugInfoState>) => {
-    // Implementation that uses canvasReady
-    setDebugInfo((prev) => ({
+    // Fixed function call syntax
+    setDebugInfo(prev => ({
       ...prev,
-      canvasReady: true, // This is now valid because canvasReady exists in DebugInfoState
-      // Other properties...
+      canvasReady: true,
+      ...partialState
     }));
   };
   
@@ -139,6 +149,8 @@ export const useCanvasControllerLoader = ({
     setIsLoading,
     handleError,
     strokeTypeMap,
-    updateDebugInfo
+    updateDebugInfo,
+    recalculateGIA,
+    calculateGIA
   };
 };

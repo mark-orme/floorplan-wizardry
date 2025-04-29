@@ -1,14 +1,13 @@
 
 import { useState, useCallback } from 'react';
-import z from '@/utils/zod-mock';
-import { ZodError, ZodType } from '@/utils/zod-mock';
+import { z } from 'zod';
 
 type ValidationResult = {
   isValid: boolean;
   error?: string;
 };
 
-export const useInputValidation = <T>(schema: ZodType<T>) => {
+export const useInputValidation = <T>(schema: z.ZodType<T>) => {
   const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
 
   const validate = useCallback(
@@ -17,7 +16,7 @@ export const useInputValidation = <T>(schema: ZodType<T>) => {
         schema.parse(value);
         return { isValid: true };
       } catch (error) {
-        if (error instanceof ZodError) {
+        if (error instanceof z.ZodError) {
           const errorMessage = error.errors[0]?.message || 'Invalid input';
           return { isValid: false, error: errorMessage };
         }

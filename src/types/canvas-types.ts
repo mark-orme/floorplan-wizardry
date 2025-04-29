@@ -3,7 +3,12 @@ import * as fabric from 'fabric';
 
 // Augment fabric module with proper type inheritance
 declare module 'fabric' {
-  interface Line extends Object {}
+  interface Line extends Object {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  }
 }
 
 export interface ExtendedFabricCanvas extends fabric.Canvas {
@@ -22,6 +27,23 @@ export function asExtendedCanvas(canvas: fabric.Canvas): ExtendedFabricCanvas {
   return canvas as ExtendedFabricCanvas;
 }
 
+// Updated FloorPlanMetadata interface to include all required properties
+export interface FloorPlanMetadata {
+  createdAt: string;
+  updatedAt: string;
+  name?: string;
+  description?: string;
+  updated?: string;
+  modified?: string;
+  paperSize?: string;
+  level?: number;
+  version?: string;
+  author?: string;
+  dateCreated?: string;
+  lastModified?: string;
+  notes?: string;
+}
+
 // Add CanvasState interface
 export interface CanvasState {
   objects: fabric.Object[];
@@ -35,17 +57,4 @@ export interface CanvasState {
   gridVisible: boolean;
   snapToGrid: boolean;
   gridSize: number;
-}
-
-// Add FloorPlanMetadata interface
-export interface FloorPlanMetadata {
-  createdAt: string;
-  updatedAt: string;
-  paperSize?: string;
-  level?: number;
-  version?: string;
-  author?: string;
-  dateCreated?: string;
-  lastModified?: string;
-  notes?: string;
 }
