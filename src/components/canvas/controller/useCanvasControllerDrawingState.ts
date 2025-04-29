@@ -104,7 +104,7 @@ export const useCanvasControllerDrawingState = ({
     endDrawing
   } = useCanvasDrawing({
     canvas: fabricCanvasRef.current,
-    tool: tool as DrawingTool,
+    tool: asDrawingTool(tool as DrawingMode),
     lineColor,
     lineThickness,
     onDrawingEnd: saveCurrentState

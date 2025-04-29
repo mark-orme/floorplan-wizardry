@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import * as fabric from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';

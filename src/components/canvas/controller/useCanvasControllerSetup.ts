@@ -1,4 +1,3 @@
-
 /**
  * Hook for setting up canvas controller
  * @module useCanvasControllerSetup
@@ -129,7 +128,9 @@ export const useCanvasControllerSetup = ({
       const canvas = fabricCanvasRef.current;
       if (!canvas) return;
       
-      canvas.setViewportTransform?.([ 1, 0, 0, 1, 0, 0 ]);
+      if (canvas.viewportTransform) {
+        canvas.viewportTransform = [ 1, 0, 0, 1, 0, 0 ];
+      }
       canvas.renderAll();
     }
   };

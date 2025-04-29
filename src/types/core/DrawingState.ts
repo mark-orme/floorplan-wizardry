@@ -5,15 +5,16 @@ import { Point } from './Point';
 export interface DrawingState {
   isDrawing: boolean;
   tool: DrawingMode;
-  pathStartPoint: Point;
+  pathStartPoint: Point | null;
   lineColor: string;
   lineThickness: number;
-  currentPath: any;
-  startPoint: Point;
-  currentPoint: Point;
+  currentPath: any | null;
+  startPoint: Point | null;
+  currentPoint: Point | null;
   points: Point[];
   distance: number;
-  cursorPosition: Point;
+  cursorPosition: Point | null;
+  zoomLevel?: number;
 }
 
 export function createDefaultDrawingState(): DrawingState {
@@ -28,6 +29,7 @@ export function createDefaultDrawingState(): DrawingState {
     currentPoint: { x: 0, y: 0 },
     points: [],
     distance: 0,
-    cursorPosition: { x: 0, y: 0 }
+    cursorPosition: { x: 0, y: 0 },
+    zoomLevel: 1
   };
 }

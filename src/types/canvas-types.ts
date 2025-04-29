@@ -1,34 +1,75 @@
 
 import { Canvas, Object as FabricObject } from 'fabric';
-import { ExtendedFabricCanvas } from './ExtendedFabricCanvas';
 
 /**
- * Extended Fabric Object interface
+ * Extended fabric object interface with custom properties
  */
 export interface ExtendedFabricObject extends FabricObject {
-  /** Type of object */
+  id?: string;
   objectType?: string;
-  /** Whether the object is visible */
-  visible?: boolean;
-  /** Whether the object is a grid element */
   isGrid?: boolean;
-  /** Whether the object is a large grid element */
   isLargeGrid?: boolean;
+  data?: any;
 }
 
 /**
- * Helper function to cast a canvas to ExtendedFabricCanvas
+ * Extended fabric canvas interface with additional properties
  */
-export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
-  if (!canvas) return null;
-  return canvas as ExtendedFabricCanvas;
+export interface ExtendedFabricCanvas extends Canvas {
+  wrapperEl: HTMLDivElement;
+  renderOnAddRemove?: boolean;
+  allowTouchScrolling?: boolean;
+  skipTargetFind?: boolean;
+  skipOffscreen?: boolean;
+  viewportTransform?: number[];
+  initialize: (element: string | HTMLCanvasElement, options?: any) => Canvas;
+  forEachObject: (callback: (obj: FabricObject) => void) => void;
+  getActiveObject: () => FabricObject | null;
+  zoomToPoint: (point: { x: number, y: number }, value: number) => void;
+  setViewportTransform?: (transform: number[]) => Canvas;
 }
 
 /**
- * Helper function to cast an object to ExtendedFabricObject
+ * Floor plan metadata interface
  */
-export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
-  return obj as T & ExtendedFabricObject;
+export interface FloorPlanMetadata {
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  version?: number;
+  scale?: number;
+  unit?: string;
+  name?: string;
+  description?: string;
+  tags?: string[];
+  properties?: Record<string, any>;
 }
 
-export type { ExtendedFabricCanvas };
+/**
+ * Canvas state interface
+ */
+export interface CanvasState {
+  objects: any[];
+  background?: string;
+  width?: number;
+  height?: number;
+  zoom?: number;
+  viewportTransform?: number[];
+  tool?: string;
+  gridVisible?: boolean;
+  snapToGrid?: boolean;
+  gridSize?: number;
+}
+
+/**
+ * User interface for canvas collaboration
+ */
+export interface CanvasUser {
+  id: string;
+  name: string;
+  color: string;
+  cursor?: { x: number; y: number };
+  active?: boolean;
+  lastActive?: string;
+}

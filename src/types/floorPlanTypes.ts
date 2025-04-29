@@ -30,6 +30,11 @@ export interface FloorPlan {
 }
 
 /**
+ * PropertyStatus for property management
+ */
+export type PropertyStatus = 'draft' | 'published' | 'archived' | 'pending' | 'rejected';
+
+/**
  * Drawing state interface for floor plans
  */
 export interface DrawingState {
@@ -43,6 +48,8 @@ export interface DrawingState {
   tool?: string;
   lineColor?: string;
   lineThickness?: number;
+  pathStartPoint?: { x: number; y: number } | null;
+  currentPath?: any;
 }
 
 // Re-export for backward compatibility
