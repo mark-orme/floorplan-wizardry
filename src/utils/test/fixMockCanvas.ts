@@ -39,6 +39,16 @@ export function fixMockCanvas(mockCanvas: Partial<MockCanvas>): MockCanvas {
   if (!mockCanvas.triggerEvent) {
     mockCanvas.triggerEvent = (eventName: string, eventData: unknown) => {};
   }
+
+  // Add runAllTimers method
+  if (!mockCanvas.runAllTimers) {
+    mockCanvas.runAllTimers = vi.runAllTimers;
+  }
+
+  // Add mocked function
+  if (!mockCanvas.mocked) {
+    mockCanvas.mocked = vi.mocked;
+  }
   
   return mockCanvas as MockCanvas;
 }

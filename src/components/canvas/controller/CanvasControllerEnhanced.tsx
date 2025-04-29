@@ -7,7 +7,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
 import type { FloorPlan } from '@/types/FloorPlan';
 import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
-import { asExtendedCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 
 interface CanvasControllerEnhancedProps {
   onCanvasReady?: (canvas: FabricCanvas | ExtendedFabricCanvas) => void;
@@ -46,7 +46,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   // Initialize grid utilities
   const gridLayerRef = useRef<fabric.Object[]>([]);
   const { createGrid } = useGrid({
-    fabricCanvasRef,
+    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<ExtendedFabricCanvas | null>,
     gridLayerRef,
     initialGridSize: 20,
     initialVisible: true
@@ -78,16 +78,16 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       }
       
       // Store reference
-      fabricCanvasRef.current = canvas;
+      fabricCanvasRef.current = extendedCanvas;
       
       // Create grid
-      if (createGrid) {
-        createGrid(canvas);
+      if (createGrid && extendedCanvas) {
+        createGrid(extendedCanvas);
       }
       
       // Notify parent
-      if (onCanvasReady) {
-        onCanvasReady(canvas);
+      if (onCanvasReady && extendedCanvas) {
+        onCanvasReady(extendedCanvas);
       }
       
       // Clean up

@@ -30,7 +30,10 @@ export const createMockCanvas = () => {
       callback({ selectable: true });
     }),
     isDrawingMode: false,
-    selection: true
+    selection: true,
+    // Add missing test utility functions
+    mocked: vi.mocked,
+    runAllTimers: vi.runAllTimers
   };
 };
 
@@ -66,6 +69,11 @@ export interface MockCanvas {
   getPointer: ReturnType<typeof vi.fn>;
   isDrawingMode: boolean;
   selection: boolean;
+  mocked?: typeof vi.mocked;
+  runAllTimers?: () => void;
+  getHandlers?: (eventName: string) => Array<() => void>;
+  triggerEvent?: (eventName: string, eventData: unknown) => void;
+  withImplementation?: (callback?: Function) => Promise<void>;
 }
 
 /**

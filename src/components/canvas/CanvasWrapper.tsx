@@ -27,20 +27,22 @@ export const CanvasWrapper: React.FC = () => {
         backgroundColor: '#ffffff',
       });
       
-      // Cast to Extended Canvas type
+      // Cast to Extended Canvas type and ensure required properties
       const extendedCanvas = asExtendedCanvas(fabricCanvas);
       
-      // Ensure required properties exist
-      if (extendedCanvas && !extendedCanvas.getElement) {
-        extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
+      if (extendedCanvas) {
+        // Ensure required properties exist
+        if (!extendedCanvas.getElement) {
+          extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
+        }
+      
+        setLocalCanvas(extendedCanvas);
+        setCanvas(extendedCanvas);
+        setIsLoading(false);
+        
+        console.log('Canvas initialized successfully!');
+        toast.success('Canvas ready');
       }
-      
-      setLocalCanvas(extendedCanvas);
-      setCanvas(extendedCanvas);
-      setIsLoading(false);
-      
-      console.log('Canvas initialized successfully!');
-      toast.success('Canvas ready');
       
       return () => {
         fabricCanvas.dispose();

@@ -8,7 +8,14 @@ import type { ExtendedFabricObject } from '@/types/canvas-types';
  */
 export function asExtendedCanvas(canvas: Canvas | ExtendedFabricCanvas | null): ExtendedFabricCanvas | null {
   if (!canvas) return null;
-  return canvas as ExtendedFabricCanvas;
+  
+  // Add required properties if they don't exist
+  const extCanvas = canvas as ExtendedFabricCanvas;
+  if (!extCanvas.initialize) {
+    extCanvas.initialize = () => {};
+  }
+  
+  return extCanvas;
 }
 
 /**

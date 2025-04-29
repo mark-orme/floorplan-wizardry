@@ -1,5 +1,5 @@
 
-import type { Canvas } from 'fabric';
+import type { Canvas, Object as FabricObject } from 'fabric';
 
 /**
  * Extended fabric canvas type with additional properties 
@@ -14,9 +14,11 @@ export interface ExtendedFabricCanvas extends Canvas {
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean;
   renderOnAddRemove?: boolean;
+  viewportTransform?: number[];
   
   /** Additional methods that might be needed by components */
   getActiveObject?: () => any;
+  forEachObject?: (callback: (obj: FabricObject) => void) => void;
 }
 
 export type { ExtendedFabricObject } from '@/types/canvas-types';

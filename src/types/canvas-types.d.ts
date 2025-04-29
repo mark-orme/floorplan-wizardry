@@ -9,6 +9,10 @@ export interface ExtendedFabricObject extends FabricObject {
   isCustomObject?: boolean;
   isGridLine?: boolean;
   customProps?: Record<string, any>;
+  width?: number;
+  height?: number;
+  set?: (options: Record<string, any>) => FabricObject;
+  setCoords?: () => FabricObject;
 }
 
 export interface FloorPlanMetadata {
@@ -21,4 +25,13 @@ export interface FloorPlanMetadata {
   width?: number;
   height?: number;
   index?: number;
+}
+
+// Add PropertyStatus for imports that expect it
+export enum PropertyStatus {
+  AVAILABLE = 'available',
+  SOLD = 'sold',
+  PENDING = 'pending',
+  RESERVED = 'reserved',
+  UNDER_CONSTRUCTION = 'under_construction'
 }
