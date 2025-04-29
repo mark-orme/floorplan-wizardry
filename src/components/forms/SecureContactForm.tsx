@@ -15,7 +15,7 @@ const schema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
   subject: z.string().min(3, { message: "Subject is required" }),
   message: z.string().min(10, { message: "Message must be at least 10 characters" }),
-  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to terms" }),
+  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to terms" })
 });
 
 // Infer TypeScript type from schema

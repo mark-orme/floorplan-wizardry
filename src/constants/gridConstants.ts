@@ -30,3 +30,4 @@ export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
 export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
 export const SMALL_GRID_WIDTH = 0.5;
 export const LARGE_GRID_WIDTH = 1;
+export const PIXELS_PER_METER = 100;

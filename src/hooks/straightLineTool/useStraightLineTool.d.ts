@@ -10,6 +10,8 @@ export interface MeasurementData {
   angle: number;
   startPoint: Point;
   endPoint: Point;
+  snapped?: boolean;
+  unit?: string;
 }
 
 /**

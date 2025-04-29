@@ -12,6 +12,7 @@ declare module 'fabric' {
     forEachObject?(callback: (obj: any) => void): void;
     setViewportTransform?(transform: number[]): void;
     getActiveObject?(): any;
+    setActiveObject?(object: Object, options?: any): Canvas;
     zoomToPoint?(point: { x: number, y: number }, value: number): void;
     enableRetinaScaling?: boolean;
     toObject?(): any;
@@ -35,6 +36,13 @@ declare module 'fabric' {
     setCoords?(): Object;
     getBoundingRect?(): { left: number; top: number; width: number; height: number };
     setPositionByOrigin?(point: { x: number; y: number }, originX: string, originY: string): void;
+    excludeFromExport?(): void;
+    toObject?(options?: any): any;
+  }
+
+  interface Text extends Object {
+    text: string;
+    set(options: Record<string, any>): Text;
   }
 
   export class ActiveSelection extends Object {
@@ -69,5 +77,10 @@ declare module 'fabric' {
   export class Text extends Object {
     constructor(text: string, options?: any);
     text: string;
+  }
+  
+  export class PencilBrush {
+    color: string;
+    width: number;
   }
 }

@@ -1,5 +1,4 @@
 
-// Import testing libraries
 import { describe, test, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 

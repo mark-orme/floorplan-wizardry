@@ -1,6 +1,6 @@
 
 import { describe, test, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 
 describe('useStraightLineTool hook', () => {
