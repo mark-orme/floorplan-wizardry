@@ -10,13 +10,25 @@ export interface ExtendedFabricObject extends FabricObject {
   isGrid?: boolean;
   isLargeGrid?: boolean;
   data?: any;
+  width?: number;
+  height?: number;
+  left?: number;
+  top?: number;
+  visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
+  stroke?: string;
+  strokeWidth?: number;
+  type?: string;
+  set?: (options: Record<string, any>) => FabricObject;
+  setCoords?: () => FabricObject;
 }
 
 /**
  * Extended fabric canvas interface with additional properties
  */
 export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl?: HTMLDivElement;
+  wrapperEl: HTMLDivElement;
   renderOnAddRemove?: boolean;
   allowTouchScrolling?: boolean;
   skipTargetFind?: boolean;
@@ -27,6 +39,8 @@ export interface ExtendedFabricCanvas extends Canvas {
   getActiveObject: () => FabricObject | null;
   zoomToPoint: (point: { x: number, y: number }, value: number) => void;
   setViewportTransform?: (transform: number[]) => Canvas;
+  enableRetinaScaling?: boolean;
+  toObject?(): any;
 }
 
 /**
@@ -47,6 +61,12 @@ export interface FloorPlanMetadata {
   // Additional fields for backwards compatibility
   updated?: string;
   modified?: string;
+  id?: string;
+  thumbnail?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  index?: number;
 }
 
 /**
@@ -92,3 +112,6 @@ export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | 
 export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
   return obj as T & ExtendedFabricObject;
 }
+
+// Re-export the Canvas type itself for compatibility
+export type { Canvas } from 'fabric';

@@ -15,31 +15,19 @@ export const useCanvasHistoryManagement = ({
   enableSync
 }: UseCanvasHistoryManagementProps) => {
   // Set up per-user canvas history management when collaboration is enabled
-  const { 
-    undo: perUserUndo, 
-    redo: perUserRedo, 
-    saveCurrentState: perUserSaveState,
-    deleteSelectedObjects: perUserDeleteSelectedObjects
-  } = usePerUserCanvasHistory({
+  const perUserHistory = usePerUserCanvasHistory({
     canvas: fabricCanvas,
     userId: userId
   });
   
   // Set up regular canvas history when collaboration is disabled
-  const { 
-    undo: regularUndo, 
-    redo: regularRedo, 
-    saveCurrentState: regularSaveState,
-    deleteSelectedObjects: regularDeleteSelectedObjects
-  } = useCanvasHistory({
-    canvas: fabricCanvas
-  });
+  const regularHistory = useCanvasHistory();
   
   // Use the appropriate history management based on enableSync
-  const undo = enableSync ? perUserUndo : regularUndo;
-  const redo = enableSync ? perUserRedo : regularRedo;
-  const saveCurrentState = enableSync ? perUserSaveState : regularSaveState;
-  const historyDeleteSelectedObjects = enableSync ? perUserDeleteSelectedObjects : regularDeleteSelectedObjects;
+  const undo = enableSync ? perUserHistory.undo : regularHistory.undo;
+  const redo = enableSync ? perUserHistory.redo : regularHistory.redo;
+  const saveCurrentState = enableSync ? perUserHistory.saveCurrentState : regularHistory.saveCurrentState;
+  const historyDeleteSelectedObjects = enableSync ? perUserHistory.deleteSelectedObjects : regularHistory.deleteSelectedObjects;
 
   return {
     undo,

@@ -1,49 +1,20 @@
 
 /**
- * Utility for Sentry error reporting
+ * Utility functions for Sentry error reporting
+ * Stub implementation for development
  */
 
-export interface CaptureMessageOptions {
-  level?: 'info' | 'warning' | 'error';
-  tags?: Record<string, string>;
-  extra?: Record<string, any>;
+export function captureMessage(message: string, options?: any): string {
+  console.log(`[Sentry] Message captured: ${message}`, options);
+  return 'mock-event-id';
 }
 
-/**
- * Capture a message for error reporting
- * @param message The message to capture
- * @param options Additional options for the message
- */
-export function captureMessage(message: string, options: CaptureMessageOptions = {}): void {
-  // In a real implementation, this would send to Sentry
-  // For now, just log to console with level-appropriate method
-  const { level = 'info', tags = {}, extra = {} } = options;
-  
-  const logData = {
-    message,
-    tags,
-    extra,
-    timestamp: new Date().toISOString()
-  };
-  
-  switch (level) {
-    case 'error':
-      console.error('[SENTRY]', logData);
-      break;
-    case 'warning':
-      console.warn('[SENTRY]', logData);
-      break;
-    default:
-      console.info('[SENTRY]', logData);
-  }
+export function captureError(error: Error, options?: any): string {
+  console.error(`[Sentry] Error captured:`, error, options);
+  return 'mock-event-id';
 }
 
-/**
- * Capture an exception for error reporting
- * @param error The error to capture
- * @param options Additional options for the error
- */
-export function captureException(error: Error, options: CaptureMessageOptions = {}): void {
-  // In a real implementation, this would send to Sentry
-  console.error('[SENTRY] Exception:', error, options);
+export function captureException(exception: any, options?: any): string {
+  console.error(`[Sentry] Exception captured:`, exception, options);
+  return 'mock-event-id';
 }

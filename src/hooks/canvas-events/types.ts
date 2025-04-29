@@ -3,7 +3,7 @@ import { MutableRefObject } from 'react';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/Point';
 
 export interface BaseEventProps {
   fabricCanvasRef: MutableRefObject<ExtendedFabricCanvas | null>;

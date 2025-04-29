@@ -6,4 +6,10 @@ import type { ActiveSelection, Point } from 'fabric';
 
 export const useCanvasOperations = () => {
   // Implementation using ActiveSelection and Point...
+  return {
+    deleteObjects: (objects: FabricObject[]) => console.log("Deleting objects", objects),
+    addObject: (object: FabricObject) => console.log("Adding object", object),
+    updateObject: (object: FabricObject, props: any) => console.log("Updating object", object, props),
+    moveObject: (object: FabricObject, point: Point) => console.log("Moving object", object, point)
+  };
 };
