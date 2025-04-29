@@ -28,6 +28,16 @@ export interface FabricObjectModifiedEvent {
   e?: Event;
 }
 
+export interface FabricCanvasTouchEvent {
+  e: TouchEvent;
+  target?: FabricObject;
+  pointer: Point;
+  absolutePointer: Point;
+}
+
+// Combined pointer event (mouse or touch)
+export type FabricPointerEvent = FabricCanvasMouseEvent | FabricCanvasTouchEvent;
+
 export type FabricEventHandler<T = any> = (e: T) => void;
 
 export const FabricEventNames = {

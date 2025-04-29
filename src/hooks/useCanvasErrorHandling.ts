@@ -34,12 +34,12 @@ export const useCanvasErrorHandling = (options: UseCanvasErrorHandlingOptions = 
       toast.error(`Canvas error: ${error.message}`);
     }
     
-    // Send to error tracking
+    // Send to error tracking with correct options interface
     if (captureToSentry) {
       captureError(error, { 
-        level: 'error',
         tags: { component: 'Canvas' },
-        extra: { message: error.message }
+        extra: { message: error.message },
+        level: 'error'
       });
     }
   }, [onCanvasError, showToast, logToConsole, captureToSentry]);

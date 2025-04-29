@@ -1,7 +1,8 @@
+
 import { useCallback, useRef } from 'react';
-import { FabricObject } from 'fabric';
+import { Object as FabricObject } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { ExtendedFabricCanvas } from '@/types/fabric-unified';
 
 interface UseCanvasInteractionProps {
   fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
@@ -39,12 +40,15 @@ export const useCanvasInteraction = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    const activeObjects = canvas.getActiveObjects();
+    const activeObjects = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
     if (activeObjects.length > 0) {
       activeObjects.forEach((obj: FabricObject) => {
         canvas.remove(obj);
       });
-      canvas.discardActiveObject().renderAll();
+      if (canvas.discardActiveObject) {
+        canvas.discardActiveObject();
+      }
+      canvas.renderAll();
       saveCurrentState();
     }
   }, [fabricCanvasRef, saveCurrentState]);
@@ -54,7 +58,7 @@ export const useCanvasInteraction = ({
     if (!canvas) return;
 
     canvas.selection = true;
-    canvas.forEachObject((obj: FabricObject) => {
+    canvas.forEachObject && canvas.forEachObject((obj: FabricObject) => {
       obj.selectable = true;
     });
   }, [fabricCanvasRef]);
@@ -63,16 +67,17 @@ export const useCanvasInteraction = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    canvas.off('object:selected');
-    canvas.off('object:modified');
+    // Use type-safe event handlers with correct parameters
+    canvas.off('object:selected', handleObjectSelected as any);
+    canvas.off('object:modified', handleObjectModified as any);
 
     if (tool === DrawingMode.SELECT) {
       enablePointSelection();
-      canvas.on('object:selected', handleObjectSelected);
-      canvas.on('object:modified', handleObjectModified);
+      canvas.on('object:selected', handleObjectSelected as any);
+      canvas.on('object:modified', handleObjectModified as any);
     } else {
       canvas.selection = false;
-      canvas.forEachObject((obj: FabricObject) => {
+      canvas.forEachObject && canvas.forEachObject((obj: FabricObject) => {
         obj.selectable = false;
       });
     }

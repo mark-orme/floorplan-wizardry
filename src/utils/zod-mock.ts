@@ -1,6 +1,7 @@
 
 // Enhanced mock implementation of Zod for testing
 
+// Create a ZodError class that matches real Zod's API
 export class ZodError extends Error {
   errors: Array<{ message: string; path: string[] }> = [];
   
@@ -10,6 +11,7 @@ export class ZodError extends Error {
   }
 }
 
+// Create a ZodType class that can be extended
 class ZodType<T> {
   _type!: T;
 
@@ -97,20 +99,20 @@ class ZodBoolean extends ZodType<boolean> {
   }
 }
 
-// Create a mock z object
-const z = {
-  string: () => new ZodString(),
-  number: () => new ZodNumber(),
-  boolean: () => new ZodBoolean(),
-  object: (schema: Record<string, ZodType<any>>) => new ZodType<any>(),
-  array: (type: ZodType<any>) => new ZodType<any[]>(),
-  enum: (values: any[]) => new ZodType<any>(),
-  nativeEnum: (enumObj: any) => new ZodType<any>(),
-  record: (keyType: any, valueType: any) => new ZodType<Record<string, any>>(),
-  infer: <T>(schema: ZodType<T>): T => ({} as T),
-  ZodError,
-  ZodType
-};
+// Create a namespace z with methods
+export namespace z {
+  export const string = () => new ZodString();
+  export const number = () => new ZodNumber();
+  export const boolean = () => new ZodBoolean();
+  export const object = (schema: Record<string, ZodType<any>>) => new ZodType<any>();
+  export const array = (type: ZodType<any>) => new ZodType<any[]>();
+  export const enum = (values: any[]) => new ZodType<any>();
+  export const nativeEnum = (enumObj: any) => new ZodType<any>();
+  export const record = (keyType: any, valueType: any) => new ZodType<Record<string, any>>();
+  export const infer = <T>(schema: ZodType<T>): T => ({} as T);
+  export const ZodError = ZodError;
+  export type ZodType<T> = ZodType<T>;
+}
 
-export { z };
-export default z;
+// Export as default and named export
+export { z as default, ZodType };

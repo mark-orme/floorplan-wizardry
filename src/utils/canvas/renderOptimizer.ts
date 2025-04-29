@@ -1,68 +1,54 @@
 
-/**
- * Canvas rendering optimization utilities
- */
-
-import { Canvas } from 'fabric';
-
-let renderRequestId: number | null = null;
-const pendingCanvases = new Set<Canvas>();
+import { ExtendedFabricCanvas } from '@/types/fabric-unified';
+import { Object as FabricObject } from 'fabric';
 
 /**
- * Request an optimized render for a canvas
- * Batches rendering requests to avoid multiple repaints in the same frame
- * @param canvas The canvas to render
- * @param reason Optional reason for debugging
+ * Batch canvas operations for better performance
+ * @param canvas The fabric canvas
+ * @param operations Functions to execute in a batch
  */
-export function requestOptimizedRender(canvas: Canvas, reason?: string): void {
+export const batchCanvasOperations = (
+  canvas: ExtendedFabricCanvas | null,
+  operations: (() => void)[]
+) => {
   if (!canvas) return;
   
-  // Add canvas to pending set
-  pendingCanvases.add(canvas);
-  
-  // If we already have a request queued, don't queue another one
-  if (renderRequestId !== null) return;
-  
-  // Schedule a render on the next animation frame
-  renderRequestId = requestAnimationFrame(() => {
-    // Render all pending canvases
-    pendingCanvases.forEach(canvas => {
-      try {
-        canvas.renderAll();
-      } catch (error) {
-        console.error('Error rendering canvas:', error);
-      }
-    });
-    
-    // Clear the pending set and request ID
-    pendingCanvases.clear();
-    renderRequestId = null;
-  });
-}
-
-/**
- * Creates a smooth event handler that throttles canvas rendering
- * Useful for high-frequency events like mouse movements
- */
-export function createSmoothEventHandler<T extends any[]>(
-  handler: (...args: T) => void,
-  canvas?: Canvas | null
-): (...args: T) => void {
-  return (...args: T) => {
-    handler(...args);
-    if (canvas) {
-      requestOptimizedRender(canvas);
-    }
-  };
-}
-
-/**
- * Cancel any pending render requests
- */
-export function cancelRenderRequests(): void {
-  if (renderRequestId !== null) {
-    cancelAnimationFrame(renderRequestId);
-    renderRequestId = null;
-    pendingCanvases.clear();
+  // Disable rendering during operations
+  const originalRenderOnAddRemove = canvas.renderOnAddRemove;
+  if (canvas.renderOnAddRemove !== undefined) {
+    canvas.renderOnAddRemove = false;
   }
-}
+
+  try {
+    // Execute all operations
+    operations.forEach(operation => {
+      operation();
+    });
+  } finally {
+    // Restore original rendering setting
+    if (canvas.renderOnAddRemove !== undefined) {
+      canvas.renderOnAddRemove = originalRenderOnAddRemove;
+    }
+    
+    // Render all changes at once
+    canvas.requestRenderAll?.() || canvas.renderAll();
+  }
+};
+
+/**
+ * Add multiple objects to canvas in a batch
+ */
+export const addObjectsBatch = (canvas: ExtendedFabricCanvas | null, objects: FabricObject[]) => {
+  batchCanvasOperations(canvas, [
+    () => objects.forEach(obj => canvas?.add(obj))
+  ]);
+};
+
+/**
+ * Remove multiple objects from canvas in a batch
+ */
+export const removeObjectsBatch = (canvas: ExtendedFabricCanvas | null, objects: FabricObject[]) => {
+  batchCanvasOperations(canvas, [
+    () => objects.forEach(obj => canvas?.remove(obj))
+  ]);
+};

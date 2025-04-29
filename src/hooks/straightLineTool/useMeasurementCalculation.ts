@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
-import type { MeasurementData } from './useStraightLineTool';
-import { Point } from '@/types/core/Point';
+import { MeasurementData, Point } from '@/types/fabric-unified';
 
 /**
  * Hook for calculating measurements between two points

@@ -1,44 +1,52 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface MeasurementGuideModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
-  open,
-  onOpenChange
-}) => {
+export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({ isOpen, onClose }) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Measurement Guide</DialogTitle>
+          <DialogTitle>Measurement Tool Guide</DialogTitle>
+          <DialogDescription>
+            Learn how to use the measurement tool effectively.
+          </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <h3 className="font-medium">How to measure</h3>
-            <p className="text-sm text-gray-500">
-              Click and drag to measure distances on the canvas.
+            <h3 className="font-medium">Basic Usage</h3>
+            <p className="text-sm text-muted-foreground">
+              Click and drag to create a measurement line. Release to complete.
             </p>
           </div>
+
           <div className="space-y-2">
-            <h3 className="font-medium">Units</h3>
-            <p className="text-sm text-gray-500">
-              Measurements are shown in both pixels and meters (based on scale).
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-medium">Tips</h3>
-            <ul className="text-sm text-gray-500 list-disc pl-5">
-              <li>Hold Shift to constrain to straight lines</li>
-              <li>Double-click to end measurement</li>
-              <li>Press Escape to cancel</li>
+            <h3 className="font-medium">Keyboard Shortcuts</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li><kbd className="px-1 rounded bg-muted">Shift</kbd> - Hold to snap to 45° angles</li>
+              <li><kbd className="px-1 rounded bg-muted">G</kbd> - Toggle grid snapping</li>
+              <li><kbd className="px-1 rounded bg-muted">Escape</kbd> - Cancel current measurement</li>
             </ul>
           </div>
+
+          <div className="space-y-2">
+            <h3 className="font-medium">Tips</h3>
+            <p className="text-sm text-muted-foreground">
+              Use grid snapping for more precise measurements. Toggle angle constraints for architectural drawings.
+            </p>
+          </div>
         </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Got it</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -1,112 +1,64 @@
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
+import { ExtendedFabricCanvas } from '@/types/fabric-unified';
 import { FabricPointerEvent } from '@/types/fabricEvents';
-import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
-export interface UsePointerEventsProps {
-  onPointerDown?: (e: FabricPointerEvent) => void;
-  onPointerMove?: (e: FabricPointerEvent) => void;
-  onPointerUp?: (e: FabricPointerEvent) => void;
-  onDragStart?: (e: FabricPointerEvent) => void;
-  onDragMove?: (e: FabricPointerEvent) => void;
-  onDragEnd?: (e: FabricPointerEvent) => void;
-  enabled?: boolean;
+interface UsePointerEventsProps {
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  currentTool: DrawingMode;
+  onMouseDown?: (e: any) => void;
+  onMouseMove?: (e: any) => void;
+  onMouseUp?: (e: any) => void;
+  isEnabled?: boolean;
 }
 
-export function usePointerEvents({
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-  enabled = true
-}: UsePointerEventsProps) {
-  const canvasRef = useRef<FabricCanvas | null>(null);
-  const isDraggingRef = useRef(false);
-  const lastPositionRef = useRef({ x: 0, y: 0 });
+export const usePointerEvents = ({ 
+  fabricCanvasRef,
+  currentTool,
+  onMouseDown,
+  onMouseMove,
+  onMouseUp,
+  isEnabled = true
+}: UsePointerEventsProps) => {
+  // Handle mouse down event
+  const handleMouseDown = useCallback((e: FabricPointerEvent) => {
+    if (!isEnabled) return;
+    if (onMouseDown) onMouseDown(e);
+  }, [isEnabled, onMouseDown]);
   
-  // Set up event listeners when the component mounts
+  // Handle mouse move event
+  const handleMouseMove = useCallback((e: FabricPointerEvent) => {
+    if (!isEnabled) return;
+    if (onMouseMove) onMouseMove(e);
+  }, [isEnabled, onMouseMove]);
+  
+  // Handle mouse up event
+  const handleMouseUp = useCallback((e: FabricPointerEvent) => {
+    if (!isEnabled) return;
+    if (onMouseUp) onMouseUp(e);
+  }, [isEnabled, onMouseUp]);
+  
+  // Set up event listeners
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !enabled) return;
-
-    const handlePointerMove = (opt: any) => {
-      const e = opt as FabricPointerEvent;
-      if (onPointerMove) {
-        onPointerMove(e);
-      }
-      
-      if (isDraggingRef.current && onDragMove) {
-        const { x, y } = lastPositionRef.current;
-        const dx = e.pointer?.x ?? 0 - x;
-        const dy = e.pointer?.y ?? 0 - y;
-        onDragMove({ ...e, movementX: dx, movementY: dy });
-      }
-      
-      if (e.pointer) {
-        lastPositionRef.current = { 
-          x: e.pointer.x ?? 0, 
-          y: e.pointer.y ?? 0 
-        };
-      }
-    };
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isEnabled) return;
     
-    const handlePointerDown = (opt: any) => {
-      const e = opt as FabricPointerEvent;
-      if (onPointerDown) {
-        onPointerDown(e);
-      }
-      
-      if (e.pointer) {
-        lastPositionRef.current = { 
-          x: e.pointer.x ?? 0, 
-          y: e.pointer.y ?? 0 
-        };
-      }
-      
-      isDraggingRef.current = true;
-      
-      if (onDragStart) {
-        onDragStart(e);
-      }
-    };
+    canvas.on('mouse:down', handleMouseDown as any);
+    canvas.on('mouse:move', handleMouseMove as any);
+    canvas.on('mouse:up', handleMouseUp as any);
     
-    const handlePointerUp = (opt: any) => {
-      const e = opt as FabricPointerEvent;
-      if (onPointerUp) {
-        onPointerUp(e);
-      }
-      
-      if (isDraggingRef.current && onDragEnd) {
-        onDragEnd(e);
-      }
-      
-      isDraggingRef.current = false;
-    };
-
-    // Using the proper canvas event binding with type casting to avoid TypeScript errors
-    canvas.on('mouse:move', handlePointerMove as any);
-    canvas.on('mouse:down', handlePointerDown as any);
-    canvas.on('mouse:up', handlePointerUp as any);
-    
-    // Clean up event listeners when the component unmounts
     return () => {
-      if (canvas) {
-        canvas.off('mouse:move', handlePointerMove as any);
-        canvas.off('mouse:down', handlePointerDown as any);
-        canvas.off('mouse:up', handlePointerUp as any);
-      }
+      if (!canvas) return;
+      canvas.off('mouse:down', handleMouseDown as any);
+      canvas.off('mouse:move', handleMouseMove as any);
+      canvas.off('mouse:up', handleMouseUp as any);
     };
-  }, [
-    enabled,
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onDragStart,
-    onDragMove,
-    onDragEnd
-  ]);
+  }, [fabricCanvasRef, handleMouseDown, handleMouseMove, handleMouseUp, isEnabled]);
   
-  return { canvasRef };
-}
+  return {
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
+  };
+};

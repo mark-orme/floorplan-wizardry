@@ -1,58 +1,49 @@
 
 import React, { useMemo } from 'react';
-import { BrushCursorPreview } from '@/components/canvas/BrushCursorPreview';
-import { MeasurementGuideModal } from '@/components/MeasurementGuideModal';
-import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import BrushCursorPreview from '@/components/canvas/BrushCursorPreview';
+import MeasurementGuideModal from '@/components/MeasurementGuideModal';
 
-// Memoized components
-export const MemoizedBrushCursorPreview = React.memo(BrushCursorPreview);
-export const MemoizedMeasurementGuideModal = React.memo(MeasurementGuideModal);
-
-// Hook to optimize drawing components rendering
-export const useMemoizedDrawingComponents = ({
-  fabricCanvas,
-  tool,
-  lineColor,
-  lineThickness,
-  showGuide,
-  handleCloseGuide,
-  handleOpenGuideChange
-}: {
-  fabricCanvas: FabricCanvas | null;
+interface UseMemoizedDrawingComponentsProps {
   tool: DrawingMode;
   lineColor: string;
   lineThickness: number;
-  showGuide: boolean;
-  handleCloseGuide: () => void;
-  handleOpenGuideChange: (open: boolean) => void;
-}) => {
+  showGuides?: boolean;
+}
+
+export const useMemoizedDrawingComponents = ({
+  tool,
+  lineColor,
+  lineThickness,
+  showGuides = false
+}: UseMemoizedDrawingComponentsProps) => {
+  const [showMeasurementGuide, setShowMeasurementGuide] = React.useState(false);
   
-  // Memoized brush cursor preview
-  const brushPreview = useMemo(() => {
-    return (
-      <MemoizedBrushCursorPreview 
-        fabricCanvas={fabricCanvas} 
-        tool={tool}
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-      />
-    );
-  }, [fabricCanvas, tool, lineColor, lineThickness]);
+  // Create memoized brush cursor preview
+  const brushCursorPreview = useMemo(() => (
+    <BrushCursorPreview
+      color={lineColor}
+      size={lineThickness}
+      visible={tool === DrawingMode.DRAW || tool === DrawingMode.PENCIL}
+    />
+  ), [tool, lineColor, lineThickness]);
   
-  // Memoized measurement guide
-  const measurementGuide = useMemo(() => {
-    return (
-      <MemoizedMeasurementGuideModal 
-        open={showGuide} 
-        onClose={handleCloseGuide}
-        onOpenChange={handleOpenGuideChange}
-      />
-    );
-  }, [showGuide, handleCloseGuide, handleOpenGuideChange]);
+  // Create memoized measurement guide modal
+  const measurementGuideModal = useMemo(() => (
+    <MeasurementGuideModal
+      isOpen={showMeasurementGuide}
+      onClose={() => setShowMeasurementGuide(false)}
+    />
+  ), [showMeasurementGuide]);
+  
+  // Function to show the measurement guide
+  const openMeasurementGuide = () => {
+    setShowMeasurementGuide(true);
+  };
   
   return {
-    brushPreview,
-    measurementGuide
+    brushCursorPreview,
+    measurementGuideModal,
+    openMeasurementGuide
   };
 };

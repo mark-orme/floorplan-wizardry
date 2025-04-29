@@ -1,55 +1,49 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Point';
 
 interface BrushCursorPreviewProps {
-  canvas: FabricCanvas;
-  size: number;
   color: string;
+  size: number;
+  visible: boolean;
+  position?: { x: number; y: number };
 }
 
 const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
-  canvas,
-  size,
-  color
+  color = '#000000',
+  size = 5,
+  visible = false,
+  position = { x: 0, y: 0 }
 }) => {
-  const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>(position);
   
   useEffect(() => {
-    if (!canvas) return;
+    if (!visible) return;
     
-    const handleMouseMove = (e: { e: MouseEvent }) => {
-      const pointer = canvas.getPointer(e.e);
-      setPosition(pointer);
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPos({ x: e.clientX, y: e.clientY });
     };
     
-    canvas.on('mouse:move', handleMouseMove);
-    
+    window.addEventListener('mousemove', handleMouseMove);
     return () => {
-      canvas.off('mouse:move', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [canvas]);
+  }, [visible]);
   
-  // Get canvas container element
-  const canvasElement = canvas?.getElement();
-  const canvasRect = canvasElement?.getBoundingClientRect();
-  
-  if (!canvasRect) return null;
+  if (!visible) return null;
   
   return (
     <div
+      className="pointer-events-none fixed z-50"
       style={{
-        position: 'absolute',
-        left: position.x + canvasRect.left,
-        top: position.y + canvasRect.top,
+        left: cursorPos.x - size / 2,
+        top: cursorPos.y - size / 2,
         width: size,
         height: size,
         borderRadius: '50%',
-        border: `1px solid ${color}`,
-        backgroundColor: `${color}20`,
+        backgroundColor: color,
+        opacity: 0.6,
         transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none'
+        transition: 'width 0.1s, height 0.1s'
       }}
     />
   );

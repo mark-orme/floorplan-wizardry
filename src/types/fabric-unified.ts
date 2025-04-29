@@ -12,7 +12,9 @@ import {
   Rect,
   Path,
   Point as FabricPoint,
-  Group
+  Group,
+  Polyline,
+  ActiveSelection,
 } from 'fabric';
 
 // Re-export the native fabric types
@@ -24,7 +26,9 @@ export type {
   Rect,
   Path,
   FabricPoint,
-  Group
+  Group,
+  Polyline,
+  ActiveSelection
 };
 
 /**
@@ -51,6 +55,43 @@ export interface ExtendedFabricCanvas extends FabricCanvas {
   forEachObject?: (callback: (obj: FabricObject) => void) => void;
   /** Zoom to specific point */
   zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
+  /** Canvas backgroundColor */
+  backgroundColor?: string;
+  /** Add objects to canvas */
+  add(...objects: FabricObject[]): FabricCanvas;
+  /** Remove objects from canvas */
+  remove(...objects: FabricObject[]): FabricCanvas;
+  /** Get all objects on canvas */
+  getObjects(): FabricObject[];
+  /** Clear all objects from canvas */
+  clear(): FabricCanvas;
+  /** Get active objects */
+  getActiveObjects?(): FabricObject[];
+  /** Discard active object */
+  discardActiveObject?(options?: any): FabricCanvas;
+  /** Render all objects */
+  renderAll(): FabricCanvas;
+  /** Request render all on next animation frame */
+  requestRenderAll(): FabricCanvas;
+  /** Whether the canvas is in drawing mode */
+  isDrawingMode?: boolean;
+  /** The free drawing brush */
+  freeDrawingBrush?: {
+    color: string;
+    width: number;
+    limitedToCanvasSize?: boolean;
+    decimate?: number;
+  };
+  /** Convert canvas to object */
+  toObject?(options?: any): any;
+  /** Convert canvas to JSON */
+  toJSON?(options?: any): any;
+  /** Canvas selection flag */
+  selection?: boolean;
+  /** Set zoom level */
+  setZoom?(zoom: number): FabricCanvas;
+  /** Get zoom level */
+  getZoom?(): number;
 }
 
 /**
@@ -61,6 +102,8 @@ export interface ExtendedFabricObject extends FabricObject {
   objectType?: string;
   /** Whether the object is part of grid */
   isGrid?: boolean;
+  /** Whether the object is a large grid line */
+  isLargeGrid?: boolean;
   /** Whether the object is visible */
   visible?: boolean;
   /** Whether the object can be selected */
@@ -68,7 +111,15 @@ export interface ExtendedFabricObject extends FabricObject {
   /** Whether the object responds to events */
   evented?: boolean;
   /** Set properties on the object */
-  set: (options: Record<string, any>) => FabricObject;
+  set(options: Record<string, any>): FabricObject;
+  /** Unique identifier */
+  id?: string;
+  /** Set coordinates */
+  setCoords?(): void;
+  /** Additional props */
+  data?: any;
+  /** Additional props for grid lines */
+  isOnScreen?: boolean;
 }
 
 /**
@@ -101,6 +152,11 @@ export interface FabricMouseEvent {
 }
 
 /**
+ * Fabric pointer event for touch and mouse
+ */
+export type FabricPointerEvent = FabricMouseEvent;
+
+/**
  * Point interface for coordinates
  */
 export interface Point {
@@ -114,11 +170,77 @@ export interface Point {
 export interface MeasurementData {
   distance: number;
   angle: number;
-  startPoint: Point;
-  endPoint: Point;
+  startPoint?: Point;
+  endPoint?: Point;
   snapped?: boolean;
   unit?: string;
   snapType?: 'grid' | 'angle' | 'both';
+}
+
+/**
+ * Canvas state interface
+ */
+export interface CanvasState {
+  tool: string;
+  lineColor: string;
+  lineThickness: number;
+  zoomLevel: number;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  showRulers: boolean;
+  showMeasurements: boolean;
+}
+
+/**
+ * Drawing state interface
+ */
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  points: Point[];
+  distance: number;
+  cursorPosition: Point;
+  currentZoom?: number;
+}
+
+/**
+ * Create default drawing state
+ */
+export function createDefaultDrawingState(): DrawingState {
+  return {
+    isDrawing: false,
+    startPoint: null,
+    currentPoint: null,
+    points: [],
+    distance: 0,
+    cursorPosition: { x: 0, y: 0 }
+  };
+}
+
+/**
+ * Canvas interaction result
+ */
+export interface UseCanvasStateResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<any>;
+  initializeCanvas: () => void;
+  disposeCanvas: () => void;
+  isInitialized: boolean;
+}
+
+/**
+ * Gesture types for touch interactions
+ */
+export type GestureType = 'pinch' | 'rotate' | 'pan';
+export type GestureState = 'start' | 'move' | 'end';
+export interface GestureStateObject {
+  type: GestureType;
+  state: GestureState;
+  scale?: number;
+  rotation?: number;
+  translation?: { x: number; y: number };
 }
 
 /**

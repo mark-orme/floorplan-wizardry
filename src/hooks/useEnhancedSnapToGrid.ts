@@ -1,123 +1,71 @@
 
-import { useCallback, useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { useCallback, useState } from 'react';
+import { GRID_CONSTANTS } from '@/types/fabric-unified';
 import { Point } from '@/types/core/Point';
-import { snapPointToGrid, snapLineToGrid, constrainToMajorAngles } from '@/utils/grid/snapping';
 
-export interface UseEnhancedSnapToGridProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+interface UseEnhancedGridSnappingProps {
   initialSnapEnabled?: boolean;
   gridSize?: number;
-  autoStraighten?: boolean;
+  snapThreshold?: number;
 }
 
-export const useEnhancedSnapToGrid = ({
-  fabricCanvasRef,
+/**
+ * Enhanced grid snapping hook with improved performance
+ */
+export const useEnhancedGridSnapping = ({
   initialSnapEnabled = true,
-  gridSize = GRID_CONSTANTS.GRID_SIZE,
-  autoStraighten = true
-}: UseEnhancedSnapToGridProps) => {
+  gridSize = 10,
+  snapThreshold = 5
+}: UseEnhancedGridSnappingProps = {}) => {
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  const [straightenEnabled, setStraightenEnabled] = useState(autoStraighten);
+  const [currentGridSize, setGridSize] = useState(gridSize);
+  const [currentSnapThreshold, setSnapThreshold] = useState(snapThreshold);
   
-  // Toggle snap to grid
-  const toggleSnapToGrid = useCallback(() => {
+  // Use a numerical value for gridSize, not the object
+  const defaultGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+  
+  /**
+   * Toggle grid snapping on/off
+   */
+  const toggleGridSnapping = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
   
-  // Toggle auto-straighten lines
-  const toggleStraighten = useCallback(() => {
-    setStraightenEnabled(prev => !prev);
-  }, []);
-  
-  // Enhanced snap point function that also considers auto-straightening
-  const snapPoint = useCallback((point: Point, origin?: Point): Point => {
-    if (!snapEnabled) return { ...point };
+  /**
+   * Snap a point to the nearest grid intersection
+   */
+  const snapPointToGrid = useCallback((point: Point): Point => {
+    if (!snapEnabled) return point;
     
-    // First, snap to grid
-    const snappedPoint = snapPointToGrid(point, gridSize);
+    const snapSize = currentGridSize || defaultGridSize;
     
-    // If auto-straighten is enabled and we have an origin point, constrain to major angles
-    if (straightenEnabled && origin) {
-      const { end } = constrainToMajorAngles(origin, snappedPoint);
-      return end;
-    }
-    
-    return snappedPoint;
-  }, [snapEnabled, straightenEnabled, gridSize]);
-  
-  // Enhanced snap line function
-  const snapLine = useCallback((start: Point, end: Point): { start: Point, end: Point } => {
-    if (!snapEnabled) return { start: { ...start }, end: { ...end } };
-    
-    // First, snap both points to grid
-    const snappedStart = snapPointToGrid(start, gridSize);
-    let snappedEnd = snapPointToGrid(end, gridSize);
-    
-    // If auto-straighten is enabled, constrain to major angles
-    if (straightenEnabled) {
-      const constrained = constrainToMajorAngles(snappedStart, snappedEnd);
-      snappedEnd = constrained.end;
-    }
-    
-    return { start: snappedStart, end: snappedEnd };
-  }, [snapEnabled, straightenEnabled, gridSize]);
-  
-  // Snap during mouse or touch events
-  const snapEventPoint = useCallback((e: any): Point | null => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
-    
-    try {
-      const pointer = canvas.getPointer(e);
-      return snapPoint({ x: pointer.x, y: pointer.y });
-    } catch (error) {
-      console.error('Error getting pointer position:', error);
-      return null;
-    }
-  }, [fabricCanvasRef, snapPoint]);
-  
-  // Set up canvas event listeners for object movement snapping
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !snapEnabled) return;
-    
-    const handleObjectMoving = (e: any) => {
-      if (!snapEnabled) return;
-      
-      const obj = e.target;
-      if (!obj) return;
-      
-      // Get current position
-      const p = { x: obj.left, y: obj.top };
-      
-      // Snap to grid
-      const snapped = snapPoint(p);
-      
-      // Apply snapped position
-      obj.set({
-        left: snapped.x,
-        top: snapped.y
-      });
+    return {
+      x: Math.round(point.x / snapSize) * snapSize,
+      y: Math.round(point.y / snapSize) * snapSize
     };
+  }, [snapEnabled, currentGridSize, defaultGridSize]);
+  
+  /**
+   * Snap a line to the grid (both endpoints)
+   */
+  const snapLineToGrid = useCallback((start: Point, end: Point): { start: Point; end: Point } => {
+    if (!snapEnabled) return { start, end };
     
-    // Add the event listener
-    canvas.on('object:moving', handleObjectMoving);
-    
-    // Clean up
-    return () => {
-      canvas.off('object:moving', handleObjectMoving);
+    return {
+      start: snapPointToGrid(start),
+      end: snapPointToGrid(end)
     };
-  }, [fabricCanvasRef, snapEnabled, snapPoint]);
+  }, [snapEnabled, snapPointToGrid]);
   
   return {
     snapEnabled,
-    straightenEnabled,
-    toggleSnapToGrid,
-    toggleStraighten,
-    snapPoint,
-    snapLine,
-    snapEventPoint
+    setSnapEnabled,
+    gridSize: currentGridSize,
+    setGridSize,
+    snapThreshold: currentSnapThreshold,
+    setSnapThreshold,
+    toggleSnap: toggleGridSnapping,
+    snapPointToGrid,
+    snapLineToGrid
   };
 };

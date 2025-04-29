@@ -1,31 +1,84 @@
 
 /**
- * Drawing-related constants
+ * Drawing constants for the application
  */
 
-// Drawing defaults
-export const DEFAULT_LINE_COLOR = '#000000';
-export const DEFAULT_FILL_COLOR = 'rgba(0, 0, 0, 0.1)';
-export const DEFAULT_STROKE_WIDTH = 2;
-export const DEFAULT_FONT_SIZE = 16;
-export const DEFAULT_FONT_FAMILY = 'Arial, sans-serif';
+// Polyline styles
+export const POLYLINE_STYLES = {
+  DEFAULT: {
+    stroke: '#000000',
+    strokeWidth: 2,
+    fill: 'transparent',
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round'
+  },
+  WALL: {
+    stroke: '#333333',
+    strokeWidth: 5,
+    fill: 'transparent',
+    strokeLineCap: 'butt',
+    strokeLineJoin: 'miter'
+  },
+  ROOM_BOUNDARY: {
+    stroke: '#0066cc',
+    strokeWidth: 2,
+    fill: 'rgba(0, 102, 204, 0.1)',
+    strokeLineCap: 'butt',
+    strokeLineJoin: 'miter'
+  },
+  MEASUREMENT: {
+    stroke: '#ff6600',
+    strokeWidth: 1,
+    strokeDashArray: [3, 3],
+    fill: 'transparent',
+    strokeLineCap: 'butt',
+    strokeLineJoin: 'miter'
+  }
+};
 
-// Drawing limits
-export const MIN_STROKE_WIDTH = 0.5;
-export const MAX_STROKE_WIDTH = 20;
-export const MIN_FONT_SIZE = 8;
-export const MAX_FONT_SIZE = 72;
-export const MAX_ZOOM = 10;
-export const MIN_ZOOM = 0.1;
+// Line styles
+export const LINE_STYLES = {
+  DEFAULT: {
+    stroke: '#000000',
+    strokeWidth: 2
+  },
+  THIN: {
+    stroke: '#333333',
+    strokeWidth: 1
+  },
+  THICK: {
+    stroke: '#000000',
+    strokeWidth: 4
+  },
+  DASHED: {
+    stroke: '#000000',
+    strokeWidth: 2,
+    strokeDashArray: [5, 5]
+  },
+  HIGHLIGHTED: {
+    stroke: '#ff0000',
+    strokeWidth: 3
+  }
+};
 
-// Drawing modes (re-exported from drawingModes.ts)
-// export { DrawingMode } from './drawingModes';
+// Drawing modes
+export const DRAWING_MODES = {
+  SELECT: 'select',
+  DRAW: 'draw',
+  LINE: 'line',
+  RECTANGLE: 'rectangle',
+  CIRCLE: 'circle',
+  TEXT: 'text',
+  WALL: 'wall',
+  ROOM: 'room'
+};
 
-// Performance settings
-export const CANVAS_RENDER_THROTTLE_MS = 16; // ~60fps
-export const CANVAS_STATE_UPDATE_DEBOUNCE_MS = 300;
-export const HISTORY_MAX_SIZE = 50;
-
-// Canvas dimension defaults
-export const DEFAULT_CANVAS_WIDTH = 800;
-export const DEFAULT_CANVAS_HEIGHT = 600;
+// Cursor styles for different drawing modes
+export const CURSOR_STYLES = {
+  DEFAULT: 'default',
+  CROSSHAIR: 'crosshair',
+  GRAB: 'grab',
+  GRABBING: 'grabbing',
+  TEXT: 'text',
+  NOT_ALLOWED: 'not-allowed'
+};

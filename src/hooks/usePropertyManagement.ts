@@ -1,104 +1,94 @@
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { PropertyListItem, PropertyStatus } from '@/types/propertyTypes';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Hook for property management operations
- */
-export const usePropertyManagement = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+export interface PropertyListItem {
+  id: string;
+  name: string;
+  address: string;
+  status: 'available' | 'sold' | 'pending';
+  price: number;
+  created_at: string;
+  updated_at: string;
+  description?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: number;
+  type?: string;
+  imageUrl?: string;
+}
 
-  /**
-   * List properties for the current user
-   * @returns Array of properties or empty array
-   */
-  const listProperties = async (): Promise<PropertyListItem[]> => {
-    setIsLoading(true);
+interface UsePropertyManagementProps {
+  initialProperties?: PropertyListItem[];
+}
+
+export const usePropertyManagement = ({
+  initialProperties = []
+}: UsePropertyManagementProps = {}) => {
+  const [properties, setProperties] = useState<PropertyListItem[]>(initialProperties);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Load properties (simulation)
+  const loadProperties = useCallback(async () => {
+    setLoading(true);
     setError(null);
     
     try {
-      if (!user) {
-        toast.error('User must be authenticated');
-        return [];
-      }
-      
-      console.log('Fetching properties for user:', user?.id);
-      
-      // In a real implementation, this would call Supabase
-      // For now, returning mock data
-      return [
-        {
-          id: 'property-1',
-          address: '123 Main St, Anytown, USA',
-          status: 'completed' as PropertyStatus,
-          updatedAt: new Date().toISOString(),
-          client_name: 'John Doe',
-          order_id: 'ORD-12345',
-          branch_name: 'Main Branch'
-        },
-        {
-          id: 'property-2',
-          address: '456 Oak Ave, Somewhere, USA',
-          status: 'draft' as PropertyStatus,
-          updatedAt: new Date().toISOString(),
-          client_name: 'Jane Smith',
-          order_id: 'ORD-67890',
-          branch_name: 'Secondary Branch'
-        }
-      ];
+      // In a real app, this would fetch from an API
+      setProperties(initialProperties);
     } catch (err) {
-      console.error('Error listing properties:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      return [];
+      setError(err instanceof Error ? err : new Error('Failed to load properties'));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  };
-
-  /**
-   * Get property by ID
-   * @param propertyId Property ID
-   * @returns Property or null
-   */
-  const getProperty = async (propertyId: string): Promise<PropertyListItem | null> => {
-    setIsLoading(true);
-    setError(null);
+  }, [initialProperties]);
+  
+  // Add a new property
+  const addProperty = useCallback((property: Omit<PropertyListItem, 'id' | 'created_at' | 'updated_at'>) => {
+    const now = new Date().toISOString();
+    const newProperty: PropertyListItem = {
+      id: uuidv4(),
+      created_at: now,
+      updated_at: now,
+      ...property
+    };
     
-    try {
-      if (!user) {
-        toast.error('User must be authenticated');
-        return null;
+    setProperties(prev => [...prev, newProperty]);
+    return newProperty;
+  }, []);
+  
+  // Update a property
+  const updateProperty = useCallback((id: string, updates: Partial<PropertyListItem>) => {
+    setProperties(prev => prev.map(property => {
+      if (property.id === id) {
+        return {
+          ...property,
+          ...updates,
+          updated_at: new Date().toISOString()
+        };
       }
-      
-      // In a real implementation, this would use supabase client to fetch floor plans
-      // For demonstration, return mock data
-      return {
-        id: propertyId,
-        address: '123 Main St, Anytown, USA',
-        status: 'completed' as PropertyStatus,
-        updatedAt: new Date().toISOString(),
-        client_name: 'John Doe',
-        order_id: 'ORD-12345',
-        branch_name: 'Main Branch'
-      };
-    } catch (err) {
-      console.error('Error getting property:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+      return property;
+    }));
+  }, []);
+  
+  // Delete a property
+  const deleteProperty = useCallback((id: string) => {
+    setProperties(prev => prev.filter(property => property.id !== id));
+  }, []);
+  
+  // Load properties on initial mount
+  useEffect(() => {
+    loadProperties();
+  }, [loadProperties]);
+  
   return {
-    isLoading,
+    properties,
+    loading,
     error,
-    listProperties,
-    getProperty
+    addProperty,
+    updateProperty,
+    deleteProperty,
+    refreshProperties: loadProperties
   };
 };

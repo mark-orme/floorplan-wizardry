@@ -1,44 +1,28 @@
 
-/**
- * Hook for managing drawing state
- * @module useDrawingState
- */
 import { useState, useCallback } from 'react';
-import { DrawingState, createDefaultDrawingState } from '@/types/drawingTypes';
-import type { Point } from '@/types/core/Geometry';
-import type { DrawingTool } from '@/types/core/DrawingTool';
+import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingState, createDefaultDrawingState } from '@/types/fabric-unified';
 
-/**
- * Hook for managing drawing state
- * @returns Drawing state management functions
- */
 export const useDrawingState = () => {
-  // Initialize with default state
+  const [currentTool, setCurrentTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
   const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
-  const [currentTool, setCurrentTool] = useState<DrawingTool | null>(null);
   
-  /**
-   * Start drawing operation
-   * @param x - Starting X coordinate
-   * @param y - Starting Y coordinate
-   */
   const startDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => ({
       ...prev,
       isDrawing: true,
       startPoint: { x, y },
-      pathStartPoint: { x, y },
+      currentPoint: { x, y },
       points: [{ x, y }]
     }));
   }, []);
   
-  /**
-   * Update drawing with current position
-   * @param x - Current X coordinate
-   * @param y - Current Y coordinate
-   */
   const updateDrawing = useCallback((x: number, y: number) => {
     setDrawingState(prev => {
+      if (!prev.isDrawing) return prev;
+      
       return {
         ...prev,
         currentPoint: { x, y },
@@ -47,65 +31,36 @@ export const useDrawingState = () => {
     });
   }, []);
   
-  /**
-   * End drawing operation
-   * @param x - Ending X coordinate
-   * @param y - Ending Y coordinate
-   */
-  const endDrawing = useCallback((x?: number, y?: number) => {
-    setDrawingState(prev => {
-      const points = [...prev.points];
-      if (x !== undefined && y !== undefined) {
-        points.push({ x, y });
-      }
-      
-      return {
-        ...prev,
-        isDrawing: false,
-        points
-      };
-    });
-  }, []);
-  
-  /**
-   * Reset drawing state to initial values
-   */
-  const resetDrawing = useCallback(() => {
-    setDrawingState(createDefaultDrawingState());
-  }, []);
-  
-  /**
-   * Update distance measurement
-   * @param distance - Distance in meters
-   */
-  const updateDistance = useCallback((distance: number) => {
+  const endDrawing = useCallback(() => {
     setDrawingState(prev => ({
       ...prev,
-      distance
+      isDrawing: false
     }));
   }, []);
   
-  /**
-   * Update cursor position
-   * @param point - Current cursor position
-   */
-  const updateCursorPosition = useCallback((point: Point) => {
+  const cancelDrawing = useCallback(() => {
+    setDrawingState(createDefaultDrawingState());
+  }, []);
+  
+  const updateCursorPosition = useCallback((x: number, y: number) => {
     setDrawingState(prev => ({
       ...prev,
-      cursorPosition: point
+      cursorPosition: { x, y }
     }));
   }, []);
   
   return {
+    currentTool,
+    setCurrentTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
     drawingState,
-    setDrawingState,
     startDrawing,
     updateDrawing,
     endDrawing,
-    resetDrawing,
-    updateDistance,
-    updateCursorPosition,
-    currentTool,
-    setCurrentTool
+    cancelDrawing,
+    updateCursorPosition
   };
 };
