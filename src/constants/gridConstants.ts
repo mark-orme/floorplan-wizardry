@@ -23,6 +23,16 @@ export const ANGLE_SNAP_THRESHOLD = 5;
 export const DEFAULT_GRID_VISIBLE = true;
 export const DEFAULT_SNAP_ENABLED = true;
 
+// Size groupings
+export const GRID_SIZE = {
+  SMALL: SMALL_GRID_SIZE,
+  LARGE: LARGE_GRID_SIZE,
+  DEFAULT: 25
+};
+
+// Additional constants
+export const PIXELS_PER_METER = 100;
+
 // Unified grid constants object
 export const GRID_CONSTANTS = {
   SMALL_GRID_SIZE,
@@ -34,7 +44,9 @@ export const GRID_CONSTANTS = {
   SMALL_GRID_WIDTH,
   LARGE_GRID_WIDTH,
   DEFAULT_GRID_VISIBLE,
-  DEFAULT_SNAP_ENABLED
+  DEFAULT_SNAP_ENABLED,
+  GRID_SIZE,
+  PIXELS_PER_METER
 };
 
 // Export default grid properties

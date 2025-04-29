@@ -4,6 +4,7 @@ import { useLineState } from '../useLineState';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { MutableRefObject } from 'react';
 import { describe, it, expect, vi } from 'vitest';
+import { Point } from '@/types/fabric-unified';
 
 describe('useLineState', () => {
   const mockCanvas = {} as FabricCanvas;
@@ -24,35 +25,35 @@ describe('useLineState', () => {
     expect(result.current.currentPoint).toBeNull();
   });
 
-  it('should update drawing state on startDrawing', () => {
+  it('should update drawing state on handleMouseDown', () => {
     const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
-      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.handleMouseDown({ x: 10, y: 20 });
     });
     
     expect(result.current.isDrawing).toBe(true);
     expect(result.current.startPoint).toEqual({ x: 10, y: 20 });
   });
 
-  it('should update current point on continueDrawing', () => {
+  it('should update current point on handleMouseMove', () => {
     const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
-      result.current.startDrawing({ x: 10, y: 20 });
-      result.current.continueDrawing({ x: 30, y: 40 });
+      result.current.handleMouseDown({ x: 10, y: 20 });
+      result.current.handleMouseMove({ x: 30, y: 40 });
     });
     
     expect(result.current.currentPoint).toEqual({ x: 30, y: 40 });
   });
 
-  it('should reset state on completeDrawing', () => {
+  it('should reset state on handleMouseUp', () => {
     const { result } = renderHook(() => useLineState(mockOptions));
     
     act(() => {
-      result.current.startDrawing({ x: 10, y: 20 });
-      result.current.continueDrawing({ x: 30, y: 40 });
-      result.current.completeDrawing({ x: 50, y: 60 });
+      result.current.handleMouseDown({ x: 10, y: 20 });
+      result.current.handleMouseMove({ x: 30, y: 40 });
+      result.current.handleMouseUp();
     });
     
     expect(result.current.isDrawing).toBe(false);

@@ -1,19 +1,6 @@
 
-import { Point } from '@/types/fabric-unified';
+import { Point, MeasurementData } from '@/types/fabric-unified';
 import { Canvas } from 'fabric';
-
-/**
- * Measurement data for line tools
- */
-export interface MeasurementData {
-  distance: number;
-  angle: number;
-  startPoint: Point;
-  endPoint: Point;
-  snapped?: boolean;
-  unit?: string;
-  snapType?: 'grid' | 'angle' | 'both';
-}
 
 /**
  * Props for the useStraightLineTool hook
@@ -48,5 +35,5 @@ export interface UseStraightLineToolReturn {
   renderTooltip?: () => React.ReactNode;
 }
 
-// Export the MeasurementData interface so it can be used by other files
+// Re-export the MeasurementData interface for backward compatibility
 export { MeasurementData };

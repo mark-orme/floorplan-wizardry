@@ -11,7 +11,8 @@ import {
   Circle,
   Rect,
   Path,
-  Point as FabricPoint
+  Point as FabricPoint,
+  Group
 } from 'fabric';
 
 // Re-export the native fabric types
@@ -22,7 +23,8 @@ export type {
   Circle, 
   Rect,
   Path,
-  FabricPoint
+  FabricPoint,
+  Group
 };
 
 /**
@@ -30,7 +32,7 @@ export type {
  */
 export interface ExtendedFabricCanvas extends FabricCanvas {
   /** The DIV wrapper for sizing/DOM events */
-  wrapperEl: HTMLDivElement;
+  wrapperEl: HTMLElement;
   /** Initialize canvas with element and options */
   initialize: (element: string | HTMLCanvasElement, options?: any) => FabricCanvas;
   /** Whether to skip target finding */
@@ -127,7 +129,18 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_SIZE: 50,
   SMALL_GRID_COLOR: '#e0e0e0',
   LARGE_GRID_COLOR: '#c0c0c0',
-  SNAP_THRESHOLD: 5
+  SNAP_THRESHOLD: 5,
+  ANGLE_SNAP_THRESHOLD: 5,
+  SMALL_GRID_WIDTH: 0.2,
+  LARGE_GRID_WIDTH: 0.5,
+  DEFAULT_GRID_VISIBLE: true,
+  DEFAULT_SNAP_ENABLED: true,
+  GRID_SIZE: {
+    SMALL: 10,
+    LARGE: 50,
+    DEFAULT: 25
+  },
+  PIXELS_PER_METER: 100
 };
 
 // Canvas mocking utilities for tests

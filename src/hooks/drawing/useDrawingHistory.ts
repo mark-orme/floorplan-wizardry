@@ -1,7 +1,6 @@
 
 import { useRef, useCallback } from 'react';
 import { Canvas } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface UseDrawingHistoryProps {
   fabricCanvasRef: React.MutableRefObject<Canvas | null>;
