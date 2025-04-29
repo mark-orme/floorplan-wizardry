@@ -1,8 +1,12 @@
 
 import React, { useEffect, useRef, useState, memo } from 'react';
 import * as fabric from 'fabric';
-import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
+import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
+
+// Define constants for grid widths
+const SMALL_GRID_WIDTH = 0.2;
+const LARGE_GRID_WIDTH = 0.5;
 
 interface MemoizedGridProps {
   canvas: ExtendedFabricCanvas | null;

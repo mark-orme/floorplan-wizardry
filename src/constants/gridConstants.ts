@@ -12,3 +12,7 @@ export const LARGE_GRID_SIZE = 50;
 // Grid colors
 export const SMALL_GRID_COLOR = '#e0e0e0';
 export const LARGE_GRID_COLOR = '#c0c0c0';
+
+// Grid line widths
+export const SMALL_GRID_WIDTH = 0.2;
+export const LARGE_GRID_WIDTH = 0.5;

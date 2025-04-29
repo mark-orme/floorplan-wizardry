@@ -6,11 +6,13 @@ import {
   SMALL_GRID_SIZE, 
   LARGE_GRID_SIZE,
   SMALL_GRID_COLOR, 
-  LARGE_GRID_COLOR,
-  SMALL_GRID_WIDTH, 
-  LARGE_GRID_WIDTH
+  LARGE_GRID_COLOR
 } from '@/constants/gridConstants';
 import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
+
+// Define constants for grid widths
+const SMALL_GRID_WIDTH = 0.2;
+const LARGE_GRID_WIDTH = 0.5;
 
 interface GridRendererProps {
   canvas: fabric.Canvas | ExtendedFabricCanvas | null;

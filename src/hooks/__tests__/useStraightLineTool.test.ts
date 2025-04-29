@@ -9,19 +9,19 @@ describe('useStraightLineTool', () => {
     vi.clearAllMocks();
   });
   
-  it.todo('should initialize properly', () => {
+  it.skip('should initialize properly', () => {
     // Implement this later
   });
   
-  it.todo('should handle mouse down event', () => {
+  it.skip('should handle mouse down event', () => {
     // Implement this later
   });
   
-  it.todo('should handle mouse move event', () => {
+  it.skip('should handle mouse move event', () => {
     // Implement this later
   });
   
-  it.todo('should handle mouse up event', () => {
+  it.skip('should handle mouse up event', () => {
     // Implement this later
   });
 });

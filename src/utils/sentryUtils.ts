@@ -7,7 +7,7 @@
  * Capture a message in Sentry
  */
 export const captureMessage = (message: string, options?: {
-  level?: 'info' | 'warning' | 'error',
+  level?: 'info' | 'warning' | 'error' | 'debug',
   tags?: Record<string, string>,
   extra?: Record<string, any>
 }) => {

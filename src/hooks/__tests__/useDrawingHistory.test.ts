@@ -20,22 +20,22 @@ describe('useDrawingHistory', () => {
   });
   
   it('should initialize with empty history', () => {
-    const canvasRef = { current: mockCanvas };
+    const canvasRef = { current: mockCanvas } as any;
     const { result } = renderHook(() => useDrawingHistory({ fabricCanvasRef: canvasRef }));
     
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
   });
 
-  it.todo('should save state when saveState is called', () => {
+  it.skip('should save state when saveState is called', () => {
     // Implement this later
   });
   
-  it.todo('should handle undo correctly', () => {
+  it.skip('should handle undo correctly', () => {
     // Implement this later
   });
   
-  it.todo('should handle redo correctly', () => {
+  it.skip('should handle redo correctly', () => {
     // Implement this later
   });
 });

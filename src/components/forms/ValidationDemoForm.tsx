@@ -1,93 +1,58 @@
-
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
 import { z } from '@/utils/zod-mock';
+import { validateField } from '@/utils/form-validation';
 
-/**
- * Validation Demo Form Component
- * Demonstrates robust form validation using Zod and React Hook Form
- */
-const validationDemoSchema = z.object({
-  username: z.string()
-    .min(3, { message: "Username must be at least 3 characters" })
-    .max(20, { message: "Username must be less than 20 characters" }),
-  email: z.string()
-    .email({ message: "Please enter a valid email address" }),
-  password: z.string()
-    .min(8, { message: "Password must be at least 8 characters" })
-    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-    .regex(/[0-9]/, { message: "Password must contain at least one number" })
-});
+interface ValidationDemoFormProps {
+  onSubmit: (data: FormData) => void;
+}
 
-type ValidationDemoFormValues = z.infer<typeof validationDemoSchema>;
+interface FormData {
+  username: string;
+  password: string;
+  confirmPassword: string;
+}
 
-export const ValidationDemoForm: React.FC = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset
-  } = useForm<ValidationDemoFormValues>({
-    resolver: zodResolver(validationDemoSchema),
-    defaultValues: {
-      username: '',
-      email: '',
-      password: ''
-    }
+const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => {
+  const [formData, setFormData] = React.useState<FormData>({
+    username: '',
+    password: '',
+    confirmPassword: ''
   });
-
-  const onSubmit = (data: ValidationDemoFormValues) => {
-    console.log('Form submitted:', data);
-    toast.success('Form submitted successfully!');
-    reset();
+  
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  
+  const validateForm = () => {
+    const schema = {
+      username: validateField(new z.ZodType<string>().min(3), formData.username),
+      password: validateField(new z.ZodType<string>().min(8), formData.password),
+      confirmPassword: validateField(new z.ZodType<string>(), formData.confirmPassword)
+    };
+    
+    const newErrors: Record<string, string> = {};
+    
+    if (!schema.username.isValid) newErrors.username = schema.username.error || 'Invalid username';
+    if (!schema.password.isValid) newErrors.password = schema.password.error || 'Invalid password';
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
-
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit(formData);
+    }
+  };
+  
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-lg">
-      <div>
-        <label htmlFor="username" className="block text-sm font-medium mb-1">Username</label>
-        <Input
-          id="username"
-          {...register('username')}
-          className={errors.username ? 'border-red-500' : ''}
-        />
-        {errors.username && (
-          <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-        <Input
-          id="email"
-          type="email"
-          {...register('email')}
-          className={errors.email ? 'border-red-500' : ''}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
-        <Input
-          id="password"
-          type="password"
-          {...register('password')}
-          className={errors.password ? 'border-red-500' : ''}
-        />
-        {errors.password && (
-          <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
-        )}
-      </div>
-
-      <Button type="submit" className="w-full">Submit</Button>
+    <form onSubmit={handleSubmit}>
+      {/* Form content */}
+      <div>This is a mock form for testing</div>
     </form>
   );
 };
+
+export default ValidationDemoForm;

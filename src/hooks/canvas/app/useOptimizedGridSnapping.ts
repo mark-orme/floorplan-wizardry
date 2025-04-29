@@ -1,51 +1,32 @@
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { SMALL_GRID_SIZE, GridSize } from '@/constants/gridConstants';
+import { SMALL_GRID_SIZE } from '@/constants/gridConstants';
 
-/**
- * Hook for optimized grid snapping functionality
- * @returns Grid snapping utilities
- */
-export const useOptimizedGridSnapping = () => {
-  /**
-   * Snap a point to the nearest grid intersection
-   * @param point Point to snap
-   * @param gridSize Grid size in pixels
-   * @returns Snapped point
-   */
-  const snapPointToGrid = useCallback((point: Point, gridSize: number = GridSize.SMALL): Point => {
+export const useOptimizedGridSnapping = (options: {
+  initialEnabled?: boolean;
+  gridSize?: number;
+}) => {
+  const [enabled, setEnabled] = useState(options.initialEnabled ?? true);
+  const gridSize = options.gridSize ?? SMALL_GRID_SIZE;
+
+  const toggle = useCallback(() => {
+    setEnabled(prev => !prev);
+  }, []);
+
+  const snap = useCallback((point: Point): Point => {
+    if (!enabled) return point;
+
     return {
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
     };
-  }, []);
-
-  /**
-   * Check if a point is close to a grid line
-   * @param point Point to check
-   * @param gridSize Grid size in pixels
-   * @param threshold Distance threshold in pixels
-   * @returns Whether the point is close to a grid line
-   */
-  const isCloseToGridLine = useCallback((
-    point: Point, 
-    gridSize: number = GridSize.SMALL, 
-    threshold: number = 5
-  ): boolean => {
-    const distanceX = point.x % gridSize;
-    const distanceY = point.y % gridSize;
-    
-    return (
-      distanceX <= threshold || 
-      distanceX >= gridSize - threshold || 
-      distanceY <= threshold || 
-      distanceY >= gridSize - threshold
-    );
-  }, []);
+  }, [enabled, gridSize]);
 
   return {
-    snapPointToGrid,
-    isCloseToGridLine
+    enabled,
+    toggle,
+    snap,
+    gridSize
   };
 };

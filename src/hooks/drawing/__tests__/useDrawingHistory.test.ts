@@ -12,10 +12,11 @@ vi.mock('@sentry/react', () => ({
 describe('useDrawingHistory', () => {
   test('should initialize with empty history', () => {
     const mockCanvas = {
-      toObject: vi.fn().mockReturnValue({ objects: [] })
-    } as unknown as fabric.Canvas;
+      toObject: vi.fn().mockReturnValue({ objects: [] }),
+      wrapperEl: document.createElement('div')
+    } as any;
     
-    const canvasRef = { current: mockCanvas } as React.MutableRefObject<fabric.Canvas>;
+    const canvasRef = { current: mockCanvas } as any;
     
     const { result } = renderHook(() => useDrawingHistory({ fabricCanvasRef: canvasRef }));
     

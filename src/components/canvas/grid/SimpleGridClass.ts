@@ -1,6 +1,10 @@
 
 import { fabric } from 'fabric';
-import { SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
+import { SMALL_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
+
+// Define constants for grid widths
+const SMALL_GRID_WIDTH = 0.2;
+const LARGE_GRID_WIDTH = 0.5;
 
 export const GRID_CONSTANTS = {
   SMALL: {

@@ -45,6 +45,15 @@ export const useLineState = ({
     saveCurrentState
   );
   
+  // Create adapter functions to match expected signatures
+  const createLineAdapter = (startPoint: Point, endPoint: Point) => {
+    return createLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+  };
+
+  const updateLineAdapter = (line: Line, endPoint: Point) => {
+    return updateLine(line, endPoint.x, endPoint.y);
+  };
+  
   // Get actions from the extracted hook
   const actions = useLineStateActions({
     coreState,
@@ -52,9 +61,8 @@ export const useLineState = ({
     snapToGrid,
     anglesEnabled,
     snapToAngle,
-    // Convert the function signatures to match what's expected
-    createLine: (startPoint: Point, endPoint: Point) => createLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y),
-    updateLine: (line: Line, endPoint: Point) => updateLine(line, endPoint.x, endPoint.y),
+    createLine: createLineAdapter,
+    updateLine: updateLineAdapter,
     finalizeLine,
     removeLine
   });
