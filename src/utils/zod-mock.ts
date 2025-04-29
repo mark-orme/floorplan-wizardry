@@ -100,19 +100,21 @@ class ZodBoolean extends ZodType<boolean> {
 }
 
 // Create a namespace z with methods
-export namespace z {
-  export const string = () => new ZodString();
-  export const number = () => new ZodNumber();
-  export const boolean = () => new ZodBoolean();
-  export const object = (schema: Record<string, ZodType<any>>) => new ZodType<any>();
-  export const array = (type: ZodType<any>) => new ZodType<any[]>();
-  export const enum = (values: any[]) => new ZodType<any>();
-  export const nativeEnum = (enumObj: any) => new ZodType<any>();
-  export const record = (keyType: any, valueType: any) => new ZodType<Record<string, any>>();
-  export const infer = <T>(schema: ZodType<T>): T => ({} as T);
-  export const ZodError = ZodError;
-  export type ZodType<T> = ZodType<T>;
-}
+export const z = {
+  string: () => new ZodString(),
+  number: () => new ZodNumber(),
+  boolean: () => new ZodBoolean(),
+  object: (schema: Record<string, ZodType<any>>) => new ZodType<any>(),
+  array: (type: ZodType<any>) => new ZodType<any[]>(),
+  enum: (values: any[]) => new ZodType<any>(),
+  nativeEnum: (enumObj: any) => new ZodType<any>(),
+  record: (keyType: any, valueType: any) => new ZodType<Record<string, any>>(),
+  infer: <T>(schema: ZodType<T>): T => ({} as T),
+  ZodError: ZodError
+};
 
-// Export as default and named export
-export { z as default, ZodType };
+// Export ZodType as a type
+export type { ZodType };
+
+// Export as default for compatibility
+export default z;
