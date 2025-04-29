@@ -1,6 +1,7 @@
 
 import { FloorPlanMetadata } from '@/types/canvas-types';
 import { FabricObject } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * FloorPlan interface
@@ -32,24 +33,34 @@ export interface FloorPlan {
 /**
  * PropertyStatus for property management
  */
-export type PropertyStatus = 'draft' | 'published' | 'archived' | 'pending' | 'rejected';
+export type PropertyStatus = 
+  | 'draft' 
+  | 'published' 
+  | 'archived' 
+  | 'pending' 
+  | 'rejected'
+  | 'available'
+  | 'sold'
+  | 'reserved'
+  | 'under_construction';
 
 /**
  * Drawing state interface for floor plans
  */
 export interface DrawingState {
   isDrawing: boolean;
-  startPoint: { x: number; y: number };
-  currentPoint: { x: number; y: number };
+  startPoint: { x: number; y: number } | null;
+  currentPoint: { x: number; y: number } | null;
   points: { x: number; y: number }[];
   distance: number;
-  cursorPosition: { x: number; y: number };
-  // Additional fields for compatibility
-  tool?: string;
+  cursorPosition: { x: number; y: number } | null;
+  // Additional fields for drawing tools
+  tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
   pathStartPoint?: { x: number; y: number } | null;
   currentPath?: any;
+  zoomLevel?: number;
 }
 
 // Re-export for backward compatibility
@@ -57,4 +68,4 @@ export type { FloorPlanMetadata } from '@/types/canvas-types';
 
 // Export DrawingMode and DrawingTool for type consistency
 export type { DrawingMode } from '@/constants/drawingModes';
-export type DrawingTool = string; // Make it compatible with DrawingMode
+export type DrawingTool = DrawingMode; // Make it compatible with DrawingMode

@@ -1,8 +1,8 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, fabric, Object as FabricObject } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
-import { ExtendedFabricCanvas, asExtendedObject } from "@/types/canvas-types";
+import { ExtendedFabricCanvas } from "@/types/canvas-types";
+import { asExtendedObject } from "@/types/canvas-types";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
@@ -86,7 +86,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      canvas.add(line);
+      canvas.add(asExtendedObject(line));
       gridObjects.push(line);
     }
     
@@ -104,7 +104,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      canvas.add(line);
+      canvas.add(asExtendedObject(line));
       gridObjects.push(line);
     }
     

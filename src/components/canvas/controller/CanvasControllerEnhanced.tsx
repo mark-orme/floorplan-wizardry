@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import * as fabric from 'fabric';
-import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import type { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
@@ -26,7 +26,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
 }) => {
   // Canvas refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<fabric.Canvas | ExtendedFabricCanvas | null>(null);
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);
@@ -44,7 +44,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
   // Initialize grid utilities
   const gridLayerRef = useRef<fabric.Object[]>([]);
   const { createGrid } = useGrid({
-    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<ExtendedFabricCanvas | null>,
+    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<fabric.Canvas | ExtendedFabricCanvas | null>,
     gridLayerRef,
     initialGridSize: 20,
     initialVisible: true

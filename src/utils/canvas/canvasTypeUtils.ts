@@ -1,12 +1,12 @@
 
-import { Canvas, Object as FabricObject, ICanvasOptions } from 'fabric';
-import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import { Canvas, Object as FabricObject } from 'fabric';
+import type { ExtendedFabricCanvas } from '@/types/canvas-types';
 import type { ExtendedFabricObject } from '@/types/canvas-types';
 
 /**
  * Helper function to cast a canvas to ExtendedFabricCanvas
  */
-export function asExtendedCanvas(canvas: Canvas | ExtendedFabricCanvas | null): ExtendedFabricCanvas | null {
+export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
   if (!canvas) return null;
   
   // Cast to extended canvas type

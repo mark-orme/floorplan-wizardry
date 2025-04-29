@@ -6,9 +6,9 @@
 import { useEffect } from "react";
 import { Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
-import { DrawingTool } from "@/types/floorPlanTypes";
+import { DrawingTool, DrawingState } from "@/types/floorPlanTypes";
 import { FloorPlan } from "@/types/floorPlanTypes";
-import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
+import { createDefaultDrawingState } from "@/types/core/DrawingState";
 import { asDrawingTool } from "@/utils/drawing/drawingToolAdapter";
 import { DrawingMode } from "@/constants/drawingModes";
 import { ExtendedFabricCanvas } from "@/types/canvas-types";
@@ -103,7 +103,6 @@ export const useCanvasControllerDrawingState = ({
     continueDrawing,
     endDrawing
   } = useCanvasDrawing({
-    canvas: fabricCanvasRef.current,
     tool: asDrawingTool(tool as DrawingMode),
     lineColor,
     lineThickness,

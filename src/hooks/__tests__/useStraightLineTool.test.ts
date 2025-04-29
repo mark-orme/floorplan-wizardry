@@ -7,7 +7,7 @@
 import { vi } from 'vitest';
 
 describe('useStraightLineTool', () => {
-  it.skip('should be properly tested once dependencies are available', () => {
+  test.skip('should be properly tested once dependencies are available', () => {
     console.log('Test skipped - missing dependencies');
   });
 });

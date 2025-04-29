@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { captureMessage } from '@/utils/sentryUtils';
 import { 
   SMALL_GRID_SIZE, 

@@ -16,7 +16,7 @@ export interface ExtendedFabricObject extends FabricObject {
  * Extended fabric canvas interface with additional properties
  */
 export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl: HTMLDivElement;
+  wrapperEl?: HTMLDivElement;
   renderOnAddRemove?: boolean;
   allowTouchScrolling?: boolean;
   skipTargetFind?: boolean;
@@ -44,6 +44,9 @@ export interface FloorPlanMetadata {
   description?: string;
   tags?: string[];
   properties?: Record<string, any>;
+  // Additional fields for backwards compatibility
+  updated?: string;
+  modified?: string;
 }
 
 /**
@@ -72,4 +75,19 @@ export interface CanvasUser {
   cursor?: { x: number; y: number };
   active?: boolean;
   lastActive?: string;
+}
+
+/**
+ * Helper function to cast a canvas to ExtendedFabricCanvas
+ */
+export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
+  if (!canvas) return null;
+  return canvas as ExtendedFabricCanvas;
+}
+
+/**
+ * Helper function to cast an object to ExtendedFabricObject
+ */
+export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T & ExtendedFabricObject {
+  return obj as T & ExtendedFabricObject;
 }

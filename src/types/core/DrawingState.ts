@@ -21,15 +21,15 @@ export function createDefaultDrawingState(): DrawingState {
   return {
     isDrawing: false,
     tool: DrawingMode.SELECT,
-    pathStartPoint: { x: 0, y: 0 },
+    pathStartPoint: null,
     lineColor: '#000000',
     lineThickness: 2,
     currentPath: null,
-    startPoint: { x: 0, y: 0 },
-    currentPoint: { x: 0, y: 0 },
+    startPoint: null,
+    currentPoint: null,
     points: [],
     distance: 0,
-    cursorPosition: { x: 0, y: 0 },
+    cursorPosition: null,
     zoomLevel: 1
   };
 }
