@@ -1,26 +1,23 @@
 
-// Auth types and constants
+// Authentication constants and types
 
-export enum USER_ROLES {
-  ADMIN = 'admin',
-  MODERATOR = 'moderator',
-  USER = 'user',
+export const USER_ROLES = {
+  ADMIN: 'admin',
+  MODERATOR: 'moderator',
+  USER: 'user',
+  GUEST: 'guest'
+} as const;
+
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+
+export interface AuthUser {
+  id: string;
+  email?: string;
+  role?: UserRole;
 }
 
-export interface AuthContextType {
-  user: any;
-  isAuthenticated: boolean;
-  isLoading?: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+export interface AuthSession {
+  user: AuthUser;
+  token: string;
+  expiresAt: number;
 }
-
-export const DEFAULT_AUTH_CONTEXT: AuthContextType = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  login: async () => {},
-  logout: async () => {},
-  register: async () => {},
-};

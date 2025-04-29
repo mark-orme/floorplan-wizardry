@@ -8,4 +8,6 @@ export interface DebugInfoState {
   memoryUsage?: number;
   canvasReady?: boolean;
   hasError?: boolean;
+  canvasInitialized?: boolean;
+  errorMessage?: string;
 }

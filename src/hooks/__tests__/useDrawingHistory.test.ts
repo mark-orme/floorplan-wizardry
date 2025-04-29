@@ -14,9 +14,12 @@ describe('useDrawingHistory', () => {
     const mockCanvas = {
       toObject: vi.fn().mockReturnValue({ objects: [] })
     } as unknown as fabric.Canvas;
+    
+    // Create a ref to pass to the hook
+    const canvasRef = { current: mockCanvas } as React.MutableRefObject<fabric.Canvas>;
 
-    // Render the hook
-    const { result } = renderHook(() => useDrawingHistory(mockCanvas));
+    // Render the hook with the ref
+    const { result } = renderHook(() => useDrawingHistory({ fabricCanvasRef: canvasRef }));
 
     // Save a state
     act(() => {

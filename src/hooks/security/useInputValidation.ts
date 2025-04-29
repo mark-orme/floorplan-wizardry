@@ -1,6 +1,7 @@
 
 import { useState, useCallback } from 'react';
-import z, { ZodError, ZodType } from '@/utils/zod-mock';
+import z from '@/utils/zod-mock';
+import { ZodError, ZodType } from '@/utils/zod-mock';
 
 type ValidationResult = {
   isValid: boolean;

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { FloorPlan } from '@/types/floorPlan';
+import { FloorPlan } from '@/types/FloorPlan';
 import { toast } from 'sonner';
 
 export interface UsePropertyFloorPlanProps {

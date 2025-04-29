@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { USER_ROLES } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 export interface UsePropertyPageAuthProps {
   propertyId?: string;

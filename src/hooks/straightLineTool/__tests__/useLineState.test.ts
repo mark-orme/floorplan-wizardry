@@ -1,7 +1,9 @@
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { MutableRefObject } from 'react';
+import { describe, it, expect, vi } from 'vitest';
 
 describe('useLineState', () => {
   const mockCanvas = {} as FabricCanvas;
@@ -11,7 +13,7 @@ describe('useLineState', () => {
     fabricCanvasRef,
     lineColor: '#000000',
     lineThickness: 2,
-    saveCurrentState: jest.fn()
+    saveCurrentState: vi.fn()
   };
 
   it('should initialize with default values', () => {

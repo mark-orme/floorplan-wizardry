@@ -58,11 +58,13 @@ const useLogger = (props: DebugLoggerProps) => {
   };
 };
 
-const useFloorPlanGIA = () => {
-  return {
-    recalculateGIA: () => {},
-    calculateGIA: () => {}
-  };
+// Define the missing GIA functions
+const recalculateGIA = () => {
+  console.log('Recalculating GIA');
+};
+
+const calculateGIA = () => {
+  console.log('Calculating GIA');
 };
 
 /**

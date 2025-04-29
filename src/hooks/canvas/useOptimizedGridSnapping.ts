@@ -1,8 +1,9 @@
+
 import { useCallback, useRef } from 'react';
 import { Canvas, Point } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { createSmoothEventHandler } from '@/utils/canvas/renderOptimizer';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { GRID_CONSTANTS, GridSize } from '@/constants/gridConstants';
 
 export const useOptimizedGridSnapping = (
   canvas: Canvas | ExtendedFabricCanvas | null, 
@@ -13,7 +14,7 @@ export const useOptimizedGridSnapping = (
   const snapToNearestGridPoint = useCallback((point: { x: number; y: number }) => {
     if (!snapToGrid || !point) return point;
     
-    const gridSize = GRID_CONSTANTS.SMALL.SIZE;
+    const gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
     
     return {
       x: Math.round(point.x / gridSize) * gridSize,
