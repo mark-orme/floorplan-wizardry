@@ -95,6 +95,11 @@ export interface DebugInfoState {
   errorMessage?: string;
   objectCount?: number;
   eventCount?: number;
+  fps?: number;
+  visibleObjectCount?: number;
+  renderTime?: number;
+  memoryUsage?: number;
+  canvasInitialized?: boolean;
 }
 
 /**

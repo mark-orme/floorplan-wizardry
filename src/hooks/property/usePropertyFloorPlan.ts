@@ -1,72 +1,64 @@
 
 import { useState, useEffect } from 'react';
-import { FloorPlan } from '@/types/floorPlanTypes';
+import { FloorPlan } from '@/types/floorPlan';
+import { toast } from 'sonner';
 
-export const usePropertyFloorPlan = (propertyId: string) => {
+export interface UsePropertyFloorPlanProps {
+  propertyId: string;
+}
+
+export const usePropertyFloorPlan = ({ propertyId }: UsePropertyFloorPlanProps) => {
   const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
+  
+  // Load floor plans when property ID changes
   useEffect(() => {
-    const fetchFloorPlans = async () => {
+    async function loadFloorPlans() {
+      if (!propertyId) {
+        setFloorPlans([]);
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
+      
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // In a real app, we would fetch from an API
-        // For now, we just create a mock floor plan
-        const mockFloorPlan: FloorPlan = {
-          id: `floor-plan-${propertyId}-1`,
-          name: 'Ground Floor',
-          level: 0,
-          updatedAt: new Date().toISOString(),
-          strokes: [],
-          walls: [],
-          rooms: [],
-          width: 800,
-          height: 600,
-          backgroundColor: '#f5f5f5',
-          // Add required fields for compatibility
-          canvasData: null,
-          canvasJson: null,
-          createdAt: new Date().toISOString(),
-          data: {},
-          userId: 'default-user'
-        };
-
-        const mockFloorPlan2: FloorPlan = {
-          id: `floor-plan-${propertyId}-2`,
-          name: 'First Floor',
-          level: 1,
-          updatedAt: new Date().toISOString(),
-          strokes: [],
-          walls: [],
-          rooms: [],
-          width: 800,
-          height: 600,
-          backgroundColor: '#f5f5f5',
-          // Add required fields for compatibility
-          canvasData: null,
-          canvasJson: null,
-          createdAt: new Date().toISOString(),
-          data: {},
-          userId: 'default-user'
-        };
-
-        setFloorPlans([mockFloorPlan, mockFloorPlan2]);
+        // Mock data - in a real app, fetch from API
+        const mockFloorPlans: FloorPlan[] = [
+          {
+            id: 'floor-1',
+            name: 'Ground Floor',
+            level: 0,
+            metadata: {
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          },
+          {
+            id: 'floor-2',
+            name: 'First Floor',
+            level: 1,
+            metadata: {
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          }
+        ];
+        
+        setFloorPlans(mockFloorPlans);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error'));
+        console.error('Failed to load floor plans:', err);
+        setError(err instanceof Error ? err : new Error('Failed to load floor plans'));
+        toast.error('Failed to load floor plans');
       } finally {
         setIsLoading(false);
       }
-    };
-
-    if (propertyId) {
-      fetchFloorPlans();
     }
+    
+    loadFloorPlans();
   }, [propertyId]);
-
+  
   return {
     floorPlans,
     isLoading,

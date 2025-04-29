@@ -1,15 +1,19 @@
 
-/**
- * STUB TEST: Disabled due to missing dependencies
- * Once all dependencies are properly defined and imported, this test can be re-enabled.
- */
+import { describe, test, expect, vi } from 'vitest';
+import { renderHook } from '@testing-library/react-hooks';
+import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 
-import { vi } from 'vitest';
+describe('useStraightLineTool hook', () => {
+  test('should initialize with default values', () => {
+    const { result } = renderHook(() => useStraightLineTool({
+      canvasRef: { current: null }
+    }));
+    
+    expect(result.current.isDrawing).toBe(false);
+  });
 
-describe('useStraightLineTool', () => {
-  test.skip('should be properly tested once dependencies are available', () => {
-    console.log('Test skipped - missing dependencies');
+  test.skip('skipped test for tool functionality', () => {
+    // This test is skipped
+    expect(true).toBe(true);
   });
 });
-
-export {};

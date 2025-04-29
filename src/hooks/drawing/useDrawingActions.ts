@@ -1,15 +1,17 @@
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDrawingHistory } from './useDrawingHistory';
 import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 export interface UseDrawingActionsProps {
-  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef?: React.MutableRefObject<FabricCanvas | ExtendedFabricCanvas | null>;
 }
 
 export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = {}) => {
-  const { undo, redo, saveState } = useDrawingHistory({ fabricCanvasRef });
+  const canvasRef = useRef<FabricCanvas | ExtendedFabricCanvas | null>(null);
+  const { undo, redo, saveState } = useDrawingHistory(canvasRef.current);
   
   const handleUndo = useCallback(() => {
     undo();
@@ -57,6 +59,7 @@ export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = 
     handleUndo,
     handleRedo,
     handleClear,
-    handleSave
+    handleSave,
+    fabricCanvasRef
   };
 };

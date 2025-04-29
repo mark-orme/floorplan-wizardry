@@ -22,8 +22,8 @@ export const useSelectionManager = (fabricCanvas: FabricCanvas | null) => {
       fabricCanvas.discardActiveObject();
     }
     
-    // Use optimized render instead of direct rendering
-    requestOptimizedRender(fabricCanvas, 'delete');
+    // Use optimized render - fixed to use only one argument
+    requestOptimizedRender(fabricCanvas);
   };
 
   return { deleteSelectedObjects };

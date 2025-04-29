@@ -1,158 +1,128 @@
 
-/**
- * Grid creation hook
- * Manages the creation and updates of the grid system
- * @module hooks/grid/useGridCreation
- */
-import { useCallback, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { createCompleteGrid, createBasicEmergencyGrid, validateGrid } from "@/utils/grid/gridRenderers";
-import logger from "@/utils/logger";
+import { useCallback, useRef, useState } from 'react';
+import { Canvas } from 'fabric';
+import { validateGrid } from '@/utils/grid/gridRenderers';
+import { toast } from 'sonner';
 
-/**
- * Props for useGridCreation hook
- */
-export interface UseGridCreationProps {
-  /** Reference to the fabric canvas */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to the last grid creation attempt timestamp */
-  lastGridCreationAttemptRef: React.MutableRefObject<number>;
-  /** Reference to grid initialization state */
-  gridInitializedRef: React.MutableRefObject<boolean>;
+interface UseGridCreationProps {
+  canvas: Canvas | null;
+  gridSize?: number;
+  visible?: boolean;
+  enabled?: boolean;
 }
 
-/**
- * Hook for creating and managing canvas grid
- * 
- * @param {UseGridCreationProps} props - Hook properties
- * @returns Grid creation and management functions
- */
 export const useGridCreation = ({
-  fabricCanvasRef,
-  lastGridCreationAttemptRef,
-  gridInitializedRef
+  canvas,
+  gridSize = 20,
+  visible = true,
+  enabled = true
 }: UseGridCreationProps) => {
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState("");
+  const [isVisible, setIsVisible] = useState(visible);
+  const [isEnabled, setIsEnabled] = useState(enabled);
+  const gridObjectsRef = useRef<fabric.Object[]>([]);
   
-  // Create grid function
-  const createGrid = useCallback((): FabricObject[] => {
-    const canvas = fabricCanvasRef.current;
-    setError("");
-    
-    if (!canvas) {
-      setError("No canvas available");
+  // Create and add grid to canvas
+  const createGrid = useCallback(() => {
+    if (!canvas || !isEnabled) {
       return [];
     }
     
-    if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-      setError("Invalid canvas dimensions");
-      logger.warn("Grid creation attempted with invalid canvas dimensions:", {
-        width: canvas.width,
-        height: canvas.height
-      });
-      return [];
-    }
+    // Remove existing grid
+    gridObjectsRef.current.forEach(obj => {
+      canvas.remove(obj);
+    });
     
-    // Prevent too frequent grid creation attempts
-    const now = Date.now();
-    if (now - lastGridCreationAttemptRef.current < 500) {
-      return [];
-    }
-    
-    lastGridCreationAttemptRef.current = now;
-    setIsCreating(true);
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    const newGridObjects: fabric.Object[] = [];
     
     try {
-      // Remove any existing grid objects
-      const existingGridObjects = canvas.getObjects().filter(obj => 
-        (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-      );
-      
-      if (existingGridObjects.length > 0) {
-        existingGridObjects.forEach(obj => {
-          canvas.remove(obj);
+      // Create vertical grid lines
+      for (let x = 0; x <= width; x += gridSize) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: '#e0e0e0',
+          strokeWidth: 0.5,
+          selectable: false,
+          evented: false,
+          visible: isVisible
         });
-      }
-      
-      // Create grid
-      const gridObjects = createCompleteGrid(canvas);
-      
-      // If complete grid creation failed, try emergency grid
-      if (!gridObjects || gridObjects.length === 0) {
-        logger.warn("Complete grid creation failed, attempting emergency grid");
-        const emergencyGrid = createBasicEmergencyGrid(canvas);
         
-        if (emergencyGrid.length > 0) {
-          gridInitializedRef.current = true;
-          setIsCreating(false);
-          return emergencyGrid;
-        }
-      } else {
-        gridInitializedRef.current = true;
-        setIsCreating(false);
-        return gridObjects;
+        canvas.add(line);
+        newGridObjects.push(line);
       }
       
-      setError("Failed to create grid");
-      return [];
+      // Create horizontal grid lines
+      for (let y = 0; y <= height; y += gridSize) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: '#e0e0e0',
+          strokeWidth: 0.5,
+          selectable: false,
+          evented: false,
+          visible: isVisible
+        });
+        
+        canvas.add(line);
+        newGridObjects.push(line);
+      }
+      
+      // Send grid to back
+      newGridObjects.forEach(obj => {
+        canvas.sendToBack(obj);
+      });
+      
+      gridObjectsRef.current = newGridObjects;
+      canvas.renderAll();
+      
+      return newGridObjects;
     } catch (error) {
-      logger.error("Error creating grid:", error);
-      setError("Error creating grid");
-      setIsCreating(false);
-      
-      // Try emergency grid on error
-      try {
-        const emergencyGrid = createBasicEmergencyGrid(canvas);
-        if (emergencyGrid.length > 0) {
-          gridInitializedRef.current = true;
-          return emergencyGrid;
-        }
-      } catch (emergencyError) {
-        logger.error("Emergency grid creation also failed:", emergencyError);
-      }
-      
+      toast.error('Failed to create grid');
+      console.error('Error creating grid:', error);
       return [];
     }
-  }, [fabricCanvasRef, lastGridCreationAttemptRef, gridInitializedRef]);
+  }, [canvas, gridSize, isVisible, isEnabled]);
   
-  // Ensure grid visibility
-  const ensureVisibility = useCallback((): boolean => {
-    const canvas = fabricCanvasRef.current;
+  // Toggle grid visibility
+  const toggleGridVisibility = useCallback(() => {
+    const newVisibility = !isVisible;
+    setIsVisible(newVisibility);
     
-    if (!canvas) {
-      return false;
-    }
-    
-    // Get grid objects
-    const gridObjects = canvas.getObjects().filter(obj => 
-      (obj as any).objectType === 'grid' || (obj as any).isGrid === true
-    );
-    
-    if (gridObjects.length === 0) {
-      return false;
-    }
-    
-    // Set visibility to true for all grid objects
-    let visibilityChanged = false;
-    gridObjects.forEach(obj => {
-      if (!obj.visible) {
-        obj.set('visible', true);
-        visibilityChanged = true;
+    gridObjectsRef.current.forEach(obj => {
+      if (typeof obj.set === 'function') {
+        obj.set({ visible: newVisibility });
       }
     });
     
-    if (visibilityChanged) {
-      canvas.requestRenderAll();
+    if (canvas) {
+      canvas.renderAll();
     }
     
-    return true;
-  }, [fabricCanvasRef]);
+    return newVisibility;
+  }, [isVisible, canvas]);
+  
+  // Handle canvas resize
+  const resizeGrid = useCallback(() => {
+    if (validateGrid(gridObjectsRef.current)) {
+      // Clear existing grid
+      gridObjectsRef.current.forEach(obj => {
+        if (canvas) {
+          canvas.remove(obj);
+        }
+      });
+      gridObjectsRef.current = [];
+      
+      // Create new grid with updated dimensions
+      return createGrid();
+    }
+    return [];
+  }, [canvas, createGrid]);
   
   return {
+    gridObjects: gridObjectsRef.current,
+    isGridVisible: isVisible,
     createGrid,
-    ensureVisibility,
-    isCreating,
-    error
+    toggleGridVisibility,
+    resizeGrid,
+    setIsEnabled,
+    setIsVisible
   };
 };

@@ -1,9 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import type { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
-import { asExtendedCanvas, asExtendedObject } from '@/utils/canvas/canvasTypeUtils';
+import { Canvas as FabricCanvas } from 'fabric';
+import type { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface SimpleGridLayerProps {
   canvas: FabricCanvas | ExtendedFabricCanvas | null;
@@ -30,8 +30,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const extendedCanvas = asExtendedCanvas(canvas);
-    if (!extendedCanvas) return;
+    const baseCanvas = canvas as FabricCanvas;
     
     const newObjects: fabric.Object[] = [];
 
@@ -46,7 +45,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([0, y, width, y], lineProps);
-      canvas.add(line);
+      baseCanvas.add(asExtendedObject(line));
       newObjects.push(line);
     }
 
@@ -61,27 +60,27 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([x, 0, x, height], lineProps);
-      canvas.add(line);
+      baseCanvas.add(asExtendedObject(line));
       newObjects.push(line);
     }
 
     // Send all grid objects to the back
     newObjects.forEach(obj => {
-      if (canvas.sendToBack) {
-        canvas.sendToBack(obj);
+      if (baseCanvas.sendToBack) {
+        baseCanvas.sendToBack(obj);
       }
     });
 
     setGridObjects(newObjects);
     initialized.current = true;
-    canvas.renderAll();
+    baseCanvas.renderAll();
 
     return () => {
       if (canvas) {
         newObjects.forEach(obj => {
-          canvas.remove(obj);
+          baseCanvas.remove(obj);
         });
-        canvas.renderAll();
+        baseCanvas.renderAll();
       }
     };
   }, [canvas, gridSize, largeGridSize, gridColor, largeGridColor]);

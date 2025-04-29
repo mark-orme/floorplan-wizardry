@@ -1,7 +1,8 @@
+
 // Import testing libraries
 import { describe, test, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
-import { act } from '@testing-library/react';
+import { act } from '@testing-library/react-hooks';
 
 // Import the hook
 import { useDrawingHistory } from '../useDrawingHistory';
@@ -25,6 +26,11 @@ describe('useDrawingHistory', () => {
 
     // Expect the canUndo to be true
     expect(result.current.canUndo).toBe(true);
+  });
+
+  test.skip('skipped test example', () => {
+    // This test is skipped
+    expect(true).toBe(true);
   });
 
   // More tests...

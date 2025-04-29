@@ -1,8 +1,8 @@
 
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/floorPlan';
-import { DrawingMode } from '@/constants/drawingModes';
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/types/DrawingMode';
 
 export interface UseDrawingOperationsProps {
   canvas?: FabricCanvas | null;

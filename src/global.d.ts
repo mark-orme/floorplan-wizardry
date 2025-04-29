@@ -1,5 +1,4 @@
 
-// src/global.d.ts
 import 'fabric';
 
 declare module 'fabric' {
@@ -51,7 +50,10 @@ declare module 'fabric' {
     divide(scalar: number): Point;
   }
 
-  // Ensure Line is exported from the fabric module
+  // Export Canvas and Line from fabric
+  export const Canvas: any;
+  
+  // Ensure Line is properly exported and extends Object
   export class Line extends Object {
     constructor(points: number[], options?: any);
   }

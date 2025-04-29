@@ -11,8 +11,10 @@ const pendingCanvases = new Set<Canvas>();
 /**
  * Request an optimized render for a canvas
  * Batches rendering requests to avoid multiple repaints in the same frame
+ * @param canvas The canvas to render
+ * @param reason Optional reason for debugging
  */
-export function requestOptimizedRender(canvas: Canvas): void {
+export function requestOptimizedRender(canvas: Canvas, reason?: string): void {
   if (!canvas) return;
   
   // Add canvas to pending set

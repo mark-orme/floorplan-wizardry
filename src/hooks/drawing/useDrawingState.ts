@@ -1,7 +1,8 @@
 
 import { useState, useCallback } from 'react';
-import { StrokeTypeLiteral, Stroke, Point } from '@/types/floorPlan';
 import { v4 as uuidv4 } from 'uuid';
+import { StrokeTypeLiteral, Stroke } from '@/types/floorPlan';
+import { Point } from '@/types/core/Point';
 
 export interface DrawingStateOptions {
   defaultColor?: string;

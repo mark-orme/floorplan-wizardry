@@ -1,20 +1,24 @@
 
 /**
- * Utility functions for Sentry error reporting
- * Stub implementation for development
+ * Sentry utility functions
  */
 
-export function captureMessage(message: string, options?: any): string {
-  console.log(`[Sentry] Message captured: ${message}`, options);
-  return 'mock-event-id';
+/**
+ * Capture an error message with optional metadata
+ * @param message Message to capture
+ * @param options Optional metadata
+ */
+export function captureMessage(message: string, options: any = {}): void {
+  // Implementation would use Sentry's API, this is a stub
+  console.log('[Sentry]', message, options);
 }
 
-export function captureError(error: Error, options?: any): string {
-  console.error(`[Sentry] Error captured:`, error, options);
-  return 'mock-event-id';
-}
-
-export function captureException(exception: any, options?: any): string {
-  console.error(`[Sentry] Exception captured:`, exception, options);
-  return 'mock-event-id';
+/**
+ * Capture an error with optional metadata
+ * @param error Error to capture
+ * @param options Optional metadata
+ */
+export function captureError(error: Error | unknown, options: any = {}): void {
+  // Implementation would use Sentry's API, this is a stub
+  console.error('[Sentry]', error, options);
 }

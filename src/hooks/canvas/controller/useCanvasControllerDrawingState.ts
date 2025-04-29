@@ -1,113 +1,47 @@
 
-/**
- * Hook for managing drawing state in the canvas controller
- * @module useCanvasControllerDrawingState
- */
-import { useEffect, useState } from "react";
-import { Object as FabricObject } from "fabric";
-import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
-import { DrawingMode } from "@/constants/drawingModes";
-import { FloorPlan } from "@/types/floorPlanTypes";
-import { DrawingState, createDefaultDrawingState } from "@/types/DrawingState";
-import { ExtendedFabricCanvas } from "@/types/canvas-types";
+import { useState, useCallback } from 'react';
+import { Canvas } from 'fabric';
+import { DrawingMode } from '@/types/DrawingMode';
+import { Point } from '@/types/core/Point';
 
-/**
- * Props for useCanvasControllerDrawingState hook
- * @interface UseCanvasControllerDrawingStateProps
- */
-interface UseCanvasControllerDrawingStateProps {
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
-  
-  /** Current drawing tool */
-  tool: DrawingMode;
-  
-  /** Function to set the current drawing tool */
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  
-  /** Line color for drawing */
-  lineColor: string;
-  
-  /** Line thickness for drawing */
-  lineThickness: number;
-  
-  /** Array of floor plans */
-  floorPlans: FloorPlan[];
-  
-  /** Function to set floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  
-  /** Function to save the current state */
-  saveCurrentState?: () => void;
-  
-  /** Function to add objects to the canvas */
-  addObjectsToCanvas?: (objects: FabricObject[]) => void;
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  points: Point[];
+  distance?: number;
+  cursorPosition?: Point | null;
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
+  pathStartPoint?: Point | null;
+  currentPath?: any;
+  zoomLevel?: number;
 }
 
-/**
- * Return type for useCanvasControllerDrawingState hook
- * @interface UseCanvasControllerDrawingStateReturn
- */
-export interface UseCanvasControllerDrawingStateReturn {
-  /** Current drawing state */
-  drawingState: DrawingState;
-  
-  /** Function to set the drawing state */
-  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState>>;
-  
-  /** Function to handle mouse down event */
-  handleMouseDown: (event: any) => void;
-  
-  /** Function to handle mouse move event */
-  handleMouseMove: (event: any) => void;
-  
-  /** Function to handle mouse up event */
-  handleMouseUp: (event: any) => void;
-  
-  /** Function to start drawing */
-  startDrawing: (point: { x: number; y: number }) => void;
-  
-  /** Function to continue drawing */
-  continueDrawing: (point: { x: number; y: number }) => void;
-  
-  /** Function to end drawing */
-  endDrawing: () => void;
+export const defaultDrawingState: DrawingState = {
+  isDrawing: false,
+  startPoint: null,
+  currentPoint: null,
+  points: [],
+  distance: 0,
+  cursorPosition: null,
+  tool: DrawingMode.SELECT,
+  lineColor: '#000000',
+  lineThickness: 2,
+  pathStartPoint: null,
+  currentPath: null,
+  zoomLevel: 1
+};
+
+export interface UseCanvasControllerDrawingStateProps {
+  canvas: Canvas | null;
 }
 
-/**
- * Hook for managing drawing state in the canvas controller
- * @param props - Hook props
- * @returns Drawing state and methods
- */
-export const useCanvasControllerDrawingState = ({
-  fabricCanvasRef,
-  tool,
-  setTool,
-  lineColor,
-  lineThickness,
-  floorPlans,
-  setFloorPlans,
-  saveCurrentState,
-  addObjectsToCanvas
-}: UseCanvasControllerDrawingStateProps): UseCanvasControllerDrawingStateReturn => {
-  // Initialize with default state
-  const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
-  
-  // Mock implementations for handlers (replace with actual implementations)
-  const handleMouseDown = (event: any) => {
-    console.log("Mouse down", event);
-  };
-  
-  const handleMouseMove = (event: any) => {
-    console.log("Mouse move", event);
-  };
-  
-  const handleMouseUp = (event: any) => {
-    console.log("Mouse up", event);
-  };
-  
-  const startDrawing = (point: { x: number; y: number }) => {
-    console.log("Start drawing at", point);
+export const useCanvasControllerDrawingState = ({ canvas }: UseCanvasControllerDrawingStateProps) => {
+  const [drawingState, setDrawingState] = useState<DrawingState>(defaultDrawingState);
+
+  const startDrawing = useCallback((point: Point) => {
     setDrawingState(prev => ({
       ...prev,
       isDrawing: true,
@@ -115,29 +49,46 @@ export const useCanvasControllerDrawingState = ({
       currentPoint: point,
       points: [point]
     }));
-  };
-  
-  const continueDrawing = (point: { x: number; y: number }) => {
-    console.log("Continue drawing at", point);
-    setDrawingState(prev => ({
-      ...prev,
-      currentPoint: point,
-      points: [...prev.points, point]
-    }));
-  };
-  
-  const endDrawing = () => {
-    console.log("End drawing");
+  }, []);
+
+  const continueDrawing = useCallback((point: Point) => {
+    setDrawingState(prev => {
+      if (!prev.isDrawing) return prev;
+      return {
+        ...prev,
+        currentPoint: point,
+        points: [...prev.points, point]
+      };
+    });
+  }, []);
+
+  const endDrawing = useCallback(() => {
     setDrawingState(prev => ({
       ...prev,
       isDrawing: false
     }));
-    if (saveCurrentState) {
-      saveCurrentState();
-    }
-  };
+  }, []);
 
-  // Return all methods and state
+  const handleMouseDown = useCallback((e: any) => {
+    if (!canvas || drawingState.tool === DrawingMode.SELECT) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    startDrawing({ x: pointer.x, y: pointer.y });
+  }, [canvas, drawingState.tool, startDrawing]);
+
+  const handleMouseMove = useCallback((e: any) => {
+    if (!canvas || !drawingState.isDrawing) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    continueDrawing({ x: pointer.x, y: pointer.y });
+  }, [canvas, drawingState.isDrawing, continueDrawing]);
+
+  const handleMouseUp = useCallback(() => {
+    if (!canvas || !drawingState.isDrawing) return;
+    
+    endDrawing();
+  }, [canvas, drawingState.isDrawing, endDrawing]);
+
   return {
     drawingState,
     setDrawingState,

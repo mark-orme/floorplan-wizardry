@@ -1,174 +1,198 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan } from '@/types/floorPlan';
-import { DrawingMode } from '@/constants/drawingModes';
-import type { MutableRefObject } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { fabric } from 'fabric';
+import { toast } from 'sonner';
+import { captureMessage } from '@/utils/sentryUtils';
 
-export interface UseFloorPlanDrawingProps {
-  fabricCanvasRef?: MutableRefObject<FabricCanvas | null>;
-  floorPlan?: FloorPlan;
-  tool?: DrawingMode;
-  onFloorPlanUpdate?: (floorPlan: FloorPlan) => void;
-  isActive?: boolean;
-  inputMethod?: 'mouse' | 'touch' | 'stylus';
-  isPencilMode?: boolean;
-  setInputMethod?: (method: 'mouse' | 'touch' | 'stylus') => void;
-  initialHistory?: FloorPlan[];
-  initialTool?: DrawingMode;
-  initialColor?: string;
-  initialThickness?: number;
-}
-
-export const useFloorPlanDrawing = ({
-  fabricCanvasRef = { current: null },
-  floorPlan = {} as FloorPlan,
-  tool = DrawingMode.SELECT,
-  onFloorPlanUpdate = () => {},
-  isActive = true,
-  inputMethod = 'mouse',
-  isPencilMode = false,
-  setInputMethod = () => {},
-  initialHistory = [],
-  initialTool = DrawingMode.SELECT,
-  initialColor = "#000",
-  initialThickness = 1
-}: UseFloorPlanDrawingProps = {}) => {
+export const useFloorPlanDrawing = () => {
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentTool, setCurrentTool] = useState<DrawingMode>(initialTool);
-  const [lineColor, setLineColor] = useState<string>(initialColor);
-  const [lineThickness, setLineThickness] = useState<number>(initialThickness);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [activeObjects, setActiveObjects] = useState<fabric.Object[]>([]);
+  const canvasRef = useRef<fabric.Canvas | null>(null);
   
-  // History stack for undo/redo
-  const [history, setHistory] = useState<FloorPlan[]>(initialHistory);
-  const [redoStack, setRedoStack] = useState<FloorPlan[]>([]);
-  
-  const canUndo = history.length > 0;
-  const canRedo = redoStack.length > 0;
+  const historyRef = useRef<{
+    past: any[];
+    future: any[];
+  }>({
+    past: [],
+    future: []
+  });
 
-  const undo = useCallback(() => {
-    if (!canUndo) return;
-    const last = history[history.length - 1];
-    setHistory(prev => prev.slice(0, -1));
-    setRedoStack(prev => [last, ...prev]);
-  }, [canUndo, history]);
-
-  const redo = useCallback(() => {
-    if (!canRedo) return;
-    const next = redoStack[0];
-    setRedoStack(prev => prev.slice(1));
-    setHistory(prev => [...prev, next]);
-  }, [canRedo, redoStack]);
-  
-  // Initialize drawing modes
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
+  // Initialize the canvas
+  const initCanvas = useCallback((canvas: fabric.Canvas) => {
     if (!canvas) return;
     
-    // Cleanup function for event handlers
-    return () => {
-      canvas.off('mouse:down');
-      canvas.off('mouse:move');
-      canvas.off('mouse:up');
-    };
-  }, [fabricCanvasRef, tool]);
-  
-  // Fix the saveState, restoreState, and other functions to take proper arguments
+    canvasRef.current = canvas;
+    
+    // Add event listeners
+    canvas.on('object:added', () => {
+      saveState();
+      captureMessage('Object added to canvas');
+    });
+    
+    canvas.on('object:modified', () => {
+      saveState();
+      captureMessage('Object modified on canvas');
+    });
+    
+    canvas.on('selection:created', (e: any) => {
+      if (e.selected) setActiveObjects(e.selected);
+      captureMessage('Selection created on canvas');
+    });
+    
+    canvas.on('selection:updated', (e: any) => {
+      if (e.selected) setActiveObjects(e.selected);
+      captureMessage('Selection updated on canvas');
+    });
+    
+    canvas.on('selection:cleared', () => {
+      setActiveObjects([]);
+      captureMessage('Selection cleared on canvas');
+    });
+    
+    // Save initial state
+    saveState();
+  }, []);
+
+  // Save the current canvas state to history
   const saveState = useCallback(() => {
-    console.log('Save state');
-  }, []);
-  
-  const restoreState = useCallback(() => {
-    console.log('Restore state');
-  }, []);
-  
-  const snapPoint = useCallback((point: any) => {
-    return point;
-  }, []);
-  
-  const addWall = useCallback(() => {
-    console.log('Add wall');
-  }, []);
-  
-  const addRoom = useCallback(() => {
-    console.log('Add room');
-  }, []);
-  
-  const addStroke = useCallback(() => {
-    console.log('Add stroke');
-  }, []);
-  
-  const updateObject = useCallback(() => {
-    console.log('Update object');
-  }, []);
-  
-  const deleteObject = useCallback(() => {
-    console.log('Delete object');
-  }, []);
-  
-  // Enable drawing mode based on selected tool
-  const handleDrawingEvent = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvasRef.current) return;
     
-    // Remove existing listeners
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
-    
-    // Set up new listeners based on the current tool
-    switch (tool) {
-      case DrawingMode.SELECT:
-        canvas.isDrawingMode = false;
-        break;
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        break;
-      default:
-        canvas.isDrawingMode = false;
-        break;
+    try {
+      const canvas = canvasRef.current;
+      const json = canvas.toJSON();
+      
+      historyRef.current.past.push(json);
+      historyRef.current.future = [];
+      
+      setCanUndo(historyRef.current.past.length > 0);
+      setCanRedo(false);
+      
+      captureMessage('Canvas state saved', { level: 'debug' });
+    } catch (error) {
+      console.error('Error saving canvas state:', error);
     }
-  }, [fabricCanvasRef, tool]);
-  
-  // Draw the floor plan on the canvas
-  const drawFloorPlan = useCallback((canvas: FabricCanvas, plan: FloorPlan) => {
-    if (!canvas) return;
-    
-    // Clear canvas
-    canvas.clear();
-    
-    // Set background
-    canvas.backgroundColor = '#f0f0f0';
-    
-    // Render floor plan elements (simplified)
-    canvas.renderAll();
-    
   }, []);
-  
+
+  // Undo the last action
+  const undo = useCallback(() => {
+    if (!canvasRef.current || historyRef.current.past.length === 0) return;
+    
+    try {
+      const canvas = canvasRef.current;
+      const currentState = canvas.toJSON();
+      const previousState = historyRef.current.past.pop();
+      
+      historyRef.current.future.unshift(currentState);
+      
+      canvas.loadFromJSON(previousState, () => {
+        canvas.renderAll();
+        
+        setCanUndo(historyRef.current.past.length > 0);
+        setCanRedo(true);
+        
+        toast.info('Undo successful');
+        captureMessage('Undo action performed', { level: 'debug' });
+      });
+    } catch (error) {
+      console.error('Error undoing action:', error);
+      toast.error('Failed to undo');
+    }
+  }, []);
+
+  // Redo the last undone action
+  const redo = useCallback(() => {
+    if (!canvasRef.current || historyRef.current.future.length === 0) return;
+    
+    try {
+      const canvas = canvasRef.current;
+      const currentState = canvas.toJSON();
+      const nextState = historyRef.current.future.shift();
+      
+      historyRef.current.past.push(currentState);
+      
+      canvas.loadFromJSON(nextState, () => {
+        canvas.renderAll();
+        
+        setCanUndo(true);
+        setCanRedo(historyRef.current.future.length > 0);
+        
+        toast.info('Redo successful');
+        captureMessage('Redo action performed', { level: 'debug' });
+      });
+    } catch (error) {
+      console.error('Error redoing action:', error);
+      toast.error('Failed to redo');
+    }
+  }, []);
+
+  // Clear the canvas
+  const clearCanvas = useCallback(() => {
+    if (!canvasRef.current) return;
+    
+    try {
+      const canvas = canvasRef.current;
+      
+      saveState();
+      canvas.clear();
+      canvas.backgroundColor = '#ffffff';
+      canvas.renderAll();
+      saveState();
+      
+      toast.info('Canvas cleared');
+      captureMessage('Canvas cleared', { level: 'debug' });
+    } catch (error) {
+      console.error('Error clearing canvas:', error);
+      toast.error('Failed to clear canvas');
+    }
+  }, [saveState]);
+
+  // Delete selected objects
+  const deleteSelected = useCallback(() => {
+    if (!canvasRef.current) return;
+    
+    try {
+      const canvas = canvasRef.current;
+      const selectedObjects = canvas.getActiveObjects();
+      
+      if (!selectedObjects || selectedObjects.length === 0) {
+        toast.info('Nothing selected to delete');
+        return;
+      }
+      
+      saveState();
+      
+      if (selectedObjects.length === 1) {
+        canvas.remove(selectedObjects[0]);
+      } else {
+        canvas.remove(...selectedObjects);
+        canvas.discardActiveObject();
+      }
+      
+      canvas.renderAll();
+      saveState();
+      
+      toast.info(`Deleted ${selectedObjects.length} object(s)`);
+      captureMessage('Objects deleted from canvas', { level: 'debug' });
+    } catch (error) {
+      console.error('Error deleting objects:', error);
+      toast.error('Failed to delete objects');
+    }
+  }, [saveState]);
+
   return {
+    initCanvas,
+    canvasRef,
     isDrawing,
     setIsDrawing,
-    currentTool,
-    setCurrentTool,
-    lineColor,
-    setLineColor,
-    lineThickness, 
-    setLineThickness,
-    canvas: fabricCanvasRef.current,
-    handleDrawingEvent,
-    drawFloorPlan,
-    saveState,
-    restoreState,
-    snapPoint,
-    addWall,
-    addRoom,
-    addStroke,
-    updateObject,
-    deleteObject,
-    undo,
-    redo,
     canUndo,
     canRedo,
-    initialHistory
+    undo,
+    redo,
+    saveState,
+    clearCanvas,
+    deleteSelected,
+    activeObjects
   };
 };

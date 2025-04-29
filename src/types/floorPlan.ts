@@ -1,49 +1,47 @@
 
-import { FloorPlanMetadata } from './canvas-types';
-import { FabricObject } from 'fabric';
+import { Point } from '@/types/core/Point';
+
+export type StrokeTypeLiteral = 'line' | 'straight_line' | 'wall' | 'door' | 'window' | 'furniture' | 'annotation' | 'polyline' | 'room' | 'freehand';
+
+export interface Stroke {
+  id: string;
+  points: Point[];
+  color: string;
+  thickness: number;
+  width: number;
+  type: StrokeTypeLiteral;
+}
+
+export { Point };
+
+// Helper function to ensure a string is a valid StrokeTypeLiteral
+export function asStrokeType(type: string): StrokeTypeLiteral {
+  const validTypes: StrokeTypeLiteral[] = ['line', 'straight_line', 'wall', 'door', 'window', 'furniture', 'annotation', 'polyline', 'room', 'freehand'];
+  return validTypes.includes(type as StrokeTypeLiteral) ? type as StrokeTypeLiteral : 'line';
+}
 
 export interface FloorPlan {
   id: string;
   name: string;
   created?: string;
   modified?: string;
-  data?: any;
+  updated?: string;
+  description?: string;
   thumbnail?: string;
   size?: number;
   width?: number;
   height?: number;
   index?: number;
-  metadata: FloorPlanMetadata;
-  objects?: FabricObject[];
-  canvasData?: string;
-  label?: string;
+  level?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-/**
- * Create an empty floor plan with default values
- */
-export function createEmptyFloorPlan(id: string = ''): FloorPlan {
+// Helper function to create an empty floor plan
+export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
   return {
-    id: id || crypto.randomUUID(),
-    name: 'New Floor Plan',
-    created: new Date().toISOString(),
-    modified: new Date().toISOString(),
-    metadata: {
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1
-    },
-    objects: [],
-    width: 800,
-    height: 600
+    id: crypto.randomUUID(),
+    name: 'Untitled Floor Plan',
+    ...overrides
   };
-}
-
-export type StrokeTypeLiteral = 'solid' | 'dashed' | 'dotted';
-
-export interface Stroke {
-  type: StrokeTypeLiteral;
-  width: number;
-  color: string;
-  opacity?: number;
 }
