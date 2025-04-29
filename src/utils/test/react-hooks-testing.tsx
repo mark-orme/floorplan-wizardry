@@ -12,7 +12,9 @@ export const act = rtlAct;
 
 // Create mock wrapper for context providers
 export const createWrapper = (Providers: React.FC<{ children: React.ReactNode }>) => {
-  return ({ children }: { children: React.ReactNode }) => <Providers>{children}</Providers>;
+  return ({ children }: { children: React.ReactNode }) => (
+    React.createElement(Providers, {}, children)
+  );
 };
 
 // Create test state

@@ -37,6 +37,27 @@ export const jsxExtensionValidationRule = {
         "selector": "ExportNamedDeclaration > FunctionDeclaration:has(JSXElement)",
         "message": "Functions that return JSX should be in .tsx files."
       }
+    ],
+    
+    // Additional rule to catch React.createElement in .ts files that should be .tsx
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["createElement"],
+            "message": "React.createElement should only be used in .tsx files when creating elements."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["react"],
+            "importNames": ["createElement"],
+            "message": "React.createElement should only be used in .tsx files when creating elements."
+          }
+        ]
+      }
     ]
   },
   overrides: [
