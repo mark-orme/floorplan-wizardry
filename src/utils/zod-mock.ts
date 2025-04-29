@@ -10,7 +10,11 @@ export class ZodError extends Error {
   }
 }
 
-export class ZodType<T> {
+class ZodType<T> {
+  _type!: T;
+
+  constructor() {}
+  
   parse(value: unknown): T {
     // Simple validation - override in subclasses
     if (value === undefined || value === null) {
@@ -31,66 +35,64 @@ export class ZodType<T> {
     }
   }
   
-  // Add common Zod string methods
-  min(length: number, message?: { message: string }) {
+  min(length: number, message?: { message: string }): this {
     return this;
   }
   
-  max(length: number, message?: { message: string }) {
+  max(length: number, message?: { message: string }): this {
     return this;
   }
   
-  email(message?: { message: string }) {
+  email(message?: { message: string }): this {
     return this;
   }
   
-  regex(regex: RegExp, message?: { message: string }) {
+  regex(regex: RegExp, message?: { message: string }): this {
     return this;
   }
   
-  // Add common Zod boolean methods
-  refine(refinementFn: (val: any) => boolean, message: { message: string }) {
+  refine(refinementFn: (val: any) => boolean, message: { message: string }): this {
     return this;
   }
 }
 
 // String class
 class ZodString extends ZodType<string> {
-  min(length: number, message?: { message: string }) {
+  min(length: number, message?: { message: string }): this {
     return this;
   }
   
-  max(length: number, message?: { message: string }) {
+  max(length: number, message?: { message: string }): this {
     return this;
   }
   
-  email(message?: { message: string }) {
+  email(message?: { message: string }): this {
     return this;
   }
   
-  regex(regex: RegExp, message?: { message: string }) {
+  regex(regex: RegExp, message?: { message: string }): this {
     return this;
   }
 }
 
 // Number class
 class ZodNumber extends ZodType<number> {
-  min(min: number, message?: { message: string }) {
+  min(min: number, message?: { message: string }): this {
     return this;
   }
   
-  max(max: number, message?: { message: string }) {
+  max(max: number, message?: { message: string }): this {
     return this;
   }
   
-  positive(message?: { message: string }) {
+  positive(message?: { message: string }): this {
     return this;
   }
 }
 
 // Boolean class
 class ZodBoolean extends ZodType<boolean> {
-  refine(refinementFn: (val: boolean) => boolean, message: { message: string }) {
+  refine(refinementFn: (val: boolean) => boolean, message: { message: string }): this {
     return this;
   }
 }

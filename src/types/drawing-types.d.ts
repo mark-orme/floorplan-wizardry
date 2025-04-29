@@ -33,7 +33,15 @@ export interface CanvasState {
 export type ZoomDirection = 'in' | 'out';
 
 // Drawing state for canvas
-export type DrawingState = 'idle' | 'drawing' | 'editing' | 'selecting';
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: { x: number; y: number };
+  currentPoint: { x: number; y: number };
+  points: Array<{ x: number; y: number }>;
+  distance: number;
+  cursorPosition: { x: number; y: number };
+  currentZoom?: number;
+}
 
 // Tool change event
 export interface ToolChangeEvent {
@@ -65,8 +73,31 @@ export type ValidateDrawingMode<T extends DrawingMode> = T;
 // Add gesture types
 export type GestureType = 'pinch' | 'rotate' | 'pan';
 export type GestureState = 'start' | 'move' | 'end';
+export interface GestureStateObject {
+  type: GestureType;
+  state: GestureState;
+  scale?: number;
+  rotation?: number;
+  translation?: { x: number; y: number };
+}
 
 // Add function to create default drawing state
 export function createDefaultDrawingState(): DrawingState {
-  return { isDrawing: false, startPoint: {x:0,y:0}, currentPoint: {x:0,y:0}, points: [], distance:0, cursorPosition:{x:0,y:0} };
+  return { 
+    isDrawing: false, 
+    startPoint: {x:0,y:0}, 
+    currentPoint: {x:0,y:0}, 
+    points: [], 
+    distance:0, 
+    cursorPosition:{x:0,y:0} 
+  };
+}
+
+// Canvas state result type
+export interface UseCanvasStateResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<any>;
+  initializeCanvas: () => void;
+  disposeCanvas: () => void;
+  isInitialized: boolean;
 }

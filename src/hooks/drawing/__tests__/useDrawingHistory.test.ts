@@ -6,7 +6,9 @@ import * as Sentry from '@sentry/react';
 
 // Mock Sentry captureException
 vi.mock('@sentry/react', () => ({
-  captureException: vi.fn()
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  addBreadcrumb: vi.fn()
 }));
 
 describe('useDrawingHistory', () => {
@@ -25,7 +27,22 @@ describe('useDrawingHistory', () => {
   });
   
   test('should handle errors gracefully', () => {
-    // Placeholder test
-    expect(true).toBe(true);
+    const mockCanvas = {
+      toObject: vi.fn().mockImplementation(() => {
+        throw new Error('Test error');
+      }),
+      wrapperEl: document.createElement('div')
+    } as any;
+    
+    const canvasRef = { current: mockCanvas } as any;
+    
+    const { result } = renderHook(() => useDrawingHistory({ fabricCanvasRef: canvasRef }));
+    
+    act(() => {
+      result.current.saveState();
+    });
+    
+    expect(Sentry.captureException).toHaveBeenCalled();
+    expect(result.current.canUndo).toBe(false);
   });
 });

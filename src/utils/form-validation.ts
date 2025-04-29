@@ -18,3 +18,22 @@ export const validateField = <T>(
     return { isValid: false, error: 'Invalid value' };
   }
 };
+
+// Additional helper functions for form validation
+export const validateForm = <T extends Record<string, unknown>>(
+  schema: Record<string, z.ZodType<any>>,
+  values: T
+): { isValid: boolean; errors: Record<string, string> } => {
+  const errors: Record<string, string> = {};
+  let isValid = true;
+
+  Object.entries(schema).forEach(([field, fieldSchema]) => {
+    const result = validateField(fieldSchema, values[field]);
+    if (!result.isValid) {
+      errors[field] = result.error || `Invalid ${field}`;
+      isValid = false;
+    }
+  });
+
+  return { isValid, errors };
+};

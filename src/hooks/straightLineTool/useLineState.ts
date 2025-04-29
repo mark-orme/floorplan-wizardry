@@ -38,21 +38,12 @@ export const useLineState = ({
   });
 
   // Use line drawing hooks for canvas operations
-  const { createLine, updateLine, finalizeLine, removeLine } = useLineDrawing(
+  const { createLine, updateLine, finalizeLine, removeLine } = useLineDrawing({
     fabricCanvasRef,
     lineColor,
     lineThickness,
     saveCurrentState
-  );
-  
-  // Create adapter functions to match expected signatures
-  const createLineAdapter = (x1: number, y1: number, x2: number, y2: number) => {
-    return createLine(x1, y1, x2, y2);
-  };
-
-  const updateLineAdapter = (line: Line, x2: number, y2: number) => {
-    return updateLine(line, x2, y2);
-  };
+  });
   
   // Get actions from the extracted hook
   const actions = useLineStateActions({
@@ -61,8 +52,8 @@ export const useLineState = ({
     snapToGrid,
     anglesEnabled,
     snapToAngle,
-    createLine: createLineAdapter,
-    updateLine: updateLineAdapter,
+    createLine,
+    updateLine,
     finalizeLine,
     removeLine
   });

@@ -1,5 +1,5 @@
 
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/fabric-unified';
 import { Canvas } from 'fabric';
 
 /**
@@ -47,3 +47,6 @@ export interface UseStraightLineToolReturn {
   cancelDrawing: () => void;
   renderTooltip?: () => React.ReactNode;
 }
+
+// Export the MeasurementData interface so it can be used by other files
+export { MeasurementData };
