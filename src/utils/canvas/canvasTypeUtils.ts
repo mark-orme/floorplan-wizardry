@@ -6,9 +6,9 @@ import type { ExtendedFabricObject } from '@/types/canvas-types';
 /**
  * Helper function to cast a canvas to ExtendedFabricCanvas
  */
-export function asExtendedCanvas(canvas: Canvas | null): ExtendedFabricCanvas | null {
+export function asExtendedCanvas(canvas: Canvas | ExtendedFabricCanvas | null): ExtendedFabricCanvas | null {
   if (!canvas) return null;
-  return canvas as unknown as ExtendedFabricCanvas;
+  return canvas as ExtendedFabricCanvas;
 }
 
 /**
@@ -24,10 +24,10 @@ export function asExtendedObject<T extends FabricObject>(obj: FabricObject): T &
  * @param property The property to access
  * @param defaultValue The default value to return if property doesn't exist
  */
-export function getExtendedCanvasProperty<T>(canvas: Canvas | null, property: keyof ExtendedFabricCanvas, defaultValue: T): T {
+export function getExtendedCanvasProperty<T>(canvas: Canvas | ExtendedFabricCanvas | null, property: keyof ExtendedFabricCanvas, defaultValue: T): T {
   if (!canvas) return defaultValue;
   
-  const extCanvas = canvas as unknown as ExtendedFabricCanvas;
+  const extCanvas = canvas as ExtendedFabricCanvas;
   return (extCanvas[property] as unknown as T) ?? defaultValue;
 }
 
@@ -35,13 +35,13 @@ export function getExtendedCanvasProperty<T>(canvas: Canvas | null, property: ke
  * Helper function to safely set extended canvas properties
  */
 export function setExtendedCanvasProperty(
-  canvas: Canvas | null, 
+  canvas: Canvas | ExtendedFabricCanvas | null, 
   property: keyof ExtendedFabricCanvas, 
   value: any
 ): void {
   if (!canvas) return;
   
-  const extCanvas = canvas as unknown as ExtendedFabricCanvas;
+  const extCanvas = canvas as ExtendedFabricCanvas;
   (extCanvas[property] as any) = value;
 }
 

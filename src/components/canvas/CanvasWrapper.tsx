@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 export const CanvasWrapper: React.FC = () => {
   const { canvasRef, setCanvas } = useCanvas();
   const [isLoading, setIsLoading] = useState(true);
+  const [canvas, setLocalCanvas] = useState<FabricCanvas | ExtendedFabricCanvas | null>(null);
 
   // Initialize the canvas
   useEffect(() => {
@@ -34,6 +35,7 @@ export const CanvasWrapper: React.FC = () => {
         extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
       }
       
+      setLocalCanvas(extendedCanvas);
       setCanvas(extendedCanvas);
       setIsLoading(false);
       
@@ -43,6 +45,7 @@ export const CanvasWrapper: React.FC = () => {
       return () => {
         fabricCanvas.dispose();
         setCanvas(null);
+        setLocalCanvas(null);
       };
     } catch (error) {
       console.error('Failed to initialize canvas:', error);

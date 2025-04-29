@@ -1,28 +1,56 @@
 
-import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingTool } from '@/types/core/DrawingTool';
+import { DrawingMode } from "@/constants/drawingModes";
+import { DrawingTool } from "@/types/canvasStateTypes";
 
 /**
- * Adapter function to convert between different DrawingMode formats
+ * Convert DrawingMode to DrawingTool
+ * @param mode DrawingMode value
+ * @returns DrawingTool value
  */
 export function asDrawingTool(mode: DrawingMode): DrawingTool {
-  return mode as unknown as DrawingTool;
+  // Map DrawingMode to DrawingTool
+  const modeToTool: Record<DrawingMode, DrawingTool> = {
+    [DrawingMode.SELECT]: 'select',
+    [DrawingMode.PAN]: 'pan',
+    [DrawingMode.DRAW]: 'draw',
+    [DrawingMode.ERASE]: 'erase',
+    [DrawingMode.LINE]: 'line',
+    [DrawingMode.RECTANGLE]: 'rectangle',
+    [DrawingMode.CIRCLE]: 'circle',
+    [DrawingMode.TEXT]: 'text',
+    [DrawingMode.WALL]: 'wall',
+    [DrawingMode.PENCIL]: 'draw', // Map to draw
+    [DrawingMode.ROOM]: 'wall', // Map to wall
+    [DrawingMode.ERASER]: 'erase', // Map to erase
+    [DrawingMode.STRAIGHT_LINE]: 'line', // Map to line
+    [DrawingMode.HAND]: 'pan', // Map to pan
+    [DrawingMode.MEASURE]: 'wall', // Map to wall
+    [DrawingMode.DOOR]: 'wall', // Map to wall
+    [DrawingMode.WINDOW]: 'wall', // Map to wall
+    [DrawingMode.SHAPE]: 'rectangle' // Map to rectangle
+  };
+
+  return modeToTool[mode] || 'select';
 }
 
 /**
- * Convert drawing tool to string representation
+ * Convert DrawingTool to DrawingMode
+ * @param tool DrawingTool value
+ * @returns DrawingMode value
  */
-export function drawingToolToString(tool: DrawingTool): string {
-  return tool.toString();
-}
+export function asDrawingMode(tool: DrawingTool): DrawingMode {
+  // Map DrawingTool to DrawingMode
+  const toolToMode: Record<DrawingTool, DrawingMode> = {
+    'select': DrawingMode.SELECT,
+    'pan': DrawingMode.PAN,
+    'draw': DrawingMode.DRAW,
+    'erase': DrawingMode.ERASE,
+    'line': DrawingMode.LINE,
+    'rectangle': DrawingMode.RECTANGLE,
+    'circle': DrawingMode.CIRCLE,
+    'text': DrawingMode.TEXT,
+    'wall': DrawingMode.WALL
+  };
 
-/**
- * Get display name for a drawing tool
- */
-export function getDrawingToolName(tool: DrawingTool): string {
-  if (typeof tool === 'string') {
-    return tool.charAt(0).toUpperCase() + tool.slice(1).toLowerCase();
-  }
-  
-  return 'Unknown Tool';
+  return toolToMode[tool] || DrawingMode.SELECT;
 }

@@ -1,6 +1,6 @@
 
 /**
- * Point interface
+ * Basic point type with x and y coordinates
  */
 export interface Point {
   x: number;
@@ -8,38 +8,42 @@ export interface Point {
 }
 
 /**
- * Size interface
+ * Rectangle type defined by two points
  */
-export interface Size {
-  width: number;
-  height: number;
+export interface Rect {
+  topLeft: Point;
+  bottomRight: Point;
 }
 
 /**
- * Rectangle interface
+ * Create a point
+ * @param x The x coordinate
+ * @param y The y coordinate
+ * @returns A new point
  */
-export interface Rectangle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export function createPoint(x: number, y: number): Point {
+  return { x, y };
 }
 
 /**
- * Circle interface
+ * Calculate distance between two points
+ * @param a First point
+ * @param b Second point
+ * @returns Distance between points
  */
-export interface Circle {
-  x: number;
-  y: number;
-  radius: number;
+export function distance(a: Point, b: Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**
- * Line interface
+ * Check if two points are equal
+ * @param a First point
+ * @param b Second point
+ * @returns True if points are equal
  */
-export interface Line {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+export function pointsEqual(a: Point | null, b: Point | null): boolean {
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y;
 }

@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { DrawingTool } from "@/types/canvasStateTypes";
-import { FloorPlan } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/FloorPlan";
 import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
 import { asDrawingTool } from "@/types/core/DrawingToolAdapter";
 import { DrawingMode } from "@/constants/drawingModes";
@@ -94,10 +94,15 @@ export const useCanvasControllerDrawingState = (
     if (drawingState) {
       setDrawingState(drawingState as DrawingState);
     } else {
-      // If drawing state is null, create a default state
-      setDrawingState(createDefaultDrawingState());
+      // Create a properly populated default state
+      const defaultState = createDefaultDrawingState();
+      defaultState.lineColor = lineColor;
+      defaultState.lineThickness = lineThickness;
+      defaultState.tool = tool as unknown as DrawingMode;
+      
+      setDrawingState(defaultState);
     }
-  }, [drawingState, setDrawingState]);
+  }, [drawingState, setDrawingState, lineColor, lineThickness, tool]);
   
   return { drawingState };
 };

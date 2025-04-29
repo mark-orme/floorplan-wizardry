@@ -93,12 +93,12 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       // Make sure visible property is set directly
       (obj as any).visible = visible;
       
-      // Try to use the extended object if available
+      // Fixed: Check if set method exists before calling it
       const extObj = asExtendedObject(obj);
       if (extObj) {
         // Handle set property not existing on some objects
-        if (typeof extObj.set === 'function') {
-          extObj.set({ visible });
+        if (typeof obj.set === 'function') {
+          obj.set({ visible });
         }
       }
     });
