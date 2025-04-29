@@ -4,70 +4,50 @@ import { cn } from '@/lib/utils';
 
 interface LineToolMeasurementOverlayProps {
   visible: boolean;
-  distance: number | null;
-  angle: number | null;
-  isSnapped: boolean;
+  distance?: number | null;
+  angle?: number | null;
+  isSnapped?: boolean;
   unit?: string;
-  className?: string;
 }
 
-/**
- * Component that displays live measurement info during line drawing
- */
 export const LineToolMeasurementOverlay: React.FC<LineToolMeasurementOverlayProps> = ({
   visible,
   distance,
   angle,
   isSnapped,
-  unit = 'px',
-  className
+  unit = 'px'
 }) => {
-  if (!visible || distance === null) return null;
-  
-  // Format distance for display
-  const formattedDistance = Math.round(distance);
-  
-  // Standard angles for highlighting
-  const standardAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-  
-  // Check if angle is near a standard angle
-  const isStandardAngle = angle !== null && 
-    standardAngles.some(stdAngle => Math.abs((angle % 360) - stdAngle) < 2);
-  
-  // Format angle for display
-  const formattedAngle = angle !== null ? Math.round(angle % 360) : null;
-  
+  if (!visible) return null;
+
   return (
-    <div className={cn(
-      "fixed bottom-4 left-4 z-50 px-4 py-3 rounded-lg shadow-md transition-opacity duration-200",
-      "bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700",
-      className
-    )}>
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Distance:</span>
-          <span className="text-sm font-bold">{formattedDistance} {unit}</span>
-          {isSnapped && (
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-              Snapped
-            </span>
-          )}
-        </div>
-        
-        {angle !== null && (
+    <div className="fixed bottom-4 left-4 p-2 bg-white/90 dark:bg-gray-800/90 rounded-md shadow-lg z-50 text-xs font-mono">
+      <div className="flex flex-col gap-1">
+        {distance !== null && distance !== undefined && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Angle:</span>
-            <span className={cn(
-              "text-sm font-bold",
-              isStandardAngle && "text-blue-600 dark:text-blue-400"
-            )}>
-              {formattedAngle}°
+            <span className="text-gray-500">Distance:</span>
+            <span className={cn("font-semibold", isSnapped ? "text-green-600 dark:text-green-400" : "")}>
+              {Math.round(distance)} {unit}
             </span>
-            {isStandardAngle && (
-              <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                Standard
-              </span>
-            )}
+          </div>
+        )}
+        
+        {angle !== null && angle !== undefined && (
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">Angle:</span>
+            <span className="font-semibold">
+              {Math.round(angle)}°
+            </span>
+          </div>
+        )}
+        
+        {isSnapped && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-green-600 dark:text-green-400">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 6L9 17l-5-5"></path>
+              </svg>
+            </span>
+            <span className="text-xs text-green-600 dark:text-green-400">Snapped</span>
           </div>
         )}
       </div>

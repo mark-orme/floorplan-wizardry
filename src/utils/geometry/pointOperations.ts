@@ -1,18 +1,10 @@
-
 import { Point } from '@/types/core/Point';
+import { SMALL_GRID_SIZE } from '@/constants/gridConstants';
 
 /**
- * Grid size for snapping
+ * Snap a point to the nearest grid point
  */
-const GRID_SIZE = 20;
-
-/**
- * Snaps a point to the grid
- * @param point Point to snap
- * @param gridSize Grid size in pixels
- * @returns Snapped point
- */
-export const snapToGrid = (point: Point, gridSize: number = GRID_SIZE): Point => {
+export const snapToGrid = (point: Point, gridSize = SMALL_GRID_SIZE): Point => {
   return {
     x: Math.round(point.x / gridSize) * gridSize,
     y: Math.round(point.y / gridSize) * gridSize
@@ -20,100 +12,57 @@ export const snapToGrid = (point: Point, gridSize: number = GRID_SIZE): Point =>
 };
 
 /**
- * Alias for snapToGrid to maintain backward compatibility
+ * Snap an angle to the nearest angle step
  */
-export const snapPointToGrid = snapToGrid;
-
-/**
- * Calculate distance between two points
- * @param point1 First point
- * @param point2 Second point
- * @returns Distance in pixels
- */
-export const calculateDistance = (point1: Point, point2: Point): number => {
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-/**
- * Calculate angle between two points in degrees
- * @param point1 First point
- * @param point2 Second point
- * @returns Angle in degrees
- */
-export const calculateAngle = (point1: Point, point2: Point): number => {
-  const dx = point2.x - point1.x;
-  const dy = point2.y - point1.y;
-  return Math.atan2(dy, dx) * 180 / Math.PI;
-};
-
-/**
- * Snap a point to the nearest angle
- * @param startPoint Origin point
- * @param endPoint Point to constrain
- * @param angleStep Angle step in degrees
- * @returns Constrained point
- */
-export const snapToAngle = (startPoint: Point, endPoint: Point, angleStep: number = 45): Point => {
-  const dx = endPoint.x - startPoint.x;
-  const dy = endPoint.y - startPoint.y;
+export const snapToAngle = (
+  start: Point, 
+  end: Point, 
+  angleStep = 45
+): Point => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const angle = Math.atan2(dy, dx);
+  
+  // Calculate distance
   const distance = Math.sqrt(dx * dx + dy * dy);
-  let angle = Math.atan2(dy, dx) * 180 / Math.PI;
   
-  // Snap to nearest angle step
-  angle = Math.round(angle / angleStep) * angleStep;
+  // Snap angle to nearest step
+  const snappedAngle = Math.round(angle / (Math.PI * angleStep / 180)) * (Math.PI * angleStep / 180);
   
-  // Convert back to radians
-  const radians = angle * Math.PI / 180;
-  
-  // Calculate new point
+  // Calculate new end point using snapped angle and keeping the same distance
   return {
-    x: startPoint.x + Math.cos(radians) * distance,
-    y: startPoint.y + Math.sin(radians) * distance
+    x: start.x + Math.cos(snappedAngle) * distance,
+    y: start.y + Math.sin(snappedAngle) * distance
   };
 };
 
 /**
- * Check if a point is near another point
- * @param point1 First point
- * @param point2 Second point
- * @param threshold Distance threshold in pixels
- * @returns True if points are within threshold
+ * Calculate angle between two points in degrees
  */
-export const isPointNear = (point1: Point, point2: Point, threshold: number = 5): boolean => {
-  return calculateDistance(point1, point2) <= threshold;
+export const calculateAngle = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
+  // Calculate angle in degrees
+  return Math.atan2(dy, dx) * 180 / Math.PI;
 };
 
 /**
- * Round point coordinates to the grid
- * @param point Point to round
- * @param gridSize Grid size in pixels
- * @returns Rounded point
+ * Calculate distance between two points
  */
-export const roundToGrid = (point: Point, gridSize: number = GRID_SIZE): Point => {
-  return snapToGrid(point, gridSize);
+export const calculateDistance = (start: Point, end: Point): number => {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  
+  return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
- * Check if two points have equal coordinates
- * @param point1 First point
- * @param point2 Second point
- * @returns True if points are equal
+ * Get midpoint between two points
  */
-export const arePointsEqual = (point1: Point, point2: Point): boolean => {
-  return point1.x === point2.x && point1.y === point2.y;
-};
-
-/**
- * Calculate the midpoint between two points
- * @param point1 First point
- * @param point2 Second point
- * @returns Midpoint
- */
-export const calculateMidpoint = (point1: Point, point2: Point): Point => {
+export const getMidpoint = (start: Point, end: Point): Point => {
   return {
-    x: (point1.x + point2.x) / 2,
-    y: (point1.y + point2.y) / 2
+    x: (start.x + end.x) / 2,
+    y: (start.y + end.y) / 2
   };
 };

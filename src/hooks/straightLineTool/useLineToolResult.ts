@@ -5,6 +5,7 @@
  */
 import { useMemo } from "react";
 import { InputMethod } from "./useLineInputMethod";
+import { Point } from "@/types/core/Point";
 
 interface UseLineToolResultProps {
   isDrawing: boolean;
@@ -14,6 +15,18 @@ interface UseLineToolResultProps {
   startPointRef: React.MutableRefObject<any | null>;
   currentLineRef: React.MutableRefObject<any | null>;
   toggleSnap: () => void;
+  toggleAngles: () => void;
+  cancelDrawing: () => void;
+  renderTooltip: () => JSX.Element | null;
+  startDrawing?: (point: Point) => void;
+  continueDrawing?: (point: Point) => void;
+  completeDrawing?: (point: Point) => void;
+  measurementData: {
+    distance: number | null;
+    angle: number | null;
+    snapped?: boolean;
+    unit?: string;
+  };
 }
 
 /**
@@ -27,7 +40,14 @@ export const useLineToolResult = (props: UseLineToolResultProps) => {
     snapEnabled,
     startPointRef,
     currentLineRef,
-    toggleSnap
+    toggleSnap,
+    toggleAngles,
+    cancelDrawing,
+    renderTooltip,
+    startDrawing,
+    continueDrawing,
+    completeDrawing,
+    measurementData
   } = props;
   
   // Create the result object
@@ -38,31 +58,24 @@ export const useLineToolResult = (props: UseLineToolResultProps) => {
     isPencilMode: inputMethod === InputMethod.PENCIL,
     snapEnabled,
     anglesEnabled: false,
-    measurementData: {
-      distance: null,
-      angle: null
+    measurementData,
+    handlePointerDown: (point: Point) => {
+      startDrawing?.(point);
     },
-    handlePointerDown: (point: any) => {
-      //console.log('Pointer down at', point);
+    handlePointerMove: (point: Point) => {
+      continueDrawing?.(point);
     },
-    handlePointerMove: (point: any) => {
-      //console.log('Pointer move to', point);
+    handlePointerUp: (point: Point) => {
+      completeDrawing?.(point);
     },
-    handlePointerUp: (point: any) => {
-      //console.log('Pointer up at', point);
-    },
-    cancelDrawing: () => {
-      //console.log('Drawing cancelled');
-    },
-    toggleGridSnapping: () => {
-      toggleSnap();
-    },
-    toggleAngles: () => {
-      //console.log('Angles toggled');
-    },
+    cancelDrawing,
+    toggleGridSnapping: toggleSnap,
+    toggleAngles,
     startPointRef,
     currentLineRef,
-    currentLine: currentLineRef.current
+    currentLine: currentLineRef.current,
+    toggleSnap,
+    renderTooltip
   }), [
     isDrawing,
     enabled,
@@ -70,7 +83,14 @@ export const useLineToolResult = (props: UseLineToolResultProps) => {
     snapEnabled,
     startPointRef,
     currentLineRef,
-    toggleSnap
+    toggleSnap,
+    toggleAngles,
+    cancelDrawing,
+    renderTooltip,
+    startDrawing,
+    continueDrawing,
+    completeDrawing,
+    measurementData
   ]);
   
   return result;

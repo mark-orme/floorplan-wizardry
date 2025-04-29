@@ -1,33 +1,17 @@
 
-export enum GridSize {
-  SMALL = 8,
-  LARGE = 32
-}
+// Grid configuration constants
+export const DEFAULT_GRID_SIZE = 20;
+export const MAJOR_GRID_INTERVAL = 100;
+export const DEFAULT_GRID_COLOR = '#e0e0e0';
+export const MAJOR_GRID_COLOR = '#c0c0c0';
+export const DEFAULT_GRID_OPACITY = 0.5;
+export const MAJOR_GRID_OPACITY = 1.0;
 
-export const GRID_CONSTANTS = {
-  DEFAULT_GRID_SIZE: 50,
-  DEFAULT_GRID_COLOR: 'rgba(200, 200, 200, 0.2)',
-  DEFAULT_GRID_OPACITY: 0.4,
-  MAJOR_GRID_INTERVAL: 5,
-  MAJOR_GRID_COLOR: 'rgba(180, 180, 180, 0.5)',
-  MAJOR_GRID_OPACITY: 0.6,
-  SMALL_GRID_SIZE: 8,
-  LARGE_GRID_SIZE: 32,
-  LARGE: {
-    COLOR: 'rgba(180, 180, 180, 0.5)',
-    WIDTH: 1
-  },
-  SMALL: {
-    COLOR: 'rgba(200, 200, 200, 0.2)',
-    WIDTH: 0.5
-  }
-};
-
-// Export these for backward compatibility with older imports
-export const SMALL_GRID_SIZE = 8;
-export const LARGE_GRID_SIZE = 32;
-export const SMALL_GRID_COLOR = 'rgba(200, 200, 200, 0.2)';
-export const LARGE_GRID_COLOR = 'rgba(180, 180, 180, 0.5)';
-export const SMALL_GRID_WIDTH = 0.5;
-export const LARGE_GRID_WIDTH = 1;
+// Export constants used by other components
+export const SMALL_GRID_SIZE = DEFAULT_GRID_SIZE;
+export const LARGE_GRID_SIZE = MAJOR_GRID_INTERVAL;
+export const SMALL_GRID_COLOR = DEFAULT_GRID_COLOR;
+export const LARGE_GRID_COLOR = MAJOR_GRID_COLOR;
+export const SMALL_GRID_WIDTH = DEFAULT_GRID_OPACITY;
+export const LARGE_GRID_WIDTH = MAJOR_GRID_OPACITY;
 export const PIXELS_PER_METER = 100;

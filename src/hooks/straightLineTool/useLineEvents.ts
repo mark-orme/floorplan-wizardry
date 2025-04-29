@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { MeasurementData } from '@/types/measurement/MeasurementData';
+import { MeasurementData } from './useStraightLineTool.d';
 import { snapToGrid, snapToAngle } from '@/utils/geometry/pointOperations';
 import logger from '@/utils/logger';
 
@@ -14,13 +14,13 @@ interface UseLineEventsProps {
   updateMeasurementData: (data: MeasurementData) => void;
 }
 
-export const useLineEvents = ({
+export function useLineEvents({
   canvas,
   lineState,
   snapEnabled,
   anglesEnabled,
   updateMeasurementData
-}: UseLineEventsProps) => {
+}: UseLineEventsProps) {
   // Get pointer coordinates from fabric mouse event
   const getPointerFromEvent = useCallback((e: any): Point => {
     if (!canvas) return { x: 0, y: 0 };
@@ -59,6 +59,8 @@ export const useLineEvents = ({
     updateMeasurementData({
       distance: 0,
       angle: 0,
+      startPoint: snappedPoint,
+      endPoint: snappedPoint,
       snapped: pointer.x !== snappedPoint.x || pointer.y !== snappedPoint.y,
       unit: 'px'
     });
@@ -91,6 +93,8 @@ export const useLineEvents = ({
       updateMeasurementData({
         distance,
         angle,
+        startPoint: lineState.startPoint,
+        endPoint: endPoint,
         snapped: pointer.x !== endPoint.x || pointer.y !== endPoint.y,
         unit: 'px'
       });
@@ -130,6 +134,6 @@ export const useLineEvents = ({
     handleMouseMove,
     handleMouseUp,
     handleKeyDown,
-    cancelDrawing: lineState.cancelDrawing
+    cancelDrawing: lineState?.cancelDrawing
   };
-};
+}
