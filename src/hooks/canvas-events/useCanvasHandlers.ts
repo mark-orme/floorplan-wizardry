@@ -67,22 +67,14 @@ export const useCanvasHandlers = ({
     });
   }, [fabricCanvasRef, eventTypes, handlers]);
   
-  /**
-   * Clean up resources
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
   // Register events when component mounts or dependencies change
   useEffect(() => {
     register();
-    return cleanup;
-  }, [register, cleanup, tool]); // Added tool as dependency to re-register on tool change
+    return () => unregister();
+  }, [register, unregister, tool]); // Added tool as dependency to re-register on tool change
   
   return {
     register,
-    unregister,
-    cleanup
+    unregister
   };
 };

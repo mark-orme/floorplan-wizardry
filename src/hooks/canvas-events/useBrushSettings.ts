@@ -30,10 +30,10 @@ export const useBrushSettings = ({
     // Configure brush
     if (canvas.freeDrawingBrush) {
       // Set brush color
-      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.color = lineColor || '#000000';
       
       // Set brush width
-      canvas.freeDrawingBrush.width = lineThickness;
+      canvas.freeDrawingBrush.width = lineThickness || 1;
       
       // Apply pressure sensitivity if available
       if (usePressure && 'setPressure' in canvas.freeDrawingBrush) {

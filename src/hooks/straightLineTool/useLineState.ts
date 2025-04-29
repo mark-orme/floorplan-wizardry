@@ -46,12 +46,12 @@ export const useLineState = ({
   );
   
   // Create adapter functions to match expected signatures
-  const createLineAdapter = (startPoint: Point, endPoint: Point) => {
-    return createLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+  const createLineAdapter = (x1: number, y1: number, x2: number, y2: number) => {
+    return createLine(x1, y1, x2, y2);
   };
 
-  const updateLineAdapter = (line: Line, endPoint: Point) => {
-    return updateLine(line, endPoint.x, endPoint.y);
+  const updateLineAdapter = (line: Line, x2: number, y2: number) => {
+    return updateLine(line, x2, y2);
   };
   
   // Get actions from the extracted hook

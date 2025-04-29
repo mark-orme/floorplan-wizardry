@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { z } from '@/utils/zod-mock';
 import { validateField } from '@/utils/form-validation';
@@ -23,9 +24,9 @@ const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => 
   
   const validateForm = () => {
     const schema = {
-      username: validateField(new z.ZodType<string>().min(3), formData.username),
-      password: validateField(new z.ZodType<string>().min(8), formData.password),
-      confirmPassword: validateField(new z.ZodType<string>(), formData.confirmPassword)
+      username: validateField(z.string().min(3), formData.username),
+      password: validateField(z.string().min(8), formData.password),
+      confirmPassword: validateField(z.string(), formData.confirmPassword)
     };
     
     const newErrors: Record<string, string> = {};

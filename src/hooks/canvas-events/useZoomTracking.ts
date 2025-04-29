@@ -66,7 +66,6 @@ export const useZoomTracking = ({
     setZoom,
     zoomIn,
     zoomOut,
-    resetZoom,
-    currentZoom: zoom
+    resetZoom
   };
 };

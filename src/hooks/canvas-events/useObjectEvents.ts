@@ -68,8 +68,6 @@ export const useObjectEvents = ({
     fabricCanvasRef,
     tool,
     eventTypes,
-    handlers,
-    lineColor,
-    lineThickness
+    handlers
   });
 };

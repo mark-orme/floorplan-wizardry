@@ -90,22 +90,14 @@ export const useMouseEvents = ({
     canvas.off('mouse:up', onMouseUp);
   }, [fabricCanvasRef, onMouseDown, onMouseMove, onMouseUp]);
   
-  /**
-   * Clean up resources
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
   // Register and cleanup on mount/unmount
   useEffect(() => {
     register();
-    return cleanup;
-  }, [register, cleanup]);
+    return () => unregister();
+  }, [register, unregister]);
   
   return {
     register,
-    unregister,
-    cleanup
+    unregister
   };
 };

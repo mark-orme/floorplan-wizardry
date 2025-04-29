@@ -34,14 +34,14 @@ export const useKeyboardEvents = ({
     // Ctrl/Cmd + Z for undo
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
       e.preventDefault();
-      handleUndo();
+      if (handleUndo) handleUndo();
     }
     
     // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y for redo
     if (((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) ||
         ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
       e.preventDefault();
-      handleRedo();
+      if (handleRedo) handleRedo();
     }
     
     // Delete or Backspace to delete selected objects
@@ -51,7 +51,7 @@ export const useKeyboardEvents = ({
         e.preventDefault();
         if (handleDelete) {
           handleDelete();
-        } else {
+        } else if (deleteSelectedObjects) {
           deleteSelectedObjects();
         }
       }
@@ -84,22 +84,14 @@ export const useKeyboardEvents = ({
     window.removeEventListener('keydown', onKeyDown);
   }, [onKeyDown]);
   
-  /**
-   * Clean up resources
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
   // Register and cleanup on mount/unmount
   useEffect(() => {
     register();
-    return cleanup;
-  }, [register, cleanup]);
+    return () => unregister();
+  }, [register, unregister]);
   
   return {
     register,
-    unregister,
-    cleanup
+    unregister
   };
 };

@@ -10,8 +10,13 @@ export interface UseDrawingActionsProps {
 }
 
 export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = {}) => {
-  const canvasRef = useRef<FabricCanvas | ExtendedFabricCanvas | null>(null);
-  const { undo, redo, saveState } = useDrawingHistory(canvasRef.current);
+  // Create a ref to handle both the input ref and our internal ref
+  const actualCanvasRef = fabricCanvasRef || useRef<FabricCanvas | ExtendedFabricCanvas | null>(null);
+  
+  // Pass the ref to useDrawingHistory
+  const { undo, redo, saveState } = useDrawingHistory({ 
+    fabricCanvasRef: actualCanvasRef 
+  });
   
   const handleUndo = useCallback(() => {
     undo();
@@ -28,7 +33,9 @@ export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = 
     
     const canvas = fabricCanvasRef.current;
     canvas.clear();
-    canvas.backgroundColor = '#ffffff';
+    if ('backgroundColor' in canvas) {
+      (canvas as any).backgroundColor = '#ffffff';
+    }
     canvas.renderAll();
     
     // Save the empty state to history
@@ -43,7 +50,7 @@ export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = 
     try {
       const canvas = fabricCanvasRef.current;
       // Convert canvas to JSON
-      const json = JSON.stringify(canvas.toJSON());
+      const json = JSON.stringify((canvas as any).toJSON ? (canvas as any).toJSON() : {});
       
       // Here you would typically save to a backend or localStorage
       localStorage.setItem('savedDrawing', json);
@@ -60,6 +67,6 @@ export const useDrawingActions = ({ fabricCanvasRef }: UseDrawingActionsProps = 
     handleRedo,
     handleClear,
     handleSave,
-    fabricCanvasRef
+    fabricCanvasRef: actualCanvasRef
   };
 };

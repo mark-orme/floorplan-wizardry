@@ -1,111 +1,85 @@
-
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { toast } from 'sonner';
-import { CanvasAction } from '@/types/canvas/canvasTypes';
+import { Canvas } from 'fabric';
 
-// Local action type definitions
-interface AddFloorPlanAction extends CanvasAction {
-  type: 'ADD_FLOOR_PLAN';
+// Define base action type
+interface CanvasAction {
+  type: string;
+  payload: any;
+}
+
+// Define specific action types
+interface AddShapeAction {
+  type: 'ADD_SHAPE';
   payload: {
-    floorPlan: any;
+    shape: 'rect' | 'circle' | 'line';
+    props: Record<string, any>;
   };
 }
 
-interface UpdateFloorPlanAction extends CanvasAction {
-  type: 'UPDATE_FLOOR_PLAN';
+interface AddFloorPlanAction {
+  type: 'ADD_FLOORPLAN';
   payload: {
-    id: string;
-    changes: any;
+    json: string;
+    options?: Record<string, any>;
   };
 }
 
-interface DeleteFloorPlanAction extends CanvasAction {
-  type: 'DELETE_FLOOR_PLAN';
-  payload: {
-    id: string;
-  };
+interface RemoveSelectedAction {
+  type: 'REMOVE_SELECTED';
+  payload?: undefined;
 }
 
-// Helper function to create actions with timestamp
-function createCanvasAction<T extends CanvasAction>(type: T['type'], payload?: any): T {
-  return {
-    type,
-    payload,
-    timestamp: Date.now()
-  } as unknown as T;
+type CanvasActionTypes = 
+  | AddShapeAction
+  | AddFloorPlanAction
+  | RemoveSelectedAction;
+
+export interface UseCanvasActionsProps {
+  canvas: Canvas | null;
+  onStateChange?: () => void;
 }
 
-export const useCanvasActions = (canvas: FabricCanvas | null) => {
-  const addFloorPlan = useCallback((floorPlan: any) => {
-    if (!canvas) {
-      console.error('Canvas not available');
-      return;
+export const useCanvasActions = ({ 
+  canvas, 
+  onStateChange 
+}: UseCanvasActionsProps) => {
+  // Dispatch function to handle canvas actions
+  const dispatch = useCallback((action: CanvasActionTypes) => {
+    if (!canvas) return;
+    
+    switch (action.type) {
+      case 'ADD_SHAPE': {
+        // Handle adding shape
+        break;
+      }
+      case 'ADD_FLOORPLAN': {
+        // Handle adding floorplan
+        break;
+      }
+      case 'REMOVE_SELECTED': {
+        // Handle removing selected objects
+        const selectedObjects = canvas.getActiveObjects();
+        if (selectedObjects.length > 0) {
+          // Remove all selected objects
+          canvas.discardActiveObject();
+          selectedObjects.forEach(obj => {
+            canvas.remove(obj);
+          });
+          canvas.requestRenderAll();
+        }
+        break;
+      }
+      default:
+        // Handle unknown action
+        break;
     }
     
-    try {
-      // Create action
-      const action = createCanvasAction<AddFloorPlanAction>('ADD_FLOOR_PLAN', { floorPlan });
-      
-      // Process action
-      console.log('Adding floor plan', action);
-      toast.success('Floor plan added');
-      
-      return action;
-    } catch (error) {
-      console.error('Error adding floor plan', error);
-      toast.error('Failed to add floor plan');
-      return null;
+    if (onStateChange) {
+      onStateChange();
     }
-  }, [canvas]);
-  
-  const updateFloorPlan = useCallback((id: string, changes: any) => {
-    if (!canvas) {
-      console.error('Canvas not available');
-      return;
-    }
-    
-    try {
-      // Create action
-      const action = createCanvasAction<UpdateFloorPlanAction>('UPDATE_FLOOR_PLAN', { id, changes });
-      
-      // Process action
-      console.log('Updating floor plan', action);
-      toast.success('Floor plan updated');
-      
-      return action;
-    } catch (error) {
-      console.error('Error updating floor plan', error);
-      toast.error('Failed to update floor plan');
-      return null;
-    }
-  }, [canvas]);
-  
-  const deleteFloorPlan = useCallback((id: string) => {
-    if (!canvas) {
-      console.error('Canvas not available');
-      return;
-    }
-    
-    try {
-      // Create action
-      const action = createCanvasAction<DeleteFloorPlanAction>('DELETE_FLOOR_PLAN', { id });
-      
-      // Process action
-      console.log('Deleting floor plan', action);
-      toast.success('Floor plan deleted');
-      
-      return action;
-    } catch (error) {
-      console.error('Error deleting floor plan', error);
-      toast.error('Failed to delete floor plan');
-      return null;
-    }
-  }, [canvas]);
+  }, [canvas, onStateChange]);
   
   return {
-    addFloorPlan,
-    updateFloorPlan,
-    deleteFloorPlan
+    dispatch
   };
 };

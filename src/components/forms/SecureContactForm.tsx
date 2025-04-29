@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { z } from '@/utils/zod-mock';
 import { validateField } from '@/utils/form-validation';
@@ -23,9 +24,9 @@ const SecureContactForm: React.FC<SecureContactFormProps> = ({ onSubmit }) => {
   
   const validate = () => {
     const schema = {
-      name: validateField(new z.ZodType<string>().min(2), formData.name),
-      email: validateField(new z.ZodType<string>().email(), formData.email),
-      message: validateField(new z.ZodType<string>().min(10), formData.message)
+      name: validateField(z.string().min(2), formData.name),
+      email: validateField(z.string().email(), formData.email),
+      message: validateField(z.string().min(10), formData.message)
     };
     
     const newErrors: Record<string, string> = {};

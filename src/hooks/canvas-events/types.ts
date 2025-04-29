@@ -1,5 +1,6 @@
 
 import { Object as FabricObject } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
 /**
  * Enhanced fabric object that supports direct property editing
@@ -48,17 +49,30 @@ export interface BaseEventProps {
 }
 
 export interface UseKeyboardEventsProps extends BaseEventProps {
+  handleUndo?: () => void;
+  handleRedo?: () => void;
+  deleteSelectedObjects?: () => void;
+  handleEscape?: () => void;
+  handleDelete?: () => void;
   onKeyDown?: (e: KeyboardEvent) => void;
   onKeyUp?: (e: KeyboardEvent) => void;
 }
 
 export interface UseMouseEventsProps extends BaseEventProps {
+  tool?: DrawingMode;
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
   onMouseDown?: CanvasEventHandler;
   onMouseMove?: CanvasEventHandler;
   onMouseUp?: CanvasEventHandler;
 }
 
 export interface UsePathEventsProps extends BaseEventProps {
+  tool?: DrawingMode;
+  saveCurrentState?: () => void;
+  processCreatedPath?: (path: any) => void;
+  handleMouseUp?: () => void;
   onPathCreated?: (path: any) => void;
   onPathCancelled?: () => void;
 }
@@ -66,6 +80,7 @@ export interface UsePathEventsProps extends BaseEventProps {
 export interface EventHandlerResult {
   register: () => void;
   unregister: () => void;
+  cleanup?: () => void;
 }
 
 export interface DrawingPathState {
@@ -74,22 +89,35 @@ export interface DrawingPathState {
 }
 
 export interface UseObjectEventsProps extends BaseEventProps {
+  tool?: DrawingMode;
+  saveCurrentState?: () => void;
+  lineColor?: string;
+  lineThickness?: number;
   onObjectAdded?: (e: any) => void;
   onObjectRemoved?: (e: any) => void;
   onObjectModified?: (e: any) => void;
 }
 
 export interface UseBrushSettingsProps extends BaseEventProps {
+  tool?: DrawingMode;
+  lineColor?: string;
+  lineThickness?: number;
+  usePressure?: boolean;
   brushColor?: string;
   brushWidth?: number;
 }
 
 export interface UseCanvasHandlersProps extends BaseEventProps {
-  handlers: Partial<CanvasEventHandlerMap>;
+  tool?: DrawingMode;
+  eventTypes?: string[];
+  handlers?: Partial<CanvasEventHandlerMap>;
 }
 
 export interface UseZoomTrackingProps extends BaseEventProps {
-  onChange?: (zoom: number) => void;
+  initialZoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  updateZoomLevel?: () => void;
 }
 
 export interface UseZoomTrackingResult {
@@ -98,6 +126,7 @@ export interface UseZoomTrackingResult {
   zoomOut: () => void;
   resetZoom: () => void;
   setZoom: (zoom: number) => void;
+  currentZoom?: number;
 }
 
 export enum ZoomDirection {

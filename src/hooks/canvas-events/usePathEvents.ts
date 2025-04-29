@@ -28,7 +28,9 @@ export const usePathEvents = ({
     if (!fabricCanvasRef.current) return;
     
     // Save current state before making changes
-    saveCurrentState();
+    if (saveCurrentState) {
+      saveCurrentState();
+    }
     
     const path = e.path as FabricObject;
     
@@ -63,22 +65,14 @@ export const usePathEvents = ({
     fabricCanvasRef.current.off('path:created', handlePathCreated);
   }, [fabricCanvasRef, handlePathCreated]);
   
-  /**
-   * Clean up resources
-   */
-  const cleanup = useCallback(() => {
-    unregister();
-  }, [unregister]);
-  
   // Register path event handlers when component mounts
   useEffect(() => {
     register();
-    return cleanup;
-  }, [register, cleanup]);
+    return () => unregister();
+  }, [register, unregister]);
   
   return {
     register,
-    unregister,
-    cleanup
+    unregister
   };
 };
