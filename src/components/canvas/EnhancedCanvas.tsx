@@ -1,6 +1,5 @@
-
 import React, { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import * as fabric from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
@@ -35,16 +34,11 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     if (!canvasRef.current) return;
 
     try {
-      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff'
       }) as unknown as ExtendedFabricCanvas;
-
-      // Initialize explicitly to satisfy the type constraint
-      if (!fabricCanvas.initialize) {
-        fabricCanvas.initialize = () => {};
-      }
 
       canvasInstanceRef.current = fabricCanvas;
       setIsLoading(false);
@@ -66,18 +60,6 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       }
 
       return () => {
-        if (onObjectAdded) {
-          fabricCanvas.off('object:added', onObjectAdded);
-        }
-
-        if (onObjectModified) {
-          fabricCanvas.off('object:modified', onObjectModified);
-        }
-
-        if (onObjectRemoved) {
-          fabricCanvas.off('object:removed', onObjectRemoved);
-        }
-
         fabricCanvas.dispose();
       };
     } catch (error) {

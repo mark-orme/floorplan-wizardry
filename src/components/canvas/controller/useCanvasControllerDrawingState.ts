@@ -4,13 +4,14 @@
  * @module useCanvasControllerDrawingState
  */
 import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
+import { Object as FabricObject } from "fabric";
 import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
-import { DrawingTool } from "@/types/canvasStateTypes";
-import { FloorPlan } from "@/types/FloorPlan";
+import { DrawingTool } from "@/types/floorPlanTypes";
+import { FloorPlan } from "@/types/floorPlanTypes";
 import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
 import { asDrawingTool } from "@/utils/drawing/drawingToolAdapter";
 import { DrawingMode } from "@/constants/drawingModes";
+import { ExtendedFabricCanvas } from "@/types/canvas-types";
 
 /**
  * Props for useCanvasControllerDrawingState hook
@@ -18,90 +19,106 @@ import { DrawingMode } from "@/constants/drawingModes";
  */
 interface UseCanvasControllerDrawingStateProps {
   /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Reference to history state for undo/redo */
-  historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
-  /** Current active drawing tool */
-  tool: DrawingMode;
-  /** Current floor index */
-  currentFloor: number;
-  /** Function to update floor plans */
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  /** Function to update GIA */
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  /** Current line thickness */
-  lineThickness: number;
-  /** Current line color */
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  
+  /** Current drawing tool */
+  tool: DrawingMode | DrawingTool;
+  
+  /** Function to set the current drawing tool */
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode | DrawingTool>>;
+  
+  /** Line color for drawing */
   lineColor: string;
-  /** Function to delete selected objects */
-  deleteSelectedObjects: () => void;
-  /** Function to update drawing state */
-  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState | null>>;
-  /** Function to recalculate GIA */
-  recalculateGIA?: () => void;
+  
+  /** Line thickness for drawing */
+  lineThickness: number;
+  
+  /** Array of floor plans */
+  floorPlans: FloorPlan[];
+  
+  /** Function to set floor plans */
+  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
+  
+  /** Function to save the current state */
+  saveCurrentState?: () => void;
+  
+  /** Function to add objects to the canvas */
+  addObjectsToCanvas?: (objects: FabricObject[]) => void;
 }
 
 /**
- * Return type for the hook
+ * Return type for useCanvasControllerDrawingState hook
+ * @interface UseCanvasControllerDrawingStateReturn
  */
-interface UseCanvasControllerDrawingStateResult {
+export interface UseCanvasControllerDrawingStateReturn {
   /** Current drawing state */
-  drawingState: DrawingState | null;
+  drawingState: DrawingState;
+  
+  /** Function to set the drawing state */
+  setDrawingState: React.Dispatch<React.SetStateAction<DrawingState>>;
+  
+  /** Function to handle mouse down event */
+  handleMouseDown: (event: any) => void;
+  
+  /** Function to handle mouse move event */
+  handleMouseMove: (event: any) => void;
+  
+  /** Function to handle mouse up event */
+  handleMouseUp: (event: any) => void;
+  
+  /** Function to start drawing */
+  startDrawing: (point: { x: number; y: number }) => void;
+  
+  /** Function to continue drawing */
+  continueDrawing: (point: { x: number; y: number }) => void;
+  
+  /** Function to end drawing */
+  endDrawing: () => void;
 }
 
 /**
- * Hook that handles drawing state in the canvas controller
- * @param {UseCanvasControllerDrawingStateProps} props - Hook properties
- * @returns {UseCanvasControllerDrawingStateResult} Drawing state
+ * Hook for managing drawing state in the canvas controller
+ * @param props - Hook props
+ * @returns Drawing state and methods
  */
-export const useCanvasControllerDrawingState = (
-  props: UseCanvasControllerDrawingStateProps
-): UseCanvasControllerDrawingStateResult => {
+export const useCanvasControllerDrawingState = ({
+  fabricCanvasRef,
+  tool,
+  setTool,
+  lineColor,
+  lineThickness,
+  floorPlans,
+  setFloorPlans,
+  saveCurrentState,
+  addObjectsToCanvas
+}: UseCanvasControllerDrawingStateProps): UseCanvasControllerDrawingStateReturn => {
+  // Use canvas drawing hook for shared drawing functionality
   const {
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    lineThickness,
-    lineColor,
-    deleteSelectedObjects,
+    drawingState,
     setDrawingState,
-    recalculateGIA
-  } = props;
-  
-  // Use the canvas drawing hook - convert DrawingMode to DrawingTool with the adapter
-  const toolAsDrawingTool = asDrawingTool(tool);
-  
-  // Use a type assertion since we know the types are compatible
-  const { drawingState } = useCanvasDrawing({
-    fabricCanvasRef,
-    gridLayerRef,
-    historyRef,
-    tool: toolAsDrawingTool,
-    currentFloor,
-    setFloorPlans,
-    setGia,
-    lineThickness,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    startDrawing,
+    continueDrawing,
+    endDrawing
+  } = useCanvasDrawing({
+    canvas: fabricCanvasRef.current,
+    tool: tool as DrawingTool,
     lineColor,
-    deleteSelectedObjects,
-    recalculateGIA
+    lineThickness,
+    onDrawingEnd: saveCurrentState
   });
-  
-  // Update the controller drawing state whenever it changes
-  useEffect(() => {
-    if (drawingState) {
-      setDrawingState(drawingState as unknown as DrawingState);
-    } else {
-      // Create a properly populated default state
-      const defaultState = createDefaultDrawingState();
-      setDrawingState(defaultState);
-    }
-  }, [drawingState, setDrawingState]);
-  
-  return { drawingState: drawingState as unknown as DrawingState };
+
+  // Return all methods and state
+  return {
+    drawingState,
+    setDrawingState,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    startDrawing,
+    continueDrawing,
+    endDrawing
+  };
 };

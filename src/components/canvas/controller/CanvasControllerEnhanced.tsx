@@ -1,16 +1,14 @@
-
 import React, { useRef, useState, useEffect } from 'react';
-import { fabric } from 'fabric';
-import type { Canvas as FabricCanvas } from 'fabric';
+import * as fabric from 'fabric';
+import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import { toast } from 'sonner';
 import { DrawingMode } from '@/constants/drawingModes';
 import { useGrid } from '@/hooks/useGrid';
-import type { FloorPlan } from '@/types/FloorPlan';
-import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
+import type { FloorPlan } from '@/types/floorPlanTypes';
 import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 
 interface CanvasControllerEnhancedProps {
-  onCanvasReady?: (canvas: FabricCanvas | ExtendedFabricCanvas) => void;
+  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
   onError?: (error: Error) => void;
   initialTool?: DrawingMode;
   width?: number;
@@ -28,7 +26,7 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
 }) => {
   // Canvas refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<FabricCanvas | ExtendedFabricCanvas | null>(null);
+  const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
   
   // State
   const [tool, setTool] = useState<DrawingMode>(initialTool);
@@ -69,25 +67,18 @@ export const CanvasControllerEnhanced: React.FC<CanvasControllerEnhancedProps> =
       // Cast to extended canvas for type safety
       const extendedCanvas = asExtendedCanvas(canvas);
       
-      // Add necessary properties and methods
-      if (extendedCanvas && !extendedCanvas.getActiveObject) {
-        extendedCanvas.getActiveObject = () => {
-          const activeObjects = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
-          return activeObjects.length > 0 ? activeObjects[0] : null;
-        };
-      }
-      
-      // Store reference
-      fabricCanvasRef.current = extendedCanvas;
-      
-      // Create grid
-      if (createGrid && extendedCanvas) {
-        createGrid(extendedCanvas);
-      }
-      
-      // Notify parent
-      if (onCanvasReady && extendedCanvas) {
-        onCanvasReady(extendedCanvas);
+      if (extendedCanvas) {
+        fabricCanvasRef.current = extendedCanvas;
+        
+        // Create grid
+        if (createGrid) {
+          createGrid(extendedCanvas);
+        }
+        
+        // Notify parent
+        if (onCanvasReady) {
+          onCanvasReady(extendedCanvas);
+        }
       }
       
       // Clean up

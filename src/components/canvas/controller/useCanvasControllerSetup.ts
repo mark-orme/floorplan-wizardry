@@ -1,172 +1,136 @@
 
 /**
- * Hook for canvas initialization and setup
+ * Hook for setting up canvas controller
  * @module useCanvasControllerSetup
  */
-import { useRef, useEffect, useState, useCallback } from "react";
-import { fabric } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useGrid } from "@/hooks/useGrid";
-import { useCanvasInteraction } from "@/hooks/useCanvasInteraction";
-import { useDrawingHistory } from "@/hooks/useDrawingHistory";
-import { asExtendedCanvas, ExtendedFabricCanvas } from "@/types/canvas-types";
+import { useRef, useEffect } from 'react';
+import * as fabric from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { FloorPlan } from '@/types/floorPlanTypes';
+import { DrawingMode } from '@/constants/drawingModes';
+import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 
+/**
+ * Props for useCanvasControllerSetup hook
+ * @interface UseCanvasControllerSetupProps
+ */
 interface UseCanvasControllerSetupProps {
+  /** Canvas reference */
   canvasRef: React.RefObject<HTMLCanvasElement>;
-  initialTool?: DrawingMode;
-  initialLineThickness?: number;
-  initialLineColor?: string;
-  initialZoomLevel?: number;
-  initialFloorPlans?: any[];
+  
+  /** Width of the canvas */
+  width: number;
+  
+  /** Height of the canvas */
+  height: number;
+  
+  /** Current drawing tool */
+  tool: DrawingMode;
+  
+  /** Line color for drawing */
+  lineColor: string;
+  
+  /** Line thickness for drawing */
+  lineThickness: number;
+  
+  /** Current floor plans */
+  floorPlans: FloorPlan[];
+  
+  /** Function to set the canvas */
+  setCanvas: React.Dispatch<React.SetStateAction<ExtendedFabricCanvas | null>>;
+  
+  /** Function to handle canvas ready state */
+  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
+  
+  /** Function to handle canvas error */
+  onError?: (error: Error) => void;
+  
+  /** Flag to show grid */
+  showGrid?: boolean;
 }
 
-export const useCanvasControllerSetup = (props: UseCanvasControllerSetupProps) => {
-  const {
-    canvasRef,
-    initialTool = DrawingMode.SELECT,
-    initialLineThickness = 2,
-    initialLineColor = "#000000",
-    initialZoomLevel = 1
-  } = props;
-  
-  // Initialize state variables
-  const [canvas, setCanvas] = useState<ExtendedFabricCanvas | null>(null);
-  const [tool, setTool] = useState<DrawingMode>(initialTool);
-  const [zoomLevel, setZoomLevel] = useState<number>(initialZoomLevel);
-  const [lineThickness, setLineThickness] = useState<number>(initialLineThickness);
-  const [lineColor, setLineColor] = useState<string>(initialLineColor);
-  const [isGridVisible, setIsGridVisible] = useState(true);
-  const [gia, setGia] = useState(0);
-  const [currentFloor, setCurrentFloor] = useState(0);
-  
-  // Create references
+/**
+ * Hook for setting up canvas controller
+ * @param props - Hook props
+ * @returns Canvas references and utility methods
+ */
+export const useCanvasControllerSetup = ({
+  canvasRef,
+  width,
+  height,
+  tool,
+  lineColor,
+  lineThickness,
+  floorPlans,
+  setCanvas,
+  onCanvasReady,
+  onError,
+  showGrid = true
+}: UseCanvasControllerSetupProps) => {
+  // Create a ref for the fabric canvas
   const fabricCanvasRef = useRef<ExtendedFabricCanvas | null>(null);
+  
+  // Create a ref for the grid layer
   const gridLayerRef = useRef<fabric.Object[]>([]);
   
-  // Initialize drawing history
-  const {
-    saveState,
-    undo,
-    redo,
-    canUndo,
-    canRedo
-  } = useDrawingHistory({
-    fabricCanvasRef
-  });
-  
-  // Initialize grid hook
-  const {
-    gridSize,
-    createGrid,
-    toggleGridVisibility,
-    snapToGrid
-  } = useGrid({ 
-    fabricCanvasRef, 
-    gridLayerRef,
-    initialGridSize: 50,
-    initialVisible: true 
-  });
-  
-  // Initialize canvas interaction hook
-  const {
-    isInteracting,
-    startInteraction,
-    endInteraction,
-    deleteSelectedObjects,
-    enablePointSelection,
-    setupSelectionMode
-  } = useCanvasInteraction({
-    fabricCanvasRef,
-    tool,
-    saveCurrentState: saveState
-  });
-  
-  /**
-   * Function to handle canvas ready event
-   * Initializes the Fabric canvas and sets up event listeners
-   * 
-   * @param {fabric.Canvas} fabricCanvas - Fabric canvas instance
-   */
-  const handleCanvasReady = useCallback((fabricCanvas: fabric.Canvas) => {
-    // Cast to ExtendedFabricCanvas and set fabric canvas reference
-    const extendedCanvas = asExtendedCanvas(fabricCanvas);
-    fabricCanvasRef.current = extendedCanvas;
-    
-    // Set canvas state
-    setCanvas(extendedCanvas);
-    
-    // Set up selection mode
-    setupSelectionMode();
-    
-    // Create initial grid
-    const gridObjects = createGrid(extendedCanvas);
-    gridLayerRef.current = gridObjects as fabric.Object[];
-    
-    // Save initial canvas state
-    saveState();
-  }, [createGrid, saveState, setupSelectionMode]);
-  
-  /**
-   * Function to handle canvas init error
-   * Logs the error message
-   * 
-   * @param {string} message - Error message
-   */
-  const handleCanvasInitError = useCallback((message: string) => {
-    console.error("Canvas initialization error:", message);
-  }, []);
-  
-  /**
-   * Function to handle canvas retry
-   * Logs a message indicating canvas retry
-   */
-  const handleCanvasRetry = useCallback(() => {
-    console.log("Retrying canvas initialization...");
-  }, []);
-  
-  // Update drawing mode when tool changes
+  // Initialize canvas
   useEffect(() => {
-    setupSelectionMode();
-  }, [tool, setupSelectionMode]);
+    if (!canvasRef.current) return;
+    
+    try {
+      // Create canvas
+      const canvas = new fabric.Canvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff',
+        selection: true,
+        renderOnAddRemove: true
+      });
+      
+      // Cast to extended canvas for type safety
+      const extendedCanvas = asExtendedCanvas(canvas);
+      
+      if (extendedCanvas) {
+        fabricCanvasRef.current = extendedCanvas;
+        setCanvas(extendedCanvas);
+        
+        // Call onCanvasReady callback
+        if (onCanvasReady) {
+          onCanvasReady(extendedCanvas);
+        }
+      }
+      
+      // Clean up
+      return () => {
+        canvas.dispose();
+        fabricCanvasRef.current = null;
+        setCanvas(null);
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+    }
+  }, [canvasRef, width, height, setCanvas, onCanvasReady, onError]);
   
-  // Return all the functions and references
+  // Return canvas refs and utility methods
   return {
-    canvasRef,
     fabricCanvasRef,
-    fabricRef: fabricCanvasRef,
-    canvas,
-    tool,
-    setTool,
-    zoomLevel,
-    setZoomLevel,
-    lineThickness,
-    setLineThickness,
-    lineColor,
-    setLineColor,
-    isGridVisible,
-    setIsGridVisible,
-    gridSize,
-    createGrid,
-    toggleGridVisibility,
-    snapToGrid,
-    isInteracting,
-    startInteraction,
-    endInteraction,
-    deleteSelectedObjects,
-    enablePointSelection,
-    setupSelectionMode,
-    handleUndo: undo,
-    handleRedo: redo,
-    canUndo,
-    canRedo,
-    saveCurrentState: saveState,
-    handleCanvasReady,
-    handleCanvasInitError,
-    handleCanvasRetry,
-    gia,
-    setGia,
-    currentFloor,
-    setCurrentFloor,
-    gridLayerRef
+    gridLayerRef,
+    clearCanvas: () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      canvas.clear();
+      canvas.renderAll();
+    },
+    resetView: () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      
+      canvas.setViewportTransform?.([ 1, 0, 0, 1, 0, 0 ]);
+      canvas.renderAll();
+    }
   };
 };

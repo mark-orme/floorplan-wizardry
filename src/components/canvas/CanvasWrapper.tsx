@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
-import type { Canvas as FabricCanvas } from 'fabric';
+import * as fabric from 'fabric';
 import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 import { toast } from 'sonner';
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 export const CanvasWrapper: React.FC = () => {
   const { canvasRef, setCanvas } = useCanvas();
   const [isLoading, setIsLoading] = useState(true);
-  const [canvas, setLocalCanvas] = useState<FabricCanvas | ExtendedFabricCanvas | null>(null);
+  const [canvas, setLocalCanvas] = useState<fabric.Canvas | ExtendedFabricCanvas | null>(null);
 
   // Initialize the canvas
   useEffect(() => {
@@ -21,7 +21,7 @@ export const CanvasWrapper: React.FC = () => {
 
     try {
       // Use Canvas constructor from fabric
-      const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: '#ffffff',

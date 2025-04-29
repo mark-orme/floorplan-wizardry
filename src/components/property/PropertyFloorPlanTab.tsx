@@ -1,60 +1,67 @@
 
 import React from 'react';
+import { FloorPlanCanvas } from './FloorPlanCanvas';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AiOutlineEdit } from 'react-icons/ai';
-import { PropertyStatus } from '@/types/canvas-types';
+import { PropertyStatus } from '@/types/floorPlanTypes';
 
 interface PropertyFloorPlanTabProps {
-  canEdit?: boolean;
-  isApprovedUser?: boolean;
-  propertyStatus?: PropertyStatus;
-  onMeasurementGuideOpen?: () => void;
+  floorPlans: Array<{
+    id: string;
+    name: string;
+    width?: number;
+    height?: number;
+  }>;
+  propertyStatus: PropertyStatus;
 }
 
 export const PropertyFloorPlanTab: React.FC<PropertyFloorPlanTabProps> = ({
-  canEdit = false,
-  isApprovedUser = false,
-  propertyStatus,
-  onMeasurementGuideOpen
+  floorPlans,
+  propertyStatus
 }) => {
+  const [selectedPlan, setSelectedPlan] = React.useState(floorPlans[0]?.id);
+
+  const handleCanvasError = (error: Error) => {
+    console.error('Floor plan canvas error:', error);
+  };
+
+  const isUnavailable = propertyStatus === 'sold' || propertyStatus === 'pending';
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Floor Plan Editor</CardTitle>
-        <CardDescription>
-          Create and edit the floor plan for this property
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="min-h-[300px] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">
-            Click the button below to start editing the floor plan
-          </p>
-          <Button 
-            disabled={!canEdit || propertyStatus === PropertyStatus.COMPLETED} 
-            onClick={() => { console.log("Open floor plan editor"); }}
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 mb-4">
+        {floorPlans.map((plan) => (
+          <Button
+            key={plan.id}
+            variant={selectedPlan === plan.id ? 'default' : 'outline'}
+            onClick={() => setSelectedPlan(plan.id)}
           >
-            <AiOutlineEdit className="mr-2 h-4 w-4" />
-            Edit Floor Plan
+            {plan.name}
           </Button>
-          {onMeasurementGuideOpen && (
-            <Button 
-              variant="outline"
-              onClick={onMeasurementGuideOpen}
-              className="ml-2"
-            >
-              Measurement Guide
-            </Button>
+        ))}
+      </div>
+      
+      {selectedPlan ? (
+        <div className="relative">
+          <FloorPlanCanvas onCanvasError={handleCanvasError} />
+          
+          {isUnavailable && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white p-4 rounded shadow-lg text-center">
+                <p className="text-lg font-bold">
+                  {propertyStatus === 'sold' ? 'Property Sold' : 'Sale Pending'}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Floor plans are not available for viewing
+                </p>
+              </div>
+            </div>
           )}
         </div>
-      </CardContent>
-      <CardFooter>
-        <p className="text-sm text-muted-foreground">
-          {!canEdit && "You don't have permission to edit the floor plan"}
-          {canEdit && propertyStatus === PropertyStatus.COMPLETED && "This property is marked as completed and cannot be edited"}
-        </p>
-      </CardFooter>
-    </Card>
+      ) : (
+        <div className="p-8 text-center border border-dashed rounded-md">
+          <p className="text-gray-500">No floor plans available</p>
+        </div>
+      )}
+    </div>
   );
 };

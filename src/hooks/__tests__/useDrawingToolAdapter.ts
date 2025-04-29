@@ -1,7 +1,7 @@
 
 import { vi, describe, it, expect } from 'vitest';
 import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingTool } from '@/types/canvasStateTypes';
+import { DrawingTool } from '@/types/floorPlanTypes';
 import { asDrawingMode, asDrawingTool } from '@/utils/drawing/drawingToolAdapter';
 
 describe('useDrawingToolAdapter', () => {
@@ -10,8 +10,7 @@ describe('useDrawingToolAdapter', () => {
     expect(asDrawingTool(DrawingMode.SELECT)).toBe('select');
     expect(asDrawingTool(DrawingMode.PAN)).toBe('pan');
     // Add the existing DrawingMode to be compatible
-    const lineAsMode = DrawingMode.LINE as DrawingMode;
-    expect(asDrawingTool(lineAsMode)).toBe('line');
+    expect(asDrawingTool(DrawingMode.LINE)).toBe('line');
   });
 
   it('should convert DrawingTool to DrawingMode', () => {

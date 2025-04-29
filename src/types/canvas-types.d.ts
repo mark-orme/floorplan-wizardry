@@ -33,6 +33,8 @@ export interface FloorPlanMetadata {
   width?: number;
   height?: number;
   index?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Add PropertyStatus for imports that expect it
@@ -46,13 +48,14 @@ export enum PropertyStatus {
 
 // Add ExtendedFabricCanvas export
 export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl?: HTMLDivElement;
-  initialize?: Function;
+  wrapperEl: HTMLDivElement;
+  initialize: (element: string | HTMLCanvasElement, options?: any) => Canvas;
   skipTargetFind?: boolean;
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean;
-  renderOnAddRemove?: boolean;
+  renderOnAddRemove: boolean;
   viewportTransform?: number[];
   getActiveObject?: () => any;
   forEachObject?: (callback: (obj: FabricObject) => void) => void;
+  zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
 }

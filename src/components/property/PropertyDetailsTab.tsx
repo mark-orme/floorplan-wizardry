@@ -1,138 +1,83 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Icons } from '@/components/icons';
-import { PropertyStatus } from '@/types/canvas-types';
-import { useNavigate } from 'react-router-dom';
-
-// Define UserRole type
-export type UserRole = 'admin' | 'manager' | 'user' | 'guest' | 'photographer' | 'processing_manager';
-
-// Export as a constant for usage as values
-export const UserRole = {
-  ADMIN: 'admin' as UserRole,
-  MANAGER: 'manager' as UserRole,
-  USER: 'user' as UserRole,
-  GUEST: 'guest' as UserRole,
-  PHOTOGRAPHER: 'photographer' as UserRole,
-  PROCESSING_MANAGER: 'processing_manager' as UserRole
-};
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { PropertyStatus } from '@/types/floorPlanTypes';
 
 interface PropertyDetailsTabProps {
-  property: {
-    order_id: string;
-    client_name: string;
-    address: string;
-    branch_name?: string;
-    created_at: string;
-    updated_at: string;
-    notes?: string;
-    status: PropertyStatus;
-  };
-  userRole: UserRole;
-  propertyId?: string;
-  onStatusChange: (status: PropertyStatus) => Promise<void>;
+  name: string;
+  address: string;
+  price: string;
+  bedrooms: number;
+  bathrooms: number;
+  squareFootage: number;
+  status: PropertyStatus;
+  description: string;
 }
 
-export const PropertyDetailsTab = ({ 
-  property, 
-  userRole, 
-  propertyId, 
-  onStatusChange 
-}: PropertyDetailsTabProps) => {
-  const navigate = useNavigate();
-  
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Property Information</CardTitle>
-        <CardDescription>
-          Details about this property and order
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Order ID</h3>
-            <p className="text-lg">{property.order_id}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
-            <p className="text-lg">{property.client_name}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-            <p className="text-lg">{property.address}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Branch</h3>
-            <p className="text-lg">{property.branch_name || 'N/A'}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Created</h3>
-            <p className="text-lg">{new Date(property.created_at).toLocaleString()}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Last Updated</h3>
-            <p className="text-lg">{new Date(property.updated_at).toLocaleString()}</p>
-          </div>
-        </div>
+export const PropertyDetailsTab: React.FC<PropertyDetailsTabProps> = ({
+  name,
+  address,
+  price,
+  bedrooms,
+  bathrooms,
+  squareFootage,
+  status,
+  description
+}) => {
+  // Determine badge color based on status
+  const getBadgeColor = (status: PropertyStatus): string => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800';
+      case 'sold':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'reserved':
+        return 'bg-blue-100 text-blue-800';
+      case 'under_construction':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-        {property.notes && (
-          <>
-            <Separator className="my-4" />
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Notes</h3>
-              <p className="text-base">{property.notes}</p>
-            </div>
-          </>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <div>
-          {userRole === UserRole.MANAGER && propertyId && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate(`/properties/${propertyId}/edit`)}
-            >
-              <Icons.pencil className="mr-2 h-4 w-4" />
-              Edit Details
-            </Button>
-          )}
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">{name}</h2>
+        <p className="text-gray-500">{address}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <Badge variant="outline" className={getBadgeColor(status)}>
+            {status === 'under_construction' ? 'Under Construction' : status.charAt(0).toUpperCase() + status.slice(1)}
+          </Badge>
+          <span className="font-bold text-lg">{price}</span>
         </div>
-        <div className="flex gap-2">
-          {userRole === UserRole.PHOTOGRAPHER && property.status === PropertyStatus.DRAFT && (
-            <Button 
-              onClick={() => onStatusChange(PropertyStatus.PENDING_REVIEW)}
-              size="sm"
-            >
-              <Icons.send className="mr-2 h-4 w-4" />
-              Submit for Review
-            </Button>
-          )}
-          {userRole === UserRole.PROCESSING_MANAGER && property.status === PropertyStatus.PENDING_REVIEW && (
-            <Button 
-              onClick={() => onStatusChange(PropertyStatus.COMPLETED)}
-              variant="default"
-              size="sm"
-            >
-              <Icons.checkCircle className="mr-2 h-4 w-4" />
-              Mark as Completed
-            </Button>
-          )}
-          {userRole === UserRole.MANAGER && property.status !== PropertyStatus.DRAFT && (
-            <Button 
-              onClick={() => onStatusChange(PropertyStatus.DRAFT)}
-              variant="outline"
-              size="sm"
-            >
-              Return to Draft
-            </Button>
-          )}
-        </div>
-      </CardFooter>
-    </Card>
+      </div>
+      
+      <Card>
+        <CardContent className="grid grid-cols-3 gap-4 py-4">
+          <div>
+            <Label className="text-gray-500">Bedrooms</Label>
+            <p className="text-lg font-medium">{bedrooms}</p>
+          </div>
+          <div>
+            <Label className="text-gray-500">Bathrooms</Label>
+            <p className="text-lg font-medium">{bathrooms}</p>
+          </div>
+          <div>
+            <Label className="text-gray-500">Square Footage</Label>
+            <p className="text-lg font-medium">{squareFootage} sq ft</p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Description</h3>
+        <p className="text-gray-700 whitespace-pre-line">{description}</p>
+      </div>
+    </div>
   );
 };
