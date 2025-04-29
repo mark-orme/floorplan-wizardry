@@ -15,6 +15,7 @@ declare module 'fabric' {
     zoomToPoint?(point: { x: number, y: number }, value: number): void;
     enableRetinaScaling?: boolean;
     toObject?(): any;
+    fire?(eventName: string, options?: any): Canvas; 
   }
 
   interface Object {
@@ -56,5 +57,17 @@ declare module 'fabric' {
   // Ensure Line is properly exported and extends Object
   export class Line extends Object {
     constructor(points: number[], options?: any);
+    x1?: number;
+    y1?: number;
+    x2?: number;
+    y2?: number;
+    stroke?: string;
+    strokeWidth?: number;
+    data?: any;
+  }
+  
+  export class Text extends Object {
+    constructor(text: string, options?: any);
+    text: string;
   }
 }

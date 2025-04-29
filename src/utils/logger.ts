@@ -1,26 +1,23 @@
 
 /**
- * Simple logger utility
+ * Logger utility for application-wide logging
  */
-const logger = {
-  info: (message: string, ...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.info(`[INFO] ${message}`, ...args);
-    }
+const toolsLogger = {
+  info: (message: string, data?: any) => {
+    console.info(`[Tools]: ${message}`, data || '');
   },
-  warn: (message: string, ...args: any[]) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[WARN] ${message}`, ...args);
-    }
+  warn: (message: string, data?: any) => {
+    console.warn(`[Tools]: ${message}`, data || '');
   },
-  error: (message: string, ...args: any[]) => {
-    console.error(`[ERROR] ${message}`, ...args);
+  error: (message: string, data?: any) => {
+    console.error(`[Tools]: ${message}`, data || '');
   },
-  debug: (message: string, ...args: any[]) => {
+  debug: (message: string, data?: any) => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`[DEBUG] ${message}`, ...args);
+      console.debug(`[Tools]: ${message}`, data || '');
     }
   }
 };
 
-export default logger;
+export default toolsLogger;
+export { toolsLogger };

@@ -1,4 +1,3 @@
-
 /**
  * Canvas controller loader hook
  * Handles loading and error states for the canvas controller
@@ -137,7 +136,7 @@ export const useCanvasControllerLoader = ({
   
   const updateDebugInfo = (partialState: Partial<DebugInfoState>) => {
     // Fixed function call syntax
-    setDebugInfo(prev => ({
+    setDebugInfo((prev) => ({
       ...prev,
       canvasReady: true,
       ...partialState

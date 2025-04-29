@@ -1,5 +1,6 @@
+
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Text } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
 import { useSnapToGrid } from '../useSnapToGrid';
 import { useLineCreation } from './useLineCreation';
@@ -15,11 +16,22 @@ export const useLineDrawing = (
   lineThickness: number,
   saveCurrentState: () => void
 ) => {
-  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
+  const { snapPointToGrid } = useSnapToGrid();
   const { createLine, createDistanceTooltip } = useLineCreation();
   const { calculateDistance, calculateAngle, getMeasurements } = useMeasurementCalculation();
   const { finalizeLine, removeLine } = useLineFinalizer(fabricCanvasRef, saveCurrentState);
   
+  // Add the missing snapLineToGrid function
+  const snapLineToGrid = useCallback((
+    start: Point, 
+    end: Point
+  ): { start: Point; end: Point } => {
+    return {
+      start: snapPointToGrid(start),
+      end: snapPointToGrid(end)
+    };
+  }, [snapPointToGrid]);
+
   /**
    * Create a new line on the canvas
    * @param startX - Starting X coordinate
@@ -118,6 +130,7 @@ export const useLineDrawing = (
   
   return {
     snapPointToGrid,
+    snapLineToGrid, // Add the missing function
     createLine: createNewLine,
     updateLine,
     createOrUpdateTooltip,

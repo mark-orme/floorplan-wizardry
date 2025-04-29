@@ -42,4 +42,5 @@ const z = {
   infer: <T>(schema: ZodType<T>) => ({} as T)
 };
 
+export { z };
 export default z;
