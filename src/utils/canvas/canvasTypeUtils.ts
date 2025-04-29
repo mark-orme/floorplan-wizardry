@@ -1,5 +1,5 @@
 
-import { Canvas, Object as FabricObject } from 'fabric';
+import { Canvas, Object as FabricObject, ICanvasOptions } from 'fabric';
 import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 import type { ExtendedFabricObject } from '@/types/canvas-types';
 
@@ -11,8 +11,12 @@ export function asExtendedCanvas(canvas: Canvas | ExtendedFabricCanvas | null): 
   
   // Add required properties if they don't exist
   const extCanvas = canvas as ExtendedFabricCanvas;
+  
+  // Ensure initialize method has the correct signature
   if (!extCanvas.initialize) {
-    extCanvas.initialize = () => {};
+    extCanvas.initialize = (element: string | HTMLCanvasElement, options?: ICanvasOptions): Canvas => {
+      return canvas;
+    };
   }
   
   return extCanvas;

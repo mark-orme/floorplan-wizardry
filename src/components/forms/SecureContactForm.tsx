@@ -1,23 +1,25 @@
 import React from 'react';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
-// Define the form schema using Zod
+/**
+ * Secure contact form schema with validation
+ */
 const secureContactSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  subject: z.string().min(5, { message: "Subject must be at least 5 characters" }),
+  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
   message: z.string().min(10, { message: "Message must be at least 10 characters" }),
-  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms" })
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the terms and conditions"
+  })
 });
 
-// Infer the type from the schema
 type SecureContactFormValues = z.infer<typeof secureContactSchema>;
 
 export const SecureContactForm: React.FC = () => {
@@ -26,7 +28,7 @@ export const SecureContactForm: React.FC = () => {
     defaultValues: {
       name: '',
       email: '',
-      subject: '',
+      phone: '',
       message: '',
       agreeToTerms: false,
     }
@@ -53,9 +55,9 @@ export const SecureContactForm: React.FC = () => {
         </div>
         
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium pb-1">Subject</label>
-          <Input id="subject" {...register('subject')} className={errors.subject ? 'border-red-500' : ''} />
-          {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
+          <label htmlFor="phone" className="block text-sm font-medium pb-1">Phone</label>
+          <Input id="phone" {...register('phone')} className={errors.phone ? 'border-red-500' : ''} />
+          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
         </div>
         
         <div>

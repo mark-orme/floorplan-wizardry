@@ -1,10 +1,9 @@
-
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
-import { Point } from '@/types/core/Point';
-import { MockCanvas, createMockCanvas } from '@/utils/test/createMockCanvas';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mocked } from 'jest-mock';
+import { renderHook } from '@testing-library/react-hooks';
+import { useStraightLineTool } from '../tools/useStraightLineTool';
+import { DrawingMode } from '@/constants/drawingModes';
+import { createMockCanvas } from '@/utils/test/createMockCanvas';
 
 // Create strongly typed mocks
 interface MockEvent {
@@ -83,6 +82,41 @@ describe('useStraightLineTool', () => {
       // The tool should now be in drawing state
       expect(result.current.isDrawing).toBe(true);
       expect(mockCanvas.selection).toBe(false);
+    }
+  });
+  
+  it('should add a line when mouse up event is triggered at a sufficient distance', () => {
+    // Setup
+    const mockedCanvas = createMockCanvas();
+    const mockedAdd = mocked(mockedCanvas.add);
+    const { result } = renderHook(() => 
+      useStraightLineTool({
+        isActive: true,
+        canvas: mockedCanvas as unknown as Canvas,
+        saveCurrentState: saveStateMock
+      })
+    );
+    
+    // Find the event handler that was registered
+    const mouseUpHandler = vi.mocked(mockedCanvas.on).mock.calls.find(
+      call => call[0] === 'mouse:up'
+    )?.[1] as ((e: MockEvent) => void) | undefined;
+    
+    expect(mouseUpHandler).toBeDefined();
+    
+    // Simulate mouse up event
+    if (mouseUpHandler) {
+      const mockEvent: MockEvent = {
+        e: { clientX: 100, clientY: 100, button: 0, shiftKey: false },
+        pointer: { x: 100, y: 100 }
+      };
+      
+      act(() => {
+        mouseUpHandler(mockEvent);
+      });
+      
+      // The tool should now have added a line
+      expect(mockedAdd).toHaveBeenCalled();
     }
   });
 });

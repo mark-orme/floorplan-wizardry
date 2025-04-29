@@ -9,7 +9,7 @@ import { useCanvasDrawing } from "@/hooks/useCanvasDrawing";
 import { DrawingTool } from "@/types/canvasStateTypes";
 import { FloorPlan } from "@/types/FloorPlan";
 import { DrawingState, createDefaultDrawingState } from "@/types/core/DrawingState";
-import { asDrawingTool } from "@/types/core/DrawingToolAdapter";
+import { asDrawingTool } from "@/utils/drawing/drawingToolAdapter";
 import { DrawingMode } from "@/constants/drawingModes";
 
 /**
@@ -24,7 +24,7 @@ interface UseCanvasControllerDrawingStateProps {
   /** Reference to history state for undo/redo */
   historyRef: React.MutableRefObject<{past: FabricObject[][], future: FabricObject[][]}>;
   /** Current active drawing tool */
-  tool: DrawingTool;
+  tool: DrawingMode;
   /** Current floor index */
   currentFloor: number;
   /** Function to update floor plans */
@@ -75,11 +75,14 @@ export const useCanvasControllerDrawingState = (
   } = props;
   
   // Use the canvas drawing hook - convert DrawingMode to DrawingTool with the adapter
+  const toolAsDrawingTool = asDrawingTool(tool);
+  
+  // Use a type assertion since we know the types are compatible
   const { drawingState } = useCanvasDrawing({
     fabricCanvasRef,
     gridLayerRef,
     historyRef,
-    tool: asDrawingTool(tool as unknown as DrawingMode),
+    tool: toolAsDrawingTool,
     currentFloor,
     setFloorPlans,
     setGia,
@@ -92,17 +95,13 @@ export const useCanvasControllerDrawingState = (
   // Update the controller drawing state whenever it changes
   useEffect(() => {
     if (drawingState) {
-      setDrawingState(drawingState as DrawingState);
+      setDrawingState(drawingState as unknown as DrawingState);
     } else {
       // Create a properly populated default state
       const defaultState = createDefaultDrawingState();
-      defaultState.lineColor = lineColor;
-      defaultState.lineThickness = lineThickness;
-      defaultState.tool = tool as unknown as DrawingMode;
-      
       setDrawingState(defaultState);
     }
-  }, [drawingState, setDrawingState, lineColor, lineThickness, tool]);
+  }, [drawingState, setDrawingState]);
   
-  return { drawingState };
+  return { drawingState: drawingState as unknown as DrawingState };
 };

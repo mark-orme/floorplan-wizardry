@@ -1,29 +1,23 @@
 
+import { vi, describe, it, expect } from 'vitest';
 import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingTool } from '@/types/core/DrawingTool';
-import { asDrawingTool } from '@/types/core/DrawingToolAdapter';
+import { DrawingTool } from '@/types/canvasStateTypes';
+import { asDrawingMode, asDrawingTool } from '@/utils/drawing/drawingToolAdapter';
 
-/**
- * Hook to adapt DrawingMode to DrawingTool for test files
- * This handles type compatibility issues between the two types
- */
-export const useDrawingToolAdapter = () => {
-  /**
-   * Convert a DrawingMode to a DrawingTool for type compatibility
-   */
-  const adaptDrawingMode = (mode: DrawingMode): DrawingTool => {
-    return asDrawingTool(mode);
-  };
-  
-  /**
-   * Compare a DrawingTool with a DrawingMode
-   */
-  const compareTools = (tool: DrawingTool, mode: DrawingMode): boolean => {
-    return String(tool) === String(mode);
-  };
-  
-  return {
-    adaptDrawingMode,
-    compareTools
-  };
-};
+describe('useDrawingToolAdapter', () => {
+  it('should convert DrawingMode to DrawingTool', () => {
+    // Test conversions
+    expect(asDrawingTool(DrawingMode.SELECT)).toBe('select');
+    expect(asDrawingTool(DrawingMode.PAN)).toBe('pan');
+    // Add the existing DrawingMode to be compatible
+    const lineAsMode = DrawingMode.LINE as DrawingMode;
+    expect(asDrawingTool(lineAsMode)).toBe('line');
+  });
+
+  it('should convert DrawingTool to DrawingMode', () => {
+    // Test conversions
+    expect(asDrawingMode('select' as DrawingTool)).toBe(DrawingMode.SELECT);
+    expect(asDrawingMode('pan' as DrawingTool)).toBe(DrawingMode.PAN);
+    expect(asDrawingMode('line' as DrawingTool)).toBe(DrawingMode.LINE);
+  });
+});

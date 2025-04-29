@@ -1,7 +1,6 @@
-
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useSyncedFloorPlans } from '../useSyncedFloorPlans';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock API response
 const mockFloorPlans = [
@@ -130,5 +129,54 @@ describe('useSyncedFloorPlans', () => {
     
     expect(result.current.floorPlans.length).toBe(1);
     expect(result.current.floorPlans[0].id).toBe('plan2');
+  });
+  
+  it('should sync floor plans on initialization', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => 
+      useSyncedFloorPlans({ projectId: '123' })
+    );
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.floorPlans).toEqual(mockFloorPlans);
+    expect(result.current.isLoading).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    
+    // Replace jest.runAllTimers with vi.runAllTimers
+    vi.runAllTimers();
+  });
+  
+  it('should not sync floor plans if sync is disabled', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => 
+      useSyncedFloorPlans({ projectId: '123', sync: false })
+    );
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.floorPlans).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(0);
+    
+    // Replace jest.runAllTimers with vi.runAllTimers
+    vi.runAllTimers();
+  });
+  
+  it('should retry syncing when network errors occur', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.reject(new Error('API error'))
+    ) as any;
+    
+    const { result, waitForNextUpdate } = renderHook(() => 
+      useSyncedFloorPlans({ projectId: '123' })
+    );
+    
+    await waitForNextUpdate();
+    
+    expect(result.current.floorPlans).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toEqual('API error');
+    
+    // Replace jest.runAllTimers with vi.runAllTimers
+    vi.runAllTimers();
   });
 });

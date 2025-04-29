@@ -12,6 +12,8 @@ declare module 'fabric' {
     objectType?: string;
     data?: any;
     visible?: boolean;
+    selectable?: boolean;
+    evented?: boolean;
     set(options: Record<string, any>): FabricObject;
   }
   
@@ -30,5 +32,32 @@ declare module 'fabric' {
   // Add custom events
   interface CanvasEvents {
     'object:created': any;
+  }
+
+  // Add exports for ActiveSelection and Point
+  export class ActiveSelection extends FabricObject {
+    // Add properties and methods for ActiveSelection
+    constructor(objects: FabricObject[], options?: any);
+    forEachObject(callback: (obj: FabricObject) => void): void;
+  }
+
+  export class Point {
+    x: number;
+    y: number;
+    constructor(x: number, y: number);
+    add(point: Point): Point;
+    subtract(point: Point): Point;
+    multiply(scalar: number): Point;
+    divide(scalar: number): Point;
+  }
+  
+  // Add missing Canvas properties
+  interface Canvas {
+    getActiveObject(): FabricObject | null;
+    zoomToPoint(point: Point, zoom: number): Canvas;
+    renderOnAddRemove: boolean;
+    allowTouchScrolling: boolean;
+    forEachObject(callback: (obj: FabricObject) => void): void;
+    viewportTransform: number[];
   }
 }

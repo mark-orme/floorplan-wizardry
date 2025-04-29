@@ -13,7 +13,7 @@ export interface FloorPlan {
   width?: number;
   height?: number;
   index?: number;
-  metadata?: FloorPlanMetadata;
+  metadata: FloorPlanMetadata;
   objects?: FabricObject[];
   canvasData?: string;
 }
