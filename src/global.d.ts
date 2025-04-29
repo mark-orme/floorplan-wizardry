@@ -33,6 +33,8 @@ declare module 'fabric' {
     type?: string;
     set?(options: Record<string, any>): Object;
     setCoords?(): Object;
+    getBoundingRect?(): { left: number; top: number; width: number; height: number };
+    setPositionByOrigin?(point: { x: number; y: number }, originX: string, originY: string): void;
   }
 
   export class ActiveSelection extends Object {
@@ -47,5 +49,10 @@ declare module 'fabric' {
     subtract(point: Point): Point;
     multiply(scalar: number): Point;
     divide(scalar: number): Point;
+  }
+
+  // Ensure Line is exported from the fabric module
+  export class Line extends Object {
+    constructor(points: number[], options?: any);
   }
 }

@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useCanvas } from '@/components/Canvas';
 import * as fabric from 'fabric';
-import type { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
-import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
+import type { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas } from '@/types/canvas-types';
 import { toast } from 'sonner';
 
 /**
@@ -12,7 +13,7 @@ import { toast } from 'sonner';
 export const CanvasWrapper: React.FC = () => {
   const { canvasRef, setCanvas } = useCanvas();
   const [isLoading, setIsLoading] = useState(true);
-  const [canvas, setLocalCanvas] = useState<fabric.Canvas | ExtendedFabricCanvas | null>(null);
+  const [localCanvas, setLocalCanvas] = useState<fabric.Canvas | ExtendedFabricCanvas | null>(null);
 
   // Initialize the canvas
   useEffect(() => {
@@ -32,7 +33,7 @@ export const CanvasWrapper: React.FC = () => {
       if (extendedCanvas) {
         // Ensure required properties exist
         if (!extendedCanvas.getElement) {
-          extendedCanvas.getElement = () => canvasRef.current as HTMLCanvasElement;
+          (extendedCanvas as any).getElement = () => canvasRef.current as HTMLCanvasElement;
         }
       
         setLocalCanvas(extendedCanvas);

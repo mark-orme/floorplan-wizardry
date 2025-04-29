@@ -28,16 +28,16 @@ export interface ExtendedFabricObject extends FabricObject {
  * Extended fabric canvas interface with additional properties
  */
 export interface ExtendedFabricCanvas extends Canvas {
-  wrapperEl: HTMLDivElement;
+  wrapperEl?: HTMLDivElement; // Make wrapperEl optional to avoid type conflicts
   renderOnAddRemove?: boolean;
   allowTouchScrolling?: boolean;
   skipTargetFind?: boolean;
   skipOffscreen?: boolean;
   viewportTransform?: number[];
-  initialize: (element: string | HTMLCanvasElement, options?: any) => Canvas;
-  forEachObject: (callback: (obj: FabricObject) => void) => void;
-  getActiveObject: () => FabricObject | null;
-  zoomToPoint: (point: { x: number, y: number }, value: number) => void;
+  initialize?: (element: string | HTMLCanvasElement, options?: any) => Canvas;
+  forEachObject?: (callback: (obj: FabricObject) => void) => void;
+  getActiveObject?: () => FabricObject | null;
+  zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
   setViewportTransform?: (transform: number[]) => Canvas;
   enableRetinaScaling?: boolean;
   toObject?(): any;
@@ -84,6 +84,17 @@ export interface CanvasState {
   snapToGrid?: boolean;
   gridSize?: number;
   zoomLevel?: number;
+}
+
+/**
+ * Debug info state
+ */
+export interface DebugInfoState {
+  canvasReady?: boolean;
+  hasError?: boolean;
+  errorMessage?: string;
+  objectCount?: number;
+  eventCount?: number;
 }
 
 /**

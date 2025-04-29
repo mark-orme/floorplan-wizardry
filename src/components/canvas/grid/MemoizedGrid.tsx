@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, memo } from 'react';
 import * as fabric from 'fabric';
 import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';

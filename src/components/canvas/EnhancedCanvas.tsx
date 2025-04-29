@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import * as fabric from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
@@ -114,3 +115,5 @@ export const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     </div>
   );
 };
+
+export default EnhancedCanvas;

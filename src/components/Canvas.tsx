@@ -27,7 +27,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!canvasRef.current) return;
     
     try {
-      const fabricCanvas = new fabric.fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
         width,
         height,
         backgroundColor: '#ffffff',

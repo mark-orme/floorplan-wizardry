@@ -4,62 +4,63 @@
  */
 
 import { Canvas } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
+
+let renderRequestId: number | null = null;
+const pendingCanvases = new Set<Canvas>();
 
 /**
- * Request an optimized render of the canvas
- * Uses requestAnimationFrame to batch render operations
+ * Request an optimized render for a canvas
+ * Batches rendering requests to avoid multiple repaints in the same frame
  */
-export function requestOptimizedRender(
-  canvas: Canvas | ExtendedFabricCanvas | null, 
-  options: { immediate?: boolean } = {}
-): void {
+export function requestOptimizedRender(canvas: Canvas): void {
   if (!canvas) return;
   
-  if (options.immediate) {
-    canvas.renderAll();
-    return;
-  }
-
-  // Use requestAnimationFrame to optimize rendering
-  if (!('_renderPending' in canvas)) {
-    (canvas as any)._renderPending = false;
-  }
-
-  if (!(canvas as any)._renderPending) {
-    (canvas as any)._renderPending = true;
-    
-    requestAnimationFrame(() => {
-      if (!canvas) return;
-      canvas.renderAll();
-      (canvas as any)._renderPending = false;
+  // Add canvas to pending set
+  pendingCanvases.add(canvas);
+  
+  // If we already have a request queued, don't queue another one
+  if (renderRequestId !== null) return;
+  
+  // Schedule a render on the next animation frame
+  renderRequestId = requestAnimationFrame(() => {
+    // Render all pending canvases
+    pendingCanvases.forEach(canvas => {
+      try {
+        canvas.renderAll();
+      } catch (error) {
+        console.error('Error rendering canvas:', error);
+      }
     });
-  }
+    
+    // Clear the pending set and request ID
+    pendingCanvases.clear();
+    renderRequestId = null;
+  });
 }
 
 /**
- * Batch multiple canvas operations and render once at the end
+ * Creates a smooth event handler that throttles canvas rendering
+ * Useful for high-frequency events like mouse movements
  */
-export async function batchCanvasOperations<T>(
-  canvas: Canvas | ExtendedFabricCanvas | null,
-  operations: () => Promise<T> | T
-): Promise<T> {
-  if (!canvas) throw new Error('Canvas is null');
-  
-  // Temporarily disable rendering
-  const originalRenderOnAddRemove = canvas.renderOnAddRemove;
-  canvas.renderOnAddRemove = false;
-  
-  try {
-    // Run operations
-    const result = await operations();
-    
-    // Render once at the end
-    canvas.renderAll();
-    
-    return result;
-  } finally {
-    // Restore original setting
-    canvas.renderOnAddRemove = originalRenderOnAddRemove;
+export function createSmoothEventHandler<T extends any[]>(
+  handler: (...args: T) => void,
+  canvas?: Canvas | null
+): (...args: T) => void {
+  return (...args: T) => {
+    handler(...args);
+    if (canvas) {
+      requestOptimizedRender(canvas);
+    }
+  };
+}
+
+/**
+ * Cancel any pending render requests
+ */
+export function cancelRenderRequests(): void {
+  if (renderRequestId !== null) {
+    cancelAnimationFrame(renderRequestId);
+    renderRequestId = null;
+    pendingCanvases.clear();
   }
 }
