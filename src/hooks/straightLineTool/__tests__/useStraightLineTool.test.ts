@@ -50,8 +50,8 @@ describe('useStraightLineTool', () => {
     expect(result.current.snapEnabled).toBe(true);
   });
   
-  // Basic mock tests
-  it.skip('should handle drawing operations', () => {
+  // Basic mock tests - avoid using skip
+  it('handles drawing operations', () => {
     const mockCanvas = {
       add: vi.fn(),
       remove: vi.fn(),
@@ -67,7 +67,9 @@ describe('useStraightLineTool', () => {
     
     // Test grid snapping toggle
     act(() => {
-      result.current.toggleGridSnapping();
+      if (result.current.toggleGridSnapping) {
+        result.current.toggleGridSnapping();
+      }
     });
     
     expect(result.current.snapEnabled).toBe(false);

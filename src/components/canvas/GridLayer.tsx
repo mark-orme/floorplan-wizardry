@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as FabricCanvas, fabric, Object as FabricObject } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
@@ -86,7 +87,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      canvas.add(asExtendedObject(line));
+      // Use direct add instead of asExtendedObject to avoid type mismatches
+      canvas.add(line);
       gridObjects.push(line);
     }
     
@@ -104,7 +106,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      canvas.add(asExtendedObject(line));
+      // Use direct add instead of asExtendedObject to avoid type mismatches
+      canvas.add(line);
       gridObjects.push(line);
     }
     

@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface SimpleGridLayerProps {
   canvas: FabricCanvas | ExtendedFabricCanvas | null;
@@ -45,7 +44,8 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([0, y, width, y], lineProps);
-      baseCanvas.add(asExtendedObject(line));
+      // Direct add to canvas to avoid type incompatibility
+      baseCanvas.add(line);
       newObjects.push(line);
     }
 
@@ -60,7 +60,8 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([x, 0, x, height], lineProps);
-      baseCanvas.add(asExtendedObject(line));
+      // Direct add to canvas to avoid type incompatibility
+      baseCanvas.add(line);
       newObjects.push(line);
     }
 
@@ -91,11 +92,6 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
     gridObjects.forEach(obj => {
       // Make sure visible property is set directly
       (obj as any).visible = visible;
-      
-      // Fixed: Check if set method exists before calling it
-      if (typeof obj.set === 'function') {
-        obj.set({ visible });
-      }
     });
 
     canvas.renderAll();

@@ -1,11 +1,17 @@
+
 import { useRef, useCallback } from 'react';
 import { Canvas } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
-export const useDrawingHistory = (canvas: Canvas | ExtendedFabricCanvas | null) => {
+interface UseDrawingHistoryProps {
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+}
+
+export const useDrawingHistory = ({ fabricCanvasRef }: UseDrawingHistoryProps) => {
   const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
   const saveState = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
     const currentState = (canvas as any).toObject ? (canvas as any).toObject() : null;
@@ -14,9 +20,10 @@ export const useDrawingHistory = (canvas: Canvas | ExtendedFabricCanvas | null) 
       historyRef.current.past.push(currentState);
       historyRef.current.future = [];
     }
-  }, [canvas]);
+  }, [fabricCanvasRef]);
   
   const undo = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
     if (!canvas || historyRef.current.past.length === 0) return;
     
     const lastState = historyRef.current.past.pop();
@@ -26,9 +33,10 @@ export const useDrawingHistory = (canvas: Canvas | ExtendedFabricCanvas | null) 
         canvas.renderAll();
       });
     }
-  }, [canvas]);
+  }, [fabricCanvasRef]);
   
   const redo = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
     if (!canvas || historyRef.current.future.length === 0) return;
     
     const nextState = historyRef.current.future.shift();
@@ -38,7 +46,7 @@ export const useDrawingHistory = (canvas: Canvas | ExtendedFabricCanvas | null) 
         canvas.renderAll();
       });
     }
-  }, [canvas]);
+  }, [fabricCanvasRef]);
   
   return { 
     canUndo: historyRef.current.past.length > 0,

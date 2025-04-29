@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import { GRID_CONSTANTS, SMALL_GRID_SIZE } from '@/constants/gridConstants';
+import { SMALL_GRID_SIZE } from '@/constants/gridConstants';
 
 interface SimpleGridProps {
   canvas: fabric.Canvas;
@@ -34,8 +34,8 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
     for (let x = 0; x <= width; x += gridSize) {
       const isLargeLine = x % (gridSize * 5) === 0;
       const line = new fabric.Line([x, 0, x, height], {
-        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
-        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        stroke: isLargeLine ? '#c0c0c0' : '#e0e0e0',
+        strokeWidth: isLargeLine ? 1.0 : 0.5,
         selectable: false,
         evented: false,
         visible: isVisible
@@ -49,8 +49,8 @@ export const SimpleGrid: React.FC<SimpleGridProps> = ({
     for (let y = 0; y <= height; y += gridSize) {
       const isLargeLine = y % (gridSize * 5) === 0;
       const line = new fabric.Line([0, y, width, y], {
-        stroke: isLargeLine ? GRID_CONSTANTS.LARGE.COLOR : GRID_CONSTANTS.SMALL.COLOR,
-        strokeWidth: isLargeLine ? GRID_CONSTANTS.LARGE.WIDTH : GRID_CONSTANTS.SMALL.WIDTH,
+        stroke: isLargeLine ? '#c0c0c0' : '#e0e0e0',
+        strokeWidth: isLargeLine ? 1.0 : 0.5,
         selectable: false,
         evented: false,
         visible: isVisible

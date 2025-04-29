@@ -1,315 +1,214 @@
-
-// Import necessary hooks and utilities
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas, Line, Text } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { MeasurementData } from './useStraightLineTool.d';
-import { useLineInputMethod, InputMethod } from './useLineInputMethod';
-import { useLineEvents } from './useLineEvents';
-import { useLineDrawingState } from './useLineDrawingState';
-import { useLineInitialization } from './useLineInitialization';
+import { Canvas } from 'fabric';
+import { Point, createPoint } from '@/types/core/Point';
 import { useLineDistance } from './useLineDistance';
-import { useLineKeyboardShortcuts } from './useLineKeyboardShortcuts';
-import { useLinePreview } from './useLinePreview';
-import { useLineToolResult } from './useLineToolResult';
+import { useLineEvents } from './useLineEvents';
+import { useLineSnapping } from './useLineSnapping';
+import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
+import { useApplePencilSupport } from './useApplePencilSupport';
 import { toolsLogger } from '@/utils/logger';
-import { DrawingMode } from '@/types/drawingTypes';
 
-// Export the MeasurementData type for consumers
-export type { MeasurementData } from './useStraightLineTool.d';
+interface UseStraightLineToolProps {
+  isEnabled: boolean;
+  canvas: Canvas | null;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState?: () => void;
+}
+
+export interface StraightLineState {
+  isDrawing: boolean;
+  startPoint: Point;
+  currentPoint: Point;
+  activeLine: any;
+  distanceTooltip: any;
+  isActive: boolean;
+  snapEnabled: boolean;
+}
 
 /**
- * Hook for the straight line drawing tool
+ * Hook that provides straight line drawing functionality
  */
 export const useStraightLineTool = ({
-  isEnabled = false,
-  isActive = false,
+  isEnabled,
   canvas,
-  lineColor = '#000000',
-  lineThickness = 2,
-  shiftKeyPressed = false,
-  saveCurrentState = () => {}
-}) => {
-  // Initialize state
+  lineColor,
+  lineThickness,
+  saveCurrentState
+}: UseStraightLineToolProps) => {
+  // Initialize state with default values
+  const [isDrawing, setIsDrawing] = useState(false);
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const [anglesEnabled, setAnglesEnabled] = useState(false);
-  const [measurementData, setMeasurementData] = useState<MeasurementData>({
-    distance: 0, 
-    angle: 0,
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 0, y: 0 },
-    snapped: false,
-    unit: 'px'
+  const lineRef = useRef<any>(null);
+  const tooltipRef = useRef<any>(null);
+  
+  // Track points for the current line
+  const startPointRef = useRef<Point>(createPoint(0, 0));
+  const currentPointRef = useRef<Point>(createPoint(0, 0));
+  
+  // Use distance calculation utility
+  const { calculateDistance, updateDistanceTooltip } = useLineDistance();
+  
+  // Use enhanced grid snapping
+  const { snapToGrid, toggleGridSnapping } = useEnhancedGridSnapping({
+    initialSnapEnabled: snapEnabled
   });
   
-  // Initialize refs
-  const startPointRef = useRef<Point | null>(null);
-  const currentLineRef = useRef<Line | null>(null);
-  const tooltipRef = useRef<Text | null>(null);
-  
-  // Use line hooks
-  const { isDrawing, startPoint, currentPoint, currentLine, setIsDrawing, setStartPoint, setCurrentPoint, setCurrentLine, resetDrawingState } = useLineDrawingState();
-  const { isActive: isToolActive, initializeTool, lineRef } = useLineInitialization();
-  const { getInputMethod, InputMethod } = useLineInputMethod();
-  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.MOUSE);
-  const { calculateDistance, updateDistanceTooltip, getMidpoint } = useLineDistance();
-  const { getLinePreview } = useLinePreview();
-  
-  // Initialize tool when enabled
+  // Set drawing mode when enabled changes
   useEffect(() => {
-    if (isEnabled && !isToolActive) {
-      initializeTool();
-    }
-  }, [isEnabled, isToolActive, initializeTool]);
-  
-  // Update input method
-  const updateInputMethod = useCallback((pointerType: string) => {
-    if (pointerType === 'pen' || pointerType === 'stylus') {
-      setInputMethod(InputMethod.PENCIL);
-    } else if (pointerType === 'touch') {
-      setInputMethod(InputMethod.TOUCH);
+    if (!canvas) return;
+    
+    // Enable drawing mode when tool is enabled
+    if (isEnabled) {
+      toolsLogger.debug("Straight line tool enabled");
     } else {
-      setInputMethod(InputMethod.MOUSE);
+      toolsLogger.debug("Straight line tool disabled");
+      // Cancel any active drawing when tool is disabled
+      cancelDrawing();
     }
-  }, []);
+  }, [isEnabled, canvas]);
   
-  // Handle starting a line drawing
-  const startDrawing = useCallback((point: Point) => {
+  // Handle mouse down to start drawing a line
+  const handleMouseDown = useCallback((point: Point) => {
+    if (!canvas || !isEnabled || isDrawing) return;
+    
+    // Set the start point
+    const snappedPoint = snapEnabled ? snapToGrid(point) : point;
+    startPointRef.current = snappedPoint;
+    currentPointRef.current = snappedPoint;
+    
     setIsDrawing(true);
-    setStartPoint(point);
-    startPointRef.current = point;
+    toolsLogger.debug("Started drawing line", { point: snappedPoint });
     
-    if (canvas) {
-      // Create line on canvas
-      const line = new Line([point.x, point.y, point.x, point.y], {
-        stroke: lineColor,
-        strokeWidth: lineThickness,
-        selectable: false,
-        evented: false
-      });
-      
-      canvas.add(line);
-      canvas.renderAll();
-      
-      setCurrentLine(line);
-      currentLineRef.current = line;
-      lineRef.current = line;
-    }
-    
-    toolsLogger.debug('Started drawing at', point);
-  }, [canvas, lineColor, lineThickness, setIsDrawing, setStartPoint, setCurrentLine]);
+  }, [canvas, isEnabled, isDrawing, snapEnabled, snapToGrid]);
   
-  // Handle continuing line drawing
-  const continueDrawing = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint || !currentLine) return;
+  // Handle mouse move to update the current line
+  const handleMouseMove = useCallback((point: Point) => {
+    if (!canvas || !isEnabled || !isDrawing) return;
     
-    setCurrentPoint(point);
+    // Update the current point with snapping if enabled
+    const snappedPoint = snapEnabled ? snapToGrid(point) : point;
+    currentPointRef.current = snappedPoint;
     
-    // Apply line preview with snapping
-    const preview = getLinePreview(startPoint, point, snapEnabled, anglesEnabled, shiftKeyPressed);
-    
-    // Update line on canvas
-    if (canvas && currentLine) {
-      currentLine.set({
-        x2: preview.endPoint.x,
-        y2: preview.endPoint.y
-      });
-      canvas.renderAll();
+    // Create or update the line
+    if (!lineRef.current) {
+      // Create a new line
+      lineRef.current = createLine(startPointRef.current, snappedPoint);
+    } else {
+      // Update the existing line
+      updateLine(lineRef.current, snappedPoint);
     }
     
-    // Update measurement data
-    if (startPoint) {
-      const distance = calculateDistance(startPoint, preview.endPoint);
-      const dx = preview.endPoint.x - startPoint.x;
-      const dy = preview.endPoint.y - startPoint.y;
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    // Update distance tooltip
+    if (lineRef.current) {
+      const distance = calculateDistance(startPointRef.current, snappedPoint);
+      updateDistanceTooltip(distance, startPointRef.current, snappedPoint, tooltipRef);
+    }
+    
+  }, [canvas, isEnabled, isDrawing, snapEnabled, snapToGrid, calculateDistance]);
+  
+  // Handle mouse up to finish drawing a line
+  const handleMouseUp = useCallback(() => {
+    if (!canvas || !isEnabled || !isDrawing) return;
+    
+    // Finalize the line
+    if (lineRef.current) {
+      // Calculate the final distance
+      const distance = calculateDistance(startPointRef.current, currentPointRef.current);
       
-      setMeasurementData({
-        distance,
-        angle,
-        startPoint,
-        endPoint: preview.endPoint,
-        snapped: preview.isSnapped,
-        unit: 'px',
-        snapType: preview.snapType
-      });
-      
-      // Update distance tooltip
-      if (tooltipRef.current) {
-        const midpoint = getMidpoint(startPoint, preview.endPoint);
-        updateDistanceTooltip(tooltipRef.current, startPoint, preview.endPoint, distance);
+      // Only keep the line if it has a meaningful length
+      if (distance > 5) {
+        if (saveCurrentState) {
+          saveCurrentState();
+        }
+        toolsLogger.debug("Line created", { distance });
+      } else {
+        // Remove the line if it's too short
+        canvas.remove(lineRef.current);
+        toolsLogger.debug("Line discarded (too short)");
       }
     }
-  }, [
-    isDrawing, 
-    startPoint, 
-    currentLine, 
-    canvas, 
-    snapEnabled, 
-    anglesEnabled, 
-    shiftKeyPressed,
-    setCurrentPoint, 
-    getLinePreview,
-    calculateDistance,
-    getMidpoint,
-    updateDistanceTooltip
-  ]);
-  
-  // Handle completing line drawing
-  const completeDrawing = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint || !currentLine) return;
     
-    // Apply final snapping
-    const preview = getLinePreview(startPoint, point, snapEnabled, anglesEnabled, shiftKeyPressed);
+    // Reset the state
+    setIsDrawing(false);
+    lineRef.current = null;
     
-    // Finalize line
-    if (canvas && currentLine) {
-      currentLine.set({
-        x2: preview.endPoint.x,
-        y2: preview.endPoint.y,
-        selectable: true,
-        evented: true
-      });
-      canvas.renderAll();
-      
-      // Store final measurements
-      const distance = calculateDistance(startPoint, preview.endPoint);
-      const dx = preview.endPoint.x - startPoint.x;
-      const dy = preview.endPoint.y - startPoint.y;
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      
-      setMeasurementData({
-        distance,
-        angle,
-        startPoint,
-        endPoint: preview.endPoint,
-        snapped: preview.isSnapped,
-        unit: 'px',
-        snapType: preview.snapType
-      });
-      
-      // Remove tooltip if exists
-      if (tooltipRef.current) {
-        canvas.remove(tooltipRef.current);
-        tooltipRef.current = null;
-      }
-      
-      // Save canvas state
-      saveCurrentState();
-    }
-    
-    // Reset drawing state
-    resetDrawingState();
-    toolsLogger.debug('Completed drawing');
-  }, [
-    isDrawing, 
-    startPoint, 
-    currentLine, 
-    canvas, 
-    snapEnabled, 
-    anglesEnabled, 
-    shiftKeyPressed,
-    resetDrawingState,
-    getLinePreview,
-    calculateDistance,
-    saveCurrentState
-  ]);
-  
-  // Handle cancelling line drawing
-  const cancelDrawing = useCallback(() => {
-    if (canvas && currentLine) {
-      canvas.remove(currentLine);
-      canvas.renderAll();
-    }
-    
-    if (tooltipRef.current && canvas) {
+    // Remove the tooltip if it exists
+    if (tooltipRef.current) {
       canvas.remove(tooltipRef.current);
       tooltipRef.current = null;
     }
     
-    resetDrawingState();
-    toolsLogger.debug('Drawing cancelled');
-  }, [canvas, currentLine, resetDrawingState]);
+  }, [canvas, isEnabled, isDrawing, saveCurrentState, calculateDistance]);
   
-  // Toggle grid snapping
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
+  // Cancel drawing (e.g., on key press)
+  const cancelDrawing = useCallback(() => {
+    if (!canvas || !isDrawing) return;
+    
+    // Remove the line and tooltip
+    if (lineRef.current) {
+      canvas.remove(lineRef.current);
+      lineRef.current = null;
+    }
+    
+    if (tooltipRef.current) {
+      canvas.remove(tooltipRef.current);
+      tooltipRef.current = null;
+    }
+    
+    // Reset state
+    setIsDrawing(false);
+    toolsLogger.debug("Drawing cancelled");
+    
+  }, [canvas, isDrawing]);
   
-  // Toggle angle snapping
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-  }, []);
-  
-  // Use line events hook
-  const lineState = { 
-    isDrawing, 
-    startPoint, 
-    startDrawing, 
-    continueDrawing, 
-    completeDrawing,
-    cancelDrawing 
+  // Helper functions for creating and updating lines
+  const createLine = (start: Point, end: Point) => {
+    if (!canvas) return null;
+    
+    const line = new fabric.Line([
+      start.x, start.y, end.x, end.y
+    ], {
+      stroke: lineColor,
+      strokeWidth: lineThickness,
+      selectable: false,
+      evented: false,
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round'
+    });
+    
+    canvas.add(line);
+    canvas.renderAll();
+    
+    return line;
   };
   
-  const { handleMouseDown, handleMouseMove, handleMouseUp, handleKeyDown } = useLineEvents({
+  const updateLine = (line: any, end: Point) => {
+    if (!line) return;
+    
+    line.set({ 
+      x2: end.x,
+      y2: end.y 
+    });
+    
+    canvas?.renderAll();
+  };
+  
+  // Register Apple Pencil support
+  useApplePencilSupport({
     canvas,
-    lineState,
-    snapEnabled,
-    anglesEnabled,
-    updateMeasurementData: setMeasurementData
+    snapToGrid: snapEnabled
   });
   
-  // Set up keyboard shortcuts
-  useLineKeyboardShortcuts({
+  // Return the public API
+  return {
     isActive: isEnabled,
     isDrawing,
-    cancelDrawing,
-    toggleGridSnapping: toggleSnap,
-    toggleAngles,
-    tool: 'line' as DrawingMode
-  });
-  
-  // Handle pointer events
-  const handlePointerDown = useCallback((event: any) => {
-    if (!isEnabled) return;
-    return handleMouseDown(event);
-  }, [isEnabled, handleMouseDown]);
-  
-  const handlePointerMove = useCallback((event: any) => {
-    if (!isEnabled) return;
-    return handleMouseMove(event);
-  }, [isEnabled, handleMouseMove]);
-  
-  const handlePointerUp = useCallback((event: any) => {
-    if (!isEnabled) return;
-    return handleMouseUp(event);
-  }, [isEnabled, handleMouseUp]);
-  
-  // Function to render tooltip (stub implementation)
-  const renderTooltip = useCallback(() => {
-    return null; // Implement actual tooltip rendering as needed
-  }, []);
-  
-  // Create the final hook result
-  return useLineToolResult({
-    isDrawing,
-    enabled: isEnabled && isActive,
-    inputMethod,
     snapEnabled,
-    startPointRef,
-    currentLineRef,
-    toggleSnap,
-    toggleAngles,
-    cancelDrawing,
-    renderTooltip,
-    startDrawing,
-    continueDrawing,
-    completeDrawing,
-    measurementData: {
-      distance: measurementData.distance,
-      angle: measurementData.angle,
-      snapped: measurementData.snapped,
-      unit: measurementData.unit
-    }
-  });
+    toggleGridSnapping: () => setSnapEnabled(!snapEnabled),
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    cancelDrawing
+  };
 };

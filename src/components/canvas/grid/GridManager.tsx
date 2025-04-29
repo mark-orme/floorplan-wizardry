@@ -2,7 +2,7 @@
 import React from 'react';
 import { fabric } from 'fabric';
 import { SimpleGrid } from './SimpleGrid';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { SMALL_GRID_SIZE, LARGE_GRID_SIZE } from '@/constants/gridConstants';
 
 interface GridManagerProps {
   canvas: fabric.Canvas | null;

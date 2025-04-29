@@ -1,44 +1,37 @@
 
 import { useState, useCallback } from 'react';
-import { z } from 'zod';
+import { z } from '@/utils/zod-mock';
 
-type ValidationResult = {
-  isValid: boolean;
-  error?: string;
-};
+export const useInputValidation = () => {
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-export const useInputValidation = <T>(schema: z.ZodType<T>) => {
-  const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
-
-  const validate = useCallback(
-    (value: unknown): ValidationResult => {
-      try {
-        schema.parse(value);
-        return { isValid: true };
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          const errorMessage = error.errors[0]?.message || 'Invalid input';
-          return { isValid: false, error: errorMessage };
-        }
-        return { isValid: false, error: 'Unknown validation error' };
+  const validateInput = useCallback(<T>(
+    schema: z.ZodType<T>,
+    input: unknown
+  ): { isValid: boolean; data: T | null } => {
+    try {
+      const result = schema.parse(input);
+      setErrors({});
+      return { isValid: true, data: result };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMap: Record<string, string> = {};
+        error.errors.forEach(err => {
+          const path = err.path.join('.');
+          errorMap[path || 'general'] = err.message;
+        });
+        setErrors(errorMap);
+      } else {
+        setErrors({ general: 'An unknown error occurred' });
       }
-    },
-    [schema]
-  );
+      return { isValid: false, data: null };
+    }
+  }, []);
 
-  const validateInput = useCallback(
-    (value: unknown) => {
-      const result = validate(value);
-      setValidationResult(result);
-      return result.isValid;
-    },
-    [validate]
-  );
-  
   return {
-    validationResult,
+    errors,
     validateInput,
-    isValid: validationResult.isValid,
-    errorMessage: validationResult.error,
+    hasErrors: Object.keys(errors).length > 0,
+    getError: (field: string) => errors[field] || null
   };
 };
