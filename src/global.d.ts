@@ -16,7 +16,7 @@ declare module 'fabric' {
     zoomToPoint?(point: { x: number, y: number }, value: number): void;
     enableRetinaScaling?: boolean;
     toObject?(): any;
-    fire?(eventName: string, options?: any): Canvas; 
+    fire?(eventName: string, options?: any): Canvas;
   }
 
   interface Object {
@@ -32,7 +32,8 @@ declare module 'fabric' {
     selectable?: boolean;
     evented?: boolean;
     type?: string;
-    set?(options: Record<string, any>): Object;
+    set(options: Record<string, any>): Object;
+    set(property: string, value: any): Object;
     setCoords?(): Object;
     getBoundingRect?(): { left: number; top: number; width: number; height: number };
     setPositionByOrigin?(point: { x: number; y: number }, originX: string, originY: string): void;
@@ -43,6 +44,7 @@ declare module 'fabric' {
   interface Text extends Object {
     text: string;
     set(options: Record<string, any>): Text;
+    set(property: string, value: any): Text;
   }
 
   export class ActiveSelection extends Object {

@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Automerge from '@automerge/automerge';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
@@ -103,7 +102,8 @@ export function useCRDTCollaboration({
         
         // Convert the object to a simple JSON representation
         // We use toObject instead of toJSON to get a normal object
-        const objData = obj.toObject(['id', 'type', 'left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle']);
+        // We use toObject with the correct parameters
+        const objData = obj.toObject({ propertiesToInclude: ['id', 'type', 'left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'] });
         serializableObjects[objId] = objData;
       });
       

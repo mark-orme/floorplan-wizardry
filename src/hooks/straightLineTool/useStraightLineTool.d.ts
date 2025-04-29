@@ -12,6 +12,7 @@ export interface MeasurementData {
   endPoint: Point;
   snapped?: boolean;
   unit?: string;
+  snapType?: 'grid' | 'angle' | 'both';
 }
 
 /**

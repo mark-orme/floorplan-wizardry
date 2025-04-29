@@ -20,3 +20,13 @@ export const getInputMethod = (event: any): InputMethod => {
   }
   return InputMethod.MOUSE;
 };
+
+/**
+ * Hook for handling input method detection
+ */
+export const useLineInputMethod = () => {
+  return {
+    getInputMethod,
+    InputMethod
+  };
+};

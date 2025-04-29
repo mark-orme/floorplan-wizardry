@@ -136,11 +136,7 @@ export const useCanvasControllerLoader = ({
   
   const updateDebugInfo = (partialState: Partial<DebugInfoState>) => {
     // Fixed function call syntax
-    setDebugInfo((prev) => ({
-      ...prev,
-      canvasReady: true,
-      ...partialState
-    }));
+    setDebugInfo(prev => ({ ...prev, canvasInitialized: true, ...partialState }));
   };
   
   return {
