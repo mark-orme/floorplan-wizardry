@@ -29,3 +29,21 @@ export interface UseStraightLineToolProps {
   saveCurrentState?: () => void;
   anglesEnabled?: boolean;
 }
+
+/**
+ * Return type for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolReturn {
+  isActive: boolean;
+  isDrawing: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  measurementData?: MeasurementData;
+  toggleGridSnapping: () => void;
+  toggleAngles: () => void;
+  handleMouseDown: (point: Point) => void;
+  handleMouseMove: (point: Point) => void;
+  handleMouseUp: () => void;
+  cancelDrawing: () => void;
+  renderTooltip?: () => React.ReactNode;
+}

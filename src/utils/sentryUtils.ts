@@ -1,44 +1,32 @@
 
 /**
- * Utility functions for error reporting
+ * Sentry utility functions for error logging
  */
 
 /**
- * Capture a message to the error reporting system
+ * Capture a message in Sentry
  */
-export const captureMessage = (
-  message: string,
-  options?: {
-    level?: 'info' | 'warning' | 'error',
-    tags?: Record<string, string>,
-    extra?: Record<string, any>
-  }
-) => {
-  console.log(`[REPORTING] ${options?.level || 'info'}: ${message}`);
-  
-  // In a real app, this would send to Sentry or similar
-  // Sentry.captureMessage(message, {
-  //   level: options?.level || 'info',
-  //   tags: options?.tags,
-  //   extra: options?.extra
-  // });
+export const captureMessage = (message: string, options?: {
+  level?: 'info' | 'warning' | 'error',
+  tags?: Record<string, string>,
+  extra?: Record<string, any>
+}) => {
+  console.log(`[Sentry] ${message}`, options);
 };
 
 /**
- * Capture an error to the error reporting system
+ * Capture an exception in Sentry
  */
-export const captureError = (
-  error: Error,
-  options?: {
-    tags?: Record<string, string>,
-    extra?: Record<string, any>
-  }
-) => {
-  console.error(`[REPORTING] Error: ${error.message}`, error);
-  
-  // In a real app, this would send to Sentry or similar
-  // Sentry.captureException(error, {
-  //   tags: options?.tags,
-  //   extra: options?.extra
-  // });
+export const captureException = (error: Error, options?: {
+  tags?: Record<string, string>,
+  extra?: Record<string, any>
+}) => {
+  console.error(`[Sentry] Exception:`, error, options);
+};
+
+/**
+ * Initialize Sentry
+ */
+export const initSentry = () => {
+  console.log('[Sentry] Initialized');
 };

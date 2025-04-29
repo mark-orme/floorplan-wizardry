@@ -1,9 +1,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
-import { Canvas as FabricCanvas, fabric, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, fabric } from "fabric";
 import { captureMessage } from "@/utils/sentryUtils";
 import { ExtendedFabricCanvas } from "@/types/canvas-types";
-import { asExtendedObject } from "@/types/canvas-types";
 import logger from "@/utils/logger";
 
 interface GridLayerProps {
@@ -17,7 +16,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   dimensions,
   showDebug = false
 }) => {
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
+  const [gridObjects, setGridObjects] = useState<any[]>([]);
   const gridInitializedRef = useRef(false);
   const dimensionsRef = useRef(dimensions);
   
@@ -25,7 +24,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
     dimensionsRef.current = dimensions;
   }, [dimensions]);
   
-  const handleGridCreated = (objects: FabricObject[]) => {
+  const handleGridCreated = (objects: any[]) => {
     if (!gridInitializedRef.current) {
       logger.info(`Grid created with ${objects.length} objects`);
       setGridObjects(objects);
@@ -70,8 +69,8 @@ export const GridLayer: React.FC<GridLayerProps> = ({
   }, [fabricCanvas, dimensions.width, dimensions.height]);
   
   // Helper function to create grid
-  function createGrid(canvas: FabricCanvas | ExtendedFabricCanvas, dimensions: { width: number; height: number }): FabricObject[] {
-    const gridObjects: FabricObject[] = [];
+  function createGrid(canvas: FabricCanvas | ExtendedFabricCanvas, dimensions: { width: number; height: number }): any[] {
+    const gridObjects: any[] = [];
     
     // Create horizontal lines
     for (let y = 0; y <= dimensions.height; y += 20) {
@@ -87,7 +86,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      // Use direct add instead of asExtendedObject to avoid type mismatches
+      // Use canvas.add directly with the line object
       canvas.add(line);
       gridObjects.push(line);
     }
@@ -106,7 +105,7 @@ export const GridLayer: React.FC<GridLayerProps> = ({
         strokeDashArray: isLargeLine ? [] : [5, 5]
       });
       
-      // Use direct add instead of asExtendedObject to avoid type mismatches
+      // Use canvas.add directly with the line object
       canvas.add(line);
       gridObjects.push(line);
     }

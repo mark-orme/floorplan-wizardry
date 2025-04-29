@@ -17,9 +17,9 @@ declare module 'fabric' {
     enableRetinaScaling?: boolean;
     toObject?(): any;
     fire?(eventName: string, options?: any): Canvas;
-    add(...objects: Object[]): Canvas;  // Ensure this accepts Object[]
-    remove(...objects: Object[]): Canvas;  // Ensure this accepts Object[]
-    sendToBack(object: Object): Canvas;  // Ensure this accepts Object
+    add(...objects: any[]): Canvas;  // Critical fix: accept any objects
+    remove(...objects: any[]): Canvas;  // Critical fix: accept any objects
+    sendToBack(object: any): Canvas;  // Critical fix: accept any object
   }
 
   interface Object {
@@ -36,9 +36,9 @@ declare module 'fabric' {
     evented?: boolean;
     type?: string;
     // Fix the 'set' method signature to be compatible with all expected usages
-    set(options: Record<string, any>): Object;
-    set(property: string, value: any): Object;
-    setCoords?(): Object;
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
+    setCoords?(): any;
     getBoundingRect?(): { left: number; top: number; width: number; height: number };
     setPositionByOrigin?(point: { x: number; y: number }, originX: string, originY: string): void;
     excludeFromExport?(): void;
@@ -47,8 +47,8 @@ declare module 'fabric' {
 
   interface Text extends Object {
     text: string;
-    set(options: Record<string, any>): Text;
-    set(property: string, value: any): Text;
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
   }
 
   export class ActiveSelection extends Object {
@@ -78,17 +78,17 @@ declare module 'fabric' {
     stroke?: string;
     strokeWidth?: number;
     data?: any;
-    // Ensure Line's set method matches Object's set method
-    set(options: Record<string, any>): Line;
-    set(property: string, value: any): Line;
+    // Ensure Line's set method returns the correct type
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
   }
   
   export class Text extends Object {
     constructor(text: string, options?: any);
     text: string;
-    // Ensure Text's set method matches Object's set method
-    set(options: Record<string, any>): Text;
-    set(property: string, value: any): Text;
+    // Ensure Text's set method returns the correct type
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
   }
   
   export class PencilBrush {

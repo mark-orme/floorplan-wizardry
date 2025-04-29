@@ -21,7 +21,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
   largeGridColor = '#c0c0c0',
   visible = true
 }) => {
-  const [gridObjects, setGridObjects] = useState<fabric.Object[]>([]);
+  const [gridObjects, setGridObjects] = useState<any[]>([]);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -29,9 +29,8 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const baseCanvas = canvas as FabricCanvas;
     
-    const newObjects: fabric.Object[] = [];
+    const newObjects: any[] = [];
 
     // Create horizontal lines
     for (let y = 0; y <= height; y += gridSize) {
@@ -44,8 +43,8 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([0, y, width, y], lineProps);
-      // Direct add to canvas to avoid type incompatibility
-      baseCanvas.add(line);
+      // Direct add to canvas without type assertions
+      canvas.add(line);
       newObjects.push(line);
     }
 
@@ -60,28 +59,28 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
       };
 
       const line = new fabric.Line([x, 0, x, height], lineProps);
-      // Direct add to canvas to avoid type incompatibility
-      baseCanvas.add(line);
+      // Direct add to canvas without type assertions
+      canvas.add(line);
       newObjects.push(line);
     }
 
     // Send all grid objects to the back
     newObjects.forEach(obj => {
-      if (baseCanvas.sendToBack) {
-        baseCanvas.sendToBack(obj);
+      if (canvas.sendToBack) {
+        canvas.sendToBack(obj);
       }
     });
 
     setGridObjects(newObjects);
     initialized.current = true;
-    baseCanvas.renderAll();
+    canvas.renderAll();
 
     return () => {
       if (canvas) {
         newObjects.forEach(obj => {
-          baseCanvas.remove(obj);
+          canvas.remove(obj);
         });
-        baseCanvas.renderAll();
+        canvas.renderAll();
       }
     };
   }, [canvas, gridSize, largeGridSize, gridColor, largeGridColor]);
@@ -91,7 +90,7 @@ export const SimpleGridLayer: React.FC<SimpleGridLayerProps> = ({
 
     gridObjects.forEach(obj => {
       // Make sure visible property is set directly
-      (obj as any).visible = visible;
+      obj.visible = visible;
     });
 
     canvas.renderAll();

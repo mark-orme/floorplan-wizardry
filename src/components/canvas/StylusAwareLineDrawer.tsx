@@ -27,7 +27,6 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   const straightLineTool = useStraightLineTool({
     isEnabled: enabled,
-    isActive: enabled,
     canvas: canvas,
     lineColor: lineColor,
     lineThickness: lineThickness,
@@ -47,7 +46,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   useEffect(() => {
     if (isDrawing) {
       setShowMeasurement(true);
-    } else if (measurementData?.distance !== null) {
+    } else if (measurementData?.distance !== undefined) {
       const timer = setTimeout(() => {
         setShowMeasurement(false);
       }, 3000);
