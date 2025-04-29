@@ -31,6 +31,8 @@ export const createMockCanvas = () => {
     }),
     isDrawingMode: false,
     selection: true,
+    // Add wrapperEl to match Canvas requirements
+    wrapperEl: document.createElement('div'),
     // Add missing test utility functions
     mocked: vi.mocked,
     runAllTimers: vi.runAllTimers
@@ -69,6 +71,7 @@ export interface MockCanvas {
   getPointer: ReturnType<typeof vi.fn>;
   isDrawingMode: boolean;
   selection: boolean;
+  wrapperEl: HTMLDivElement;
   mocked?: typeof vi.mocked;
   runAllTimers?: () => void;
   getHandlers?: (eventName: string) => Array<() => void>;

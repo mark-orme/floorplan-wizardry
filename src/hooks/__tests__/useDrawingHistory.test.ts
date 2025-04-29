@@ -1,29 +1,41 @@
-import { describe, test, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react-hooks';
-import { useDrawingHistory } from '../drawing/useDrawingHistory';
-import * as Sentry from '@sentry/react';
 
-// Mock Sentry captureException
-vi.mock('@sentry/react', () => ({
-  captureException: vi.fn()
-}));
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useDrawingHistory } from '../useDrawingHistory';
+
+// Setup mocks
+const mockCanvas = {
+  add: vi.fn(),
+  remove: vi.fn(),
+  getObjects: vi.fn().mockReturnValue([]),
+  renderAll: vi.fn(),
+  clear: vi.fn(),
+  // Add wrapperEl to match Canvas requirements
+  wrapperEl: document.createElement('div'),
+};
 
 describe('useDrawingHistory', () => {
-  test('should initialize with empty history', () => {
-    const mockCanvas = {
-      toObject: vi.fn().mockReturnValue({ objects: [] })
-    } as unknown as fabric.Canvas;
-    
-    const canvasRef = { current: mockCanvas } as React.MutableRefObject<fabric.Canvas>;
-    
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  
+  it('should initialize with empty history', () => {
+    const canvasRef = { current: mockCanvas };
     const { result } = renderHook(() => useDrawingHistory({ fabricCanvasRef: canvasRef }));
     
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
   });
+
+  it.todo('should save state when saveState is called', () => {
+    // Implement this later
+  });
   
-  test('should handle errors gracefully', () => {
-    // Replace skip with regular test but keep condition simple
-    expect(true).toBe(true);
+  it.todo('should handle undo correctly', () => {
+    // Implement this later
+  });
+  
+  it.todo('should handle redo correctly', () => {
+    // Implement this later
   });
 });

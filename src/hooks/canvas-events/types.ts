@@ -1,127 +1,43 @@
 
-import { MutableRefObject } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from '@/types/Point';
+import { Object as FabricObject } from 'fabric';
 
-export interface BaseEventProps {
-  fabricCanvasRef: MutableRefObject<ExtendedFabricCanvas | null>;
-  tool: DrawingMode;
-  saveCurrentState?: () => void;
-}
-
-export interface EventHandlerResult {
-  register: () => void;
-  unregister: () => void;
-  cleanup: () => void;
-}
-
-export interface UsePathEventsProps extends BaseEventProps {
-  processCreatedPath?: (path: FabricObject) => void;
-  handleMouseUp?: () => void;
-}
-
-export interface UseKeyboardEventsProps extends BaseEventProps {
-  deleteSelectedObjects?: () => void;
-  undo?: () => void;
-  redo?: () => void;
-  handleUndo?: () => void;
-  handleRedo?: () => void;
-  handleEscape?: () => void;
-  handleDelete?: () => void;
-}
-
-export interface UseMouseEventsProps extends BaseEventProps {
-  lineColor: string;
-  lineThickness: number;
-  isSnapping?: boolean;
-  gridSize?: number;
-  snapToGrid?: (point: Point) => Point;
-  handleMouseDown?: (e: any) => void;
-  handleMouseMove?: (e: any) => void;
-  handleMouseUp?: (e: any) => void;
-}
-
-export interface UseObjectEventsProps extends BaseEventProps {
-  onObjectAdded?: (e: any) => void;
-  onObjectModified?: (e: any) => void;
-  onObjectRemoved?: (e: any) => void;
-  lineColor?: string;
-  lineThickness?: number;
-}
-
-export interface UseBrushSettingsProps extends BaseEventProps {
-  lineColor: string;
-  lineThickness: number;
-  usePressure?: boolean;
-}
-
-export interface UseCanvasHandlersProps extends BaseEventProps {
-  lineColor?: string;
-  lineThickness?: number;
-  onDrawingComplete?: () => void;
-  eventTypes?: string[];
-  handlers?: Record<string, (e: any) => void>;
-}
-
-export interface DrawingPathState {
-  isDrawing: boolean;
-  currentPath: FabricObject | null;
-}
-
-export interface UseZoomTrackingProps {
-  fabricCanvasRef: MutableRefObject<ExtendedFabricCanvas | null>;
-  initialZoom?: number;
-  minZoom?: number;
-  maxZoom?: number;
-  tool?: DrawingMode;
-  updateZoomLevel?: () => void;
-}
-
-export interface UseZoomTrackingResult {
-  zoom: number;
-  setZoom: (zoom: number) => void;
-  zoomIn: (factor?: number) => void;
-  zoomOut: (factor?: number) => void;
-  resetZoom: () => void;
-  currentZoom?: number;
-  register?: () => void;
-  unregister?: () => void;
-  cleanup?: () => void;
-}
-
-export type ZoomDirection = 'in' | 'out';
-
-export interface ZoomOptions {
-  center?: Point;
-  duration?: number;
-}
-
-export interface CanvasEvents {
-  [key: string]: (e: any) => void;
-}
-
-export interface EventHandlerMap {
-  [key: string]: (e: any) => void;
-}
-
+/**
+ * Enhanced fabric object that supports direct property editing
+ */
 export interface EditableFabricObject extends FabricObject {
-  set: (options: Record<string, any>) => FabricObject;
+  // Ensuring this matches the FabricObject.set signature
+  set(options: Record<string, any>): any;
+  set(property: string, value: any): any;
+  type?: string;
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  visible?: boolean;
+  selectable?: boolean;
+  evented?: boolean;
 }
 
-export interface TargetEvent {
-  target: FabricObject;
-}
+/**
+ * Canvas event handler type
+ */
+export type CanvasEventHandler = (e: any) => void;
 
-export const ZOOM_LEVEL_CONSTANTS = {
-  DEFAULT: 1.0,
-  MIN: 0.1,
-  MAX: 10.0,
-  STEP: 0.1,
-  LARGE_STEP: 0.5,
-  DEFAULT_ZOOM: 1.0,
-  MIN_ZOOM: 0.1,
-  MAX_ZOOM: 10.0,
-  ZOOM_STEP: 0.1
-};
+/**
+ * Canvas events map
+ */
+export interface CanvasEventHandlerMap {
+  'mouse:down': CanvasEventHandler;
+  'mouse:move': CanvasEventHandler;
+  'mouse:up': CanvasEventHandler;
+  'object:added': CanvasEventHandler;
+  'object:removed': CanvasEventHandler;
+  'object:modified': CanvasEventHandler;
+  'object:rotating': CanvasEventHandler;
+  'object:scaling': CanvasEventHandler;
+  'object:moving': CanvasEventHandler;
+  'selection:created': CanvasEventHandler;
+  'selection:updated': CanvasEventHandler;
+  'selection:cleared': CanvasEventHandler;
+  [key: string]: CanvasEventHandler;
+}

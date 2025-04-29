@@ -20,6 +20,8 @@ declare module 'fabric' {
     add(...objects: any[]): Canvas;  // Critical fix: accept any objects
     remove(...objects: any[]): Canvas;  // Critical fix: accept any objects
     sendToBack(object: any): Canvas;  // Critical fix: accept any object
+    getActiveObjects(): any[];
+    discardActiveObject(options?: any): Canvas;
   }
 
   interface Object {
@@ -51,7 +53,11 @@ declare module 'fabric' {
     set(property: string, value: any): any;
   }
 
-  export class ActiveSelection extends Object {
+  export class ActiveSelection {
+    constructor(objects: Object[], options?: any);
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
+    canvas?: Canvas;
     forEachObject(callback: (obj: Object) => void): void;
   }
 
@@ -94,5 +100,6 @@ declare module 'fabric' {
   export class PencilBrush {
     color: string;
     width: number;
+    onMouseDown?: (event: any) => void;
   }
 }

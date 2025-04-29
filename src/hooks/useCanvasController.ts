@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, ActiveSelection } from 'fabric';
+import { Canvas as FabricCanvas, ActiveSelection, Object as FabricObject } from 'fabric';
 import { toast } from 'sonner';
 import { saveCanvasToLocalStorage } from '@/utils/autosave/canvasAutoSave';
 
@@ -53,9 +53,15 @@ export const useCanvasController = (canvas: FabricCanvas | null) => {
         canvas.discardActiveObject();
         canvas.renderAll();
         
-        // Reselect objects after saving
-        canvas.setActiveObject(new ActiveSelection(activeObjects, { canvas }));
-        canvas.requestRenderAll();
+        // Reselect objects after saving - fixing the ActiveSelection creation
+        if (canvas.setActiveObject && activeObjects.length > 0) {
+          const selection = new ActiveSelection(activeObjects as FabricObject[], {});
+          if (selection.set) {
+            selection.set('canvas', canvas);
+          }
+          canvas.setActiveObject(selection);
+          canvas.requestRenderAll();
+        }
       }
       
       toast.success("Canvas saved successfully");

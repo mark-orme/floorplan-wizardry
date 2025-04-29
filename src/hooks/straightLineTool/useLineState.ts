@@ -52,8 +52,9 @@ export const useLineState = ({
     snapToGrid,
     anglesEnabled,
     snapToAngle,
-    createLine,
-    updateLine,
+    // Convert the function signatures to match what's expected
+    createLine: (startPoint: Point, endPoint: Point) => createLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y),
+    updateLine: (line: Line, endPoint: Point) => updateLine(line, endPoint.x, endPoint.y),
     finalizeLine,
     removeLine
   });

@@ -25,6 +25,16 @@ export const captureException = (error: Error, options?: {
 };
 
 /**
+ * Capture an error in Sentry (Alias for captureException)
+ */
+export const captureError = (error: Error, options?: {
+  tags?: Record<string, string>,
+  extra?: Record<string, any>
+}) => {
+  captureException(error, options);
+};
+
+/**
  * Initialize Sentry
  */
 export const initSentry = () => {

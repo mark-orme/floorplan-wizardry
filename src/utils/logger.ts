@@ -33,6 +33,10 @@ export const toolsLogger = {
   
   error: (message: string, ...args: any[]) => {
     logger.error(`[TOOLS] ${message}`, ...args);
+  },
+  
+  debug: (message: string, ...args: any[]) => {
+    logger.debug(`[TOOLS] ${message}`, ...args);
   }
 };
 

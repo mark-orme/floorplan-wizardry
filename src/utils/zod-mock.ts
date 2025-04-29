@@ -105,7 +105,8 @@ const z = {
   enum: (values: any[]) => new ZodType<any>(),
   nativeEnum: (enumObj: any) => new ZodType<any>(),
   record: (keyType: any, valueType: any) => new ZodType<Record<string, any>>(),
-  infer: <T>(schema: ZodType<T>): T => ({} as T)
+  infer: <T>(schema: ZodType<T>): T => ({} as T),
+  ZodError: ZodError
 };
 
 export { z };
