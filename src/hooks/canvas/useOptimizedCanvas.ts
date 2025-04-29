@@ -1,8 +1,7 @@
-
 /**
  * Master hook for canvas optimization combining virtualization and metrics
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useVirtualizationEngine } from './useVirtualizationEngine';
 import { useCanvasMetrics } from './useCanvasMetrics';

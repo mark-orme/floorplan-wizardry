@@ -1,11 +1,13 @@
 
-import { RefObject } from 'react';
-import { Object as FabricObject } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas } from 'fabric';
+import * as fabric from 'fabric';
+import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR } from '@/constants/gridConstants';
+import { ExtendedFabricCanvas, asExtendedObject } from '@/types/canvas-types';
 
-interface UseGridParams {
-  fabricCanvasRef: RefObject<ExtendedFabricCanvas | null>;
-  gridLayerRef: RefObject<FabricObject[]>;
+interface UseGridProps {
+  fabricCanvasRef: React.MutableRefObject<Canvas | ExtendedFabricCanvas | null>;
+  gridLayerRef: React.MutableRefObject<fabric.Object[]>;
   initialGridSize?: number;
   initialVisible?: boolean;
 }
@@ -13,41 +15,88 @@ interface UseGridParams {
 export const useGrid = ({
   fabricCanvasRef,
   gridLayerRef,
-  initialGridSize = 20,
+  initialGridSize = SMALL_GRID_SIZE,
   initialVisible = true
-}: UseGridParams) => {
-  const createGrid = (canvas: ExtendedFabricCanvas) => {
-    if (!canvas) return [];
-    
+}: UseGridProps) => {
+  const [gridSize, setGridSize] = useState(initialGridSize);
+  const [visible, setVisible] = useState(initialVisible);
+
+  const createGrid = useCallback((canvas: Canvas | ExtendedFabricCanvas) => {
+    if (!canvas) return;
+
+    // Clear existing grid lines
+    gridLayerRef.current.forEach(obj => {
+      canvas.remove(obj);
+    });
+
+    const gridObjects: fabric.Object[] = [];
     const width = canvas.getWidth();
     const height = canvas.getHeight();
-    const objects: FabricObject[] = [];
-    
-    // Implementation stub
-    console.log(`Creating grid with size ${initialGridSize} on canvas ${width}x${height}`);
-    
-    return objects;
-  };
-  
-  const toggleGridVisibility = (visible: boolean) => {
-    const grid = gridLayerRef.current || [];
+
+    // Create vertical grid lines
+    for (let x = 0; x <= width; x += gridSize) {
+      const isLargeLine = x % LARGE_GRID_SIZE === 0;
+      const line = new fabric.Line([x, 0, x, height], {
+        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+        strokeWidth: isLargeLine ? 1 : 0.5,
+        selectable: false,
+        evented: false,
+        visible
+      });
+      
+      canvas.add(asExtendedObject(line));
+      gridObjects.push(line);
+    }
+
+    // Create horizontal grid lines
+    for (let y = 0; y <= height; y += gridSize) {
+      const isLargeLine = y % LARGE_GRID_SIZE === 0;
+      const line = new fabric.Line([0, y, width, y], {
+        stroke: isLargeLine ? LARGE_GRID_COLOR : SMALL_GRID_COLOR,
+        strokeWidth: isLargeLine ? 1 : 0.5,
+        selectable: false,
+        evented: false,
+        visible
+      });
+      
+      canvas.add(asExtendedObject(line));
+      gridObjects.push(line);
+    }
+
+    // Send all grid lines to the back
+    gridObjects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
+
+    // Store the grid objects reference
+    gridLayerRef.current = gridObjects;
+
+    // Render the canvas
+    canvas.renderAll();
+
+    return gridObjects;
+  }, [gridLayerRef, gridSize, visible]);
+
+  // Update grid visibility when visible state changes
+  useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    
     if (!canvas) return;
-    
-    grid.forEach((obj) => {
+
+    gridLayerRef.current.forEach(obj => {
       if (obj) {
-        obj.set({ visible });
+        (obj as any).visible = visible;
       }
     });
-    
-    canvas.requestRenderAll();
-  };
-  
+
+    canvas.renderAll();
+  }, [fabricCanvasRef, gridLayerRef, visible]);
+
   return {
+    gridSize,
+    visible,
+    setGridSize,
+    setVisible,
     createGrid,
-    toggleGridVisibility,
-    isGridVisible: initialVisible,
-    gridSize: initialGridSize
+    toggleGrid: () => setVisible(!visible)
   };
 };

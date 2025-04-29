@@ -1,133 +1,63 @@
-
-/**
- * Optimized grid snapping hook with reduced jitter
- */
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useCallback, useRef } from 'react';
+import { Canvas, Point } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { createSmoothEventHandler } from '@/utils/canvas/renderOptimizer';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { Point } from '@/types/core/Point';
-import { requestOptimizedRender, createSmoothEventHandler } from '@/utils/canvas/renderOptimizer';
 
-interface UseOptimizedGridSnappingProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  initialSnapEnabled?: boolean;
-  gridSize?: number;
-}
-
-export const useOptimizedGridSnapping = ({
-  fabricCanvasRef,
-  initialSnapEnabled = true,
-  gridSize = GRID_CONSTANTS.GRID_SIZE
-}: UseOptimizedGridSnappingProps) => {
-  const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  const lastValidPointRef = useRef<Point | null>(null);
+export const useOptimizedGridSnapping = (
+  canvas: Canvas | ExtendedFabricCanvas | null, 
+  snapToGrid: boolean = true
+) => {
+  const lastSnappedPoint = useRef<Point | null>(null);
   
-  // Toggle snap to grid
-  const toggleSnapToGrid = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-  
-  /**
-   * Optimized point snapping with jitter reduction
-   */
-  const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) {
-      lastValidPointRef.current = point;
-      return { ...point };
-    }
+  const snapToNearestGridPoint = useCallback((point: { x: number; y: number }) => {
+    if (!snapToGrid || !point) return point;
     
-    try {
-      // Round to nearest grid point
-      const snappedPoint = {
-        x: Math.round(point.x / gridSize) * gridSize,
-        y: Math.round(point.y / gridSize) * gridSize
-      };
-      
-      // Store as last valid point
-      lastValidPointRef.current = snappedPoint;
-      return snappedPoint;
-    } catch (error) {
-      console.error('Error snapping point to grid:', error);
-      // Return original point or last valid point as fallback
-      return lastValidPointRef.current || point;
-    }
-  }, [snapEnabled, gridSize]);
-  
-  /**
-   * Snap a line to grid with reduced jitter
-   */
-  const snapLineToGrid = useCallback((start: Point, end: Point) => {
-    if (!snapEnabled) {
-      return { start: { ...start }, end: { ...end } };
-    }
+    const gridSize = GRID_CONSTANTS.SMALL.SIZE;
     
-    try {
-      // Snap both points
-      const snappedStart = snapPointToGrid(start);
-      const snappedEnd = snapPointToGrid(end);
-      
-      // Calculate delta to see if we should make horizontal or vertical
-      const dx = Math.abs(snappedEnd.x - snappedStart.x);
-      const dy = Math.abs(snappedEnd.y - snappedStart.y);
-      
-      // Threshold for auto-straightening (as a factor of grid size)
-      const straightenThreshold = gridSize * 0.5;
-      
-      // Make line exactly horizontal or vertical if it's close
-      if (dx < straightenThreshold) {
-        snappedEnd.x = snappedStart.x;
-      } else if (dy < straightenThreshold) {
-        snappedEnd.y = snappedStart.y;
-      }
-      
-      return { start: snappedStart, end: snappedEnd };
-    } catch (error) {
-      console.error('Error snapping line to grid:', error);
-      return { start, end };
-    }
-  }, [snapEnabled, snapPointToGrid, gridSize]);
-  
-  // Setup canvas event listeners for object movement
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !snapEnabled) return;
-    
-    // Create optimized object moving handler
-    const handleObjectMoving = createSmoothEventHandler((e: any) => {
-      if (!snapEnabled) return;
-      
-      const obj = e.target;
-      if (!obj) return;
-      
-      // Get current position
-      const p = { x: obj.left, y: obj.top };
-      
-      // Snap to grid
-      const snapped = snapPointToGrid(p);
-      
-      // Apply snapped position
-      obj.set({
-        left: snapped.x,
-        top: snapped.y
-      });
-      
-      // Request optimized render
-      requestOptimizedRender(canvas, 'objectMoving');
-    }, 16); // ~60fps
-    
-    // Add event listener
-    canvas.on('object:moving', handleObjectMoving);
-    
-    // Clean up
-    return () => {
-      canvas.off('object:moving', handleObjectMoving);
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
     };
-  }, [fabricCanvasRef, snapEnabled, snapPointToGrid]);
+  }, [snapToGrid]);
   
-  return {
-    snapEnabled,
-    toggleSnapToGrid,
-    snapPointToGrid,
-    snapLineToGrid
-  };
+  const optimizedMouseMoveHandler = useCallback((options: { target: any; e: any }) => {
+    if (!canvas || !snapToGrid || !options.target) return;
+    
+    const target = options.target;
+    const pointer = canvas.getPointer(options.e);
+    
+    if (!pointer) return;
+    
+    const snappedPoint = snapToNearestGridPoint(pointer);
+    
+    if (lastSnappedPoint.current &&
+      lastSnappedPoint.current.x === snappedPoint.x &&
+      lastSnappedPoint.current.y === snappedPoint.y) {
+      return;
+    }
+    
+    target.set({
+      left: snappedPoint.x - (target.width || 0) / 2,
+      top: snappedPoint.y - (target.height || 0) / 2
+    });
+    
+    lastSnappedPoint.current = new Point(snappedPoint.x, snappedPoint.y);
+    
+    canvas.requestRenderAll();
+  }, [canvas, snapToGrid, snapToNearestGridPoint]);
+  
+  const attachOptimizedSnapping = useCallback(() => {
+    if (!canvas) return;
+    
+    const smoothMouseMove = createSmoothEventHandler(optimizedMouseMoveHandler);
+    
+    canvas.on('object:moving', smoothMouseMove);
+    
+    return () => {
+      canvas.off('object:moving', smoothMouseMove);
+    };
+  }, [canvas, optimizedMouseMoveHandler]);
+  
+  return { snapToNearestGridPoint };
 };

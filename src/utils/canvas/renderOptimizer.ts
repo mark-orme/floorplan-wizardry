@@ -1,59 +1,29 @@
 
 /**
- * Canvas render optimization utilities
- * Helps batch and optimize render calls for better performance
+ * Canvas render optimizations
  */
-
-import { Canvas as FabricCanvas } from 'fabric';
-
-// Track pending render requests
-let renderRequested = false;
-let renderTimeout: NodeJS.Timeout | null = null;
-let renderDebounceTime = 10; // ms
+import { FabricEventHandler } from '@/types/canvas/ExtendedCanvas';
 
 /**
- * Request an optimized render of the canvas
- * Debounces multiple render calls to improve performance
- * 
- * @param canvas The fabric canvas to render
- * @param source Optional source identifier for debugging
+ * Creates a debounced event handler for smooth canvas events
+ * @param handler The original event handler
+ * @param delay Debounce delay in milliseconds
+ * @returns A smoothed event handler
  */
-export const requestOptimizedRender = (
-  canvas: FabricCanvas | null, 
-  source: string = 'unknown'
-): void => {
-  if (!canvas) return;
+export function createSmoothEventHandler<T>(
+  handler: FabricEventHandler<T>,
+  delay: number = 16
+): FabricEventHandler<T> {
+  let timeoutId: number | null = null;
   
-  // Clear any pending render timeout
-  if (renderTimeout) {
-    clearTimeout(renderTimeout);
-    renderTimeout = null;
-  }
-  
-  // Schedule a new render
-  if (!renderRequested) {
-    renderRequested = true;
+  return (e: { target: T }) => {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
     
-    renderTimeout = setTimeout(() => {
-      if (canvas) {
-        // Check if requestRenderAll is available, fall back to renderAll if not
-        if (typeof canvas.requestRenderAll === 'function') {
-          canvas.requestRenderAll();
-        } else if (typeof canvas.renderAll === 'function') {
-          canvas.renderAll();
-        }
-      }
-      renderRequested = false;
-      renderTimeout = null;
-    }, renderDebounceTime);
-  }
-};
-
-/**
- * Set the debounce time for render optimization
- * 
- * @param time Debounce time in milliseconds
- */
-export const setRenderDebounceTime = (time: number): void => {
-  renderDebounceTime = time;
-};
+    timeoutId = window.setTimeout(() => {
+      handler(e);
+      timeoutId = null;
+    }, delay);
+  };
+}

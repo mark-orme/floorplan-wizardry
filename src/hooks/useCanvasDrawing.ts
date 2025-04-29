@@ -1,37 +1,63 @@
 
-import { useEffect, useState } from 'react';
-import { FabricObject } from '@/types/fabric';
-import { DrawingTool } from '@/types/canvasStateTypes';
-import { FloorPlan, DrawingState } from '@/types/floorPlanTypes';
+import { useState, useCallback } from 'react';
+import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingState, createDefaultDrawingState } from '@/types/core/DrawingState';
 
-interface UseCanvasDrawingProps {
-  fabricCanvasRef: React.MutableRefObject<any | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  historyRef: React.MutableRefObject<{
-    past: FabricObject[][],
-    future: FabricObject[][]
-  }>;
-  tool: DrawingTool;
-  currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<FloorPlan[]>>;
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  lineThickness: number;
+export interface UseCanvasDrawingProps {
+  tool: DrawingMode;
   lineColor: string;
-  deleteSelectedObjects: () => void;
-  recalculateGIA?: () => void;
+  lineThickness: number;
+  onDrawingEnd?: () => void;
 }
 
-export const useCanvasDrawing = (props: UseCanvasDrawingProps) => {
-  const [drawingState, setDrawingState] = useState<DrawingState | null>(null);
+export const useCanvasDrawing = ({
+  tool,
+  lineColor,
+  lineThickness,
+  onDrawingEnd
+}: UseCanvasDrawingProps) => {
+  const [drawingState, setDrawingState] = useState<DrawingState>(
+    createDefaultDrawingState()
+  );
 
-  useEffect(() => {
-    // Dummy implementation
-    return () => {
-      // Cleanup
-    };
-  }, [props.tool, props.fabricCanvasRef.current]);
+  const handleMouseDown = useCallback((event: any) => {
+    // Implementation
+  }, []);
+
+  const handleMouseMove = useCallback((event: any) => {
+    // Implementation
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    // Implementation
+    if (onDrawingEnd) {
+      onDrawingEnd();
+    }
+  }, [onDrawingEnd]);
+
+  const startDrawing = useCallback((point: { x: number; y: number }) => {
+    // Implementation
+  }, []);
+
+  const continueDrawing = useCallback((point: { x: number; y: number }) => {
+    // Implementation
+  }, []);
+
+  const endDrawing = useCallback(() => {
+    // Implementation
+    if (onDrawingEnd) {
+      onDrawingEnd();
+    }
+  }, [onDrawingEnd]);
 
   return {
-    drawingState
+    drawingState,
+    setDrawingState,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    startDrawing,
+    continueDrawing,
+    endDrawing
   };
 };

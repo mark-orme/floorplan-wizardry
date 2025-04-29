@@ -1,21 +1,19 @@
 
+/**
+ * Drawing mode enumeration
+ */
 export enum DrawingMode {
   SELECT = 'select',
+  PAN = 'pan',
   DRAW = 'draw',
-  ERASE = 'erase',
-  HAND = 'hand',
-  WALL = 'wall',
-  PENCIL = 'pencil',
-  ROOM = 'room',
-  TEXT = 'text',
-  SHAPE = 'shape',
   LINE = 'line',
+  RECT = 'rect',
   RECTANGLE = 'rectangle',
+  ELLIPSE = 'ellipse',
   CIRCLE = 'circle',
+  TEXT = 'text',
+  ERASER = 'eraser',
+  WALL = 'wall',
   DOOR = 'door',
   WINDOW = 'window',
-  STRAIGHT_LINE = 'straight_line',
-  PAN = 'pan',
-  ERASER = 'eraser',
-  MEASURE = 'measure'
 }

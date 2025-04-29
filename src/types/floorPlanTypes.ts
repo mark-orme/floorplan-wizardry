@@ -20,6 +20,7 @@ export interface FloorPlan {
   metadata: FloorPlanMetadata;
   objects: FabricObject[];
   canvasData?: string;
+  label?: string;
   // Additional fields for backwards compatibility
   json?: string;
   bbox?: {

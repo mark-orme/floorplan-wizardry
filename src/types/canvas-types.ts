@@ -63,6 +63,7 @@ export interface CanvasState {
   gridVisible?: boolean;
   snapToGrid?: boolean;
   gridSize?: number;
+  zoomLevel?: number;
 }
 
 /**

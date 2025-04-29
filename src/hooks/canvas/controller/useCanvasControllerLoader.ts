@@ -1,4 +1,3 @@
-
 /**
  * Canvas controller loader hook
  * Handles loading and error states for the canvas controller
@@ -7,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from '@/types/DebugInfoState';
 import { StrokeTypeLiteral, asStrokeType, Point } from "@/types/floor-plan/unifiedTypes";
 import { calculateWallLength } from "@/utils/debug/typeDiagnostics";
 
@@ -126,10 +125,20 @@ export const useCanvasControllerLoader = ({
     'freehand': asStrokeType('freehand')
   };
   
+  const updateDebugInfo = (partialState: Partial<DebugInfoState>) => {
+    // Implementation that uses canvasReady
+    setDebugInfo((prev) => ({
+      ...prev,
+      canvasReady: true, // This is now valid because canvasReady exists in DebugInfoState
+      // Other properties...
+    }));
+  };
+  
   return {
     isLoading,
     setIsLoading,
     handleError,
-    strokeTypeMap
+    strokeTypeMap,
+    updateDebugInfo
   };
 };

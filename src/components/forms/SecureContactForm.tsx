@@ -1,139 +1,107 @@
-
 import React from 'react';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { sanitizeHtml } from '@/utils/sanitizeHtml';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
-/**
- * Secure contact form schema with validation
- */
-const secureContactSchema = z.object({
-  name: z.string()
-    .min(2, { message: "Name must be at least 2 characters" })
-    .max(50, { message: "Name must be less than 50 characters" }),
-  email: z.string()
-    .email({ message: "Please enter a valid email address" }),
-  phone: z.string()
-    .min(7, { message: "Phone number must be at least 7 characters" })
-    .max(15, { message: "Phone number must be less than 15 characters" }),
-  message: z.string()
-    .min(10, { message: "Message must be at least 10 characters" })
-    .max(500, { message: "Message must be less than 500 characters" }),
-  consent: z.boolean()
-    .refine(val => val, { message: "You must agree to the terms and conditions" })
+// Define schema using Zod
+const schema = z.object({
+  name: z.string().min(2, { message: "Name is required" }),
+  email: z.string().email({ message: "Please enter a valid email" }),
+  subject: z.string().min(3, { message: "Subject is required" }),
+  message: z.string().min(10, { message: "Message must be at least 10 characters" }),
+  agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to terms" }),
 });
 
-type SecureContactFormValues = z.infer<typeof secureContactSchema>;
+// Infer TypeScript type from schema
+type FormData = z.infer<typeof schema>;
 
-/**
- * Secure contact form with XSS protection
- */
-export const SecureContactForm: React.FC = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset
-  } = useForm<SecureContactFormValues>({
-    resolver: zodResolver(secureContactSchema),
+interface SecureContactFormProps {
+  onSubmit?: (data: FormData) => void;
+}
+
+export const SecureContactForm: React.FC<SecureContactFormProps> = ({ onSubmit }) => {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       email: '',
-      phone: '',
+      subject: '',
       message: '',
-      consent: false
-    }
+      agreeToTerms: false,
+    },
   });
 
-  const onSubmit = (data: SecureContactFormValues) => {
-    // Sanitize inputs to prevent XSS
-    const sanitizedData = {
-      ...data,
-      name: sanitizeHtml(data.name),
-      email: sanitizeHtml(data.email),
-      phone: sanitizeHtml(data.phone),
-      message: sanitizeHtml(data.message)
-    };
-
-    console.log('Form submitted:', sanitizedData);
-    toast.success('Form submitted successfully!');
-    reset();
+  const submitHandler = (data: FormData) => {
+    console.log("Form Data:", data);
+    onSubmit?.(data);
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-lg">
+    <form onSubmit={handleSubmit(submitHandler)} className="max-w-md mx-auto mt-8 space-y-6">
       <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
+        <Label htmlFor="name">Name</Label>
         <Input
+          type="text"
           id="name"
-          {...register('name')}
-          className={errors.name ? 'border-red-500' : ''}
+          {...register("name")}
+          placeholder="Your Name"
+          className={`w-full ${errors.name ? 'border-red-500' : ''}`}
         />
-        {errors.name && (
-          <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
-        )}
+        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+        <Label htmlFor="email">Email</Label>
         <Input
-          id="email"
           type="email"
-          {...register('email')}
-          className={errors.email ? 'border-red-500' : ''}
+          id="email"
+          {...register("email")}
+          placeholder="Your Email"
+          className={`w-full ${errors.email ? 'border-red-500' : ''}`}
         />
-        {errors.email && (
-          <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-        )}
+        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium mb-1">Phone</label>
+        <Label htmlFor="subject">Subject</Label>
         <Input
-          id="phone"
-          type="tel"
-          {...register('phone')}
-          className={errors.phone ? 'border-red-500' : ''}
+          type="text"
+          id="subject"
+          {...register("subject")}
+          placeholder="Subject"
+          className={`w-full ${errors.subject ? 'border-red-500' : ''}`}
         />
-        {errors.phone && (
-          <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
-        )}
+        {errors.subject && <p className="text-red-500 text-sm">{errors.subject.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="message" className="block text-sm font-medium mb-1">Message</label>
+        <Label htmlFor="message">Message</Label>
         <Textarea
           id="message"
-          {...register('message')}
-          className={errors.message ? 'border-red-500' : ''}
           rows={4}
+          {...register("message")}
+          placeholder="Your Message"
+          className={`w-full ${errors.message ? 'border-red-500' : ''}`}
         />
-        {errors.message && (
-          <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>
-        )}
+        {errors.message && <p className="text-red-500 text-sm">{errors.message.message}</p>}
       </div>
 
-      <div className="flex items-center">
-        <input
-          id="consent"
-          type="checkbox"
-          {...register('consent')}
-          className="h-4 w-4 mr-2"
-        />
-        <label htmlFor="consent" className="text-sm">
-          I agree to the terms and conditions
-        </label>
+      <div className="flex items-center space-x-2">
+        <Checkbox id="terms" {...register("agreeToTerms")} />
+        <Label htmlFor="terms">
+          I agree to the <a href="#" className="text-blue-500">Terms and Conditions</a>
+        </Label>
+        {errors.agreeToTerms && <p className="text-red-500 text-sm">{errors.agreeToTerms.message}</p>}
       </div>
-      {errors.consent && (
-        <p className="text-red-500 text-xs mt-1">{errors.consent.message}</p>
-      )}
 
-      <Button type="submit" className="w-full">Submit</Button>
+      <Button type="submit" className="w-full">
+        Send Message
+      </Button>
     </form>
   );
 };

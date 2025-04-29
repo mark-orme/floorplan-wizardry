@@ -13,7 +13,7 @@ import {
 import { ExtendedFabricCanvas, asExtendedCanvas, asExtendedObject } from '@/types/canvas-types';
 
 interface GridRendererProps {
-  canvas: FabricCanvas | ExtendedFabricCanvas | null;
+  canvas: fabric.Canvas | ExtendedFabricCanvas | null;
   gridSize?: number;
   color?: string;
   opacity?: number;
@@ -54,7 +54,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           evented: false,
           visible
         });
-        canvas.add(line);
+        canvas.add(asExtendedObject(line));
         newGridObjects.push(line);
       }
       
@@ -69,7 +69,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           evented: false,
           visible
         });
-        canvas.add(line);
+        canvas.add(asExtendedObject(line));
         newGridObjects.push(line);
       }
       
@@ -118,6 +118,6 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
   }, [canvas, visible, gridObjects]);
   
   return null;
-};
+}
 
 export default GridRenderer;
