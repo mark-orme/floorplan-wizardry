@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as fabric from 'fabric';
 import { Canvas as FabricCanvas, Object as FabricObject, Line } from 'fabric';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
@@ -33,7 +34,7 @@ export const useReliableGrid = ({
 
       // Create vertical lines
       for (let i = 0; i <= width; i += gridSpacing) {
-        const line = new Line([i, 0, i, height], {
+        const line = new fabric.Line([i, 0, i, height], {
           stroke: '#e5e5e5',
           selectable: false,
           evented: false,
@@ -46,7 +47,7 @@ export const useReliableGrid = ({
 
       // Create horizontal lines
       for (let i = 0; i <= height; i += gridSpacing) {
-        const line = new Line([0, i, width, i], {
+        const line = new fabric.Line([0, i, width, i], {
           stroke: '#e5e5e5',
           selectable: false,
           evented: false,
@@ -95,4 +96,3 @@ export const useReliableGrid = ({
     reinitializeGrid
   };
 };
-

@@ -1,11 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, supabaseAuth } from '@/lib/supabase';
+import { User, UserRole, supabase } from '@/lib/supabase';
 
 interface AuthContextType {
   user: User | null;
   userRole: UserRole | null;
   loading: boolean;
+  isLoading?: boolean;
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,8 +22,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const user = await supabaseAuth.getUser();
-        setUser(user);
+        const user = await supabase.auth.getUser();
+        setUser(user.data.user ? { id: user.data.user.id } : null);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Authentication error'));
         console.error('Auth error:', err);
@@ -37,9 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { user, error } = await supabaseAuth.signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      setUser(user);
+      setUser(data.user ? { id: data.user.id } : null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Login failed'));
       throw err;
@@ -51,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setLoading(true);
     try {
-      await supabaseAuth.signOut();
+      await supabase.auth.signOut();
       setUser(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Logout failed'));
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         userRole: user?.role || null,
         loading,
+        isLoading: loading,
         error,
         login,
         logout

@@ -2,9 +2,9 @@
 // Remove imports for hooks that don't exist or rename them
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DebugInfoState } from "@/types/debugTypes";
+import { DebugInfoState } from "@/types/DebugInfoState";
 import { DrawingMode } from "@/constants/drawingModes";
-import { createDefaultMetadata } from "@/types/floor-plan/metadataTypes";
+import { captureMessage } from "@/utils/sentryUtils";
 
 interface UseCanvasGridProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas>;
@@ -101,9 +101,6 @@ export const useCanvasControllerLoader = ({
     setErrorMessage,
     resetLoadTimes: () => {}
   });
-  
-  // Initialize GIA
-  const { recalculateGIA, calculateGIA } = useFloorPlanGIA();
   
   // Loading state
   const [isLoading, setIsLoading] = useState(true);

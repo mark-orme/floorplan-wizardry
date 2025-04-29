@@ -16,4 +16,6 @@ export interface FloorPlan {
   metadata: FloorPlanMetadata;
   objects?: FabricObject[];
   canvasData?: string;
+  label?: string;
+  level?: number;
 }

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
 import * as fabric from 'fabric';
 import { SMALL_GRID_SIZE, LARGE_GRID_SIZE, SMALL_GRID_COLOR, LARGE_GRID_COLOR, SMALL_GRID_WIDTH, LARGE_GRID_WIDTH } from '@/constants/gridConstants';
-import { ExtendedFabricCanvas, asExtendedObject } from '@/types/canvas-types';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
 interface MemoizedGridProps {
   canvas: ExtendedFabricCanvas | null;
@@ -40,7 +40,7 @@ const MemoizedGridComponent = ({
           visible
         });
         
-        canvas.add(asExtendedObject(line));
+        canvas.add(line);
         newGridObjects.push(line);
       }
       
@@ -55,7 +55,7 @@ const MemoizedGridComponent = ({
           visible
         });
         
-        canvas.add(asExtendedObject(line));
+        canvas.add(line);
         newGridObjects.push(line);
       }
       

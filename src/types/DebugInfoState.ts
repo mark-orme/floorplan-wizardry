@@ -7,4 +7,5 @@ export interface DebugInfoState {
   eventCount?: number;
   memoryUsage?: number;
   canvasReady?: boolean;
+  hasError?: boolean;
 }

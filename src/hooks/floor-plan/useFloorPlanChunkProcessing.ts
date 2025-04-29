@@ -1,106 +1,104 @@
 
-/**
- * Hook for processing floor plans in chunks to prevent UI freezing
- * Breaks down large operations into manageable chunks for better responsiveness
- * @module useFloorPlanChunkProcessing
- */
-import { useCallback } from "react";
-import { FloorPlan } from "@/types/floorPlan";
-import logger from "@/utils/logger";
+import { useState, useCallback } from 'react';
+import { FloorPlan } from '@/types/FloorPlan';
 
-/**
- * Options for chunk processing
- * @interface ChunkProcessingOptions
- */
-interface ChunkProcessingOptions {
-  /** Size of each chunk */
+interface UseFloorPlanChunkProcessingOptions {
   chunkSize?: number;
-  /** Delay between chunks in ms */
   chunkDelay?: number;
-  /** Whether to show progress notifications */
-  showProgress?: boolean;
-  /** Callback for progress updates */
-  onProgress?: (processed: number, total: number) => void;
+  onChunkComplete?: (processed: FloorPlan[], chunkIndex: number) => void;
+  onError?: (error: Error, chunkIndex: number) => void;
+  onComplete?: (results: FloorPlan[]) => void;
 }
 
 /**
- * Default options for chunk processing
+ * Hook for processing floor plans in chunks with built-in throttling
+ * Useful for handling large datasets without blocking the main thread
  */
-const DEFAULT_OPTIONS: ChunkProcessingOptions = {
-  chunkSize: 5,
-  chunkDelay: 0,
-  showProgress: true
-};
+export const useFloorPlanChunkProcessing = (
+  options: UseFloorPlanChunkProcessingOptions = {}
+) => {
+  const {
+    chunkSize = 10,
+    chunkDelay = 100,
+    onChunkComplete,
+    onError,
+    onComplete
+  } = options;
 
-/**
- * Create a delay promise
- * @param {number} ms - Milliseconds to delay
- * @returns {Promise<void>} Promise that resolves after the delay
- */
-const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentChunk, setCurrentChunk] = useState(0);
 
-/**
- * Hook for processing floor plans in chunks to avoid UI freezing
- * @returns Chunk processing utilities
- */
-export const useFloorPlanChunkProcessing = () => {
   /**
-   * Process floor plans in chunks
-   * @param {FloorPlan[]} floorPlans - Array of floor plans to process
-   * @param {Function} processFn - Function to process each floor plan
-   * @param {ChunkProcessingOptions} options - Processing options
-   * @returns {Promise<Array<{success: boolean, plan: FloorPlan, error?: Error}>>} Processing results
+   * Process floor plans in chunks with delays between each chunk
    */
-  const chunkProcessFloorPlans = useCallback(async <T>(
+  const processInChunks = useCallback(async (
     floorPlans: FloorPlan[],
-    processFn: (plan: FloorPlan) => Promise<T>,
-    options: ChunkProcessingOptions = DEFAULT_OPTIONS
-  ): Promise<Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}>> => {
-    // Merge with default options
-    const processOptions = { ...DEFAULT_OPTIONS, ...options };
-    const results: Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}> = [];
+    processFunc: (plan: FloorPlan, index: number) => Promise<FloorPlan>
+  ) => {
+    if (!floorPlans.length) return [];
     
-    const { chunkSize = 5, chunkDelay = 0, onProgress } = processOptions;
+    setIsProcessing(true);
+    setProgress(0);
+    setCurrentChunk(0);
     
-    try {
-      // Process in chunks
-      for (let i = 0; i < floorPlans.length; i += chunkSize) {
-        // Get current chunk
-        const chunk = floorPlans.slice(i, i + chunkSize);
-        
-        // Process each item in the chunk
-        const chunkPromises = chunk.map(async (plan) => {
-          try {
-            const result = await processFn(plan);
-            return { success: true, plan, result };
-          } catch (error) {
-            const errorObj = error instanceof Error ? error : new Error(String(error));
-            logger.error(`Error processing floor plan ${plan.label}:`, errorObj);
-            return { success: false, plan, error: errorObj };
+    const results: FloorPlan[] = [];
+    const chunks = Math.ceil(floorPlans.length / chunkSize);
+    
+    const processChunk = async (chunkIndex: number): Promise<FloorPlan[]> => {
+      const start = chunkIndex * chunkSize;
+      const end = Math.min(start + chunkSize, floorPlans.length);
+      const chunk = floorPlans.slice(start, end);
+      const chunkResults: FloorPlan[] = [];
+      
+      for (let i = 0; i < chunk.length; i++) {
+        try {
+          const plan = chunk[i];
+          const processed = await processFunc(plan, start + i);
+          chunkResults.push(processed);
+        } catch (error) {
+          if (onError) {
+            onError(error, chunkIndex);
           }
-        });
-        
-        // Wait for all items in this chunk to complete
-        const chunkResults = await Promise.all(chunkPromises);
-        results.push(...chunkResults);
-        
-        // Report progress
-        if (onProgress) {
-          onProgress(Math.min(i + chunkSize, floorPlans.length), floorPlans.length);
-        }
-        
-        // Add delay between chunks if specified
-        if (chunkDelay > 0 && i + chunkSize < floorPlans.length) {
-          await delay(chunkDelay);
+          console.error(`Error processing floor plan ${plan.label || plan.name}:`, error);
         }
       }
       
-      return results;
-    } catch (error) {
-      logger.error('Chunk processing error:', error);
-      throw error;
+      if (onChunkComplete) {
+        onChunkComplete(chunkResults, chunkIndex);
+      }
+      
+      return chunkResults;
+    };
+    
+    // Process all chunks sequentially with delays
+    for (let i = 0; i < chunks; i++) {
+      setCurrentChunk(i);
+      setProgress(Math.floor((i / chunks) * 100));
+      
+      // Add delay between chunks to prevent UI freezing
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, chunkDelay));
+      }
+      
+      const chunkResults = await processChunk(i);
+      results.push(...chunkResults);
     }
-  }, []);
-  
-  return { chunkProcessFloorPlans };
+    
+    setProgress(100);
+    setIsProcessing(false);
+    
+    if (onComplete) {
+      onComplete(results);
+    }
+    
+    return results;
+  }, [chunkSize, chunkDelay, onChunkComplete, onError, onComplete]);
+
+  return {
+    processInChunks,
+    isProcessing,
+    progress,
+    currentChunk
+  };
 };

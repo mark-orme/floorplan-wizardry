@@ -1,11 +1,11 @@
 
 import { useCallback, useRef, useState } from 'react';
-import { Canvas } from 'fabric';
+import * as fabric from 'fabric';
 import { validateGrid } from '@/utils/grid/gridRenderers';
 import { toast } from 'sonner';
 
 interface UseGridCreationProps {
-  canvas: Canvas | null;
+  canvas: fabric.Canvas | null;
   gridSize?: number;
   visible?: boolean;
   enabled?: boolean;

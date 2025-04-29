@@ -54,7 +54,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           evented: false,
           visible
         });
-        canvas.add(asExtendedObject(line));
+        canvas.add(line);
         newGridObjects.push(line);
       }
       
@@ -69,7 +69,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
           evented: false,
           visible
         });
-        canvas.add(asExtendedObject(line));
+        canvas.add(line);
         newGridObjects.push(line);
       }
       

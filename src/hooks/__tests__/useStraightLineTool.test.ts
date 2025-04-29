@@ -6,7 +6,7 @@ import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 describe('useStraightLineTool hook', () => {
   test('should initialize with default values', () => {
     const { result } = renderHook(() => useStraightLineTool({
-      canvasRef: { current: null }
+      canvas: null
     }));
     
     expect(result.current.isDrawing).toBe(false);

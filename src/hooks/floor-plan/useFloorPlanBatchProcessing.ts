@@ -1,87 +1,87 @@
 
-/**
- * Hook for batch processing floor plan operations
- * Provides utilities for processing multiple floor plans efficiently
- * @module useFloorPlanBatchProcessing
- */
-import { useCallback } from "react";
-import { FloorPlan } from "@/types/floorPlan";
-import logger from "@/utils/logger";
+import { useState, useCallback } from 'react';
+import { FloorPlan } from '@/types/FloorPlan';
+import { captureMessage } from '@/utils/sentryUtils';
 
-/**
- * Options for batch processing
- * @interface BatchProcessingOptions
- */
-interface BatchProcessingOptions {
-  /** Whether to continue processing after errors */
-  continueOnError?: boolean;
-  /** Maximum concurrent operations */
-  concurrency?: number;
-  /** Whether to show progress notifications */
-  showProgress?: boolean;
+interface UseFloorPlanBatchProcessingOptions {
+  batchSize?: number;
+  onBatchComplete?: (processed: FloorPlan[]) => void;
+  onError?: (error: Error) => void;
 }
 
-/**
- * Default options for batch processing
- */
-const DEFAULT_OPTIONS: BatchProcessingOptions = {
-  continueOnError: false,
-  concurrency: 1,
-  showProgress: true
-};
+export const useFloorPlanBatchProcessing = (
+  options: UseFloorPlanBatchProcessingOptions = {}
+) => {
+  const {
+    batchSize = 5,
+    onBatchComplete,
+    onError
+  } = options;
 
-/**
- * Hook for performing batch operations on floor plans
- * @returns Batch processing functions
- */
-export const useFloorPlanBatchProcessing = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [processedCount, setProcessedCount] = useState(0);
+
   /**
    * Process floor plans in batches
-   * @param {FloorPlan[]} floorPlans - Array of floor plans to process
-   * @param {Function} processFn - Function to process each floor plan
-   * @param {BatchProcessingOptions} options - Processing options
-   * @returns {Promise<Array<{success: boolean, plan: FloorPlan, error?: Error}>>} Processing results
    */
-  const batchProcessFloorPlans = useCallback(async <T>(
+  const processInBatches = useCallback(async (
     floorPlans: FloorPlan[],
-    processFn: (plan: FloorPlan, index: number) => Promise<T>,
-    options: BatchProcessingOptions = DEFAULT_OPTIONS
-  ): Promise<Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}>> => {
-    // Merge with default options
-    const processOptions = { ...DEFAULT_OPTIONS, ...options };
-    const results: Array<{success: boolean, plan: FloorPlan, result?: T, error?: Error}> = [];
+    processFunc: (plan: FloorPlan) => Promise<FloorPlan>
+  ) => {
+    if (!floorPlans.length) return [];
+    
+    setIsProcessing(true);
+    setProgress(0);
+    setProcessedCount(0);
+    
+    const results: FloorPlan[] = [];
+    const totalCount = floorPlans.length;
     
     try {
-      // Process in batches according to concurrency
-      const { concurrency = 1 } = processOptions;
-      
-      // For now we're using sequential processing (concurrency=1)
-      // due to fabric.js thread limitations
-      for (let i = 0; i < floorPlans.length; i++) {
-        const plan = floorPlans[i];
-        
-        try {
-          logger.info(`Processing floor plan ${i+1}/${floorPlans.length}: ${plan.label}`);
-          const result = await processFn(plan, i);
-          results.push({ success: true, plan, result });
-        } catch (error) {
-          const errorObj = error instanceof Error ? error : new Error(String(error));
-          logger.error(`Error processing floor plan ${plan.label}:`, errorObj);
-          results.push({ success: false, plan, error: errorObj });
-          
-          // Stop processing if continueOnError is false
-          if (!processOptions.continueOnError) {
-            break;
+      for (let i = 0; i < totalCount; i += batchSize) {
+        const batch = floorPlans.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (plan) => {
+          try {
+            const processed = await processFunc(plan);
+            setProcessedCount(prev => prev + 1);
+            setProgress(Math.floor(((i + results.length + 1) / totalCount) * 100));
+            return processed;
+          } catch (err) {
+            captureMessage(`Error processing floor plan ${plan.label || plan.name}: ${err.message}`, {
+              level: 'error'
+            });
+            throw err;
           }
+        });
+        
+        const batchResults = await Promise.allSettled(batchPromises);
+        const successfulResults = batchResults
+          .filter((result): result is PromiseFulfilledResult<FloorPlan> => result.status === 'fulfilled')
+          .map(result => result.value);
+        
+        results.push(...successfulResults);
+        
+        if (onBatchComplete) {
+          onBatchComplete(successfulResults);
         }
       }
       
       return results;
     } catch (error) {
-      logger.error('Batch processing error:', error);
-      throw error;
+      if (onError) {
+        onError(error);
+      }
+      return results;
+    } finally {
+      setIsProcessing(false);
     }
-  }, []);
-  
-  return { batchProcessFloorPlans };
+  }, [batchSize, onBatchComplete, onError]);
+
+  return {
+    processInBatches,
+    isProcessing,
+    progress,
+    processedCount
+  };
 };

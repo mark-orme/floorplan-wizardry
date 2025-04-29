@@ -21,5 +21,19 @@ export const GRID_CONSTANTS = {
   DEFAULT_GRID_OPACITY: 0.4,
   MAJOR_GRID_INTERVAL: 5,
   MAJOR_GRID_COLOR: 'rgba(180, 180, 180, 0.5)',
-  MAJOR_GRID_OPACITY: 0.6
+  MAJOR_GRID_OPACITY: 0.6,
+  LARGE: {
+    COLOR: '#cccccc',
+    WIDTH: 0.5
+  },
+  SMALL: {
+    COLOR: '#e5e5e5',
+    WIDTH: 0.2
+  }
 };
+
+// Add GridSize enum for consistent sizing references
+export enum GridSize {
+  SMALL = 10,
+  LARGE = 50
+}
