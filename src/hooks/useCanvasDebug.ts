@@ -4,7 +4,25 @@
  * @module useCanvasDebug
  */
 import { useState, useCallback } from "react";
-import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
+import { DebugInfoState } from "@/types/fabric-unified";
+
+/**
+ * Default debug state
+ */
+export const DEFAULT_DEBUG_STATE: DebugInfoState = {
+  fps: 0,
+  objectCount: 0,
+  visibleObjectCount: 0,
+  mousePosition: { x: 0, y: 0 },
+  zoomLevel: 1,
+  gridSize: 20,
+  canvasDimensions: { width: 0, height: 0 },
+  canvasInitialized: false,
+  errorMessage: '',
+  hasError: false,
+  lastInitTime: 0,
+  lastGridCreationTime: 0
+};
 
 /**
  * Hook that provides debug information and related functions

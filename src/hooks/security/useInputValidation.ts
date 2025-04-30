@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import * as z from 'zod';
+import * as z from '../../../src/utils/zod-mock';
 
 /**
  * Hook for input validation and sanitization
@@ -51,7 +51,7 @@ export const useInputValidation = () => {
   /**
    * Create form validation schema
    */
-  const createFormSchema = useCallback(<T extends Record<string, z.ZodType>>(schema: T) => z.object(schema), []);
+  const createFormSchema = useCallback(<T extends Record<string, z.ZodType>>(schema: T) => schema, []);
 
   return {
     sanitizeInput,

@@ -1,14 +1,7 @@
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 
-export interface MeasurementGuideModalProps {
+interface MeasurementGuideModalProps {
   open: boolean;
   onClose: () => void;
 }
@@ -17,43 +10,40 @@ export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
   open,
   onClose
 }) => {
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Measurement Guide</DialogTitle>
-          <DialogDescription>
-            Learn how to use the measurement tools effectively
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4">Measurement Guide</h2>
         
         <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium">Basic Measurements</h3>
-            <p className="text-sm text-gray-500">
-              Click and drag to create a line. The measurement will appear above the line.
-            </p>
-          </div>
+          <p>
+            To measure distances on the canvas:
+          </p>
           
-          <div>
-            <h3 className="text-sm font-medium">Snap to Grid</h3>
-            <p className="text-sm text-gray-500">
-              Enable snap to grid for more precise measurements. Press Shift while dragging to temporarily disable snapping.
-            </p>
-          </div>
+          <ol className="list-decimal pl-5 space-y-2">
+            <li>Click and hold at the starting point</li>
+            <li>Drag to the end point</li>
+            <li>Release to see the measurement</li>
+          </ol>
           
-          <div>
-            <h3 className="text-sm font-medium">Keyboard Shortcuts</h3>
-            <ul className="text-sm text-gray-500 list-disc pl-5">
-              <li>Hold Shift: Temporarily disable snapping</li>
-              <li>Press Escape: Cancel current measurement</li>
-              <li>Press Delete: Remove selected measurement</li>
-            </ul>
+          <div className="bg-gray-50 p-2 rounded">
+            <p className="text-sm text-gray-600">
+              <strong>Tip:</strong> Hold Shift key while measuring to snap to 45° angles.
+            </p>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
-
-export default MeasurementGuideModal;

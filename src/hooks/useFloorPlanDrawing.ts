@@ -1,6 +1,7 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan } from '@/types/floorPlan';
+import { FloorPlan } from '@/types/fabric-unified';
 import { DrawingMode } from '@/constants/drawingModes';
 import type { MutableRefObject } from 'react';
 
@@ -32,7 +33,7 @@ export const useFloorPlanDrawing = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Cleanup function for event handlers
+    // Clean up function for event handlers
     return () => {
       canvas.off('mouse:down');
       canvas.off('mouse:move');
@@ -46,9 +47,9 @@ export const useFloorPlanDrawing = ({
     if (!canvas) return;
     
     // Remove existing listeners
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
+    canvas.off('mouse:down', () => {});
+    canvas.off('mouse:move', () => {});
+    canvas.off('mouse:up', () => {});
     
     // Set up new listeners based on the current tool
     switch (tool) {

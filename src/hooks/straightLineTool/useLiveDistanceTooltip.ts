@@ -1,84 +1,62 @@
 
-import { useCallback, useState, useEffect } from 'react';
-import type { MeasurementData } from './useStraightLineTool';
-import { Point } from '@/types/core/Point';
+import { useEffect, useState } from 'react';
+import { MeasurementData } from '@/types/fabric-unified';
+import { GRID_CONSTANTS } from '@/constants/drawingModes';
 
 interface UseLiveDistanceTooltipProps {
-  isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  onMeasurement?: (measurement: MeasurementData) => void;
+  isActive: boolean;
+  measurementData: MeasurementData | null;
+  unit?: 'px' | 'm' | 'cm' | 'mm';
 }
 
-/**
- * Hook for managing live distance tooltip during line drawing
- */
 export const useLiveDistanceTooltip = ({
-  isDrawing,
-  startPoint,
-  currentPoint,
-  onMeasurement
+  isActive,
+  measurementData,
+  unit = 'm'
 }: UseLiveDistanceTooltipProps) => {
-  const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
-  const [measurement, setMeasurement] = useState<MeasurementData>({ 
-    distance: 0, 
-    angle: 0, 
-    startPoint: { x: 0, y: 0 }, 
-    endPoint: { x: 0, y: 0 },
-    snapped: false,
-    unit: 'px'
-  });
-  const [visible, setVisible] = useState<boolean>(false);
-  
-  /**
-   * Calculate distance and angle between two points
-   */
-  const calculateMeasurement = useCallback((start: Point, end: Point): MeasurementData => {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Calculate angle in degrees
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    if (angle < 0) angle += 360; // Normalize to 0-360
-    
-    return { 
-      distance, 
-      angle, 
-      startPoint: start, 
-      endPoint: end,
-      snapped: false,
-      unit: 'px'
-    };
-  }, []);
-  
-  // Update tooltip when drawing
+  const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [displayText, setDisplayText] = useState('');
+
   useEffect(() => {
-    if (isDrawing && startPoint && currentPoint) {
-      // Calculate midpoint for tooltip position
-      const midPoint = {
-        x: (startPoint.x + currentPoint.x) / 2,
-        y: (startPoint.y + currentPoint.y) / 2 - 20 // Offset above the line
-      };
-      
-      setTooltipPosition(midPoint);
-      
-      // Calculate measurement
-      const newMeasurement = calculateMeasurement(startPoint, currentPoint);
-      setMeasurement(newMeasurement);
-      setVisible(true);
-      
-      if (onMeasurement) {
-        onMeasurement(newMeasurement);
-      }
-    } else {
+    if (!isActive || !measurementData) {
       setVisible(false);
+      return;
     }
-  }, [isDrawing, startPoint, currentPoint, calculateMeasurement, onMeasurement]);
-  
+
+    setVisible(true);
+    setPosition(measurementData.midPoint);
+
+    // Calculate display text based on unit
+    let distanceText = '';
+    const distance = measurementData.distance;
+    
+    switch (unit) {
+      case 'px':
+        distanceText = `${Math.round(distance)} px`;
+        break;
+      case 'm':
+        const meters = distance / GRID_CONSTANTS.PIXELS_PER_METER;
+        distanceText = `${meters.toFixed(2)} m`;
+        break;
+      case 'cm':
+        const cm = (distance / GRID_CONSTANTS.PIXELS_PER_METER) * 100;
+        distanceText = `${cm.toFixed(1)} cm`;
+        break;
+      case 'mm':
+        const mm = (distance / GRID_CONSTANTS.PIXELS_PER_METER) * 1000;
+        distanceText = `${Math.round(mm)} mm`;
+        break;
+      default:
+        distanceText = `${Math.round(distance)} px`;
+    }
+
+    setDisplayText(distanceText);
+  }, [isActive, measurementData, unit]);
+
   return {
-    tooltipPosition,
-    measurement,
-    visible
+    visible,
+    position,
+    displayText
   };
 };

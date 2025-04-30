@@ -60,3 +60,28 @@ export const getGridObjects = (
     (obj as ExtendedFabricObject).isGrid === true
   ) as ExtendedFabricObject[];
 };
+
+/**
+ * Force grid creation and visibility
+ * @param canvas The canvas instance
+ * @param visible Whether grid should be visible
+ * @param createGridFn Function to create grid
+ */
+export const forceGridCreationAndVisibility = (
+  canvas: ExtendedFabricCanvas | Canvas,
+  visible: boolean,
+  createGridFn?: () => void
+) => {
+  if (!canvas) return;
+  
+  // Get existing grid objects
+  const gridObjects = getGridObjects(canvas);
+  
+  // If no grid objects and create function provided, create grid
+  if (gridObjects.length === 0 && createGridFn) {
+    createGridFn();
+  }
+  
+  // Set visibility
+  ensureGridVisibility(canvas, visible);
+};

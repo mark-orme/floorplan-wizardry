@@ -1,32 +1,37 @@
 
 /**
- * Drawing mode enum
+ * DrawingMode enum for tools
  */
 export enum DrawingMode {
-  SELECT = 'SELECT',
-  DRAW = 'DRAW',
-  LINE = 'LINE',
-  RECTANGLE = 'RECTANGLE',
-  CIRCLE = 'CIRCLE',
-  TEXT = 'TEXT',
-  PENCIL = 'PENCIL',
-  ERASER = 'ERASER',
-  MEASURE = 'MEASURE',
-  PAN = 'PAN',
-  WALL = 'WALL',
-  ROOM = 'ROOM',
-  DOOR = 'DOOR',
-  WINDOW = 'WINDOW',
-  STRAIGHT_LINE = 'STRAIGHT_LINE',
-  HAND = 'HAND',
-  ERASE = 'ERASE',
-  SHAPE = 'SHAPE',
-  DIMENSION = 'DIMENSION',
-  STAIR = 'STAIR',
-  COLUMN = 'COLUMN',
-  ROOM_LABEL = 'ROOM_LABEL',
-  ZOOM = 'ZOOM'
+  SELECT = 'select',
+  DRAW = 'draw',
+  LINE = 'line',
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  TEXT = 'text',
+  PAN = 'pan',
+  ERASER = 'eraser',
+  WALL = 'wall',
+  ROOM = 'room',
+  DOOR = 'door',
+  WINDOW = 'window',
+  STRAIGHT_LINE = 'straight_line',
+  FREEHAND = 'freehand',
+  POLYGON = 'polygon',
+  MEASURE = 'measure',
+  GRID = 'grid',
+  ZOOM = 'zoom'
 }
 
-// Export default for compatibility
-export default DrawingMode;
+/**
+ * Grid constants
+ */
+export const GRID_CONSTANTS = {
+  SMALL_GRID_SIZE: 20,
+  LARGE_GRID_SIZE: 100,
+  SMALL_GRID_COLOR: '#e0e0e0',
+  LARGE_GRID_COLOR: '#c0c0c0',
+  SMALL_GRID_WIDTH: 0.5,
+  LARGE_GRID_WIDTH: 1,
+  PIXELS_PER_METER: 100
+};
