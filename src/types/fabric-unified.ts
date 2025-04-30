@@ -35,6 +35,41 @@ export interface ExtendedFabricObject extends FabricObject {
 }
 
 /**
+ * Basic point interface
+ */
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Create a new point
+ */
+export function createPoint(x: number, y: number): Point {
+  return { x, y };
+}
+
+/**
+ * Calculate distance between two points
+ */
+export function distance(point1: Point, point2: Point): number {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Measurement data interface for line tools
+ */
+export interface MeasurementData {
+  distance: number | null;
+  angle: number | null;
+  snapped: boolean;
+  unit: string;
+  snapType?: 'grid' | 'angle' | 'both';
+}
+
+/**
  * Grid constants for consistent usage
  */
 export const GRID_CONSTANTS = {
@@ -44,6 +79,7 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_COLOR: '#cccccc',
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,
+  PIXELS_PER_METER: 100  // Add this constant
 };
 
 /**
@@ -81,6 +117,23 @@ export interface CanvasState {
   gridVisible: boolean;
   snapToGrid: boolean;
   gridSize: number;
+}
+
+/**
+ * Debug info state interface
+ */
+export interface DebugInfoState {
+  fps?: number;
+  objectCount?: number;
+  visibleObjectCount?: number;
+  mousePosition?: { x: number; y: number };
+  zoomLevel?: number;
+  gridSize?: number;
+  canvasDimensions?: { width: number; height: number };
+  canvasInitialized?: boolean;
+  errorMessage?: string;
+  hasError?: boolean;
+  lastInitTime?: number;
 }
 
 /**

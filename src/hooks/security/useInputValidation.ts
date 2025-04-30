@@ -1,37 +1,64 @@
 
-import { useState, useCallback } from 'react';
-import { z } from '@/utils/zod-mock';
+import { useCallback } from 'react';
+import DOMPurify from 'dompurify';
+import * as z from 'zod';
 
+/**
+ * Hook for input validation and sanitization
+ */
 export const useInputValidation = () => {
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validateInput = useCallback(<T>(
-    schema: z.ZodType<T>,
-    input: unknown
-  ): { isValid: boolean; data: T | null } => {
-    try {
-      const result = schema.parse(input);
-      setErrors({});
-      return { isValid: true, data: result };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMap: Record<string, string> = {};
-        error.errors.forEach(err => {
-          const path = err.path.join('.');
-          errorMap[path || 'general'] = err.message;
-        });
-        setErrors(errorMap);
-      } else {
-        setErrors({ general: 'An unknown error occurred' });
-      }
-      return { isValid: false, data: null };
-    }
+  /**
+   * Sanitize a string input
+   */
+  const sanitizeInput = useCallback((input: string): string => {
+    return DOMPurify.sanitize(input);
   }, []);
 
+  /**
+   * Validate a string against a schema
+   */
+  const validateInput = useCallback(<T>(input: string, schema: z.ZodType<T>): { 
+    isValid: boolean; 
+    value: T | null; 
+    error: string | null 
+  } => {
+    try {
+      const sanitized = sanitizeInput(input);
+      const result = schema.parse(sanitized);
+      return {
+        isValid: true,
+        value: result,
+        error: null
+      };
+    } catch (err) {
+      const error = err instanceof z.ZodError 
+        ? err.errors.map(e => e.message).join(', ')
+        : 'Validation error';
+        
+      return {
+        isValid: false,
+        value: null,
+        error
+      };
+    }
+  }, [sanitizeInput]);
+
+  /**
+   * Create a validation schema for common input types
+   */
+  const createSchema = useCallback(<T extends z.ZodType>(type: T) => type, []);
+
+  /**
+   * Create form validation schema
+   */
+  const createFormSchema = useCallback(<T extends Record<string, z.ZodType>>(schema: T) => z.object(schema), []);
+
   return {
-    errors,
+    sanitizeInput,
     validateInput,
-    hasErrors: Object.keys(errors).length > 0,
-    getError: (field: string) => errors[field] || null
+    createSchema,
+    createFormSchema
   };
 };
+
+export default useInputValidation;

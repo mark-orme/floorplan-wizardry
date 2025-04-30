@@ -1,89 +1,75 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { usePropertyManagement } from '@/hooks/usePropertyManagement';
-import { PropertyListItem } from '@/types/propertyTypes';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { PropertyListItem } from '@/types/property-types';
+import { usePropertyData } from './usePropertyData';
 
 /**
- * Hook for handling property data for the property page
- * @param {any} user - The current authenticated user
- * @returns {Object} Object containing property data state and handlers
+ * Hook for managing property page data
  */
-export const usePropertyPageData = (user: any) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [hasError, setHasError] = useState(false);
-  const [properties, setProperties] = useState<any[]>([]);
+export const usePropertyPageData = () => {
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
-  // Initialize property management hook once at the top level
-  const propertyManagement = usePropertyManagement();
-  const { isLoading: propertiesLoading, listProperties } = propertyManagement;
-
-  /**
-   * Load properties when user is authenticated
-   */
+  // Get the base property data hook
+  const propertyData = usePropertyData();
+  const { properties, loading, error, refreshProperties } = propertyData;
+  
+  // Load properties on mount
   useEffect(() => {
-    const loadProperties = async () => {
-      if (!user) return;
+    refreshProperties();
+  }, [refreshProperties]);
+  
+  // Sort and filter properties
+  const sortedAndFilteredProperties = properties
+    .filter(property => !activeFilter || property.status === activeFilter)
+    .sort((a, b) => {
+      const aValue = a[sortBy as keyof PropertyListItem];
+      const bValue = b[sortBy as keyof PropertyListItem];
       
-      try {
-        const result = await listProperties();
-        setProperties(result || []);
-      } catch (error) {
-        console.error("Error loading properties:", error);
-        setHasError(true);
-        setErrorMessage("Failed to load properties");
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
       }
-    };
-    
-    if (user && !hasError) {
-      loadProperties();
+      
+      if (aValue instanceof Date && bValue instanceof Date) {
+        return sortDirection === 'asc'
+          ? aValue.getTime() - bValue.getTime()
+          : bValue.getTime() - aValue.getTime();
+      }
+      
+      return 0;
+    });
+  
+  // Handle filter changes
+  const handleFilterChange = (filter: string | null) => {
+    setActiveFilter(filter);
+  };
+  
+  // Handle sort changes
+  const handleSortChange = (field: string) => {
+    if (field === sortBy) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDirection('asc');
     }
-  }, [user, hasError, listProperties]);
-
-  /**
-   * Filter properties based on search term
-   */
-  const filteredProperties = (properties || []).filter(prop => {
-    if (!prop) return false;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      prop.order_id?.toLowerCase().includes(searchLower) ||
-      prop.address?.toLowerCase().includes(searchLower) ||
-      prop.client_name?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  /**
-   * Retry loading properties after an error
-   */
-  const handleRetry = useCallback(() => {
-    setHasError(false);
-    setErrorMessage('');
-    if (user && listProperties) {
-      listProperties()
-        .then(result => {
-          setProperties(result || []);
-        })
-        .catch(error => {
-          console.error("Error retrying property load:", error);
-          setHasError(true);
-          setErrorMessage("Failed to reload properties");
-        });
-    }
-  }, [user, listProperties]);
-
+  };
+  
   return {
-    searchTerm,
-    setSearchTerm,
-    errorMessage,
-    hasError,
-    setHasError,
-    propertyState: {
-      properties: properties || [],
-      isLoading: propertiesLoading
-    },
-    filteredProperties,
-    handleRetry
+    properties: sortedAndFilteredProperties,
+    loading,
+    error,
+    activeFilter,
+    sortBy,
+    sortDirection,
+    handleFilterChange,
+    handleSortChange,
+    refreshData: refreshProperties,
+    ...propertyData
   };
 };
+
+export default usePropertyPageData;
