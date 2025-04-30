@@ -1,6 +1,6 @@
 
 /**
- * Simple Point interface used throughout the application
+ * Basic point interface
  */
 export interface Point {
   x: number;
@@ -8,20 +8,31 @@ export interface Point {
 }
 
 /**
- * Helper functions for working with points
+ * Create a new point
  */
 export const createPoint = (x: number, y: number): Point => ({ x, y });
 
-export const calculateDistance = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+/**
+ * Calculate distance between two points
+ */
+export const distance = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-export const calculateAngle = (p1: Point, p2: Point): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
+/**
+ * Calculate the angle between two points in degrees
+ */
+export const angle = (point1: Point, point2: Point): number => {
+  const dx = point2.x - point1.x;
+  const dy = point2.y - point1.y;
   return Math.atan2(dy, dx) * (180 / Math.PI);
 };
+
+/**
+ * Default point at origin
+ */
+export const ORIGIN: Point = { x: 0, y: 0 };
 
 export default Point;

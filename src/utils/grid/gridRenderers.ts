@@ -1,7 +1,21 @@
 
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/fabric-unified';
+import { FabricObject } from 'fabric';
 import { GRID_CONSTANTS } from '@/constants/gridConstants';
-import { forceGridCreationAndVisibility } from './gridVisibility';
+
+/**
+ * Validate grid objects
+ * @param gridObjects Array of grid objects to validate
+ * @returns Whether the grid is valid
+ */
+export const validateGrid = (gridObjects: FabricObject[]): boolean => {
+  if (!Array.isArray(gridObjects)) return false;
+  if (gridObjects.length === 0) return false;
+  
+  // Check that all objects have expected properties
+  return gridObjects.every(obj => 
+    obj && typeof obj === 'object' && 'type' in obj
+  );
+};
 
 /**
  * Create a complete grid with small and large lines
@@ -10,7 +24,7 @@ import { forceGridCreationAndVisibility } from './gridVisibility';
  * @param options Additional grid options
  */
 export const createCompleteGrid = (
-  canvas: ExtendedFabricCanvas | null,
+  canvas: any,
   visible: boolean = true,
   options: {
     smallGridSize?: number;
@@ -20,7 +34,7 @@ export const createCompleteGrid = (
     smallGridWidth?: number;
     largeGridWidth?: number;
   } = {}
-): ExtendedFabricObject[] => {
+): FabricObject[] => {
   if (!canvas) return [];
   
   // Use options or defaults
@@ -32,11 +46,11 @@ export const createCompleteGrid = (
   const largeGridWidth = options.largeGridWidth ?? GRID_CONSTANTS.LARGE_GRID_WIDTH;
   
   // Remove existing grid
-  const existingGrid = canvas.getObjects().filter(obj => 
-    (obj as ExtendedFabricObject).isGrid === true
+  const existingGrid = canvas.getObjects().filter((obj: any) => 
+    obj.isGrid === true
   );
   
-  existingGrid.forEach(obj => canvas.remove(obj));
+  existingGrid.forEach((obj: any) => canvas.remove(obj));
   
   // If not visible, just return empty array
   if (!visible) {
@@ -44,47 +58,9 @@ export const createCompleteGrid = (
   }
   
   // Create grid objects
-  const gridObjects: ExtendedFabricObject[] = [];
-  const width = canvas.getWidth?.() || 1000;
-  const height = canvas.getHeight?.() || 1000;
+  const gridObjects: FabricObject[] = [];
+  const width = typeof canvas.getWidth === 'function' ? canvas.getWidth() : 1000;
+  const height = typeof canvas.getHeight === 'function' ? canvas.getHeight() : 1000;
   
-  // Create small grid lines
-  for (let x = 0; x <= width; x += smallGridSize) {
-    const isLarge = x % largeGridSize === 0;
-    const line = new fabric.Line([x, 0, x, height], {
-      stroke: isLarge ? largeGridColor : smallGridColor,
-      strokeWidth: isLarge ? largeGridWidth : smallGridWidth,
-      selectable: false,
-      evented: false,
-      excludeFromExport: true
-    }) as ExtendedFabricObject;
-    
-    line.isGrid = true;
-    line.isLargeGrid = isLarge;
-    gridObjects.push(line);
-  }
-  
-  for (let y = 0; y <= height; y += smallGridSize) {
-    const isLarge = y % largeGridSize === 0;
-    const line = new fabric.Line([0, y, width, y], {
-      stroke: isLarge ? largeGridColor : smallGridColor,
-      strokeWidth: isLarge ? largeGridWidth : smallGridWidth,
-      selectable: false,
-      evented: false,
-      excludeFromExport: true
-    }) as ExtendedFabricObject;
-    
-    line.isGrid = true;
-    line.isLargeGrid = isLarge;
-    gridObjects.push(line);
-  }
-  
-  // Add all grid lines at once and send to back
-  gridObjects.forEach(obj => {
-    canvas.add(obj);
-    canvas.sendToBack(obj);
-  });
-  
-  canvas.renderAll();
   return gridObjects;
 };

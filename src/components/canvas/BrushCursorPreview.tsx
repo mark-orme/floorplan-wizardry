@@ -1,10 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
+import { Canvas } from 'fabric';
 
 interface BrushCursorPreviewProps {
-  color: string;
   size: number;
-  visible: boolean;
+  color: string;
+  visible?: boolean;
   position?: { x: number; y: number };
 }
 

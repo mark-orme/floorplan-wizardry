@@ -4,8 +4,8 @@ import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
-// Now import as default components
-import BrushCursorPreview from '@/components/canvas/BrushCursorPreview';
+// Import components
+import BrushCursorPreview from './BrushCursorPreview';
 import MeasurementGuideModal from '@/components/MeasurementGuideModal';
 
 interface DrawingManagerProps {
@@ -86,9 +86,9 @@ export const DrawingManager: React.FC<DrawingManagerProps> = ({
     <>
       {canvas && activeTool === DrawingMode.DRAW && (
         <BrushCursorPreview 
-          canvas={canvas} 
           size={lineThickness} 
           color={lineColor} 
+          visible={true}
         />
       )}
       

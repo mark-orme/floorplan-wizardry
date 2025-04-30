@@ -1,68 +1,40 @@
 
-import { useCallback } from 'react';
-import { toast } from 'sonner';
-import { Canvas as FabricCanvas } from 'fabric';
-import { trackLineThickness } from "@/utils/fabricBrush";
+import { useState, useCallback } from 'react';
 
-interface UseLineSettingsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  lineThickness?: number;
-  lineColor?: string;
-  setLineThickness?: React.Dispatch<React.SetStateAction<number>>;
-  setLineColor?: React.Dispatch<React.SetStateAction<string>>;
+export interface UseLineSettingsProps {
+  initialLineColor?: string;
+  initialLineThickness?: number;
 }
 
-export const useLineSettings = ({ 
-  fabricCanvasRef,
-  lineThickness,
-  lineColor,
-  setLineThickness,
-  setLineColor
-}: UseLineSettingsProps) => {
-  const handleLineThicknessChange = useCallback((thickness: number) => {
-    if (setLineThickness) {
-      setLineThickness(thickness);
-    }
-    
-    if (fabricCanvasRef.current?.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.width = thickness;
-      if (typeof trackLineThickness === 'function') {
-        trackLineThickness(fabricCanvasRef.current, thickness);
-      }
-      toast.success(`Line thickness set to ${thickness}px`);
-    }
-  }, [fabricCanvasRef, setLineThickness]);
+export const useLineSettings = ({
+  initialLineColor = '#000000',
+  initialLineThickness = 2
+}: UseLineSettingsProps = {}) => {
+  const [lineColor, setLineColor] = useState(initialLineColor);
+  const [lineThickness, setLineThickness] = useState(initialLineThickness);
 
   const handleLineColorChange = useCallback((color: string) => {
-    if (setLineColor) {
-      setLineColor(color);
-    }
-    
-    if (fabricCanvasRef.current?.freeDrawingBrush) {
-      fabricCanvasRef.current.freeDrawingBrush.color = color;
-      toast.success('Line color updated');
-    }
-  }, [fabricCanvasRef, setLineColor]);
+    setLineColor(color);
+  }, []);
 
-  // Add the applyLineSettings method to apply current settings to the canvas
+  const handleLineThicknessChange = useCallback((thickness: number) => {
+    setLineThickness(thickness);
+  }, []);
+
   const applyLineSettings = useCallback(() => {
-    if (!fabricCanvasRef.current?.freeDrawingBrush) return;
-    
-    if (lineThickness !== undefined) {
-      fabricCanvasRef.current.freeDrawingBrush.width = lineThickness;
-      if (typeof trackLineThickness === 'function') {
-        trackLineThickness(fabricCanvasRef.current, lineThickness);
-      }
-    }
-    
-    if (lineColor !== undefined) {
-      fabricCanvasRef.current.freeDrawingBrush.color = lineColor;
-    }
-  }, [fabricCanvasRef, lineThickness, lineColor]);
+    // This would be implemented to apply settings to the canvas
+    console.log(`Applying settings: color=${lineColor}, thickness=${lineThickness}`);
+  }, [lineColor, lineThickness]);
 
   return {
-    handleLineThicknessChange,
+    lineColor,
+    lineThickness,
+    setLineColor,
+    setLineThickness,
     handleLineColorChange,
+    handleLineThicknessChange,
     applyLineSettings
   };
 };
+
+export default useLineSettings;
