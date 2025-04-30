@@ -1,49 +1,48 @@
 
 import React, { useMemo } from 'react';
-import { DrawingMode } from '@/constants/drawingModes';
-import BrushCursorPreview from '@/components/canvas/BrushCursorPreview';
-import MeasurementGuideModal from '@/components/MeasurementGuideModal';
+import { BrushCursorPreview } from '@/components/drawing/BrushCursorPreview';
+import { MeasurementGuideModal } from '@/components/modals/MeasurementGuideModal'; 
+import { DrawingControls } from '@/components/drawing/DrawingControls';
+import { Point } from '@/types/fabric-unified';
 
 interface UseMemoizedDrawingComponentsProps {
-  tool: DrawingMode;
-  lineColor: string;
+  cursorPosition: Point | null;
   lineThickness: number;
-  showGuides?: boolean;
+  lineColor: string;
+  showMeasurementGuide: boolean;
+  closeMeasurementGuide: () => void;
 }
 
 export const useMemoizedDrawingComponents = ({
-  tool,
-  lineColor,
+  cursorPosition,
   lineThickness,
-  showGuides = false
+  lineColor,
+  showMeasurementGuide,
+  closeMeasurementGuide
 }: UseMemoizedDrawingComponentsProps) => {
-  const [showMeasurementGuide, setShowMeasurementGuide] = React.useState(false);
-  
-  // Create memoized brush cursor preview
-  const brushCursorPreview = useMemo(() => (
-    <BrushCursorPreview
-      color={lineColor}
-      size={lineThickness}
-      visible={tool === DrawingMode.DRAW || tool === DrawingMode.PENCIL}
-    />
-  ), [tool, lineColor, lineThickness]);
-  
-  // Create memoized measurement guide modal
-  const measurementGuideModal = useMemo(() => (
-    <MeasurementGuideModal
-      isOpen={showMeasurementGuide}
-      onClose={() => setShowMeasurementGuide(false)}
-    />
-  ), [showMeasurementGuide]);
-  
-  // Function to show the measurement guide
-  const openMeasurementGuide = () => {
-    setShowMeasurementGuide(true);
-  };
-  
-  return {
-    brushCursorPreview,
-    measurementGuideModal,
-    openMeasurementGuide
-  };
+
+  // Memoize components to prevent re-renders
+  const memoizedComponents = useMemo(() => ({
+    brushCursorPreview: (
+      <BrushCursorPreview 
+        position={cursorPosition}
+        thickness={lineThickness}
+        color={lineColor}
+      />
+    ),
+    measurementGuideModal: (
+      <MeasurementGuideModal 
+        open={showMeasurementGuide} 
+        onClose={closeMeasurementGuide}
+      />
+    ),
+    drawingControls: (
+      <DrawingControls 
+        lineThickness={lineThickness}
+        lineColor={lineColor}
+      />
+    )
+  }), [cursorPosition, lineThickness, lineColor, showMeasurementGuide, closeMeasurementGuide]);
+
+  return memoizedComponents;
 };

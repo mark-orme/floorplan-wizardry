@@ -12,7 +12,7 @@ export class ZodError extends Error {
 }
 
 // Create a ZodType class that can be extended
-class ZodType<T> {
+export class ZodType<T> {
   _type!: T;
 
   constructor() {}

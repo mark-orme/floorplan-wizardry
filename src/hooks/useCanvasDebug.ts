@@ -11,7 +11,11 @@ import { DebugInfoState, DEFAULT_DEBUG_STATE } from "@/types/core/DebugInfo";
  * @returns Debug information state and related functions
  */
 export const useCanvasDebug = () => {
-  const [debugInfo, setDebugInfo] = useState<DebugInfoState>(DEFAULT_DEBUG_STATE);
+  const [debugInfo, setDebugInfo] = useState<DebugInfoState>({
+    ...DEFAULT_DEBUG_STATE,
+    hasError: false,
+    errorMessage: ''
+  });
   
   /**
    * Resets load times in debug info
@@ -27,11 +31,10 @@ export const useCanvasDebug = () => {
   return {
     debugInfo,
     setDebugInfo,
-    hasError: debugInfo.hasError,
+    hasError: debugInfo.hasError || false,
     setHasError: (hasError: boolean) => setDebugInfo(prev => ({ ...prev, hasError })),
-    errorMessage: debugInfo.errorMessage,
+    errorMessage: debugInfo.errorMessage || '',
     setErrorMessage: (errorMessage: string) => setDebugInfo(prev => ({ ...prev, errorMessage })),
     resetLoadTimes
   };
 };
-

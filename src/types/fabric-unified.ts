@@ -3,7 +3,7 @@
  * Unified Fabric.js type definitions
  * This file serves as the single source of truth for Fabric.js related types
  */
-import { Canvas, Object as FabricObject, ILineOptions } from 'fabric';
+import { Canvas, Object as FabricObject, ILineOptions, Group, Path } from 'fabric';
 
 /**
  * Extended Fabric Canvas with additional properties
@@ -19,6 +19,9 @@ export interface ExtendedFabricCanvas extends Canvas {
   forEachObject?: (callback: (obj: FabricObject) => void) => void;
   zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
   initialize: (element: string | HTMLCanvasElement, options?: any) => Canvas;
+  _activeObject?: any;
+  _objects?: any[];
+  targets?: any[];
 }
 
 /**
@@ -67,6 +70,8 @@ export interface MeasurementData {
   snapped: boolean;
   unit: string;
   snapType?: 'grid' | 'angle' | 'both';
+  startPoint?: Point; // Add this missing property
+  endPoint?: Point; // Add this missing property
 }
 
 /**
@@ -100,6 +105,7 @@ export interface FloorPlanMetadata {
   dateCreated?: string;
   lastModified?: string;
   notes?: string;
+  label?: string; // Add missing property
 }
 
 /**
@@ -132,8 +138,69 @@ export interface DebugInfoState {
   canvasDimensions?: { width: number; height: number };
   canvasInitialized?: boolean;
   errorMessage?: string;
-  hasError?: boolean;
-  lastInitTime?: number;
+  hasError?: boolean; // Add missing property
+  lastInitTime?: number; // Add missing property
+  lastGridCreationTime?: number; // Add missing property
+}
+
+/**
+ * Drawing state interface
+ */
+export interface DrawingState {
+  isDrawing: boolean;
+  tool?: string;
+  pathStartPoint?: Point | null;
+  lineColor?: string;
+  lineThickness?: number;
+  currentPath?: any | null;
+  startPoint?: Point | null;
+  currentPoint?: Point | null;
+  points?: Point[];
+  distance?: number;
+  cursorPosition?: Point | null;
+  zoomLevel?: number;
+}
+
+/**
+ * Create default drawing state
+ */
+export function createDefaultDrawingState(): DrawingState {
+  return {
+    isDrawing: false,
+    pathStartPoint: null,
+    lineColor: '#000000',
+    lineThickness: 2,
+    currentPath: null,
+    startPoint: null,
+    currentPoint: null,
+    points: [],
+    distance: 0,
+    cursorPosition: null,
+    zoomLevel: 1
+  };
+}
+
+/**
+ * Gesture state object interface
+ */
+export interface GestureStateObject {
+  type: 'pinch' | 'rotate' | 'pan';
+  state: 'start' | 'move' | 'end';
+  scale?: number;
+  rotation?: number;
+  translation?: { x: number; y: number };
+  startPoints?: Point[]; // Add missing property
+}
+
+/**
+ * Canvas state result interface
+ */
+export interface UseCanvasStateResult {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  initializeCanvas: () => void;
+  disposeCanvas: () => void;
+  isInitialized: boolean;
 }
 
 /**

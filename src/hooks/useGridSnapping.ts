@@ -1,45 +1,56 @@
 
-import { useState, useCallback } from 'react';
-import { Point } from '@/types/core/Point';
-import { createPoint } from '@/utils/pointHelpers';
+import { useCallback, useState } from 'react';
+import { Point, GRID_CONSTANTS } from '@/types/fabric-unified';
 
-interface UseGridSnappingResult {
-  snapEnabled: boolean;
-  toggleSnap: () => void;
-  snapPointToGrid: (point: Point) => Point;
-  snapLineToGrid: (start: Point, end: Point) => { start: Point; end: Point };
-  gridSize: number;
+interface UseGridSnappingProps {
+  initialSnapEnabled?: boolean;
+  gridSize?: number;
+  snapThreshold?: number;
 }
 
-export const useGridSnapping = (initialEnabled = true, gridSize = 20): UseGridSnappingResult => {
-  const [snapEnabled, setSnapEnabled] = useState(initialEnabled);
-
+export const useGridSnapping = ({
+  initialSnapEnabled = true,
+  gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE,
+  snapThreshold = 5
+}: UseGridSnappingProps = {}) => {
+  const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
+  const [gridSizeState, setGridSize] = useState(gridSize);
+  const [snapThresholdState, setSnapThreshold] = useState(snapThreshold);
+  
+  // Toggle snap to grid
   const toggleSnap = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
 
+  // Snap point to grid
   const snapPointToGrid = useCallback((point: Point): Point => {
     if (!snapEnabled) return point;
-    const snappedX = Math.round(point.x / gridSize) * gridSize;
-    const snappedY = Math.round(point.y / gridSize) * gridSize;
-    return createPoint(snappedX, snappedY);
-  }, [snapEnabled, gridSize]);
-
-  const snapLineToGrid = useCallback(
-    (start: Point, end: Point): { start: Point; end: Point } => {
-      if (!snapEnabled) return { start, end };
-      const snappedStart = snapPointToGrid(start);
-      const snappedEnd = snapPointToGrid(end);
-      return { start: snappedStart, end: snappedEnd };
-    },
-    [snapEnabled, snapPointToGrid]
-  );
+    
+    const newX = Math.round(point.x / gridSizeState) * gridSizeState;
+    const newY = Math.round(point.y / gridSizeState) * gridSizeState;
+    
+    return { x: newX, y: newY };
+  }, [snapEnabled, gridSizeState]);
+  
+  // Snap line to grid
+  const snapLineToGrid = useCallback((startPoint: Point, endPoint: Point): { start: Point, end: Point } => {
+    if (!snapEnabled) return { start: startPoint, end: endPoint };
+    
+    const snappedStart = snapPointToGrid(startPoint);
+    const snappedEnd = snapPointToGrid(endPoint);
+    
+    return { start: snappedStart, end: snappedEnd };
+  }, [snapEnabled, snapPointToGrid]);
 
   return {
     snapEnabled,
+    setSnapEnabled,
+    gridSize: gridSizeState,
+    setGridSize,
+    snapThreshold: snapThresholdState,
+    setSnapThreshold,
     toggleSnap,
     snapPointToGrid,
-    snapLineToGrid,
-    gridSize
+    snapLineToGrid
   };
 };
