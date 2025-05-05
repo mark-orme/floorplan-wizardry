@@ -1,27 +1,28 @@
 
 import React, { useEffect, useState } from 'react';
-import { Canvas } from 'fabric';
 
 interface BrushCursorPreviewProps {
   size: number;
   color: string;
   visible?: boolean;
-  position?: { x: number; y: number };
 }
 
+/**
+ * Component to show brush cursor preview
+ */
 const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
-  color = '#000000',
-  size = 5,
-  visible = false,
-  position = { x: 0, y: 0 }
+  size,
+  color,
+  visible = true
 }) => {
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>(position);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   
+  // Track mouse position
   useEffect(() => {
     if (!visible) return;
     
     const handleMouseMove = (e: MouseEvent) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
+      setPosition({ x: e.clientX, y: e.clientY });
     };
     
     window.addEventListener('mousemove', handleMouseMove);
@@ -34,17 +35,15 @@ const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
   
   return (
     <div
-      className="pointer-events-none fixed z-50"
+      className="fixed pointer-events-none z-50"
       style={{
-        left: cursorPos.x - size / 2,
-        top: cursorPos.y - size / 2,
+        left: position.x - size / 2,
+        top: position.y - size / 2,
         width: size,
         height: size,
         borderRadius: '50%',
-        backgroundColor: color,
-        opacity: 0.6,
-        transform: 'translate(-50%, -50%)',
-        transition: 'width 0.1s, height 0.1s'
+        border: `1px solid black`,
+        backgroundColor: `${color}80`
       }}
     />
   );

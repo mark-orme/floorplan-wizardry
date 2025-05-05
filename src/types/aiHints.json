@@ -1,0 +1,47 @@
+
+{
+  "typeMapping": {
+    "DrawingMode": {
+      "sourceModule": "./constants/drawingModes.ts",
+      "alternateModules": [
+        "./types/drawing-types.ts",
+        "./types/DrawingMode.ts"
+      ],
+      "valueMapping": {
+        "select": "SELECT",
+        "draw": "DRAW",
+        "straight-line": "STRAIGHT_LINE",
+        "wall": "WALL",
+        "room": "ROOM",
+        "eraser": "ERASER",
+        "erase": "ERASE",
+        "pan": "PAN",
+        "measure": "MEASURE",
+        "text": "TEXT",
+        "shape": "SHAPE",
+        "hand": "HAND",
+        "pencil": "PENCIL",
+        "line": "LINE",
+        "rectangle": "RECTANGLE",
+        "circle": "CIRCLE",
+        "door": "DOOR",
+        "window": "WINDOW"
+      }
+    },
+    "MeasurementData": {
+      "sourceModule": "./types/fabric-unified.ts",
+      "requiredProps": [
+        "distance",
+        "startPoint",
+        "endPoint",
+        "midPoint",
+        "angle",
+        "unit",
+        "pixelsPerMeter"
+      ],
+      "optionalProps": [
+        "snapped"
+      ]
+    }
+  }
+}

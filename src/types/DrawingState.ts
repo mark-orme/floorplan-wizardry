@@ -1,35 +1,36 @@
 
+import { Point } from './core/Point';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Point } from './Point';
 
+/**
+ * Drawing state interface
+ */
 export interface DrawingState {
   isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
+  startPoint: Point;
+  currentPoint: Point;
   points: Point[];
-  distance?: number;
-  cursorPosition?: Point | null;
-  // Additional fields for drawing tools
   tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
-  pathStartPoint?: Point | null;
-  currentPath?: any;
-  zoomLevel?: number;
+  distance: number;
+  cursorPosition: Point;
+  currentZoom?: number;
 }
 
+/**
+ * Create a default drawing state
+ */
 export function createDefaultDrawingState(): DrawingState {
   return {
     isDrawing: false,
-    startPoint: null,
-    currentPoint: null,
+    startPoint: { x: 0, y: 0 },
+    currentPoint: { x: 0, y: 0 },
     points: [],
     distance: 0,
-    cursorPosition: null,
-    tool: DrawingMode.SELECT,
-    lineColor: '#000000',
-    lineThickness: 2,
-    pathStartPoint: null,
-    currentPath: null
+    cursorPosition: { x: 0, y: 0 },
+    currentZoom: 1
   };
 }
+
+export default DrawingState;

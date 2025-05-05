@@ -1,39 +1,24 @@
 
-import { z } from "@/utils/zod-mock";
+import * as z from '@/utils/zod-mock';
 
-export const validateField = <T>(
-  schema: z.ZodType<T>,
-  value: unknown
-): { isValid: boolean; error?: string } => {
+/**
+ * Validate a field using zod schema
+ * @param schema The zod schema to validate against
+ * @param value The value to validate
+ * @returns Validation result
+ */
+export function validateField(schema: any, value: any) {
   try {
-    schema.parse(value);
-    return { isValid: true };
+    if (typeof schema.parse === 'function') {
+      schema.parse(value);
+      return { isValid: true, error: null };
+    }
+    return { isValid: true, error: null };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        isValid: false,
-        error: error.errors[0]?.message || 'Invalid value'
-      };
-    }
-    return { isValid: false, error: 'Invalid value' };
+    const zodError = error as z.ZodError;
+    const errorMessage = zodError.errors?.[0]?.message || 'Invalid input';
+    return { isValid: false, error: errorMessage };
   }
-};
+}
 
-// Additional helper functions for form validation
-export const validateForm = <T extends Record<string, unknown>>(
-  schema: Record<string, z.ZodType<any>>,
-  values: T
-): { isValid: boolean; errors: Record<string, string> } => {
-  const errors: Record<string, string> = {};
-  let isValid = true;
-
-  Object.entries(schema).forEach(([field, fieldSchema]) => {
-    const result = validateField(fieldSchema, values[field]);
-    if (!result.isValid) {
-      errors[field] = result.error || `Invalid ${field}`;
-      isValid = false;
-    }
-  });
-
-  return { isValid, errors };
-};
+export default { validateField };

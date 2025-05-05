@@ -1,21 +1,30 @@
 
 import { useCallback } from 'react';
-import { Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { LineStateCore } from './useLineStateCore';
+import logger from '@/utils/logger';
 
-interface UseLineStateActionsProps {
-  coreState: LineStateCore;
+interface UseLineStateActionsOptions {
+  coreState: {
+    isDrawing: boolean;
+    setIsDrawing: (drawing: boolean) => void;
+    startPoint: Point | null;
+    setStartPoint: (point: Point | null) => void;
+    currentPoint: Point | null;
+    setCurrentPoint: (point: Point | null) => void;
+  };
   snapEnabled: boolean;
   snapToGrid: (point: Point) => Point;
   anglesEnabled: boolean;
   snapToAngle: (start: Point, end: Point) => Point;
-  createLine: (start: Point, end: Point) => Line;
-  updateLine: (line: Line, start: Point, end: Point) => void;
-  finalizeLine: (line: Line) => void;
-  removeLine: (line: Line) => void;
+  createLine: (start: Point, end: Point) => any;
+  updateLine: (line: any, start: Point, end: Point) => void;
+  finalizeLine: (line: any) => void;
+  removeLine: (line: any) => void;
 }
 
+/**
+ * Line state actions hook
+ */
 export const useLineStateActions = ({
   coreState,
   snapEnabled,
@@ -26,126 +35,60 @@ export const useLineStateActions = ({
   updateLine,
   finalizeLine,
   removeLine
-}: UseLineStateActionsProps) => {
-  const {
-    isDrawing,
-    setIsDrawing,
-    startPoint,
-    setStartPoint,
-    currentPoint,
-    setCurrentPoint,
-    currentLine,
-    setCurrentLine
-  } = coreState;
-
-  // Start drawing a line
+}: UseLineStateActionsOptions) => {
+  const { isDrawing, setIsDrawing, startPoint, setStartPoint, currentPoint, setCurrentPoint } = coreState;
+  
+  // Start drawing
   const startDrawing = useCallback((point: Point) => {
-    // Apply snapping if enabled
     const snappedPoint = snapEnabled ? snapToGrid(point) : point;
     
     setIsDrawing(true);
     setStartPoint(snappedPoint);
     setCurrentPoint(snappedPoint);
     
-    // Don't create line yet - wait for movement
-  }, [setIsDrawing, setStartPoint, setCurrentPoint, snapEnabled, snapToGrid]);
+    logger.debug('Started line drawing', { startPoint: snappedPoint });
+  }, [snapEnabled, snapToGrid, setIsDrawing, setStartPoint, setCurrentPoint]);
   
-  // Continue drawing as mouse moves
+  // Continue drawing
   const continueDrawing = useCallback((point: Point) => {
     if (!isDrawing || !startPoint) return;
     
+    let processedPoint = point;
+    
     // Apply snapping if enabled
-    let snappedPoint = snapEnabled ? snapToGrid(point) : point;
+    if (snapEnabled) {
+      processedPoint = snapToGrid(point);
+    }
     
-    // Apply angle constraints if enabled
     if (anglesEnabled && startPoint) {
-      snappedPoint = snapToAngle(startPoint, snappedPoint);
+      processedPoint = snapToAngle(startPoint, processedPoint);
     }
     
-    setCurrentPoint(snappedPoint);
-    
-    // Create or update line
-    if (currentLine) {
-      updateLine(currentLine, startPoint, snappedPoint);
-    } else {
-      const newLine = createLine(startPoint, snappedPoint);
-      setCurrentLine(newLine);
-    }
-  }, [
-    isDrawing,
-    startPoint,
-    currentLine,
-    setCurrentPoint,
-    setCurrentLine,
-    snapEnabled,
-    snapToGrid,
-    anglesEnabled,
-    snapToAngle,
-    createLine,
-    updateLine
-  ]);
+    setCurrentPoint(processedPoint);
+  }, [isDrawing, startPoint, snapEnabled, snapToGrid, anglesEnabled, snapToAngle, setCurrentPoint]);
   
-  // Complete drawing on mouse up
-  const completeDrawing = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint) return;
+  // Complete drawing
+  const completeDrawing = useCallback(() => {
+    if (!isDrawing || !startPoint || !currentPoint) return;
     
-    // Apply snapping if enabled
-    let snappedPoint = snapEnabled ? snapToGrid(point) : point;
-    
-    // Apply angle constraints if enabled
-    if (anglesEnabled && startPoint) {
-      snappedPoint = snapToAngle(startPoint, snappedPoint);
-    }
-    
-    setCurrentPoint(snappedPoint);
-    
-    // Finalize the line
-    if (currentLine) {
-      updateLine(currentLine, startPoint, snappedPoint);
-      finalizeLine(currentLine);
-    } else {
-      // If no line was created yet (e.g., click without drag), create one now
-      createLine(startPoint, snappedPoint);
-    }
-    
-    // Reset state
     setIsDrawing(false);
-    setCurrentLine(null);
-  }, [
-    isDrawing,
-    startPoint,
-    currentLine,
-    setCurrentPoint,
-    setIsDrawing,
-    setCurrentLine,
-    snapEnabled,
-    snapToGrid,
-    anglesEnabled,
-    snapToAngle,
-    updateLine,
-    finalizeLine,
-    createLine
-  ]);
-  
-  // Cancel drawing (e.g., on Esc key)
-  const cancelDrawing = useCallback(() => {
-    if (currentLine) {
-      removeLine(currentLine);
-    }
     
+    // Reset points
+    setStartPoint(null);
+    setCurrentPoint(null);
+    
+    logger.debug('Completed line drawing');
+  }, [isDrawing, startPoint, currentPoint, setIsDrawing, setStartPoint, setCurrentPoint]);
+  
+  // Cancel drawing
+  const cancelDrawing = useCallback(() => {
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentPoint(null);
-    setCurrentLine(null);
-  }, [
-    currentLine,
-    setIsDrawing,
-    setStartPoint,
-    setCurrentPoint,
-    setCurrentLine,
-    removeLine
-  ]);
-
+    
+    logger.debug('Cancelled line drawing');
+  }, [setIsDrawing, setStartPoint, setCurrentPoint]);
+  
   return {
     startDrawing,
     continueDrawing,

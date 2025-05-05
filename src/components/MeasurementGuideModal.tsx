@@ -1,57 +1,66 @@
 
 import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface MeasurementGuideModalProps {
   open: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onClose?: () => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
+/**
+ * Modal component for measurement guide instructions
+ */
+const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
   open,
-  onOpenChange,
-  onClose
+  onOpenChange
 }) => {
-  const handleClose = () => {
-    if (onClose) onClose();
-    if (onOpenChange) onOpenChange(false);
-  };
-
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">Measurement Guide</h2>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Using the Measurement Tool</DialogTitle>
+          <DialogDescription>
+            Learn how to measure distances on your floor plan.
+          </DialogDescription>
+        </DialogHeader>
         
-        <div className="space-y-4">
-          <p>
-            To measure distances on the canvas:
-          </p>
-          
-          <ol className="list-decimal pl-5 space-y-2">
-            <li>Click and hold at the starting point</li>
-            <li>Drag to the end point</li>
-            <li>Release to see the measurement</li>
-          </ol>
-          
-          <div className="bg-gray-50 p-2 rounded">
+        <div className="grid gap-4 py-4">
+          <div className="flex flex-col gap-2">
+            <h3 className="font-medium">Getting Started</h3>
             <p className="text-sm text-gray-600">
-              <strong>Tip:</strong> Hold Shift key while measuring to snap to 45° angles.
+              Click and drag to create a measurement line. The distance and angle will be displayed.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <h3 className="font-medium">Snapping Features</h3>
+            <p className="text-sm text-gray-600">
+              Hold Shift to snap to common angles (0°, 45°, 90°).
+              Toggle grid snapping using the grid button.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <h3 className="font-medium">Units</h3>
+            <p className="text-sm text-gray-600">
+              Measurements are shown in pixels by default. You can change units in settings.
             </p>
           </div>
         </div>
         
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={handleClose}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Got it</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

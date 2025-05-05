@@ -12,7 +12,16 @@ export enum DrawingMode {
   PAN = 'pan',
   MEASURE = 'measure',
   TEXT = 'text',
-  SHAPE = 'shape'
+  SHAPE = 'shape',
+  // Add missing DrawingMode values that were causing errors
+  HAND = 'hand',
+  ERASE = 'erase',
+  LINE = 'line',
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  PENCIL = 'pencil',
+  DOOR = 'door',
+  WINDOW = 'window'
 }
 
 /**
@@ -29,7 +38,10 @@ export function requiresSnapping(mode: DrawingMode): boolean {
   return [
     DrawingMode.STRAIGHT_LINE,
     DrawingMode.WALL,
-    DrawingMode.ROOM
+    DrawingMode.ROOM,
+    DrawingMode.LINE,
+    DrawingMode.RECTANGLE,
+    DrawingMode.CIRCLE
   ].includes(mode);
 }
 
@@ -55,6 +67,14 @@ export function getToolLabel(mode: DrawingMode): string {
     case DrawingMode.MEASURE: return 'Measure';
     case DrawingMode.TEXT: return 'Text';
     case DrawingMode.SHAPE: return 'Shape';
+    case DrawingMode.HAND: return 'Hand';
+    case DrawingMode.ERASE: return 'Erase';
+    case DrawingMode.LINE: return 'Line';
+    case DrawingMode.RECTANGLE: return 'Rectangle'; 
+    case DrawingMode.CIRCLE: return 'Circle';
+    case DrawingMode.PENCIL: return 'Pencil';
+    case DrawingMode.DOOR: return 'Door';
+    case DrawingMode.WINDOW: return 'Window';
     default: return 'Tool';
   }
 }

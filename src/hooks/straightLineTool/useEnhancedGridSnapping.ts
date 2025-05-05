@@ -1,57 +1,41 @@
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
 
 interface UseEnhancedGridSnappingOptions {
   initialSnapEnabled?: boolean;
   gridSize?: number;
-  snapThreshold?: number;
 }
 
 /**
- * Enhanced grid snapping hook with additional functionality
+ * Hook for grid snapping functionality
  */
 export const useEnhancedGridSnapping = ({
-  initialSnapEnabled = true,
-  gridSize = 20,
-  snapThreshold = 10
+  initialSnapEnabled = false,
+  gridSize = 20
 }: UseEnhancedGridSnappingOptions = {}) => {
   const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  const [gridSizeState] = useState(gridSize);
-  const [snapThresholdState] = useState(snapThreshold);
-
+  
+  // Toggle grid snapping
   const toggleGridSnapping = useCallback(() => {
     setSnapEnabled(prev => !prev);
   }, []);
-
+  
+  // Snap point to grid
   const snapToGrid = useCallback((point: Point): Point => {
     if (!snapEnabled) return point;
-
-    // Calculate nearest grid points
-    const nearestX = Math.round(point.x / gridSizeState) * gridSizeState;
-    const nearestY = Math.round(point.y / gridSizeState) * gridSizeState;
     
-    // Calculate distances to nearest grid points
-    const distX = Math.abs(point.x - nearestX);
-    const distY = Math.abs(point.y - nearestY);
-    
-    // Only snap if within threshold
     return {
-      x: distX <= snapThresholdState ? nearestX : point.x,
-      y: distY <= snapThresholdState ? nearestY : point.y
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
     };
-  }, [snapEnabled, gridSizeState, snapThresholdState]);
-
-  const isSnappedToGrid = useCallback((point: Point, snappedPoint: Point): boolean => {
-    return point.x !== snappedPoint.x || point.y !== snappedPoint.y;
-  }, []);
-
+  }, [snapEnabled, gridSize]);
+  
   return {
     snapEnabled,
     setSnapEnabled,
-    snapToGrid,
     toggleGridSnapping,
-    isSnappedToGrid
+    snapToGrid
   };
 };
 

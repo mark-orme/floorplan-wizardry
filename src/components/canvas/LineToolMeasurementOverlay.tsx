@@ -1,40 +1,48 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface LineToolMeasurementOverlayProps {
   visible: boolean;
-  distance?: number | null;
-  angle?: number | null;
+  distance?: number;
+  angle?: number;
   isSnapped?: boolean;
   unit?: string;
 }
 
+/**
+ * Component to display measurement information for line tools
+ */
 export const LineToolMeasurementOverlay: React.FC<LineToolMeasurementOverlayProps> = ({
   visible,
-  distance,
-  angle,
-  isSnapped,
+  distance = 0,
+  angle = 0,
+  isSnapped = false,
   unit = 'px'
 }) => {
-  if (!visible || distance === undefined || distance === null) return null;
-
+  if (!visible) return null;
+  
+  const formattedDistance = Math.round(distance * 100) / 100;
+  const formattedAngle = Math.round(angle);
+  
   return (
-    <div className="fixed bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded shadow-md z-50">
-      <div className="flex flex-col space-y-1">
-        <div className="flex items-center">
-          <span className="text-sm font-medium">Distance:</span>
-          <span className="ml-2 text-sm">{Math.round(distance)}{unit}</span>
-          {isSnapped && (
-            <span className="ml-1 text-xs text-green-400">(snapped)</span>
-          )}
+    <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-lg shadow-lg z-50 transition-opacity">
+      <div className="flex flex-col space-y-1 font-mono text-sm">
+        <div className="flex justify-between gap-4">
+          <span className="text-gray-600">Distance:</span>
+          <span className={cn(
+            "font-semibold",
+            isSnapped && "text-green-600"
+          )}>
+            {formattedDistance} {unit}
+            {isSnapped && <span className="ml-1 text-xs">✓</span>}
+          </span>
         </div>
         
-        {angle !== undefined && angle !== null && (
-          <div className="flex items-center">
-            <span className="text-sm font-medium">Angle:</span>
-            <span className="ml-2 text-sm">{Math.round(angle)}°</span>
-          </div>
-        )}
+        <div className="flex justify-between gap-4">
+          <span className="text-gray-600">Angle:</span>
+          <span className="font-semibold">{formattedAngle}°</span>
+        </div>
       </div>
     </div>
   );
