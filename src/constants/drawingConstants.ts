@@ -1,14 +1,14 @@
 
 /**
- * Drawing constants for the application
+ * Constants for drawing operations
  */
 
-// Polyline styles
-export const POLYLINE_STYLES = {
+// Core drawing styles
+export const DRAWING_STYLES = {
   DEFAULT: {
     stroke: '#000000',
     strokeWidth: 2,
-    fill: 'transparent',
+    fill: 'transparent', 
     strokeLineCap: 'round',
     strokeLineJoin: 'round'
   },
@@ -16,69 +16,50 @@ export const POLYLINE_STYLES = {
     stroke: '#333333',
     strokeWidth: 5,
     fill: 'transparent',
-    strokeLineCap: 'butt',
-    strokeLineJoin: 'miter'
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round'
   },
   ROOM_BOUNDARY: {
-    stroke: '#0066cc',
-    strokeWidth: 2,
-    fill: 'rgba(0, 102, 204, 0.1)',
-    strokeLineCap: 'butt',
-    strokeLineJoin: 'miter'
+    stroke: '#666666',
+    strokeWidth: 3,
+    fill: 'rgba(200, 200, 200, 0.2)',
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round'
   },
   MEASUREMENT: {
-    stroke: '#ff6600',
+    stroke: '#0066cc',
     strokeWidth: 1,
-    strokeDashArray: [3, 3],
     fill: 'transparent',
     strokeLineCap: 'butt',
-    strokeLineJoin: 'miter'
+    strokeLineJoin: 'round'
   }
 };
 
-// Line styles
-export const LINE_STYLES = {
-  DEFAULT: {
-    stroke: '#000000',
-    strokeWidth: 2
-  },
-  THIN: {
-    stroke: '#333333',
-    strokeWidth: 1
-  },
-  THICK: {
-    stroke: '#000000',
-    strokeWidth: 4
-  },
-  DASHED: {
-    stroke: '#000000',
-    strokeWidth: 2,
-    strokeDashArray: [5, 5]
-  },
-  HIGHLIGHTED: {
-    stroke: '#ff0000',
-    strokeWidth: 3
-  }
+// Default stroke properties
+export const DEFAULT_STROKE_COLOR = '#000000';
+export const DEFAULT_STROKE_WIDTH = 2;
+export const DEFAULT_FILL = 'transparent';
+export const DEFAULT_OPACITY = 1;
+export const DEFAULT_LINE_CAP = 'round';
+export const DEFAULT_LINE_JOIN = 'round';
+
+// Wall specific properties
+export const WALL_STROKE_COLOR = '#333333';
+export const WALL_STROKE_WIDTH = 5;
+export const WALL_FILL = 'transparent';
+
+// Constants for drawing operations
+export const DRAWING_CONSTANTS = {
+  PIXELS_PER_METER: 100,
+  GRID_SIZE: 20,
+  SNAP_THRESHOLD: 10,
+  MIN_POINT_DISTANCE: 5,
+  MAX_ZOOM: 5,
+  MIN_ZOOM: 0.5,
+  DEFAULT_ZOOM: 1,
+  DEFAULT_CANVAS_WIDTH: 1000,
+  DEFAULT_CANVAS_HEIGHT: 800,
+  ...DRAWING_STYLES
 };
 
-// Drawing modes
-export const DRAWING_MODES = {
-  SELECT: 'select',
-  DRAW: 'draw',
-  LINE: 'line',
-  RECTANGLE: 'rectangle',
-  CIRCLE: 'circle',
-  TEXT: 'text',
-  WALL: 'wall',
-  ROOM: 'room'
-};
-
-// Cursor styles for different drawing modes
-export const CURSOR_STYLES = {
-  DEFAULT: 'default',
-  CROSSHAIR: 'crosshair',
-  GRAB: 'grab',
-  GRABBING: 'grabbing',
-  TEXT: 'text',
-  NOT_ALLOWED: 'not-allowed'
-};
+export default DRAWING_CONSTANTS;

@@ -5,10 +5,10 @@
  */
 
 // Import fabric properly to avoid "Property does not exist" errors
-import { Canvas, Object as FabricObject, Line } from 'fabric';
+import { Canvas, Object as FabricObject, Line, Group, Polyline, Path, IObjectOptions } from 'fabric';
 
 // Define our own interfaces since some are missing in the fabric types
-export interface IPathOptions {
+export interface IPathOptions extends IObjectOptions {
   path?: string | { x: number; y: number }[];
   stroke?: string;
   strokeWidth?: number;
@@ -18,14 +18,13 @@ export interface IPathOptions {
   selectable?: boolean;
 }
 
-export interface IGroupOptions {
-  objects?: FabricObject[];
+export interface IGroupOptions extends IObjectOptions {
   originX?: string;
   originY?: string;
   selectable?: boolean;
 }
 
-export interface IPolylineOptions {
+export interface IPolylineOptions extends IObjectOptions {
   points?: Array<{ x: number; y: number }>;
   stroke?: string;
   strokeWidth?: number;
@@ -36,9 +35,7 @@ export interface IPolylineOptions {
 }
 
 // Define interfaces for missing components
-export interface IRectOptions {
-  left?: number;
-  top?: number;
+export interface IRectOptions extends IObjectOptions {
   width?: number;
   height?: number;
   fill?: string;
@@ -47,9 +44,7 @@ export interface IRectOptions {
   selectable?: boolean;
 }
 
-export interface ICircleOptions {
-  left?: number;
-  top?: number;
+export interface ICircleOptions extends IObjectOptions {
   radius?: number;
   fill?: string;
   stroke?: string;
@@ -58,7 +53,7 @@ export interface ICircleOptions {
 }
 
 // Export the interfaces for reuse
-export { FabricObject };
+export { Canvas, FabricObject, Line, Group, Polyline, Path };
 
 // Create safe functions instead of relying on direct fabric object properties
 export function createPath(path: string, options: IPathOptions = {}) {
@@ -67,7 +62,7 @@ export function createPath(path: string, options: IPathOptions = {}) {
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
       return new window.fabric.Path(path, options as any);
     }
-    return null;
+    return new Path(path, options as any);
   } catch (e) {
     console.error('Error creating fabric Path:', e);
     return null;
@@ -79,7 +74,7 @@ export function createGroup(objects: FabricObject[], options: IGroupOptions = {}
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
       return new window.fabric.Group(objects, options as any);
     }
-    return null;
+    return new Group(objects, options as any);
   } catch (e) {
     console.error('Error creating fabric Group:', e);
     return null;
@@ -91,13 +86,14 @@ export function createPolyline(points: Array<{ x: number; y: number }>, options:
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Polyline) {
       return new window.fabric.Polyline(points, options as any);
     }
-    return null;
+    return new Polyline(points, options as any);
   } catch (e) {
     console.error('Error creating fabric Polyline:', e);
     return null;
   }
 }
 
+// Add a createRect function
 export function createRect(options: IRectOptions = {}) {
   try {
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Rect) {
@@ -110,6 +106,7 @@ export function createRect(options: IRectOptions = {}) {
   }
 }
 
+// Add a createCircle function
 export function createCircle(options: ICircleOptions = {}) {
   try {
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Circle) {
@@ -142,14 +139,14 @@ export const DEFAULT_POLYLINE_OPTIONS: IPolylineOptions = {
 };
 
 // Add type safety checks
-export function isPath(object: FabricObject): boolean {
+export function isPath(object: FabricObject): object is Path {
   return object && object.type === 'path';
 }
 
-export function isGroup(object: FabricObject): boolean {
+export function isGroup(object: FabricObject): object is Group {
   return object && object.type === 'group';
 }
 
-export function isPolyline(object: FabricObject): boolean {
+export function isPolyline(object: FabricObject): object is Polyline {
   return object && object.type === 'polyline';
 }

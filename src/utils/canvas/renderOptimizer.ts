@@ -1,140 +1,102 @@
 
 import { Canvas } from 'fabric';
 
+export interface RenderOptions {
+  debounceMs?: number;
+  onBeforeRender?: () => void;
+  onAfterRender?: () => void;
+}
+
+// Debounce render calls
+const debounceTimers: Map<string, NodeJS.Timeout> = new Map();
+
 /**
- * Request optimized canvas rendering with debounce
- * @param canvas The fabric canvas
- * @param options Options for optimization
+ * Request an optimized render operation on the canvas
+ * @param canvas The canvas to render
+ * @param options Render options or a string key for predefined operations
  */
-export const requestOptimizedRender = (
-  canvas: Canvas | null,
-  options: {
-    debounceMs?: number;
-    onBeforeRender?: () => void;
-    onAfterRender?: () => void;
-  } = {}
-) => {
+export function requestOptimizedRender(
+  canvas: Canvas | null, 
+  options: RenderOptions | string = {}
+): void {
   if (!canvas) return;
   
-  const { debounceMs = 0, onBeforeRender, onAfterRender } = options;
+  // Handle string options (for backward compatibility)
+  let renderOptions: RenderOptions;
+  if (typeof options === 'string') {
+    switch (options) {
+      case 'add-objects':
+        renderOptions = { debounceMs: 50 };
+        break;
+      case 'remove-objects':
+        renderOptions = { debounceMs: 50 };
+        break;
+      case 'update-objects':
+        renderOptions = { debounceMs: 100 };
+        break;
+      default:
+        renderOptions = {};
+    }
+  } else {
+    renderOptions = options;
+  }
+  
+  const { debounceMs = 0, onBeforeRender, onAfterRender } = renderOptions;
+  
+  // Get a unique key for the canvas for debouncing
+  const canvasKey = canvas.lowerCanvasEl?.id || 'canvas';
+  
+  // Clear any existing timer for this canvas
+  if (debounceTimers.has(canvasKey)) {
+    clearTimeout(debounceTimers.get(canvasKey));
+  }
   
   if (debounceMs > 0) {
-    if ((canvas as any)._renderDebounceId) {
-      clearTimeout((canvas as any)._renderDebounceId);
-    }
-    
-    (canvas as any)._renderDebounceId = setTimeout(() => {
-      if (onBeforeRender) onBeforeRender();
-      canvas.requestRenderAll();
-      if (onAfterRender) onAfterRender();
-      (canvas as any)._renderDebounceId = null;
-    }, debounceMs);
+    // Debounce the render
+    debounceTimers.set(
+      canvasKey,
+      setTimeout(() => {
+        performRender(canvas, onBeforeRender, onAfterRender);
+        debounceTimers.delete(canvasKey);
+      }, debounceMs)
+    );
   } else {
+    // Render immediately
+    performRender(canvas, onBeforeRender, onAfterRender);
+  }
+}
+
+/**
+ * Perform the actual render operation
+ */
+function performRender(
+  canvas: Canvas,
+  onBeforeRender?: () => void,
+  onAfterRender?: () => void
+): void {
+  try {
     if (onBeforeRender) onBeforeRender();
     canvas.requestRenderAll();
     if (onAfterRender) onAfterRender();
+  } catch (error) {
+    console.error('Error during canvas render:', error);
   }
-};
+}
 
 /**
- * Create a smooth event handler with throttling
- * @param handler The event handler function
- * @param options Throttle options
+ * Cancel pending debounced renders
+ * @param canvas The canvas to cancel renders for, or null to cancel all
  */
-export const createSmoothEventHandler = <T extends (...args: any[]) => any>(
-  handler: T,
-  options: {
-    throttleMs?: number;
-    leading?: boolean;
-    trailing?: boolean;
-  } = {}
-): T => {
-  const { throttleMs = 16, leading = true, trailing = true } = options;
-  let lastArgs: any[] | null = null;
-  let lastThis: any | null = null;
-  let result: ReturnType<T>;
-  let timerId: ReturnType<typeof setTimeout> | null = null;
-  let lastCallTime = 0;
-  
-  function invoke(time: number) {
-    const args = lastArgs!;
-    const thisArg = lastThis;
-    
-    lastArgs = lastThis = null;
-    lastCallTime = time;
-    result = handler.apply(thisArg, args);
-    return result;
-  }
-  
-  function throttled(this: any, ...args: any[]) {
-    const time = Date.now();
-    const isInvoking = shouldInvoke(time);
-    
-    lastArgs = args;
-    lastThis = this;
-    
-    if (isInvoking) {
-      if (timerId === null) {
-        lastCallTime = time;
-        if (leading) {
-          return invoke(lastCallTime);
-        }
-        if (trailing) {
-          timerId = setTimeout(trailingEdge, throttleMs);
-        }
-        return result;
-      }
+export function cancelOptimizedRenders(canvas: Canvas | null = null): void {
+  if (canvas) {
+    const canvasKey = canvas.lowerCanvasEl?.id || 'canvas';
+    if (debounceTimers.has(canvasKey)) {
+      clearTimeout(debounceTimers.get(canvasKey));
+      debounceTimers.delete(canvasKey);
     }
-    if (timerId === null && trailing) {
-      timerId = setTimeout(trailingEdge, throttleMs);
-    }
-    return result;
+  } else {
+    // Cancel all pending renders
+    debounceTimers.forEach(timer => clearTimeout(timer));
+    debounceTimers.clear();
   }
-  
-  function shouldInvoke(time: number) {
-    const timeSinceLastCall = time - lastCallTime;
-    return (lastCallTime === 0 || timeSinceLastCall >= throttleMs);
-  }
-  
-  function trailingEdge() {
-    timerId = null;
-    if (trailing && lastArgs) {
-      return invoke(Date.now());
-    }
-    lastArgs = lastThis = null;
-    return result;
-  }
-  
-  return throttled as T;
-};
-
-/**
- * Batch operations for improved canvas performance
- * @param canvas The fabric canvas
- * @param callback Function to execute in batched mode
- */
-export const batchCanvasOperations = (
-  canvas: Canvas | null,
-  callback: () => void
-) => {
-  if (!canvas) return;
-  
-  // Disable rendering during operations
-  const originalRenderOnAddRemove = (canvas as any).renderOnAddRemove;
-  if ((canvas as any).renderOnAddRemove !== undefined) {
-    (canvas as any).renderOnAddRemove = false;
-  }
-  
-  try {
-    // Execute operations
-    callback();
-  } finally {
-    // Restore original rendering setting
-    if ((canvas as any).renderOnAddRemove !== undefined) {
-      (canvas as any).renderOnAddRemove = originalRenderOnAddRemove;
-    }
-    
-    // Render all changes at once
-    canvas.requestRenderAll();
-  }
-};
+}

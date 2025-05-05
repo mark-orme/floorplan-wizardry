@@ -4,6 +4,7 @@
  * Ensures consistent loading of FloorPlan types regardless of case sensitivity
  */
 import { FloorPlan } from '@/types/FloorPlan';
+import { ensureFloorPlanMetadata, createMinimalFloorPlan, updateFloorPlanMetadata } from './floorPlanMetadata';
 
 /**
  * Type guard to check if an object is a FloorPlan
@@ -38,17 +39,9 @@ export function getFloorPlanModule() {
  * Makes sure all required properties exist
  */
 export function normalizeFloorPlan(floorPlan: any): FloorPlan {
-  if (!floorPlan) return null as unknown as FloorPlan;
+  if (!floorPlan) return createMinimalFloorPlan();
   
-  return {
-    ...floorPlan,
-    // Add any required fields that might be missing
-    updatedAt: floorPlan.updatedAt || new Date().toISOString(),
-    walls: floorPlan.walls || [],
-    rooms: floorPlan.rooms || [],
-    strokes: floorPlan.strokes || [],
-    data: floorPlan.data || {}
-  };
+  return ensureFloorPlanMetadata(floorPlan);
 }
 
 /**
@@ -57,6 +50,11 @@ export function normalizeFloorPlan(floorPlan: any): FloorPlan {
 export function normalizeFloorPlanImportPath(path: string): string {
   return path.replace(/[Ff][Ll][Oo][Oo][Rr][Pp][Ll][Aa][Nn]/g, 'FloorPlan');
 }
+
+/**
+ * Export the ensureFloorPlanMetadata function
+ */
+export { ensureFloorPlanMetadata, createMinimalFloorPlan, updateFloorPlanMetadata };
 
 /**
  * Export FloorPlan directly to provide a consistent import
