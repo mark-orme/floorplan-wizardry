@@ -1,91 +1,69 @@
+
 /**
  * Utility for adapting between different measurement data formats
  */
-import { MeasurementData } from '@/types/fabric-unified';
 import { Point } from '@/types/core/Point';
 
-/**
- * Legacy measurement data type with start/end instead of startPoint/endPoint
- */
-export interface LegacyMeasurementData {
-  distance: number;
-  start: Point | null;
-  end: Point | null;
+export interface MeasurementData {
+  distance: number | null;
+  angle: number | null;
+  startPoint?: Point | null;
+  endPoint?: Point | null;
+  start?: Point | null;
+  end?: Point | null;
   midPoint?: Point | null;
-  angle?: number;
-  unit?: 'px' | 'm' | 'cm' | 'mm';
+  unit?: string;
   snapped?: boolean;
+  snapType?: 'grid' | 'angle' | 'both';
   pixelsPerMeter?: number;
 }
 
 /**
- * Check if measurement data is in legacy format
- * @param data The measurement data to check
- * @returns True if the data is in legacy format
+ * Normalize measurement data to ensure it has both start/end and startPoint/endPoint
+ * This helps with backward compatibility between different code patterns
  */
-export function isLegacyMeasurementData(data: any): data is LegacyMeasurementData {
-  return data && ('start' in data || 'end' in data);
-}
-
-/**
- * Convert legacy measurement data to current format
- * @param data The legacy measurement data
- * @returns Converted measurement data
- */
-export function convertLegacyMeasurementData(data: LegacyMeasurementData): MeasurementData {
-  return {
-    distance: data.distance,
-    startPoint: data.start,
-    endPoint: data.end,
-    midPoint: data.midPoint || null,
-    angle: data.angle || 0,
-    unit: data.unit || 'px',
-    snapped: data.snapped,
-    pixelsPerMeter: data.pixelsPerMeter || 100,
-    // Keep legacy properties for backward compatibility
-    start: data.start,
-    end: data.end
+export function normalizeMeasurementData(data: Partial<MeasurementData>): MeasurementData {
+  const result: MeasurementData = {
+    distance: data.distance ?? null,
+    angle: data.angle ?? null,
+    unit: data.unit ?? 'px',
+    snapped: data.snapped ?? false
   };
-}
-
-/**
- * Convert current measurement data to legacy format
- * @param data The current measurement data
- * @returns Legacy format measurement data
- */
-export function convertToLegacyMeasurementData(data: MeasurementData): LegacyMeasurementData {
-  return {
-    distance: data.distance,
-    start: data.startPoint || data.start,
-    end: data.endPoint || data.end,
-    midPoint: data.midPoint,
-    angle: data.angle,
-    unit: data.unit,
-    snapped: data.snapped,
-    pixelsPerMeter: data.pixelsPerMeter
-  };
-}
-
-/**
- * Get a measurement data object that works with both legacy and current code
- * @param data The measurement data (either format)
- * @returns Measurement data with all properties populated
- */
-export function getAdaptedMeasurementData(data: MeasurementData | LegacyMeasurementData | null): MeasurementData | null {
-  if (!data) return null;
   
-  if (isLegacyMeasurementData(data)) {
-    return convertLegacyMeasurementData(data);
+  // Ensure both naming conventions are available
+  if (data.startPoint) {
+    result.startPoint = data.startPoint;
+    result.start = data.startPoint;
+  } else if (data.start) {
+    result.start = data.start;
+    result.startPoint = data.start;
   }
   
-  // If current data is missing legacy properties, add them
-  if (!('start' in data) || !('end' in data)) {
-    return {
-      ...data,
-      start: data.startPoint, 
-      end: data.endPoint
-    };
+  if (data.endPoint) {
+    result.endPoint = data.endPoint;
+    result.end = data.endPoint;
+  } else if (data.end) {
+    result.end = data.end;
+    result.endPoint = data.end;
   }
   
-  return data;
+  // Copy any other properties
+  if (data.midPoint) result.midPoint = data.midPoint;
+  if (data.pixelsPerMeter) result.pixelsPerMeter = data.pixelsPerMeter;
+  if (data.snapType) result.snapType = data.snapType;
+  
+  return result;
 }
+
+/**
+ * Check if the measurement data is complete
+ */
+export function isCompleteMeasurementData(data: Partial<MeasurementData>): boolean {
+  return !!(
+    data && 
+    ((data.startPoint || data.start) && (data.endPoint || data.end)) && 
+    typeof data.distance === 'number'
+  );
+}
+
+export default { normalizeMeasurementData, isCompleteMeasurementData };

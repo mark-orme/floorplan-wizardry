@@ -2,6 +2,7 @@
 import { vi } from 'vitest';
 import { Point } from '@/types/core/Point';
 import { MeasurementData } from '../useStraightLineTool.d';
+import { Canvas as FabricCanvas } from 'fabric';
 
 /**
  * Creates a mock canvas for testing
@@ -21,8 +22,22 @@ export function createMockCanvas() {
     getWidth: vi.fn().mockReturnValue(800),
     getHeight: vi.fn().mockReturnValue(600),
     item: vi.fn(),
-    dispose: vi.fn()
-  };
+    dispose: vi.fn(),
+    // Add missing properties to make a more complete mock
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    isDrawingMode: false,
+    sendToBack: vi.fn(),
+    forEachObject: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    selection: true,
+    freeDrawingBrush: {
+      color: '#000000',
+      width: 2
+    },
+    viewportTransform: [1, 0, 0, 1, 0, 0]
+  } as unknown as FabricCanvas;
 }
 
 /**
@@ -58,4 +73,14 @@ export function mockLineState() {
     handleMouseUp: vi.fn(),
     isActive: true
   };
+}
+
+/**
+ * Create a typed canvas reference for tests
+ * This ensures the ref matches the expected React.MutableRefObject<Canvas> type
+ */
+export function createCanvasRef() {
+  return {
+    current: createMockCanvas()
+  } as React.MutableRefObject<FabricCanvas>;
 }

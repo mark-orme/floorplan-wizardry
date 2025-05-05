@@ -27,4 +27,17 @@ export function validateField(schema: any, value?: any) {
   }
 }
 
-export default { validateField };
+/**
+ * Enhanced validate field that is backward compatible with older code
+ * This handles the different ways validateField might be called
+ */
+export function validateFieldEnhanced(schema: any, value?: any) {
+  // Support for zero arguments or one argument call patterns
+  if (arguments.length === 0 || (arguments.length === 1 && typeof schema === 'object')) {
+    return validateField(schema);
+  }
+  // Support for two arguments call pattern
+  return validateField(schema, value);
+}
+
+export default { validateField, validateFieldEnhanced };

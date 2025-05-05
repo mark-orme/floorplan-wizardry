@@ -1,23 +1,51 @@
 
 /**
- * Grid constants for consistent usage
+ * Grid constants for use across the application
  */
-export const SMALL_GRID_SIZE = 20;
-export const LARGE_GRID_SIZE = 100;
-export const SMALL_GRID_COLOR = '#e5e5e5';
-export const LARGE_GRID_COLOR = '#cccccc';
-export const SMALL_GRID_WIDTH = 0.5;
-export const LARGE_GRID_WIDTH = 1;
+
+// Base measurements
 export const PIXELS_PER_METER = 100;
+export const DEFAULT_GRID_SIZE = 20;
+export const DEFAULT_GRID_DIVISIONS = 5;
 
-export const GRID_CONSTANTS = {
-  SMALL_GRID_SIZE,
-  LARGE_GRID_SIZE,
-  SMALL_GRID_COLOR,
-  LARGE_GRID_COLOR,
-  SMALL_GRID_WIDTH,
-  LARGE_GRID_WIDTH,
-  PIXELS_PER_METER,
+// Grid appearance
+export const DEFAULT_GRID_COLOR = '#cccccc';
+export const DEFAULT_GRID_OPACITY = 0.5;
+export const DEFAULT_MAJOR_GRID_COLOR = '#aaaaaa';
+export const DEFAULT_MAJOR_GRID_OPACITY = 0.8;
+
+// Snap settings
+export const DEFAULT_SNAP_THRESHOLD = 10;
+export const DEFAULT_ANGLE_SNAP_DEGREES = 15;
+
+// Grid rendering
+export const MAX_GRID_LINES = 1000; // Safety limit for grid rendering
+export const GRID_ZOOM_THRESHOLD = 0.5; // Below this zoom level, simplify grid
+
+/**
+ * Get the appropriate grid size based on zoom level
+ * @param zoomLevel Current zoom level
+ * @returns Grid size in pixels
+ */
+export function getAdaptiveGridSize(zoomLevel: number): number {
+  if (zoomLevel < 0.2) return 100;
+  if (zoomLevel < 0.5) return 50;
+  if (zoomLevel < 1) return 20;
+  return DEFAULT_GRID_SIZE;
+}
+
+/**
+ * Grid style configuration
+ */
+export const GRID_STYLES = {
+  minor: {
+    color: DEFAULT_GRID_COLOR,
+    opacity: DEFAULT_GRID_OPACITY,
+    width: 1
+  },
+  major: {
+    color: DEFAULT_MAJOR_GRID_COLOR,
+    opacity: DEFAULT_MAJOR_GRID_OPACITY,
+    width: 1.5
+  }
 };
-
-export default GRID_CONSTANTS;

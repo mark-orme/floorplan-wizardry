@@ -21,7 +21,10 @@ export enum DrawingMode {
   CIRCLE = 'circle',
   PENCIL = 'pencil',
   DOOR = 'door',
-  WINDOW = 'window'
+  WINDOW = 'window',
+  DIMENSION = 'dimension',
+  STAIR = 'stair',
+  COLUMN = 'column'
 }
 
 /**
@@ -49,7 +52,25 @@ export function requiresSnapping(mode: DrawingMode): boolean {
  * Convert string to DrawingMode
  */
 export function toDrawingMode(mode: string): DrawingMode {
-  return mode as DrawingMode;
+  const normalized = mode.toLowerCase().replace(/_/g, '-');
+  
+  // Check if it's directly in the enum
+  if (Object.values(DrawingMode).includes(normalized as DrawingMode)) {
+    return normalized as DrawingMode;
+  }
+  
+  // Handle special cases
+  switch (normalized) {
+    case 'straight_line':
+    case 'straightline':
+      return DrawingMode.STRAIGHT_LINE;
+    case 'erase':
+      return DrawingMode.ERASER;
+    case 'hand':
+      return DrawingMode.PAN;
+    default:
+      return DrawingMode.SELECT;
+  }
 }
 
 /**
@@ -75,6 +96,26 @@ export function getToolLabel(mode: DrawingMode): string {
     case DrawingMode.PENCIL: return 'Pencil';
     case DrawingMode.DOOR: return 'Door';
     case DrawingMode.WINDOW: return 'Window';
+    case DrawingMode.DIMENSION: return 'Dimension';
+    case DrawingMode.STAIR: return 'Stair';
+    case DrawingMode.COLUMN: return 'Column';
     default: return 'Tool';
   }
 }
+
+// Add DEFAULT_STROKE_COLOR for imports that need it
+export const DEFAULT_STROKE_COLOR = '#000000';
+export const DEFAULT_STROKE_WIDTH = 2;
+
+export const DEFAULT_COLORS = {
+  stroke: '#000000',
+  fill: 'transparent',
+  highlight: '#3498db',
+  error: '#e74c3c',
+  warning: '#f39c12',
+  success: '#2ecc71'
+};
+
+// Add PIXELS_PER_METER for imports that need it
+export const PIXELS_PER_METER = 100;
+export const DEFAULT_GRID_SIZE = 20;

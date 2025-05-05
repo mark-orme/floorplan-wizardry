@@ -2,8 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
-import { mockLineState, createMockCanvas, createMockLine } from './mockHelpers';
-import { FixMe } from '@/types/typesMap';
+import { mockLineState, createMockCanvas, createMockLine, createCanvasRef } from './mockHelpers';
+import { Canvas as FabricCanvas } from 'fabric';
 
 // Mock dependencies
 vi.mock('../useLineStateCore', () => ({
@@ -44,9 +44,8 @@ vi.mock('../useLineDrawing', () => ({
 
 describe('useLineState', () => {
   const saveCurrentState = vi.fn();
-  const mockCanvas = createMockCanvas();
-  // Fix the ref to include current property
-  const fabricCanvasRef = { current: mockCanvas };
+  // Use the createCanvasRef helper to get a properly typed ref
+  const fabricCanvasRef = createCanvasRef();
   
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +53,7 @@ describe('useLineState', () => {
   
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef,
+      fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -66,7 +65,7 @@ describe('useLineState', () => {
   
   it('should handle start drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef,
+      fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -80,7 +79,7 @@ describe('useLineState', () => {
   
   it('should handle continue drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef,
+      fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -94,16 +93,17 @@ describe('useLineState', () => {
   
   it('should handle complete drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef,
+      fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
     }));
     
     act(() => {
-      result.current.startDrawing({ x: 10, y: 20 });
-      result.current.continueDrawing({ x: 30, y: 40 });
-      result.current.completeDrawing({ x: 30, y: 40 });
+      // Use a single object with both properties
+      const point = { x: 50, y: 60 };
+      result.current.startDrawing(point);
+      result.current.completeDrawing();
     });
   });
 });

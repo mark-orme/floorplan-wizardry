@@ -79,3 +79,48 @@ export function createCanvasOperation<T, Args extends any[]>(
     return withCanvas(canvasRef, (canvas) => operation(canvas, ...args));
   };
 }
+
+/**
+ * Safe event removal function that handles different fabric.js versions
+ * Some versions expect 1 arg, some expect 2 args, some expect 3
+ */
+export const removeCanvasEvent = createCanvasOperation((canvas, eventName, handler) => {
+  try {
+    if (handler) {
+      canvas.off(eventName, handler as any);
+    } else {
+      // Try removing all handlers for this event
+      (canvas as any).off(eventName);
+    }
+  } catch (e) {
+    console.warn(`Error removing event handler: ${eventName}`, e);
+  }
+});
+
+/**
+ * Creates a mock fabric canvas object for testing
+ */
+export function createMockFabricCanvas() {
+  return {
+    add: vi.fn(),
+    remove: vi.fn(),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    on: vi.fn(),
+    off: vi.fn(),
+    getActiveObject: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    dispose: vi.fn(),
+    clear: vi.fn(),
+    getElement: vi.fn(),
+    getContext: vi.fn()
+  };
+}
