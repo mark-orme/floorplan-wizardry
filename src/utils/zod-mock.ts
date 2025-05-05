@@ -15,6 +15,28 @@ export const ZodError = class ZodError extends Error {
   }
 };
 
+export const string = () => {
+  return {
+    min: () => ({
+      max: () => ({
+        email: () => ({
+          regex: () => ({
+            parse: (val: string) => val
+          })
+        }),
+        parse: (val: string) => val
+      }),
+      email: () => ({
+        regex: () => ({
+          parse: (val: string) => val
+        }),
+        parse: (val: string) => val
+      }),
+      parse: (val: string) => val
+    })
+  };
+};
+
 export const ZodString = class {
   static create() {
     return {

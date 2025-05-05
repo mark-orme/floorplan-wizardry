@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { z } from '@/utils/zod-mock';
+import * as z from '@/utils/zod-mock';
 import { validateField } from '@/utils/form-validation';
 
 interface SecureContactFormProps {
@@ -25,7 +25,7 @@ const SecureContactForm: React.FC<SecureContactFormProps> = ({ onSubmit }) => {
   const validate = () => {
     const schema = {
       name: validateField(z.string().min(2), formData.name),
-      email: validateField(z.string().email(), formData.email),
+      email: validateField(z.string().min(1).email(), formData.email),
       message: validateField(z.string().min(10), formData.message)
     };
     

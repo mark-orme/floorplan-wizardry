@@ -1,46 +1,60 @@
 
 /**
- * DrawingMode enum for tools
+ * Drawing mode constants for consistent usage across the application
  */
 export enum DrawingMode {
   SELECT = 'select',
   DRAW = 'draw',
-  LINE = 'line',
-  RECTANGLE = 'rectangle',
-  CIRCLE = 'circle',
-  TEXT = 'text',
-  PAN = 'pan',
-  ERASER = 'eraser',
+  STRAIGHT_LINE = 'straight-line',
   WALL = 'wall',
   ROOM = 'room',
-  DOOR = 'door',
-  WINDOW = 'window',
-  STRAIGHT_LINE = 'straight_line',
-  FREEHAND = 'freehand',
-  POLYGON = 'polygon',
+  ERASER = 'eraser',
+  PAN = 'pan',
   MEASURE = 'measure',
-  GRID = 'grid',
-  ZOOM = 'zoom',
-  // Add missing modes that are being referenced
-  PENCIL = 'pencil',
-  HAND = 'hand',
-  ERASE = 'erase',
+  TEXT = 'text',
   SHAPE = 'shape'
 }
 
 /**
- * Grid constants
+ * Check if a mode is a drawing mode (vs. selection)
  */
-export const GRID_CONSTANTS = {
-  SMALL_GRID_SIZE: 20,
-  LARGE_GRID_SIZE: 100,
-  SMALL_GRID_COLOR: '#e0e0e0',
-  LARGE_GRID_COLOR: '#c0c0c0',
-  SMALL_GRID_WIDTH: 0.5,
-  LARGE_GRID_WIDTH: 1,
-  PIXELS_PER_METER: 100,
-  // Add helper constants for line styles
-  DEFAULT_STROKE_COLOR: '#000000',
-  DEFAULT_STROKE_WIDTH: 2,
-  DEFAULT_FILL: 'transparent'
-};
+export function isDrawingMode(mode: DrawingMode): boolean {
+  return mode !== DrawingMode.SELECT;
+}
+
+/**
+ * Check if a mode requires snapping
+ */
+export function requiresSnapping(mode: DrawingMode): boolean {
+  return [
+    DrawingMode.STRAIGHT_LINE,
+    DrawingMode.WALL,
+    DrawingMode.ROOM
+  ].includes(mode);
+}
+
+/**
+ * Convert string to DrawingMode
+ */
+export function toDrawingMode(mode: string): DrawingMode {
+  return mode as DrawingMode;
+}
+
+/**
+ * Get tool button appearance for a mode
+ */
+export function getToolLabel(mode: DrawingMode): string {
+  switch (mode) {
+    case DrawingMode.SELECT: return 'Select';
+    case DrawingMode.DRAW: return 'Draw';
+    case DrawingMode.STRAIGHT_LINE: return 'Line';
+    case DrawingMode.WALL: return 'Wall';
+    case DrawingMode.ROOM: return 'Room';
+    case DrawingMode.ERASER: return 'Erase';
+    case DrawingMode.PAN: return 'Pan';
+    case DrawingMode.MEASURE: return 'Measure';
+    case DrawingMode.TEXT: return 'Text';
+    case DrawingMode.SHAPE: return 'Shape';
+    default: return 'Tool';
+  }
+}

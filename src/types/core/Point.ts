@@ -1,6 +1,6 @@
 
 /**
- * Point interface for 2D coordinates
+ * Standard Point interface for consistency across the application
  */
 export interface Point {
   x: number;
@@ -8,36 +8,29 @@ export interface Point {
 }
 
 /**
- * Calculate distance between two points
- */
-export function getDistance(p1: Point, p2: Point): number {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-/**
- * Calculate angle between two points in degrees
- */
-export function getAngle(p1: Point, p2: Point): number {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.atan2(dy, dx) * 180 / Math.PI;
-}
-
-/**
- * Calculate midpoint between two points
- */
-export function getMidPoint(p1: Point, p2: Point): Point {
-  return {
-    x: (p1.x + p2.x) / 2,
-    y: (p1.y + p2.y) / 2
-  };
-}
-
-/**
- * Create a point from x and y coordinates
+ * Creates a new Point
  */
 export function createPoint(x: number, y: number): Point {
   return { x, y };
+}
+
+/**
+ * Checks if two points are equal
+ */
+export function pointsEqual(p1: Point, p2: Point): boolean {
+  return p1.x === p2.x && p1.y === p2.y;
+}
+
+/**
+ * Creates a point from an array [x, y]
+ */
+export function pointFromArray(arr: number[]): Point {
+  return { x: arr[0], y: arr[1] };
+}
+
+/**
+ * Converts a point to array [x, y]
+ */
+export function pointToArray(point: Point): [number, number] {
+  return [point.x, point.y];
 }

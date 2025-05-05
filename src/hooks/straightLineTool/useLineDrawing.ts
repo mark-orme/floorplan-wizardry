@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, Line, ILineOptions } from 'fabric';
 import { Point } from '@/types/core/Point';
 
 interface UseLineDrawingProps {
@@ -10,32 +10,43 @@ interface UseLineDrawingProps {
   saveCurrentState: () => void;
 }
 
+/**
+ * Hook for drawing lines on canvas
+ */
 export const useLineDrawing = ({
   fabricCanvasRef,
   lineColor,
   lineThickness,
   saveCurrentState
 }: UseLineDrawingProps) => {
-  const createLine = useCallback((start: Point, end: Point): Line | null => {
+  // Create a new line on canvas
+  const createLine = useCallback((start: Point, end: Point): Line => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return null;
+    if (!canvas) {
+      throw new Error('Canvas is not initialized');
+    }
     
-    const line = new Line([start.x, start.y, end.x, end.y], {
+    const lineOptions: ILineOptions = {
       stroke: lineColor,
       strokeWidth: lineThickness,
-      selectable: false,
-      evented: false
-    });
+      selectable: true,
+      evented: true
+    };
+    
+    const line = new Line(
+      [start.x, start.y, end.x, end.y],
+      lineOptions
+    );
     
     canvas.add(line);
     canvas.renderAll();
     
     return line;
   }, [fabricCanvasRef, lineColor, lineThickness]);
-
-  const updateLine = useCallback((line: Line, start: Point, end: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  
+  // Update existing line's coordinates
+  const updateLine = useCallback((line: Line, start: Point, end: Point): void => {
+    if (!line) return;
     
     line.set({
       x1: start.x,
@@ -44,31 +55,43 @@ export const useLineDrawing = ({
       y2: end.y
     });
     
-    canvas.renderAll();
-  }, [fabricCanvasRef]);
-
-  const finalizeLine = useCallback((line: Line) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    line.setCoords();
     
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      canvas.renderAll();
+    }
+  }, [fabricCanvasRef]);
+  
+  // Finalize a line (save state, add to history, etc.)
+  const finalizeLine = useCallback((line: Line): void => {
+    if (!line) return;
+    
+    // Make the line selectable again
     line.set({
       selectable: true,
       evented: true
     });
     
-    canvas.setActiveObject(line);
-    canvas.renderAll();
     saveCurrentState();
-  }, [fabricCanvasRef, saveCurrentState]);
-
-  const removeLine = useCallback((line: Line) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
     
-    canvas.remove(line);
-    canvas.renderAll();
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      canvas.renderAll();
+    }
+  }, [fabricCanvasRef, saveCurrentState]);
+  
+  // Remove a line from canvas
+  const removeLine = useCallback((line: Line): void => {
+    if (!line) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      canvas.remove(line);
+      canvas.renderAll();
+    }
   }, [fabricCanvasRef]);
-
+  
   return {
     createLine,
     updateLine,

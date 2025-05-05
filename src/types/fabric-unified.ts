@@ -33,7 +33,7 @@ export interface ExtendedFabricObject extends FabricObject {
   visible?: boolean;
   selectable?: boolean;
   evented?: boolean;
-  excludeFromExport?: boolean | (() => void);
+  excludeFromExport?: boolean;
   isOnScreen?: boolean;
   set?: (options: Record<string, any>) => FabricObject;
   setCoords?: () => FabricObject;
@@ -151,4 +151,12 @@ export function createDefaultDrawingState(): DrawingState {
     isEnabled: true,
     currentZoom: 1
   };
+}
+
+// Export UseCanvasStateResult for useCanvasState.ts
+export interface UseCanvasStateResult {
+  canvas: FabricCanvas | null;
+  isInitialized: boolean;
+  isLoading: boolean;
+  error: Error | null;
 }

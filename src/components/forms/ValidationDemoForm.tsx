@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { z } from '@/utils/zod-mock';
+import * as z from '@/utils/zod-mock';
 import { validateField } from '@/utils/form-validation';
 
 interface ValidationDemoFormProps {

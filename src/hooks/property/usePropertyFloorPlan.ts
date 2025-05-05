@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { FloorPlan } from '@/types/FloorPlan';
+import { FloorPlan } from '@/types/fabric-unified';
 import { toast } from 'sonner';
 
 export interface UsePropertyFloorPlanProps {
@@ -29,7 +29,10 @@ export const usePropertyFloorPlan = ({ propertyId }: UsePropertyFloorPlanProps) 
           {
             id: 'floor-1',
             name: 'Ground Floor',
+            width: 1000,
+            height: 800,
             level: 0,
+            updatedAt: new Date().toISOString(),
             metadata: {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
@@ -38,7 +41,10 @@ export const usePropertyFloorPlan = ({ propertyId }: UsePropertyFloorPlanProps) 
           {
             id: 'floor-2',
             name: 'First Floor',
+            width: 1000,
+            height: 800,
             level: 1,
+            updatedAt: new Date().toISOString(),
             metadata: {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()

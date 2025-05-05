@@ -1,7 +1,8 @@
 
 import { useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import * as z from 'zod';
+import { ZodType } from 'zod';
+import { ZodError } from '@/utils/zod-mock';
 
 /**
  * Hook for input validation and sanitization
@@ -17,7 +18,7 @@ export const useInputValidation = () => {
   /**
    * Validate a string against a schema
    */
-  const validateInput = useCallback(<T>(input: string, schema: z.ZodType<T>): { 
+  const validateInput = useCallback(<T>(input: string, schema: ZodType<T>): { 
     isValid: boolean; 
     value: T | null; 
     error: string | null 
@@ -31,7 +32,7 @@ export const useInputValidation = () => {
         error: null
       };
     } catch (err) {
-      const error = err instanceof z.ZodError 
+      const error = err instanceof ZodError 
         ? err.errors.map(e => e.message).join(', ')
         : 'Validation error';
         
@@ -46,12 +47,12 @@ export const useInputValidation = () => {
   /**
    * Create a validation schema for common input types
    */
-  const createSchema = useCallback(<T>(type: z.ZodType<T>) => type, []);
+  const createSchema = useCallback(<T>(type: ZodType<T>) => type, []);
 
   /**
    * Create form validation schema
    */
-  const createFormSchema = useCallback(<T extends Record<string, z.ZodType<any>>>(schema: T) => schema, []);
+  const createFormSchema = useCallback(<T extends Record<string, ZodType<any>>>(schema: T) => schema, []);
 
   return {
     sanitizeInput,

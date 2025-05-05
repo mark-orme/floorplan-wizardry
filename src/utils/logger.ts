@@ -1,42 +1,21 @@
 
 /**
- * Simple logger utility for the application
+ * Simple logger utility for consistent logging
  */
 const logger = {
-  info: (message: string, ...args: any[]) => {
-    console.info(`[INFO] ${message}`, ...args);
-  },
-  
-  warn: (message: string, ...args: any[]) => {
-    console.warn(`[WARN] ${message}`, ...args);
-  },
-  
-  error: (message: string, ...args: any[]) => {
-    console.error(`[ERROR] ${message}`, ...args);
-  },
-  
-  debug: (message: string, ...args: any[]) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[DEBUG] ${message}`, ...args);
+  debug: (message: string, data?: any) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug(`[DEBUG] ${message}`, data || '');
     }
-  }
-};
-
-export const toolsLogger = {
-  info: (message: string, ...args: any[]) => {
-    logger.info(`[TOOLS] ${message}`, ...args);
   },
-  
-  warn: (message: string, ...args: any[]) => {
-    logger.warn(`[TOOLS] ${message}`, ...args);
+  info: (message: string, data?: any) => {
+    console.info(`[INFO] ${message}`, data || '');
   },
-  
-  error: (message: string, ...args: any[]) => {
-    logger.error(`[TOOLS] ${message}`, ...args);
+  warn: (message: string, data?: any) => {
+    console.warn(`[WARN] ${message}`, data || '');
   },
-  
-  debug: (message: string, ...args: any[]) => {
-    logger.debug(`[TOOLS] ${message}`, ...args);
+  error: (message: string, error?: any) => {
+    console.error(`[ERROR] ${message}`, error || '');
   }
 };
 

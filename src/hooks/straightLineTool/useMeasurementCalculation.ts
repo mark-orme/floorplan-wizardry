@@ -1,49 +1,51 @@
 
 import { useCallback } from 'react';
-import { MeasurementData, Point } from '@/types/fabric-unified';
+import { Point } from '@/types/core/Point';
+import { MeasurementData, GRID_CONSTANTS } from '@/types/fabric-unified';
 
-/**
- * Hook for calculating measurements between two points
- */
 export const useMeasurementCalculation = () => {
-  /**
-   * Calculate distance between two points
-   */
-  const calculateDistance = useCallback((point1: Point, point2: Point): number => {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
+  const calculateDistance = useCallback((p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
-  
-  /**
-   * Calculate angle between two points in degrees
-   */
-  const calculateAngle = useCallback((point1: Point, point2: Point): number => {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
-    // Calculate angle in radians and convert to degrees
-    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    // Normalize to 0-360 range
-    return angle < 0 ? angle + 360 : angle;
+
+  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
   }, []);
   
-  /**
-   * Get measurement data between two points
-   */
-  const getMeasurements = useCallback((point1: Point, point2: Point): MeasurementData => {
+  const calculateMidPoint = useCallback((p1: Point, p2: Point): Point => {
     return {
-      distance: calculateDistance(point1, point2),
-      angle: calculateAngle(point1, point2),
-      startPoint: point1,
-      endPoint: point2,
-      snapped: false,
-      unit: 'px'
+      x: (p1.x + p2.x) / 2,
+      y: (p1.y + p2.y) / 2
     };
-  }, [calculateDistance, calculateAngle]);
+  }, []);
+
+  const createMeasurement = useCallback((startPoint: Point, endPoint: Point): MeasurementData => {
+    const distance = calculateDistance(startPoint, endPoint);
+    const angle = calculateAngle(startPoint, endPoint);
+    const midPoint = calculateMidPoint(startPoint, endPoint);
+    
+    return {
+      distance,
+      angle,
+      startPoint,
+      endPoint,
+      midPoint,
+      snapped: false,
+      unit: 'px',
+      pixelsPerMeter: GRID_CONSTANTS.PIXELS_PER_METER
+    };
+  }, [calculateDistance, calculateAngle, calculateMidPoint]);
   
   return {
     calculateDistance,
     calculateAngle,
-    getMeasurements
+    calculateMidPoint,
+    createMeasurement
   };
 };
+
+export default useMeasurementCalculation;

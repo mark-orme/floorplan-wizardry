@@ -1,39 +1,29 @@
 
-import { Point, MeasurementData } from '@/types/fabric-unified';
-import { Canvas } from 'fabric';
+import { MeasurementData } from '@/types/fabric-unified';
+import { Point } from '@/types/core/Point';
 
-/**
- * Props for the useStraightLineTool hook
- */
-export interface UseStraightLineToolProps {
-  isActive?: boolean;
-  isEnabled?: boolean;
-  canvas?: Canvas;
-  shiftKeyPressed?: boolean;
+export interface UseStraightLineToolOptions {
   lineColor?: string;
   lineThickness?: number;
   snapToGrid?: boolean;
-  saveCurrentState?: () => void;
-  anglesEnabled?: boolean;
+  snapToAngle?: boolean;
 }
 
-/**
- * Return type for the useStraightLineTool hook
- */
-export interface UseStraightLineToolReturn {
-  isActive: boolean;
+export interface UseStraightLineToolResult {
   isDrawing: boolean;
-  snapEnabled: boolean;
-  anglesEnabled: boolean;
-  measurementData?: MeasurementData;
-  toggleGridSnapping: () => void;
-  toggleAngles: () => void;
-  handleMouseDown: (point: Point) => void;
-  handleMouseMove: (point: Point) => void;
-  handleMouseUp: () => void;
+  startPoint: Point | null;
+  currentPoint: Point | null;
+  startDrawing: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  completeDrawing: (point: Point) => void;
   cancelDrawing: () => void;
-  renderTooltip?: () => React.ReactNode;
+  snapEnabled: boolean;
+  snapAngleEnabled: boolean;
+  toggleGridSnapping: () => void;
+  toggleAngleSnapping: () => void;
+  setSnapEnabled: (enabled: boolean) => void;
+  setSnapAngleEnabled: (enabled: boolean) => void;
+  measurementData: MeasurementData | null;
 }
 
-// Re-export the MeasurementData interface for backward compatibility
-export { MeasurementData };
+export { MeasurementData } from '@/types/fabric-unified';
