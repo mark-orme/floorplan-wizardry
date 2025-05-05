@@ -1,55 +1,61 @@
 
 import { vi } from 'vitest';
 import { Point } from '@/types/core/Point';
+import { MeasurementData } from '../useStraightLineTool.d';
 
 /**
- * Mock the useLineState hook for tests
+ * Creates a mock canvas for testing
  */
-export const mockLineState = () => ({
-  isDrawing: false,
-  startPoint: { x: 0, y: 0 } as Point | null,
-  currentPoint: { x: 0, y: 0 } as Point | null,
-  toggleSnap: vi.fn(),
-  toggleAngles: vi.fn(),
-  toggleGridSnapping: vi.fn(),
-  measurementData: { 
-    startPoint: { x: 0, y: 0 }, 
-    endPoint: { x: 0, y: 0 }, 
-    distance: 0, 
-    angle: 0, 
-    midPoint: { x: 0, y: 0 }, 
-    unit: 'px', 
-    pixelsPerMeter: 100 
-  },
-  setIsDrawing: vi.fn(),
-  setStartPoint: vi.fn(),
-  setCurrentPoint: vi.fn(),
-  startDrawing: vi.fn(),
-  continueDrawing: vi.fn(),
-  completeDrawing: vi.fn(),
-  cancelDrawing: vi.fn(),
-  snapEnabled: true,
-  anglesEnabled: true,
-  // Add missing test properties
-  handleMouseDown: vi.fn(),
-  handleMouseMove: vi.fn(),
-  handleMouseUp: vi.fn()
-});
+export function createMockCanvas() {
+  return {
+    add: vi.fn(),
+    remove: vi.fn(),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    wrapperEl: document.createElement('div'),
+    contains: vi.fn().mockReturnValue(true),
+    getObjects: vi.fn().mockReturnValue([]),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    item: vi.fn(),
+    dispose: vi.fn()
+  };
+}
 
-// Mock canvas creator
-export const createMockCanvas = () => ({
-  add: vi.fn(),
-  remove: vi.fn(),
-  renderAll: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn(),
-  getPointer: vi.fn(),
-  contains: vi.fn().mockReturnValue(true),
-  getObjects: vi.fn().mockReturnValue([])
-});
+/**
+ * Creates a mock line for testing
+ */
+export function createMockLine() {
+  return {
+    set: vi.fn(),
+    get: vi.fn(),
+    setCoords: vi.fn()
+  };
+}
 
-// Mock line creator
-export const createMockLine = () => ({
-  set: vi.fn(),
-  setCoords: vi.fn()
-});
+/**
+ * Creates a mock line state for testing
+ */
+export function mockLineState() {
+  return {
+    isDrawing: false,
+    startPoint: { x: 0, y: 0 } as Point,
+    currentPoint: { x: 0, y: 0 } as Point,
+    snapEnabled: true,
+    anglesEnabled: true,
+    measurementData: null as MeasurementData | null,
+    toggleGridSnapping: vi.fn(),
+    toggleAngles: vi.fn(),
+    startDrawing: vi.fn(),
+    continueDrawing: vi.fn(),
+    completeDrawing: vi.fn(),
+    cancelDrawing: vi.fn(),
+    handleMouseDown: vi.fn(),
+    handleMouseMove: vi.fn(),
+    handleMouseUp: vi.fn(),
+    isActive: true
+  };
+}

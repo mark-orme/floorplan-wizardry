@@ -15,7 +15,7 @@ export function validateField(schema: any, value?: any) {
         schema.parse(value);
       } else {
         // Just check if the schema is valid when no value is provided
-        schema.parse;
+        schema.parse();
       }
       return { isValid: true, error: null };
     }

@@ -45,6 +45,7 @@ vi.mock('../useLineDrawing', () => ({
 describe('useLineState', () => {
   const saveCurrentState = vi.fn();
   const mockCanvas = createMockCanvas();
+  // Fix the ref to include current property
   const fabricCanvasRef = { current: mockCanvas };
   
   beforeEach(() => {
@@ -53,7 +54,7 @@ describe('useLineState', () => {
   
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef as FixMe,
+      fabricCanvasRef: fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -65,7 +66,7 @@ describe('useLineState', () => {
   
   it('should handle start drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef as FixMe,
+      fabricCanvasRef: fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -79,7 +80,7 @@ describe('useLineState', () => {
   
   it('should handle continue drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef as FixMe,
+      fabricCanvasRef: fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -93,7 +94,7 @@ describe('useLineState', () => {
   
   it('should handle complete drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef: fabricCanvasRef as FixMe,
+      fabricCanvasRef: fabricCanvasRef,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState

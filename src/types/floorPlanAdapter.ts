@@ -37,3 +37,20 @@ export function getFloorPlanModule() {
     }
   }
 }
+
+// Add helper to normalize case-sensitive import paths
+export function normalizeFloorPlanPath(path: string): string {
+  // Convert any floor plan path to the canonical version
+  if (path.toLowerCase().includes('floorplan')) {
+    return path.replace(/[Ff][Ll][Oo][Oo][Rr][Pp][Ll][Aa][Nn]/g, 'FloorPlan');
+  }
+  return path;
+}
+
+// Add special FloorPlan type compatibility checking
+export function isFloorPlanCompatible(obj: any): boolean {
+  // Check if object has the minimum required properties to be a FloorPlan
+  return obj && typeof obj === 'object' && 
+    ('id' in obj) && 
+    ('name' in obj || 'label' in obj);
+}

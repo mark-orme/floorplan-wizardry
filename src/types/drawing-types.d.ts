@@ -79,6 +79,7 @@ export interface GestureStateObject {
   scale?: number;
   rotation?: number;
   translation?: { x: number; y: number };
+  startPoints?: Array<{ x: number; y: number }>; // Add missing property
 }
 
 // Add function to create default drawing state
@@ -93,8 +94,9 @@ export function createDefaultDrawingState(): DrawingState {
   };
 }
 
-// Canvas state result type
+// Canvas state result type with all required fields
 export interface UseCanvasStateResult {
+  canvas: any;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   fabricCanvasRef: React.MutableRefObject<any>;
   initializeCanvas: () => void;
