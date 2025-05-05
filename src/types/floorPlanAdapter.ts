@@ -16,5 +16,24 @@ export function adaptFloorPlan(data: any): FloorPlan {
     data.label = data.name;
   }
   
+  // Ensure metadata exists
+  if (!data.metadata) {
+    data.metadata = {};
+  }
+  
   return data as FloorPlan;
+}
+
+// Case insensitive import helper
+export function getFloorPlanModule() {
+  try {
+    return require('./FloorPlan');
+  } catch (e) {
+    try {
+      return require('./floorPlan');
+    } catch (e2) {
+      console.error('Could not import FloorPlan module', e2);
+      throw new Error('FloorPlan module not found');
+    }
+  }
 }

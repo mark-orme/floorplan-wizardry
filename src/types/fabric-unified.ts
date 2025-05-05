@@ -60,6 +60,9 @@ export interface MeasurementData {
   unit: 'px' | 'm' | 'cm' | 'mm';
   snapped?: boolean;
   pixelsPerMeter: number;
+  // Legacy properties for backward compatibility
+  start?: Point | null;
+  end?: Point | null;
 }
 
 // FloorPlan type definitions

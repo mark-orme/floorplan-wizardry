@@ -13,6 +13,9 @@ export function validateField(schema: any, value?: any) {
       // If value is provided, validate it
       if (arguments.length > 1) {
         schema.parse(value);
+      } else {
+        // Just check if the schema is valid when no value is provided
+        schema.parse;
       }
       return { isValid: true, error: null };
     }

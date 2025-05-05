@@ -8,6 +8,7 @@ export const SMALL_GRID_COLOR = '#e5e5e5';
 export const LARGE_GRID_COLOR = '#cccccc';
 export const SMALL_GRID_WIDTH = 0.5;
 export const LARGE_GRID_WIDTH = 1;
+export const PIXELS_PER_METER = 100;
 
 export const GRID_CONSTANTS = {
   SMALL_GRID_SIZE,
@@ -16,6 +17,7 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_COLOR,
   SMALL_GRID_WIDTH,
   LARGE_GRID_WIDTH,
+  PIXELS_PER_METER,
 };
 
 export default GRID_CONSTANTS;

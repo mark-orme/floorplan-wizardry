@@ -18,7 +18,33 @@ export function createMockCanvas() {
     contains: vi.fn().mockReturnValue(true),
     getObjects: vi.fn().mockReturnValue([]),
     getWidth: vi.fn().mockReturnValue(800),
-    getHeight: vi.fn().mockReturnValue(600)
+    getHeight: vi.fn().mockReturnValue(600),
+    // Add more required Canvas properties to satisfy TS
+    item: vi.fn(),
+    dispose: vi.fn(),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    loadFromJSON: vi.fn(),
+    toJSON: vi.fn(),
+    clear: vi.fn(),
+    setBackgroundColor: vi.fn(),
+    setViewportTransform: vi.fn(),
+    getActiveObject: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    defaultCursor: 'default',
+    freeDrawingBrush: {
+      color: '#000000',
+      width: 1
+    },
+    isDrawingMode: false,
+    selection: true,
+    requestRenderAll: vi.fn(),
+    forEachObject: vi.fn(),
+    setCoords: vi.fn(),
+    sendToBack: vi.fn(),
   } as FixMe<Canvas>;
 }
 
@@ -55,5 +81,12 @@ export function mockLineTools() {
     handleMouseUp: vi.fn(),
     isActive: true,
     renderTooltip: vi.fn().mockReturnValue(null)
+  };
+}
+
+// Helper to create a fabric canvas ref
+export function createMockCanvasRef() {
+  return {
+    current: createMockCanvas()
   };
 }

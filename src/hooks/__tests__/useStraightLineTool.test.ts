@@ -4,8 +4,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { Point } from '@/types/core/Point';
 import { MeasurementData } from '../straightLineTool/useStraightLineTool.d';
-import { createMockCanvas } from '@/utils/test-helpers';
-import { FixMe } from '@/types/typesMap';
+import { createCompleteMockCanvas } from '@/utils/test/createCompleteMockCanvas';
 
 describe('useStraightLineTool', () => {
   beforeEach(() => {
@@ -13,10 +12,10 @@ describe('useStraightLineTool', () => {
   });
   
   it('should initialize properly', () => {
-    const mockCanvas = createMockCanvas();
+    const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       isEnabled: true,
-      canvas: mockCanvas as FixMe
+      canvas: mockCanvas
     }));
     
     expect(result.current.isDrawing).toBe(false);
@@ -24,10 +23,10 @@ describe('useStraightLineTool', () => {
   });
   
   it('should handle mouse down event', () => {
-    const mockCanvas = createMockCanvas();
+    const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       isEnabled: true,
-      canvas: mockCanvas as FixMe
+      canvas: mockCanvas
     }));
     
     act(() => {
@@ -39,10 +38,10 @@ describe('useStraightLineTool', () => {
   });
   
   it('should handle mouse move event', () => {
-    const mockCanvas = createMockCanvas();
+    const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       isEnabled: true,
-      canvas: mockCanvas as FixMe
+      canvas: mockCanvas
     }));
     
     act(() => {
@@ -55,12 +54,12 @@ describe('useStraightLineTool', () => {
   });
   
   it('should handle mouse up event', () => {
-    const mockCanvas = createMockCanvas();
+    const mockCanvas = createCompleteMockCanvas();
     const saveCurrentState = vi.fn();
     
     const { result } = renderHook(() => useStraightLineTool({ 
       isEnabled: true,
-      canvas: mockCanvas as FixMe,
+      canvas: mockCanvas,
       saveCurrentState
     }));
     
