@@ -3,39 +3,54 @@ import { useCallback } from 'react';
 import { Point } from '@/types/core/Point';
 import { MeasurementData, GRID_CONSTANTS } from '@/types/fabric-unified';
 
+/**
+ * Hook for calculating measurement data
+ */
 export const useMeasurementCalculation = () => {
-  const calculateDistance = useCallback((p1: Point, p2: Point): number => {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
+  /**
+   * Calculate distance between two points
+   */
+  const calculateDistance = useCallback((startPoint: Point, endPoint: Point): number => {
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
-
-  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
+  
+  /**
+   * Calculate angle between two points
+   */
+  const calculateAngle = useCallback((startPoint: Point, endPoint: Point): number => {
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
     return Math.atan2(dy, dx) * (180 / Math.PI);
   }, []);
   
-  const calculateMidPoint = useCallback((p1: Point, p2: Point): Point => {
+  /**
+   * Calculate middle point between two points
+   */
+  const calculateMidPoint = useCallback((startPoint: Point, endPoint: Point): Point => {
     return {
-      x: (p1.x + p2.x) / 2,
-      y: (p1.y + p2.y) / 2
+      x: (startPoint.x + endPoint.x) / 2,
+      y: (startPoint.y + endPoint.y) / 2
     };
   }, []);
-
-  const createMeasurement = useCallback((startPoint: Point, endPoint: Point): MeasurementData => {
+  
+  /**
+   * Create measurement data object
+   */
+  const createMeasurement = useCallback((startPoint: Point, endPoint: Point, snapped: boolean = false): MeasurementData => {
     const distance = calculateDistance(startPoint, endPoint);
     const angle = calculateAngle(startPoint, endPoint);
     const midPoint = calculateMidPoint(startPoint, endPoint);
     
     return {
-      distance,
-      angle,
       startPoint,
       endPoint,
+      distance,
+      angle,
       midPoint,
-      snapped: false,
       unit: 'px',
+      snapped,
       pixelsPerMeter: GRID_CONSTANTS.PIXELS_PER_METER
     };
   }, [calculateDistance, calculateAngle, calculateMidPoint]);

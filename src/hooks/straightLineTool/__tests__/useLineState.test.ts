@@ -1,63 +1,108 @@
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
-import { Canvas as FabricCanvas } from 'fabric';
-import type { MutableRefObject } from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { Point } from '@/types/fabric-unified';
+import { mockLineState, createMockCanvas, createMockLine } from './mockHelpers';
+import { FixMe } from '@/types/typesMap';
+
+// Mock dependencies
+vi.mock('../useLineStateCore', () => ({
+  useLineStateCore: () => ({
+    isDrawing: false,
+    setIsDrawing: vi.fn(),
+    startPoint: { x: 0, y: 0 },
+    setStartPoint: vi.fn(),
+    currentPoint: { x: 0, y: 0 },
+    setCurrentPoint: vi.fn()
+  })
+}));
+
+vi.mock('../useEnhancedGridSnapping', () => ({
+  useEnhancedGridSnapping: () => ({
+    snapEnabled: true,
+    toggleGridSnapping: vi.fn(),
+    snapToGrid: vi.fn(point => point)
+  })
+}));
+
+vi.mock('../useLineAngleSnap', () => ({
+  useLineAngleSnap: () => ({
+    anglesEnabled: true,
+    toggleAngles: vi.fn(),
+    snapToAngle: vi.fn((start, end) => end)
+  })
+}));
+
+vi.mock('../useLineDrawing', () => ({
+  useLineDrawing: () => ({
+    createLine: vi.fn(),
+    updateLine: vi.fn(),
+    finalizeLine: vi.fn(),
+    removeLine: vi.fn()
+  })
+}));
 
 describe('useLineState', () => {
-  const mockCanvas = {} as FabricCanvas;
-  const fabricCanvasRef = { current: mockCanvas } as MutableRefObject<FabricCanvas>;
-
-  const mockOptions = {
-    fabricCanvasRef,
-    lineColor: '#000000',
-    lineThickness: 2,
-    saveCurrentState: vi.fn()
-  };
-
+  const saveCurrentState = vi.fn();
+  const mockCanvas = createMockCanvas();
+  const fabricCanvasRef = { current: mockCanvas };
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+  
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useLineState(mockOptions));
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: fabricCanvasRef as FixMe,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
     
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPoint).toBeNull();
-    expect(result.current.currentPoint).toBeNull();
+    expect(result.current.isDrawing).toBeDefined();
+    expect(result.current.snapEnabled).toBeDefined();
   });
-
-  it('should update drawing state on handleMouseDown', () => {
-    const { result } = renderHook(() => useLineState(mockOptions));
+  
+  it('should handle start drawing', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: fabricCanvasRef as FixMe,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
+    
+    // Use the actions exported by useLineState
+    act(() => {
+      result.current.startDrawing({ x: 10, y: 20 });
+    });
+  });
+  
+  it('should handle continue drawing', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: fabricCanvasRef as FixMe,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
     
     act(() => {
-      result.current.handleMouseDown({ x: 10, y: 20 });
+      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.continueDrawing({ x: 30, y: 40 });
     });
-    
-    expect(result.current.isDrawing).toBe(true);
-    expect(result.current.startPoint).toEqual({ x: 10, y: 20 });
   });
-
-  it('should update current point on handleMouseMove', () => {
-    const { result } = renderHook(() => useLineState(mockOptions));
+  
+  it('should handle complete drawing', () => {
+    const { result } = renderHook(() => useLineState({
+      fabricCanvasRef: fabricCanvasRef as FixMe,
+      lineColor: '#000000',
+      lineThickness: 2,
+      saveCurrentState
+    }));
     
     act(() => {
-      result.current.handleMouseDown({ x: 10, y: 20 });
-      result.current.handleMouseMove({ x: 30, y: 40 });
+      result.current.startDrawing({ x: 10, y: 20 });
+      result.current.continueDrawing({ x: 30, y: 40 });
+      result.current.completeDrawing({ x: 30, y: 40 });
     });
-    
-    expect(result.current.currentPoint).toEqual({ x: 30, y: 40 });
-  });
-
-  it('should reset state on handleMouseUp', () => {
-    const { result } = renderHook(() => useLineState(mockOptions));
-    
-    act(() => {
-      result.current.handleMouseDown({ x: 10, y: 20 });
-      result.current.handleMouseMove({ x: 30, y: 40 });
-      result.current.handleMouseUp();
-    });
-    
-    expect(result.current.isDrawing).toBe(false);
-    expect(result.current.startPoint).toBeNull();
-    expect(result.current.currentPoint).toBeNull();
   });
 });

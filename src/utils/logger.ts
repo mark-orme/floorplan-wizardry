@@ -1,21 +1,29 @@
 
 /**
- * Simple logger utility for consistent logging
+ * Utility logger for application
  */
 const logger = {
-  debug: (message: string, data?: any) => {
+  debug: (message: string, ...args: any[]) => {
     if (process.env.NODE_ENV !== 'production') {
-      console.debug(`[DEBUG] ${message}`, data || '');
+      console.debug(`[Debug] ${message}`, ...args);
     }
   },
-  info: (message: string, data?: any) => {
-    console.info(`[INFO] ${message}`, data || '');
+  info: (message: string, ...args: any[]) => {
+    console.info(`[Info] ${message}`, ...args);
   },
-  warn: (message: string, data?: any) => {
-    console.warn(`[WARN] ${message}`, data || '');
+  warn: (message: string, ...args: any[]) => {
+    console.warn(`[Warning] ${message}`, ...args);
   },
-  error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${message}`, error || '');
+  error: (message: string, ...args: any[]) => {
+    console.error(`[Error] ${message}`, ...args);
+  }
+};
+
+// Create module-specific loggers
+export const toolsLogger = {
+  ...logger,
+  debug: (message: string, ...args: any[]) => {
+    logger.debug(`[Tools] ${message}`, ...args);
   }
 };
 

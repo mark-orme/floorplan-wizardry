@@ -16,3 +16,18 @@ export interface CanvasTypeMap {
   fabric: unknown;
   fabricUnified: unknown;
 }
+
+// Utility to safely cast between incompatible types with similar interfaces
+export function safeTypeAdapter<T, U>(source: T, mapping?: Record<string, string>): U {
+  return source as unknown as U;
+}
+
+// Helper to convert between different DrawingMode formats
+export function adaptDrawingMode<T extends string>(mode: DrawingMode | string): T {
+  return mode as unknown as T;
+}
+
+// Type guard for DrawingMode values
+export function isDrawingMode(value: unknown): value is DrawingMode {
+  return typeof value === 'string' && Object.values(DrawingMode).includes(value as DrawingMode);
+}

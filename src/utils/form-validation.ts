@@ -4,13 +4,16 @@ import * as z from '@/utils/zod-mock';
 /**
  * Validate a field using zod schema
  * @param schema The zod schema to validate against
- * @param value The value to validate
+ * @param value The value to validate (optional)
  * @returns Validation result
  */
-export function validateField(schema: any, value: any) {
+export function validateField(schema: any, value?: any) {
   try {
     if (typeof schema.parse === 'function') {
-      schema.parse(value);
+      // If value is provided, validate it
+      if (arguments.length > 1) {
+        schema.parse(value);
+      }
       return { isValid: true, error: null };
     }
     return { isValid: true, error: null };

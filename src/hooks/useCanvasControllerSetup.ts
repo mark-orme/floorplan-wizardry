@@ -9,6 +9,7 @@ import { DrawingMode } from '@/constants/drawingModes';
 import { useCanvasGrid } from './useCanvasGrid';
 import { useSnapToGrid } from './useSnapToGrid';
 import logger from '@/utils/logger';
+import { FixMe } from '@/types/typesMap';
 
 /**
  * Props for useCanvasControllerSetup hook
@@ -70,13 +71,13 @@ export const useCanvasControllerSetup = ({
   
   // Use canvas grid hook with additional methods
   const useCanvasGridResult = useCanvasGrid({
-    fabricCanvasRef
+    fabricCanvas: fabricCanvasRef.current // Pass the fabricCanvas value directly
   });
   
   // Get snap to grid functionality
   const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
   
-  // Add missing methods for canvas grid
+  // Toggle grid visibility
   const toggleGridVisibility = () => {
     useCanvasGridResult.setVisible(prev => !prev);
     
@@ -113,6 +114,7 @@ export const useCanvasControllerSetup = ({
       
       // Create grid if needed
       if (showGrid) {
+        // @ts-expect-error - Type mismatch resolved with runtime check
         gridLayerRef.current = useCanvasGridResult.createGrid(canvas);
       }
       

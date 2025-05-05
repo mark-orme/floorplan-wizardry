@@ -1,148 +1,157 @@
 
-import { useState, useCallback, useEffect } from 'react';
-import { Canvas, Object as FabricObject } from "fabric";
-import { ExtendedFabricCanvas } from '@/types/fabric-unified';
-import { ensureGridVisibility, setGridVisibility } from '@/utils/grid/gridVisibility';
+import { useCallback, useState, useEffect } from 'react';
+import { Canvas, Line } from 'fabric';
+import { GRID_CONSTANTS } from '@/types/fabric-unified';
+import { FixMe } from '@/types/typesMap';
 
-interface UseCanvasGridProps {
-  canvas: Canvas | ExtendedFabricCanvas | null;
-  gridSize?: number;
-  initialVisible?: boolean;
-  onGridCreated?: (objects: FabricObject[]) => void;
+// Props for useCanvasGrid hook
+export interface UseCanvasGridProps {
+  /** Canvas reference */
+  fabricCanvas?: Canvas | null;
 }
 
-export const useCanvasGrid = ({
-  canvas,
-  gridSize: initialGridSize = 20,
-  initialVisible = true,
-  onGridCreated
-}: UseCanvasGridProps) => {
-  const [gridSize, setGridSize] = useState(initialGridSize);
-  const [visible, setVisible] = useState(initialVisible);
-  const [gridObjects, setGridObjects] = useState<FabricObject[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+// Result type for useCanvasGrid hook
+export interface UseCanvasGridResult {
+  visible: boolean;
+  setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  createGrid: (canvas: Canvas) => fabric.Object[];
+  updateGrid: (canvas: Canvas, size: number) => void;
+  removeGrid: (canvas: Canvas) => void;
+}
 
-  // Create grid function
-  const createGrid = useCallback((targetCanvas: Canvas | ExtendedFabricCanvas = canvas as Canvas): FabricObject[] => {
-    if (!targetCanvas) return [];
+/**
+ * Hook for managing canvas grid
+ * @param props - Hook props
+ * @returns Grid management methods and state
+ */
+export const useCanvasGrid = ({ fabricCanvas }: UseCanvasGridProps = {}): UseCanvasGridResult => {
+  const [visible, setVisible] = useState(true);
+  
+  // Create grid lines
+  const createGrid = useCallback((canvas: Canvas): fabric.Object[] => {
+    if (!canvas) return [];
     
-    setIsCreating(true);
-    setError(null);
+    const gridObjects: fabric.Object[] = [];
+    const width = canvas.getWidth() || 800;
+    const height = canvas.getHeight() || 600;
     
-    try {
-      // Remove existing grid objects
-      const existingGridObjects = targetCanvas.getObjects().filter(obj => 
-        (obj as any).isGrid === true
-      );
+    // Create small grid
+    for (let i = 0; i < width / GRID_CONSTANTS.SMALL_GRID_SIZE; i++) {
+      const x = i * GRID_CONSTANTS.SMALL_GRID_SIZE;
+      const line = new Line([x, 0, x, height], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false
+      }) as unknown as FixMe<fabric.Object>;
       
-      if (existingGridObjects.length > 0) {
-        targetCanvas.remove(...existingGridObjects);
-      }
+      // Add custom properties to identify grid lines
+      (line as any).isGrid = true;
+      (line as any).excludeFromExport = true;
       
-      // Create new grid objects (simplified for this example)
-      const newGridObjects: FabricObject[] = [];
-      
-      // Create horizontal grid lines
-      for (let y = 0; y <= 600; y += gridSize) {
-        const line = new fabric.Line([0, y, 800, y], {
-          stroke: y % 100 === 0 ? '#cccccc' : '#e5e5e5',
-          strokeWidth: y % 100 === 0 ? 1 : 0.5,
-          selectable: false,
-          evented: false
-        });
-        
-        (line as any).isGrid = true;
-        (line as any).visible = visible;
-        
-        targetCanvas.add(line);
-        newGridObjects.push(line);
-      }
-      
-      // Create vertical grid lines
-      for (let x = 0; x <= 800; x += gridSize) {
-        const line = new fabric.Line([x, 0, x, 600], {
-          stroke: x % 100 === 0 ? '#cccccc' : '#e5e5e5',
-          strokeWidth: x % 100 === 0 ? 1 : 0.5,
-          selectable: false,
-          evented: false
-        });
-        
-        (line as any).isGrid = true;
-        (line as any).visible = visible;
-        
-        targetCanvas.add(line);
-        newGridObjects.push(line);
-      }
-      
-      // Update state with new objects
-      setGridObjects(newGridObjects);
-      
-      // Call onGridCreated callback
-      if (onGridCreated) {
-        onGridCreated(newGridObjects);
-      }
-      
-      targetCanvas.requestRenderAll();
-      return newGridObjects;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error creating grid');
-      console.error('Error creating grid:', error);
-      setError(error);
-      return [];
-    } finally {
-      setIsCreating(false);
+      canvas.add(line);
+      gridObjects.push(line);
     }
-  }, [canvas, gridSize, visible, onGridCreated]);
-
-  // Toggle grid visibility
-  const toggleGridVisibility = useCallback(() => {
-    if (!canvas) return false;
     
-    const newVisible = !visible;
-    setVisible(newVisible);
+    // Create horizontal small grid
+    for (let i = 0; i < height / GRID_CONSTANTS.SMALL_GRID_SIZE; i++) {
+      const y = i * GRID_CONSTANTS.SMALL_GRID_SIZE;
+      const line = new Line([0, y, width, y], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        selectable: false,
+        evented: false
+      }) as unknown as FixMe<fabric.Object>;
+      
+      // Add custom properties to identify grid lines
+      (line as any).isGrid = true;
+      (line as any).excludeFromExport = true;
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
     
-    return ensureGridVisibility(canvas, newVisible);
-  }, [canvas, visible]);
+    // Create vertical large grid
+    for (let i = 0; i < width / GRID_CONSTANTS.LARGE_GRID_SIZE; i++) {
+      const x = i * GRID_CONSTANTS.LARGE_GRID_SIZE;
+      const line = new Line([x, 0, x, height], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false
+      }) as unknown as FixMe<fabric.Object>;
+      
+      // Add custom properties to identify grid lines
+      (line as any).isGrid = true;
+      (line as any).isLargeGrid = true;
+      (line as any).excludeFromExport = true;
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    // Create horizontal large grid
+    for (let i = 0; i < height / GRID_CONSTANTS.LARGE_GRID_SIZE; i++) {
+      const y = i * GRID_CONSTANTS.LARGE_GRID_SIZE;
+      const line = new Line([0, y, width, y], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        selectable: false,
+        evented: false
+      }) as unknown as FixMe<fabric.Object>;
+      
+      // Add custom properties to identify grid lines
+      (line as any).isGrid = true;
+      (line as any).isLargeGrid = true;
+      (line as any).excludeFromExport = true;
+      
+      canvas.add(line);
+      gridObjects.push(line);
+    }
+    
+    canvas.renderAll();
+    return gridObjects;
+  }, []);
   
-  // Toggle grid visibility shorthand
-  const toggleGrid = useCallback(() => {
-    toggleGridVisibility();
-  }, [toggleGridVisibility]);
-  
-  // Resize grid
-  const resizeGrid = useCallback(() => {
-    return createGrid();
+  // Update grid with new size
+  const updateGrid = useCallback((canvas: Canvas, size: number) => {
+    if (!canvas) return;
+    
+    // Remove existing grid
+    removeGrid(canvas);
+    
+    // Create new grid
+    createGrid(canvas);
   }, [createGrid]);
-
-  // Update grid visibility when visibility state changes
-  useEffect(() => {
-    if (canvas && gridObjects.length > 0) {
-      ensureGridVisibility(canvas, visible);
-    }
-  }, [canvas, visible, gridObjects]);
   
-  // Create grid on canvas ready
+  // Remove grid
+  const removeGrid = useCallback((canvas: Canvas) => {
+    if (!canvas) return;
+    
+    const gridObjects = canvas.getObjects().filter(obj => (obj as any).isGrid);
+    gridObjects.forEach(obj => canvas.remove(obj));
+    
+    canvas.renderAll();
+  }, []);
+  
+  // Update grid visibility when visible state changes
   useEffect(() => {
-    if (canvas && gridObjects.length === 0) {
-      createGrid();
+    if (fabricCanvas) {
+      const objects = fabricCanvas.getObjects();
+      objects.filter(obj => (obj as any).isGrid).forEach(obj => {
+        obj.set({ visible });
+      });
+      fabricCanvas.renderAll();
     }
-  }, [canvas, gridObjects.length, createGrid]);
+  }, [visible, fabricCanvas]);
   
   return {
-    gridObjects,
-    isGridVisible: visible,
-    isCreating,
-    error,
-    createGrid,
-    toggleGridVisibility,
-    toggleGrid,
-    resizeGrid,
-    setIsVisible: setVisible,
-    setIsEnabled: setVisible,
-    gridSize,
-    setGridSize,
     visible,
     setVisible,
+    createGrid,
+    updateGrid,
+    removeGrid
   };
 };
+
+export default useCanvasGrid;

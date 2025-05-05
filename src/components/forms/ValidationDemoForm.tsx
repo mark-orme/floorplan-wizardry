@@ -23,10 +23,14 @@ const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   
   const validateForm = () => {
+    const usernameSchema = z.string().min(3);
+    const passwordSchema = z.string().min(8);
+    const confirmPasswordSchema = z.string();
+    
     const schema = {
-      username: validateField(z.string().min(3), formData.username),
-      password: validateField(z.string().min(8), formData.password),
-      confirmPassword: validateField(z.string(), formData.confirmPassword)
+      username: validateField(usernameSchema, formData.username),
+      password: validateField(passwordSchema, formData.password),
+      confirmPassword: validateField(confirmPasswordSchema, formData.confirmPassword)
     };
     
     const newErrors: Record<string, string> = {};

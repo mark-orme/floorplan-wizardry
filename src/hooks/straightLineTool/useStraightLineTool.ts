@@ -104,8 +104,23 @@ export function useStraightLineTool({
     setSnapAngleEnabled(prev => !prev);
   }, []);
   
-  // Implement dummy renderTooltip for interface compatibility
+  // Implement renderTooltip for interface compatibility
   const renderTooltip = useCallback(() => null, []);
+  
+  // Add handlers for mouse events
+  const handleMouseDown = useCallback((point: Point) => {
+    startDrawing(point);
+  }, [startDrawing]);
+  
+  const handleMouseMove = useCallback((point: Point) => {
+    if (isDrawing) {
+      continueDrawing(point);
+    }
+  }, [isDrawing, continueDrawing]);
+  
+  const handleMouseUp = useCallback((point?: Point) => {
+    completeDrawing(point);
+  }, [completeDrawing]);
   
   return {
     isDrawing,
@@ -122,10 +137,10 @@ export function useStraightLineTool({
     setSnapEnabled,
     setSnapAngleEnabled,
     measurementData,
-    // Add missing methods for interface compatibility
-    handleMouseDown: startDrawing,
-    handleMouseMove: continueDrawing, 
-    handleMouseUp: completeDrawing,
+    // Add missing properties for interface compatibility
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
     isActive: isEnabled,
     renderTooltip,
     anglesEnabled: snapAngleEnabled,

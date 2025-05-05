@@ -53,9 +53,9 @@ export const GRID_CONSTANTS = {
 // Measurement data for tooltips
 export interface MeasurementData {
   distance: number;
-  startPoint: Point;
-  endPoint: Point;
-  midPoint: Point;
+  startPoint: Point | null;
+  endPoint: Point | null;
+  midPoint: Point | null;
   angle: number;
   unit: 'px' | 'm' | 'cm' | 'mm';
   snapped?: boolean;
@@ -160,3 +160,21 @@ export interface UseCanvasStateResult {
   isLoading: boolean;
   error: Error | null;
 }
+
+// Testing helpers for fabric types
+export const createMockCanvas = (): FixMe<ExtendedFabricCanvas> => {
+  return {
+    add: () => {},
+    remove: () => {},
+    renderAll: () => {},
+    requestRenderAll: () => {},
+    getObjects: () => [],
+    on: () => ({}),
+    off: () => ({}),
+    wrapperEl: document.createElement('div'),
+    initialize: () => {}
+  } as FixMe<ExtendedFabricCanvas>;
+};
+
+// Type for FixMe usage
+export type FixMe<T = unknown> = T;

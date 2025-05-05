@@ -35,12 +35,12 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   const {
     snapEnabled,
-    anglesEnabled,
+    anglesEnabled, // Now properly supported by interface
     measurementData,
     toggleGridSnapping,
-    toggleAngles,
+    toggleAngles, // Now properly supported by interface
     isDrawing,
-    renderTooltip
+    renderTooltip // Now properly supported by interface
   } = straightLineTool;
   
   useEffect(() => {

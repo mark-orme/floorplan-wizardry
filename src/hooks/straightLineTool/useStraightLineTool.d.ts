@@ -15,7 +15,7 @@ export interface UseStraightLineToolResult {
   currentPoint: Point | null;
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
-  completeDrawing: (point: Point) => void;
+  completeDrawing: (point?: Point) => void;
   cancelDrawing: () => void;
   snapEnabled: boolean;
   snapAngleEnabled: boolean;
@@ -24,6 +24,15 @@ export interface UseStraightLineToolResult {
   setSnapEnabled: (enabled: boolean) => void;
   setSnapAngleEnabled: (enabled: boolean) => void;
   measurementData: MeasurementData | null;
+  
+  // Add missing properties that were causing errors
+  anglesEnabled: boolean;
+  toggleAngles: () => void;
+  renderTooltip: () => React.ReactNode | null;
+  handleMouseDown?: (point: Point) => void;
+  handleMouseMove?: (point: Point) => void;
+  handleMouseUp?: (point?: Point) => void;
+  isActive?: boolean;
 }
 
 export { MeasurementData } from '@/types/fabric-unified';

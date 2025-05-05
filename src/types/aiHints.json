@@ -41,7 +41,91 @@
       ],
       "optionalProps": [
         "snapped"
+      ],
+      "compatibleInterfaces": [
+        "./types/measurement/MeasurementData.ts",
+        "./hooks/straightLineTool/useStraightLineTool.d.ts"
       ]
+    },
+    "floorPlan": {
+      "caseInsensitive": true,
+      "sourceModule": "./types/FloorPlan.ts",
+      "alternateModules": [
+        "./types/floorPlan.ts",
+        "./types/floorplan.ts"
+      ],
+      "requiredProps": [
+        "id",
+        "name",
+        "width",
+        "height",
+        "updatedAt"
+      ],
+      "optionalProps": [
+        "label",
+        "level",
+        "walls",
+        "rooms",
+        "strokes",
+        "data",
+        "metadata"
+      ]
+    },
+    "Canvas": {
+      "sourceModule": "fabric",
+      "alternateModules": [
+        "./types/fabric-unified.ts",
+        "./types/canvas-types.ts"
+      ],
+      "compatibleTypes": [
+        "ExtendedFabricCanvas",
+        "Canvas",
+        "FabricCanvas"
+      ],
+      "testingMock": "./utils/test-helpers.ts#createMockCanvas"
+    },
+    "Point": {
+      "sourceModule": "./types/core/Point.ts",
+      "alternateModules": [
+        "./types/fabric-unified.ts",
+        "fabric"
+      ],
+      "conversionFunctions": {
+        "toFabricPoint": "./types/fabric-unified.ts",
+        "fromFabricPoint": "./types/fabric-unified.ts"
+      },
+      "testingMock": "./utils/test-mocks.ts#mockPoint"
+    }
+  },
+  "deprecatedProps": {
+    "MeasurementData": {
+      "start": {
+        "replacedBy": "startPoint",
+        "since": "v2.0.0"
+      },
+      "end": {
+        "replacedBy": "endPoint",
+        "since": "v2.0.0"
+      }
+    },
+    "UseCanvasGridProps": {
+      "fabricCanvasRef": {
+        "replacedBy": "fabricCanvas",
+        "since": "v2.1.0"
+      }
+    }
+  },
+  "moduleReplacements": {
+    "@/utils/logger": {
+      "toolsLogger": {
+        "addedIn": "v2.0.0",
+        "description": "Module-specific logger for tools"
+      }
+    },
+    "@/hooks/straightLineTool": {
+      "addedIn": "v2.0.0",
+      "replacementFor": "@/hooks/useStraightLineTool.ts",
+      "description": "Modularized versions of straight line tool hooks"
     }
   }
 }

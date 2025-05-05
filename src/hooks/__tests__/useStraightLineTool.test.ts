@@ -4,20 +4,8 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { Point } from '@/types/core/Point';
 import { MeasurementData } from '../straightLineTool/useStraightLineTool.d';
-
-// Create mock canvas
-const createMockCanvas = () => ({
-  add: vi.fn(),
-  remove: vi.fn(),
-  renderAll: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn(),
-  getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
-  wrapperEl: document.createElement('div')
-});
-
-// Fix me type to handle TypeScript issues
-type FixMe = any;
+import { createMockCanvas } from '@/utils/test-helpers';
+import { FixMe } from '@/types/typesMap';
 
 describe('useStraightLineTool', () => {
   beforeEach(() => {
@@ -79,10 +67,11 @@ describe('useStraightLineTool', () => {
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });
       result.current.continueDrawing({ x: 30, y: 40 });
-      result.current.completeDrawing();
+      result.current.completeDrawing({ x: 30, y: 40 });
     });
     
     expect(result.current.isDrawing).toBe(false);
+    expect(saveCurrentState).toHaveBeenCalled();
     // Check if line was finalized
   });
 });
