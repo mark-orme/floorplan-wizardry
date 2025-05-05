@@ -3,10 +3,10 @@
  * Fabric.js adapter
  * Provides a consistent interface for different versions of Fabric.js
  */
-import { Canvas, Object as FabricObject, Line, Group, Point, Polyline, Path, ILineOptions } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 // Re-export fabric types
-export { Canvas, FabricObject, Line, Group, Point, Polyline, Path };
+export { Canvas, FabricObject };
 
 // Type definitions for the adapter
 export interface FabricAdapterOptions {
@@ -17,7 +17,13 @@ export interface FabricAdapterOptions {
 // Create a path with safety checks
 export function createPath(pathData: string | any[], options: any = {}) {
   try {
-    return new Path(pathData, options);
+    // Try to use global fabric first
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
+      return new window.fabric.Path(pathData, options);
+    }
+    
+    console.warn('Could not create fabric.Path directly, using fallbacks');
+    return null;
   } catch (error) {
     console.error('Error creating Fabric.js Path:', error);
     return null;
@@ -25,9 +31,15 @@ export function createPath(pathData: string | any[], options: any = {}) {
 }
 
 // Create a line with safety checks
-export function createLine(points: number[], options: ILineOptions = {}) {
+export function createLine(points: number[], options: any = {}) {
   try {
-    return new Line(points, options);
+    // Try to use global fabric first
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Line) {
+      return new window.fabric.Line(points, options);
+    }
+    
+    console.warn('Could not create fabric.Line directly, using fallbacks');
+    return null;
   } catch (error) {
     console.error('Error creating Fabric.js Line:', error);
     return null;
@@ -37,7 +49,13 @@ export function createLine(points: number[], options: ILineOptions = {}) {
 // Create a polyline with safety checks
 export function createPolyline(points: Array<{ x: number, y: number }>, options: any = {}) {
   try {
-    return new Polyline(points, options);
+    // Try to use global fabric first
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Polyline) {
+      return new window.fabric.Polyline(points, options);
+    }
+    
+    console.warn('Could not create fabric.Polyline directly, using fallbacks');
+    return null;
   } catch (error) {
     console.error('Error creating Fabric.js Polyline:', error);
     return null;
@@ -72,7 +90,7 @@ export function removeCanvasEvent(canvas: Canvas | null, eventName: string, hand
       canvas.off(eventName, handler as any);
     } else {
       // Some fabric versions allow removing all handlers for an event
-      (canvas as any).off(eventName);
+      canvas.off(eventName);
     }
   } catch (error) {
     console.error(`Error removing event ${eventName} from canvas:`, error);
@@ -80,24 +98,32 @@ export function removeCanvasEvent(canvas: Canvas | null, eventName: string, hand
 }
 
 // Type guard functions
-export function isPath(obj: any): obj is Path {
+export function isPath(obj: any): boolean {
   return obj && obj.type === 'path';
 }
 
-export function isLine(obj: any): obj is Line {
+export function isLine(obj: any): boolean {
   return obj && obj.type === 'line';
 }
 
-export function isPolyline(obj: any): obj is Polyline {
+export function isPolyline(obj: any): boolean {
   return obj && obj.type === 'polyline';
 }
 
 // Convert our Point to Fabric Point
-export function toFabricPoint(point: { x: number, y: number }): Point {
-  return new Point(point.x, point.y);
+export function toFabricPoint(point: { x: number, y: number }): any {
+  if (typeof window !== 'undefined' && window.fabric && window.fabric.Point) {
+    return new window.fabric.Point(point.x, point.y);
+  }
+  
+  return point;
 }
 
 // Convert Fabric Point to our Point
-export function fromFabricPoint(point: Point): { x: number, y: number } {
-  return { x: point.x, y: point.y };
+export function fromFabricPoint(point: any): { x: number, y: number } {
+  if (point && typeof point.x === 'number' && typeof point.y === 'number') {
+    return { x: point.x, y: point.y };
+  }
+  
+  return { x: 0, y: 0 };
 }

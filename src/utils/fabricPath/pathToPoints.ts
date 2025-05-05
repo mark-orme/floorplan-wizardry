@@ -1,136 +1,114 @@
 
 /**
- * Utilities for converting fabric paths to points
- * @module fabricPath/pathToPoints
+ * Converts fabric path data to an array of points
  */
-import { Point } from '../drawingTypes';
-import { PIXELS_PER_METER } from '@/constants/numerics';
-import logger from '../logger';
-import { PATH_COMMANDS, COMMAND_INDICES, PATH_CONSTANTS } from './types';
+import { PATH_COMMANDS, COMMAND_INDICES, PathCommand } from './types';
 
-/** 
- * Convert fabric.js path points to our Point type 
- * @param {any[]} path - Fabric.js path array
- * @returns {Point[]} Array of points
+interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Convert fabric path data to an array of points
+ * @param pathData The path data to convert
+ * @returns Array of points
  */
-export const fabricPathToPoints = (path: any[]): Point[] => {
-  if (!path || !Array.isArray(path)) return [];
-  
+export function fabricPathToPoints(pathData: PathCommand[] | string): Point[] {
   const points: Point[] = [];
+  let currentX = 0;
+  let currentY = 0;
   
-  try {
-    // Extract all path commands
-    path.forEach((command) => {
-      if (Array.isArray(command)) {
-        if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.MOVE_TO || 
-            command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO) { 
-          // Move to or Line to
-          points.push({ 
-            x: command[COMMAND_INDICES.FIRST_COORD] / PIXELS_PER_METER, 
-            y: command[COMMAND_INDICES.SECOND_COORD] / PIXELS_PER_METER 
-          });
-        }
-        else if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE) { 
-          // Quadratic curve
-          // Add the control point and end point
-          points.push({ 
-            x: command[COMMAND_INDICES.QUAD_END_X] / PIXELS_PER_METER, 
-            y: command[COMMAND_INDICES.QUAD_END_Y] / PIXELS_PER_METER 
-          }); // End point of curve
-        }
-        else if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.BEZIER_CURVE) { 
-          // Bezier curve
-          // Add the end point of the curve
-          points.push({ 
-            x: command[COMMAND_INDICES.BEZIER_END_X] / PIXELS_PER_METER, 
-            y: command[COMMAND_INDICES.BEZIER_END_Y] / PIXELS_PER_METER 
-          });
-        }
-      }
-    });
+  // Handle string path data
+  if (typeof pathData === 'string') {
+    const parsedData: PathCommand[] = [];
+    const parts = pathData.match(/[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*/g) || [];
     
-    // If we couldn't extract points properly, at least get first and last
-    if (points.length < 2 && path.length > 1) {
-      // Try to get just the first and last points
-      for (const command of path) {
-        if (Array.isArray(command) && command.length >= 3) {
-          if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.MOVE_TO || 
-              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO) {
-            points.push({ 
-              x: command[COMMAND_INDICES.FIRST_COORD] / PIXELS_PER_METER, 
-              y: command[COMMAND_INDICES.SECOND_COORD] / PIXELS_PER_METER 
-            });
-            break;
-          }
-        }
-      }
-      
-      // Get the last point
-      for (let i = path.length - 1; i >= 0; i--) {
-        const command = path[i];
-        if (Array.isArray(command) && command.length >= 3) {
-          if (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO || 
-              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE || 
-              command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.BEZIER_CURVE) {
-            const lastIndex = command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.LINE_TO ? 
-              COMMAND_INDICES.FIRST_COORD : 
-              (command[COMMAND_INDICES.COMMAND_TYPE] === PATH_COMMANDS.QUADRATIC_CURVE ? 
-                COMMAND_INDICES.QUAD_END_X : 
-                COMMAND_INDICES.BEZIER_END_X);
-            
-            points.push({ 
-              x: command[lastIndex] / PIXELS_PER_METER, 
-              y: command[lastIndex + 1] / PIXELS_PER_METER 
-            });
-            break;
-          }
-        }
-      }
+    for (const part of parts) {
+      const command = part[0];
+      const coords = part.substring(1).trim().split(/[\s,]+/).map(parseFloat);
+      parsedData.push(command);
+      parsedData.push(coords);
     }
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.error("Error converting fabric path to points:", error);
-    }
+    
+    pathData = parsedData;
   }
   
-  // Filter out points that are too close to each other
-  if (points.length > 2) {
-    const filteredPoints: Point[] = [points[0]];
-    
-    for (let i = 1; i < points.length; i++) {
-      const lastPoint = filteredPoints[filteredPoints.length - 1];
-      const currentPoint = points[i];
-      
-      const distanceX = currentPoint.x - lastPoint.x;
-      const distanceY = currentPoint.y - lastPoint.y;
-      const pointDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-      
-      if (pointDistance >= PATH_CONSTANTS.MIN_POINT_DISTANCE) {
-        filteredPoints.push(currentPoint);
-      }
-    }
-    
-    // Always include the last point if we have more than one point and it's not already included
-    const lastOriginalPoint = points[points.length - 1];
-    const lastFilteredPoint = filteredPoints[filteredPoints.length - 1];
-    
-    if (filteredPoints.length > 0 && 
-        (lastOriginalPoint.x !== lastFilteredPoint.x || 
-         lastOriginalPoint.y !== lastFilteredPoint.y)) {
-      filteredPoints.push(lastOriginalPoint);
-    }
-    
-    return filteredPoints;
+  if (!Array.isArray(pathData) || pathData.length < 2) {
+    return points;
   }
   
-  // Ensure we have at least 2 points for a proper line
-  if (points.length === 1) {
-    // Duplicate the single point slightly offset to create a minimal line
-    points.push({ 
-      x: points[0].x + PATH_CONSTANTS.SINGLE_POINT_OFFSET, 
-      y: points[0].y + PATH_CONSTANTS.SINGLE_POINT_OFFSET 
-    });
+  // Process each command
+  for (let i = 0; i < pathData.length; i++) {
+    const item = pathData[i];
+    
+    // Only process command strings
+    if (typeof item !== 'string') continue;
+    
+    const command = item.toUpperCase();
+    const coords = pathData[i + 1];
+    
+    if (!Array.isArray(coords)) continue;
+    
+    // Process based on command type
+    switch (command) {
+      case PATH_COMMANDS.MOVE_TO:
+        if (coords.length >= 2) {
+          currentX = coords[0];
+          currentY = coords[1];
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+        
+      case PATH_COMMANDS.LINE_TO:
+        if (coords.length >= 2) {
+          currentX = coords[0];
+          currentY = coords[1];
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+        
+      case PATH_COMMANDS.CURVE_TO:
+        // For curves, we only add the end point
+        if (coords.length >= 6) {
+          currentX = coords[4];
+          currentY = coords[5];
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+        
+      case PATH_COMMANDS.QUAD_TO:
+        // For quadratic curves, we only add the end point
+        if (coords.length >= 4) {
+          currentX = coords[2];
+          currentY = coords[3];
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+        
+      case PATH_COMMANDS.ARC_TO:
+        // For arcs, we only add the end point
+        if (coords.length >= 7) {
+          currentX = coords[5];
+          currentY = coords[6];
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+        
+      // Close path by returning to the first point
+      case PATH_COMMANDS.CLOSE:
+        if (points.length > 0) {
+          const firstPoint = points[0];
+          currentX = firstPoint.x;
+          currentY = firstPoint.y;
+          points.push({ x: currentX, y: currentY });
+        }
+        break;
+    }
+    
+    // Skip the coordinate array in the next iteration
+    i++;
   }
   
   return points;
-};
+}

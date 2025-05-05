@@ -35,6 +35,26 @@ export const DRAWING_STYLES = {
   }
 };
 
+// Add the POLYLINE_STYLES for hooks that need it
+export const POLYLINE_STYLES = {
+  DEFAULT: {
+    stroke: '#0033cc',
+    strokeWidth: 2,
+    fill: 'transparent',
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round',
+    selectable: true
+  },
+  BOUNDARY: {
+    stroke: '#993366',
+    strokeWidth: 3,
+    fill: 'rgba(153, 51, 102, 0.1)',
+    strokeLineCap: 'round',
+    strokeLineJoin: 'round',
+    selectable: true
+  }
+};
+
 // Default stroke properties
 export const DEFAULT_STROKE_COLOR = '#000000';
 export const DEFAULT_STROKE_WIDTH = 2;

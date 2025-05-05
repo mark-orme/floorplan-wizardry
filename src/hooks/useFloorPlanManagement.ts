@@ -1,6 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { FloorPlan } from '@/utils/floorPlanTypeAdapter';
+import { FloorPlan } from '@/types/FloorPlan';
 import { ensureFloorPlanMetadata } from '@/utils/floorPlanTypeAdapter';
 
 interface UseFloorPlanManagementOptions {
@@ -31,13 +32,7 @@ export function useFloorPlanManagement({
         // Use ensureFloorPlanMetadata to guarantee metadata exists
         newFloorPlans[index] = ensureFloorPlanMetadata({
           ...newFloorPlans[index],
-          ...updatedFloorPlan,
-          // Make sure metadata exists and is properly updated
-          metadata: {
-            ...newFloorPlans[index].metadata,
-            ...(updatedFloorPlan.metadata || {}),
-            updatedAt: new Date().toISOString()
-          }
+          ...updatedFloorPlan
         });
       }
       
@@ -48,13 +43,9 @@ export function useFloorPlanManagement({
   
   // Create a new floor plan
   const createFloorPlan = useCallback(() => {
-    const newFloorPlan: FloorPlan = ensureFloorPlanMetadata({
+    const newFloorPlan = ensureFloorPlanMetadata({
       id: uuidv4(),
-      name: `Floor Plan ${floorPlans.length + 1}`,
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+      name: `Floor Plan ${floorPlans.length + 1}`
     });
     
     setFloorPlans(prev => {

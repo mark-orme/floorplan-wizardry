@@ -5,10 +5,11 @@
  */
 
 // Import fabric properly to avoid "Property does not exist" errors
-import { Canvas, Object as FabricObject, Line, Group, Polyline, Path, IObjectOptions } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
 
+// We cannot directly import Group, Polyline, Path, so we'll get them from window.fabric at runtime
 // Define our own interfaces since some are missing in the fabric types
-export interface IPathOptions extends IObjectOptions {
+export interface IPathOptions {
   path?: string | { x: number; y: number }[];
   stroke?: string;
   strokeWidth?: number;
@@ -18,13 +19,13 @@ export interface IPathOptions extends IObjectOptions {
   selectable?: boolean;
 }
 
-export interface IGroupOptions extends IObjectOptions {
+export interface IGroupOptions {
   originX?: string;
   originY?: string;
   selectable?: boolean;
 }
 
-export interface IPolylineOptions extends IObjectOptions {
+export interface IPolylineOptions {
   points?: Array<{ x: number; y: number }>;
   stroke?: string;
   strokeWidth?: number;
@@ -35,7 +36,7 @@ export interface IPolylineOptions extends IObjectOptions {
 }
 
 // Define interfaces for missing components
-export interface IRectOptions extends IObjectOptions {
+export interface IRectOptions {
   width?: number;
   height?: number;
   fill?: string;
@@ -44,7 +45,7 @@ export interface IRectOptions extends IObjectOptions {
   selectable?: boolean;
 }
 
-export interface ICircleOptions extends IObjectOptions {
+export interface ICircleOptions {
   radius?: number;
   fill?: string;
   stroke?: string;
@@ -52,8 +53,46 @@ export interface ICircleOptions extends IObjectOptions {
   selectable?: boolean;
 }
 
-// Export the interfaces for reuse
-export { Canvas, FabricObject, Line, Group, Polyline, Path };
+// Export the Canvas and FabricObject directly
+export { Canvas, FabricObject };
+
+// Define our own versions of fabric components that aren't properly exported
+export class Line extends FabricObject {
+  constructor(points: number[], options: any = {}) {
+    super();
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Line) {
+      return new window.fabric.Line(points, options) as any;
+    }
+    throw new Error('fabric.Line not available');
+  }
+}
+
+export class Group {
+  constructor(objects: any[], options: any = {}) {
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
+      return new window.fabric.Group(objects, options) as any;
+    }
+    throw new Error('fabric.Group not available');
+  }
+}
+
+export class Polyline {
+  constructor(points: Array<{ x: number; y: number }>, options: any = {}) {
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Polyline) {
+      return new window.fabric.Polyline(points, options) as any;
+    }
+    throw new Error('fabric.Polyline not available');
+  }
+}
+
+export class Path {
+  constructor(path: string | Array<{ x: number; y: number }>, options: any = {}) {
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
+      return new window.fabric.Path(path, options) as any;
+    }
+    throw new Error('fabric.Path not available');
+  }
+}
 
 // Create safe functions instead of relying on direct fabric object properties
 export function createPath(path: string, options: IPathOptions = {}) {
@@ -139,14 +178,14 @@ export const DEFAULT_POLYLINE_OPTIONS: IPolylineOptions = {
 };
 
 // Add type safety checks
-export function isPath(object: FabricObject): object is Path {
+export function isPath(object: FabricObject): boolean {
   return object && object.type === 'path';
 }
 
-export function isGroup(object: FabricObject): object is Group {
+export function isGroup(object: FabricObject): boolean {
   return object && object.type === 'group';
 }
 
-export function isPolyline(object: FabricObject): object is Polyline {
+export function isPolyline(object: FabricObject): boolean {
   return object && object.type === 'polyline';
 }

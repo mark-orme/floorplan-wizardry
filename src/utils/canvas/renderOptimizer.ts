@@ -100,3 +100,53 @@ export function cancelOptimizedRenders(canvas: Canvas | null = null): void {
     debounceTimers.clear();
   }
 }
+
+// Add the createSmoothEventHandler function needed by hooks
+export function createSmoothEventHandler<T extends (...args: any[]) => any>(
+  handler: T,
+  debounceMs: number = 16
+): T {
+  let lastCallTime = 0;
+  
+  return ((...args: any[]) => {
+    const now = Date.now();
+    
+    if (now - lastCallTime >= debounceMs) {
+      lastCallTime = now;
+      return handler(...args);
+    }
+    
+    return undefined;
+  }) as T;
+}
+
+// Add the batchCanvasOperations function needed by hooks
+export function batchCanvasOperations<T>(
+  canvas: Canvas | null, 
+  operations: () => T,
+  renderAfter: boolean = true
+): T {
+  if (!canvas) {
+    return operations();
+  }
+  
+  try {
+    // Temporarily disable rendering
+    const originalRenderOnAddRemove = canvas.renderOnAddRemove;
+    canvas.renderOnAddRemove = false;
+    
+    // Perform operations
+    const result = operations();
+    
+    // Restore original setting and render if needed
+    canvas.renderOnAddRemove = originalRenderOnAddRemove;
+    if (renderAfter) {
+      canvas.requestRenderAll();
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error during batch canvas operations:', error);
+    throw error;
+  }
+}

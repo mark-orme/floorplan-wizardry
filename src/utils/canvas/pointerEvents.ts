@@ -1,70 +1,110 @@
 
 /**
- * Utility functions for handling pointer events in canvas
+ * Pointer events utility
+ * Handles different pointer types including stylus, touch, and mouse
  */
 
 /**
- * Check if pressure is supported in the current browser
+ * Check if a pointer event is from a stylus
+ * @param event The pointer event
+ * @returns Whether the event is from a stylus
  */
-export const isPressureSupported = (): boolean => {
-  return 'PointerEvent' in window && 'pressure' in new PointerEvent('pointerdown');
-};
-
-/**
- * Check if tilt is supported in the current browser
- */
-export const isTiltSupported = (): boolean => {
-  return 'PointerEvent' in window && 'tiltX' in new PointerEvent('pointerdown');
-};
-
-/**
- * Checks if the event is a touch event
- */
-export const isTouchEvent = (e: MouseEvent | TouchEvent): e is TouchEvent => {
-  return 'touches' in e;
-};
-
-/**
- * Checks if the pointer device is likely a stylus/pen
- */
-export const isPenPointer = (e: PointerEvent): boolean => {
-  return e.pointerType === 'pen';
-};
-
-/**
- * Extract pressure from a pointer event with fallback
- */
-export const getPointerPressure = (e: PointerEvent): number => {
-  // Some devices report pressure as 0.5 even when they don't support pressure
-  // So we check if it's exactly 0.5 and return a default value instead
-  if (e.pressure === 0.5 && !isPressureSupported()) {
-    return 1.0;
+export function isStylus(event: any): boolean {
+  if (!event || !event.e) return false;
+  
+  // Use pointerType on PointerEvent if available
+  if (event.e.pointerType) {
+    return event.e.pointerType === 'pen';
   }
-  return e.pressure;
-};
-
-/**
- * Extract tilt data from a pointer event
- */
-export const getPointerTilt = (e: PointerEvent): { tiltX: number; tiltY: number } => {
-  if (isTiltSupported() && (e.tiltX !== 0 || e.tiltY !== 0)) {
-    return { tiltX: e.tiltX, tiltY: e.tiltY };
+  
+  // Legacy browsers: check for presence of a pressure value
+  if ('pressure' in event.e) {
+    return event.e.pressure > 0 && event.e.pressure < 1;
   }
-  return { tiltX: 0, tiltY: 0 };
-};
+  
+  // Try to get from Touch API
+  if (event.e.touches && event.e.touches[0]) {
+    const touch = event.e.touches[0];
+    return 'touchType' in touch && touch.touchType === 'stylus';
+  }
+  
+  return false;
+}
 
 /**
- * Convert tilt values to angle and altitude values
+ * Get pressure value from a pointer event
+ * @param event The pointer event
+ * @returns The pressure value (0-1)
  */
-export const tiltToAngles = (tiltX: number, tiltY: number): { angle: number; altitude: number } => {
-  const angle = Math.atan2(tiltY, tiltX) * (180 / Math.PI);
+export function getPressure(event: any): number {
+  if (!event || !event.e) return 0;
   
-  // Normalize the angle to 0-360
-  const normalizedAngle = (angle + 360) % 360;
+  // Direct pressure property
+  if ('pressure' in event.e) {
+    return event.e.pressure;
+  }
   
-  // Calculate altitude (0 = flat, 90 = perpendicular)
-  // Max tilt is typically 90 degrees in each direction
-  const altitude = 90 - Math.sqrt(tiltX * tiltX + tiltY * tiltY);
+  // Try to get from Touch API
+  if (event.e.touches && event.e.touches[0]) {
+    const touch = event.e.touches[0];
+    return 'force' in touch ? touch.force : 0;
+  }
   
-  return { angle: normalizedAngle, altitude };
-};
+  // Default value
+  return 0;
+}
+
+/**
+ * Get a standardized pointer position
+ * @param event Original event (mouse, touch, pointer)
+ * @param canvas Optional canvas element for coordinate conversion
+ * @returns Standardized position
+ */
+export function getPointerPosition(event: any, canvas?: HTMLCanvasElement): { x: number, y: number } {
+  // Default position
+  let x = 0, y = 0;
+  
+  if (!event) return { x, y };
+  
+  try {
+    // Handle fabric.js event wrapper
+    if (event.pointer) {
+      return { x: event.pointer.x, y: event.pointer.y };
+    }
+    
+    // Handle fabric.js absolute pointer
+    if (event.absolutePointer) {
+      return { x: event.absolutePointer.x, y: event.absolutePointer.y };
+    }
+    
+    // Extract from event object
+    const e = event.e || event;
+    
+    // Mouse events
+    if ('clientX' in e && 'clientY' in e) {
+      x = e.clientX;
+      y = e.clientY;
+    }
+    // Touch events
+    else if (e.touches && e.touches[0]) {
+      x = e.touches[0].clientX;
+      y = e.touches[0].clientY;
+    }
+    // Pointer events
+    else if ('pointerId' in e && 'clientX' in e) {
+      x = e.clientX;
+      y = e.clientY;
+    }
+    
+    // Adjust for canvas offset if provided
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      x -= rect.left;
+      y -= rect.top;
+    }
+  } catch (err) {
+    console.error('Error getting pointer position:', err);
+  }
+  
+  return { x, y };
+}

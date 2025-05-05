@@ -1,66 +1,82 @@
 
-import { FabricObject } from 'fabric';
-import { GRID_CONSTANTS } from '@/constants/gridConstants';
-
 /**
- * Validate grid objects
- * @param gridObjects Array of grid objects to validate
- * @returns Whether the grid is valid
+ * Grid renderer utilities
+ * Functions for rendering different types of grids
  */
-export const validateGrid = (gridObjects: FabricObject[]): boolean => {
-  if (!Array.isArray(gridObjects)) return false;
-  if (gridObjects.length === 0) return false;
-  
-  // Check that all objects have expected properties
-  return gridObjects.every(obj => 
-    obj && typeof obj === 'object' && 'type' in obj
-  );
-};
+import { Canvas, Object as FabricObject } from 'fabric';
+import { createCompleteGrid } from './gridCreationUtils';
 
 /**
- * Create a complete grid with small and large lines
+ * Create a standard grid on the canvas
  * @param canvas The fabric canvas
- * @param visible Whether the grid should be visible
- * @param options Additional grid options
+ * @param gridSize The size of the grid cells
+ * @param options Additional options for the grid
+ * @returns The grid objects created
  */
-export const createCompleteGrid = (
-  canvas: any,
-  visible: boolean = true,
-  options: {
-    smallGridSize?: number;
-    largeGridSize?: number;
-    smallGridColor?: string;
-    largeGridColor?: string;
-    smallGridWidth?: number;
-    largeGridWidth?: number;
-  } = {}
-): FabricObject[] => {
+export function createGrid(
+  canvas: Canvas,
+  gridSize: number = 20,
+  options: any = {}
+): FabricObject[] {
+  return createCompleteGrid(canvas, gridSize, options);
+}
+
+/**
+ * Render a grid with main and secondary lines
+ * @param canvas The fabric canvas
+ * @param smallGridSize The size of the small grid cells
+ * @param largeGridInterval The interval for larger grid lines
+ * @param options Additional options for the grid
+ * @returns The grid objects created
+ */
+export function createDualScaleGrid(
+  canvas: Canvas | null,
+  smallGridSize: number = 20,
+  largeGridInterval: number = 5,
+  options: any = {}
+): FabricObject[] {
   if (!canvas) return [];
   
-  // Use options or defaults
-  const smallGridSize = options.smallGridSize ?? GRID_CONSTANTS.SMALL_GRID_SIZE;
-  const largeGridSize = options.largeGridSize ?? GRID_CONSTANTS.LARGE_GRID_SIZE;
-  const smallGridColor = options.smallGridColor ?? GRID_CONSTANTS.SMALL_GRID_COLOR;
-  const largeGridColor = options.largeGridColor ?? GRID_CONSTANTS.LARGE_GRID_COLOR;
-  const smallGridWidth = options.smallGridWidth ?? GRID_CONSTANTS.SMALL_GRID_WIDTH;
-  const largeGridWidth = options.largeGridWidth ?? GRID_CONSTANTS.LARGE_GRID_WIDTH;
+  const gridObjects: FabricObject[] = [];
+  const { width, height } = canvas;
   
-  // Remove existing grid
-  const existingGrid = canvas.getObjects().filter((obj: any) => 
-    obj.isGrid === true
-  );
+  const smallColor = options.smallColor || '#eeeeee';
+  const largeColor = options.largeColor || '#cccccc';
+  const smallOpacity = options.smallOpacity || 0.4;
+  const largeOpacity = options.largeOpacity || 0.7;
   
-  existingGrid.forEach((obj: any) => canvas.remove(obj));
-  
-  // If not visible, just return empty array
-  if (!visible) {
-    return [];
+  // Small grid lines
+  for (let x = 0; x <= width; x += smallGridSize) {
+    const isLargeLine = x % (smallGridSize * largeGridInterval) === 0;
+    const line = new fabric.Line([x, 0, x, height], {
+      stroke: isLargeLine ? largeColor : smallColor,
+      strokeWidth: isLargeLine ? 1.5 : 1,
+      opacity: isLargeLine ? largeOpacity : smallOpacity,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      excludeFromExport: true
+    });
+    
+    canvas.add(line as FabricObject);
+    gridObjects.push(line as FabricObject);
   }
   
-  // Create grid objects
-  const gridObjects: FabricObject[] = [];
-  const width = typeof canvas.getWidth === 'function' ? canvas.getWidth() : 1000;
-  const height = typeof canvas.getHeight === 'function' ? canvas.getHeight() : 1000;
+  for (let y = 0; y <= height; y += smallGridSize) {
+    const isLargeLine = y % (smallGridSize * largeGridInterval) === 0;
+    const line = new fabric.Line([0, y, width, y], {
+      stroke: isLargeLine ? largeColor : smallColor,
+      strokeWidth: isLargeLine ? 1.5 : 1,
+      opacity: isLargeLine ? largeOpacity : smallOpacity,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      excludeFromExport: true
+    });
+    
+    canvas.add(line as FabricObject);
+    gridObjects.push(line as FabricObject);
+  }
   
   return gridObjects;
-};
+}

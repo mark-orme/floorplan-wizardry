@@ -1,140 +1,150 @@
 
 /**
- * Grid Creation Utilities
- * Utilities for creating and managing grid objects
- * @module utils/grid/gridCreationUtils
+ * Grid creation utilities
+ * Functions for creating and validating grids
  */
-import { Canvas as FabricCanvas } from 'fabric';
-import { GridLine, GridOptions } from './gridTypes';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { createLine } from '@/utils/fabric/fabricAdapter';
 
 /**
- * Create a grid of lines on the canvas
- * @param canvas The canvas to create the grid on
- * @param options Grid options
- * @returns Array of created grid lines
+ * Create a complete grid on the canvas
+ * @param canvas The fabric canvas
+ * @param gridSize The size of the grid cells
+ * @param options Additional options for the grid
+ * @returns The grid objects created
  */
-export function createGrid(canvas: FabricCanvas, options: GridOptions = {}): GridLine[] {
-  const {
-    spacing = 50,
-    color = '#e0e0e0',
-    opacity = 0.5,
-    strokeWidth = 1,
-    visible = true
-  } = options;
+export function createCompleteGrid(
+  canvas: Canvas | null,
+  gridSize: number = 20,
+  options: any = {}
+): FabricObject[] {
+  if (!canvas) return [];
   
-  const gridLines: GridLine[] = [];
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
+  const gridObjects: FabricObject[] = [];
+  const { width, height } = canvas;
+  const gridColor = options.color || '#cccccc';
+  const gridOpacity = options.opacity || 0.5;
   
-  try {
-    // Create horizontal lines
-    for (let y = 0; y <= height; y += spacing) {
-      // Create custom properties object
-      const lineProps = {
-        stroke: color,
-        strokeWidth,
-        opacity,
-        selectable: false,
-        evented: false,
-        visible,
-        gridObject: true,
-        gridType: 'horizontal'
-      };
-
-      // Create the line with proper typing
-      const line = new window.fabric.Line([0, y, width, y], lineProps);
-      
+  // Create grid lines
+  for (let x = 0; x <= width; x += gridSize) {
+    const line = createLine([x, 0, x, height], {
+      stroke: gridColor,
+      strokeWidth: 1,
+      opacity: gridOpacity,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      excludeFromExport: true
+    });
+    
+    if (line) {
       canvas.add(line);
-      gridLines.push(line as GridLine);
+      gridObjects.push(line);
     }
-    
-    // Create vertical lines
-    for (let x = 0; x <= width; x += spacing) {
-      // Create custom properties object
-      const lineProps = {
-        stroke: color,
-        strokeWidth,
-        opacity,
-        selectable: false,
-        evented: false,
-        visible,
-        gridObject: true,
-        gridType: 'vertical'
-      };
-
-      // Create the line with proper typing
-      const line = new window.fabric.Line([x, 0, x, height], lineProps);
-      
-      canvas.add(line);
-      gridLines.push(line as GridLine);
-    }
-    
-    // Ensure grid is behind other objects
-    gridLines.forEach(line => {
-      canvas.sendToBack(line);
-    });
-    
-    canvas.requestRenderAll();
-    
-    return gridLines;
-  } catch (error) {
-    console.error('Error creating grid:', error);
-    return [];
   }
-}
-
-/**
- * Remove grid lines from canvas
- * @param canvas The canvas containing the grid
- * @param gridLines Array of grid lines to remove
- */
-export function removeGrid(canvas: FabricCanvas, gridLines: GridLine[]): void {
-  try {
-    gridLines.forEach(line => {
-      canvas.remove(line);
-    });
-    
-    canvas.requestRenderAll();
-  } catch (error) {
-    console.error('Error removing grid:', error);
-  }
-}
-
-/**
- * Update grid visibility
- * @param canvas The canvas containing the grid
- * @param gridLines Array of grid lines to update
- * @param visible Whether the grid should be visible
- */
-export function updateGridVisibility(canvas: FabricCanvas, gridLines: GridLine[], visible: boolean): void {
-  try {
-    gridLines.forEach(line => {
-      line.set('visible', visible);
-    });
-    
-    canvas.requestRenderAll();
-  } catch (error) {
-    console.error('Error updating grid visibility:', error);
-  }
-}
-
-/**
- * Update grid dimensions when canvas size changes
- * @param canvas The canvas containing the grid
- * @param gridLines Array of grid lines to update
- * @param options Grid options
- */
-export function updateGridDimensions(canvas: FabricCanvas, gridLines: GridLine[], options: GridOptions = {}): void {
-  const width = canvas.getWidth();
-  const height = canvas.getHeight();
   
-  try {
-    // Remove existing grid
-    removeGrid(canvas, gridLines);
+  for (let y = 0; y <= height; y += gridSize) {
+    const line = createLine([0, y, width, y], {
+      stroke: gridColor,
+      strokeWidth: 1,
+      opacity: gridOpacity,
+      selectable: false,
+      evented: false,
+      objectType: 'grid',
+      excludeFromExport: true
+    });
     
-    // Create new grid with updated dimensions
-    createGrid(canvas, options);
-  } catch (error) {
-    console.error('Error updating grid dimensions:', error);
+    if (line) {
+      canvas.add(line);
+      gridObjects.push(line);
+    }
   }
+  
+  return gridObjects;
+}
+
+/**
+ * Create a basic emergency grid when the full grid fails
+ * @param canvas The fabric canvas
+ * @returns The emergency grid objects created
+ */
+export function createBasicEmergencyGrid(canvas: Canvas | null): FabricObject[] {
+  if (!canvas) return [];
+  
+  const emergencyGridObjects: FabricObject[] = [];
+  const { width, height } = canvas;
+  
+  // Create a simpler grid with fewer lines
+  const intervals = [width/2, height/2];
+  
+  // Vertical center line
+  const verticalLine = createLine([width/2, 0, width/2, height], {
+    stroke: '#ff0000',
+    strokeWidth: 1,
+    opacity: 0.7,
+    selectable: false,
+    evented: false,
+    objectType: 'emergency-grid'
+  });
+  
+  if (verticalLine) {
+    canvas.add(verticalLine);
+    emergencyGridObjects.push(verticalLine);
+  }
+  
+  // Horizontal center line
+  const horizontalLine = createLine([0, height/2, width, height/2], {
+    stroke: '#ff0000',
+    strokeWidth: 1,
+    opacity: 0.7,
+    selectable: false,
+    evented: false,
+    objectType: 'emergency-grid'
+  });
+  
+  if (horizontalLine) {
+    canvas.add(horizontalLine);
+    emergencyGridObjects.push(horizontalLine);
+  }
+  
+  return emergencyGridObjects;
+}
+
+/**
+ * Validate that the grid is properly set up
+ * @param canvas The fabric canvas
+ * @param gridObjects The grid objects to validate
+ * @returns Whether the grid is valid
+ */
+export function validateGrid(canvas: Canvas | null, gridObjects: FabricObject[]): boolean {
+  if (!canvas) return false;
+  
+  // Check if there are any grid objects
+  if (!gridObjects || gridObjects.length === 0) {
+    return false;
+  }
+  
+  // Check if all grid objects exist on the canvas
+  for (const gridObject of gridObjects) {
+    if (!canvas.contains(gridObject)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Create a grid with the given grid size
+ * @param canvas The fabric canvas
+ * @param gridSize The size of the grid cells
+ * @param color The color of the grid lines
+ * @returns The grid objects created
+ */
+export function createGrid(
+  canvas: Canvas,
+  gridSize: number = 20,
+  color: string = '#cccccc'
+): FabricObject[] {
+  return createCompleteGrid(canvas, gridSize, { color });
 }
