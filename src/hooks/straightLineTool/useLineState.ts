@@ -73,7 +73,15 @@ export const useLineState = ({
     
     // For backwards compatibility
     toggleGridSnapping,
-    measurementData: { startPoint: coreState.startPoint, endPoint: coreState.currentPoint, distance: 0, angle: 0, midPoint: { x: 0, y: 0 }, unit: 'px', pixelsPerMeter: 100 }
+    measurementData: { 
+      startPoint: coreState.startPoint, 
+      endPoint: coreState.currentPoint, 
+      distance: 0, 
+      angle: 0, 
+      midPoint: { x: 0, y: 0 }, 
+      unit: 'px', 
+      pixelsPerMeter: 100 
+    }
   };
 };
 

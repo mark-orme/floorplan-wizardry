@@ -41,6 +41,19 @@ export const useSnapToGrid = (options: SnapToGridOptions = {}) => {
       y: distY <= snapThreshold ? nearestY : y
     };
   }, [snapEnabled, gridSize, snapThreshold]);
+  
+  // Add the missing snapLineToGrid function
+  const snapLineToGrid = useCallback((startPoint: { x: number, y: number }, endPoint: { x: number, y: number }) => {
+    if (!snapEnabled) return { startPoint, endPoint };
+    
+    const snappedStartPoint = snapPointToGrid(startPoint);
+    const snappedEndPoint = snapPointToGrid(endPoint);
+    
+    return {
+      startPoint: snappedStartPoint,
+      endPoint: snappedEndPoint
+    };
+  }, [snapEnabled, snapPointToGrid]);
 
   return {
     snapEnabled,
@@ -50,6 +63,7 @@ export const useSnapToGrid = (options: SnapToGridOptions = {}) => {
     snapThreshold,
     setSnapThreshold,
     toggleSnap,
-    snapPointToGrid
+    snapPointToGrid,
+    snapLineToGrid
   };
 };
