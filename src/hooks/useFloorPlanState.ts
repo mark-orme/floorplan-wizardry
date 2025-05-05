@@ -1,7 +1,7 @@
-
-import { useState, useCallback } from 'react';
-import { FloorPlan } from '@/types/floorPlan';
+import { useState } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
+// Import from our adapter to avoid case sensitivity issues
+import { FloorPlan, isFloorPlan } from '@/utils/floorPlanTypeAdapter';
 
 export interface UseFloorPlanStateProps {
   initialFloorPlans?: FloorPlan[];

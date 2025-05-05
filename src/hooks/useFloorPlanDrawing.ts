@@ -1,8 +1,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { FloorPlan } from '@/types/fabric-unified';
+import { FloorPlan } from '@/utils/floorPlanTypeAdapter';
 import { DrawingMode } from '@/constants/drawingModes';
+import { removeCanvasEvent } from '@/utils/canvas/eventHandlers';
 import type { MutableRefObject } from 'react';
 
 export interface UseFloorPlanDrawingProps {
@@ -35,9 +36,10 @@ export const useFloorPlanDrawing = ({
     
     // Clean up function for event handlers
     return () => {
-      canvas.off('mouse:down');
-      canvas.off('mouse:move');
-      canvas.off('mouse:up');
+      // Fix: Use our helper that handles different signature requirements
+      removeCanvasEvent(canvas, 'mouse:down');
+      removeCanvasEvent(canvas, 'mouse:move');
+      removeCanvasEvent(canvas, 'mouse:up');
     };
   }, [fabricCanvasRef, tool]);
   

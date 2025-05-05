@@ -1,125 +1,95 @@
-
 import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '@/utils/logger';
+import { FloorPlan } from '@/utils/floorPlanTypeAdapter';
+import { ensureFloorPlanMetadata } from '@/utils/floorPlanTypeAdapter';
 
-// Import from the adapter instead of direct import
-import { FloorPlan, adaptFloorPlan } from '@/types/floorPlanAdapter';
-
-interface UseFloorPlanManagementProps {
-  onFloorPlanCreated?: (floorPlan: FloorPlan) => void;
-  onFloorPlanDeleted?: (id: string) => void;
-  onFloorPlanUpdated?: (floorPlan: FloorPlan) => void;
+interface UseFloorPlanManagementOptions {
+  initialFloorPlans?: FloorPlan[];
+  onUpdate?: (floorPlans: FloorPlan[]) => void;
 }
 
-export const useFloorPlanManagement = ({
-  onFloorPlanCreated,
-  onFloorPlanDeleted,
-  onFloorPlanUpdated
-}: UseFloorPlanManagementProps = {}) => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [activeFloorPlanId, setActiveFloorPlanId] = useState<string | null>(null);
+export function useFloorPlanManagement({
+  initialFloorPlans = [],
+  onUpdate = () => {}
+}: UseFloorPlanManagementOptions = {}) {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(
+    initialFloorPlans.map(ensureFloorPlanMetadata)
+  );
   
-  const createFloorPlan = useCallback((data: Partial<FloorPlan> = {}) => {
-    try {
-      const id = uuidv4();
-      const timestamp = new Date().toISOString();
-      
-      const newFloorPlan = adaptFloorPlan({
-        id,
-        name: `Floor Plan ${floorPlans.length + 1}`,
-        width: data.width || 800,
-        height: data.height || 600,
-        updatedAt: timestamp,
-        ...data,
-        metadata: {
-          createdAt: timestamp,
-          updatedAt: timestamp,
-          ...data.metadata
-        }
-      });
-      
-      setFloorPlans(prev => [...prev, newFloorPlan]);
-      
-      if (onFloorPlanCreated) {
-        onFloorPlanCreated(newFloorPlan);
-      }
-      
-      toast.success('Floor plan created');
-      return newFloorPlan;
-    } catch (error) {
-      logger.error('Error creating floor plan:', error);
-      toast.error('Failed to create floor plan');
-      return null;
-    }
-  }, [floorPlans, onFloorPlanCreated]);
+  const [currentFloorPlanIndex, setCurrentFloorPlanIndex] = useState(0);
   
-  const updateFloorPlan = useCallback((id: string, data: Partial<FloorPlan>) => {
-    try {
-      const timestamp = new Date().toISOString();
+  // Update a floor plan
+  const updateFloorPlan = useCallback((updatedFloorPlan: Partial<FloorPlan>) => {
+    setFloorPlans(prev => {
+      const newFloorPlans = [...prev];
       
-      setFloorPlans(prev => prev.map(plan => {
-        if (plan.id !== id) return plan;
+      const index = updatedFloorPlan.id 
+        ? newFloorPlans.findIndex(fp => fp.id === updatedFloorPlan.id)
+        : -1;
         
-        const updated = {
-          ...plan,
-          ...data,
-          updatedAt: timestamp,
+      if (index >= 0) {
+        // Use ensureFloorPlanMetadata to guarantee metadata exists
+        newFloorPlans[index] = ensureFloorPlanMetadata({
+          ...newFloorPlans[index],
+          ...updatedFloorPlan,
+          // Make sure metadata exists and is properly updated
           metadata: {
-            ...plan.metadata,
-            updatedAt: timestamp,
-            ...data.metadata
+            ...newFloorPlans[index].metadata,
+            ...(updatedFloorPlan.metadata || {}),
+            updatedAt: new Date().toISOString()
           }
-        };
-        
-        return adaptFloorPlan(updated);
-      }));
-      
-      const updatedPlan = floorPlans.find(plan => plan.id === id);
-      
-      if (updatedPlan && onFloorPlanUpdated) {
-        onFloorPlanUpdated(updatedPlan);
+        });
       }
       
-      toast.success('Floor plan updated');
-      return true;
-    } catch (error) {
-      logger.error('Error updating floor plan:', error);
-      toast.error('Failed to update floor plan');
-      return false;
-    }
-  }, [floorPlans, onFloorPlanUpdated]);
+      onUpdate(newFloorPlans);
+      return newFloorPlans;
+    });
+  }, [onUpdate]);
   
-  const deleteFloorPlan = useCallback((id: string) => {
-    try {
-      setFloorPlans(prev => prev.filter(plan => plan.id !== id));
-      
-      if (activeFloorPlanId === id) {
-        setActiveFloorPlanId(null);
+  // Create a new floor plan
+  const createFloorPlan = useCallback(() => {
+    const newFloorPlan: FloorPlan = ensureFloorPlanMetadata({
+      id: uuidv4(),
+      name: `Floor Plan ${floorPlans.length + 1}`,
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
-      
-      if (onFloorPlanDeleted) {
-        onFloorPlanDeleted(id);
-      }
-      
-      toast.success('Floor plan deleted');
-      return true;
-    } catch (error) {
-      logger.error('Error deleting floor plan:', error);
-      toast.error('Failed to delete floor plan');
-      return false;
-    }
-  }, [activeFloorPlanId, onFloorPlanDeleted]);
+    });
+    
+    setFloorPlans(prev => {
+      const newFloorPlans = [...prev, newFloorPlan];
+      onUpdate(newFloorPlans);
+      return newFloorPlans;
+    });
+    
+    return newFloorPlan;
+  }, [floorPlans.length, onUpdate]);
+  
+  // Delete a floor plan
+  const deleteFloorPlan = useCallback((floorPlanId: string) => {
+    setFloorPlans(prev => {
+      const newFloorPlans = prev.filter(fp => fp.id !== floorPlanId);
+      onUpdate(newFloorPlans);
+      return newFloorPlans;
+    });
+  }, [onUpdate]);
+  
+  // Select a floor plan
+  const selectFloorPlan = useCallback((index: number) => {
+    setCurrentFloorPlanIndex(index);
+  }, []);
+  
+  const currentFloorPlan = floorPlans[currentFloorPlanIndex];
   
   return {
     floorPlans,
-    activeFloorPlanId,
-    setActiveFloorPlanId,
+    currentFloorPlan,
+    currentFloorPlanIndex,
     createFloorPlan,
     updateFloorPlan,
-    deleteFloorPlan
+    deleteFloorPlan,
+    selectFloorPlan,
+    setFloorPlans
   };
-};
-
-export default useFloorPlanManagement;
+}

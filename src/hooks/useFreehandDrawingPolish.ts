@@ -1,6 +1,7 @@
-
-import { useEffect, useRef } from 'react';
-import { Canvas, Path, Point } from 'fabric'; 
+import { useCallback } from 'react';
+import { Canvas } from 'fabric';
+// Import from our adapter instead of directly from fabric
+import { Path } from '@/components/canvas/fabric/FabricComponents';
 
 // Tolerance for the simplification algorithm
 const SIMPLIFICATION_TOLERANCE = 2;

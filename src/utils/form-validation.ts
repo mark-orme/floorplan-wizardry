@@ -30,14 +30,20 @@ export function validateField(schema: any, value?: any) {
 /**
  * Enhanced validate field that is backward compatible with older code
  * This handles the different ways validateField might be called
+ * 
+ * @param schema The zod schema to validate against
+ * @param value The value to validate (optional)
+ * @returns Validation result
  */
 export function validateFieldEnhanced(schema: any, value?: any) {
-  // Support for zero arguments or one argument call patterns
-  if (arguments.length === 0 || (arguments.length === 1 && typeof schema === 'object')) {
-    return validateField(schema);
+  // Support for all argument patterns
+  // If called with a schema and a value, validate the value against the schema
+  if (arguments.length >= 2) {
+    return validateField(schema, value);
   }
-  // Support for two arguments call pattern
-  return validateField(schema, value);
+  
+  // If called with just a schema, validate the schema itself
+  return validateField(schema);
 }
 
 export default { validateField, validateFieldEnhanced };

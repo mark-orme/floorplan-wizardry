@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas, Line, Group } from 'fabric';
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas } from 'fabric';
+import { Group, Path } from '@/components/canvas/fabric/FabricComponents';
 import { Point } from '@/types/core/Point';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface UseCanvasInteractionsProps {
-  canvas: FabricCanvas | null;
+  canvas: Canvas | null;
   tool: DrawingMode;
   lineThickness: number;
   lineColor: string;
@@ -22,7 +23,7 @@ interface UseCanvasInteractionsResult {
 }
 
 export const useCanvasInteractions = (
-  canvas: FabricCanvas | null,
+  canvas: Canvas | null,
   tool: DrawingMode,
   lineThickness: number,
   lineColor: string
@@ -64,7 +65,7 @@ export const useCanvasInteractions = (
   useEffect(() => {
     if (!canvas) return;
 
-    let line: Line | null = null;
+    let line: Path | null = null;
 
     const handleMouseDown = (event: any) => {
       if (tool === DrawingMode.DRAW) {
@@ -73,7 +74,7 @@ export const useCanvasInteractions = (
         setStartPoint({ x: pointer.x, y: pointer.y });
         setEndPoint({ x: pointer.x, y: pointer.y });
 
-        line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        line = new Path([pointer.x, pointer.y, pointer.x, pointer.y], {
           strokeWidth: lineThickness,
           stroke: lineColor,
           originX: 'center',

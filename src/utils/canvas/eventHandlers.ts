@@ -1,104 +1,87 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+/**
+ * Canvas Event Handlers
+ * Provides utilities for safely adding and removing event handlers from canvas objects
+ */
+import { Canvas } from 'fabric';
 
 /**
- * Safely add event handler to canvas
- * @param canvas Fabric canvas
- * @param eventName Event name
- * @param handler Event handler
+ * Safely add an event handler to a canvas
+ * @param canvas The canvas to add the handler to
+ * @param eventName The name of the event
+ * @param handler The event handler function
  */
-export function addCanvasEventHandler(
-  canvas: FabricCanvas,
-  eventName: string,
-  handler: Function
-) {
+export function addCanvasEvent(canvas: Canvas | null, eventName: string, handler: Function) {
   if (!canvas) return;
   
   canvas.on(eventName, handler as any);
 }
 
 /**
- * Safely remove event handler from canvas
- * @param canvas Fabric canvas
- * @param eventName Event name
- * @param handler Event handler (optional in some versions)
+ * Safely remove an event handler from a canvas
+ * This handles different versions of fabric.js which might have different signatures
+ * 
+ * @param canvas The canvas to remove the handler from
+ * @param eventName The name of the event
+ * @param handler The event handler function (optional in some fabric versions)
  */
-export function removeCanvasEventHandler(
-  canvas: FabricCanvas,
-  eventName: string,
-  handler?: Function
-) {
-  if (!canvas) return;
-  
-  if (handler) {
-    canvas.off(eventName, handler as any);
-  } else {
-    // Some versions support removing all handlers for an event
-    canvas.off(eventName);
-  }
-}
-
-/**
- * Add multiple event handlers to canvas
- * @param canvas Fabric canvas
- * @param handlers Event handlers mapping
- */
-export function addCanvasEventHandlers(
-  canvas: FabricCanvas,
-  handlers: Record<string, Function>
-) {
-  if (!canvas) return;
-  
-  Object.entries(handlers).forEach(([eventName, handler]) => {
-    addCanvasEventHandler(canvas, eventName, handler);
-  });
-}
-
-/**
- * Remove multiple event handlers from canvas
- * @param canvas Fabric canvas
- * @param handlers Event handlers mapping
- */
-export function removeCanvasEventHandlers(
-  canvas: FabricCanvas,
-  handlers: Record<string, Function>
-) {
-  if (!canvas) return;
-  
-  Object.entries(handlers).forEach(([eventName, handler]) => {
-    removeCanvasEventHandler(canvas, eventName, handler);
-  });
-}
-
-/**
- * Handles the different versions of fabric.js event listener removal
- * Some versions expect 1 arg, some expect 2 args, and some can handle both
- * @param canvas The canvas to remove listeners from
- * @param eventName The event name
- * @param handler Optional event handler
- */
-export function safeRemoveCanvasEvent(
-  canvas: FabricCanvas,
-  eventName: string,
-  handler?: Function
-) {
+export function removeCanvasEvent(canvas: Canvas | null, eventName: string, handler?: Function) {
   if (!canvas) return;
   
   try {
-    // Try with both arguments first
+    // If the handler is provided, try to remove it specifically
     if (handler) {
       canvas.off(eventName, handler as any);
     } else {
-      // Some versions just need the event name
+      // Some fabric versions allow removing all handlers for an event
+      // Using 'any' to bypass type checking since this is version-dependent
       (canvas as any).off(eventName);
     }
-  } catch (e) {
-    // Fallbacks for different fabric versions
+  } catch (error) {
+    console.error(`Error removing event handler for ${eventName}:`, error);
+    
+    // Fallback to try different method signatures
     try {
-      // Try with just the event name
+      // Try forcing a handler-less removal
       (canvas as any).off(eventName);
-    } catch (e2) {
-      console.warn(`Could not remove event handler for ${eventName}`, e2);
+    } catch (fallbackError) {
+      console.error(`Fallback error removing handler for ${eventName}:`, fallbackError);
     }
   }
+}
+
+/**
+ * Create a dummy handler for canvas events
+ * This is useful when you need to provide a handler but don't need it to do anything
+ */
+export function createEmptyHandler() {
+  return () => {};
+}
+
+/**
+ * Version-safe addEventListener for canvas elements
+ */
+export function addDomCanvasEvent(
+  canvasElement: HTMLCanvasElement | null,
+  eventName: string,
+  handler: EventListener,
+  options?: boolean | AddEventListenerOptions
+) {
+  if (!canvasElement) return;
+  
+  canvasElement.addEventListener(eventName, handler, options);
+}
+
+/**
+ * Version-safe removeEventListener for canvas elements
+ */
+export function removeDomCanvasEvent(
+  canvasElement: HTMLCanvasElement | null,
+  eventName: string,
+  handler: EventListener,
+  options?: boolean | EventListenerOptions
+) {
+  if (!canvasElement) return;
+  
+  canvasElement.removeEventListener(eventName, handler, options);
 }

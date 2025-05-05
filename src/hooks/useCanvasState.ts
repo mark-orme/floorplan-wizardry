@@ -1,62 +1,58 @@
-
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Canvas } from 'fabric';
-import { UseCanvasStateResult } from '@/types/fabric-unified';
+import { DrawingMode } from '@/constants/drawingModes';
 
-export const useCanvasState = (): UseCanvasStateResult => {
+// Update the return type to include the canvasRef property
+export interface UseCanvasStateResult {
+  canvas: Canvas | null;
+  canvasRef: React.RefObject<HTMLCanvasElement>; // Add this property
+  tool: DrawingMode;
+  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
+  lineColor: string;
+  setLineColor: React.Dispatch<React.SetStateAction<string>>;
+  lineThickness: number;
+  setLineThickness: React.Dispatch<React.SetStateAction<number>>;
+  canvasWidth: number;
+  canvasHeight: number;
+  setCanvasSize: (width: number, height: number) => void;
+  showGrid: boolean;
+  setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function useCanvasState(): UseCanvasStateResult {
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const [canvasWidth, setCanvasWidth] = useState<number>(800);
+  const [canvasHeight, setCanvasHeight] = useState<number>(600);
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<Canvas | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Initialize the canvas
-  const initializeCanvas = useCallback(() => {
-    if (!canvasRef.current) return;
-
-    try {
-      // Clean up any existing canvas
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-      }
-
-      // Create a new canvas
-      const canvas = new Canvas(canvasRef.current, {
-        width: canvasRef.current.width,
-        height: canvasRef.current.height,
-        backgroundColor: '#ffffff',
-        selection: true
-      });
-
-      fabricCanvasRef.current = canvas;
-      setIsInitialized(true);
-
-      console.log('Canvas initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize canvas:', error);
-      setIsInitialized(false);
+  
+  const setCanvasSize = (width: number, height: number) => {
+    setCanvasWidth(width);
+    setCanvasHeight(height);
+    if (canvas) {
+      canvas.setWidth(width);
+      canvas.setHeight(height);
+      canvas.requestRenderAll();
     }
-  }, []);
-
-  // Dispose the canvas
-  const disposeCanvas = useCallback(() => {
-    if (fabricCanvasRef.current) {
-      fabricCanvasRef.current.dispose();
-      fabricCanvasRef.current = null;
-      setIsInitialized(false);
-    }
-  }, []);
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      disposeCanvas();
-    };
-  }, [disposeCanvas]);
-
-  return {
-    canvasRef,
-    fabricCanvasRef,
-    initializeCanvas,
-    disposeCanvas,
-    isInitialized
   };
-};
+  
+  return {
+    canvas,
+    canvasRef, // Now this is properly typed in the return type
+    tool,
+    setTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    canvasWidth,
+    canvasHeight,
+    setCanvasSize,
+    showGrid,
+    setShowGrid
+  };
+}
