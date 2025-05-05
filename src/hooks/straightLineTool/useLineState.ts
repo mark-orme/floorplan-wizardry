@@ -2,11 +2,9 @@
 import { useRef } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { InputMethod } from './useLineInputMethod';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLineAngleSnap } from './useLineAngleSnap';
 import { useLineDrawing } from './useLineDrawing';
-import { toolsLogger } from '@/utils/logger';
 import { useLineStateCore } from './useLineStateCore';
 import { useLineStateActions } from './useLineStateActions';
 
@@ -71,6 +69,12 @@ export const useLineState = ({
     
     // Toggles
     toggleSnap: toggleGridSnapping,
-    toggleAngles
+    toggleAngles,
+    
+    // For backwards compatibility
+    toggleGridSnapping,
+    measurementData: { startPoint: coreState.startPoint, endPoint: coreState.currentPoint, distance: 0, angle: 0, midPoint: { x: 0, y: 0 }, unit: 'px', pixelsPerMeter: 100 }
   };
 };
+
+export default useLineState;

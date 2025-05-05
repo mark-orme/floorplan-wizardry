@@ -20,7 +20,12 @@ export enum DrawingMode {
   POLYGON = 'polygon',
   MEASURE = 'measure',
   GRID = 'grid',
-  ZOOM = 'zoom'
+  ZOOM = 'zoom',
+  // Add missing modes that are being referenced
+  PENCIL = 'pencil',
+  HAND = 'hand',
+  ERASE = 'erase',
+  SHAPE = 'shape'
 }
 
 /**
@@ -33,5 +38,9 @@ export const GRID_CONSTANTS = {
   LARGE_GRID_COLOR: '#c0c0c0',
   SMALL_GRID_WIDTH: 0.5,
   LARGE_GRID_WIDTH: 1,
-  PIXELS_PER_METER: 100
+  PIXELS_PER_METER: 100,
+  // Add helper constants for line styles
+  DEFAULT_STROKE_COLOR: '#000000',
+  DEFAULT_STROKE_WIDTH: 2,
+  DEFAULT_FILL: 'transparent'
 };

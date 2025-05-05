@@ -3,26 +3,32 @@ import React from 'react';
 import { Point } from '@/types/fabric-unified';
 
 interface BrushCursorPreviewProps {
-  position: Point | null;
-  thickness: number;
-  color: string;
+  position?: Point | null;
+  thickness?: number;
+  color?: string;
+  size?: number;
+  visible?: boolean;
 }
 
 export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({ 
-  position, 
-  thickness, 
-  color 
+  position = null, 
+  thickness = 2, 
+  color = '#000000',
+  size,
+  visible = true
 }) => {
-  if (!position) return null;
+  const actualSize = size || thickness;
+  
+  if (!visible || !position) return null;
   
   return (
     <div 
       style={{
         position: 'absolute',
-        left: position.x - thickness / 2,
-        top: position.y - thickness / 2,
-        width: thickness,
-        height: thickness,
+        left: position.x - actualSize / 2,
+        top: position.y - actualSize / 2,
+        width: actualSize,
+        height: actualSize,
         borderRadius: '50%',
         backgroundColor: color,
         opacity: 0.5,
@@ -31,3 +37,5 @@ export const BrushCursorPreview: React.FC<BrushCursorPreviewProps> = ({
     />
   );
 };
+
+export default BrushCursorPreview;

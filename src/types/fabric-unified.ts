@@ -21,6 +21,7 @@ export interface ExtendedFabricCanvas extends FabricCanvas {
   getActiveObject?: () => any;
   _activeObject?: any;
   _objects?: any[];
+  freeDrawingBrush?: any;
 }
 
 // Object extensions
@@ -34,6 +35,8 @@ export interface ExtendedFabricObject extends FabricObject {
   evented?: boolean;
   excludeFromExport?: boolean | (() => void);
   isOnScreen?: boolean;
+  set?: (options: Record<string, any>) => FabricObject;
+  setCoords?: () => FabricObject;
 }
 
 // Grid constants
@@ -55,6 +58,7 @@ export interface MeasurementData {
   midPoint: Point;
   angle: number;
   unit: 'px' | 'm' | 'cm' | 'mm';
+  snapped?: boolean;
   pixelsPerMeter: number;
 }
 
@@ -71,12 +75,13 @@ export interface FloorPlan {
   rooms?: any[];
   strokes?: any[];
   data?: Record<string, any>;
+  metadata?: FloorPlanMetadata;
 }
 
 // FloorPlan metadata
 export interface FloorPlanMetadata {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   created?: string;
   modified?: string;
   updated?: string;
@@ -88,6 +93,22 @@ export interface FloorPlanMetadata {
   index?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// Debug info state
+export interface DebugInfoState {
+  fps: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  mousePosition: { x: number; y: number };
+  zoomLevel: number;
+  gridSize: number;
+  canvasDimensions: { width: number; height: number };
+  canvasInitialized: boolean;
+  errorMessage: string;
+  hasError: boolean;
+  lastInitTime: number;
+  lastGridCreationTime: number;
 }
 
 // Gesture state for touch interactions
@@ -103,3 +124,31 @@ export interface GestureStateObject {
 // Convert between fabric Points and our Points
 export const toFabricPoint = (point: Point): FabricPoint => new FabricPoint(point.x, point.y);
 export const fromFabricPoint = (point: FabricPoint): Point => ({ x: point.x, y: point.y });
+
+// Drawing state for canvas
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  pathStartPoint?: Point | null;
+  currentPoint: Point | null;
+  points: Array<Point>;
+  distance: number | null;
+  cursorPosition: Point | null;
+  isEnabled?: boolean;
+  currentZoom?: number;
+}
+
+// Create default drawing state
+export function createDefaultDrawingState(): DrawingState {
+  return {
+    isDrawing: false,
+    startPoint: null,
+    pathStartPoint: null,
+    currentPoint: null,
+    points: [],
+    distance: null,
+    cursorPosition: null,
+    isEnabled: true,
+    currentZoom: 1
+  };
+}

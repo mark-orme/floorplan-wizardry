@@ -4,12 +4,28 @@ import React from 'react';
 interface DrawingControlsProps {
   lineThickness: number;
   lineColor: string;
+  onThicknessChange?: (thickness: number) => void;
+  onColorChange?: (color: string) => void;
 }
 
 export const DrawingControls: React.FC<DrawingControlsProps> = ({
   lineThickness,
-  lineColor
+  lineColor,
+  onThicknessChange,
+  onColorChange
 }) => {
+  const handleThicknessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onThicknessChange) {
+      onThicknessChange(Number(e.target.value));
+    }
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onColorChange) {
+      onColorChange(e.target.value);
+    }
+  };
+
   return (
     <div className="p-2 bg-white shadow-md rounded-md">
       <div className="flex items-center space-x-4">
@@ -22,7 +38,7 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
               max="20"
               value={lineThickness}
               className="w-32"
-              readOnly
+              onChange={handleThicknessChange}
             />
             <span className="ml-2 text-sm">{lineThickness}px</span>
           </div>
@@ -31,9 +47,11 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
         <div>
           <label className="block text-sm font-medium text-gray-700">Color</label>
           <div className="mt-1 flex items-center">
-            <div 
-              className="w-8 h-8 rounded-full border border-gray-300" 
-              style={{ backgroundColor: lineColor }}
+            <input 
+              type="color"
+              value={lineColor}
+              onChange={handleColorChange}
+              className="w-8 h-8 rounded-full border border-gray-300"
             />
           </div>
         </div>
@@ -41,3 +59,5 @@ export const DrawingControls: React.FC<DrawingControlsProps> = ({
     </div>
   );
 };
+
+export default DrawingControls;

@@ -1,41 +1,36 @@
 
 /**
- * Debug information state interface
- * @module types/canvas/DebugInfoState
- */
-
-/**
- * Debug information state interface
+ * Debug information state for canvas
  */
 export interface DebugInfoState {
-  /** Whether to show FPS counter */
-  fpsCounter: boolean;
-  /** Whether to show grid helper */
-  gridHelper: boolean;
-  /** Whether to show object counter */
-  objectCounter: boolean;
-  /** Whether to show rendering stats */
-  renderingStats: boolean;
-  /** Whether to show canvas events */
-  canvasEvents: boolean;
-  /** Whether to show memory usage */
-  memoryUsage: boolean;
-  /** Whether to show error reporting */
-  errorReporting: boolean;
-  /** Current canvas dimensions */
-  canvasDimensions?: { width: number; height: number };
+  fps: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  mousePosition: { x: number; y: number };
+  zoomLevel: number;
+  gridSize: number;
+  canvasDimensions: { width: number; height: number };
+  canvasInitialized: boolean;
+  errorMessage: string;
+  hasError: boolean;
+  lastInitTime: number;
+  lastGridCreationTime: number;
 }
 
 /**
  * Default debug state
  */
 export const DEFAULT_DEBUG_STATE: DebugInfoState = {
-  fpsCounter: false,
-  gridHelper: false,
-  objectCounter: false,
-  renderingStats: false,
-  canvasEvents: false,
-  memoryUsage: false,
-  errorReporting: true,
-  canvasDimensions: { width: 0, height: 0 }
+  fps: 0,
+  objectCount: 0,
+  visibleObjectCount: 0,
+  mousePosition: { x: 0, y: 0 },
+  zoomLevel: 1,
+  gridSize: 20,
+  canvasDimensions: { width: 0, height: 0 },
+  canvasInitialized: false,
+  errorMessage: '',
+  hasError: false,
+  lastInitTime: 0,
+  lastGridCreationTime: 0
 };

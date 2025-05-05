@@ -1,62 +1,54 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MeasurementData } from '@/types/fabric-unified';
-import { GRID_CONSTANTS } from '@/constants/drawingModes';
 
-interface UseLiveDistanceTooltipProps {
-  isActive: boolean;
-  measurementData: MeasurementData | null;
-  unit?: 'px' | 'm' | 'cm' | 'mm';
-}
-
-export const useLiveDistanceTooltip = ({
-  isActive,
-  measurementData,
-  unit = 'm'
-}: UseLiveDistanceTooltipProps) => {
-  const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [displayText, setDisplayText] = useState('');
-
+export const useLiveDistanceTooltip = (
+  measurementData: MeasurementData | null,
+  isDrawing: boolean
+) => {
+  const [showTooltip, setShowTooltip] = useState(true);
+  
+  // Auto-hide tooltip after drawing ends
   useEffect(() => {
-    if (!isActive || !measurementData) {
-      setVisible(false);
-      return;
+    if (isDrawing) {
+      setShowTooltip(true);
+    } else if (measurementData?.distance !== undefined) {
+      const timer = setTimeout(() => {
+        setShowTooltip(false);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
     }
+  }, [isDrawing, measurementData]);
 
-    setVisible(true);
-    setPosition(measurementData.midPoint);
-
-    // Calculate display text based on unit
-    let distanceText = '';
-    const distance = measurementData.distance;
+  const renderTooltip = () => {
+    if (!showTooltip || !measurementData) return null;
     
-    switch (unit) {
-      case 'px':
-        distanceText = `${Math.round(distance)} px`;
-        break;
-      case 'm':
-        const meters = distance / GRID_CONSTANTS.PIXELS_PER_METER;
-        distanceText = `${meters.toFixed(2)} m`;
-        break;
-      case 'cm':
-        const cm = (distance / GRID_CONSTANTS.PIXELS_PER_METER) * 100;
-        distanceText = `${cm.toFixed(1)} cm`;
-        break;
-      case 'mm':
-        const mm = (distance / GRID_CONSTANTS.PIXELS_PER_METER) * 1000;
-        distanceText = `${Math.round(mm)} mm`;
-        break;
-      default:
-        distanceText = `${Math.round(distance)} px`;
-    }
-
-    setDisplayText(distanceText);
-  }, [isActive, measurementData, unit]);
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: measurementData.midPoint.x,
+          top: measurementData.midPoint.y,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          transform: 'translate(-50%, -100%)',
+          pointerEvents: 'none'
+        }}
+      >
+        {Math.round(measurementData.distance)} {measurementData.unit}
+        <br />
+        {Math.round(measurementData.angle)}°
+      </div>
+    );
+  };
 
   return {
-    visible,
-    position,
-    displayText
+    showTooltip,
+    setShowTooltip,
+    renderTooltip
   };
 };

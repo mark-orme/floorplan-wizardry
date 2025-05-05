@@ -1,50 +1,49 @@
 
 import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
-import { snapToAngle } from '@/utils/grid/snapping';
-import { toolsLogger } from '@/utils/logger';
 
-interface UseLineAngleSnapOptions {
+interface UseLineAngleSnapProps {
   enabled?: boolean;
-  snapAngleDeg?: number;
+  angleStep?: number;
 }
 
-/**
- * Hook for angle snapping functionality
- */
-export const useLineAngleSnap = ({ 
-  enabled = false,
-  snapAngleDeg = 45
-}: UseLineAngleSnapOptions = {}) => {
+export const useLineAngleSnap = ({
+  enabled = true,
+  angleStep = 45
+}: UseLineAngleSnapProps = {}) => {
   const [anglesEnabled, setAnglesEnabled] = useState(enabled);
-  
-  /**
-   * Snap a line to standard angles
-   * @param start Starting point
-   * @param end End point to be adjusted
-   * @returns Adjusted end point
-   */
+  const [angleStepState, setAngleStep] = useState(angleStep);
+
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+
   const snapToAngle = useCallback((start: Point, end: Point): Point => {
     if (!anglesEnabled) return end;
     
-    return snapToAngle(start, end);
-  }, [anglesEnabled]);
-  
-  /**
-   * Toggle angle constraints
-   */
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => {
-      const newValue = !prev;
-      toolsLogger.debug(`Angle constraints ${newValue ? 'enabled' : 'disabled'}`);
-      return newValue;
-    });
-  }, []);
-  
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const angle = Math.atan2(dy, dx);
+    
+    // Snap to angle steps (default 45 degrees)
+    const snapAngle = Math.PI * (angleStepState / 180);
+    const snappedAngle = Math.round(angle / snapAngle) * snapAngle;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    return {
+      x: start.x + distance * Math.cos(snappedAngle),
+      y: start.y + distance * Math.sin(snappedAngle)
+    };
+  }, [anglesEnabled, angleStepState]);
+
   return {
     anglesEnabled,
     setAnglesEnabled,
-    snapToAngle,
-    toggleAngles
+    angleStep: angleStepState,
+    setAngleStep,
+    toggleAngles,
+    snapToAngle
   };
 };
+
+export default useLineAngleSnap;

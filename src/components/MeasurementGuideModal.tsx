@@ -2,35 +2,54 @@
 import React from 'react';
 
 interface MeasurementGuideModalProps {
-  open?: boolean;
+  open: boolean;
   onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
 }
 
-const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
-  open = false,
-  onOpenChange = () => {}
+export const MeasurementGuideModal: React.FC<MeasurementGuideModalProps> = ({
+  open,
+  onOpenChange,
+  onClose
 }) => {
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+
   if (!open) return null;
-  
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-xl font-bold mb-4">Measurement Guide</h2>
-        <p className="mb-4">
-          Use the measurement tool to get precise distances between points on your canvas.
-          Click to place the first point, then click again to measure the distance.
-        </p>
-        <ul className="list-disc pl-4 mb-4 space-y-2">
-          <li>Hold Shift while measuring to snap to 45° angles</li>
-          <li>Press Escape to cancel the current measurement</li>
-          <li>Double click to complete a multi-point measurement</li>
-        </ul>
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full"
-          onClick={() => onOpenChange(false)}
-        >
-          Got it
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4">Measurement Guide</h2>
+        
+        <div className="space-y-4">
+          <p>
+            To measure distances on the canvas:
+          </p>
+          
+          <ol className="list-decimal pl-5 space-y-2">
+            <li>Click and hold at the starting point</li>
+            <li>Drag to the end point</li>
+            <li>Release to see the measurement</li>
+          </ol>
+          
+          <div className="bg-gray-50 p-2 rounded">
+            <p className="text-sm text-gray-600">
+              <strong>Tip:</strong> Hold Shift key while measuring to snap to 45° angles.
+            </p>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
