@@ -23,8 +23,8 @@ export function isPath(obj: any): boolean {
  */
 export function createFabricPath(pathData: string | Point[], options: IPathOptions = {}) {
   try {
-    if (typeof fabric !== 'undefined' && fabric.Path) {
-      return new fabric.Path(pathData, options as any);
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
+      return new window.fabric.Path(pathData as any, options as any);
     }
     throw new Error('fabric.Path not available');
   } catch (e) {

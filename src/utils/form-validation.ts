@@ -7,10 +7,10 @@ import * as z from '@/utils/zod-mock';
  * @param value The value to validate
  * @returns Validation result
  */
-export function validateField(schema: any, value: any) {
+export function validateField(schema: any, value?: any) {
   try {
     if (typeof schema.parse === 'function') {
-      // Always pass the value to the schema
+      // Always pass the value to the schema, even if it's undefined
       schema.parse(value);
       return { isValid: true, error: null };
     }

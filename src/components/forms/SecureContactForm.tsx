@@ -28,9 +28,9 @@ const SecureContactForm: React.FC<SecureContactFormProps> = ({ onSubmit }) => {
     const messageSchema = z.string().min(10);
     
     const schema = {
-      name: validateField(nameSchema, formData.name),
-      email: validateField(emailSchema, formData.email),
-      message: validateField(messageSchema, formData.message)
+      name: validateField(nameSchema),
+      email: validateField(emailSchema),
+      message: validateField(messageSchema)
     };
     
     const newErrors: Record<string, string> = {};

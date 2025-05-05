@@ -28,9 +28,9 @@ const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => 
     const confirmPasswordSchema = z.string();
     
     const schema = {
-      username: validateField(usernameSchema, formData.username),
-      password: validateField(passwordSchema, formData.password),
-      confirmPassword: validateField(confirmPasswordSchema, formData.confirmPassword)
+      username: validateField(usernameSchema),
+      password: validateField(passwordSchema),
+      confirmPassword: validateField(confirmPasswordSchema)
     };
     
     const newErrors: Record<string, string> = {};
