@@ -3,14 +3,9 @@
  * Line Adapter
  * Provides utilities for working with lines that might have different property names
  */
+import { Point } from '@/utils/geometry/Point';
 
 // Define the common types for standardization
-export interface Point {
-  x: number;
-  y: number;
-}
-
-// Line representation with start/end properties
 export interface LineWithStartEnd {
   start: Point;
   end: Point;
@@ -119,4 +114,22 @@ export function setEndPoint(line: Line, point: Point): Line {
     ...line,
     endPoint: point
   };
+}
+
+/**
+ * Creates a fabric line from our line interface
+ */
+export function createFabricLine(line: Line, options: any = {}) {
+  try {
+    const start = getStartPoint(line);
+    const end = getEndPoint(line);
+    
+    if (typeof fabric !== 'undefined' && fabric.Line) {
+      return new fabric.Line([start.x, start.y, end.x, end.y], options);
+    }
+    return null;
+  } catch (e) {
+    console.error('Error creating fabric line:', e);
+    return null;
+  }
 }

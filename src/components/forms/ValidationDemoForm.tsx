@@ -1,7 +1,7 @@
 
 import React from 'react';
 import * as z from '@/utils/zod-mock';
-import { validateFieldEnhanced } from '@/utils/form-validation';
+import { validateField } from '@/utils/form-validation';
 
 interface ValidationDemoFormProps {
   onSubmit: (data: FormData) => void;
@@ -28,9 +28,9 @@ const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => 
     const confirmPasswordSchema = z.string();
     
     const schema = {
-      username: validateFieldEnhanced(usernameSchema, formData.username),
-      password: validateFieldEnhanced(passwordSchema, formData.password),
-      confirmPassword: validateFieldEnhanced(confirmPasswordSchema, formData.confirmPassword)
+      username: validateField(usernameSchema, formData.username),
+      password: validateField(passwordSchema, formData.password),
+      confirmPassword: validateField(confirmPasswordSchema, formData.confirmPassword)
     };
     
     const newErrors: Record<string, string> = {};

@@ -51,37 +51,26 @@ export function removeCanvasEvent(canvas: Canvas | null, eventName: string, hand
 }
 
 /**
- * Create a dummy handler for canvas events
- * This is useful when you need to provide a handler but don't need it to do anything
+ * Remove all event handlers of a specific type from a canvas
+ * @param canvas The canvas to remove handlers from
+ * @param eventNames Array of event names to remove all handlers for
+ */
+export function removeAllCanvasEvents(canvas: Canvas | null, eventNames: string[]) {
+  if (!canvas) return;
+  
+  eventNames.forEach(eventName => {
+    try {
+      removeCanvasEvent(canvas, eventName);
+    } catch (e) {
+      console.error(`Failed to remove all handlers for ${eventName}:`, e);
+    }
+  });
+}
+
+/**
+ * Creates an empty handler for canvas events
+ * Useful when you need to provide a handler but don't want it to do anything
  */
 export function createEmptyHandler() {
   return () => {};
-}
-
-/**
- * Version-safe addEventListener for canvas elements
- */
-export function addDomCanvasEvent(
-  canvasElement: HTMLCanvasElement | null,
-  eventName: string,
-  handler: EventListener,
-  options?: boolean | AddEventListenerOptions
-) {
-  if (!canvasElement) return;
-  
-  canvasElement.addEventListener(eventName, handler, options);
-}
-
-/**
- * Version-safe removeEventListener for canvas elements
- */
-export function removeDomCanvasEvent(
-  canvasElement: HTMLCanvasElement | null,
-  eventName: string,
-  handler: EventListener,
-  options?: boolean | EventListenerOptions
-) {
-  if (!canvasElement) return;
-  
-  canvasElement.removeEventListener(eventName, handler, options);
 }

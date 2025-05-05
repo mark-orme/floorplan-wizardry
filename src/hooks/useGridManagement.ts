@@ -1,165 +1,159 @@
 
-import { useEffect } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { toast } from "sonner";
-import { 
-  ensureGridVisibility, 
-  setGridVisibility,
-  forceGridCreationAndVisibility 
-} from "@/utils/grid/gridVisibility";
-import { createCompleteGrid } from "@/utils/grid/gridRenderers";
+import { useRef, useEffect, useState } from 'react';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { GRID_CONSTANTS } from '@/constants/gridConstants';
+import { addCanvasEvent, removeCanvasEvent } from '@/utils/canvas/eventHandlers';
 
-export const useGridManagement = (
-  canvas: FabricCanvas | null,
-  canvasStableRef: React.MutableRefObject<boolean>,
-  gridInitializedRef: React.MutableRefObject<boolean>,
-  retryCountRef: React.MutableRefObject<number>,
-  mountedRef: React.MutableRefObject<boolean>,
-  maxRetries: number
-) => {
-  // Ensure canvas is properly tracked and stable before grid creation
-  useEffect(() => {
-    if (!canvas) {
-      console.log("Canvas not available yet");
-      return;
-    }
+interface UseGridManagementOptions {
+  initialVisible?: boolean;
+  gridSize?: number;
+  gridColor?: string;
+  largeGridSize?: number;
+  largeGridColor?: string;
+}
 
-    console.log("Canvas reference received:", !!canvas);
-    
-    // Wait to confirm canvas is stable before attempting grid creation
-    const stabilityTimer = setTimeout(() => {
-      if (mountedRef.current) {
-        canvasStableRef.current = true;
-        console.log("Canvas marked as stable after delay");
-      }
-    }, 1000);
-    
-    return () => {
-      clearTimeout(stabilityTimer);
-    };
-  }, [canvas, canvasStableRef, mountedRef]);
+export function useGridManagement(canvas: Canvas | null, options: UseGridManagementOptions = {}) {
+  const {
+    initialVisible = true,
+    gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE,
+    gridColor = GRID_CONSTANTS.SMALL_GRID_COLOR,
+    largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE,
+    largeGridColor = GRID_CONSTANTS.LARGE_GRID_COLOR
+  } = options;
   
-  // Separate effect for grid creation to ensure it only runs after canvas is stable
-  useEffect(() => {
-    if (!canvas || !canvasStableRef.current || gridInitializedRef.current) {
-      return;
-    }
-    
-    console.log("Attempting grid creation on stable canvas");
-    
-    const createGridWithRetry = () => {
-      try {
-        // Validate canvas dimensions
-        if (!canvas.width || !canvas.height || canvas.width <= 0 || canvas.height <= 0) {
-          throw new Error("Invalid canvas dimensions for grid creation");
-        }
-
-        console.log("Creating grid with dimensions:", canvas.width, "x", canvas.height);
-        
-        // Create grid with complete renderer
-        let gridSuccess = false;
-        
-        // Try normal grid creation first
-        const gridObjects = createCompleteGrid(canvas);
-        
-        if (gridObjects && gridObjects.length > 0) {
-          gridInitializedRef.current = true;
-          console.log(`Grid created successfully with ${gridObjects.length} objects`);
-          
-          // Force grid objects to be visible
-          gridObjects.forEach(obj => {
-            obj.set('visible', true);
-          });
-          
-          // Re-render the canvas after setting visibility
-          canvas.renderAll();
-          canvas.requestRenderAll();
-          
-          toast.success(`Grid created with ${gridObjects.length} objects`);
-          gridSuccess = true;
-        } 
-        
-        // If normal grid creation failed, try forced approach
-        if (!gridSuccess) {
-          console.log("Standard grid creation failed, trying forced approach");
-          if (forceGridCreationAndVisibility(canvas)) {
-            gridInitializedRef.current = true;
-            toast.success("Grid created with emergency approach");
-            gridSuccess = true;
-          } else {
-            throw new Error("Both standard and emergency grid creation failed");
-          }
-        }
-      } catch (error) {
-        console.error("Grid creation error:", error);
-        
-        if (retryCountRef.current < maxRetries) {
-          retryCountRef.current++;
-          console.log(`Retrying grid creation (attempt ${retryCountRef.current}/${maxRetries})`);
-          
-          // Retry after a delay
-          setTimeout(createGridWithRetry, 1000);
-        } else {
-          toast.error("Failed to initialize grid after multiple attempts");
-        }
-      }
-    };
-    
-    // Start grid creation with delay to ensure canvas is ready
-    const timer = setTimeout(createGridWithRetry, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [canvas, canvasStableRef, gridInitializedRef, retryCountRef, maxRetries]);
+  const [isVisible, setIsVisible] = useState(initialVisible);
+  const gridObjectsRef = useRef<FabricObject[]>([]);
   
-  // Check grid visibility periodically
+  // Create grid on canvas initialization
   useEffect(() => {
     if (!canvas) return;
     
-    // Initial check with delay
-    const initialCheck = setTimeout(() => {
-      if (canvas) {
-        console.log("Performing initial grid visibility check");
-        ensureGridVisibility(canvas);
+    const createGrid = () => {
+      const canvasWidth = canvas.getWidth();
+      const canvasHeight = canvas.getHeight();
+      const objects: FabricObject[] = [];
+      
+      // Clean up existing grid
+      gridObjectsRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      
+      // Create vertical grid lines
+      for (let x = 0; x <= canvasWidth; x += gridSize) {
+        const isLargeLine = x % largeGridSize === 0;
+        const line = new fabric.Line([x, 0, x, canvasHeight], {
+          stroke: isLargeLine ? largeGridColor : gridColor,
+          strokeWidth: isLargeLine ? 1 : 0.5,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          visible: isVisible
+        } as any);
+        
+        canvas.add(line);
+        objects.push(line);
       }
-    }, 2000);
-    
-    // Periodic check every 5 seconds
-    const intervalCheck = setInterval(() => {
-      if (canvas && mountedRef.current) {
-        ensureGridVisibility(canvas);
+      
+      // Create horizontal grid lines
+      for (let y = 0; y <= canvasHeight; y += gridSize) {
+        const isLargeLine = y % largeGridSize === 0;
+        const line = new fabric.Line([0, y, canvasWidth, y], {
+          stroke: isLargeLine ? largeGridColor : gridColor,
+          strokeWidth: isLargeLine ? 1 : 0.5,
+          selectable: false,
+          evented: false,
+          objectType: 'grid',
+          visible: isVisible
+        } as any);
+        
+        canvas.add(line);
+        objects.push(line);
       }
-    }, 5000);
-    
-    return () => {
-      clearTimeout(initialCheck);
-      clearInterval(intervalCheck);
+      
+      // Send grid to back
+      objects.forEach(obj => {
+        canvas.sendToBack(obj);
+      });
+      
+      gridObjectsRef.current = objects;
+      canvas.requestRenderAll();
     };
-  }, [canvas, mountedRef]);
-
-  const toggleGridDebug = (showGridDebug: boolean) => {    
+    
+    // Create grid on startup
+    createGrid();
+    
+    // Handle canvas resize
+    const handleResize = () => {
+      createGrid();
+    };
+    
+    // Add event listener safely
+    addCanvasEvent(canvas, 'resize', handleResize);
+    
+    // Clean up
+    return () => {
+      // Clean up existing grid
+      gridObjectsRef.current.forEach(obj => {
+        if (canvas.contains(obj)) {
+          canvas.remove(obj);
+        }
+      });
+      
+      // Remove event listener safely
+      removeCanvasEvent(canvas, 'resize', handleResize);
+    };
+  }, [canvas, gridSize, gridColor, largeGridSize, largeGridColor, isVisible]);
+  
+  // Toggle grid visibility
+  const toggleGrid = () => {
+    setIsVisible(prev => !prev);
+    
+    gridObjectsRef.current.forEach(obj => {
+      obj.set('visible', !isVisible);
+    });
+    
     if (canvas) {
-      // Toggle grid visibility based on showGridDebug state
-      setGridVisibility(canvas, !showGridDebug);
-      toast.info(showGridDebug ? "Grid debug hidden" : "Grid debug visible");
+      canvas.requestRenderAll();
     }
   };
   
-  const handleForceRefresh = (
-    canvas: FabricCanvas | null, 
-    setForceRefreshKey: React.Dispatch<React.SetStateAction<number>>
-  ) => {
+  // Show grid
+  const showGrid = () => {
+    if (isVisible) return;
+    
+    setIsVisible(true);
+    
+    gridObjectsRef.current.forEach(obj => {
+      obj.set('visible', true);
+    });
+    
     if (canvas) {
-      toast.info("Forcing grid recreation...");
-      forceGridCreationAndVisibility(canvas);
-    } else {
-      // If no canvas, force complete component refresh
-      toast.info("Forcing complete refresh...");
-      setForceRefreshKey(prev => prev + 1);
+      canvas.requestRenderAll();
     }
   };
-
-  return {
-    toggleGridDebug,
-    handleForceRefresh
+  
+  // Hide grid
+  const hideGrid = () => {
+    if (!isVisible) return;
+    
+    setIsVisible(false);
+    
+    gridObjectsRef.current.forEach(obj => {
+      obj.set('visible', false);
+    });
+    
+    if (canvas) {
+      canvas.requestRenderAll();
+    }
   };
-};
+  
+  return {
+    isVisible,
+    toggleGrid,
+    showGrid,
+    hideGrid,
+    gridObjects: gridObjectsRef.current
+  };
+}

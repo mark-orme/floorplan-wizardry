@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 // Import from our adapter to avoid case sensitivity issues
 import { FloorPlan, isFloorPlan } from '@/utils/floorPlanTypeAdapter';
