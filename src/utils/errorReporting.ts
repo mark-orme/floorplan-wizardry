@@ -5,7 +5,7 @@
  */
 
 import { toast } from 'sonner';
-import React, { Component, ErrorInfo } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 export enum ErrorSeverity {
   LOW = 'low',
@@ -62,6 +62,16 @@ export function reportError(error: Error | string, options: ErrorOptions = {}) {
   return errorObject;
 }
 
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
 /**
  * Create an error boundary for catching React component errors
  */
@@ -69,10 +79,7 @@ export function createErrorBoundary(
   ComponentToWrap: React.ComponentType<any>,
   options: ErrorOptions = {}
 ) {
-  return class ErrorBoundary extends Component<
-    any,
-    { hasError: boolean; error: Error | null }
-  > {
+  return class ErrorBoundary extends Component<any, ErrorBoundaryState> {
     constructor(props: any) {
       super(props);
       this.state = { hasError: false, error: null };
