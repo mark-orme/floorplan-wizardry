@@ -1,6 +1,13 @@
 {
+  "extends": "./tsconfig.json.recommended",
   "compilerOptions": {
-  "types": ["node","react","react-dom"],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "vite/client",
+      "vitest/globals"
+    ],
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "node",
@@ -11,11 +18,8 @@
       "@/*": ["src/*"]
     },
     "skipLibCheck": true,
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    "allowJs": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/tests", "node_modules"]
 }
