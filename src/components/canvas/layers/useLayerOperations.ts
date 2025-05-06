@@ -43,9 +43,14 @@ export const useLayerOperations = ({
     const layerToDelete = layers.find(layer => layer.id === layerId);
     if (!layerToDelete) return;
     
-    layerToDelete.objects.forEach(obj => {
-      canvas.remove(obj);
-    });
+    // Make sure we safely access objects array
+    if (layerToDelete.objects && Array.isArray(layerToDelete.objects)) {
+      layerToDelete.objects.forEach(obj => {
+        if (obj) {
+          canvas.remove(obj);
+        }
+      });
+    }
     
     setLayers(prevLayers => prevLayers.filter(layer => layer.id !== layerId));
     
@@ -61,4 +66,3 @@ export const useLayerOperations = ({
 
   return { createNewLayer, deleteLayer };
 };
-

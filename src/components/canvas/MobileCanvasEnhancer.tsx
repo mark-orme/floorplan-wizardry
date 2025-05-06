@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import logger from '@/utils/logger';
@@ -46,7 +47,7 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
       }
       
       // Update event listener types
-      const addPassiveListener = (element: HTMLElement, event: string, handler: (e: TouchEvent | MouseEvent) => void) => {
+      const addPassiveListener = (element: HTMLElement, event: string, handler: EventListener) => {
         element.addEventListener(event, handler, { passive: false });
         
         return () => {
@@ -55,7 +56,7 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
       };
       
       // Prevent page scrolling when interacting with canvas
-      const preventScroll = (e: TouchEvent) => {
+      const preventScroll = (e: Event) => {
         if (e.target === canvas.upperCanvasEl) {
           e.preventDefault();
         }
@@ -66,8 +67,8 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
       
       if (canvas.wrapperEl) {
         removeListeners.push(
-          addPassiveListener(canvas.wrapperEl, 'touchstart', preventScroll),
-          addPassiveListener(canvas.wrapperEl, 'touchmove', preventScroll)
+          addPassiveListener(canvas.wrapperEl, 'touchstart', preventScroll as EventListener),
+          addPassiveListener(canvas.wrapperEl, 'touchmove', preventScroll as EventListener)
         );
       }
       

@@ -1,8 +1,17 @@
 
 import React, { useCallback } from 'react';
 import { ListChildComponentProps, FixedSizeList } from 'react-window-mock';
-import { Eye, EyeOff, Lock, Unlock, Trash2 } from '@/components/ui/icons';
-import { VirtualizedLayerListProps } from '@/types/drawing/LayerTypes';
+import { DrawingLayer } from '@/components/canvas/types/DrawingLayer';
+
+export interface VirtualizedLayerListProps {
+  layers: DrawingLayer[];
+  activeLayerId: string;
+  onLayerClick: (layerId: string) => void;
+  onToggleVisibility: (layerId: string) => void;
+  onToggleLock: (layerId: string) => void;
+  onDeleteLayer: (layerId: string) => void;
+  listHeight: number;
+}
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   layers,
@@ -13,8 +22,11 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   onDeleteLayer,
   listHeight
 }) => {
-  const renderLayer = React.useCallback(({ index, style }) => {
+  const renderLayer = useCallback(({ index, style }: { index: number, style: React.CSSProperties }) => {
     const layer = layers[index];
+    
+    // Add null check to ensure layer is defined
+    if (!layer) return null;
     
     return (
       <div 
@@ -28,7 +40,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
           className="p-1 rounded hover:bg-gray-200"
           title={layer.visible ? 'Hide layer' : 'Show layer'}
         >
-          {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+          {layer.visible ? 'Eye Icon' : 'EyeOff Icon'}
         </button>
         
         <button
@@ -36,7 +48,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
           className="p-1 rounded hover:bg-gray-200"
           title={layer.locked ? 'Unlock layer' : 'Lock layer'}
         >
-          {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
+          {layer.locked ? 'Lock Icon' : 'Unlock Icon'}
         </button>
         
         <div 
@@ -52,7 +64,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
             className="p-1 rounded hover:bg-red-100 hover:text-red-600"
             title="Delete layer"
           >
-            <Trash2 size={14} />
+            {'Trash Icon'}
           </button>
         )}
       </div>

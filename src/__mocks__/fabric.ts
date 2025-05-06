@@ -4,18 +4,37 @@
  * SAFE FOR ES5-ONLY ENVIRONMENT
  */
 
+// Define basic interfaces for the mock
+interface CanvasOptions {
+  width?: number;
+  height?: number;
+  selection?: boolean;
+}
+
+interface BrushOptions {
+  width?: number;
+  color?: string;
+}
+
+interface LineOptions {
+  stroke?: string;
+  strokeWidth?: number;
+  selectable?: boolean;
+  evented?: boolean;
+}
+
 // Mock Canvas class
 export class Canvas {
-  width;
-  height;
-  selection;
-  isDrawingMode;
-  defaultCursor;
-  hoverCursor;
-  freeDrawingBrush;
-  _objects;
+  width: number;
+  height: number;
+  selection: boolean;
+  isDrawingMode: boolean;
+  defaultCursor: string;
+  hoverCursor: string;
+  freeDrawingBrush: PencilBrush;
+  _objects: Array<any>;
 
-  constructor(element, options) {
+  constructor(element: string | HTMLElement, options?: CanvasOptions) {
     this.width = options && options.width || 600;
     this.height = options && options.height || 400;
     this.selection = options && typeof options.selection !== "undefined" ? options.selection : true;
@@ -26,14 +45,14 @@ export class Canvas {
     this.freeDrawingBrush = new PencilBrush(this);
   }
 
-  add() {
+  add(): Canvas {
     for (var i = 0; i < arguments.length; i++) {
       this._objects.push(arguments[i]);
     }
     return this;
   }
 
-  remove() {
+  remove(): Canvas {
     for (var i = 0; i < arguments.length; i++) {
       var obj = arguments[i];
       var index = this._objects.indexOf(obj);
@@ -44,7 +63,7 @@ export class Canvas {
     return this;
   }
 
-  contains(object) {
+  contains(object: any): boolean {
     // Use regular for loop for compatibility; avoid .includes
     for (var i = 0; i < this._objects.length; i++) {
       if (this._objects[i] === object) return true;
@@ -52,7 +71,7 @@ export class Canvas {
     return false;
   }
 
-  getObjects() {
+  getObjects(): Array<any> {
     // shallow copy using a loop (no .slice or .from)
     var copy = [];
     for (var i = 0; i < this._objects.length; i++) {
@@ -61,7 +80,7 @@ export class Canvas {
     return copy;
   }
 
-  getActiveObjects() {
+  getActiveObjects(): Array<any> {
     var active = [];
     for (var i = 0; i < this._objects.length; i++) {
       if (this._objects[i].activeOn) active.push(this._objects[i]);
@@ -69,32 +88,32 @@ export class Canvas {
     return active;
   }
 
-  discardActiveObject() {
+  discardActiveObject(): Canvas {
     for (var i = 0; i < this._objects.length; i++) {
       this._objects[i].activeOn = false;
     }
     return this;
   }
 
-  getElement() {
+  getElement(): Record<string, any> {
     // cannot use document.createElement here, but pretend API is available
     return {};
   }
 
-  getPointer(event) {
+  getPointer(event?: MouseEvent | TouchEvent): { x: number, y: number } {
     // Return mock coordinates
-    return { x: (event && event.clientX) || 100, y: (event && event.clientY) || 100 };
+    return { x: (event && 'clientX' in event && event.clientX) || 100, y: (event && 'clientY' in event && event.clientY) || 100 };
   }
 
-  setZoom() { return this; }
-  getZoom() { return 1; }
-  sendObjectToBack(object) { return this; }
-  renderAll() {}
-  requestRenderAll() {}
-  dispose() {}
+  setZoom(): Canvas { return this; }
+  getZoom(): number { return 1; }
+  sendObjectToBack(object: any): Canvas { return this; }
+  renderAll(): void {}
+  requestRenderAll(): void {}
+  dispose(): void {}
 
   // Removed all Promise usage
-  withImplementation(callback) {
+  withImplementation(callback?: Function): void {
     // Just directly call the callback, no async/Promise support
     if (callback && typeof callback === "function") {
       callback();
@@ -104,11 +123,11 @@ export class Canvas {
 
 // Mock PencilBrush class
 export class PencilBrush {
-  width;
-  color;
-  canvas;
+  width: number;
+  color: string;
+  canvas: Canvas;
 
-  constructor(canvas) {
+  constructor(canvas: Canvas) {
     this.width = 1;
     this.color = "#000000";
     this.canvas = canvas;
@@ -117,10 +136,17 @@ export class PencilBrush {
 
 // Mock Line class
 export class Line {
-  x1; y1; x2; y2;
-  stroke; strokeWidth; selectable; evented; activeOn;
+  x1: number; 
+  y1: number; 
+  x2: number; 
+  y2: number;
+  stroke: string; 
+  strokeWidth: number; 
+  selectable: boolean; 
+  evented: boolean; 
+  activeOn: boolean;
 
-  constructor(points, options) {
+  constructor(points: number[], options?: LineOptions) {
     this.x1 = points[0] || 0;
     this.y1 = points[1] || 0;
     this.x2 = points[2] || 0;
@@ -132,11 +158,11 @@ export class Line {
     this.activeOn = false;
   }
 
-  set(options) {
+  set(options: Record<string, any>): Line {
     if (options) {
       for (var key in options) {
         if (Object.prototype.hasOwnProperty.call(options, key)) {
-          this[key] = options[key];
+          this[key as keyof this] = options[key];
         }
       }
     }
@@ -145,4 +171,3 @@ export class Line {
 }
 
 export const Object = { prototype: {} };
-

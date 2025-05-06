@@ -4,6 +4,13 @@ import { Canvas as FabricCanvas } from "fabric";
 import { DebugInfoState } from "@/types/drawingTypes";
 import { captureMessage } from "@/utils/sentryUtils";
 
+interface UseCanvasControllerLoaderProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  debugInfo: DebugInfoState;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string>>;
+}
+
 /**
  * Canvas controller loader hook
  * Handles loading and error states for the canvas controller
@@ -13,7 +20,7 @@ export const useCanvasControllerLoader = ({
   debugInfo,
   setDebugInfo,
   setErrorMessage
-}) => {
+}: UseCanvasControllerLoaderProps) => {
   const canvasDimensions = { width: 800, height: 600 };
   const historyRef = useRef({ past: [], future: [] });
   
