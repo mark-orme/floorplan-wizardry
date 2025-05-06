@@ -1,3 +1,4 @@
+
 /** @ts-nocheck */
 // This file is a mock implementation of fabric.js for testing purposes
 // TypeScript checking is disabled to avoid adding type annotations to test code
@@ -72,7 +73,7 @@ const fabric = {
     constructor() {
       this.set = jest.fn();
       this.get = jest.fn();
-      this toObject = jest.fn();
+      this.toObject = jest.fn();
     }
     set() { }
     get() { }
