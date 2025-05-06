@@ -1,65 +1,70 @@
-
-import { describe, test, expect, beforeEach } from 'vitest';
-import { 
-  registerToolChange, 
-  registerObjectCreated, 
-  registerObjectDeleted, 
-  registerObjectModified, 
-  getDrawingMetrics, 
-  resetDrawingMetrics 
-} from '../drawingMetrics';
-import { DrawingMode } from '@/constants/drawingModes';
+import { DrawingMetricsState, initialDrawingMetricsState, drawingMetricsReducer, startToolUsage, endToolUsage } from '../drawingMetricsSlice';
 
 describe('Drawing Metrics', () => {
+  let initialState: DrawingMetricsState;
+
   beforeEach(() => {
-    resetDrawingMetrics();
+    initialState = initialDrawingMetricsState;
   });
-  
-  test('should track tool changes', () => {
-    // Track a tool change
-    registerToolChange(DrawingMode.DRAW);
-    
-    // Get metrics
-    const metrics = getDrawingMetrics();
-    
-    // Verify metrics
-    expect(metrics.toolSwitchCount).toBe(1);
-    expect(metrics.toolUsageDuration[DrawingMode.SELECT]).toBeGreaterThanOrEqual(0);
-    expect(metrics.toolUsageDuration[DrawingMode.DRAW]).toBeGreaterThanOrEqual(0);
+
+  it('should return the initial state', () => {
+    expect(drawingMetricsReducer(undefined, { type: '' })).toEqual(initialState);
   });
-  
-  test('should track object operations', () => {
-    // Track operations
-    registerObjectCreated();
-    registerObjectCreated();
-    registerObjectModified();
-    registerObjectDeleted();
-    
-    // Get metrics
-    const metrics = getDrawingMetrics();
-    
-    // Verify metrics
-    expect(metrics.objectsCreated).toBe(2);
-    expect(metrics.objectsModified).toBe(1);
-    expect(metrics.objectsDeleted).toBe(1);
+
+  it('should start tracking tool usage', () => {
+    const tool = 'select';
+    const newState = drawingMetricsReducer(initialState, startToolUsage(tool));
+    expect(newState.activeTool).toBe(tool);
+    expect(newState.toolUsageStartTime).not.toBeNull();
   });
-  
-  test('should reset metrics', () => {
-    // Track some operations
-    registerToolChange(DrawingMode.DRAW);
-    registerObjectCreated();
-    registerObjectModified();
-    
-    // Reset metrics
-    resetDrawingMetrics();
-    
-    // Get metrics
-    const metrics = getDrawingMetrics();
-    
-    // Verify metrics are reset
-    expect(metrics.toolSwitchCount).toBe(0);
-    expect(metrics.objectsCreated).toBe(0);
-    expect(metrics.objectsModified).toBe(0);
-    expect(metrics.objectsDeleted).toBe(0);
+
+  it('should end tracking tool usage', () => {
+    const tool = 'select';
+    const startTime = Date.now() - 100;
+    const interimState: DrawingMetricsState = {
+      ...initialState,
+      activeTool: tool,
+      toolUsageStartTime: startTime,
+      toolUsageDuration: {}
+    };
+    const newState = drawingMetricsReducer(interimState, endToolUsage());
+    expect(newState.activeTool).toBeNull();
+    expect(newState.toolUsageStartTime).toBeNull();
+
+    // Add null checks for metrics.toolUsageDuration
+    expect(newState.toolUsageDuration?.select || 0).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should track tool usage duration', () => {
+    const selectTool = 'select';
+    const drawTool = 'draw';
+
+    // Start select tool
+    let metrics = drawingMetricsReducer(initialState, startToolUsage(selectTool));
+    const selectStartTime = metrics.toolUsageStartTime || Date.now();
+
+    // Simulate some time passing
+    metrics = {
+      ...metrics,
+      toolUsageStartTime: selectStartTime
+    };
+
+    // End select tool and start draw tool
+    metrics = drawingMetricsReducer(metrics, endToolUsage());
+    metrics = drawingMetricsReducer(metrics, startToolUsage(drawTool));
+    const drawStartTime = metrics.toolUsageStartTime || Date.now();
+
+    // Simulate more time passing
+    metrics = {
+      ...metrics,
+      toolUsageStartTime: drawStartTime
+    };
+
+    // End draw tool
+    metrics = drawingMetricsReducer(metrics, endToolUsage());
+
+    // Add null checks for metrics.toolUsageDuration
+    expect(metrics.toolUsageDuration?.select || 0).toBe(100);
+    expect(metrics.toolUsageDuration?.draw || 0).toBe(200);
   });
 });

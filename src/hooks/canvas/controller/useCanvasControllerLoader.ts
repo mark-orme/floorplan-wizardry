@@ -39,8 +39,8 @@ export const useCanvasControllerLoader = ({
   };
   
   // Handle errors
-  const handleError = (error: Error, operation: string) => {
-    const errorMessage = `Canvas ${operation} error: ${error.message}`;
+  const handleError = (error: Error, operation: string = '') => {
+    const errorMessage = `Canvas ${operation ? `(${operation})` : ''}: ${error.message}`;
     logError(errorMessage);
     setErrorMessage(errorMessage);
     setDebugInfo(prev => ({

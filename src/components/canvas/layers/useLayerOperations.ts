@@ -46,7 +46,7 @@ export const useLayerOperations = ({
     // Make sure we safely access objects array
     if (layerToDelete.objects && Array.isArray(layerToDelete.objects)) {
       layerToDelete.objects.forEach(obj => {
-        if (obj) {
+        if (obj && canvas) {
           canvas.remove(obj);
         }
       });
@@ -61,7 +61,9 @@ export const useLayerOperations = ({
       }
     }
     
-    canvas.requestRenderAll();
+    if (canvas) {
+      canvas.requestRenderAll();
+    }
   }, [fabricCanvasRef, layers, activeLayerId, setLayers, setActiveLayerId]);
 
   return { createNewLayer, deleteLayer };

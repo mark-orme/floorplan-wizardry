@@ -1,48 +1,31 @@
-
 import React from 'react';
-import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LineThicknessSliderProps {
-  currentValue: number;
-  onValueChange: (value: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
+  value: number;
+  onChange: (value: number) => void;
 }
 
-export const LineThicknessSlider: React.FC<LineThicknessSliderProps> = ({
-  currentValue,
-  onValueChange,
-  min = 1,
-  max = 10,
-  step = 1
-}) => {
-  const handleValueChange = (values: number[]) => {
-    if (values.length > 0) {
-      onValueChange(values[0]);
-    }
+export const LineThicknessSlider = ({ value, onChange }: LineThicknessSliderProps) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(event.target.value, 10);
+    onChange(newValue || 1); // Provide a default value if undefined
   };
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center space-x-2 w-24">
-            <Slider
-              value={[currentValue]}
-              min={min}
-              max={max}
-              step={step}
-              onValueChange={handleValueChange}
-              aria-label="Line Thickness"
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Line Thickness</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="flex items-center">
+      <label htmlFor="lineThickness" className="mr-2 text-sm">
+        Thickness:
+      </label>
+      <input
+        type="range"
+        id="lineThickness"
+        min="1"
+        max="20"
+        value={value}
+        onChange={handleChange}
+        className="w-24"
+      />
+      <span className="ml-2 text-sm">{value}</span>
+    </div>
   );
 };

@@ -46,15 +46,6 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
         canvas.freeDrawingBrush.width = originalWidth * 1.5; // Slightly thicker for touch
       }
       
-      // Update event listener types
-      const addPassiveListener = (element: HTMLElement, event: string, handler: EventListener) => {
-        element.addEventListener(event, handler, { passive: false });
-        
-        return () => {
-          element.removeEventListener(event, handler);
-        };
-      };
-      
       // Prevent page scrolling when interacting with canvas
       const preventScroll = (e: Event) => {
         if (e.target === canvas.upperCanvasEl) {
@@ -62,13 +53,32 @@ export const MobileCanvasEnhancer: React.FC<MobileCanvasEnhancerProps> = ({ canv
         }
       };
       
-      // Apply passive listeners
+      // Apply event listeners with proper type handling
       const removeListeners: Array<() => void> = [];
       
       if (canvas.wrapperEl) {
+        // Handle touchstart
+        const handleTouchStart = (e: TouchEvent) => {
+          if (e.target === canvas.upperCanvasEl) {
+            e.preventDefault();
+          }
+        };
+        
+        // Handle touchmove
+        const handleTouchMove = (e: TouchEvent) => {
+          if (e.target === canvas.upperCanvasEl) {
+            e.preventDefault();
+          }
+        };
+        
+        // Add event listeners with proper types
+        canvas.wrapperEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.wrapperEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+        
+        // Setup cleanup function
         removeListeners.push(
-          addPassiveListener(canvas.wrapperEl, 'touchstart', preventScroll as EventListener),
-          addPassiveListener(canvas.wrapperEl, 'touchmove', preventScroll as EventListener)
+          () => canvas.wrapperEl?.removeEventListener('touchstart', handleTouchStart),
+          () => canvas.wrapperEl?.removeEventListener('touchmove', handleTouchMove)
         );
       }
       

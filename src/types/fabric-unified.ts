@@ -42,8 +42,8 @@ export interface MeasurementData {
   units?: string;
   precision?: number;
   formatted?: string;
-  snapped?: boolean; // Added missing property
-  unit?: string; // Added missing property
+  snapped: boolean; // Changed from optional to required
+  unit: string; // Changed from optional to required
 }
 
 // Unified fabric object types

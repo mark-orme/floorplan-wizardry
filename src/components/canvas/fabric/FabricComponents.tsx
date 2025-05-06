@@ -2,32 +2,7 @@
 import React from 'react';
 import { Canvas, Object as FabricObject } from 'fabric';
 import { Point } from '@/types/fabric-unified';
-
-// Define proper interfaces for Fabric objects
-export interface IObjectOptions {
-  left?: number;
-  top?: number;
-  width?: number;
-  height?: number;
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  selectable?: boolean;
-  evented?: boolean;
-  objectCaching?: boolean;
-  objectType?: string;
-}
-
-export interface IPathOptions extends IObjectOptions {
-  path?: string | Point[];
-}
-
-export interface ILineOptions extends IObjectOptions {
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
-}
+import type { IObjectOptions, IPathOptions } from 'fabric/fabric-impl';
 
 // Fabric Components as React wrappers
 interface FabricCanvasProps {
@@ -72,7 +47,7 @@ export const FabricCanvas: React.FC<FabricCanvasProps> = ({
 };
 
 interface FabricPathProps {
-  path: string | Point[];
+  path: string | { x: number; y: number }[];
   options?: IPathOptions;
 }
 
@@ -84,7 +59,8 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
     
     // Use window.fabric to safely access fabric
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
-      const pathObj = new window.fabric.Path(path, options || {});
+      const fabricPath = typeof path === 'string' ? path : pathToString(path);
+      const pathObj = new window.fabric.Path(fabricPath, options || {});
       canvas.add(pathObj);
       
       return () => {
@@ -94,6 +70,16 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
   }, [canvas, path, options]);
   
   return null;
+};
+
+// Helper function to convert Point[] to SVG path string
+const pathToString = (points: { x: number; y: number }[]): string => {
+  if (!points.length) return '';
+  let result = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    result += ` L ${points[i].x} ${points[i].y}`;
+  }
+  return result;
 };
 
 interface FabricGroupProps {
@@ -109,17 +95,16 @@ export const FabricGroup: React.FC<FabricGroupProps> = ({ objects, options }) =>
     
     // Use window.fabric to safely access fabric
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
-      // Convert objects if needed to ensure compatibility
-      const compatibleObjects = objects.map(obj => ({
-        ...obj,
-        toObject: obj.toObject || (() => ({}))
-      }));
-      
-      const group = new window.fabric.Group(compatibleObjects as any[], options || {});
-      canvas.add(group);
+      // Convert objects to ensure compatibility
+      const group = new window.fabric.Group(objects, options || {});
+      if (canvas) {
+        canvas.add(group);
+      }
       
       return () => {
-        canvas.remove(group);
+        if (canvas) {
+          canvas.remove(group);
+        }
       };
     }
   }, [canvas, objects, options]);

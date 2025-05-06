@@ -82,17 +82,4 @@ export const DRAWING_CONSTANTS = {
   ...DRAWING_STYLES
 };
 
-// Export individual constants for direct access as well
-export {
-  DEFAULT_STROKE_COLOR,
-  DEFAULT_STROKE_WIDTH,
-  DEFAULT_FILL,
-  DEFAULT_OPACITY,
-  DEFAULT_LINE_CAP,
-  DEFAULT_LINE_JOIN,
-  WALL_STROKE_COLOR,
-  WALL_STROKE_WIDTH,
-  WALL_FILL
-};
-
 export default DRAWING_CONSTANTS;

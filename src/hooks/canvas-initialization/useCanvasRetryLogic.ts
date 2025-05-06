@@ -1,107 +1,105 @@
-/**
- * Hook for managing canvas initialization retry logic
- * @module useCanvasRetryLogic
- */
-import { useRef, useCallback } from "react";
-import logger from "@/utils/logger";
+import { useState, useEffect, useRef } from 'react';
 
-interface RetryAttemptStatus {
-  shouldContinue: boolean;
-  isMaxAttemptsReached: boolean;
-  isCycleDetected: boolean;
+interface RetryOptions {
+  maxRetries?: number;
+  baseDelay?: number;
+}
+
+interface RetryState {
+  count?: number;
+  delay?: number;
+  error?: Error | null;
 }
 
 /**
- * Hook to handle canvas initialization retry logic
- * Prevents infinite retry loops and tracks initialization attempts
+ * Hook for implementing retry logic with exponential backoff
+ * @param initialize - Function to initialize the resource
+ * @param options - Retry options
+ * @returns Object containing retry state and control functions
  */
-export const useCanvasRetryLogic = () => {
-  const MAX_RETRY_ATTEMPTS = 5;
-  const attemptsRef = useRef<number>(0);
-  const lastTimestampsRef = useRef<number[]>([]);
-  const cycleDetectedRef = useRef<boolean>(false);
+export const useCanvasRetryLogic = <T>(
+  initialize: () => Promise<T>,
+  options: RetryOptions = {}
+) => {
+  const [retryState, setRetryState] = useState<RetryState>({
+    count: 0,
+    delay: options.baseDelay || 1000,
+    error: null
+  });
   
-  /**
-   * Check if initialization attempts show a cycle pattern
-   */
-  const isCycleDetected = useCallback((): boolean => {
-    return cycleDetectedRef.current;
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  
+  const retryOptions = useRef(options);
+  
+  useEffect(() => {
+    retryOptions.current = options;
+  }, [options]);
+  
+  const initializeResource = async () => {
+    setIsLoading(true);
+    setRetryState(prev => ({ ...prev, error: null }));
+    
+    try {
+      const result = await initialize();
+      setData(result);
+      setIsReady(true);
+      setIsLoading(false);
+      setRetryState({ count: 0, delay: retryOptions.current.baseDelay || 1000, error: null });
+    } catch (error: any) {
+      setIsReady(false);
+      setIsLoading(false);
+      setRetryState(prev => ({ ...prev, error: error instanceof Error ? error : new Error(String(error)) }));
+    }
+  };
+  
+  useEffect(() => {
+    initializeResource();
   }, []);
   
-  /**
-   * Reset all initialization tracking state
-   */
-  const resetInitializationTracking = useCallback((): void => {
-    attemptsRef.current = 0;
-    lastTimestampsRef.current = [];
-    cycleDetectedRef.current = false;
-    logger.info("Initialization tracking reset");
-  }, []);
+  useEffect(() => {
+    if (retryState.error && retryState.count !== undefined && retryOptions.current.maxRetries !== undefined) {
+      if (retryState.count >= retryOptions.current.maxRetries) {
+        console.error('Max retries reached');
+        return;
+      }
+      
+      const timeoutId = setTimeout(() => {
+        setRetryState(prev => ({
+          count: (prev.count || 0) + 1,
+          delay: prev.delay ? prev.delay * 2 : retryOptions.current.baseDelay || 1000,
+          error: null
+        }));
+        
+        initializeResource();
+      }, retryState.delay);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [retryState.error, retryState.count, retryState.delay, retryOptions.current.maxRetries]);
   
-  /**
-   * Track an initialization attempt and determine if we should continue trying
-   * @returns Status of the attempt and whether to continue
-   */
-  const trackInitializationAttempt = useCallback((): RetryAttemptStatus => {
-    // Track this attempt
-    attemptsRef.current += 1;
-    const now = Date.now();
-    lastTimestampsRef.current.push(now);
-    
-    // Keep only the last 10 timestamps
-    if (lastTimestampsRef.current.length > 10) {
-      lastTimestampsRef.current = lastTimestampsRef.current.slice(-10);
-    }
-    
-    // Check for a cycle (rapid consecutive attempts)
-    if (lastTimestampsRef.current.length >= 3) {
-      const timestamps = lastTimestampsRef.current;
-      const intervals = [];
-      
-      for (let i = 1; i < timestamps.length; i++) {
-        intervals.push(timestamps[i] - timestamps[i-1]);
-      }
-      
-      // If we have at least 3 very similar intervals (within 100ms), that's a cycle
-      let similarIntervals = 0;
-      for (let i = 1; i < intervals.length; i++) {
-        if (Math.abs(intervals[i] - intervals[i-1]) < 100) {
-          similarIntervals++;
-        }
-      }
-      
-      if (similarIntervals >= 2) {
-        logger.warn("Initialization cycle detected!");
-        cycleDetectedRef.current = true;
-        return {
-          shouldContinue: false,
-          isMaxAttemptsReached: false,
-          isCycleDetected: true
-        };
+  const handleRetry = () => {
+    if (retryState && retryState.count !== undefined && retryOptions.current && retryOptions.current.maxRetries !== undefined) {
+      if (retryState.count >= retryOptions.current.maxRetries) {
+        console.warn('Max retries reached');
+        return;
       }
     }
     
-    // Check max attempts
-    if (attemptsRef.current > MAX_RETRY_ATTEMPTS) {
-      logger.warn(`Max initialization attempts (${MAX_RETRY_ATTEMPTS}) reached`);
-      return {
-        shouldContinue: false,
-        isMaxAttemptsReached: true,
-        isCycleDetected: false
-      };
+    if (retryState && retryState.delay !== undefined && retryOptions.current && retryOptions.current.baseDelay !== undefined) {
+      const newDelay = retryOptions.current.baseDelay || 1000;
+      setRetryState(prev => ({ ...prev, delay: newDelay }));
     }
     
-    // Otherwise, we can continue attempting
-    return {
-      shouldContinue: true,
-      isMaxAttemptsReached: false,
-      isCycleDetected: false
-    };
-  }, []);
+    initializeResource();
+  };
   
   return {
-    trackInitializationAttempt,
-    resetInitializationTracking,
-    isCycleDetected
+    data,
+    isLoading,
+    isReady,
+    retryState,
+    handleRetry
   };
 };

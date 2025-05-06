@@ -1,12 +1,8 @@
-
-/**
- * Canvas event attachment hook
- * Manages attaching and detaching event handlers to canvas
- * @module hooks/canvas/drawing/useCanvasEventAttachment
- */
 import { useEffect, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
+import { asExtendedCanvas, asExtendedObject } from '@/utils/canvas/canvasTypeUtils';
+import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 
 /**
  * Canvas event handler type
@@ -70,16 +66,24 @@ export const useCanvasEventAttachment = (
       
       // Make sure selection is disabled in drawing modes
       canvas.selection = false;
-      canvas.forEachObject(obj => {
-        obj.selectable = false;
-        obj.evented = false;
+      
+      // Manually handle objects since forEachObject might not be available
+      const objects = canvas.getObjects ? canvas.getObjects() : [];
+      objects.forEach(obj => {
+        // Set properties directly
+        (obj as any).selectable = false;
+        (obj as any).evented = false;
       });
     } else if (canvas) {
       // Re-enable selection in select mode
       canvas.selection = true;
-      canvas.forEachObject(obj => {
-        obj.selectable = true;
-        obj.evented = true;
+      
+      // Manually handle objects since forEachObject might not be available
+      const objects = canvas.getObjects ? canvas.getObjects() : [];
+      objects.forEach(obj => {
+        // Set properties directly
+        (obj as any).selectable = true;
+        (obj as any).evented = true;
       });
     }
     

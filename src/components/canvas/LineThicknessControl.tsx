@@ -1,39 +1,25 @@
-
 import React from 'react';
-import { Slider } from "@/components/ui/slider";
 
 interface LineThicknessControlProps {
-  thickness: number;
-  onChange: (thickness: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
+  value: number;
+  onChange: (value: number) => void;
 }
 
-export const LineThicknessControl: React.FC<LineThicknessControlProps> = ({
-  thickness,
-  onChange,
-  min = 1,
-  max = 10,
-  step = 1
-}) => {
-  const handleChange = (value: number[]) => {
-    onChange(value[0]);
+export const LineThicknessControl = ({ value, onChange }: LineThicknessControlProps) => {
+  const handleChange = (newValue: number) => {
+    onChange(newValue || 1); // Provide a default value if undefined
   };
-
+  
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">Line Thickness</label>
-        <span className="text-sm text-muted-foreground">{thickness}px</span>
-      </div>
-      <Slider
-        value={[thickness]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={handleChange}
-        className="w-full"
+    <div>
+      <label htmlFor="line-thickness">Line Thickness:</label>
+      <input
+        type="number"
+        id="line-thickness"
+        value={value}
+        onChange={(e) => handleChange(parseInt(e.target.value, 10))}
+        min="1"
+        max="20"
       />
     </div>
   );

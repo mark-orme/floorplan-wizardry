@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -85,5 +84,51 @@ export const PencilCalibrationDialog: React.FC<PencilCalibrationDialogProps> = (
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+export const PencilSettingsScreen = () => {
+  const [sensitivity, setSensitivity] = React.useState(50);
+  const [pressure, setPressure] = React.useState(50);
+  
+  const handleSensitivityChange = (newValue: number | undefined) => {
+    setSensitivity(newValue ?? 50); // Use nullish coalescing to provide a default value
+  };
+  
+  const handlePressureChange = (newValue: number | undefined) => {
+    setPressure(newValue ?? 50); // Use nullish coalescing to provide a default value
+  };
+  
+  return (
+    <div>
+      <h1>Pencil Settings</h1>
+      <div>
+        <label className="block text-sm font-medium mb-2">Sensitivity</label>
+        <Slider
+          value={[sensitivity]}
+          onValueChange={(values) => handleSensitivityChange(values[0])}
+          max={100}
+          step={1}
+        />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Low</span>
+          <span>High</span>
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-2">Pressure</label>
+        <Slider
+          value={[pressure]}
+          onValueChange={(values) => handlePressureChange(values[0])}
+          max={100}
+          step={1}
+        />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>Low</span>
+          <span>High</span>
+        </div>
+      </div>
+    </div>
   );
 };

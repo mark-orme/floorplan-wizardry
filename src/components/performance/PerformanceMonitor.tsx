@@ -1,208 +1,88 @@
+import React, { useRef, useEffect } from 'react';
 
-import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-
-interface PerformanceMetrics {
-  fcp: number | null;
-  lcp: number | null;
-  fid: number | null;
-  cls: number | null;
-  ttfb: number | null;
-  fps: number;
-}
-
-interface PerformanceMonitorProps {
-  showToasts?: boolean;
-  performanceBudgets?: {
-    fcp?: number;
-    lcp?: number;
-    fid?: number;
-    cls?: number;
-    ttfb?: number;
-    fps?: number;
-  };
-  onPerformanceViolation?: (metric: string, value: number, budget: number) => void;
-}
-
-/**
- * Performance Monitor Component
- * Tracks core web vitals and performance metrics
- */
-export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
-  showToasts = process.env.NODE_ENV === 'development',
-  performanceBudgets = {
-    fcp: 2000, // 2 seconds
-    lcp: 2500, // 2.5 seconds
-    fid: 100,  // 100ms
-    cls: 0.1,  // 0.1
-    ttfb: 800, // 800ms
-    fps: 30    // 30fps
-  },
-  onPerformanceViolation
-}) => {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>({
-    fcp: null,
-    lcp: null,
-    fid: null,
-    cls: null,
-    ttfb: null,
-    fps: 0
-  });
+export const PerformanceMonitor = () => {
+  const frameRateRef = useRef<HTMLDivElement>(null);
+  const frameTimeRef = useRef<HTMLDivElement>(null);
+  const toolUsageRef = useRef<HTMLDivElement>(null);
+  const averageFrameTimeRef = useRef<HTMLDivElement>(null);
   
-  // Track FPS
+  const metrics = useRef({
+    fps: 0,
+    frameTime: 0,
+    toolUsageDuration: {
+      select: 0,
+      draw: 0
+    }
+  }).current;
+  
   useEffect(() => {
     let frameCount = 0;
     let lastTime = performance.now();
-    let frameId: number;
+    let animationFrameId: number;
     
-    const countFrames = () => {
-      frameCount++;
-      frameId = requestAnimationFrame(countFrames);
-    };
-    
-    // Start counting frames
-    frameId = requestAnimationFrame(countFrames);
-    
-    // Update FPS every second
-    const intervalId = setInterval(() => {
+    const updateFPS = () => {
       const now = performance.now();
-      const elapsed = now - lastTime;
-      const fps = Math.round((frameCount * 1000) / elapsed);
+      const delta = now - lastTime;
+      frameCount++;
       
-      setMetrics(prev => ({ ...prev, fps }));
-      
-      // Check FPS budget
-      if (performanceBudgets.fps && fps < performanceBudgets.fps) {
-        if (onPerformanceViolation) {
-          onPerformanceViolation('fps', fps, performanceBudgets.fps);
+      if (delta >= 1000) {
+        const fps = frameCount;
+        metrics.fps = fps;
+        metrics.frameTime = delta / frameCount;
+        
+        if (frameRateRef.current) {
+          frameRateRef.current.textContent = `${fps} FPS`;
         }
         
-        if (showToasts) {
-          toast.warning(`Low FPS: ${fps}`, {
-            id: 'low-fps',
-            description: `Target: ${performanceBudgets.fps} FPS`
-          });
-        }
+        frameCount = 0;
+        lastTime = now;
       }
       
-      // Reset counters
-      frameCount = 0;
-      lastTime = now;
-    }, 1000);
-    
-    // Track web vitals if available
-    if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      // First Contentful Paint
-      const fcpObserver = new PerformanceObserver(entryList => {
-        const entries = entryList.getEntries();
-        if (entries.length > 0) {
-          const fcp = entries[0].startTime;
-          setMetrics(prev => ({ ...prev, fcp }));
-          
-          // Check FCP budget
-          if (performanceBudgets.fcp && fcp > performanceBudgets.fcp) {
-            if (onPerformanceViolation) {
-              onPerformanceViolation('fcp', fcp, performanceBudgets.fcp);
-            }
-            
-            if (showToasts) {
-              toast.warning(`Slow FCP: ${Math.round(fcp)}ms`, {
-                id: 'slow-fcp',
-                description: `Target: ${performanceBudgets.fcp}ms`
-              });
-            }
-          }
-        }
-      });
-      
-      // Try to observe FCP
-      try {
-        fcpObserver.observe({ type: 'paint', buffered: true });
-      } catch (e) {
-        console.error('Failed to observe FCP:', e);
-      }
-      
-      // Largest Contentful Paint
-      const lcpObserver = new PerformanceObserver(entryList => {
-        const entries = entryList.getEntries();
-        const lastEntry = entries[entries.length - 1];
-        const lcp = lastEntry.startTime;
-        
-        setMetrics(prev => ({ ...prev, lcp }));
-        
-        // Check LCP budget
-        if (performanceBudgets.lcp && lcp > performanceBudgets.lcp) {
-          if (onPerformanceViolation) {
-            onPerformanceViolation('lcp', lcp, performanceBudgets.lcp);
-          }
-          
-          if (showToasts) {
-            toast.warning(`Slow LCP: ${Math.round(lcp)}ms`, {
-              id: 'slow-lcp',
-              description: `Target: ${performanceBudgets.lcp}ms`
-            });
-          }
-        }
-      });
-      
-      // Try to observe LCP
-      try {
-        lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
-      } catch (e) {
-        console.error('Failed to observe LCP:', e);
-      }
-      
-      // TTFB (Time to First Byte)
-      const navigationObserver = new PerformanceObserver(entryList => {
-        const entries = entryList.getEntries();
-        if (entries.length > 0) {
-          const entry = entries[0] as PerformanceNavigationTiming;
-          const ttfb = entry.responseStart;
-          
-          setMetrics(prev => ({ ...prev, ttfb }));
-          
-          // Check TTFB budget
-          if (performanceBudgets.ttfb && ttfb > performanceBudgets.ttfb) {
-            if (onPerformanceViolation) {
-              onPerformanceViolation('ttfb', ttfb, performanceBudgets.ttfb);
-            }
-            
-            if (showToasts) {
-              toast.warning(`Slow TTFB: ${Math.round(ttfb)}ms`, {
-                id: 'slow-ttfb',
-                description: `Target: ${performanceBudgets.ttfb}ms`
-              });
-            }
-          }
-        }
-      });
-      
-      // Try to observe navigation timing
-      try {
-        navigationObserver.observe({ type: 'navigation', buffered: true });
-      } catch (e) {
-        console.error('Failed to observe navigation timing:', e);
-      }
-      
-      // Clean up observers
-      return () => {
-        fcpObserver.disconnect();
-        lcpObserver.disconnect();
-        navigationObserver.disconnect();
-        clearInterval(intervalId);
-        cancelAnimationFrame(frameId);
-      };
-    }
-    
-    // Clean up if no PerformanceObserver
-    return () => {
-      clearInterval(intervalId);
-      cancelAnimationFrame(frameId);
+      animationFrameId = requestAnimationFrame(updateFPS);
     };
-  }, [showToasts, performanceBudgets, onPerformanceViolation]);
+    
+    const calculateAverageFrameTime = () => {
+      const entries = performance.getEntriesByType("frame");
+      const lastEntry = entries[entries.length - 1];
+      if (!lastEntry) return 0; // Return default value if undefined
+      
+      return lastEntry.value || 0; // Return 0 if value is undefined
+    };
+    
+    const updateAverageFrameTime = () => {
+      const avgFrameTime = calculateAverageFrameTime();
+      
+      if (averageFrameTimeRef.current) {
+        averageFrameTimeRef.current.textContent = `${avgFrameTime.toFixed(2)} ms`;
+      }
+    };
+    
+    animationFrameId = requestAnimationFrame(updateFPS);
+    
+    const intervalId = setInterval(updateAverageFrameTime, 500);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      clearInterval(intervalId);
+    };
+  }, []);
   
-  // This component doesn't render anything visible
-  return null;
+  useEffect(() => {
+    const updateToolUsage = () => {
+      if (toolUsageRef.current) {
+        toolUsageRef.current.textContent = `Select: ${metrics.toolUsageDuration.select}ms, Draw: ${metrics.toolUsageDuration.draw}ms`;
+      }
+    };
+    
+    updateToolUsage();
+  }, []);
+  
+  return (
+    <div className="fixed bottom-4 left-4 bg-white p-2 rounded shadow-md text-sm">
+      <div ref={frameRateRef}>FPS: 0</div>
+      <div ref={frameTimeRef}>Frame Time: 0ms</div>
+      <div ref={averageFrameTimeRef}>Avg Frame Time: 0ms</div>
+      <div ref={toolUsageRef}>Tool Usage:</div>
+    </div>
+  );
 };
-
-export default PerformanceMonitor;

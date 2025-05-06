@@ -1,173 +1,177 @@
+/** @ts-nocheck */
+// This file is a mock implementation of fabric.js for testing purposes
+// TypeScript checking is disabled to avoid adding type annotations to test code
 
-/**
- * Mock for fabric.js
- * SAFE FOR ES5-ONLY ENVIRONMENT
- */
-
-// Define basic interfaces for the mock
-interface CanvasOptions {
-  width?: number;
-  height?: number;
-  selection?: boolean;
-}
-
-interface BrushOptions {
-  width?: number;
-  color?: string;
-}
-
-interface LineOptions {
-  stroke?: string;
-  strokeWidth?: number;
-  selectable?: boolean;
-  evented?: boolean;
-}
-
-// Mock Canvas class
-export class Canvas {
-  width: number;
-  height: number;
-  selection: boolean;
-  isDrawingMode: boolean;
-  defaultCursor: string;
-  hoverCursor: string;
-  freeDrawingBrush: PencilBrush;
-  _objects: Array<any>;
-
-  constructor(element: string | HTMLElement, options?: CanvasOptions) {
-    this.width = options && options.width || 600;
-    this.height = options && options.height || 400;
-    this.selection = options && typeof options.selection !== "undefined" ? options.selection : true;
-    this.isDrawingMode = false;
-    this.defaultCursor = "default";
-    this.hoverCursor = "pointer";
-    this._objects = [];
-    this.freeDrawingBrush = new PencilBrush(this);
-  }
-
-  add(): Canvas {
-    for (var i = 0; i < arguments.length; i++) {
-      this._objects.push(arguments[i]);
+const fabric = {
+  Canvas: class {
+    constructor() {
+      this.add = jest.fn();
+      this.remove = jest.fn();
+      this.clear = jest.fn();
+      this.renderAll = jest.fn();
+      this.toDataURL = jest.fn();
+      this.on = jest.fn();
+      this.off = jest.fn();
+      this.getObjects = jest.fn().mockReturnValue([]);
+      this.toJSON = jest.fn().mockReturnValue({});
+      this.loadFromJSON = jest.fn();
+      this.requestRenderAll = jest.fn();
+      this.dispose = jest.fn();
+      this.setActiveObject = jest.fn();
+      this.getActiveObject = jest.fn();
+      this.discardActiveObject = jest.fn();
+      this.viewportTransform = [1, 0, 0, 1, 0, 0];
+      this.getZoom = jest.fn().mockReturnValue(1);
+      this.setZoom = jest.fn();
+      this.absolutePointer = { x: 0, y: 0 };
+      this.relativePointer = { x: 0, y: 0 };
+      this.upperCanvasEl = { style: {} };
+      this.wrapperEl = { classList: { add: jest.fn(), remove: jest.fn() } };
+      this.isDrawingMode = false;
+      this.selection = true;
+      this.freeDrawingBrush = {
+        color: '#000000',
+        width: 1
+      };
     }
-    return this;
-  }
-
-  remove(): Canvas {
-    for (var i = 0; i < arguments.length; i++) {
-      var obj = arguments[i];
-      var index = this._objects.indexOf(obj);
-      if (index !== -1) {
-        this._objects.splice(index, 1);
-      }
+    add() { }
+    remove() { }
+    clear() { }
+    renderAll() { }
+    toDataURL() { }
+    on() { }
+    off() { }
+    getObjects() { return []; }
+    toJSON() { return {}; }
+    loadFromJSON() { }
+    requestRenderAll() { }
+    dispose() { }
+    setActiveObject() { }
+    getActiveObject() { }
+    discardActiveObject() { }
+    getZoom() { return 1; }
+    setZoom() { }
+  },
+  Object: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this.toObject = jest.fn();
+      this.setCoords = jest.fn();
+      this.on = jest.fn();
+      this.off = jest.fn();
     }
-    return this;
-  }
-
-  contains(object: any): boolean {
-    // Use regular for loop for compatibility; avoid .includes
-    for (var i = 0; i < this._objects.length; i++) {
-      if (this._objects[i] === object) return true;
+    set() { }
+    get() { }
+    toObject() { }
+    setCoords() { }
+    on() { }
+    off() { }
+  },
+  Rect: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this toObject = jest.fn();
     }
-    return false;
-  }
-
-  getObjects(): Array<any> {
-    // shallow copy using a loop (no .slice or .from)
-    var copy = [];
-    for (var i = 0; i < this._objects.length; i++) {
-      copy.push(this._objects[i]);
+    set() { }
+    get() { }
+    toObject() { }
+  },
+  Circle: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this.toObject = jest.fn();
     }
-    return copy;
-  }
-
-  getActiveObjects(): Array<any> {
-    var active = [];
-    for (var i = 0; i < this._objects.length; i++) {
-      if (this._objects[i].activeOn) active.push(this._objects[i]);
+    set() { }
+    get() { }
+    toObject() { }
+  },
+  Line: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this.toObject = jest.fn();
+      this.setCoords = jest.fn();
     }
-    return active;
-  }
-
-  discardActiveObject(): Canvas {
-    for (var i = 0; i < this._objects.length; i++) {
-      this._objects[i].activeOn = false;
+    set() { }
+    get() { }
+    toObject() { }
+    setCoords() { }
+  },
+  Textbox: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this.toObject = jest.fn();
     }
-    return this;
-  }
-
-  getElement(): Record<string, any> {
-    // cannot use document.createElement here, but pretend API is available
-    return {};
-  }
-
-  getPointer(event?: MouseEvent | TouchEvent): { x: number, y: number } {
-    // Return mock coordinates
-    return { x: (event && 'clientX' in event && event.clientX) || 100, y: (event && 'clientY' in event && event.clientY) || 100 };
-  }
-
-  setZoom(): Canvas { return this; }
-  getZoom(): number { return 1; }
-  sendObjectToBack(object: any): Canvas { return this; }
-  renderAll(): void {}
-  requestRenderAll(): void {}
-  dispose(): void {}
-
-  // Removed all Promise usage
-  withImplementation(callback?: Function): void {
-    // Just directly call the callback, no async/Promise support
-    if (callback && typeof callback === "function") {
-      callback();
+    set() { }
+    get() { }
+    toObject() { }
+  },
+  Path: class {
+    constructor() {
+      this.set = jest.fn();
+      this.get = jest.fn();
+      this.toObject = jest.fn();
     }
-  }
-}
-
-// Mock PencilBrush class
-export class PencilBrush {
-  width: number;
-  color: string;
-  canvas: Canvas;
-
-  constructor(canvas: Canvas) {
-    this.width = 1;
-    this.color = "#000000";
-    this.canvas = canvas;
-  }
-}
-
-// Mock Line class
-export class Line {
-  x1: number; 
-  y1: number; 
-  x2: number; 
-  y2: number;
-  stroke: string; 
-  strokeWidth: number; 
-  selectable: boolean; 
-  evented: boolean; 
-  activeOn: boolean;
-
-  constructor(points: number[], options?: LineOptions) {
-    this.x1 = points[0] || 0;
-    this.y1 = points[1] || 0;
-    this.x2 = points[2] || 0;
-    this.y2 = points[3] || 0;
-    this.stroke = (options && options.stroke) || "#000000";
-    this.strokeWidth = (options && options.strokeWidth) || 1;
-    this.selectable = (options && typeof options.selectable !== "undefined") ? options.selectable : true;
-    this.evented = (options && typeof options.evented !== "undefined") ? options.evented : true;
-    this.activeOn = false;
-  }
-
-  set(options: Record<string, any>): Line {
-    if (options) {
-      for (var key in options) {
-        if (Object.prototype.hasOwnProperty.call(options, key)) {
-          this[key as keyof this] = options[key];
-        }
-      }
+    set() { }
+    get() { }
+    toObject() { }
+  },
+  Group: class {
+    constructor() {
+      this.add = jest.fn();
+      this.remove = jest.fn();
+      this.clear = jest.fn();
+      this.renderAll = jest.fn();
+      this.toDataURL = jest.fn();
+      this.on = jest.fn();
+      this.off = jest.fn();
+      this.getObjects = jest.fn().mockReturnValue([]);
+      this.toJSON = jest.fn().mockReturnValue({});
+      this.loadFromJSON = jest.fn();
+      this.requestRenderAll = jest.fn();
+      this.dispose = jest.fn();
+      this.setActiveObject = jest.fn();
+      this.getActiveObject = jest.fn();
+      this.discardActiveObject = jest.fn();
     }
-    return this;
-  }
-}
+    add() { }
+    remove() { }
+    clear() { }
+    renderAll() { }
+    toDataURL() { }
+    on() { }
+    off() { }
+    getObjects() { return []; }
+    toJSON() { return {}; }
+    loadFromJSON() { }
+    requestRenderAll() { }
+    dispose() { }
+    setActiveObject() { }
+    getActiveObject() { }
+    discardActiveObject() { }
+  },
+  util: {
+    degreesToRadians: () => { }
+  },
+  Point: class {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+    }
+  },
+  Intersection: {
+    intersectLineLine: () => {
+      return { status: 'Intersection' };
+    },
+    intersectPathPath: () => {
+      return { status: 'Intersection' };
+    }
+  },
+  version: '6.0.0'
+};
 
-export const Object = { prototype: {} };
+export default fabric;

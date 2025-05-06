@@ -1,126 +1,65 @@
-
 import React from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingTools } from '@/components/toolbar/DrawingTools';
-import { StyleOptions } from '@/components/toolbar/StyleOptions';
-import { CanvasActions } from '@/components/toolbar/CanvasActions';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
-// Define StyleOptionsProps interface to match the component's expectations
-export interface StyleOptionsProps {
-  color?: string;
-  lineColor?: string;
-  onColorChange?: (color: string) => void;
-  thickness?: number;
-  lineThickness?: number;
-  onThicknessChange?: (thickness: number) => void;
-  minThickness?: number;
-  maxThickness?: number;
-}
-
-export interface DrawingToolbarProps {
-  /** Active drawing tool */
-  activeTool?: DrawingMode;
-  /** Current line color */
-  lineColor?: string;
-  /** Current line thickness */
-  lineThickness?: number;
-  /** Tool change handler */
-  onToolChange?: (tool: DrawingMode) => void;
-  /** Color change handler */
-  onColorChange?: (color: string) => void;
-  /** Thickness change handler */
-  onThicknessChange?: (thickness: number) => void;
-  /** Clear canvas handler */
-  onClear?: () => void;
-  /** Save canvas handler */
-  onSave?: () => void;
-  /** Import canvas handler */
-  onImport?: () => void;
-  /** Export canvas handler */
-  onExport?: () => void;
-  /** Undo handler */
-  onUndo?: () => void;
-  /** Redo handler */
-  onRedo?: () => void;
-  /** Zoom in handler */
-  onZoomIn?: () => void;
-  /** Zoom out handler */
-  onZoomOut?: () => void;
-  /** Reset zoom handler */
-  onResetZoom?: () => void;
-  /** Toggle grid handler */
-  onToggleGrid?: () => void;
-  /** Whether grid is visible */
-  gridVisible?: boolean;
-  /** Whether undo is available */
-  canUndo?: boolean;
-  /** Whether redo is available */
-  canRedo?: boolean;
-  /** Children to render */
-  children?: React.ReactNode;
-}
-
-/**
- * Drawing toolbar component
- * @param props Component props
- * @returns Rendered component
- */
-export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
-  activeTool,
-  lineColor,
-  lineThickness,
-  onToolChange,
-  onColorChange,
-  onThicknessChange,
-  onClear,
-  onSave,
-  onImport,
-  onExport,
-  onUndo,
-  onRedo,
-  onZoomIn,
-  onZoomOut,
-  onResetZoom,
-  onToggleGrid,
-  gridVisible,
-  canUndo,
-  canRedo,
-  children
-}) => {
+export const CanvasToolbar = () => {
+  const {
+    activeTool = DrawingMode.SELECT, // Provide a default value
+    setActiveTool = () => {}, // Provide a default function
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    showGrid,
+    setShowGrid
+  } = useDrawingContext();
+  
   return (
-    <div className="flex items-center bg-background border-b p-1.5">
-      <DrawingTools
-        activeTool={activeTool}
-        onToolChange={onToolChange}
-      />
+    <div className="flex items-center space-x-4 p-4 bg-gray-100 border-b border-gray-200">
+      {/* Tool Selection */}
+      <select
+        value={activeTool}
+        onChange={(e) => setActiveTool(e.target.value as DrawingMode)}
+        className="p-2 border rounded"
+      >
+        <option value={DrawingMode.SELECT}>Select</option>
+        <option value={DrawingMode.DRAW}>Draw</option>
+        {/* Add more tools as needed */}
+      </select>
       
-      <StyleOptions
-        lineColor={lineColor}
-        lineThickness={lineThickness}
-        onColorChange={onColorChange}
-        onThicknessChange={onThicknessChange}
-      />
+      {/* Line Color */}
+      <div>
+        <label htmlFor="lineColor" className="mr-2">Line Color:</label>
+        <input
+          type="color"
+          id="lineColor"
+          value={lineColor}
+          onChange={(e) => setLineColor(e.target.value)}
+        />
+      </div>
       
-      <CanvasActions
-        onClear={onClear}
-        onSave={onSave}
-        onImport={onImport}
-        onExport={onExport}
-        onUndo={onUndo}
-        onRedo={onRedo}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onResetZoom={onResetZoom}
-        onToggleGrid={onToggleGrid}
-        gridVisible={gridVisible}
-        canUndo={canUndo}
-        canRedo={canRedo}
-      />
+      {/* Line Thickness */}
+      <div>
+        <label htmlFor="lineThickness" className="mr-2">Line Thickness:</label>
+        <input
+          type="number"
+          id="lineThickness"
+          value={lineThickness}
+          onChange={(e) => setLineThickness(parseInt(e.target.value))}
+          className="w-16 p-2 border rounded"
+        />
+      </div>
       
-      {children}
+      {/* Show Grid Toggle */}
+      <div>
+        <label htmlFor="showGrid" className="mr-2">Show Grid:</label>
+        <input
+          type="checkbox"
+          id="showGrid"
+          checked={showGrid}
+          onChange={(e) => setShowGrid(e.target.checked)}
+        />
+      </div>
     </div>
   );
 };
-
-// Export as default for backward compatibility
-export default DrawingToolbar;

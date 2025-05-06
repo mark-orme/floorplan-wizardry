@@ -1,42 +1,46 @@
-
-import {
-  AiOutlineAppstore as Square,
-  AiOutlineFileText as Type,
-  AiOutlineMore as MousePointer,
-  AiOutlineEdit as Pencil,
-  AiOutlineHdd as Hand,
-  AiOutlineDelete as Eraser
-} from 'react-icons/ai';
+import { useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { useDrawingContext } from '@/hooks/useDrawingContext';
+import { toast } from 'sonner';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
-export const useCanvasToolsManager = () => {
-  const { setActiveTool } = useDrawingContext();
+interface UseCanvasToolsProps {
+  canvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  activeTool: DrawingMode;
+  setActiveTool: (tool: DrawingMode) => void;
+}
 
-  const toolIcons = {
-    [DrawingMode.SELECT]: MousePointer,
-    [DrawingMode.DRAW]: Pencil,
-    [DrawingMode.ERASE]: Eraser,
-    [DrawingMode.HAND]: Hand,
-    [DrawingMode.WALL]: Square,
-    [DrawingMode.PENCIL]: Pencil,
-    [DrawingMode.ROOM]: Square,
-    [DrawingMode.TEXT]: Type,
-    [DrawingMode.SHAPE]: Square,
-    [DrawingMode.LINE]: Pencil,
-    [DrawingMode.RECTANGLE]: Square,
-    [DrawingMode.CIRCLE]: Square,
-    [DrawingMode.DOOR]: Square,
-    [DrawingMode.WINDOW]: Square,
-    [DrawingMode.STRAIGHT_LINE]: Pencil,
-    [DrawingMode.PAN]: Hand,
-    [DrawingMode.ERASER]: Eraser,
-    [DrawingMode.MEASURE]: Square
-  };
-
-  const handleToolChange = (tool: DrawingMode) => {
+export const useCanvasToolsManager = ({
+  canvasRef,
+  activeTool,
+  setActiveTool
+}: UseCanvasToolsProps) => {
+  const switchTool = useCallback((tool: DrawingMode) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Disable current tool
+    canvas.isDrawingMode = false;
+    canvas.selection = false;
+    
+    // Enable new tool
+    switch (tool) {
+      case DrawingMode.DRAW:
+        canvas.isDrawingMode = true;
+        break;
+      case DrawingMode.SELECT:
+        canvas.selection = true;
+        break;
+      case DrawingMode.PAN:
+        // Enable panning logic here
+        break;
+      default:
+        // Handle other tools
+        break;
+    }
+    
     setActiveTool(tool);
-  };
+    toast.info(`Switched to ${tool} tool`);
+  }, [canvasRef, setActiveTool]);
 
-  return { toolIcons, handleToolChange };
+  return { switchTool };
 };

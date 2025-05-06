@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -25,11 +24,17 @@ export function StylusCurveVisualizer({
   
   // Draw the curve on the canvas
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        // Now ctx is guaranteed not to be undefined
+        drawCurve(ctx);
+      }
+    }
+  }, [curve, activePointIndex, height, width]);
+  
+  const drawCurve = (ctx: CanvasRenderingContext2D) => {
+    // ctx is guaranteed not to be undefined
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -100,8 +105,7 @@ export function StylusCurveVisualizer({
       ctx.textAlign = 'center';
       ctx.fillText(`${i / 4}`, x, height - 5);
     }
-    
-  }, [curve, activePointIndex, height, width]);
+  };
   
   // Handle mouse interactions for curve editing
   const handleMouseDown = (e: React.MouseEvent) => {

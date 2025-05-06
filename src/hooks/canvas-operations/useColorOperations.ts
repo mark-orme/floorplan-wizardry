@@ -1,139 +1,66 @@
-
-/**
- * Hook for managing color and line thickness operations
- */
-import { useCallback, useEffect } from "react";
-import { toast } from "sonner";
-import { captureMessage, captureError } from "@/utils/sentryUtils";
-import * as Sentry from '@sentry/react';
-import logger from "@/utils/logger";
+import { useState, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useDrawingContext } from '@/contexts/DrawingContext';
 
 interface UseColorOperationsProps {
-  lineThickness: number;
-  setLineThickness: (thickness: number) => void;
-  lineColor: string;
-  setLineColor: (color: string) => void;
+  canvas: FabricCanvas | null;
 }
 
-export const useColorOperations = ({
-  lineThickness,
-  setLineThickness,
-  lineColor,
-  setLineColor
-}: UseColorOperationsProps) => {
-  // Set Sentry context for the component
-  useEffect(() => {
-    Sentry.setTag("component", "useColorOperations");
-    
-    Sentry.setContext("drawingStyles", {
-      lineThickness,
-      lineColor
-    });
-    
-    return () => {
-      // Clear component-specific tags when unmounting
-      Sentry.setTag("component", null);
-    };
-  }, [lineThickness, lineColor]);
+export const useColorOperations = ({ canvas }: UseColorOperationsProps) => {
+  const { lineColor, setLineColor } = useDrawingContext();
+  const [recentColors, setRecentColors] = useState<string[]>([
+    '#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00'
+  ]);
 
-  const handleLineThicknessChange = useCallback((thickness: number) => {
-    logger.info("Line thickness change requested", { 
-      previousThickness: lineThickness, 
-      newThickness: thickness 
-    });
+  const updateColor = useCallback((color: string | null) => {
+    // Use default color if null
+    const safeColor = color || '#000000'; // Default to black if null
     
-    // Update Sentry context for thickness change
-    Sentry.setTag("action", "thicknessChange");
-    Sentry.setContext("thicknessChange", {
-      previousThickness: lineThickness,
-      newThickness: thickness,
-      timestamp: new Date().toISOString()
-    });
+    // Update context
+    setLineColor(safeColor);
     
-    try {
-      setLineThickness(thickness);
-      toast.success(`Changed line thickness to ${thickness}`);
-      
-      captureMessage("Line thickness changed", {
-        tags: { component: "CanvasApp", action: "thicknessChange" },
-        extra: { previousThickness: lineThickness, newThickness: thickness }
-      });
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("Failed to change line thickness", { 
-        error: errorMsg, 
-        previousThickness: lineThickness, 
-        newThickness: thickness 
-      });
-      
-      // Set error context in Sentry
-      Sentry.setTag("errorSource", "thicknessChange");
-      Sentry.setContext("thicknessChangeError", {
-        error: errorMsg,
-        previousThickness: lineThickness,
-        newThickness: thickness,
-        timestamp: new Date().toISOString()
-      });
-      
-      captureError(error as Error, {
-        tags: { component: "CanvasApp", action: "thicknessChange" },
-        extra: { previousThickness: lineThickness, newThickness: thickness }
-      });
-      
-      toast.error(`Failed to change line thickness: ${errorMsg}`);
+    // Update canvas brush if available
+    if (canvas && canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = safeColor;
     }
-  }, [lineThickness, setLineThickness]);
+    
+    // Add to recent colors if not already present
+    setRecentColors(prev => {
+      if (prev.includes(safeColor)) {
+        return prev;
+      }
+      return [safeColor, ...prev.slice(0, 4)];
+    });
+  }, [canvas, setLineColor]);
 
-  const handleLineColorChange = useCallback((color: string) => {
-    logger.info("Line color change requested", { 
-      previousColor: lineColor, 
-      newColor: color 
+  const updateSelectedObjectsColor = useCallback((color: string) => {
+    if (!canvas) return;
+    
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+    
+    activeObjects.forEach(obj => {
+      if (obj.stroke) {
+        obj.set('stroke', color);
+      } else if (obj.fill && obj.fill !== 'transparent') {
+        obj.set('fill', color);
+      }
     });
     
-    // Update Sentry context for color change
-    Sentry.setTag("action", "colorChange");
-    Sentry.setContext("colorChange", {
-      previousColor: lineColor,
-      newColor: color,
-      timestamp: new Date().toISOString()
-    });
+    canvas.requestRenderAll();
     
-    try {
-      setLineColor(color);
-      toast.success(`Changed line color`);
-      
-      captureMessage("Line color changed", {
-        tags: { component: "CanvasApp", action: "colorChange" },
-        extra: { previousColor: lineColor, newColor: color }
-      });
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : "Unknown error";
-      logger.error("Failed to change line color", { 
-        error: errorMsg, 
-        previousColor: lineColor, 
-        newColor: color 
-      });
-      
-      // Set error context in Sentry
-      Sentry.setTag("errorSource", "colorChange");
-      Sentry.setContext("colorChangeError", {
-        error: errorMsg,
-        previousColor: lineColor,
-        newColor: color,
-        timestamp: new Date().toISOString()
-      });
-      
-      captureError(error as Error, {
-        tags: { component: "CanvasApp", action: "colorChange" },
-        extra: { previousColor: lineColor, newColor: color }
-      });
-      
-      toast.error(`Failed to change line color: ${errorMsg}`);
+    // Add to history if needed
+    if (canvas.fire) {
+      canvas.fire('object:modified', { target: activeObjects[0] });
     }
-  }, [lineColor, setLineColor]);
+  }, [canvas]);
 
   return {
-    handleLineThicknessChange,
-    handleLineColorChange
+    currentColor: lineColor,
+    recentColors,
+    updateColor,
+    updateSelectedObjectsColor
   };
 };
+
+export default useColorOperations;

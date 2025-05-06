@@ -1,28 +1,25 @@
-
-import { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/components/auth/AuthProvider';
+import React from 'react';
+import { Route, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PrivateRouteProps {
-  children: ReactNode;
-  roles?: string[];
+  children: React.ReactNode;
+  path: string;
 }
 
-export const PrivateRoute = ({ children, roles = [] }: PrivateRouteProps): JSX.Element => {
-  const { user, loading } = useAuth();
-  const location = useLocation();
-
-  if (loading) {
-    return <div>Loading...</div>;
+export const PrivateRoute = ({ children, path }: PrivateRouteProps) => {
+  const { isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to={redirectTo(path)} replace />;
   }
+  
+  return <Route path={path} element={<>{children}</>} />;
+};
 
-  if (!user) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+const redirectTo = (routePath: string | undefined) => {
+  if (!routePath) {
+    return '/login'; // Default redirect path
   }
-
-  if (roles.length > 0 && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
+  return `/login?returnTo=${encodeURIComponent(routePath)}`;
 };
