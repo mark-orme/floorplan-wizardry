@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +9,9 @@ interface PrivateRouteProps {
 }
 
 export const PrivateRoute = ({ children, path }: PrivateRouteProps) => {
-  const { isAuthenticated } = useAuth();
+  const auth = useAuth();
+  // Use optional chaining to safely access isAuthenticated
+  const isAuthenticated = auth?.isAuthenticated ?? false;
   
   if (!isAuthenticated) {
     return <Navigate to={redirectTo(path)} replace />;

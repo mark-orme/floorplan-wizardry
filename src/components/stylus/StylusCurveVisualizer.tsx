@@ -25,26 +25,28 @@ export function StylusCurveVisualizer({
   // Draw the curve on the canvas
   useEffect(() => {
     if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        // Now ctx is guaranteed not to be undefined
-        drawCurve(ctx);
-      }
+      const context = canvasRef.current?.getContext('2d');
+      if (!context || !canvasRef.current) return;
+      
+      // Now context is guaranteed not to be undefined
+      drawCurve(context);
     }
   }, [curve, activePointIndex, height, width]);
   
-  const drawCurve = (ctx: CanvasRenderingContext2D) => {
-    // ctx is guaranteed not to be undefined
+  const drawCurve = (context: CanvasRenderingContext2D) => {
+    // context is guaranteed not to be undefined
     
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvasRef.current && context) {
+      context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
     
     // Set up styles
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#3b82f6'; // blue-500
+    context.lineWidth = 2;
+    context.strokeStyle = '#3b82f6'; // blue-500
     
     // Draw curve
-    ctx.beginPath();
+    context.beginPath();
     
     // Map curve points to canvas coordinates
     const pointCount = curve.length;
@@ -55,55 +57,55 @@ export function StylusCurveVisualizer({
       const y = height - (curve[i] * height); // Invert Y axis
       
       if (i === 0) {
-        ctx.moveTo(x, y);
+        context.moveTo(x, y);
       } else {
-        ctx.lineTo(x, y);
+        context.lineTo(x, y);
       }
       
       // Draw control points
-      ctx.fillStyle = i === activePointIndex ? '#ef4444' : '#3b82f6';
-      ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fill();
+      context.fillStyle = i === activePointIndex ? '#ef4444' : '#3b82f6';
+      context.beginPath();
+      context.arc(x, y, 6, 0, Math.PI * 2);
+      context.fill();
     }
     
     // Draw the curve
-    ctx.stroke();
+    context.stroke();
     
     // Draw grid lines
-    ctx.strokeStyle = '#e5e7eb'; // gray-200
-    ctx.lineWidth = 1;
+    context.strokeStyle = '#e5e7eb'; // gray-200
+    context.lineWidth = 1;
     
     // Horizontal grid lines (every 0.25)
     for (let i = 0; i <= 4; i++) {
       const y = height * (i / 4);
       
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
+      context.stroke();
       
       // Add labels
-      ctx.fillStyle = '#6b7280'; // gray-500
-      ctx.font = '12px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(`${1 - i / 4}`, 5, y - 5);
+      context.fillStyle = '#6b7280'; // gray-500
+      context.font = '12px sans-serif';
+      context.textAlign = 'left';
+      context.fillText(`${1 - i / 4}`, 5, y - 5);
     }
     
     // Vertical grid lines (every 0.25)
     for (let i = 0; i <= 4; i++) {
       const x = width * (i / 4);
       
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, height);
+      context.stroke();
       
       // Add labels
-      ctx.fillStyle = '#6b7280'; // gray-500
-      ctx.font = '12px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${i / 4}`, x, height - 5);
+      context.fillStyle = '#6b7280'; // gray-500
+      context.font = '12px sans-serif';
+      context.textAlign = 'center';
+      context.fillText(`${i / 4}`, x, height - 5);
     }
   };
   

@@ -1,133 +1,96 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalibrationCanvas } from './CalibrationCanvas';
+import React, { useState, useCallback } from 'react';
 
-interface PencilCalibrationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface PencilSettingsScreenProps {
+  minPressure: number;
+  maxPressure: number;
+  color: string;
+  width: number;
+  setMinPressure: (value: number) => void;
+  setMaxPressure: (value: number) => void;
+  setColor: (color: string) => void;
+  setWidth: (width: number) => void;
 }
 
-export const PencilCalibrationDialog: React.FC<PencilCalibrationDialogProps> = ({ 
-  open, 
-  onOpenChange
+export const PencilSettingsScreen: React.FC<PencilSettingsScreenProps> = ({
+  minPressure,
+  maxPressure,
+  color,
+  width,
+  setMinPressure,
+  setMaxPressure,
+  setColor,
+  setWidth
 }) => {
-  const [pressureSensitivity, setPressureSensitivity] = React.useState(0.5);
-  const [tiltSensitivity, setTiltSensitivity] = React.useState(0.5);
+  const handleMinPressureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinPressure(parseInt(e.target.value, 10) || 0);
+  }, [setMinPressure]);
   
-  const handleSave = () => {
-    console.log('Saved pencil settings:', { pressureSensitivity, tiltSensitivity });
-    onOpenChange(false);
-  };
+  const handleMaxPressureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setMaxPressure(parseInt(e.target.value, 10) || 100);
+  }, [setMaxPressure]);
   
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Pencil Settings</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs defaultValue="pressure">
-          <TabsList className="w-full">
-            <TabsTrigger value="pressure">Pressure Sensitivity</TabsTrigger>
-            <TabsTrigger value="tilt">Tilt Sensitivity</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="pressure" className="space-y-4 my-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Pressure Sensitivity</label>
-              <Slider
-                value={[pressureSensitivity]}
-                onValueChange={(values) => setPressureSensitivity(values[0])}
-                max={1}
-                step={0.01}
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Low</span>
-                <span>High</span>
-              </div>
-            </div>
-            
-            <div className="border rounded-md p-4">
-              <h4 className="font-medium mb-2 text-sm">Test Pressure Sensitivity</h4>
-              <CalibrationCanvas />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="tilt" className="space-y-4 my-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Tilt Sensitivity</label>
-              <Slider
-                value={[tiltSensitivity]}
-                onValueChange={(values) => setTiltSensitivity(values[0])}
-                max={1}
-                step={0.01}
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Low</span>
-                <span>High</span>
-              </div>
-            </div>
-            
-            <div className="border rounded-md p-4">
-              <h4 className="font-medium mb-2 text-sm">Test Tilt Sensitivity</h4>
-              <CalibrationCanvas />
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save Settings</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-export const PencilSettingsScreen = () => {
-  const [sensitivity, setSensitivity] = React.useState(50);
-  const [pressure, setPressure] = React.useState(50);
+  const handleColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setColor(e.target.value);
+  }, [setColor]);
   
-  const handleSensitivityChange = (newValue: number | undefined) => {
-    setSensitivity(newValue ?? 50); // Use nullish coalescing to provide a default value
-  };
-  
-  const handlePressureChange = (newValue: number | undefined) => {
-    setPressure(newValue ?? 50); // Use nullish coalescing to provide a default value
-  };
+  const handleWidthChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setWidth(parseInt(e.target.value, 10));
+  }, [setWidth]);
   
   return (
-    <div>
-      <h1>Pencil Settings</h1>
-      <div>
-        <label className="block text-sm font-medium mb-2">Sensitivity</label>
-        <Slider
-          value={[sensitivity]}
-          onValueChange={(values) => handleSensitivityChange(values[0])}
-          max={100}
-          step={1}
+    <div className="p-4">
+      <h2 className="text-lg font-semibold mb-4">Pencil Settings</h2>
+      
+      <div className="mb-2">
+        <label htmlFor="minPressure" className="block text-sm font-medium text-gray-700">
+          Min Pressure
+        </label>
+        <input
+          type="number"
+          id="minPressure"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          value={minPressure}
+          onChange={handleMinPressureChange}
         />
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>Low</span>
-          <span>High</span>
-        </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium mb-2">Pressure</label>
-        <Slider
-          value={[pressure]}
-          onValueChange={(values) => handlePressureChange(values[0])}
-          max={100}
-          step={1}
+      <div className="mb-2">
+        <label htmlFor="maxPressure" className="block text-sm font-medium text-gray-700">
+          Max Pressure
+        </label>
+        <input
+          type="number"
+          id="maxPressure"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          value={maxPressure}
+          onChange={handleMaxPressureChange}
         />
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>Low</span>
-          <span>High</span>
-        </div>
+      </div>
+      
+      <div className="mb-2">
+        <label htmlFor="color" className="block text-sm font-medium text-gray-700">
+          Color
+        </label>
+        <input
+          type="color"
+          id="color"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          value={color}
+          onChange={handleColorChange}
+        />
+      </div>
+      
+      <div className="mb-2">
+        <label htmlFor="width" className="block text-sm font-medium text-gray-700">
+          Width
+        </label>
+        <input
+          type="number"
+          id="width"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          value={width}
+          onChange={handleWidthChange}
+        />
       </div>
     </div>
   );

@@ -1,32 +1,13 @@
+import { useCallback, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { DebugInfoState } from '@/types/drawingTypes';
 
-// Remove imports for hooks that don't exist or rename them
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DebugInfoState } from "@/types/DebugInfoState";
-import { DrawingMode } from "@/constants/drawingModes";
-import { captureMessage } from "@/utils/sentryUtils";
-
-interface UseCanvasGridProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas>;
-  canvasDimensions: { width: number; height: number }; // Required prop
-}
-
-interface UseCanvasHistoryProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas>;
-  historyRef: React.MutableRefObject<any>; // Required prop
-}
-
-interface DebugLoggerProps {
+interface UseCanvasControllerLoaderProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
   debugInfo: DebugInfoState;
-  setDebugInfo: (info: Partial<DebugInfoState>) => void;
-  hasError: boolean;
-  setHasError: (hasError: boolean) => void;
-  errorMessage: string;
-  setErrorMessage: (errorMessage: string) => void;
-  resetLoadTimes: () => void;
-  logError?: (message: string) => void; // Added missing methods as optional
-  logInfo?: (message: string) => void;
-  logWarning?: (message: string) => void;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  setErrorMessage: (message: string) => void;
 }
 
 // Mock implementations for missing hooks

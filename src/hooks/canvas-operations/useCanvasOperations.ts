@@ -1,4 +1,3 @@
-
 /**
  * Main canvas operations hook
  * Composes smaller, focused hooks for different operation types
@@ -48,10 +47,11 @@ export const useCanvasOperations = ({
   } = useCanvasRef({ setCanvas });
   
   // Setup tool operations
-  const { handleToolChange } = useToolOperations({
-    tool,
-    setTool
-  });
+  const { tool: selectedTool, updateTool } = useToolOperations();
+  const handleToolChange = useCallback((newTool: DrawingMode) => {
+    updateTool(newTool);
+    setTool(newTool);
+  }, [setTool, updateTool]);
   
   // Setup history operations
   const { handleUndo, handleRedo } = useHistoryOperations({
@@ -81,6 +81,14 @@ export const useCanvasOperations = ({
     setLineColor
   });
   
+  const handleLineThicknessChangeWrapper = useCallback((thickness: number) => {
+    setLineThickness(thickness);
+  }, [setLineThickness]);
+
+  const handleLineColorChangeWrapper = useCallback((color: string) => {
+    setLineColor(color);
+  }, [setLineColor]);
+  
   return {
     canvasComponentRef,
     setCanvasRef,
@@ -92,7 +100,7 @@ export const useCanvasOperations = ({
     handleClear,
     handleSave,
     handleDelete,
-    handleLineThicknessChange,
-    handleLineColorChange
+    handleLineThicknessChange: handleLineThicknessChangeWrapper,
+    handleLineColorChange: handleLineColorChangeWrapper
   };
 };

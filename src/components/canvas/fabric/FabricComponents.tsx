@@ -61,10 +61,15 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
       const fabricPath = typeof path === 'string' ? path : pathToString(path);
       const pathObj = new window.fabric.Path(fabricPath, options || {});
-      canvas.add(pathObj);
+      
+      if (canvas) {
+        canvas.add(pathObj);
+      }
       
       return () => {
-        canvas.remove(pathObj);
+        if (canvas && pathObj) {
+          canvas.remove(pathObj);
+        }
       };
     }
   }, [canvas, path, options]);
@@ -95,8 +100,10 @@ export const FabricGroup: React.FC<FabricGroupProps> = ({ objects, options }) =>
     
     // Use window.fabric to safely access fabric
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
-      // Convert objects to ensure compatibility
-      const group = new window.fabric.Group(objects, options || {});
+      // Type assertion to make TypeScript happy
+      const safeObjects = objects as any[];
+      const group = new window.fabric.Group(safeObjects, options || {});
+      
       if (canvas) {
         canvas.add(group);
       }

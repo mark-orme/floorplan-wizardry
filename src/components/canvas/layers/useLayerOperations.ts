@@ -47,7 +47,11 @@ export const useLayerOperations = ({
     if (layerToDelete.objects && Array.isArray(layerToDelete.objects)) {
       layerToDelete.objects.forEach(obj => {
         if (obj && canvas) {
-          canvas.remove(obj);
+          try {
+            canvas.remove(obj);
+          } catch (err) {
+            console.error('Error removing object from canvas:', err);
+          }
         }
       });
     }
