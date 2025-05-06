@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { StrokeTypeLiteral, Stroke } from '@/types/floorPlan';
+import { StrokeTypeLiteral, Stroke } from '@/types/FloorPlan'; // Fixed casing
 import { Point } from '@/types/core/Point';
 
 export interface DrawingStateOptions {

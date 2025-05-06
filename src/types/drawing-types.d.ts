@@ -79,7 +79,7 @@ export interface GestureStateObject {
   scale?: number;
   rotation?: number;
   translation?: { x: number; y: number };
-  startPoints?: Array<{ x: number; y: number }>; // Add missing property
+  startPoints: Array<{ x: number; y: number }>; // Added property - required for builds
 }
 
 // Add function to create default drawing state

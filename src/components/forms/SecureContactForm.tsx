@@ -27,17 +27,16 @@ const SecureContactForm: React.FC<SecureContactFormProps> = ({ onSubmit }) => {
     const emailSchema = z.string().min(1).email();
     const messageSchema = z.string().min(10);
     
-    const schema = {
-      name: validateField(nameSchema),
-      email: validateField(emailSchema),
-      message: validateField(messageSchema)
-    };
-    
     const newErrors: Record<string, string> = {};
     
-    if (!schema.name.isValid) newErrors.name = schema.name.error || 'Invalid name';
-    if (!schema.email.isValid) newErrors.email = schema.email.error || 'Invalid email';
-    if (!schema.message.isValid) newErrors.message = schema.message.error || 'Invalid message';
+    // Use our fixed validateField function
+    const nameResult = validateField(nameSchema, formData.name);
+    const emailResult = validateField(emailSchema, formData.email);
+    const messageResult = validateField(messageSchema, formData.message);
+    
+    if (!nameResult.isValid) newErrors.name = nameResult.error || 'Invalid name';
+    if (!emailResult.isValid) newErrors.email = emailResult.error || 'Invalid email';
+    if (!messageResult.isValid) newErrors.message = messageResult.error || 'Invalid message';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

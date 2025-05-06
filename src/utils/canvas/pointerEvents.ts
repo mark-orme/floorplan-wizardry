@@ -32,6 +32,45 @@ export function isStylus(event: any): boolean {
 }
 
 /**
+ * Check if pressure input is supported
+ */
+export function isPressureSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  // Check if Pointer Events are supported
+  if ('PointerEvent' in window) {
+    return true; // PointerEvent API has pressure
+  }
+  
+  // Check for Touch API with force support
+  if ('ontouchstart' in window) {
+    try {
+      // Try to get the first touch point and check for force property
+      const touchPoints = (window as any).navigator?.maxTouchPoints || 0;
+      return touchPoints > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Check if tilt input is supported
+ */
+export function isTiltSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  // Currently, only Pointer Events API supports tilt
+  if ('PointerEvent' in window) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Get pressure value from a pointer event
  * @param event The pointer event
  * @returns The pressure value (0-1)

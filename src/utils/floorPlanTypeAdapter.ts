@@ -1,62 +1,56 @@
 
-/**
- * Floor Plan Type Adapter
- * Ensures consistent loading of FloorPlan types regardless of case sensitivity
- */
-import { FloorPlan } from '@/types/FloorPlan';
-import { ensureFloorPlanMetadata, createMinimalFloorPlan, updateFloorPlanMetadata } from './floorPlanMetadata';
+import { v4 as uuidv4 } from 'uuid';
+import { FloorPlan, FloorPlanMetadata } from '@/types/canvas-types';
 
 /**
- * Type guard to check if an object is a FloorPlan
+ * Ensure a floor plan has all required metadata
+ * @param floorPlan Partial floor plan to ensure metadata for
+ * @returns Floor plan with complete metadata
  */
-export function isFloorPlan(obj: any): obj is FloorPlan {
-  return obj && 
-    typeof obj === 'object' &&
-    'id' in obj &&
-    'name' in obj;
-}
-
-/**
- * Safely get floor plan module regardless of casing
- */
-export function getFloorPlanModule() {
-  try {
-    // First try with uppercase F
-    return require('@/types/FloorPlan');
-  } catch (e) {
-    try {
-      // Fall back to lowercase f
-      return require('@/types/floorPlan');
-    } catch (e2) {
-      console.error('Could not import FloorPlan module', e2);
-      throw new Error('FloorPlan module not found');
-    }
-  }
-}
-
-/**
- * Normalize the FloorPlan type
- * Makes sure all required properties exist
- */
-export function normalizeFloorPlan(floorPlan: any): FloorPlan {
-  if (!floorPlan) return createMinimalFloorPlan();
+export function ensureFloorPlanMetadata(floorPlan: Partial<FloorPlan> = {}): FloorPlan {
+  const now = new Date().toISOString();
+  const id = floorPlan.id || uuidv4();
+  const name = floorPlan.name || `Floor Plan ${Math.floor(Math.random() * 1000)}`;
   
-  return ensureFloorPlanMetadata(floorPlan);
+  // Create metadata object with required fields
+  const metadata: FloorPlanMetadata = {
+    id,
+    name,
+    createdAt: floorPlan.createdAt || now,
+    updatedAt: floorPlan.updatedAt || now,
+    
+    // Handle legacy fields for compatibility
+    created: floorPlan.created || floorPlan.createdAt || now,
+    modified: floorPlan.modified || floorPlan.updatedAt || now,
+    updated: floorPlan.updated || floorPlan.updatedAt || now,
+    
+    // Optional fields
+    description: floorPlan.description || '',
+    thumbnail: floorPlan.thumbnail || '',
+    size: floorPlan.size || 0,
+    width: floorPlan.width || 800,
+    height: floorPlan.height || 600,
+    index: floorPlan.index || 0,
+  };
+  
+  // Return the complete floor plan
+  return {
+    id,
+    name,
+    ...floorPlan,
+    ...metadata,
+  } as FloorPlan;
 }
 
 /**
- * Normalize a floor plan import path to always use the same casing
+ * Export adapter functions to handle FloorPlan types properly
+ * This allows imports from both '@/types/FloorPlan' and '@/types/floorPlan' to work
  */
-export function normalizeFloorPlanImportPath(path: string): string {
-  return path.replace(/[Ff][Ll][Oo][Oo][Rr][Pp][Ll][Aa][Nn]/g, 'FloorPlan');
-}
+export const floorPlanAdapter = {
+  ensureMetadata: ensureFloorPlanMetadata,
+  createEmpty: (): FloorPlan => ensureFloorPlanMetadata({}),
+  fromPartial: (partial: Partial<FloorPlan>) => ensureFloorPlanMetadata(partial),
+};
 
-/**
- * Export the ensureFloorPlanMetadata function
- */
-export { ensureFloorPlanMetadata, createMinimalFloorPlan, updateFloorPlanMetadata };
-
-/**
- * Export FloorPlan directly to provide a consistent import
- */
-export { FloorPlan };
+// Re-export the ensureFloorPlanMetadata function for backward compatibility
+export { ensureFloorPlanMetadata };

@@ -1,191 +1,157 @@
 
+import { Object as FabricObject, IObjectOptions, IPathOptions, Canvas } from 'fabric';
+import { Point } from 'fabric/fabric-impl';
+
 /**
- * Re-export fabric components with proper typing
- * This helps with import resolution when fabric components are used directly
+ * Extended Fabric interface for proper TypeScript support
  */
+export interface IExtendedObjectOptions extends IObjectOptions {
+  objectType?: string;
+  isGrid?: boolean;
+  isLargeGrid?: boolean;
+}
 
-// Import fabric properly to avoid "Property does not exist" errors
-import { Canvas, Object as FabricObject } from 'fabric';
-
-// We cannot directly import Group, Polyline, Path, so we'll get them from window.fabric at runtime
-// Define our own interfaces since some are missing in the fabric types
-export interface IPathOptions {
+/**
+ * Extended Fabric path options
+ */
+export interface IPathOptions extends IObjectOptions {
   path?: string | { x: number; y: number }[];
-  stroke?: string;
-  strokeWidth?: number;
-  fill?: string | null;
-  strokeLineCap?: string;
-  strokeLineJoin?: string;
-  selectable?: boolean;
 }
 
-export interface IGroupOptions {
-  originX?: string;
-  originY?: string;
-  selectable?: boolean;
-}
-
-export interface IPolylineOptions {
-  points?: Array<{ x: number; y: number }>;
-  stroke?: string;
-  strokeWidth?: number;
-  fill?: string | null;
-  strokeLineCap?: string;
-  strokeLineJoin?: string;
-  selectable?: boolean;
-}
-
-// Define interfaces for missing components
-export interface IRectOptions {
-  width?: number;
-  height?: number;
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  selectable?: boolean;
-}
-
-export interface ICircleOptions {
-  radius?: number;
-  fill?: string;
-  stroke?: string;
-  strokeWidth?: number;
-  selectable?: boolean;
-}
-
-// Export the Canvas and FabricObject directly
-export { Canvas, FabricObject };
-
-// Define our own versions of fabric components that aren't properly exported
-export class Line extends FabricObject {
-  constructor(points: number[], options: any = {}) {
-    super();
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Line) {
-      return new window.fabric.Line(points, options) as any;
-    }
-    throw new Error('fabric.Line not available');
+/**
+ * Convert simple points to Fabric.js Points
+ * @param points Array of simple {x,y} points
+ * @returns Array of Fabric.js Points
+ */
+export function toFabricPoints(points: Array<{ x: number; y: number }>): Point[] {
+  if (!points || !Array.isArray(points)) return [];
+  
+  // Import fabric dynamically when in browser environment
+  if (typeof window !== 'undefined' && window.fabric) {
+    return points.map(p => new window.fabric.Point(p.x, p.y));
   }
+  
+  // Fallback if fabric is not available
+  return points as unknown as Point[];
 }
 
-export class Group {
-  constructor(objects: any[], options: any = {}) {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
-      return new window.fabric.Group(objects, options) as any;
+/**
+ * Implementation of Fabric objects that match the required interfaces
+ */
+export class ExtendedFabricObject implements FabricObject {
+  id?: string;
+  objectType?: string;
+  visible = true;
+  selectable = true;
+  evented = true;
+  type = 'object';
+  
+  // Required implementations
+  initialize(options?: IObjectOptions) {
+    if (options) {
+      Object.assign(this, options);
     }
-    throw new Error('fabric.Group not available');
+    return this;
   }
-}
-
-export class Polyline {
-  constructor(points: Array<{ x: number; y: number }>, options: any = {}) {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Polyline) {
-      return new window.fabric.Polyline(points, options) as any;
+  
+  setOptions(options: IObjectOptions) {
+    Object.assign(this, options);
+    return this;
+  }
+  
+  set(key: string | Record<string, any>, value?: any) {
+    if (typeof key === 'object') {
+      Object.assign(this, key);
+    } else if (typeof key === 'string' && value !== undefined) {
+      (this as any)[key] = value;
     }
-    throw new Error('fabric.Polyline not available');
+    return this;
   }
+  
+  // Minimal required implementation
+  setCoords() {
+    return this;
+  }
+  
+  // Add any other required methods from FabricObject interface
+  // that your application uses
 }
 
-export class Path {
-  constructor(path: string | Array<{ x: number; y: number }>, options: any = {}) {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
-      return new window.fabric.Path(path, options) as any;
-    }
-    throw new Error('fabric.Path not available');
+/**
+ * Create a Fabric.js path safely with proper typing
+ */
+export function createPath(pathData: string | Array<{ x: number; y: number }>, options: IPathOptions = {}) {
+  if (typeof window === 'undefined' || !window.fabric) {
+    console.warn('Fabric.js not available in this environment');
+    return null;
   }
-}
-
-// Create safe functions instead of relying on direct fabric object properties
-export function createPath(path: string, options: IPathOptions = {}) {
-  // For fabric 4.x and above, we can use fabric.Path directly
+  
   try {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Path) {
-      return new window.fabric.Path(path, options as any);
+    // Convert simple points to path data if needed
+    let finalPathData: string | Point[];
+    if (Array.isArray(pathData) && pathData.length > 0 && 'x' in pathData[0] && 'y' in pathData[0]) {
+      finalPathData = toFabricPoints(pathData);
+    } else {
+      finalPathData = pathData as string;
     }
-    return new Path(path, options as any);
-  } catch (e) {
-    console.error('Error creating fabric Path:', e);
+    
+    return new window.fabric.Path(finalPathData, options);
+  } catch (error) {
+    console.error('Error creating fabric Path:', error);
     return null;
   }
 }
 
-export function createGroup(objects: FabricObject[], options: IGroupOptions = {}) {
+/**
+ * Create a Fabric.js group safely with proper typing
+ */
+export function createGroup(objects: FabricObject[], options: IObjectOptions = {}) {
+  if (typeof window === 'undefined' || !window.fabric) {
+    console.warn('Fabric.js not available in this environment');
+    return null;
+  }
+  
   try {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
-      return new window.fabric.Group(objects, options as any);
-    }
-    return new Group(objects, options as any);
-  } catch (e) {
-    console.error('Error creating fabric Group:', e);
+    // Make sure we have a valid array of objects
+    const validObjects = Array.isArray(objects) ? objects : [];
+    return new window.fabric.Group(validObjects, options);
+  } catch (error) {
+    console.error('Error creating fabric Group:', error);
     return null;
   }
 }
 
-export function createPolyline(points: Array<{ x: number; y: number }>, options: IPolylineOptions = {}) {
+/**
+ * Create a Fabric.js polyline safely with proper typing
+ */
+export function createPolyline(points: Array<{ x: number; y: number }>, options: IObjectOptions = {}) {
+  if (typeof window === 'undefined' || !window.fabric) {
+    console.warn('Fabric.js not available in this environment');
+    return null;
+  }
+  
   try {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Polyline) {
-      return new window.fabric.Polyline(points, options as any);
-    }
-    return new Polyline(points, options as any);
-  } catch (e) {
-    console.error('Error creating fabric Polyline:', e);
+    const fabricPoints = toFabricPoints(points);
+    return new window.fabric.Polyline(fabricPoints, options);
+  } catch (error) {
+    console.error('Error creating fabric Polyline:', error);
     return null;
   }
 }
 
-// Add a createRect function
-export function createRect(options: IRectOptions = {}) {
+/**
+ * Safely create a Fabric canvas with error handling
+ */
+export function createCanvas(element: HTMLCanvasElement | string, options: any = {}): Canvas | null {
+  if (typeof window === 'undefined' || !window.fabric) {
+    console.warn('Fabric.js not available in this environment');
+    return null;
+  }
+  
   try {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Rect) {
-      return new window.fabric.Rect(options as any);
-    }
-    return null;
-  } catch (e) {
-    console.error('Error creating fabric Rect:', e);
+    return new window.fabric.Canvas(element, options);
+  } catch (error) {
+    console.error('Error creating fabric Canvas:', error);
     return null;
   }
-}
-
-// Add a createCircle function
-export function createCircle(options: ICircleOptions = {}) {
-  try {
-    if (typeof window !== 'undefined' && window.fabric && window.fabric.Circle) {
-      return new window.fabric.Circle(options as any);
-    }
-    return null;
-  } catch (e) {
-    console.error('Error creating fabric Circle:', e);
-    return null;
-  }
-}
-
-// Export constants for styling
-export const DEFAULT_PATH_OPTIONS: IPathOptions = {
-  stroke: '#000000',
-  strokeWidth: 2,
-  fill: null,
-  strokeLineCap: 'round',
-  strokeLineJoin: 'round',
-  selectable: true
-};
-
-export const DEFAULT_POLYLINE_OPTIONS: IPolylineOptions = {
-  stroke: '#000000',
-  strokeWidth: 2,
-  fill: null,
-  strokeLineCap: 'round',
-  strokeLineJoin: 'round',
-  selectable: true
-};
-
-// Add type safety checks
-export function isPath(object: FabricObject): boolean {
-  return object && object.type === 'path';
-}
-
-export function isGroup(object: FabricObject): boolean {
-  return object && object.type === 'group';
-}
-
-export function isPolyline(object: FabricObject): boolean {
-  return object && object.type === 'polyline';
 }

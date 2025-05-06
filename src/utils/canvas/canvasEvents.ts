@@ -2,129 +2,112 @@
 import { Canvas, Object as FabricObject } from 'fabric';
 
 /**
- * Safely add an event handler to a canvas
- * @param canvas The canvas to add the event handler to
- * @param eventName The name of the event
- * @param handler The event handler function
+ * Safe canvas event handler type
  */
-export function addCanvasEvent(
-  canvas: Canvas | null, 
-  eventName: string, 
-  handler: Function
-): void {
-  if (!canvas) return;
-  
-  try {
-    canvas.on(eventName, handler as any);
-  } catch (error) {
-    console.error(`Error adding event handler for ${eventName}:`, error);
+type CanvasEventHandler = (e: any) => void;
+
+/**
+ * Add event handlers to a canvas safely
+ * @param canvas The canvas to add handlers to
+ * @param handlers Map of event names to handlers
+ * @returns Function to remove all added handlers
+ */
+export function addCanvasEventHandlers(
+  canvas: Canvas | null,
+  handlers: Record<string, CanvasEventHandler>
+): () => void {
+  if (!canvas) return () => {};
+
+  // Add all handlers
+  for (const [event, handler] of Object.entries(handlers)) {
+    canvas.on(event, handler);
   }
+  
+  // Return a cleanup function
+  return () => {
+    if (canvas) {
+      for (const [event, handler] of Object.entries(handlers)) {
+        safeRemoveEvent(canvas, event, handler);
+      }
+    }
+  };
 }
 
 /**
- * Safely remove an event handler from a canvas
- * @param canvas The canvas to remove the event handler from
- * @param eventName The name of the event
- * @param handler The event handler function (optional)
+ * Remove an event handler safely
+ * This handles different versions of fabric.js which might have different signatures
  */
-export function removeCanvasEvent(
-  canvas: Canvas | null, 
-  eventName: string, 
+export function safeRemoveEvent(
+  canvas: Canvas,
+  eventName: string,
   handler?: Function
 ): void {
-  if (!canvas) return;
-  
   try {
     if (handler) {
       canvas.off(eventName, handler as any);
     } else {
-      // Some fabric versions need just the event name to remove all handlers
+      // Some fabric versions allow removing all handlers for an event
+      // Using 'any' to bypass type checking since this is version-dependent
       canvas.off(eventName);
     }
   } catch (error) {
     console.error(`Error removing event handler for ${eventName}:`, error);
-  }
-}
-
-/**
- * Safely add an object event handler
- * @param object The fabric object to add the event handler to
- * @param eventName The name of the event
- * @param handler The event handler function
- */
-export function addObjectEvent(
-  object: FabricObject | null,
-  eventName: string,
-  handler: Function
-): void {
-  if (!object) return;
-  
-  try {
-    object.on(eventName, handler as any);
-  } catch (error) {
-    console.error(`Error adding object event handler for ${eventName}:`, error);
-  }
-}
-
-/**
- * Safely remove an object event handler
- * @param object The fabric object to remove the event handler from
- * @param eventName The name of the event
- * @param handler The event handler function (optional)
- */
-export function removeObjectEvent(
-  object: FabricObject | null,
-  eventName: string,
-  handler?: Function
-): void {
-  if (!object) return;
-  
-  try {
-    if (handler) {
-      object.off(eventName, handler as any);
-    } else {
-      // Some fabric versions need just the event name to remove all handlers
-      object.off(eventName);
+    
+    // Fallback to try different method signatures
+    try {
+      // Try forcing a handler-less removal
+      (canvas as any).off(eventName);
+    } catch (fallbackError) {
+      // Last resort: do nothing, just log the error
+      console.warn(`Could not remove event handler for ${eventName}`);
     }
-  } catch (error) {
-    console.error(`Error removing object event handler for ${eventName}:`, error);
   }
 }
 
 /**
- * Get pointer coordinates from a fabric mouse event
- * @param event The fabric mouse event
- * @returns The pointer coordinates
+ * Add one-time event handlers to a canvas
+ * This automatically removes the handlers after they're triggered once
+ * 
+ * @param canvas The canvas to add handlers to
+ * @param handlers Map of event names to handlers
+ * @returns Function to remove all added handlers
  */
-export function getPointerFromEvent(event: any): { x: number, y: number } | null {
-  if (!event) return null;
+export function addOneTimeCanvasEventHandlers(
+  canvas: Canvas | null,
+  handlers: Record<string, CanvasEventHandler>
+): () => void {
+  if (!canvas) return () => {};
   
-  try {
-    if (event.pointer) {
-      return event.pointer;
-    } else if (event.absolutePointer) {
-      return event.absolutePointer;
-    } else if (event.e && 'clientX' in event.e && 'clientY' in event.e) {
-      return { x: event.e.clientX, y: event.e.clientY };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting pointer from event:', error);
-    return null;
+  // Track which handlers have been added
+  const addedHandlers: Record<string, CanvasEventHandler> = {};
+  
+  // Create wrapped handlers that remove themselves after execution
+  for (const [event, originalHandler] of Object.entries(handlers)) {
+    const wrappedHandler = (e: any) => {
+      // Execute original handler
+      originalHandler(e);
+      
+      // Remove this handler
+      if (canvas) {
+        try {
+          canvas.off(event, wrappedHandler as any);
+        } catch (error) {
+          console.error(`Error removing one-time event handler for ${event}:`, error);
+        }
+      }
+    };
+    
+    // Add the wrapped handler
+    canvas.on(event, wrappedHandler as any);
+    addedHandlers[event] = wrappedHandler;
   }
-}
-
-/**
- * Check if a fabric canvas is valid and active
- * @param canvas The canvas to check
- * @returns Whether the canvas is valid
- */
-export function isValidCanvas(canvas: any): boolean {
-  return (
-    canvas && 
-    typeof canvas === 'object' && 
-    typeof canvas.on === 'function' &&
-    typeof canvas.off === 'function' && 
-    typeof canvas.add === 'function'
-  );
+  
+  // Return cleanup function
+  return () => {
+    if (canvas) {
+      for (const [event, handler] of Object.entries(addedHandlers)) {
+        safeRemoveEvent(canvas, event, handler);
+      }
+    }
+  };
 }

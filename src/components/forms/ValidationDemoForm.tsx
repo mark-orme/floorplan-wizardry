@@ -27,16 +27,15 @@ const ValidationDemoForm: React.FC<ValidationDemoFormProps> = ({ onSubmit }) => 
     const passwordSchema = z.string().min(8);
     const confirmPasswordSchema = z.string();
     
-    const schema = {
-      username: validateField(usernameSchema),
-      password: validateField(passwordSchema),
-      confirmPassword: validateField(confirmPasswordSchema)
-    };
+    // Use our fixed validateField function with values
+    const usernameResult = validateField(usernameSchema, formData.username);
+    const passwordResult = validateField(passwordSchema, formData.password);
+    const confirmPasswordResult = validateField(confirmPasswordSchema, formData.confirmPassword);
     
     const newErrors: Record<string, string> = {};
     
-    if (!schema.username.isValid) newErrors.username = schema.username.error || 'Invalid username';
-    if (!schema.password.isValid) newErrors.password = schema.password.error || 'Invalid password';
+    if (!usernameResult.isValid) newErrors.username = usernameResult.error || 'Invalid username';
+    if (!passwordResult.isValid) newErrors.password = passwordResult.error || 'Invalid password';
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }

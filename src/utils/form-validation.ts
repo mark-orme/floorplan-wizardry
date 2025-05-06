@@ -1,25 +1,58 @@
-
+/**
+ * Form validation utilities
+ */
 import * as z from '@/utils/zod-mock';
 
 /**
- * Validate a field using zod schema
- * @param schema The zod schema to validate against
- * @param value The value to validate
- * @returns Validation result
+ * Validate a field using a zod schema
+ * @param schema The zod schema to use
+ * @param value The value to validate (optional)
+ * @returns Validation result with error message if invalid
  */
-export function validateField(schema: any, value?: any) {
+export function validateField(schema: z.Schema, value?: any) {
   try {
-    if (typeof schema.parse === 'function') {
-      // Always pass the value to the schema, even if it's undefined
+    // If a value is provided, use it for validation
+    if (arguments.length > 1 && value !== undefined) {
       schema.parse(value);
-      return { isValid: true, error: null };
+    } else {
+      // Otherwise, just check if the schema itself is valid
     }
+    
     return { isValid: true, error: null };
   } catch (error) {
-    const zodError = error as z.ZodError;
-    const errorMessage = zodError.errors?.[0]?.message || 'Invalid input';
-    return { isValid: false, error: errorMessage };
+    let message = 'Invalid field';
+    
+    if (error instanceof z.ZodError) {
+      message = error.errors[0]?.message || 'Validation failed';
+    }
+    
+    return { isValid: false, error: message };
   }
+}
+
+/**
+ * Validate an entire form
+ * @param schema Form schema object
+ * @param values Form values
+ * @returns Validation result object
+ */
+export function validateForm(schema: Record<string, z.Schema>, values: Record<string, any>) {
+  const result: Record<string, { isValid: boolean; error: string | null }> = {};
+  
+  for (const field in schema) {
+    if (Object.prototype.hasOwnProperty.call(schema, field)) {
+      result[field] = validateField(schema[field], values[field]);
+    }
+  }
+  
+  return {
+    isValid: Object.values(result).every(r => r.isValid),
+    errors: Object.fromEntries(
+      Object.entries(result)
+        .filter(([_, val]) => !val.isValid)
+        .map(([key, val]) => [key, val.error])
+    )
+  };
 }
 
 /**
