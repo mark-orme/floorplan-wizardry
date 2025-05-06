@@ -10,8 +10,9 @@ interface PrivateRouteProps {
 
 export const PrivateRoute = ({ children, path }: PrivateRouteProps) => {
   const auth = useAuth();
-  // Use optional chaining to safely access isAuthenticated
-  const isAuthenticated = auth?.isAuthenticated ?? false;
+  
+  // Use optional chaining and nullish coalescing for safe property access
+  const isAuthenticated = auth?.user?.isAuthenticated ?? false;
   
   if (!isAuthenticated) {
     return <Navigate to={redirectTo(path)} replace />;

@@ -1,10 +1,11 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
+import { ExtendedFabricCanvas } from '@/types/fabric-core';
 
 interface UseLayerOperationsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;

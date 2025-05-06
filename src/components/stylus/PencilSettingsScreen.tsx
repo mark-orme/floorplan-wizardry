@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 
 interface PencilSettingsScreenProps {
@@ -22,11 +23,13 @@ export const PencilSettingsScreen: React.FC<PencilSettingsScreenProps> = ({
   setWidth
 }) => {
   const handleMinPressureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setMinPressure(parseInt(e.target.value, 10) || 0);
+    const value = parseInt(e.target.value, 10);
+    setMinPressure(isNaN(value) ? 0 : value);
   }, [setMinPressure]);
   
   const handleMaxPressureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setMaxPressure(parseInt(e.target.value, 10) || 100);
+    const value = parseInt(e.target.value, 10);
+    setMaxPressure(isNaN(value) ? 100 : value);
   }, [setMaxPressure]);
   
   const handleColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +37,8 @@ export const PencilSettingsScreen: React.FC<PencilSettingsScreenProps> = ({
   }, [setColor]);
   
   const handleWidthChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setWidth(parseInt(e.target.value, 10));
+    const value = parseInt(e.target.value, 10);
+    setWidth(isNaN(value) ? 1 : value);
   }, [setWidth]);
   
   return (
@@ -94,4 +98,9 @@ export const PencilSettingsScreen: React.FC<PencilSettingsScreenProps> = ({
       </div>
     </div>
   );
+};
+
+// Add this empty component to avoid issues with imports
+export const PencilCalibrationDialog: React.FC = () => {
+  return <div>Pencil Calibration Dialog</div>;
 };

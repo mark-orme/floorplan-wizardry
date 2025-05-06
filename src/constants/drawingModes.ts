@@ -1,121 +1,119 @@
 
 /**
- * Drawing mode constants for consistent usage across the application
+ * Drawing modes constants
+ * Defines all available drawing tools and modes
  */
+
 export enum DrawingMode {
+  // Selection and navigation tools
   SELECT = 'select',
-  DRAW = 'draw',
-  STRAIGHT_LINE = 'straight-line',
-  WALL = 'wall',
-  ROOM = 'room',
-  ERASER = 'eraser',
   PAN = 'pan',
-  MEASURE = 'measure',
-  TEXT = 'text',
-  SHAPE = 'shape',
-  // Add missing DrawingMode values that were causing errors
-  HAND = 'hand',
-  ERASE = 'erase',
-  LINE = 'line',
+  ZOOM = 'zoom',
+  
+  // Drawing tools
+  DRAW = 'draw',
+  ERASER = 'eraser',
+  STRAIGHT_LINE = 'straight-line',
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
-  PENCIL = 'pencil',
+  ELLIPSE = 'ellipse',
+  POLYGON = 'polygon',
+  TEXT = 'text',
+  
+  // Specialized tools
+  WALL = 'wall',
   DOOR = 'door',
   WINDOW = 'window',
-  DIMENSION = 'dimension',
   STAIR = 'stair',
-  COLUMN = 'column'
-}
-
-/**
- * Check if a mode is a drawing mode (vs. selection)
- */
-export function isDrawingMode(mode: DrawingMode): boolean {
-  return mode !== DrawingMode.SELECT;
-}
-
-/**
- * Check if a mode requires snapping
- */
-export function requiresSnapping(mode: DrawingMode): boolean {
-  return [
-    DrawingMode.STRAIGHT_LINE,
-    DrawingMode.WALL,
-    DrawingMode.ROOM,
-    DrawingMode.LINE,
-    DrawingMode.RECTANGLE,
-    DrawingMode.CIRCLE
-  ].includes(mode);
-}
-
-/**
- * Convert string to DrawingMode
- */
-export function toDrawingMode(mode: string): DrawingMode {
-  const normalized = mode.toLowerCase().replace(/_/g, '-');
+  ROOM = 'room',
   
-  // Check if it's directly in the enum
-  if (Object.values(DrawingMode).includes(normalized as DrawingMode)) {
-    return normalized as DrawingMode;
-  }
+  // Annotation tools
+  MEASURE = 'measure',
+  DIMENSION = 'dimension',
+  ANGLE = 'angle',
+  AREA = 'area',
   
-  // Handle special cases
-  switch (normalized) {
-    case 'straight_line':
-    case 'straightline':
-      return DrawingMode.STRAIGHT_LINE;
-    case 'erase':
-      return DrawingMode.ERASER;
-    case 'hand':
-      return DrawingMode.PAN;
-    default:
-      return DrawingMode.SELECT;
-  }
+  // Shape manipulation tools
+  ROTATE = 'rotate',
+  SCALE = 'scale',
+  MOVE = 'move',
+  
+  // Utility tools
+  EYEDROPPER = 'eyedropper',
+  GRID = 'grid',
+  SNAP = 'snap',
+  
+  // Default state
+  NONE = 'none'
 }
 
-/**
- * Get tool button appearance for a mode
- */
-export function getToolLabel(mode: DrawingMode): string {
-  switch (mode) {
-    case DrawingMode.SELECT: return 'Select';
-    case DrawingMode.DRAW: return 'Draw';
-    case DrawingMode.STRAIGHT_LINE: return 'Line';
-    case DrawingMode.WALL: return 'Wall';
-    case DrawingMode.ROOM: return 'Room';
-    case DrawingMode.ERASER: return 'Erase';
-    case DrawingMode.PAN: return 'Pan';
-    case DrawingMode.MEASURE: return 'Measure';
-    case DrawingMode.TEXT: return 'Text';
-    case DrawingMode.SHAPE: return 'Shape';
-    case DrawingMode.HAND: return 'Hand';
-    case DrawingMode.ERASE: return 'Erase';
-    case DrawingMode.LINE: return 'Line';
-    case DrawingMode.RECTANGLE: return 'Rectangle'; 
-    case DrawingMode.CIRCLE: return 'Circle';
-    case DrawingMode.PENCIL: return 'Pencil';
-    case DrawingMode.DOOR: return 'Door';
-    case DrawingMode.WINDOW: return 'Window';
-    case DrawingMode.DIMENSION: return 'Dimension';
-    case DrawingMode.STAIR: return 'Stair';
-    case DrawingMode.COLUMN: return 'Column';
-    default: return 'Tool';
-  }
-}
-
-// Add DEFAULT_STROKE_COLOR for imports that need it
-export const DEFAULT_STROKE_COLOR = '#000000';
-export const DEFAULT_STROKE_WIDTH = 2;
-
-export const DEFAULT_COLORS = {
-  stroke: '#000000',
-  fill: 'transparent',
-  highlight: '#3498db',
-  error: '#e74c3c',
-  warning: '#f39c12',
-  success: '#2ecc71'
+// Tool categories for organizing UI
+export const ToolCategories = {
+  NAVIGATION: 'navigation',
+  DRAWING: 'drawing',
+  SHAPES: 'shapes',
+  ARCHITECTURE: 'architecture',
+  ANNOTATION: 'annotation',
+  UTILITIES: 'utilities'
 };
 
-// Add PIXELS_PER_METER for imports that need it
-export const PIXELS_PER_METER = 100;
-export const DEFAULT_GRID_SIZE = 20;
+// Map tools to categories
+export const toolCategoryMap: Record<DrawingMode, string> = {
+  [DrawingMode.SELECT]: ToolCategories.NAVIGATION,
+  [DrawingMode.PAN]: ToolCategories.NAVIGATION,
+  [DrawingMode.ZOOM]: ToolCategories.NAVIGATION,
+  
+  [DrawingMode.DRAW]: ToolCategories.DRAWING,
+  [DrawingMode.ERASER]: ToolCategories.DRAWING,
+  [DrawingMode.STRAIGHT_LINE]: ToolCategories.DRAWING,
+  
+  [DrawingMode.RECTANGLE]: ToolCategories.SHAPES,
+  [DrawingMode.CIRCLE]: ToolCategories.SHAPES,
+  [DrawingMode.ELLIPSE]: ToolCategories.SHAPES,
+  [DrawingMode.POLYGON]: ToolCategories.SHAPES,
+  [DrawingMode.TEXT]: ToolCategories.ANNOTATION,
+  
+  [DrawingMode.WALL]: ToolCategories.ARCHITECTURE,
+  [DrawingMode.DOOR]: ToolCategories.ARCHITECTURE,
+  [DrawingMode.WINDOW]: ToolCategories.ARCHITECTURE,
+  [DrawingMode.STAIR]: ToolCategories.ARCHITECTURE,
+  [DrawingMode.ROOM]: ToolCategories.ARCHITECTURE,
+  
+  [DrawingMode.MEASURE]: ToolCategories.ANNOTATION,
+  [DrawingMode.DIMENSION]: ToolCategories.ANNOTATION,
+  [DrawingMode.ANGLE]: ToolCategories.ANNOTATION,
+  [DrawingMode.AREA]: ToolCategories.ANNOTATION,
+  
+  [DrawingMode.ROTATE]: ToolCategories.NAVIGATION,
+  [DrawingMode.SCALE]: ToolCategories.NAVIGATION,
+  [DrawingMode.MOVE]: ToolCategories.NAVIGATION,
+  
+  [DrawingMode.EYEDROPPER]: ToolCategories.UTILITIES,
+  [DrawingMode.GRID]: ToolCategories.UTILITIES,
+  [DrawingMode.SNAP]: ToolCategories.UTILITIES,
+  
+  [DrawingMode.NONE]: ToolCategories.NAVIGATION
+};
+
+// Default tool configurations
+export const DefaultToolSettings = {
+  [DrawingMode.DRAW]: {
+    lineColor: '#000000',
+    lineThickness: 2,
+    lineDash: [],
+    smoothing: true
+  },
+  [DrawingMode.STRAIGHT_LINE]: {
+    lineColor: '#000000',
+    lineThickness: 2,
+    lineDash: [],
+    snapToGrid: true,
+    snapToAngle: true
+  },
+  [DrawingMode.RECTANGLE]: {
+    lineColor: '#000000',
+    fillColor: 'transparent',
+    lineThickness: 2,
+    lineDash: []
+  }
+};

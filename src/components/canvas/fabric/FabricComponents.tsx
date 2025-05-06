@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { Canvas, Object as FabricObject } from 'fabric';
-import { Point } from '@/types/fabric-unified';
-import type { IObjectOptions, IPathOptions } from 'fabric/fabric-impl';
+import { ExtendedFabricCanvas } from '@/types/fabric-core';
 
 // Fabric Components as React wrappers
 interface FabricCanvasProps {
   width?: number;
   height?: number;
   backgroundColor?: string;
-  onReady?: (canvas: Canvas) => void;
+  onReady?: (canvas: ExtendedFabricCanvas) => void;
 }
 
 export const FabricCanvas: React.FC<FabricCanvasProps> = ({
@@ -19,7 +18,7 @@ export const FabricCanvas: React.FC<FabricCanvasProps> = ({
   onReady
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = React.useRef<Canvas | null>(null);
+  const fabricCanvasRef = React.useRef<ExtendedFabricCanvas | null>(null);
   
   React.useEffect(() => {
     if (!canvasRef.current) return;
@@ -29,7 +28,7 @@ export const FabricCanvas: React.FC<FabricCanvasProps> = ({
       height,
       backgroundColor,
       renderOnAddRemove: false
-    });
+    }) as unknown as ExtendedFabricCanvas;
     
     fabricCanvasRef.current = canvas;
     
@@ -46,9 +45,20 @@ export const FabricCanvas: React.FC<FabricCanvasProps> = ({
   return <canvas ref={canvasRef} />;
 };
 
+// Helper function to convert Point[] to SVG path string
+const pathToString = (points: { x: number; y: number }[]): string => {
+  if (!points.length) return '';
+  
+  let result = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    result += ` L ${points[i].x} ${points[i].y}`;
+  }
+  return result;
+};
+
 interface FabricPathProps {
   path: string | { x: number; y: number }[];
-  options?: IPathOptions;
+  options?: any; // Using any for now, but should be properly typed
 }
 
 export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
@@ -62,14 +72,10 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
       const fabricPath = typeof path === 'string' ? path : pathToString(path);
       const pathObj = new window.fabric.Path(fabricPath, options || {});
       
-      if (canvas) {
-        canvas.add(pathObj);
-      }
+      canvas.add(pathObj);
       
       return () => {
-        if (canvas && pathObj) {
-          canvas.remove(pathObj);
-        }
+        canvas.remove(pathObj);
       };
     }
   }, [canvas, path, options]);
@@ -77,19 +83,9 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
   return null;
 };
 
-// Helper function to convert Point[] to SVG path string
-const pathToString = (points: { x: number; y: number }[]): string => {
-  if (!points.length) return '';
-  let result = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    result += ` L ${points[i].x} ${points[i].y}`;
-  }
-  return result;
-};
-
 interface FabricGroupProps {
   objects: FabricObject[];
-  options?: IObjectOptions;
+  options?: any; // Using any for now, but should be properly typed
 }
 
 export const FabricGroup: React.FC<FabricGroupProps> = ({ objects, options }) => {
@@ -100,13 +96,11 @@ export const FabricGroup: React.FC<FabricGroupProps> = ({ objects, options }) =>
     
     // Use window.fabric to safely access fabric
     if (typeof window !== 'undefined' && window.fabric && window.fabric.Group) {
-      // Type assertion to make TypeScript happy
-      const safeObjects = objects as any[];
+      // Create a safe copy of objects to work with
+      const safeObjects = [...objects];
       const group = new window.fabric.Group(safeObjects, options || {});
       
-      if (canvas) {
-        canvas.add(group);
-      }
+      canvas.add(group);
       
       return () => {
         if (canvas) {
@@ -121,12 +115,12 @@ export const FabricGroup: React.FC<FabricGroupProps> = ({ objects, options }) =>
 
 // Context for sharing canvas instance
 interface FabricContextType {
-  canvas: Canvas | null;
+  canvas: ExtendedFabricCanvas | null;
 }
 
 const FabricContext = React.createContext<FabricContextType>({ canvas: null });
 
-export const FabricProvider: React.FC<{ children: React.ReactNode; canvas?: Canvas }> = ({ 
+export const FabricProvider: React.FC<{ children: React.ReactNode; canvas?: ExtendedFabricCanvas | null }> = ({ 
   children, 
   canvas 
 }) => {

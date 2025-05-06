@@ -1,13 +1,55 @@
-import { useCallback, useEffect } from 'react';
+
+/**
+ * Canvas controller loader hook
+ * Handles loading and error states for the canvas controller
+ * @module canvas/controller/useCanvasControllerLoader
+ */
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { DebugInfoState } from '@/types/drawingTypes';
+import { toast } from 'sonner';
+import { ExtendedFabricCanvas } from '@/types/fabric-core';
+
+// Type definitions for hook props
+interface DebugInfoState {
+  fps?: number;
+  objectCount?: number;
+  visibleObjectCount?: number;
+  mousePosition?: { x: number; y: number };
+  zoomLevel?: number;
+  gridSize?: number;
+  canvasInitialized?: boolean;
+  errorMessage?: string;
+  hasError?: boolean;
+}
 
 interface UseCanvasControllerLoaderProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   debugInfo: DebugInfoState;
   setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
   setErrorMessage: (message: string) => void;
+}
+
+interface UseCanvasGridProps {
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  canvasDimensions: { width: number; height: number };
+}
+
+interface UseCanvasHistoryProps {
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  historyRef: React.MutableRefObject<{ past: any[]; future: any[] }>;
+}
+
+interface DebugLoggerProps {
+  debugInfo: DebugInfoState;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfoState>>;
+  hasError: boolean;
+  setHasError: (hasError: boolean) => void;
+  errorMessage: string;
+  setErrorMessage: (message: string) => void;
+  resetLoadTimes?: () => void;
+  logError?: (message: string) => void;
+  logInfo?: (message: string) => void;
+  logWarning?: (message: string) => void;
 }
 
 // Mock implementations for missing hooks
@@ -48,29 +90,24 @@ const calculateGIA = () => {
   console.log('Calculating GIA');
 };
 
-/**
- * Canvas controller loader hook
- * Handles loading and error states for the canvas controller
- * @module canvas/controller/useCanvasControllerLoader
- */
 export const useCanvasControllerLoader = ({
   canvasRef,
   debugInfo,
   setDebugInfo,
   setErrorMessage
-}) => {
+}: UseCanvasControllerLoaderProps) => {
   const canvasDimensions = { width: 800, height: 600 };
-  const historyRef = useRef({ past: [], future: [] });
+  const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
   // Initialize grid
   const grid = useCanvasGrid({ 
-    fabricCanvasRef: canvasRef, 
+    fabricCanvasRef: canvasRef as unknown as React.MutableRefObject<ExtendedFabricCanvas | null>, 
     canvasDimensions 
   });
   
   // Initialize history
   const history = useCanvasHistory({ 
-    fabricCanvasRef: canvasRef,
+    fabricCanvasRef: canvasRef as unknown as React.MutableRefObject<ExtendedFabricCanvas | null>,
     historyRef
   });
   
@@ -86,7 +123,7 @@ export const useCanvasControllerLoader = ({
   });
   
   // Loading state
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Example of a proper metadata object
   const metadata = {
@@ -102,14 +139,15 @@ export const useCanvasControllerLoader = ({
   };
   
   // Handle errors
-  const handleError = (error: Error, operation: string) => {
+  const handleError = useCallback((error: Error, operation: string) => {
     logger.logError(`Canvas ${operation} error: ${error.message}`);
     setErrorMessage(`Canvas error (${operation}): ${error.message}`);
     setDebugInfo({
+      ...debugInfo,
       hasError: true,
       errorMessage: error.message
     });
-  };
+  }, [logger, setDebugInfo, setErrorMessage, debugInfo]);
 
   // Example Wall without floorPlanId
   const wall = {
@@ -123,9 +161,10 @@ export const useCanvasControllerLoader = ({
   };
   
   // Log info using the logger
-  logger.logInfo('Canvas controller loaded');
-  logger.logWarning('Canvas initialization may take time');
-  logger.logError('Example error message');
+  useEffect(() => {
+    logger.logInfo('Canvas controller loaded');
+    logger.logWarning('Canvas initialization may take time');
+  }, [logger]);
   
   return {
     isLoading,
