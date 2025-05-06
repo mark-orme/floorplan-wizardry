@@ -1,8 +1,19 @@
 
 import { useState, useRef } from "react";
 import { Canvas as FabricCanvas } from "fabric";
-import { DebugInfoState } from "@/types/drawingTypes";
-import { captureMessage } from "@/utils/sentryUtils";
+import { reportError } from "@/utils/errorReporting";
+
+// Define the DebugInfoState interface
+export interface DebugInfoState {
+  canvasReady?: boolean;
+  hasError?: boolean;
+  errorMessage?: string;
+  fps?: number;
+  objectCount?: number;
+  visibleObjectCount?: number;
+  mousePosition?: { x: number; y: number };
+  zoomLevel?: number;
+}
 
 interface UseCanvasControllerLoaderProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -22,7 +33,7 @@ export const useCanvasControllerLoader = ({
   setErrorMessage
 }: UseCanvasControllerLoaderProps) => {
   const canvasDimensions = { width: 800, height: 600 };
-  const historyRef = useRef({ past: [], future: [] });
+  const historyRef = useRef<{ past: any[], future: any[] }>({ past: [], future: [] });
   
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +41,11 @@ export const useCanvasControllerLoader = ({
   // Initialize logging
   const logError = (message: string) => {
     console.error(message);
-    captureMessage(message, { level: 'error' });
+    reportError(message, { context: 'canvas-controller' });
   };
   
   const logInfo = (message: string) => {
     console.info(message);
-    captureMessage(message, { level: 'info' });
   };
   
   // Handle errors

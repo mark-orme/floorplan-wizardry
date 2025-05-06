@@ -1,86 +1,162 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, supabase } from '@/lib/supabase';
 
-interface AuthContextType {
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  isAuthenticated: boolean;
+}
+
+export interface AuthContextType {
   user: User | null;
-  userRole: UserRole | null;
-  loading: boolean;
-  isLoading?: boolean;
+  isLoading: boolean;
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signup: (email: string, password: string, name?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    // Check for existing session on mount
+    const checkAuthStatus = async () => {
       try {
-        const user = await supabase.auth.getUser();
-        setUser(user.data.user ? { id: user.data.user.id } : null);
+        setIsLoading(true);
+        // This would typically be an API call to check the session
+        const storedUser = localStorage.getItem('user');
+        
+        if (storedUser) {
+          // Parse stored user and set the state
+          const parsedUser: User = JSON.parse(storedUser);
+          setUser({
+            ...parsedUser,
+            isAuthenticated: true // Ensure this property exists
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Authentication error'));
-        console.error('Auth error:', err);
+        setError(err instanceof Error ? err : new Error('Failed to check authentication status'));
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    checkAuth();
+    checkAuthStatus();
   }, []);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setUser(data.user ? { id: data.user.id } : null);
+      setIsLoading(true);
+      setError(null);
+      
+      // This would be an API call in a real app
+      if (email && password) {
+        const newUser: User = {
+          id: 'user-123',
+          email,
+          isAuthenticated: true
+        };
+        
+        localStorage.setItem('user', JSON.stringify(newUser));
+        setUser(newUser);
+      } else {
+        throw new Error('Email and password are required');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Login failed'));
+      setError(err instanceof Error ? err : new Error('Failed to login'));
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
-      await supabase.auth.signOut();
+      setIsLoading(true);
+      
+      // This would be an API call in a real app
+      localStorage.removeItem('user');
       setUser(null);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Logout failed'));
+      setError(err instanceof Error ? err : new Error('Failed to logout'));
+      throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const signup = async (email: string, password: string, name?: string) => {
+    try {
+      setIsLoading(true);
+      
+      // This would be an API call in a real app
+      if (email && password) {
+        const newUser: User = {
+          id: 'user-' + Date.now(),
+          email,
+          name,
+          isAuthenticated: true
+        };
+        
+        localStorage.setItem('user', JSON.stringify(newUser));
+        setUser(newUser);
+      } else {
+        throw new Error('Email and password are required');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to signup'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      
+      // This would be an API call in a real app
+      if (!email) {
+        throw new Error('Email is required');
+      }
+      
+      // Simulate success
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to reset password'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    error,
+    login,
+    logout,
+    signup,
+    resetPassword
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userRole: user?.role || null,
-        loading,
-        isLoading: loading,
-        error,
-        login,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

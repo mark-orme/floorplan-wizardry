@@ -12,6 +12,7 @@ export const PrivateRoute = ({ children, path }: PrivateRouteProps) => {
   const auth = useAuth();
   
   // Use optional chaining and nullish coalescing for safe property access
+  // Check for auth.user and auth.user.isAuthenticated, with a fallback to false
   const isAuthenticated = auth?.user?.isAuthenticated ?? false;
   
   if (!isAuthenticated) {

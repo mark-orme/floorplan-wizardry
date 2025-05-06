@@ -1,221 +1,197 @@
 
-/**
- * Fabric.js mock for testing
- */
-import { ExtendedFabricCanvas, ExtendedFabricObject } from '../types/fabric-core';
+import { vi } from 'vitest';
 
-// Use proper jest function mocks
-const mockFn = () => jest.fn();
-const mockReturnSelf = () => jest.fn().mockImplementation(function() { return this; });
-const mockObjectFactory = () => ({
-  set: mockReturnSelf(),
-  setCoords: mockReturnSelf(),
-  toObject: mockFn(),
-  get: mockFn(),
-  on: mockReturnSelf(),
-  off: mockReturnSelf(),
-  addEventListener: mockReturnSelf(),
-  removeEventListener: mockReturnSelf(),
-  moveTo: mockReturnSelf(),
-  dispose: mockFn(),
-  remove: mockFn()
-});
-
-// Mock Canvas class
-class Canvas {
-  constructor(element: string | HTMLCanvasElement, options?: any) {
-    // Initialize properties with default values
-    this.viewportTransform = [1, 0, 0, 1, 0, 0];
-    this.absolutePointer = { x: 0, y: 0 };
-    this.relativePointer = { x: 0, y: 0 };
-    this.upperCanvasEl = document.createElement('canvas') as HTMLCanvasElement;
-    this.wrapperEl = document.createElement('div') as HTMLDivElement;
-    this.isDrawingMode = false;
-    this.selection = true;
-    this.freeDrawingBrush = {
+// Mock implementation of fabric.js for testing
+const createMockCanvas = () => {
+  return {
+    add: vi.fn(),
+    remove: vi.fn(),
+    getObjects: vi.fn().mockReturnValue([]),
+    renderAll: vi.fn(),
+    requestRenderAll: vi.fn(),
+    getActiveObjects: vi.fn().mockReturnValue([]),
+    discardActiveObject: vi.fn(),
+    contains: vi.fn().mockReturnValue(false),
+    on: vi.fn(),
+    off: vi.fn(),
+    fire: vi.fn(),
+    getContext: vi.fn().mockReturnValue({
+      canvas: { width: 800, height: 600 }
+    }),
+    toJSON: vi.fn().mockReturnValue({}),
+    clear: vi.fn(),
+    getWidth: vi.fn().mockReturnValue(800),
+    getHeight: vi.fn().mockReturnValue(600),
+    getPointer: vi.fn().mockReturnValue({ x: 0, y: 0 }),
+    setWidth: vi.fn(),
+    setHeight: vi.fn(),
+    setZoom: vi.fn(),
+    getZoom: vi.fn().mockReturnValue(1),
+    viewportTransform: [1, 0, 0, 1, 0, 0],
+    absolutePointer: { x: 0, y: 0 },
+    relativePointer: { x: 0, y: 0 },
+    upperCanvasEl: document.createElement('canvas'),
+    wrapperEl: document.createElement('div'),
+    isDrawingMode: false,
+    selection: true,
+    freeDrawingBrush: {
       color: '#000000',
-      width: 1
-    };
-    
-    // Set up mock methods
-    this.add = jest.fn().mockReturnValue(this);
-    this.remove = jest.fn().mockReturnValue(this);
-    this.clear = jest.fn().mockReturnValue(this);
-    this.renderAll = jest.fn().mockReturnValue(this);
-    this.requestRenderAll = jest.fn().mockReturnValue(this);
-    this.getContext = jest.fn().mockReturnValue({
-      canvas: {
-        width: options?.width || 600,
-        height: options?.height || 400
-      }
-    });
-    this.getObjects = jest.fn().mockReturnValue([]);
-    this.getActiveObject = jest.fn().mockReturnValue(null);
-    this.discardActiveObject = jest.fn().mockReturnValue(this);
-    this.setZoom = jest.fn().mockReturnValue(this);
-    this.getZoom = jest.fn().mockReturnValue(1);
-    this.forEachObject = jest.fn();
-    this.on = jest.fn().mockReturnValue(this);
-    this.off = jest.fn().mockReturnValue(this);
-    this.dispose = jest.fn();
-    this.getPointer = jest.fn().mockReturnValue({ x: 0, y: 0 });
-    this.zoomToPoint = jest.fn().mockReturnValue(this);
-    this.setWidth = jest.fn().mockReturnValue(this);
-    this.setHeight = jest.fn().mockReturnValue(this);
-    this.toObject = jest.fn().mockReturnValue({});
-    this.toDataURL = jest.fn().mockReturnValue('data:image/png;base64,mock');
-  }
-
-  // Properties with default values
-  viewportTransform: number[];
-  absolutePointer: { x: number; y: number };
-  relativePointer: { x: number; y: number };
-  upperCanvasEl: HTMLCanvasElement;
-  wrapperEl: HTMLDivElement;
-  isDrawingMode: boolean;
-  selection: boolean;
-  freeDrawingBrush: {
-    color: string;
-    width: number;
+      width: 2
+    },
+    withImplementation: vi.fn().mockImplementation((callback) => {
+      if (callback) callback();
+      return Promise.resolve();
+    }),
+    zoomToPoint: vi.fn(),
+    forEachObject: vi.fn((callback) => {
+      if (callback) callback({ selectable: true });
+    }),
+    dispose: vi.fn()
   };
-  
-  // Mock methods
-  add: jest.Mock;
-  remove: jest.Mock;
-  clear: jest.Mock;
-  renderAll: jest.Mock;
-  requestRenderAll: jest.Mock;
-  getContext: jest.Mock;
-  getObjects: jest.Mock;
-  getActiveObject: jest.Mock;
-  discardActiveObject: jest.Mock;
-  setZoom: jest.Mock;
-  getZoom: jest.Mock;
-  forEachObject: jest.Mock;
-  on: jest.Mock;
-  off: jest.Mock;
-  dispose: jest.Mock;
-  getPointer: jest.Mock;
-  zoomToPoint: jest.Mock;
-  setWidth: jest.Mock;
-  setHeight: jest.Mock;
-  toObject: jest.Mock;
-  toDataURL: jest.Mock;
-}
+};
 
-// Mock Object class
-class FabricObject implements ExtendedFabricObject {
+// Mock fabric Object class
+class FabricObject {
+  static type = 'object';
+  
   constructor(options = {}) {
-    Object.assign(this, options);
-    
-    // Set up mock methods
-    this.set = jest.fn().mockReturnValue(this);
-    this.setCoords = jest.fn().mockReturnValue(this);
-    this.toObject = jest.fn().mockReturnValue({});
-    this.get = jest.fn();
-    this.on = jest.fn().mockReturnValue(this);
-    this.off = jest.fn().mockReturnValue(this);
+    Object.assign(this, {
+      id: `mock-object-${Date.now()}`,
+      type: 'object',
+      visible: true,
+      selectable: true,
+      evented: true,
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      ...options,
+      set: vi.fn().mockImplementation(function(options) {
+        if (typeof options === 'object') {
+          Object.assign(this, options);
+        } else if (arguments.length === 2) {
+          this[arguments[0]] = arguments[1];
+        }
+        return this;
+      }),
+      setCoords: vi.fn().mockImplementation(function() {
+        return this;
+      })
+    });
   }
-
-  // Properties with default values
-  visible = true;
-  selectable = true;
-  evented = true;
-  
-  // Mock methods
-  set: jest.Mock;
-  setCoords: jest.Mock;
-  toObject: jest.Mock;
-  get: jest.Mock;
-  on: jest.Mock;
-  off: jest.Mock;
 }
 
-// Mock Line class 
+// Mock specific fabric objects
 class Line extends FabricObject {
-  constructor(points: Array<number>, options = {}) {
-    super(options);
-    this.points = points;
-    this.type = 'line';
-    this.x1 = points[0] || 0;
-    this.y1 = points[1] || 0;
-    this.x2 = points[2] || 0;
-    this.y2 = points[3] || 0;
-  }
+  static type = 'line';
   
-  points: Array<number>;
-  type: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  constructor(points = [0, 0, 100, 100], options = {}) {
+    super({
+      type: 'line',
+      x1: points[0],
+      y1: points[1],
+      x2: points[2],
+      y2: points[3],
+      ...options
+    });
+  }
 }
 
-// Mock Path class
 class Path extends FabricObject {
-  constructor(path: string, options = {}) {
-    super(options);
-    this.path = path;
-    this.type = 'path';
-  }
+  static type = 'path';
   
-  path: string;
-  type: string;
+  constructor(path = '', options = {}) {
+    super({
+      type: 'path',
+      path,
+      ...options
+    });
+  }
 }
 
-// Mock Group class
-class Group extends FabricObject {
-  constructor(objects: Array<FabricObject>, options = {}) {
-    super(options);
-    this.objects = objects;
-    this.type = 'group';
-  }
-  
-  objects: Array<FabricObject>;
-  type: string;
-}
-
-// Mock Text class
 class Text extends FabricObject {
-  constructor(text: string, options = {}) {
-    super(options);
-    this.text = text;
-    this.type = 'text';
-  }
+  static type = 'text';
   
-  text: string;
-  type: string;
+  constructor(text = '', options = {}) {
+    super({
+      type: 'text',
+      text,
+      ...options
+    });
+  }
 }
 
-// Mock Point class
+class Circle extends FabricObject {
+  static type = 'circle';
+  
+  constructor(options = {}) {
+    super({
+      type: 'circle',
+      radius: 50,
+      ...options
+    });
+  }
+}
+
+class Rect extends FabricObject {
+  static type = 'rect';
+  
+  constructor(options = {}) {
+    super({
+      type: 'rect',
+      ...options
+    });
+  }
+}
+
+class Group extends FabricObject {
+  static type = 'group';
+  
+  constructor(objects = [], options = {}) {
+    super({
+      type: 'group',
+      objects,
+      ...options
+    });
+    this.getObjects = vi.fn().mockReturnValue(objects);
+    this.forEachObject = vi.fn((callback) => {
+      objects.forEach((obj) => callback(obj));
+    });
+  }
+}
+
+// Helper Point class for fabric
 class Point {
-  constructor(x: number, y: number) {
+  constructor(x = 0, y = 0) {
     this.x = x;
     this.y = y;
   }
-  
-  x: number;
-  y: number;
 }
 
-// Export all the mocked components
-export {
-  Canvas,
-  FabricObject as Object,
-  Line,
-  Path,
-  Group,
-  Text,
-  Point
-};
+// Mock Canvas class
+class Canvas {
+  constructor(element, options = {}) {
+    const mockCanvas = createMockCanvas();
+    return Object.assign(this, mockCanvas, options);
+  }
+  
+  static fabric = {
+    Canvas
+  };
+}
 
-// Default export
-export default {
+// Create and export the fabric namespace
+const fabric = {
   Canvas,
   Object: FabricObject,
   Line,
-  Path, 
-  Group,
+  Path,
   Text,
+  Circle,
+  Rect,
+  Group,
   Point
 };
+
+export default fabric;
+export { Canvas, FabricObject as Object, Line, Path, Text, Circle, Rect, Group, Point };

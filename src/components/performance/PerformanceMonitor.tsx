@@ -1,88 +1,99 @@
-import React, { useRef, useEffect } from 'react';
 
-export const PerformanceMonitor = () => {
-  const frameRateRef = useRef<HTMLDivElement>(null);
-  const frameTimeRef = useRef<HTMLDivElement>(null);
-  const toolUsageRef = useRef<HTMLDivElement>(null);
-  const averageFrameTimeRef = useRef<HTMLDivElement>(null);
-  
-  const metrics = useRef({
-    fps: 0,
-    frameTime: 0,
-    toolUsageDuration: {
-      select: 0,
-      draw: 0
-    }
-  }).current;
+import React, { useEffect, useState } from 'react';
+import { useTheme } from '@/hooks/useTheme';
+
+interface PerformanceMetrics {
+  fps: number;
+  memory?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+  };
+  responseTime?: number;
+}
+
+interface PerformanceMonitorProps {
+  showMemory?: boolean;
+  showResponseTime?: boolean;
+  interval?: number;
+  className?: string;
+}
+
+export function PerformanceMonitor({
+  showMemory = false,
+  showResponseTime = false,
+  interval = 1000,
+  className = ''
+}: PerformanceMonitorProps) {
+  const [metrics, setMetrics] = useState<PerformanceMetrics>({ fps: 0 });
+  const { theme } = useTheme();
   
   useEffect(() => {
     let frameCount = 0;
     let lastTime = performance.now();
-    let animationFrameId: number;
+    let frameId: number;
     
-    const updateFPS = () => {
+    const calculateFPS = () => {
       const now = performance.now();
-      const delta = now - lastTime;
-      frameCount++;
+      const elapsed = now - lastTime;
       
-      if (delta >= 1000) {
-        const fps = frameCount;
-        metrics.fps = fps;
-        metrics.frameTime = delta / frameCount;
+      if (elapsed >= interval) {
+        const fps = Math.round((frameCount * 1000) / elapsed);
         
-        if (frameRateRef.current) {
-          frameRateRef.current.textContent = `${fps} FPS`;
+        const newMetrics: PerformanceMetrics = { fps };
+        
+        // Add memory metrics if supported and requested
+        if (showMemory && 'memory' in performance) {
+          const memoryInfo = (performance as any).memory;
+          newMetrics.memory = {
+            usedJSHeapSize: memoryInfo?.usedJSHeapSize || 0,
+            totalJSHeapSize: memoryInfo?.totalJSHeapSize || 0
+          };
         }
+        
+        // Add response time if requested
+        if (showResponseTime) {
+          const navigationEntries = performance.getEntriesByType('navigation');
+          if (navigationEntries.length > 0) {
+            // Safely access the responseStart property with proper type checking
+            const entry = navigationEntries[0];
+            const responseTime = entry ? entry.responseEnd - (entry as any).responseStart : 0;
+            newMetrics.responseTime = responseTime;
+          }
+        }
+        
+        setMetrics(newMetrics);
         
         frameCount = 0;
         lastTime = now;
       }
       
-      animationFrameId = requestAnimationFrame(updateFPS);
+      frameCount++;
+      frameId = requestAnimationFrame(calculateFPS);
     };
     
-    const calculateAverageFrameTime = () => {
-      const entries = performance.getEntriesByType("frame");
-      const lastEntry = entries[entries.length - 1];
-      if (!lastEntry) return 0; // Return default value if undefined
-      
-      return lastEntry.value || 0; // Return 0 if value is undefined
-    };
-    
-    const updateAverageFrameTime = () => {
-      const avgFrameTime = calculateAverageFrameTime();
-      
-      if (averageFrameTimeRef.current) {
-        averageFrameTimeRef.current.textContent = `${avgFrameTime.toFixed(2)} ms`;
-      }
-    };
-    
-    animationFrameId = requestAnimationFrame(updateFPS);
-    
-    const intervalId = setInterval(updateAverageFrameTime, 500);
+    frameId = requestAnimationFrame(calculateFPS);
     
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      clearInterval(intervalId);
+      cancelAnimationFrame(frameId);
     };
-  }, []);
+  }, [interval, showMemory, showResponseTime]);
   
-  useEffect(() => {
-    const updateToolUsage = () => {
-      if (toolUsageRef.current) {
-        toolUsageRef.current.textContent = `Select: ${metrics.toolUsageDuration.select}ms, Draw: ${metrics.toolUsageDuration.draw}ms`;
-      }
-    };
-    
-    updateToolUsage();
-  }, []);
+  const backgroundColor = theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100';
+  const textColor = theme === 'dark' ? 'text-gray-100' : 'text-gray-800';
   
   return (
-    <div className="fixed bottom-4 left-4 bg-white p-2 rounded shadow-md text-sm">
-      <div ref={frameRateRef}>FPS: 0</div>
-      <div ref={frameTimeRef}>Frame Time: 0ms</div>
-      <div ref={averageFrameTimeRef}>Avg Frame Time: 0ms</div>
-      <div ref={toolUsageRef}>Tool Usage:</div>
+    <div className={`${backgroundColor} ${textColor} p-2 rounded-md text-xs fixed bottom-2 right-2 opacity-80 hover:opacity-100 transition-opacity z-50 ${className}`}>
+      <div className="mb-1">FPS: {metrics.fps}</div>
+      
+      {showMemory && metrics.memory && (
+        <div className="mb-1">
+          Memory: {Math.round(metrics.memory.usedJSHeapSize / 1048576)} / {Math.round(metrics.memory.totalJSHeapSize / 1048576)} MB
+        </div>
+      )}
+      
+      {showResponseTime && metrics.responseTime !== undefined && (
+        <div>Response: {metrics.responseTime.toFixed(2)} ms</div>
+      )}
     </div>
   );
-};
+}

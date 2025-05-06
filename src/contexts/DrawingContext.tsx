@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import type { Canvas as FabricCanvas } from 'fabric';
 
@@ -14,13 +14,13 @@ interface DrawingContextType {
   setShowGrid: React.Dispatch<React.SetStateAction<boolean>>;
   canUndo: boolean;
   canRedo: boolean;
-  // Adding the missing methods
   setCanUndo: (v: boolean) => void;
   setCanRedo: (v: boolean) => void;
   addToUndoStack: (cmd: any) => void;
   canvas?: FabricCanvas;  
   activeTool?: DrawingMode;
   setActiveTool?: (tool: DrawingMode) => void;
+  handleToolChange?: (tool: DrawingMode) => void;
 }
 
 export const DrawingContext = createContext<DrawingContextType>({
@@ -34,12 +34,12 @@ export const DrawingContext = createContext<DrawingContextType>({
   setShowGrid: () => {},
   canUndo: false,
   canRedo: false,
-  // Adding default implementations for missing methods
   setCanUndo: () => {},
   setCanRedo: () => {},
   addToUndoStack: () => {},
   activeTool: DrawingMode.SELECT,
   setActiveTool: () => {},
+  handleToolChange: () => {},
 });
 
 export const useDrawingContext = (): DrawingContextType => {
@@ -53,13 +53,55 @@ export const useDrawingContext = (): DrawingContextType => {
 // Alias for backward compatibility
 export const useDrawing = useDrawingContext;
 
-// Export a type-safe provider for use in tests/apps
+// Export provider with default implementation
 export const DrawingProvider: React.FC<{
   children: React.ReactNode;
-  value: DrawingContextType;
-}> = ({ children, value }) => {
+  value?: Partial<DrawingContextType>;
+}> = ({ children, value = {} }) => {
+  // Default state
+  const [tool, setTool] = useState<DrawingMode>(DrawingMode.SELECT);
+  const [lineColor, setLineColor] = useState<string>('#000000');
+  const [lineThickness, setLineThickness] = useState<number>(2);
+  const [showGrid, setShowGrid] = useState<boolean>(true);
+  const [canUndo, setCanUndo] = useState<boolean>(false);
+  const [canRedo, setCanRedo] = useState<boolean>(false);
+  const [undoStack, setUndoStack] = useState<any[]>([]);
+  const [redoStack, setRedoStack] = useState<any[]>([]);
+  
+  // Default implementation of addToUndoStack
+  const addToUndoStack = (cmd: any) => {
+    setUndoStack(prev => [...prev, cmd]);
+    setCanUndo(true);
+    setRedoStack([]);
+    setCanRedo(false);
+  };
+  
+  // Default tool change handler
+  const handleToolChange = (newTool: DrawingMode) => {
+    setTool(newTool);
+  };
+  
+  // Combine defaults with provided value
+  const contextValue: DrawingContextType = {
+    tool,
+    setTool,
+    lineColor,
+    setLineColor,
+    lineThickness,
+    setLineThickness,
+    showGrid,
+    setShowGrid,
+    canUndo,
+    canRedo,
+    setCanUndo,
+    setCanRedo,
+    addToUndoStack,
+    handleToolChange,
+    ...value // Override defaults with provided values
+  };
+
   return (
-    <DrawingContext.Provider value={value}>
+    <DrawingContext.Provider value={contextValue}>
       {children}
     </DrawingContext.Provider>
   );

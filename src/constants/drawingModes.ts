@@ -9,16 +9,20 @@ export enum DrawingMode {
   SELECT = 'select',
   PAN = 'pan',
   ZOOM = 'zoom',
+  HAND = 'hand',
   
   // Drawing tools
   DRAW = 'draw',
   ERASER = 'eraser',
+  PENCIL = 'pencil',
   STRAIGHT_LINE = 'straight-line',
+  LINE = 'line',
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
   ELLIPSE = 'ellipse',
   POLYGON = 'polygon',
   TEXT = 'text',
+  SHAPE = 'shape',
   
   // Specialized tools
   WALL = 'wall',
@@ -62,16 +66,20 @@ export const toolCategoryMap: Record<DrawingMode, string> = {
   [DrawingMode.SELECT]: ToolCategories.NAVIGATION,
   [DrawingMode.PAN]: ToolCategories.NAVIGATION,
   [DrawingMode.ZOOM]: ToolCategories.NAVIGATION,
+  [DrawingMode.HAND]: ToolCategories.NAVIGATION,
   
   [DrawingMode.DRAW]: ToolCategories.DRAWING,
   [DrawingMode.ERASER]: ToolCategories.DRAWING,
+  [DrawingMode.PENCIL]: ToolCategories.DRAWING,
   [DrawingMode.STRAIGHT_LINE]: ToolCategories.DRAWING,
+  [DrawingMode.LINE]: ToolCategories.DRAWING,
   
   [DrawingMode.RECTANGLE]: ToolCategories.SHAPES,
   [DrawingMode.CIRCLE]: ToolCategories.SHAPES,
   [DrawingMode.ELLIPSE]: ToolCategories.SHAPES,
   [DrawingMode.POLYGON]: ToolCategories.SHAPES,
   [DrawingMode.TEXT]: ToolCategories.ANNOTATION,
+  [DrawingMode.SHAPE]: ToolCategories.SHAPES,
   
   [DrawingMode.WALL]: ToolCategories.ARCHITECTURE,
   [DrawingMode.DOOR]: ToolCategories.ARCHITECTURE,

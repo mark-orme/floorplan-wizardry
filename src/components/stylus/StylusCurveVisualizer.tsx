@@ -62,7 +62,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       const normalizedCurve = pressureCurve.map(p => Math.max(0, Math.min(1, p)));
       
       for (let i = 0; i < normalizedCurve.length; i++) {
-        const x = (i / (normalizedCurve.length - 1)) * canvas.width;
+        const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
         // Invert Y to make higher values go up
         const y = canvas.height - normalizedCurve[i] * canvas.height;
         
@@ -78,7 +78,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       // Draw control points
       ctx.fillStyle = '#ef4444';
       for (let i = 0; i < normalizedCurve.length; i++) {
-        const x = (i / (normalizedCurve.length - 1)) * canvas.width;
+        const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
         const y = canvas.height - normalizedCurve[i] * canvas.height;
         
         ctx.beginPath();

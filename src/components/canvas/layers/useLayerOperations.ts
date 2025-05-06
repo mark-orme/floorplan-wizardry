@@ -1,11 +1,11 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Object as FabricObject } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
-import { ExtendedFabricCanvas } from '@/types/fabric-core';
+import { ExtendedCanvas } from '@/types/fabric-unified';
 
 interface UseLayerOperationsProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<ExtendedCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -49,7 +49,7 @@ export const useLayerOperations = ({
       layerToDelete.objects.forEach(obj => {
         if (obj && canvas) {
           try {
-            canvas.remove(obj);
+            canvas.remove(obj as FabricObject);
           } catch (err) {
             console.error('Error removing object from canvas:', err);
           }
@@ -67,7 +67,7 @@ export const useLayerOperations = ({
     }
     
     if (canvas) {
-      canvas.requestRenderAll();
+      canvas.requestRenderAll?.();
     }
   }, [fabricCanvasRef, layers, activeLayerId, setLayers, setActiveLayerId]);
 

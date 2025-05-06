@@ -1,6 +1,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import ChartTooltip, { ChartTooltipContent } from "./chart/chart-tooltip";
 
 interface ChartProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -20,10 +21,4 @@ const Chart = React.forwardRef<HTMLDivElement, ChartProps>(
 Chart.displayName = "Chart";
 
 export default Chart;
-
-// Create simplified versions of missing components
-const ChartTooltip: React.FC = () => <div>Chart Tooltip</div>;
-const ChartTooltipContent: React.FC = () => <div>Chart Tooltip Content</div>;
-
-// Export them properly
 export { ChartTooltip, ChartTooltipContent };
