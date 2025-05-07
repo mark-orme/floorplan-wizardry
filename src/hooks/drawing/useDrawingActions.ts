@@ -3,7 +3,7 @@ import { useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useDrawingHistory } from './useDrawingHistory';
 import { Canvas } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/fabric-unified';
+import { ExtendedCanvas } from '@/types/fabric-unified';
 
 export interface UseDrawingActionsProps {
   fabricCanvasRef?: React.MutableRefObject<Canvas | null>;

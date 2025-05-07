@@ -1,269 +1,117 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/constants/drawingModes';
+import { captureMessage } from '@/utils/sentryUtils';
 
-/**
- * Hook for handling mouse events during drawing
- * Abstracts common mouse event handling logic for various drawing tools
- * @module hooks/drawing/useMouseEvents
- */
-import { useCallback, useEffect, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { DrawingTool } from "@/types/core/DrawingTool";
-import { DrawingMode } from "@/constants/drawingModes";
-import { Point } from "@/types/core/Geometry";
-import logger from "@/utils/logger";
-import * as Sentry from '@sentry/react';
-
-/**
- * Props for useMouseEvents hook
- * @interface UseMouseEventsProps
- */
-export interface UseMouseEventsProps {
-  /** Reference to the Fabric canvas instance */
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool */
-  tool: DrawingTool;
-  /** Function to start drawing at a point */
-  startDrawing: (point: Point) => void;
-  /** Function to continue drawing to a point */
-  continueDrawing: (point: Point) => void;
-  /** Function to end drawing at a point */
-  endDrawing: (point: Point) => void;
-  /** Whether drawing is currently in progress */
+interface UseMouseEventsProps {
+  canvas: FabricCanvas | null;
+  activeTool: DrawingMode;
   isDrawing: boolean;
-  /** Line thickness for drawing */
-  lineThickness?: number;
-  /** Line color for drawing */
-  lineColor?: string;
+  setIsDrawing: (isDrawing: boolean) => void;
+  onStartDrawing?: (point: Point) => void;
+  onContinueDrawing?: (point: Point) => void;
+  onEndDrawing?: () => void;
+  disabled?: boolean;
 }
 
-/**
- * Return type for useMouseEvents hook
- * @interface UseMouseEventsResult
- */
-export interface UseMouseEventsResult {
-  /** Handle mouse down event */
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  /** Handle mouse move event */
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  /** Handle mouse up event */
-  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
-  /** Clean up event listeners */
-  cleanup: () => void;
-}
-
-/**
- * Hook that abstracts mouse event handling during drawing
- * Provides standardized event handlers for mouse/touch interactions
- * Manages document-level event listeners and cleanup
- * 
- * @param {UseMouseEventsProps} props - Hook properties
- * @returns {UseMouseEventsResult} Mouse event handlers
- */
-export const useMouseEvents = (
-  props: UseMouseEventsProps
-): UseMouseEventsResult => {
-  const {
-    fabricCanvasRef,
-    tool,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    isDrawing,
-    lineThickness,
-    lineColor
-  } = props;
-
-  // Set Sentry context for the component
-  useEffect(() => {
-    Sentry.setTag("component", "useMouseEvents");
-    Sentry.setTag("currentTool", tool);
-    
-    Sentry.setContext("drawingState", {
-      tool,
-      isDrawing,
-      lineThickness,
-      lineColor
-    });
-    
-    return () => {
-      // Clear component-specific tags when unmounting
-      Sentry.setTag("component", null);
-    };
-  }, [tool, isDrawing, lineThickness, lineColor]);
-
-  // Reference to store active timeouts for cleanup
-  const timeoutRef = useRef<number[]>([]);
+export const useMouseEvents = ({
+  canvas,
+  activeTool,
+  isDrawing,
+  setIsDrawing,
+  onStartDrawing,
+  onContinueDrawing,
+  onEndDrawing,
+  disabled = false
+}: UseMouseEventsProps) => {
+  const lastPointRef = useRef<Point | null>(null);
   
-  // Track bound document event listeners
-  const mouseMoveListenerRef = useRef<((e: MouseEvent | TouchEvent) => void) | null>(null);
-  const mouseUpListenerRef = useRef<((e: MouseEvent | TouchEvent) => void) | null>(null);
-  
-  /**
-   * Convert event coordinates to canvas point
-   * Handles coordinate conversion considering zoom and pan
-   * 
-   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
-   * @returns {Point | null} Canvas point or null if canvas is not available
-   */
-  const getCanvasPoint = useCallback((e: MouseEvent | TouchEvent): Point | null => {
-    const canvas = fabricCanvasRef.current;
+  const getPointerPosition = useCallback((event: any): Point | null => {
     if (!canvas) return null;
     
-    // Get pointer from canvas (handles zoom and pan)
-    return canvas.getPointer(e);
-  }, [fabricCanvasRef]);
-
-  /**
-   * Handle mouse down event
-   * Initiates drawing operation and sets up document-level event listeners
-   * 
-   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
-   */
-  const handleMouseDown = useCallback((e: MouseEvent | TouchEvent): void => {
-    const canvas = fabricCanvasRef.current;
+    try {
+      const pointer = canvas.getPointer(event.e);
+      return { x: pointer.x, y: pointer.y };
+    } catch (err) {
+      console.error('Error getting pointer position:', err);
+      return null;
+    }
+  }, [canvas]);
+  
+  const handleMouseDown = useCallback((event: any) => {
+    if (disabled || !canvas || activeTool === DrawingMode.SELECT) return;
+    
+    // Get pointer position
+    const point = getPointerPosition(event);
+    if (!point) return;
+    
+    // Start drawing
+    setIsDrawing(true);
+    lastPointRef.current = point;
+    
+    if (onStartDrawing) {
+      onStartDrawing(point);
+    }
+  }, [canvas, activeTool, disabled, getPointerPosition, setIsDrawing, onStartDrawing]);
+  
+  const handleMouseMove = useCallback((event: any) => {
+    if (!canvas || !isDrawing || disabled) return;
+    
+    // Get pointer position
+    const point = getPointerPosition(event);
+    if (!point) return;
+    
+    // Continue drawing
+    if (onContinueDrawing) {
+      onContinueDrawing(point);
+    }
+    
+    lastPointRef.current = point;
+  }, [canvas, isDrawing, disabled, getPointerPosition, onContinueDrawing]);
+  
+  const handleMouseUp = useCallback(() => {
+    if (!isDrawing || disabled) return;
+    
+    // End drawing
+    setIsDrawing(false);
+    
+    if (onEndDrawing) {
+      onEndDrawing();
+    }
+    
+    lastPointRef.current = null;
+    
+    // Log drawing completion for analytics
+    captureMessage('Drawing completed', {
+      level: 'info',
+      tags: { 
+        tool: activeTool,
+        component: 'Canvas' 
+      }
+    });
+  }, [isDrawing, disabled, setIsDrawing, onEndDrawing, activeTool]);
+  
+  // Set up event listeners
+  useEffect(() => {
     if (!canvas) return;
     
-    // Return early if tool is not a drawing tool
-    const isSelectOrHand = tool === DrawingMode.SELECT || tool === DrawingMode.HAND;
-    if (isSelectOrHand) {
-      return;
-    }
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
     
-    // Get point from event
-    const point = getCanvasPoint(e);
-    if (!point) return;
-    
-    // Set Sentry context for mouse down
-    Sentry.setTag("action", "mouseDown");
-    Sentry.setContext("mouseEvent", {
-      type: "mouseDown",
-      tool,
-      point,
-      timestamp: new Date().toISOString()
-    });
-    
-    logger.info("Mouse down", { tool, point, isDrawingTool: !isSelectOrHand });
-    
-    // Start drawing at the point
-    startDrawing(point);
-    
-    // Define handlers here to avoid reference errors
-    const handleDocumentMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
-      handleMouseMove(moveEvent);
+    // Clean up event listeners
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
     };
-    
-    const handleDocumentMouseUp = (upEvent: MouseEvent | TouchEvent) => {
-      handleMouseUp(upEvent);
-      
-      // Clean up after mouse up
-      cleanup();
-    };
-    
-    // Store references to listeners for cleanup
-    mouseMoveListenerRef.current = handleDocumentMouseMove;
-    mouseUpListenerRef.current = handleDocumentMouseUp;
-    
-    // Add document-level event listeners
-    document.addEventListener('mousemove', handleDocumentMouseMove);
-    document.addEventListener('touchmove', handleDocumentMouseMove);
-    document.addEventListener('mouseup', handleDocumentMouseUp);
-    document.addEventListener('touchend', handleDocumentMouseUp);
-    
-    // Prevent default to avoid text selection during drawing
-    e.preventDefault();
-  }, [fabricCanvasRef, tool, getCanvasPoint, startDrawing]);
-
-  /**
-   * Handle mouse move event
-   * Updates drawing operation as mouse/touch moves
-   * 
-   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
-   */
-  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent): void => {
-    if (!isDrawing) return;
-    
-    // Get point from event
-    const point = getCanvasPoint(e);
-    if (!point) return;
-    
-    // Set Sentry context for mouse move (throttled to avoid excessive logging)
-    if (Math.random() < 0.05) { // Only log ~5% of moves to avoid spamming Sentry
-      Sentry.setContext("mouseEvent", {
-        type: "mouseMove",
-        tool,
-        point,
-        isDrawing,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Continue drawing to the point
-    continueDrawing(point);
-    
-    // Prevent default to avoid text selection during drawing
-    e.preventDefault();
-  }, [isDrawing, getCanvasPoint, continueDrawing, tool]);
-
-  /**
-   * Handle mouse up event
-   * Completes drawing operation
-   * 
-   * @param {MouseEvent | TouchEvent} e - Mouse or touch event
-   */
-  const handleMouseUp = useCallback((e: MouseEvent | TouchEvent): void => {
-    if (!isDrawing) return;
-    
-    // Get point from event
-    const point = getCanvasPoint(e);
-    if (!point) return;
-    
-    // Set Sentry context for mouse up
-    Sentry.setTag("action", "mouseUp");
-    Sentry.setContext("mouseEvent", {
-      type: "mouseUp",
-      tool,
-      point,
-      timestamp: new Date().toISOString()
-    });
-    
-    // End drawing at the point
-    endDrawing(point);
-    
-    // Prevent default
-    e.preventDefault();
-  }, [isDrawing, getCanvasPoint, endDrawing, tool]);
-
-  /**
-   * Clean up event listeners and timeouts
-   * Ensures proper cleanup to prevent memory leaks
-   */
-  const cleanup = useCallback(() => {
-    // Clean up timeouts
-    timeoutRef.current.forEach(id => window.clearTimeout(id));
-    timeoutRef.current = [];
-    
-    // Remove document event listeners
-    if (mouseMoveListenerRef.current) {
-      document.removeEventListener('mousemove', mouseMoveListenerRef.current);
-      document.removeEventListener('touchmove', mouseMoveListenerRef.current);
-      mouseMoveListenerRef.current = null;
-    }
-    
-    if (mouseUpListenerRef.current) {
-      document.removeEventListener('mouseup', mouseUpListenerRef.current);
-      document.removeEventListener('touchend', mouseUpListenerRef.current);
-      mouseUpListenerRef.current = null;
-    }
-  }, []);
+  }, [canvas, handleMouseDown, handleMouseMove, handleMouseUp]);
   
-  // Clean up on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
-
   return {
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    cleanup
+    getPointerPosition,
+    lastPoint: lastPointRef.current
   };
 };
+
+export default useMouseEvents;

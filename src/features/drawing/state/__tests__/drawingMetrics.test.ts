@@ -1,3 +1,4 @@
+
 import { DrawingMetricsState, initialDrawingMetricsState, drawingMetricsReducer, startToolUsage, endToolUsage } from '../drawingMetricsSlice';
 
 describe('Drawing Metrics', () => {
@@ -14,57 +15,35 @@ describe('Drawing Metrics', () => {
   it('should start tracking tool usage', () => {
     const tool = 'select';
     const newState = drawingMetricsReducer(initialState, startToolUsage(tool));
-    expect(newState.activeTool).toBe(tool);
-    expect(newState.toolUsageStartTime).not.toBeNull();
+    expect(newState.currentTool).toBe(tool);
+    expect(newState.startTime).toBeTruthy();
   });
 
   it('should end tracking tool usage', () => {
-    const tool = 'select';
-    const startTime = Date.now() - 100;
-    const interimState: DrawingMetricsState = {
-      ...initialState,
-      activeTool: tool,
-      toolUsageStartTime: startTime,
-      toolUsageDuration: {}
-    };
-    const newState = drawingMetricsReducer(interimState, endToolUsage());
-    expect(newState.activeTool).toBeNull();
-    expect(newState.toolUsageStartTime).toBeNull();
-
-    // Add null checks for metrics.toolUsageDuration
-    expect(newState.toolUsageDuration?.select || 0).toBeGreaterThanOrEqual(0);
-  });
-
-  it('should track tool usage duration', () => {
-    const selectTool = 'select';
-    const drawTool = 'draw';
-
-    // Start select tool
-    let metrics = drawingMetricsReducer(initialState, startToolUsage(selectTool));
-    const selectStartTime = metrics.toolUsageStartTime || Date.now();
-
-    // Simulate some time passing
-    metrics = {
-      ...metrics,
-      toolUsageStartTime: selectStartTime
-    };
-
-    // End select tool and start draw tool
-    metrics = drawingMetricsReducer(metrics, endToolUsage());
-    metrics = drawingMetricsReducer(metrics, startToolUsage(drawTool));
-    const drawStartTime = metrics.toolUsageStartTime || Date.now();
-
-    // Simulate more time passing
-    metrics = {
-      ...metrics,
-      toolUsageStartTime: drawStartTime
-    };
-
-    // End draw tool
-    metrics = drawingMetricsReducer(metrics, endToolUsage());
-
-    // Add null checks for metrics.toolUsageDuration
-    expect(metrics.toolUsageDuration?.select || 0).toBe(100);
-    expect(metrics.toolUsageDuration?.draw || 0).toBe(200);
+    // First start tracking
+    const tool = 'rectangle';
+    let state = drawingMetricsReducer(initialState, startToolUsage(tool));
+    
+    // Mock Date.now to return a consistent value for testing
+    const realDateNow = Date.now;
+    const mockStartTime = 1000;
+    const mockEndTime = 5000;
+    const mockDuration = mockEndTime - mockStartTime;
+    
+    // Mock time passing (4 seconds)
+    Date.now = jest.fn().mockReturnValue(mockEndTime);
+    state = { ...state, startTime: mockStartTime };
+    
+    // Now end tracking
+    state = drawingMetricsReducer(state, endToolUsage());
+    
+    // Restore Date.now
+    Date.now = realDateNow;
+    
+    // Check that usage was recorded correctly
+    expect(state.currentTool).toBeNull();
+    expect(state.startTime).toBeNull();
+    expect(state.toolUsage[tool]).toBe(mockDuration);
+    expect(state.drawingDuration).toBe(mockDuration);
   });
 });

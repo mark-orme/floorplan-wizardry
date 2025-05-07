@@ -26,18 +26,18 @@ export const drawingMetricsSlice = createSlice({
   name: 'drawingMetrics',
   initialState: initialDrawingMetricsState,
   reducers: {
-    recordToolUsage: (state, action: PayloadAction<{ tool: string, duration: number }>) => {
+    recordToolUsage: (state: DrawingMetricsState, action: PayloadAction<{ tool: string, duration: number }>) => {
       const { tool, duration } = action.payload;
       state.toolUsage[tool] = (state.toolUsage[tool] || 0) + duration;
     },
     
-    startToolUsage: (state, action: PayloadAction<string>) => {
+    startToolUsage: (state: DrawingMetricsState, action: PayloadAction<string>) => {
       state.currentTool = action.payload;
       state.startTime = Date.now();
       state.lastActive = new Date().toISOString();
     },
     
-    endToolUsage: (state) => {
+    endToolUsage: (state: DrawingMetricsState) => {
       if (state.currentTool && state.startTime) {
         const duration = Date.now() - state.startTime;
         state.toolUsage[state.currentTool] = (state.toolUsage[state.currentTool] || 0) + duration;
@@ -47,19 +47,19 @@ export const drawingMetricsSlice = createSlice({
       }
     },
     
-    incrementObjectCount: (state) => {
+    incrementObjectCount: (state: DrawingMetricsState) => {
       state.objectCount += 1;
     },
     
-    decrementObjectCount: (state) => {
+    decrementObjectCount: (state: DrawingMetricsState) => {
       state.objectCount = Math.max(0, state.objectCount - 1);
     },
     
-    updateDrawingDuration: (state, action: PayloadAction<number>) => {
+    updateDrawingDuration: (state: DrawingMetricsState, action: PayloadAction<number>) => {
       state.drawingDuration += action.payload;
     },
     
-    setLastActive: (state, action: PayloadAction<string>) => {
+    setLastActive: (state: DrawingMetricsState, action: PayloadAction<string>) => {
       state.lastActive = action.payload;
     },
     

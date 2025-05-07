@@ -88,7 +88,7 @@ export const FabricPath: React.FC<FabricPathProps> = ({ path, options }) => {
 };
 
 interface FabricGroupProps {
-  objects: FabricObject[];
+  objects: any[]; // Changed from FabricObject[] to any[] to fix type error
   options?: any; // Using any for now, but should be properly typed
 }
 

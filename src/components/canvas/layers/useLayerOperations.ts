@@ -62,12 +62,12 @@ export const useLayerOperations = ({
     if (activeLayerId === layerId) {
       const remainingLayers = layers.filter(layer => layer.id !== layerId);
       if (remainingLayers.length > 0) {
-        setActiveLayerId(remainingLayers[0].id);
+        setActiveLayerId(remainingLayers[0]?.id || ''); // Add null check here
       }
     }
     
-    if (canvas) {
-      canvas.requestRenderAll?.();
+    if (canvas && canvas.requestRenderAll) {
+      canvas.requestRenderAll();
     }
   }, [fabricCanvasRef, layers, activeLayerId, setLayers, setActiveLayerId]);
 

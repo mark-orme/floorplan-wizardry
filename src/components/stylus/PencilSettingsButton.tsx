@@ -4,17 +4,28 @@ import { Button } from '@/components/ui/button';
 import { PencilSettingsScreen, PencilCalibrationDialog } from './PencilSettingsScreen';
 
 interface PencilSettingsButtonProps {
-  minPressure: number;
-  maxPressure: number;
-  color: string;
-  width: number;
-  setMinPressure: (value: number) => void;
-  setMaxPressure: (value: number) => void;
-  setColor: (color: string) => void;
-  setWidth: (width: number) => void;
+  minPressure?: number;
+  maxPressure?: number;
+  color?: string;
+  width?: number;
+  setMinPressure?: (value: number) => void;
+  setMaxPressure?: (value: number) => void;
+  setColor?: (color: string) => void;
+  setWidth?: (width: number) => void;
+  className?: string; // Add className prop
 }
 
-export const PencilSettingsButton: React.FC<PencilSettingsButtonProps> = (props) => {
+export const PencilSettingsButton: React.FC<PencilSettingsButtonProps> = ({
+  minPressure = 0.1,
+  maxPressure = 1.0,
+  color = '#000000',
+  width = 2,
+  setMinPressure = () => {},
+  setMaxPressure = () => {},
+  setColor = () => {},
+  setWidth = () => {},
+  className = ''
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   
   return (
@@ -23,6 +34,7 @@ export const PencilSettingsButton: React.FC<PencilSettingsButtonProps> = (props)
         variant="outline" 
         size="sm" 
         onClick={() => setIsOpen(true)}
+        className={className}
       >
         Pencil Settings
       </Button>
@@ -39,7 +51,16 @@ export const PencilSettingsButton: React.FC<PencilSettingsButtonProps> = (props)
                 ✕
               </button>
             </div>
-            <PencilSettingsScreen {...props} />
+            <PencilSettingsScreen 
+              minPressure={minPressure}
+              maxPressure={maxPressure}
+              color={color}
+              width={width}
+              setMinPressure={setMinPressure}
+              setMaxPressure={setMaxPressure}
+              setColor={setColor}
+              setWidth={setWidth}
+            />
             <div className="p-4 border-t flex justify-end">
               <Button 
                 variant="outline" 

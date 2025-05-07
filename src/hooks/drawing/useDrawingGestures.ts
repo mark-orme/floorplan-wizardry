@@ -25,13 +25,17 @@ export const useDrawingGestures = ({
       // Calculate initial distance between touch points
       const touch1 = event.touches[0];
       const touch2 = event.touches[1];
+      
+      // Add null checks for touch points
+      if (!touch1 || !touch2) return;
+      
       initialDistance = Math.hypot(
         touch2.clientX - touch1.clientX,
         touch2.clientY - touch1.clientY
       );
       
       // Store current zoom level
-      initialZoom = canvas.getZoom();
+      initialZoom = canvas.getZoom?.() || 1;
     };
     
     const handleTouchMove = (event: TouchEvent) => {
@@ -40,6 +44,10 @@ export const useDrawingGestures = ({
       // Calculate new distance between touch points
       const touch1 = event.touches[0];
       const touch2 = event.touches[1];
+      
+      // Add null checks for touch points
+      if (!touch1 || !touch2) return;
+      
       const currentDistance = Math.hypot(
         touch2.clientX - touch1.clientX,
         touch2.clientY - touch1.clientY
@@ -61,12 +69,14 @@ export const useDrawingGestures = ({
       const canvasElement = canvas.getElement();
       const rect = canvasElement.getBoundingClientRect();
       const canvasPoint: Point = {
-        x: (midpoint.x - rect.left) / canvas.getZoom(),
-        y: (midpoint.y - rect.top) / canvas.getZoom()
+        x: (midpoint.x - rect.left) / (canvas.getZoom?.() || 1),
+        y: (midpoint.y - rect.top) / (canvas.getZoom?.() || 1)
       };
       
-      // Apply zoom
-      canvas.zoomToPoint(canvasPoint as any, newZoom);
+      // Apply zoom if zoomToPoint is available
+      if (canvas.zoomToPoint) {
+        canvas.zoomToPoint(canvasPoint as any, newZoom);
+      }
       
       // Prevent default to avoid browser zooming
       event.preventDefault();
