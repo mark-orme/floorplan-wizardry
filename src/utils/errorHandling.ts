@@ -11,20 +11,36 @@ interface ErrorContext {
   context?: Record<string, any>;
 }
 
+type ErrorSeverityLevel = 'critical' | 'error' | 'warning' | 'info';
+
+/**
+ * Map severity level to ErrorSeverity enum
+ */
+function mapSeverityLevel(severity: ErrorSeverityLevel): ErrorSeverity {
+  switch (severity) {
+    case 'critical':
+      return ErrorSeverity.CRITICAL;
+    case 'error':
+      return ErrorSeverity.HIGH;
+    case 'warning':
+      return ErrorSeverity.MEDIUM;
+    case 'info':
+      return ErrorSeverity.LOW;
+    default:
+      return ErrorSeverity.MEDIUM;
+  }
+}
+
 /**
  * Handle errors with consistent reporting and user feedback
  */
 export function handleError(
   error: Error | string,
-  severity: 'critical' | 'error' | 'warning' | 'info' = 'error',
+  severity: ErrorSeverityLevel = 'error',
   context: ErrorContext = {}
 ): void {
   // Map severity to ErrorSeverity enum
-  const errorSeverity = 
-    severity === 'critical' ? ErrorSeverity.CRITICAL :
-    severity === 'error' ? ErrorSeverity.HIGH :
-    severity === 'warning' ? ErrorSeverity.MEDIUM :
-    ErrorSeverity.LOW;
+  const errorSeverity = mapSeverityLevel(severity);
 
   // Report the error using consistent structure
   reportError(error, {
@@ -56,7 +72,7 @@ export async function trySafely<T>(
   try {
     const result = await operation();
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(
       error instanceof Error ? error : new Error(String(error)),
       'error',

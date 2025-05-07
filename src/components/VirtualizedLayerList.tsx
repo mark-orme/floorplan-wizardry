@@ -13,6 +13,19 @@ export interface VirtualizedLayerListProps {
   listHeight: number;
 }
 
+interface LayerItemProps {
+  index: number;
+  style: React.CSSProperties;
+  data: {
+    layers: DrawingLayer[];
+    activeLayerId: string;
+    onLayerClick: (layerId: string) => void;
+    onToggleVisibility: (layerId: string) => void;
+    onToggleLock: (layerId: string) => void;
+    onDeleteLayer: (layerId: string) => void;
+  };
+}
+
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   layers,
   activeLayerId,
@@ -22,7 +35,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   onDeleteLayer,
   listHeight
 }) => {
-  const renderLayer = useCallback(({ index, style }: { index: number, style: React.CSSProperties }) => {
+  const renderLayer = useCallback(({ index, style }: LayerItemProps) => {
     const layer = layers[index];
     
     // Add null check to ensure layer is defined
@@ -78,8 +91,16 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
       itemSize={40}
       width="100%"
       className="scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400"
+      itemData={{
+        layers,
+        activeLayerId,
+        onLayerClick,
+        onToggleVisibility,
+        onToggleLock,
+        onDeleteLayer
+      }}
     >
-      {renderLayer}
+      {renderLayer as any}
     </FixedSizeList>
   );
 };
