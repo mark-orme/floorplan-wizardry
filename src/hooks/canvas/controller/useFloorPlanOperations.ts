@@ -21,6 +21,9 @@ export const useFloorPlanOperations = ({
     if (currentFloorIndex < 0 || currentFloorIndex >= floorPlans.length) return;
     
     const floorPlan = floorPlans[currentFloorIndex];
+    
+    // Safety check to ensure floorPlan exists
+    if (!floorPlan) return;
 
     if (canvas && floorPlan) {
       floorPlan.data = canvas.toJSON();

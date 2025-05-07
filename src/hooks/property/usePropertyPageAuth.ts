@@ -7,8 +7,9 @@ const USER_ROLES = {
 };
 
 export const usePropertyPageAuth = () => {
-  const checkUserPermission = (userRole) => {
+  const checkUserPermission = (userRole?: string) => {
     // Use the imported USER_ROLES constant for comparison
+    // Handle undefined userRole
     if (userRole === USER_ROLES.ADMIN) {
       return {
         canEdit: true,
@@ -25,7 +26,7 @@ export const usePropertyPageAuth = () => {
       };
     }
     
-    // Default user role
+    // Default user role or undefined
     return {
       canEdit: false,
       canDelete: false,

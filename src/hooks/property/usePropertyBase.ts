@@ -3,12 +3,17 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+interface AuthContextWithRole {
+  user: any;
+  userRole?: string; // Make userRole optional
+}
+
 /**
  * Base hook for property operations
  * Provides common functionality for property hooks
  */
 export const usePropertyBase = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole } = useAuth() as AuthContextWithRole;
   const [isLoading, setIsLoading] = useState(false);
   
   /**
@@ -25,7 +30,7 @@ export const usePropertyBase = () => {
   
   return {
     user,
-    userRole,
+    userRole, // This can be undefined now
     isLoading,
     setIsLoading,
     checkAuthentication

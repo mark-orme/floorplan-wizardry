@@ -31,14 +31,16 @@ describe('Drawing Metrics', () => {
     const mockDuration = mockEndTime - mockStartTime;
     
     // Mock time passing (4 seconds)
-    Date.now = jest.fn().mockReturnValue(mockEndTime);
+    const mockDateNow = () => mockEndTime;
+    global.Date.now = mockDateNow;
+    
     state = { ...state, startTime: mockStartTime };
     
     // Now end tracking
     state = drawingMetricsReducer(state, endToolUsage());
     
     // Restore Date.now
-    Date.now = realDateNow;
+    global.Date.now = realDateNow;
     
     // Check that usage was recorded correctly
     expect(state.currentTool).toBeNull();

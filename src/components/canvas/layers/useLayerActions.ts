@@ -1,5 +1,6 @@
 
 import { useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
@@ -21,10 +22,13 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  const { toggleLayerVisibility } = useLayerVisibility({ fabricCanvasRef, setLayers });
-  const { toggleLayerLock } = useLayerLocking({ fabricCanvasRef, setLayers });
+  // Use type assertion to ensure compatibility with existing hooks
+  const canvasRef = fabricCanvasRef as React.MutableRefObject<FabricCanvas | null>;
+  
+  const { toggleLayerVisibility } = useLayerVisibility({ fabricCanvasRef: canvasRef, setLayers });
+  const { toggleLayerLock } = useLayerLocking({ fabricCanvasRef: canvasRef, setLayers });
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef,
+    fabricCanvasRef: canvasRef,
     layers,
     setLayers,
     activeLayerId,

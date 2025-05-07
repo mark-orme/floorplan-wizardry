@@ -48,10 +48,9 @@ export const useFloorPlanBatchProcessing = (
             setProgress(Math.floor(((i + results.length + 1) / totalCount) * 100));
             return processed;
           } catch (err) {
-            captureMessage(`Error processing floor plan ${plan.label || plan.name}: ${err.message}`, {
-              level: 'error'
-            });
-            throw err;
+            const errorMessage = `Error processing floor plan ${plan.name || ''}: ${err instanceof Error ? err.message : String(err)}`;
+            captureMessage(errorMessage, { level: 'error' });
+            throw new Error(errorMessage);
           }
         });
         
@@ -70,7 +69,7 @@ export const useFloorPlanBatchProcessing = (
       return results;
     } catch (error) {
       if (onError) {
-        onError(error);
+        onError(error instanceof Error ? error : new Error(String(error)));
       }
       return results;
     } finally {

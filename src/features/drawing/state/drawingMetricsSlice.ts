@@ -1,87 +1,80 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { DrawingMode } from '@/constants/drawingModes';
 
-// Define the state interface for drawing metrics
 export interface DrawingMetricsState {
-  toolUsage: Record<string, number>;
-  drawingDuration: number;
-  objectCount: number;
-  lastActive: string;
-  currentTool: string | null;
+  currentTool: DrawingMode | null;
   startTime: number | null;
+  drawingDuration: number;
+  toolUsage: Record<string, number>;
 }
 
-// Initialize state with default values
 export const initialDrawingMetricsState: DrawingMetricsState = {
-  toolUsage: {},
-  drawingDuration: 0,
-  objectCount: 0,
-  lastActive: '',
   currentTool: null,
-  startTime: null
+  startTime: null,
+  drawingDuration: 0,
+  toolUsage: {}
 };
 
-// Create the slice with reducers
 export const drawingMetricsSlice = createSlice({
   name: 'drawingMetrics',
   initialState: initialDrawingMetricsState,
   reducers: {
-    recordToolUsage: (state: DrawingMetricsState, action: PayloadAction<{ tool: string, duration: number }>) => {
-      const { tool, duration } = action.payload;
-      state.toolUsage[tool] = (state.toolUsage[tool] || 0) + duration;
-    },
-    
-    startToolUsage: (state: DrawingMetricsState, action: PayloadAction<string>) => {
+    startToolUsage: (state: DrawingMetricsState, action: PayloadAction<DrawingMode>) => {
       state.currentTool = action.payload;
       state.startTime = Date.now();
-      state.lastActive = new Date().toISOString();
     },
     
     endToolUsage: (state: DrawingMetricsState) => {
-      if (state.currentTool && state.startTime) {
-        const duration = Date.now() - state.startTime;
-        state.toolUsage[state.currentTool] = (state.toolUsage[state.currentTool] || 0) + duration;
+      const { currentTool, startTime } = state;
+      
+      if (currentTool && startTime) {
+        const duration = Date.now() - startTime;
+        
+        state.toolUsage = {
+          ...state.toolUsage,
+          [currentTool]: (state.toolUsage[currentTool] || 0) + duration
+        };
+        
         state.drawingDuration += duration;
         state.currentTool = null;
         state.startTime = null;
       }
     },
     
-    incrementObjectCount: (state: DrawingMetricsState) => {
-      state.objectCount += 1;
-    },
-    
-    decrementObjectCount: (state: DrawingMetricsState) => {
-      state.objectCount = Math.max(0, state.objectCount - 1);
-    },
-    
-    updateDrawingDuration: (state: DrawingMetricsState, action: PayloadAction<number>) => {
-      state.drawingDuration += action.payload;
-    },
-    
-    setLastActive: (state: DrawingMetricsState, action: PayloadAction<string>) => {
-      state.lastActive = action.payload;
-    },
-    
-    resetMetrics: () => {
+    resetMetrics: (state: DrawingMetricsState) => {
       return initialDrawingMetricsState;
+    },
+    
+    incrementToolUsage: (state: DrawingMetricsState, action: PayloadAction<{tool: DrawingMode; duration: number}>) => {
+      const { tool, duration } = action.payload;
+      state.toolUsage[tool] = (state.toolUsage[tool] || 0) + duration;
+      state.drawingDuration += duration;
+    },
+    
+    setDrawingDuration: (state: DrawingMetricsState, action: PayloadAction<number>) => {
+      state.drawingDuration = action.payload;
+    },
+    
+    setToolUsageStats: (state: DrawingMetricsState, action: PayloadAction<Record<string, number>>) => {
+      state.toolUsage = action.payload;
+    },
+    
+    clearStats: (state: DrawingMetricsState) => {
+      state.toolUsage = {};
+      state.drawingDuration = 0;
     }
   }
 });
 
-// Export actions
 export const {
-  recordToolUsage,
   startToolUsage,
   endToolUsage,
-  incrementObjectCount,
-  decrementObjectCount,
-  updateDrawingDuration,
-  setLastActive,
-  resetMetrics
+  resetMetrics,
+  incrementToolUsage,
+  setDrawingDuration,
+  setToolUsageStats,
+  clearStats
 } = drawingMetricsSlice.actions;
 
-// Export reducer
-export const drawingMetricsReducer = drawingMetricsSlice.reducer;
-
-export default drawingMetricsReducer;
+export default drawingMetricsSlice.reducer;

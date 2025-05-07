@@ -1,4 +1,3 @@
-
 /**
  * Geometry Engine Hook
  * Provides geometry calculation utilities for canvas operations
@@ -55,11 +54,27 @@ export const useGeometryEngine = () => {
     return geometryEngine.isPointInsidePolygon(point, polygon);
   }, []);
 
+  /**
+   * Calculate the area of a bounding box
+   */
+  const calculateBoundingBoxArea = (rect?: { left?: number, top?: number, width?: number, height?: number }) => {
+    if (!rect) return 0;
+    
+    // Add proper null checks
+    const left = rect.left ?? 0;
+    const top = rect.top ?? 0;
+    const width = rect.width ?? 0;
+    const height = rect.height ?? 0;
+    
+    return width * height;
+  };
+
   return {
     calculatePolygonArea,
     calculateDistance,
     isPolygonClockwise,
     calculateCenter,
-    isPointInPolygon
+    isPointInPolygon,
+    calculateBoundingBoxArea
   };
 };

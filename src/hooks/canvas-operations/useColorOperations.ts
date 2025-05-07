@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { useDrawingContext } from '@/contexts/DrawingContext';
+import { ExtendedFabricObject } from '@/types/canvas-types';
 
 interface UseColorOperationsProps {
   canvas: FabricCanvas | null;
@@ -41,11 +42,16 @@ export const useColorOperations = ({ canvas }: UseColorOperationsProps) => {
     if (activeObjects.length === 0) return;
     
     activeObjects.forEach(obj => {
-      const fabricObj = obj as FabricObject & { stroke?: string; fill?: string };
-      if (fabricObj.stroke !== undefined) {
-        fabricObj.set('stroke', color);
-      } else if (fabricObj.fill !== undefined && fabricObj.fill !== 'transparent') {
-        fabricObj.set('fill', color);
+      // Cast to ExtendedFabricObject to ensure we can access stroke and fill
+      const fabricObj = obj as ExtendedFabricObject;
+      
+      // Check if properties exist using 'in' operator
+      if (fabricObj && typeof fabricObj === 'object') {
+        if ('stroke' in fabricObj && fabricObj.stroke !== undefined) {
+          fabricObj.set('stroke', color);
+        } else if ('fill' in fabricObj && fabricObj.fill !== undefined && fabricObj.fill !== 'transparent') {
+          fabricObj.set('fill', color);
+        }
       }
     });
     

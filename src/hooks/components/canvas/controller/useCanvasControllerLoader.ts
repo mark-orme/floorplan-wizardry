@@ -1,56 +1,56 @@
 
-import { useState, useRef } from "react";
-import { Canvas as FabricCanvas } from "fabric";
-import { DebugInfoState } from "@/types/DebugInfoState";
-import { captureMessage } from "@/utils/sentryUtils";
+import { useState, useEffect } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { toast } from 'sonner';
 
-/**
- * Canvas controller loader hook
- * Handles loading and error states for the canvas controller
- */
+interface DebugInfo {
+  fps: number;
+  objectCount: number;
+  renderTime: number;
+}
+
+interface UseCanvasControllerLoaderProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  debugInfo: DebugInfo;
+  setDebugInfo: React.Dispatch<React.SetStateAction<DebugInfo>>;
+  setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
 export const useCanvasControllerLoader = ({
   canvasRef,
   debugInfo,
   setDebugInfo,
   setErrorMessage
-}) => {
-  const canvasDimensions = { width: 800, height: 600 };
-  const historyRef = useRef({ past: [], future: [] });
-  
-  // Loading state
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Initialize logging
-  const logError = (message: string) => {
-    console.error(message);
-    captureMessage(message, { level: 'error' });
-  };
-  
-  const logInfo = (message: string) => {
-    console.info(message);
-    captureMessage(message, { level: 'info' });
-  };
-  
-  // Handle errors
-  const handleError = (error: Error, operation: string) => {
-    const errorMessage = `Canvas ${operation} error: ${error.message}`;
-    logError(errorMessage);
-    setErrorMessage(errorMessage);
-    setDebugInfo({
-      canvasReady: false,
-      hasError: true,
-      errorMessage: error.message
-    });
-  };
-  
-  // Log information
-  logInfo('Canvas controller loader initialized');
-  
+}: UseCanvasControllerLoaderProps) => {
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!canvasRef.current || isInitialized) return;
+
+    try {
+      const fabricCanvas = new FabricCanvas(canvasRef.current, {
+        width: 800,
+        height: 600,
+        backgroundColor: '#FFFFFF'
+      });
+      
+      setCanvas(fabricCanvas);
+      setIsInitialized(true);
+      setErrorMessage(null);
+      
+      return () => {
+        fabricCanvas.dispose();
+      };
+    } catch (error) {
+      console.error('Failed to initialize canvas:', error);
+      setErrorMessage('Failed to initialize canvas');
+      toast.error('Failed to initialize canvas');
+    }
+  }, [canvasRef, isInitialized, setErrorMessage]);
+
   return {
-    isLoading,
-    setIsLoading,
-    handleError,
-    historyRef,
-    canvasDimensions
+    canvas,
+    isInitialized
   };
 };

@@ -54,13 +54,14 @@ export const useFloorPlanChunkProcessing = (
       for (let i = 0; i < chunk.length; i++) {
         try {
           const currentPlan = chunk[i];
+          if (!currentPlan) continue;
           const processed = await processFunc(currentPlan, start + i);
           chunkResults.push(processed);
         } catch (error) {
           if (onError) {
-            onError(error, chunkIndex);
+            onError(error instanceof Error ? error : new Error(String(error)), chunkIndex);
           }
-          console.error(`Error processing floor plan ${chunk[i].label || chunk[i].name}:`, error);
+          console.error(`Error processing floor plan ${chunk[i]?.name || 'unknown'}:`, error);
         }
       }
       

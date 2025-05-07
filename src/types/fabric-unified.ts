@@ -1,149 +1,135 @@
 
 /**
- * Unified Fabric Types
- * Provides compatibility across different Fabric.js versions
+ * Unified type definitions for Fabric.js
  */
-import { Object as FabricObject, Canvas, IObjectOptions } from 'fabric';
+import { Canvas, Object as FabricObject, Point, Circle, Rect, Line } from 'fabric';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
 
-// Re-export standard types
-export type { Canvas, FabricObject };
+// Re-export types
+export {
+  Canvas,
+  FabricObject,
+  Point,
+  Circle,
+  Rect,
+  Line
+};
 
-// Create a unified Point type
-export interface Point {
+// Type definitions for common Fabric shapes
+export interface FabricPoint {
   x: number;
   y: number;
 }
 
-// Extended canvas interface with additional properties
+export interface FabricCoord {
+  left: number;
+  top: number;
+}
+
+export interface FabricDimension {
+  width: number;
+  height: number;
+}
+
+export interface FabricObjectOptions {
+  id?: string;
+  left?: number;
+  top?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  angle?: number;
+  selectable?: boolean;
+  evented?: boolean;
+  visible?: boolean;
+  hasControls?: boolean;
+  hasBorders?: boolean;
+  lockMovementX?: boolean;
+  lockMovementY?: boolean;
+  objectCaching?: boolean;
+}
+
+// Extended canvas interface
 export interface ExtendedCanvas extends Canvas {
-  wrapperEl: HTMLDivElement;
-  upperCanvasEl?: HTMLCanvasElement;
-  isDrawingMode?: boolean;
-  selection?: boolean;
-  skipTargetFind?: boolean;
-  skipOffscreen?: boolean;
-  renderOnAddRemove?: boolean;
-  viewportTransform?: number[];
-  absolutePointer?: Point;
-  relativePointer?: Point;
-  freeDrawingBrush?: {
+  isDrawingMode: boolean;  // Make sure this is not optional
+  selection: boolean;
+  defaultCursor: string;
+  hoverCursor: string;
+  freeDrawingBrush: {
     color: string;
     width: number;
   };
+  wrapperEl: HTMLDivElement;
+  viewportTransform: number[];
+  renderOnAddRemove: boolean;
+  skipTargetFind: boolean;
+  allowTouchScrolling: boolean;
+}
+
+// GRID constants
+export const GRID_CONSTANTS = {
+  SMALL_GRID: 10,
+  LARGE_GRID: 50,
+  GRID_COLOR: '#e0e0e0',
+  LARGE_GRID_COLOR: '#c0c0c0'
+};
+
+// Helper functions
+export function toFabricPoint(point: FabricPoint): Point {
+  return new Point(point.x, point.y);
+}
+
+export function fromFabricPoint(point: Point): FabricPoint {
+  return { x: point.x, y: point.y };
+}
+
+export function isFabricObject(obj: any): obj is FabricObject {
+  return obj && obj.type !== undefined && typeof obj.toObject === 'function';
+}
+
+export function safeAddToCanvas(canvas: Canvas | null, obj: FabricObject | null): boolean {
+  if (!canvas || !obj) return false;
   
-  // Additional methods that might be missing in some types
-  getActiveObject?: () => FabricObject | null;
-  forEachObject?: (callback: (obj: FabricObject) => void) => void;
-  zoomToPoint?: (point: Point, value: number) => Canvas;
-  setWidth?(width: number): Canvas;
-  setHeight?(height: number): Canvas;
-  getWidth?(): number;
-  getHeight?(): number;
-  getZoom?(): number;
-  setZoom?(zoom: number): Canvas;
-  clear?(): Canvas;
-  toJSON?(propertiesToInclude?: string[]): any;
+  try {
+    canvas.add(obj);
+    canvas.renderAll();
+    return true;
+  } catch (error) {
+    console.error('Error adding object to canvas:', error);
+    return false;
+  }
 }
 
-// Extended object interface with additional properties
-export interface ExtendedObject extends FabricObject {
-  id?: string;
-  objectType?: string;
-  visible?: boolean;
-  selectable?: boolean;
-  evented?: boolean;
-  excludeFromExport?: boolean | (() => void);
+export function safeDisposeCanvas(canvas: Canvas | null): void {
+  if (!canvas) return;
   
-  // Ensure proper method implementations
-  set(options: Record<string, any>): this;
-  set(property: string, value: any): this;
-  setCoords?(): this;
+  try {
+    canvas.dispose();
+  } catch (error) {
+    console.error('Error disposing canvas:', error);
+  }
 }
 
-// Unified path options
-export interface PathOptions extends IObjectOptions {
-  path?: string | Point[];
-  objectType?: string;
-  evented?: boolean;
-  selectable?: boolean;
+// Export FloorPlan type for compatibility
+export interface FloorPlan {
+  id: string;
+  name: string;
+  created?: string;
+  updated?: string;
+  data?: any;
+  thumbnail?: string;
+  label?: string;
 }
 
-// Unified line options
-export interface LineOptions extends IObjectOptions {
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
-  stroke?: string;
-  strokeWidth?: number;
-  evented?: boolean;
-  selectable?: boolean;
-  objectType?: string;
-}
-
-// Unified measurement data
+// Export MeasurementData type for compatibility
 export interface MeasurementData {
-  distance: number;
-  angle: number;
-  units: string;
-  precision?: number;
-  formatted?: string;
-  snapped: boolean;
-  unit: string;
+  length?: number;
+  angle?: number;
+  units?: string;
+  startPoint?: FabricPoint;
+  endPoint?: FabricPoint;
 }
 
-// Typeguards for fabric objects
-export function isPathObject(obj: any): boolean {
-  return obj && obj.type === 'path';
-}
-
-export function isLineObject(obj: any): boolean {
-  return obj && obj.type === 'line';
-}
-
-/**
- * Common event handler signature for Fabric.js events
- */
-export type FabricEventHandler<T = any> = (e: T) => void;
-
-/**
- * Canvas event type
- */
-export interface CanvasEvent<T = any> {
-  e?: T;
-  target?: FabricObject;
-  pointer?: Point;
-  absolutePointer?: Point;
-}
-
-/**
- * Mouse event type
- */
-export interface CanvasMouseEvent extends CanvasEvent<MouseEvent> {
-  button?: number;
-}
-
-/**
- * Touch event type
- */
-export interface CanvasTouchEvent extends CanvasEvent<TouchEvent> {}
-
-/**
- * Object event type
- */
-export interface CanvasObjectEvent extends CanvasEvent {
-  target: FabricObject;
-}
-
-/**
- * Fabric.js event types
- */
-export enum FabricEventType {
-  MOUSE_DOWN = 'mouse:down',
-  MOUSE_MOVE = 'mouse:move',
-  MOUSE_UP = 'mouse:up',
-  OBJECT_MODIFIED = 'object:modified',
-  SELECTION_CREATED = 'selection:created',
-  SELECTION_UPDATED = 'selection:updated',
-  SELECTION_CLEARED = 'selection:cleared'
-}
