@@ -15,6 +15,7 @@ export interface CaptureErrorOptions {
     email?: string;
     username?: string;
   };
+  extra?: Record<string, any>;
 }
 
 /**
@@ -24,6 +25,7 @@ export interface CaptureMessageOptions {
   level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
   tags?: Record<string, string>;
   context?: Record<string, any>;
+  extra?: Record<string, any>;
 }
 
 /**

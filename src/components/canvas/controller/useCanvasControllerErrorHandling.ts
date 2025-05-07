@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { handleError } from '@/utils/errorHandlingUtils';
+import { handleApiError } from '@/utils/errorHandlingUtils';
 import { captureMessage } from '@/utils/sentryUtils';
 
 interface UseControllerErrorHandlingProps {
@@ -31,7 +31,10 @@ export const useCanvasControllerErrorHandling = ({
     // Capture error for monitoring
     captureMessage(`Canvas error: ${errorObj.message}`, {
       level,
-      tags: { component: componentName, source: sourceName }
+      tags: { 
+        component: componentName, 
+        source: sourceName 
+      }
     });
 
     // Call onError callback if provided

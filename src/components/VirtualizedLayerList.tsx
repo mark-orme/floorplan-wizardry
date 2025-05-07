@@ -13,17 +13,13 @@ export interface VirtualizedLayerListProps {
   listHeight: number;
 }
 
-interface LayerItemProps {
-  index: number;
-  style: React.CSSProperties;
-  data: {
-    layers: DrawingLayer[];
-    activeLayerId: string;
-    onLayerClick: (layerId: string) => void;
-    onToggleVisibility: (layerId: string) => void;
-    onToggleLock: (layerId: string) => void;
-    onDeleteLayer: (layerId: string) => void;
-  };
+interface LayerListData {
+  layers: DrawingLayer[];
+  activeLayerId: string;
+  onLayerClick: (layerId: string) => void;
+  onToggleVisibility: (layerId: string) => void;
+  onToggleLock: (layerId: string) => void;
+  onDeleteLayer: (layerId: string) => void;
 }
 
 export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
@@ -35,8 +31,8 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
   onDeleteLayer,
   listHeight
 }) => {
-  const renderLayer = useCallback(({ index, style }: LayerItemProps) => {
-    const layer = layers[index];
+  const renderLayer = useCallback(({ index, style, data }: ListChildComponentProps<LayerListData>) => {
+    const layer = data.layers[index];
     
     // Add null check to ensure layer is defined
     if (!layer) return null;
@@ -45,11 +41,11 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
       <div 
         style={style}
         className={`flex items-center gap-2 px-2 py-1 ${
-          activeLayerId === layer.id ? 'bg-blue-100' : 'hover:bg-gray-100'
+          data.activeLayerId === layer.id ? 'bg-blue-100' : 'hover:bg-gray-100'
         }`}
       >
         <button
-          onClick={() => onToggleVisibility(layer.id)}
+          onClick={() => data.onToggleVisibility(layer.id)}
           className="p-1 rounded hover:bg-gray-200"
           title={layer.visible ? 'Hide layer' : 'Show layer'}
         >
@@ -57,7 +53,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         </button>
         
         <button
-          onClick={() => onToggleLock(layer.id)}
+          onClick={() => data.onToggleLock(layer.id)}
           className="p-1 rounded hover:bg-gray-200"
           title={layer.locked ? 'Unlock layer' : 'Lock layer'}
         >
@@ -66,14 +62,14 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         
         <div 
           className="flex-1 cursor-pointer truncate"
-          onClick={() => onLayerClick(layer.id)}
+          onClick={() => data.onLayerClick(layer.id)}
         >
           {layer.name}
         </div>
         
-        {layers.length > 1 && (
+        {data.layers.length > 1 && (
           <button
-            onClick={() => onDeleteLayer(layer.id)}
+            onClick={() => data.onDeleteLayer(layer.id)}
             className="p-1 rounded hover:bg-red-100 hover:text-red-600"
             title="Delete layer"
           >
@@ -82,10 +78,10 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         )}
       </div>
     );
-  }, [layers, activeLayerId, onLayerClick, onToggleVisibility, onToggleLock, onDeleteLayer]);
+  }, []);
 
   return (
-    <FixedSizeList
+    <FixedSizeList<LayerListData>
       height={listHeight}
       itemCount={layers.length}
       itemSize={40}
@@ -100,7 +96,7 @@ export const VirtualizedLayerList: React.FC<VirtualizedLayerListProps> = ({
         onDeleteLayer
       }}
     >
-      {renderLayer as any}
+      {renderLayer}
     </FixedSizeList>
   );
 };
