@@ -21,10 +21,10 @@ export interface CanvasErrorData {
 /**
  * Maps the canvas error severity to a Sentry level
  */
-function mapSeverityToLevel(severity: 'low' | 'medium' | 'high' | 'critical' | undefined): string {
+function mapSeverityToLevel(severity: 'low' | 'medium' | 'high' | 'critical' | undefined): 'info' | 'warning' | 'error' | 'fatal' {
   switch (severity) {
     case 'critical':
-      return 'error';
+      return 'fatal';
     case 'high':
       return 'error';
     case 'medium':
@@ -90,7 +90,7 @@ export const useCanvasErrorHandling = (options: UseCanvasErrorHandlingOptions = 
           component: componentName,
           source: source
         },
-        extra: { 
+        context: { 
           ...metadata,
           message: errorMessage
         },

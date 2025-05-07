@@ -17,7 +17,7 @@ export const useCanvasControllerErrorHandling = ({
   componentName = 'CanvasController',
   onError
 }: UseControllerErrorHandlingProps = {}) => {
-  const handleError = useCallback((
+  const handleControllerError = useCallback((
     error: Error | string, 
     source: string = '',
     level: ErrorLevel = 'error'
@@ -41,6 +41,6 @@ export const useCanvasControllerErrorHandling = ({
   }, [componentName, onError]);
 
   return {
-    handleError
+    handleError: handleControllerError
   };
 };

@@ -4,6 +4,7 @@
  */
 import { ErrorSeverity, reportError } from './errorReporting';
 import { toast } from 'sonner';
+import { normalizeError } from './errorHandlingUtils';
 
 interface ErrorContext {
   component?: string;
@@ -73,11 +74,8 @@ export async function trySafely<T>(
     const result = await operation();
     return result;
   } catch (error: unknown) {
-    handleError(
-      error instanceof Error ? error : new Error(String(error)),
-      'error',
-      errorContext
-    );
+    const normalizedError = normalizeError(error);
+    handleError(normalizedError, 'error', errorContext);
     return null;
   }
 }

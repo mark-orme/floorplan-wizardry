@@ -6,7 +6,7 @@
 
 import { ErrorSeverity, reportError } from './errorReporting';
 import { toast } from 'sonner';
-import { captureError as sentryCaptureError } from './sentryUtils';
+import { captureError } from './sentryUtils';
 
 /**
  * Standard error context interface
@@ -80,13 +80,13 @@ export function handleError(
   });
   
   // Send to Sentry if available
-  sentryCaptureError(typeof error === 'string' ? new Error(error) : error, {
+  captureError(typeof error === 'string' ? new Error(error) : error, {
     level: mapToSentryLevel(severity),
     tags: {
       component: context.component || 'unknown',
       operation: context.operation || 'unknown'
     },
-    extra: context.context
+    context: context.context
   });
   
   // Show appropriate user feedback based on severity

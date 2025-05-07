@@ -1,36 +1,35 @@
 
 /**
- * Type definitions for Sentry utility functions
+ * Type definitions for Sentry utilities
  */
-import type { User } from '@sentry/react';
 
-// Options for captureError function
 export interface CaptureErrorOptions {
-  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
   tags?: Record<string, string>;
   extra?: Record<string, any>;
-  context?: Record<string, any>;
-  user?: User;
-  security?: {
-    csp?: string;
-    hpkp?: string;
-    expectCt?: string;
-    expectStaple?: string;
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
   };
+  context?: Record<string, any>;
+  security?: Record<string, any>;
 }
 
-// Options for captureMessage function
 export interface CaptureMessageOptions {
-  level?: 'fatal' | 'error' | 'warning' | 'log' | 'info' | 'debug';
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
   tags?: Record<string, string>;
   extra?: Record<string, any>;
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
+  };
   context?: Record<string, any>;
-  user?: User;
 }
 
-// Result of input validation
 export interface InputValidationResult {
   valid: boolean;
-  error?: string;
-  value?: any;
+  errors: string[];
+  field: string;
 }

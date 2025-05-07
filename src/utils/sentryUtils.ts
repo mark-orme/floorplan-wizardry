@@ -8,8 +8,22 @@
  */
 export interface CaptureErrorOptions {
   tags?: Record<string, string>;
-  extra?: Record<string, any>;
+  context?: Record<string, any>;
   level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+  user?: {
+    id?: string;
+    email?: string;
+    username?: string;
+  };
+}
+
+/**
+ * Options for message capture
+ */
+export interface CaptureMessageOptions {
+  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+  tags?: Record<string, string>;
+  context?: Record<string, any>;
 }
 
 /**
@@ -23,7 +37,7 @@ export const captureError = (error: Error, options: CaptureErrorOptions = {}) =>
 /**
  * Capture a message in Sentry
  */
-export const captureMessage = (message: string, options: CaptureErrorOptions = {}) => {
+export const captureMessage = (message: string, options: CaptureMessageOptions = {}) => {
   // In a real application, this would send to Sentry
   console.log('Message captured:', message, options);
 };

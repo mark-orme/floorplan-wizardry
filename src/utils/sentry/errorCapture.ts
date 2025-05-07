@@ -1,4 +1,8 @@
 
+/**
+ * Error capture utilities for Sentry
+ */
+
 interface CaptureErrorOptions {
   context?: Record<string, any>;
   tags?: Record<string, string>;
@@ -8,7 +12,7 @@ interface CaptureErrorOptions {
     email?: string;
     username?: string;
   };
-  showDialog?: boolean; // Changed from showReportDialog to showDialog
+  showDialog?: boolean;
 }
 
 /**
