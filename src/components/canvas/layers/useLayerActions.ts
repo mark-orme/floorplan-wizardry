@@ -23,12 +23,20 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Create a reference that properly casts the canvas for the hooks that expect FabricCanvas
+  // Create a reference that casts the canvas properly
+  // We'll make sure the viewportTransform is properly typed
   const canvasRef = {
     get current() {
-      return fabricCanvasRef.current;
+      const canvas = fabricCanvasRef.current;
+      if (canvas) {
+        // Ensure viewportTransform is defined when needed
+        if (canvas.viewportTransform === undefined) {
+          canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+        }
+      }
+      return canvas;
     }
-  } as React.MutableRefObject<FabricCanvas | null>;
+  };
   
   const { toggleLayerVisibility } = useLayerVisibility({ fabricCanvasRef: canvasRef, setLayers });
   const { toggleLayerLock } = useLayerLocking({ fabricCanvasRef: canvasRef, setLayers });

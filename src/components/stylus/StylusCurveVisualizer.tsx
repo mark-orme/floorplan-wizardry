@@ -1,6 +1,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Path } from 'fabric';
+import { Canvas, Object as FabricObject } from 'fabric';
+// Import full fabric namespace to ensure we can access the Path class
+import * as fabric from 'fabric';
 
 interface StylusCurveVisualizerProps {
   canvas: Canvas | null;
@@ -16,7 +18,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
   strokeStyle = 'solid'
 }) => {
   const points = useRef<Array<{ x: number; y: number }>>([]);
-  const currentPath = useRef<Path | null>(null);
+  const currentPath = useRef<fabric.Path | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pressure, setPressure] = useState(1);
   
@@ -47,7 +49,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       points.current = [pointer];
       
       // Create a new path
-      currentPath.current = new Path([], {
+      currentPath.current = new fabric.Path([], {
         stroke: color,
         strokeWidth: strokeWidth * (e.pressure || 1),
         fill: 'transparent',
@@ -56,7 +58,9 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
         strokeDashArray: strokeStyle === 'dashed' ? [5, 5] : undefined,
       });
       
-      canvas.add(currentPath.current);
+      if (currentPath.current) {
+        canvas.add(currentPath.current);
+      }
       setPressure(e.pressure || 1);
     };
     
@@ -64,7 +68,9 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       if (!isDrawing || e.pointerType !== 'pen') return;
       
       const pointer = canvas.getPointer(e.e);
-      points.current.push(pointer);
+      if (pointer) {
+        points.current.push(pointer);
+      }
       
       if (points.current.length > 2) {
         updateCurvePath(e.pressure || pressure);
@@ -93,7 +99,10 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       if (pts.length < 2) return;
       
       // Start at the first point
-      path = `M ${pts[0]?.x || 0} ${pts[0]?.y || 0}`;
+      const firstPoint = pts[0];
+      if (firstPoint) {
+        path = `M ${firstPoint.x} ${firstPoint.y}`;
+      }
       
       // Add bezier curve segments
       for (let i = 1; i < pts.length; i++) {
@@ -104,12 +113,16 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
         path += ` Q ${(p0.x + p1.x) / 2} ${(p0.y + p1.y) / 2}, ${p1.x} ${p1.y}`;
       }
       
-      currentPath.current.set({ 
-        path: path,
-        strokeWidth: strokeWidth * currentPressure
-      });
-      
-      canvas.requestRenderAll();
+      if (path) {
+        currentPath.current.set({ 
+          path: path,
+          strokeWidth: strokeWidth * currentPressure
+        });
+        
+        if (canvas) {
+          canvas.requestRenderAll();
+        }
+      }
     };
 
     canvas.on('mouse:down', handlePointerDown);

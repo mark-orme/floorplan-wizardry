@@ -7,13 +7,24 @@ export interface DrawingMetricsState {
   startTime: number | null;
   drawingDuration: number;
   toolUsage: Record<string, number>;
+  // For backward compatibility
+  objectCount?: number;
+  drawingTime?: number;
+  lastUsedTool?: DrawingMode | null;
+  toolSwitchCount?: number;
+  sessionStart?: number;
 }
 
 export const initialDrawingMetricsState: DrawingMetricsState = {
   currentTool: null,
   startTime: null,
   drawingDuration: 0,
-  toolUsage: {}
+  toolUsage: {},
+  // For backward compatibility
+  objectCount: 0,
+  drawingTime: 0,
+  lastUsedTool: null,
+  sessionStart: Date.now(),
 };
 
 export const drawingMetricsSlice = createSlice({
@@ -23,6 +34,8 @@ export const drawingMetricsSlice = createSlice({
     startToolUsage: (state: DrawingMetricsState, action: PayloadAction<DrawingMode | string>) => {
       state.currentTool = action.payload;
       state.startTime = Date.now();
+      // For backward compatibility
+      state.lastUsedTool = action.payload as any;
     },
     
     endToolUsage: (state: DrawingMetricsState) => {
@@ -39,21 +52,31 @@ export const drawingMetricsSlice = createSlice({
         state.drawingDuration += duration;
         state.currentTool = null;
         state.startTime = null;
+        
+        // For backward compatibility
+        if (state.drawingTime !== undefined) {
+          state.drawingTime += duration;
+        }
       }
-    },
-    
-    resetMetrics: (state: DrawingMetricsState) => {
-      return initialDrawingMetricsState;
     },
     
     incrementToolUsage: (state: DrawingMetricsState, action: PayloadAction<{tool: DrawingMode | string; duration: number}>) => {
       const { tool, duration } = action.payload;
       state.toolUsage[tool] = (state.toolUsage[tool] || 0) + duration;
       state.drawingDuration += duration;
+      
+      // For backward compatibility
+      if (state.drawingTime !== undefined) {
+        state.drawingTime += duration;
+      }
     },
     
     setDrawingDuration: (state: DrawingMetricsState, action: PayloadAction<number>) => {
       state.drawingDuration = action.payload;
+      // For backward compatibility
+      if (state.drawingTime !== undefined) {
+        state.drawingTime = action.payload;
+      }
     },
     
     setToolUsageStats: (state: DrawingMetricsState, action: PayloadAction<Record<string, number>>) => {
@@ -63,6 +86,46 @@ export const drawingMetricsSlice = createSlice({
     clearStats: (state: DrawingMetricsState) => {
       state.toolUsage = {};
       state.drawingDuration = 0;
+      // For backward compatibility
+      if (state.drawingTime !== undefined) {
+        state.drawingTime = 0;
+      }
+      if (state.objectCount !== undefined) {
+        state.objectCount = 0;
+      }
+    },
+    
+    // Backward compatibility methods
+    incrementObjectCount: (state: DrawingMetricsState) => {
+      if (state.objectCount !== undefined) {
+        state.objectCount += 1;
+      }
+    },
+    
+    incrementDrawingTime: (state: DrawingMetricsState, action: PayloadAction<number>) => {
+      if (state.drawingTime !== undefined) {
+        state.drawingTime += action.payload;
+      }
+      state.drawingDuration += action.payload;
+    },
+    
+    recordToolUse: (state: DrawingMetricsState, action: PayloadAction<DrawingMode>) => {
+      if (state.lastUsedTool !== undefined) {
+        state.lastUsedTool = action.payload;
+      }
+      
+      // Add to toolUsage for both old and new API
+      const toolKey = action.payload.toString();
+      if (!state.toolUsage[toolKey]) {
+        state.toolUsage[toolKey] = {
+          count: 1,
+          time: 0,
+          lastUsed: Date.now()
+        } as any;
+      } else {
+        (state.toolUsage[toolKey] as any).count += 1;
+        (state.toolUsage[toolKey] as any).lastUsed = Date.now();
+      }
     }
   }
 });
@@ -70,14 +133,15 @@ export const drawingMetricsSlice = createSlice({
 export const {
   startToolUsage,
   endToolUsage,
-  resetMetrics,
   incrementToolUsage,
   setDrawingDuration,
   setToolUsageStats,
-  clearStats
+  clearStats,
+  // Backward compatibility exports
+  incrementObjectCount,
+  incrementDrawingTime,
+  recordToolUse
 } = drawingMetricsSlice.actions;
 
 // Export the reducer for test compatibility
-export const drawingMetricsReducer = drawingMetricsSlice.reducer;
-
-export default drawingMetricsReducer;
+export default drawingMetricsSlice.reducer;

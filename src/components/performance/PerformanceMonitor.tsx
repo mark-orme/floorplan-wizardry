@@ -1,121 +1,125 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Canvas } from 'fabric';
 
 interface PerformanceMonitorProps {
   canvas?: Canvas | null;
-  refreshInterval?: number;
-  showMemory?: boolean;
+  renderInterval?: number;
+  showFps?: boolean;
+  showObjectCount?: boolean;
+  showMemoryUsage?: boolean;
 }
 
 interface PerformanceData {
   fps: number;
-  frameTime: number;
   objectCount: number;
-  renderTime: number | null;
   memoryUsage?: {
     usedJSHeapSize?: number;
-    totalJSHeapSize?: number;
     jsHeapSizeLimit?: number;
+    totalJSHeapSize?: number;
+  };
+}
+
+// Custom type for performance.memory which is non-standard
+interface ExtendedPerformance extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    jsHeapSizeLimit: number;
+    totalJSHeapSize: number;
   };
 }
 
 export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
-  canvas,
-  refreshInterval = 1000,
-  showMemory = false
+  canvas = null,
+  renderInterval = 1000,
+  showFps = true,
+  showObjectCount = true,
+  showMemoryUsage = true,
 }) => {
   const [perfData, setPerfData] = useState<PerformanceData>({
     fps: 0,
-    frameTime: 0,
     objectCount: 0,
-    renderTime: null,
     memoryUsage: {
       usedJSHeapSize: 0,
-      totalJSHeapSize: 0,
-      jsHeapSizeLimit: 0
+      jsHeapSizeLimit: 0,
+      totalJSHeapSize: 0
     }
   });
 
-  useEffect(() => {
-    let frameCount = 0;
-    let lastTime = performance.now();
-    let frameId: number;
-    
-    // Use a safe access to memory that may not be available in all browsers
-    const getMemoryUsage = () => {
-      try {
-        const performanceMemory = (performance as any).memory;
-        if (performanceMemory) {
-          return {
-            usedJSHeapSize: performanceMemory.usedJSHeapSize,
-            totalJSHeapSize: performanceMemory.totalJSHeapSize,
-            jsHeapSizeLimit: performanceMemory.jsHeapSizeLimit
-          };
-        }
-        return undefined;
-      } catch (e) {
-        return undefined;
-      }
-    };
-    
-    const getObjectCount = () => {
-      return canvas && canvas.getObjects ? canvas.getObjects().length : 0;
-    };
+  const frameCount = useRef(0);
+  const lastUpdateTime = useRef(performance.now());
+  const animationFrameId = useRef<number | null>(null);
 
-    const getRenderTiming = () => {
-      if (!performance.getEntriesByType) return null;
-      
-      const entries = performance.getEntriesByType('paint');
-      const paintEntry = entries.find(entry => entry.name === 'paint');
-      
-      return paintEntry ? paintEntry.duration : null;
+  // Get memory usage safely
+  const getMemoryUsage = () => {
+    const extendedPerformance = performance as ExtendedPerformance;
+    if (extendedPerformance.memory) {
+      return {
+        usedJSHeapSize: extendedPerformance.memory.usedJSHeapSize,
+        jsHeapSizeLimit: extendedPerformance.memory.jsHeapSizeLimit,
+        totalJSHeapSize: extendedPerformance.memory.totalJSHeapSize,
+      };
+    }
+    return {
+      usedJSHeapSize: 0,
+      jsHeapSizeLimit: 0,
+      totalJSHeapSize: 0,
     };
-    
-    const measurePerformance = () => {
-      frameCount++;
-      
-      const now = performance.now();
-      const elapsed = now - lastTime;
-      
-      if (elapsed >= refreshInterval) {
-        const fps = Math.round((frameCount * 1000) / elapsed);
-        const frameTime = elapsed / frameCount;
-        
-        setPerfData({
-          fps,
-          frameTime,
-          objectCount: getObjectCount(),
-          renderTime: getRenderTiming(),
-          memoryUsage: showMemory ? getMemoryUsage() : undefined
-        });
-        
-        frameCount = 0;
-        lastTime = now;
-      }
-      
-      frameId = requestAnimationFrame(measurePerformance);
-    };
-    
-    frameId = requestAnimationFrame(measurePerformance);
-    
+  };
+
+  const getObjectCount = () => {
+    if (!canvas) return 0;
+    return canvas.getObjects?.().length || 0;
+  };
+
+  const updateStats = () => {
+    frameCount.current += 1;
+
+    const now = performance.now();
+    const elapsed = now - lastUpdateTime.current;
+
+    if (elapsed >= renderInterval) {
+      const fps = Math.round((frameCount.current * 1000) / elapsed);
+      const objectCount = getObjectCount();
+      const memoryUsage = getMemoryUsage();
+
+      setPerfData({
+        fps,
+        objectCount,
+        memoryUsage
+      });
+
+      frameCount.current = 0;
+      lastUpdateTime.current = now;
+    }
+
+    animationFrameId.current = requestAnimationFrame(updateStats);
+  };
+
+  useEffect(() => {
+    animationFrameId.current = requestAnimationFrame(updateStats);
+
     return () => {
-      cancelAnimationFrame(frameId);
+      if (animationFrameId.current !== null) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
     };
-  }, [canvas, refreshInterval, showMemory]);
-  
+  }, [canvas, renderInterval]);
+
+  const formatBytes = (bytes?: number): string => {
+    if (bytes === undefined) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1048576).toFixed(1)} MB`;
+  };
+
   return (
-    <div className="performance-monitor bg-black bg-opacity-75 text-green-400 p-2 rounded text-xs fixed bottom-4 left-4 font-mono">
-      <div>FPS: {perfData.fps}</div>
-      <div>Frame: {perfData.frameTime.toFixed(2)}ms</div>
-      <div>Objects: {perfData.objectCount}</div>
-      {perfData.renderTime !== null && (
-        <div>Render: {perfData.renderTime.toFixed(2)}ms</div>
-      )}
-      {perfData.memoryUsage && (
+    <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded font-mono text-xs z-50">
+      {showFps && <div>FPS: {perfData.fps}</div>}
+      {showObjectCount && <div>Objects: {perfData.objectCount}</div>}
+      {showMemoryUsage && (
         <div>
-          Memory: {Math.round(perfData.memoryUsage.usedJSHeapSize / (1024 * 1024))}MB / 
-          {Math.round(perfData.memoryUsage.jsHeapSizeLimit / (1024 * 1024))}MB
+          Memory: {formatBytes(perfData.memoryUsage?.usedJSHeapSize)} / {formatBytes(perfData.memoryUsage?.jsHeapSizeLimit)}
         </div>
       )}
     </div>

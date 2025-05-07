@@ -47,7 +47,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   useEffect(() => {
     if (isDrawing) {
       setShowMeasurement(true);
-    } else if (measurementData && measurementData.distance !== undefined && measurementData.distance !== null) {
+    } else if (measurementData && measurementData.distance !== undefined) {
       const timer = setTimeout(() => {
         setShowMeasurement(false);
       }, 3000);
@@ -55,6 +55,12 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isDrawing, measurementData]);
+  
+  // Convert null to undefined to match expected types
+  const distance = measurementData?.distance === null ? undefined : measurementData?.distance;
+  const angle = measurementData?.angle === null ? undefined : measurementData?.angle;
+  const isSnapped = measurementData?.snapped === true;
+  const unitValue = measurementData?.units || measurementData?.unit || 'px';
   
   return (
     <>
@@ -64,10 +70,10 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       {/* Enhanced measurement overlay */}
       <LineToolMeasurementOverlay
         visible={showMeasurement && !enabled}
-        distance={measurementData?.distance}
-        angle={measurementData?.angle}
-        isSnapped={!!measurementData?.snapped}
-        unit={measurementData?.unit || measurementData?.units || 'px'}
+        distance={distance}
+        angle={angle}
+        isSnapped={isSnapped}
+        unit={unitValue}
       />
       
       {/* Controls */}
