@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 
 export interface PropertyQueryParams {
@@ -7,16 +8,18 @@ export interface PropertyQueryParams {
 }
 
 export const usePropertyQuery = ({ id, slug, includeDetails = true }: PropertyQueryParams) => {
+  const queryIdentifier = id || slug || '';
+  
   return useQuery({
-    queryKey: ['property', id || slug || ''],
+    queryKey: ['property', queryIdentifier],
     queryFn: async () => {
       // Safety check to ensure we have an identifier
       if (!id && !slug) {
         throw new Error("Either property ID or slug must be provided");
       }
-
-      // Use a non-nullable identifier for the API call
-      const identifier = id || slug || '';
+      
+      // Use a non-nullable identifier for the API call - this satisfies TypeScript
+      const identifier = queryIdentifier;
       
       // For now, just simulate a property fetch
       const mockProperty = {
@@ -33,6 +36,6 @@ export const usePropertyQuery = ({ id, slug, includeDetails = true }: PropertyQu
       
       return mockProperty;
     },
-    enabled: !!(id || slug)  // Only enable the query if we have an identifier
+    enabled: queryIdentifier !== ''  // Only enable the query if we have an identifier
   });
 };

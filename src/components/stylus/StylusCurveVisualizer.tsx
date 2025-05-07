@@ -1,107 +1,128 @@
-import React, { useRef, useEffect, useState } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
+import { Canvas, Path } from 'fabric';
 
 interface StylusCurveVisualizerProps {
-  pressureCurve: number[];
-  width?: number;
-  height?: number;
-  lineColor?: string;
-  backgroundColor?: string;
-  title?: string;
+  canvas: Canvas | null;
+  color: string;
+  strokeWidth: number;
+  strokeStyle?: 'solid' | 'dashed';
 }
 
 export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
-  pressureCurve,
-  width = 300,
-  height = 200,
-  lineColor = '#3b82f6',
-  backgroundColor = '#f8fafc',
-  title = 'Pressure Curve'
+  canvas,
+  color = '#000000',
+  strokeWidth = 1,
+  strokeStyle = 'solid'
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const points = useRef<Array<{ x: number; y: number }>>([]);
+  const currentPath = useRef<Path | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [pressure, setPressure] = useState(1);
   
-  useEffect(() => {
-    const canvas = canvasRef.current;
+  // Clean up function to remove events and objects
+  const cleanUp = () => {
     if (!canvas) return;
     
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Clear canvas
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw grid
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
-    
-    // Vertical grid lines
-    for (let i = 0; i <= 10; i++) {
-      const x = (i / 10) * canvas.width;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
+    if (currentPath.current && canvas.contains(currentPath.current)) {
+      canvas.remove(currentPath.current);
     }
     
-    // Horizontal grid lines
-    for (let i = 0; i <= 10; i++) {
-      const y = (i / 10) * canvas.height;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
+    currentPath.current = null;
+    points.current = [];
+    setIsDrawing(false);
+  };
+
+  useEffect(() => {
+    if (!canvas) return;
     
-    // Draw the pressure curve
-    if (pressureCurve && pressureCurve.length > 0) {
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+    const handlePointerDown = (e: any) => {
+      // Make sure we're using a stylus
+      if (e.pointerType !== 'pen') return;
       
-      const normalizedCurve = pressureCurve.map(p => Math.max(0, Math.min(1, p)));
+      cleanUp();
+      setIsDrawing(true);
       
-      for (let i = 0; i < normalizedCurve.length; i++) {
-        const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
-        // Invert Y to make higher values go up
-        const y = canvas.height - (normalizedCurve[i] || 0) * canvas.height;
-        
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+      const pointer = canvas.getPointer(e.e);
+      points.current = [pointer];
+      
+      // Create a new path
+      currentPath.current = new Path([], {
+        stroke: color,
+        strokeWidth: strokeWidth * (e.pressure || 1),
+        fill: 'transparent',
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        strokeDashArray: strokeStyle === 'dashed' ? [5, 5] : undefined,
+      });
+      
+      canvas.add(currentPath.current);
+      setPressure(e.pressure || 1);
+    };
+    
+    const handlePointerMove = (e: any) => {
+      if (!isDrawing || e.pointerType !== 'pen') return;
+      
+      const pointer = canvas.getPointer(e.e);
+      points.current.push(pointer);
+      
+      if (points.current.length > 2) {
+        updateCurvePath(e.pressure || pressure);
       }
       
-      ctx.stroke();
+      setPressure(e.pressure || pressure);
+    };
+    
+    const handlePointerUp = (e: any) => {
+      if (!isDrawing || e.pointerType !== 'pen') return;
       
-      // Draw control points
-      ctx.fillStyle = '#ef4444';
-      for (let i = 0; i < normalizedCurve.length; i++) {
-        const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
-        const y = canvas.height - (normalizedCurve[i] || 0) * canvas.height;
-        
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
+      if (points.current.length > 2) {
+        updateCurvePath(e.pressure || pressure);
       }
-    }
+      
+      setIsDrawing(false);
+    };
     
-    // Add title
-    ctx.fillStyle = '#1e293b';
-    ctx.font = '14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(title, canvas.width / 2, 20);
+    const updateCurvePath = (currentPressure: number) => {
+      if (!currentPath.current) return;
+      
+      // Use a smooth curve approach
+      let path = '';
+      const pts = points.current;
+      
+      if (pts.length < 2) return;
+      
+      // Start at the first point
+      path = `M ${pts[0]?.x || 0} ${pts[0]?.y || 0}`;
+      
+      // Add bezier curve segments
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i-1];
+        const p1 = pts[i];
+        if (!p0 || !p1) continue;
+        
+        path += ` Q ${(p0.x + p1.x) / 2} ${(p0.y + p1.y) / 2}, ${p1.x} ${p1.y}`;
+      }
+      
+      currentPath.current.set({ 
+        path: path,
+        strokeWidth: strokeWidth * currentPressure
+      });
+      
+      canvas.requestRenderAll();
+    };
+
+    canvas.on('mouse:down', handlePointerDown);
+    canvas.on('mouse:move', handlePointerMove);
+    canvas.on('mouse:up', handlePointerUp);
     
-  }, [pressureCurve, width, height, lineColor, backgroundColor, title]);
-  
-  return (
-    <div className="flex flex-col items-center">
-      <canvas 
-        ref={canvasRef} 
-        width={width} 
-        height={height}
-        className="border border-gray-200 rounded shadow-sm"
-      />
-    </div>
-  );
+    return () => {
+      canvas.off('mouse:down', handlePointerDown);
+      canvas.off('mouse:move', handlePointerMove);
+      canvas.off('mouse:up', handlePointerUp);
+      cleanUp();
+    };
+  }, [canvas, color, strokeWidth, isDrawing, strokeStyle, pressure]);
+
+  return null;
 };

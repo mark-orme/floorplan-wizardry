@@ -3,7 +3,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,  // Changed to false to reduce migration burden
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,

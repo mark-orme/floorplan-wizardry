@@ -1,52 +1,64 @@
 
-import { DrawingMetricsState, initialDrawingMetricsState, drawingMetricsReducer, startToolUsage, endToolUsage } from '../drawingMetricsSlice';
+import { configureStore } from '@reduxjs/toolkit';
+import { drawingMetricsSlice } from '../drawingMetricsSlice';
 import { DrawingMode } from '@/constants/drawingModes';
 
-describe('Drawing Metrics', () => {
-  let initialState: DrawingMetricsState;
+describe('drawingMetrics reducer', () => {
+  const { reducer } = drawingMetricsSlice;
 
-  beforeEach(() => {
-    initialState = initialDrawingMetricsState;
+  it('should handle initial state', () => {
+    expect(reducer(undefined, { type: 'unknown' })).toEqual({
+      drawingTime: 0,
+      objectCount: 0,
+      toolUsage: {},
+      lastUsedTool: null,
+      sessionStart: expect.any(Number),
+    });
   });
 
-  it('should return the initial state', () => {
-    expect(drawingMetricsReducer(undefined, { type: '' })).toEqual(initialState);
+  it('should handle incrementObjectCount', () => {
+    const actual = reducer(undefined, drawingMetricsSlice.actions.incrementObjectCount());
+    expect(actual.objectCount).toEqual(1);
   });
 
-  it('should start tracking tool usage', () => {
-    const tool = DrawingMode.SELECT;
-    const newState = drawingMetricsReducer(initialState, startToolUsage(tool));
-    expect(newState.currentTool).toBe(tool);
-    expect(newState.startTime).toBeTruthy();
+  it('should handle incrementDrawingTime', () => {
+    const actual = reducer(undefined, drawingMetricsSlice.actions.incrementDrawingTime(10));
+    expect(actual.drawingTime).toEqual(10);
   });
 
-  it('should end tracking tool usage', () => {
-    // First start tracking
-    const tool = DrawingMode.RECTANGLE;
-    let state = drawingMetricsReducer(initialState, startToolUsage(tool));
-    
+  it('should handle recordToolUse with SELECT', () => {
     // Mock Date.now to return a consistent value for testing
-    const realDateNow = Date.now;
-    const mockStartTime = 1000;
-    const mockEndTime = 5000;
-    const mockDuration = mockEndTime - mockStartTime;
+    const mockDateNow = jest.fn(() => 1600000000000);
+    const originalDateNow = Date.now;
+    Date.now = mockDateNow;
     
-    // Mock time passing (4 seconds)
-    const mockDateNow = jest.fn(() => mockEndTime);
-    global.Date.now = mockDateNow;
+    const actual = reducer(undefined, drawingMetricsSlice.actions.recordToolUse(DrawingMode.SELECT));
+    expect(actual.lastUsedTool).toEqual(DrawingMode.SELECT);
+    expect(actual.toolUsage[DrawingMode.SELECT]).toEqual({
+      count: 1,
+      time: 0,
+      lastUsed: 1600000000000
+    });
     
-    state = { ...state, startTime: mockStartTime };
+    // Restore original Date.now
+    Date.now = originalDateNow;
+  });
+
+  it('should handle recordToolUse with RECTANGLE', () => {
+    // Mock Date.now to return a consistent value for testing
+    const mockDateNow = jest.fn(() => 1600000000000);
+    const originalDateNow = Date.now;
+    Date.now = mockDateNow;
     
-    // Now end tracking
-    state = drawingMetricsReducer(state, endToolUsage());
+    const actual = reducer(undefined, drawingMetricsSlice.actions.recordToolUse(DrawingMode.RECTANGLE));
+    expect(actual.lastUsedTool).toEqual(DrawingMode.RECTANGLE);
+    expect(actual.toolUsage[DrawingMode.RECTANGLE]).toEqual({
+      count: 1,
+      time: 0,
+      lastUsed: 1600000000000
+    });
     
-    // Restore Date.now
-    global.Date.now = realDateNow;
-    
-    // Check that usage was recorded correctly
-    expect(state.currentTool).toBeNull();
-    expect(state.startTime).toBeNull();
-    expect(state.toolUsage[tool]).toBe(mockDuration);
-    expect(state.drawingDuration).toBe(mockDuration);
+    // Restore original Date.now
+    Date.now = originalDateNow;
   });
 });

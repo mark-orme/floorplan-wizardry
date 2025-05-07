@@ -31,7 +31,7 @@ export function registerLineCreation(
     }
   });
   
-  // Fire a custom event - works with our extended types
+  // Fire a custom event - check if fire exists before calling
   if (canvas.fire) {
     canvas.fire('object:created' as any, { target: line });
   }

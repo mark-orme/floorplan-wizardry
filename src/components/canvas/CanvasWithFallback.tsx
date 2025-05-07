@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import CanvasFallback from "@/components/canvas/CanvasFallback";
 import { Canvas, CanvasProps } from '@/components/Canvas';
@@ -5,6 +6,7 @@ import { useCanvasInit } from '@/hooks/useCanvasInit';
 import { captureMessage, captureError } from '@/utils/sentryUtils';
 import logger from '@/utils/logger';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { Canvas as FabricCanvas } from 'fabric';
 
 export { default as CanvasFallback } from '@/components/canvas/CanvasFallback';
 
@@ -16,7 +18,7 @@ export interface CanvasWithFallbackProps extends CanvasProps {
   /** Max retry attempts before showing fallback permanently */
   maxRetries?: number;
   /** Callback when canvas is initialized */
-  onCanvasInitialized?: (canvas: ExtendedFabricCanvas) => void;
+  onCanvasInitialized?: (canvas: ExtendedFabricCanvas | FabricCanvas) => void;
 }
 
 /**
@@ -100,8 +102,8 @@ export const CanvasWithFallback: React.FC<CanvasWithFallbackProps> = ({
     logger.info("User initiated canvas retry:", { count: retryCount + 1 });
   };
   
-  // Handle canvas ready
-  const handleCanvasReady = (canvas: ExtendedFabricCanvas) => {
+  // Handle canvas ready - make it accept either ExtendedFabricCanvas or Canvas
+  const handleCanvasReady = (canvas: FabricCanvas | ExtendedFabricCanvas) => {
     // Call original onCanvasReady if provided
     if (onCanvasReady) {
       onCanvasReady(canvas);

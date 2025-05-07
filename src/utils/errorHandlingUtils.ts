@@ -55,3 +55,36 @@ export function handleUnknownError(
 ): void {
   handler(errorToString(error));
 }
+
+/**
+ * Handle API error (for component error handling)
+ * @param error The error object
+ * @param callback Optional callback for error handling
+ * @returns Normalized error message
+ */
+export function handleApiError(
+  error: unknown,
+  callback?: (message: string) => void
+): string {
+  const message = errorToString(error);
+  if (callback) {
+    callback(message);
+  }
+  return message;
+}
+
+/**
+ * Convert unknown to Error object
+ * @param error Unknown error object
+ * @returns Error instance
+ */
+export function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  } else if (typeof error === 'string') {
+    return new Error(error);
+  } else {
+    return new Error('Unknown error');
+  }
+}
+

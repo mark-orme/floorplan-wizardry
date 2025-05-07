@@ -1,78 +1,80 @@
 
-import { useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject, Point } from 'fabric';
-import { toast } from 'sonner';
-import logger from '@/utils/logger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
 interface UseGridMonitoringProps {
-  canvas: FabricCanvas | null;
-  gridObjects: FabricObject[];
-  onGridError?: (error: Error) => void;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  gridObjectsRef: React.MutableRefObject<any[]>;
+  onGridIssue?: (issue: string) => void;
 }
 
-export const useGridMonitoring = ({ 
-  canvas, 
-  gridObjects,
-  onGridError 
+export const useGridMonitoring = ({
+  fabricCanvasRef,
+  gridObjectsRef,
+  onGridIssue
 }: UseGridMonitoringProps) => {
-  const monitoringIntervalRef = useRef<number>();
+  const [gridStatus, setGridStatus] = useState<'ok' | 'warning' | 'error'>('ok');
+  const monitoringIntervalRef = useRef<number | null>(null);
   
+  // Check for grid rendering issues
   const checkGridHealth = useCallback(() => {
-    if (!canvas) return;
+    const canvas = fabricCanvasRef.current;
+    const gridObjects = gridObjectsRef.current;
     
-    try {
-      const visibleGridObjects = gridObjects.filter(obj => obj.visible);
-      
-      // Handle grid visibility issues
-      if (visibleGridObjects.length === 0) {
-        logger.warn('Grid visibility issue detected');
-        gridObjects.forEach(obj => {
-          obj.visible = true;
-        });
-        canvas.requestRenderAll();
-      }
-      
-      // Handle grid alignment issues
-      const misalignedObjects = gridObjects.filter(obj => {
-        const bounds = obj.getBoundingRect();
-        return bounds.left < 0 || bounds.top < 0;
-      });
-      
-      if (misalignedObjects.length > 0) {
-        logger.warn('Grid alignment issue detected');
-        misalignedObjects.forEach(obj => {
-          const originPoint = new Point(0, 0);
-          obj.setPositionByOrigin(originPoint, 'left', 'top');
-        });
-        canvas.requestRenderAll();
-      }
-
-      // Check for damaged or corrupted grid objects
-      const damagedObjects = gridObjects.filter(obj => 
-        !obj.width || !obj.height || 
-        Number.isNaN(obj.left) || Number.isNaN(obj.top)
-      );
-
-      if (damagedObjects.length > 0) {
-        logger.error('Damaged grid objects detected');
-        canvas.remove(...damagedObjects);
-        canvas.requestRenderAll();
-      }
-    } catch (error) {
-      logger.error('Grid monitoring error:', error);
-      onGridError?.(error as Error);
+    if (!canvas || !gridObjects.length) {
+      setGridStatus('error');
+      if (onGridIssue) onGridIssue('No grid found');
+      return;
     }
-  }, [canvas, gridObjects, onGridError]);
+    
+    // Check if all grid objects are present and have correct bounds
+    let allObjectsVisible = true;
+    let allObjectsHaveBounds = true;
+    
+    gridObjects.forEach(obj => {
+      if (obj && !canvas.contains(obj)) {
+        allObjectsVisible = false;
+      }
+      
+      // Check if the getBoundingRect method exists before calling it
+      if (obj && obj.getBoundingRect) {
+        const bounds = obj.getBoundingRect();
+        if (!bounds || bounds.width === 0 || bounds.height === 0) {
+          allObjectsHaveBounds = false;
+        }
+      } else {
+        allObjectsHaveBounds = false;
+      }
+    });
+    
+    if (!allObjectsVisible) {
+      setGridStatus('error');
+      if (onGridIssue) onGridIssue('Some grid objects are missing');
+    } else if (!allObjectsHaveBounds) {
+      setGridStatus('warning');
+      if (onGridIssue) onGridIssue('Some grid objects have invalid bounds');
+    } else {
+      setGridStatus('ok');
+    }
+  }, [fabricCanvasRef, gridObjectsRef, onGridIssue]);
   
+  // Set up monitoring interval
   useEffect(() => {
-    monitoringIntervalRef.current = window.setInterval(checkGridHealth, 5000);
+    // Initial check
+    checkGridHealth();
+    
+    // Set up interval for periodic checks
+    monitoringIntervalRef.current = window.setInterval(checkGridHealth, 10000);
     
     return () => {
-      if (monitoringIntervalRef.current) {
+      if (monitoringIntervalRef.current !== null) {
         clearInterval(monitoringIntervalRef.current);
       }
     };
   }, [checkGridHealth]);
   
-  return { checkGridHealth };
+  return {
+    gridStatus,
+    checkGridHealth
+  };
 };

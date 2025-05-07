@@ -6,7 +6,7 @@ import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { asExtendedCanvas } from '@/types/canvas-types';
+import { ExtendedCanvas } from '@/types/fabric-unified';
 
 interface UseLayerActionsProps {
   fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
@@ -26,7 +26,7 @@ export const useLayerActions = ({
   // Create a reference that properly casts the canvas for the hooks that expect FabricCanvas
   const canvasRef = {
     get current() {
-      return fabricCanvasRef.current ? asExtendedCanvas(fabricCanvasRef.current) : null;
+      return fabricCanvasRef.current;
     }
   } as React.MutableRefObject<FabricCanvas | null>;
   

@@ -1,267 +1,196 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+
+import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
+import { useMouseEvents } from './useMouseEvents';
 
 interface UseDrawingToolManagerProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: FabricCanvas | null;
   activeTool: DrawingMode;
-  onToolChange?: (tool: DrawingMode) => void;
-}
-
-// Extended UseMouseEventsProps with needed properties
-interface UseMouseEventsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  tool?: DrawingMode;
-  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
-  onMouseDown?: (e: any) => void;
-  onMouseMove?: (e: any) => void;
-  onMouseUp?: (e: any) => void;
+  lineColor: string;
+  lineThickness: number;
+  onCreateObject?: (obj: any) => void;
 }
 
 export const useDrawingToolManager = ({
-  fabricCanvasRef,
+  canvas,
   activeTool,
-  onToolChange
+  lineColor,
+  lineThickness,
+  onCreateObject
 }: UseDrawingToolManagerProps) => {
-  const [previousTool, setPreviousTool] = useState<DrawingMode>(activeTool);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<Point | null>(null);
-  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
-  const [drawingObjects, setDrawingObjects] = useState<any[]>([]);
+  const [currentPath, setCurrentPath] = useState<any>(null);
   
-  // Track tool changes
-  useEffect(() => {
-    if (activeTool !== previousTool) {
-      // Clean up previous tool
-      cleanupCurrentTool();
-      
-      // Initialize new tool
-      initializeTool(activeTool);
-      
-      // Update previous tool
-      setPreviousTool(activeTool);
-      
-      // Notify parent of tool change
-      if (onToolChange) {
-        onToolChange(activeTool);
-      }
-    }
-  }, [activeTool, previousTool, onToolChange]);
-  
-  // Clean up current tool
-  const cleanupCurrentTool = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  const handleMouseDown = useCallback((point: Point) => {
+    if (!canvas || activeTool === DrawingMode.SELECT) return;
     
-    // Reset drawing state
+    setIsDrawing(true);
+    
+    switch (activeTool) {
+      case DrawingMode.DRAW:
+        // Canvas free drawing is handled by fabric directly
+        // Just make sure the brush is configured
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = lineColor;
+          canvas.freeDrawingBrush.width = lineThickness;
+        }
+        break;
+      
+      case DrawingMode.LINE:
+        // Create a line
+        const line = new fabric.Line([point.x, point.y, point.x, point.y], {
+          stroke: lineColor,
+          strokeWidth: lineThickness,
+          selectable: false
+        });
+        
+        canvas.add(line);
+        setCurrentPath(line);
+        break;
+      
+      case DrawingMode.RECTANGLE:
+        // Create a rectangle
+        const rect = new fabric.Rect({
+          left: point.x,
+          top: point.y,
+          width: 0,
+          height: 0,
+          stroke: lineColor,
+          strokeWidth: lineThickness,
+          fill: 'transparent',
+          selectable: false
+        });
+        
+        canvas.add(rect);
+        setCurrentPath(rect);
+        break;
+      
+      case DrawingMode.CIRCLE:
+        // Create a circle
+        const circle = new fabric.Circle({
+          left: point.x,
+          top: point.y,
+          radius: 0,
+          stroke: lineColor,
+          strokeWidth: lineThickness,
+          fill: 'transparent',
+          selectable: false
+        });
+        
+        canvas.add(circle);
+        setCurrentPath(circle);
+        break;
+      
+      default:
+        break;
+    }
+  }, [canvas, activeTool, lineColor, lineThickness]);
+  
+  const handleMouseMove = useCallback((point: Point) => {
+    if (!canvas || !isDrawing || !currentPath) return;
+    
+    switch (activeTool) {
+      case DrawingMode.LINE:
+        // Update line end point
+        currentPath.set({
+          x2: point.x,
+          y2: point.y
+        });
+        break;
+      
+      case DrawingMode.RECTANGLE:
+        // Calculate width and height
+        const width = Math.abs(point.x - currentPath.left);
+        const height = Math.abs(point.y - currentPath.top);
+        
+        // Update rectangle dimensions
+        currentPath.set({
+          width,
+          height
+        });
+        break;
+      
+      case DrawingMode.CIRCLE:
+        // Calculate radius based on distance
+        const dx = point.x - currentPath.left;
+        const dy = point.y - currentPath.top;
+        const radius = Math.sqrt(dx * dx + dy * dy);
+        
+        // Update circle radius
+        currentPath.set({
+          radius
+        });
+        break;
+        
+      default:
+        break;
+    }
+    
+    canvas.renderAll();
+  }, [canvas, isDrawing, currentPath, activeTool]);
+  
+  const handleMouseUp = useCallback(() => {
+    if (!canvas || !isDrawing) return;
+    
+    // Make the object selectable again
+    if (currentPath) {
+      currentPath.set({
+        selectable: true,
+        evented: true
+      });
+      
+      if (onCreateObject) {
+        onCreateObject(currentPath);
+      }
+      
+      canvas.setActiveObject(currentPath);
+    }
+    
     setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    
-    // Remove temporary drawing objects
-    drawingObjects.forEach(obj => {
-      if (canvas.contains(obj)) {
-        canvas.remove(obj);
-      }
-    });
-    setDrawingObjects([]);
-    
-    // Reset canvas state based on previous tool
-    switch (previousTool) {
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = false;
-        break;
-      case DrawingMode.SELECT:
-        canvas.selection = false;
-        break;
-      default:
-        break;
-    }
-    
-    // Reset cursor
-    canvas.defaultCursor = 'default';
-  }, [fabricCanvasRef, previousTool, drawingObjects]);
+    setCurrentPath(null);
+  }, [canvas, isDrawing, currentPath, onCreateObject]);
   
-  // Initialize tool
-  const initializeTool = useCallback((tool: DrawingMode) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Set canvas state based on tool
-    switch (tool) {
-      case DrawingMode.DRAW:
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = 2;
-        canvas.freeDrawingBrush.color = '#000000';
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.SELECT:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        break;
-      case DrawingMode.LINE:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.RECTANGLE:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.CIRCLE:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'crosshair';
-        break;
-      case DrawingMode.ERASER:
-        canvas.isDrawingMode = false;
-        canvas.selection = false;
-        canvas.defaultCursor = 'cell';
-        break;
-      default:
-        canvas.isDrawingMode = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
-        break;
-    }
-  }, [fabricCanvasRef]);
-  
-  // Get pointer position from event
-  const getPointerPosition = useCallback((event: any): Point | null => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !canvas.getPointer) return null;
-    
-    return canvas.getPointer(event);
-  }, [fabricCanvasRef]);
-
-  const pointerUtils = {
-    getPointerPosition,
-    lastPoint: null,
-    handleMouseDown: (e: any) => {
-      const point = getPointerPosition(e);
-      if (!point) return;
-      
-      setIsDrawing(true);
-      setStartPoint(point);
-      setCurrentPoint(point);
-      
-      // Tool-specific handling
-      handleToolMouseDown(activeTool, point);
-    },
-    handleMouseMove: (e: any) => {
-      const point = getPointerPosition(e);
-      if (!isDrawing || !point) return;
-      
-      setCurrentPoint(point);
-      
-      // Tool-specific handling
-      handleToolMouseMove(activeTool, point);
-    },
-    handleMouseUp: (e: any) => {
-      if (!isDrawing) return;
-      
-      const point = getPointerPosition(e);
-      
-      // Tool-specific handling
-      handleToolMouseUp(activeTool, point || currentPoint);
-      
-      setIsDrawing(false);
-    }
-  };
-  
-  // Tool-specific mouse down handler
-  const handleToolMouseDown = useCallback((tool: DrawingMode, point: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    switch (tool) {
-      case DrawingMode.LINE:
-        // Start drawing a line
-        break;
-      case DrawingMode.RECTANGLE:
-        // Start drawing a rectangle
-        break;
-      case DrawingMode.CIRCLE:
-        // Start drawing a circle
-        break;
-      default:
-        break;
-    }
-  }, [fabricCanvasRef]);
-  
-  // Tool-specific mouse move handler
-  const handleToolMouseMove = useCallback((tool: DrawingMode, point: Point) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !startPoint) return;
-    
-    switch (tool) {
-      case DrawingMode.LINE:
-        // Update line
-        break;
-      case DrawingMode.RECTANGLE:
-        // Update rectangle
-        break;
-      case DrawingMode.CIRCLE:
-        // Update circle
-        break;
-      default:
-        break;
-    }
-  }, [fabricCanvasRef, startPoint]);
-  
-  // Tool-specific mouse up handler
-  const handleToolMouseUp = useCallback((tool: DrawingMode, point: Point | null) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !startPoint || !point) return;
-    
-    switch (tool) {
-      case DrawingMode.LINE:
-        // Finalize line
-        break;
-      case DrawingMode.RECTANGLE:
-        // Finalize rectangle
-        break;
-      case DrawingMode.CIRCLE:
-        // Finalize circle
-        break;
-      default:
-        break;
-    }
-    
-    // Clear temporary drawing objects
-    setDrawingObjects([]);
-  }, [fabricCanvasRef, startPoint]);
-  
-  useEffect(() => {
-    // Register event handlers
-    const mouseEvents: UseMouseEventsProps = {
-      fabricCanvasRef,
-      tool: activeTool,
-      handleMouseDown: pointerUtils.handleMouseDown,
-      handleMouseMove: pointerUtils.handleMouseMove,
-      handleMouseUp: pointerUtils.handleMouseUp
-    };
-    
-    // Initialize tool on mount
-    initializeTool(activeTool);
-    
-    // Clean up on unmount
-    return () => {
-      cleanupCurrentTool();
-    };
-  }, [activeTool, fabricCanvasRef, initializeTool, cleanupCurrentTool]);
-  
-  return {
+  // Use the mouse events hook for handling interactions
+  const fabricCanvasRef = { current: canvas };
+  const mouseEvents = useMouseEvents({
+    canvas,
     activeTool,
     isDrawing,
-    startPoint,
-    currentPoint,
-    setActiveTool: onToolChange,
-    getPointerPosition
+    setIsDrawing,
+    onStartDrawing: handleMouseDown,
+    onContinueDrawing: handleMouseMove,
+    onEndDrawing: handleMouseUp
+  });
+  
+  // Set up drawing mode based on the active tool
+  useEffect(() => {
+    if (!canvas) return;
+    
+    // Configure drawing mode
+    canvas.isDrawingMode = activeTool === DrawingMode.DRAW;
+    
+    // Configure free drawing brush if we're in draw mode
+    if (activeTool === DrawingMode.DRAW && canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
+    }
+    
+    // Configure object selection based on mode
+    canvas.selection = activeTool === DrawingMode.SELECT;
+    
+    // Update canvas
+    canvas.requestRenderAll();
+  }, [canvas, activeTool, lineColor, lineThickness]);
+  
+  return {
+    isDrawing,
+    currentObject: currentPath,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp
   };
 };
+
+export default useDrawingToolManager;

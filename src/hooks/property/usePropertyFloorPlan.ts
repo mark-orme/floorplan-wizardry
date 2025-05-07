@@ -1,70 +1,76 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FloorPlan } from '@/types/fabric-unified';
 
-interface UsePropertyFloorPlanProps {
-  propertyId: string;
-  enabled?: boolean;
-}
-
-export const usePropertyFloorPlan = ({ 
-  propertyId, 
-  enabled = true 
-}: UsePropertyFloorPlanProps) => {
-  const [selectedFloorPlan, setSelectedFloorPlan] = useState<string | null>(null);
+export const usePropertyFloorPlan = (propertyId?: string, floorPlanId?: string) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Query for floor plans
-  const { data: floorPlans, isLoading, error } = useQuery({
-    queryKey: ['propertyFloorPlans', propertyId],
-    queryFn: async (): Promise<FloorPlan[]> => {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+  // Query to fetch the floor plan
+  const { data: floorPlan, isLoading, refetch } = useQuery({
+    queryKey: ['floorPlan', propertyId, floorPlanId],
+    queryFn: async () => {
+      if (!propertyId || !floorPlanId) {
+        return null;
+      }
       
-      // Mock data with compatible types
-      return [
-        {
-          id: 'floor-1',
-          name: 'Ground Floor',
-          label: 'Ground Floor',
-          width: 800,
-          height: 600,
-          data: { /* Floor plan data */ },
-          thumbnail: '/images/floor-1-thumb.png'
-        },
-        {
-          id: 'floor-2',
-          name: 'First Floor',
-          label: 'First Floor',
-          width: 800,
-          height: 600,
-          data: { /* Floor plan data */ },
-          thumbnail: '/images/floor-2-thumb.png'
-        }
-      ] as unknown as FloorPlan[]; // Cast to FloorPlan[] to ensure compatibility
+      // Mock implementation - replace with actual API call
+      return {
+        id: floorPlanId,
+        name: 'Floor Plan',
+        width: 800,
+        height: 600,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        data: null
+      } as FloorPlan;
     },
-    enabled
+    enabled: !!propertyId && !!floorPlanId
   });
   
-  // Set the first floor plan as selected when data loads
-  useEffect(() => {
-    if (floorPlans && floorPlans.length > 0 && !selectedFloorPlan) {
-      setSelectedFloorPlan(floorPlans[0].id);
+  // Save floor plan
+  const saveFloorPlan = useCallback(async (data: any) => {
+    if (!propertyId || !floorPlanId) {
+      setError('Missing property ID or floor plan ID');
+      return null;
     }
-  }, [floorPlans, selectedFloorPlan]);
-  
-  // Get the currently selected floor plan
-  const currentFloorPlan = useCallback(() => {
-    if (!floorPlans || !selectedFloorPlan) return null;
-    return floorPlans.find(plan => plan.id === selectedFloorPlan) || null;
-  }, [floorPlans, selectedFloorPlan]);
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      // Mock implementation - replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const updatedFloorPlan = {
+        id: floorPlanId,
+        name: floorPlan?.name || 'Floor Plan',
+        width: floorPlan?.width || 800,
+        height: floorPlan?.height || 600,
+        created: floorPlan?.created || new Date().toISOString(),
+        updated: new Date().toISOString(),
+        data
+      };
+      
+      // Refresh data
+      await refetch();
+      
+      return updatedFloorPlan;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save floor plan');
+      return null;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [propertyId, floorPlanId, floorPlan, refetch]);
   
   return {
-    floorPlans: floorPlans || [],
-    selectedFloorPlan,
-    setSelectedFloorPlan,
-    currentFloorPlan: currentFloorPlan(),
+    floorPlan,
     isLoading,
-    error
+    isSubmitting,
+    error,
+    saveFloorPlan,
+    refetch
   };
 };

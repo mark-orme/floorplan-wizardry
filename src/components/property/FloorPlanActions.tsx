@@ -1,121 +1,82 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+// Remove Next.js import and use normal button behavior
+// import { useRouter } from 'next/navigation';
 
 interface FloorPlanActionsProps {
-  floorPlanId: string;
-  propertyId: string;
-  canEdit: boolean;
-  canDelete: boolean;
+  propertyId?: string;
+  floorPlanId?: string;
   onEdit?: () => void;
   onDelete?: () => void;
-  className?: string;
+  onDownload?: () => void;
+  canEdit: boolean;
+  isLoading?: boolean;
 }
 
 export const FloorPlanActions: React.FC<FloorPlanActionsProps> = ({
-  floorPlanId,
   propertyId,
-  canEdit,
-  canDelete,
+  floorPlanId,
   onEdit,
   onDelete,
-  className
+  onDownload,
+  canEdit,
+  isLoading = false
 }) => {
-  const router = useRouter();
-  
+  // const router = useRouter();
+
   const handleEdit = () => {
     if (onEdit) {
       onEdit();
     } else {
-      router.push(`/properties/${propertyId}/floor-plans/${floorPlanId}/edit`);
+      // Use location instead of Next.js router
+      window.location.href = `/properties/${propertyId}/floor-plans/${floorPlanId}/edit`;
     }
   };
-  
+
   const handleDelete = async () => {
     try {
-      // Call API to delete floor plan
-      const response = await fetch(`/api/properties/${propertyId}/floor-plans/${floorPlanId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete floor plan');
-      }
-      
-      toast.success('Floor plan deleted successfully');
-      
       if (onDelete) {
         onDelete();
       } else {
-        router.refresh();
+        toast.success("Floor plan deleted");
       }
     } catch (error) {
-      let errorMessage: string;
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = 'An unknown error occurred';
-      }
-      
-      console.error('Error deleting floor plan:', errorMessage);
-      toast.error(`Error: ${errorMessage}`);
+      toast.error(error instanceof Error ? error.message : "Error deleting floor plan");
     }
   };
-  
+
   return (
-    <div className={`flex space-x-2 ${className || ''}`}>
+    <div className="flex gap-2">
       {canEdit && (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleEdit}
-          aria-label="Edit floor plan"
-        >
-          Edit
-        </Button>
+        <>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleEdit}
+            disabled={isLoading}
+          >
+            Edit
+          </Button>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={handleDelete}
+            disabled={isLoading}
+          >
+            Delete
+          </Button>
+        </>
       )}
-      
-      {canDelete && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              aria-label="Delete floor plan"
-            >
-              Delete
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the
-                floor plan and all associated data.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <Button 
+        variant="secondary" 
+        size="sm"
+        onClick={onDownload}
+        disabled={isLoading}
+      >
+        Download
+      </Button>
     </div>
   );
 };

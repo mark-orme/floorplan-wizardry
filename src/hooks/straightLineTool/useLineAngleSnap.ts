@@ -1,63 +1,107 @@
-
-import { useState, useCallback } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Point } from '@/types/core/Point';
 
-interface UseLineAngleSnapProps {
+interface UseLineAngleSnapOptions {
+  angleIncrement?: number;
+  snapThreshold?: number;
   enabled?: boolean;
-  angles?: number[];
-  threshold?: number;
 }
 
-export const useLineAngleSnap = ({ 
-  enabled = false, 
-  angles = [0, 45, 90, 135, 180, 225, 270, 315], 
-  threshold = 10 
-}: UseLineAngleSnapProps) => {
-  const [anglesEnabled, setAnglesEnabled] = useState(enabled);
+export const useLineAngleSnap = ({
+  angleIncrement = 15, // Snap to multiples of this angle
+  snapThreshold = 5,  // Degrees of threshold for snapping
+  enabled = false
+}: UseLineAngleSnapOptions = {}) => {
+  const [isEnabled, setIsEnabled] = useState(enabled);
+  const previousAngleRef = useRef<number | null>(null);
   
-  const toggleAngles = useCallback(() => {
-    setAnglesEnabled(prev => !prev);
-  }, []);
-  
-  const snapToAngle = useCallback((startPoint: Point, currentPoint: Point): Point => {
-    if (!anglesEnabled) return currentPoint;
-    
-    // Calculate current angle
-    const dx = currentPoint.x - startPoint.x;
-    const dy = currentPoint.y - startPoint.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
-    // Find closest predefined angle
-    let closestAngle = angles[0] || 0;
-    let minDiff = 360;
-    
-    for (const snapAngle of angles) {
-      if (snapAngle !== undefined) {
-        const diff = Math.abs((angle + 360) % 360 - snapAngle);
-        if (diff < minDiff && diff < threshold) {
-          minDiff = diff;
-          closestAngle = snapAngle;
-        }
-      }
+  const snapAngle = useCallback((start: Point, end: Point): { point: Point, wasSnapped: boolean, angle: number } => {
+    if (!isEnabled) {
+      return { point: end, wasSnapped: false, angle: calculateAngle(start, end) };
     }
     
-    // If angle is within threshold, snap to it
-    if (minDiff < threshold) {
-      const snapAngle = closestAngle * Math.PI / 180;
-      return {
-        x: startPoint.x + Math.cos(snapAngle) * distance,
-        y: startPoint.y + Math.sin(snapAngle) * distance
+    // Calculate the angle and distance
+    const angle = calculateAngle(start, end);
+    const distance = calculateDistance(start, end);
+    
+    // Round to nearest increment
+    const prev = previousAngleRef.current;
+    const snappedAngle = Math.round(angle / angleIncrement) * angleIncrement;
+    
+    // Check if we're close enough to snap
+    const isCloseEnoughToSnap = Math.abs(angle - snappedAngle) < snapThreshold;
+    
+    // Store the snapped angle for next time if we snapped
+    if (isCloseEnoughToSnap) {
+      previousAngleRef.current = snappedAngle;
+    } else if (prev !== null) {
+      // Use previous snap angle if we're still close to it
+      const isCloseToLastSnap = Math.abs(angle - prev) < snapThreshold * 2;
+      if (isCloseToLastSnap) {
+        return { 
+          point: calculateEndPoint(start, distance, prev),
+          wasSnapped: true,
+          angle: prev
+        };
+      }
+      previousAngleRef.current = null;
+    }
+    
+    // Return the snapped point if snapping occurred
+    if (isCloseEnoughToSnap) {
+      return { 
+        point: calculateEndPoint(start, distance, snappedAngle),
+        wasSnapped: true,
+        angle: snappedAngle
       };
     }
     
-    return currentPoint;
-  }, [anglesEnabled, angles, threshold]);
+    // Otherwise return the original point
+    return { point: end, wasSnapped: false, angle };
+  }, [isEnabled, angleIncrement, snapThreshold]);
   
+  const resetAngle = useCallback(() => {
+    previousAngleRef.current = null;
+  }, []);
+  
+  const toggleEnabled = useCallback(() => {
+    setIsEnabled(prev => !prev);
+  }, []);
+
   return {
-    anglesEnabled,
-    setAnglesEnabled,
-    snapToAngle,
-    toggleAngles
+    snapAngle,
+    resetAngle,
+    isEnabled,
+    toggleEnabled,
+    setEnabled: setIsEnabled
   };
 };
+
+// Helper function to calculate angle between two points in degrees
+function calculateAngle(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  if (angle < 0) {
+    angle += 360;
+  }
+  return angle;
+}
+
+// Helper function to calculate distance between two points
+function calculateDistance(start: Point, end: Point): number {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Helper function to calculate end point based on start, distance, and angle
+function calculateEndPoint(start: Point, distance: number, angle: number): Point {
+  const angleRadians = angle * (Math.PI / 180);
+  return {
+    x: start.x + distance * Math.cos(angleRadians),
+    y: start.y + distance * Math.sin(angleRadians)
+  };
+}
+
+export default useLineAngleSnap;

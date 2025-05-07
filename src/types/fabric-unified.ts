@@ -55,7 +55,7 @@ export interface FabricObjectOptions {
 
 // Extended canvas interface
 export interface ExtendedCanvas extends Canvas {
-  isDrawingMode: boolean;  // Make sure this is not optional
+  isDrawingMode: boolean; 
   selection: boolean;
   defaultCursor: string;
   hoverCursor: string;
@@ -63,11 +63,21 @@ export interface ExtendedCanvas extends Canvas {
     color: string;
     width: number;
   };
-  wrapperEl: HTMLDivElement;
-  viewportTransform: number[];
+  wrapperEl: HTMLElement; // Changed from HTMLDivElement to be more generic
+  viewportTransform: number[] | undefined; // Allow undefined to match Canvas type
   renderOnAddRemove: boolean;
   skipTargetFind: boolean;
   allowTouchScrolling: boolean;
+}
+
+// Debug info state for useCanvasDebug
+export interface DebugInfoState {
+  objectCount?: number;
+  visibleObjects?: number;
+  fps?: number;
+  renderTime?: number;
+  gridStatus?: 'enabled' | 'disabled';
+  version?: string;
 }
 
 // GRID constants
@@ -76,7 +86,10 @@ export const GRID_CONSTANTS = {
   LARGE_GRID: 50,
   GRID_COLOR: '#e0e0e0',
   LARGE_GRID_COLOR: '#c0c0c0',
-  PIXELS_PER_METER: 100  // Add PIXELS_PER_METER here
+  PIXELS_PER_METER: 100,
+  SMALL_GRID_COLOR: '#f0f0f0',
+  SMALL_GRID_WIDTH: 0.5,
+  SMALL_GRID_SIZE: 10
 };
 
 // Helper functions
@@ -97,7 +110,11 @@ export function safeAddToCanvas(canvas: Canvas | null, obj: FabricObject | null)
   
   try {
     canvas.add(obj);
-    canvas.renderAll();
+    if (canvas.renderAll) {
+      canvas.renderAll();
+    } else if (canvas.requestRenderAll) {
+      canvas.requestRenderAll();
+    }
     return true;
   } catch (error) {
     console.error('Error adding object to canvas:', error);
@@ -130,6 +147,7 @@ export interface FloorPlan {
 
 // Export MeasurementData type for compatibility
 export interface MeasurementData {
+  // Allow both number and null for distance
   distance: number | null;
   angle?: number | null;
   units?: string;
@@ -143,3 +161,4 @@ export interface MeasurementData {
   snapType?: 'grid' | 'angle' | 'both';
   pixelsPerMeter?: number;
 }
+

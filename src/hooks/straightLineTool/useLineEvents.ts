@@ -1,129 +1,233 @@
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas, Line } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { MeasurementData } from '@/types/measurement/MeasurementData';
-import { GRID_CONSTANTS } from '@/types/fabric-unified';
-import { calculateDistance } from '@/utils/geometryUtils';
+import { registerLineCreation } from './lineEvents';
+import { MeasurementData } from '@/types/fabric-unified';
 
 interface UseLineEventsProps {
   canvas: FabricCanvas | null;
+  isEnabled: boolean;
   lineColor: string;
   lineThickness: number;
+  snapEnabled?: boolean;
+  snapPoints?: Point[];
+  anglesEnabled?: boolean;
+  onLineCreated?: (line: Line, start: Point, end: Point) => void;
 }
 
-export const useLineEvents = ({ canvas, lineColor, lineThickness }: UseLineEventsProps) => {
-  // Create a line between two points
-  const createLine = useCallback((start: Point, end: Point): Line | null => {
-    if (!canvas) return null;
+export const useLineEvents = ({
+  canvas,
+  isEnabled,
+  lineColor,
+  lineThickness,
+  snapEnabled = false,
+  snapPoints = [],
+  anglesEnabled = false,
+  onLineCreated
+}: UseLineEventsProps) => {
+  const lineRef = useRef<Line | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const startPointRef = useRef<Point | null>(null);
+  const [measurementData, setMeasurementData] = useState<MeasurementData | null>(null);
+  const [lastPoint, setLastPoint] = useState<Point | null>(null);
+  
+  // Constants for calculations
+  const PIXELS_PER_METER = 100; // 100 pixels = 1 meter
+  
+  // Calculate distance between two points
+  const calculateDistance = useCallback((p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+  
+  // Calculate angle between two points
+  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+    return angle;
+  }, []);
+  
+  // Update measurement data
+  const updateMeasurementData = useCallback((start: Point, end: Point, snapped: boolean = false) => {
+    if (!start || !end) {
+      setMeasurementData(null);
+      return;
+    }
     
-    const line = new Line([start.x, start.y, end.x, end.y], {
+    const distance = calculateDistance(start, end);
+    const distanceInMeters = distance / PIXELS_PER_METER;
+    
+    const angle = calculateAngle(start, end);
+    const midPoint = {
+      x: (start.x + end.x) / 2,
+      y: (start.y + end.y) / 2
+    };
+    
+    setMeasurementData({
+      distance,
+      angle,
+      units: 'px',
+      startPoint: start,
+      endPoint: end,
+      midPoint,
+      snapped,
+      pixelsPerMeter: PIXELS_PER_METER
+    });
+    
+    setLastPoint(end);
+  }, [calculateDistance, calculateAngle]);
+  
+  // Snap to grid or angles
+  const snapToGridOrAngles = useCallback((start: Point, current: Point): { point: Point, snapped: boolean } => {
+    if (!snapEnabled && !anglesEnabled) return { point: current, snapped: false };
+    
+    let result = { ...current };
+    let snapped = false;
+    
+    if (snapEnabled && snapPoints.length > 0) {
+      // Find the closest snap point
+      let minDistance = Number.MAX_VALUE;
+      let closestPoint: Point | null = null;
+      
+      for (const point of snapPoints) {
+        const distance = calculateDistance(current, point);
+        if (distance < minDistance && distance < 10) { // 10px snap radius
+          minDistance = distance;
+          closestPoint = point;
+        }
+      }
+      
+      if (closestPoint) {
+        result = closestPoint;
+        snapped = true;
+      }
+    }
+    
+    if (anglesEnabled && start) {
+      // Snap to 15 degree increments
+      const angle = calculateAngle(start, result);
+      const snappedAngle = Math.round(angle / 15) * 15;
+      
+      const distance = calculateDistance(start, result);
+      const angleRadians = snappedAngle * (Math.PI / 180);
+      
+      const snappedPoint = {
+        x: start.x + distance * Math.cos(angleRadians),
+        y: start.y + distance * Math.sin(angleRadians)
+      };
+      
+      // Check if we're close enough to the snapped angle
+      const originalToSnappedAngleDistance = calculateDistance(result, snappedPoint);
+      if (originalToSnappedAngleDistance < 10) { // 10px angle snap radius
+        result = snappedPoint;
+        snapped = true;
+      }
+    }
+    
+    return { point: result, snapped };
+  }, [snapEnabled, snapPoints, anglesEnabled, calculateDistance, calculateAngle]);
+  
+  // Handle mouse down
+  const handleMouseDown = useCallback((e: any) => {
+    if (!isEnabled || !canvas || isDrawing) return;
+    
+    const pointer = canvas.getPointer(e.e);
+    startPointRef.current = pointer;
+    
+    // Create a new line
+    const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
       stroke: lineColor,
       strokeWidth: lineThickness,
       selectable: false,
       evented: false
     });
     
-    return line;
-  }, [canvas, lineColor, lineThickness]);
+    canvas.add(line);
+    lineRef.current = line;
+    setIsDrawing(true);
+    
+    // Update measurement data
+    updateMeasurementData(pointer, pointer);
+  }, [isEnabled, canvas, isDrawing, lineColor, lineThickness, updateMeasurementData]);
   
-  // Add a line to the canvas
-  const addLine = useCallback((line: Line | null): boolean => {
-    if (!canvas || !line) return false;
+  // Handle mouse move
+  const handleMouseMove = useCallback((e: any) => {
+    if (!isEnabled || !canvas || !isDrawing || !lineRef.current || !startPointRef.current) return;
     
-    try {
-      canvas.add(line);
-      canvas.renderAll();
-      return true;
-    } catch (error) {
-      console.error('Error adding line to canvas:', error);
-      return false;
-    }
-  }, [canvas]);
+    const pointer = canvas.getPointer(e.e);
+    const { point: snappedPoint, snapped } = snapToGridOrAngles(startPointRef.current, pointer);
+    
+    // Update line end point
+    lineRef.current.set({
+      x2: snappedPoint.x,
+      y2: snappedPoint.y
+    });
+    
+    canvas.renderAll();
+    
+    // Update measurement data
+    updateMeasurementData(startPointRef.current, snappedPoint, snapped);
+  }, [isEnabled, canvas, isDrawing, snapToGridOrAngles, updateMeasurementData]);
   
-  // Update a line's endpoints
-  const updateLine = useCallback((line: Line | null, start: Point, end: Point): boolean => {
-    if (!canvas || !line) return false;
+  // Handle mouse up
+  const handleMouseUp = useCallback(() => {
+    if (!isEnabled || !canvas || !isDrawing || !lineRef.current || !startPointRef.current) return;
     
-    try {
-      line.set({ x1: start.x, y1: start.y, x2: end.x, y2: end.y });
-      canvas.renderAll();
-      return true;
-    } catch (error) {
-      console.error('Error updating line:', error);
-      return false;
+    const line = lineRef.current;
+    const start = startPointRef.current;
+    const end = { x: line.x2!, y: line.y2! };
+    
+    // Check if the line has any length
+    const distance = calculateDistance(start, end);
+    if (distance < 2) {
+      // Too short, remove the line
+      canvas.remove(line);
+    } else {
+      // Make the line interactive
+      line.set({
+        selectable: true,
+        evented: true
+      });
+      
+      // Register line creation event
+      registerLineCreation(canvas, line, start, end);
+      
+      // Notify creation
+      if (onLineCreated) {
+        onLineCreated(line, start, end);
+      }
     }
-  }, [canvas]);
+    
+    // Reset state
+    lineRef.current = null;
+    startPointRef.current = null;
+    setIsDrawing(false);
+  }, [isEnabled, canvas, isDrawing, calculateDistance, onLineCreated]);
   
-  // Calculate measurement data for a line
-  const calculateMeasurementData = useCallback((start: Point, end: Point): MeasurementData => {
-    if (!start || !end) {
-      return { distance: null, angle: null, unit: 'px' };
-    }
+  // Set up event handlers
+  useEffect(() => {
+    if (!canvas || !isEnabled) return;
     
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    canvas.on('mouse:down', handleMouseDown);
+    canvas.on('mouse:move', handleMouseMove);
+    canvas.on('mouse:up', handleMouseUp);
     
-    // Use PIXELS_PER_METER from GRID_CONSTANTS with fallback
-    const pixelsPerMeter = GRID_CONSTANTS.PIXELS_PER_METER || 100;
-    const distanceInMeters = distance / pixelsPerMeter;
-    
-    return {
-      distance: distance,
-      angle: angle,
-      startPoint: start,
-      endPoint: end,
-      start: start,
-      end: end,
-      midPoint: {
-        x: (start.x + end.x) / 2,
-        y: (start.y + end.y) / 2
-      },
-      unit: 'px',
-      units: 'px',
-      pixelsPerMeter: pixelsPerMeter
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+      canvas.off('mouse:move', handleMouseMove);
+      canvas.off('mouse:up', handleMouseUp);
     };
-  }, []);
-  
-  // Create a measurement tooltip for a line
-  const createMeasurementTooltip = useCallback((start: Point, end: Point): MeasurementData => {
-    if (!start || !end) {
-      return { distance: null, angle: null, unit: 'px' };
-    }
-    
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
-    // Use PIXELS_PER_METER from GRID_CONSTANTS with fallback
-    const pixelsPerMeter = GRID_CONSTANTS.PIXELS_PER_METER || 100;
-    const distanceInMeters = distance / pixelsPerMeter;
-    
-    return {
-      distance: distance,
-      angle: angle,
-      startPoint: start,
-      endPoint: end,
-      start: start,
-      end: end,
-      midPoint: {
-        x: (start.x + end.x) / 2,
-        y: (start.y + end.y) / 2
-      },
-      unit: 'px',
-      units: 'px',
-      pixelsPerMeter: pixelsPerMeter
-    };
-  }, []);
+  }, [canvas, isEnabled, handleMouseDown, handleMouseMove, handleMouseUp]);
   
   return {
-    createLine,
-    addLine,
-    updateLine,
-    calculateMeasurementData,
-    createMeasurementTooltip
+    isDrawing,
+    measurementData,
+    lastPoint
   };
 };
+
+export default useLineEvents;

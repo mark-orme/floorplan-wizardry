@@ -1,118 +1,107 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { throttle } from 'lodash';
 
-/**
- * Hook for handling canvas dimension changes
- * @module grid-management/useDimensionChangeHandler
- */
-import { useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import logger from "@/utils/logger";
-
-/**
- * Props for the useDimensionChangeHandler hook
- * @interface UseDimensionChangeHandlerProps
- */
 interface UseDimensionChangeHandlerProps {
-  /** Current canvas dimensions */
-  canvasDimensions: { width: number; height: number };
-  /** Reference to Fabric canvas */
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Reference to grid layer objects */
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  /** Function to create grid elements */
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
-  /** Timestamp of last creation attempt */
-  lastAttemptTime: number;
-  /** Function to update last attempt timestamp */
-  updateLastAttemptTime: (time: number) => void;
+  onDimensionsChange?: (width: number, height: number) => void;
+  resizeThrottle?: number;
+  enableResize?: boolean;
 }
 
-/**
- * Hook for handling dimension changes and grid recreation
- * @param {UseDimensionChangeHandlerProps} props - Hook properties
- * @returns {void}
- */
 export const useDimensionChangeHandler = ({
-  canvasDimensions,
   fabricCanvasRef,
-  gridLayerRef,
-  createGrid,
-  lastAttemptTime,
-  updateLastAttemptTime
-}: UseDimensionChangeHandlerProps): void => {
-  // Update grid when canvas dimensions change
-  useEffect(() => {
-    // Skip if dimensions are zero or invalid
-    if (!canvasDimensions.width || !canvasDimensions.height || 
-        canvasDimensions.width <= 0 || canvasDimensions.height <= 0) {
+  onDimensionsChange,
+  resizeThrottle = 200,
+  enableResize = true
+}: UseDimensionChangeHandlerProps) => {
+  // Keep track of previous dimensions
+  const previousDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  
+  // Create throttled resize handler to avoid performance issues
+  const handleResize = useCallback(throttle(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !canvas.wrapperEl) return;
+    
+    // Get the parent element's dimensions
+    const parent = canvas.wrapperEl.parentElement;
+    if (!parent) return;
+    
+    // Get parent dimensions accounting for padding and border
+    const parentStyle = window.getComputedStyle(parent);
+    const paddingX = parseFloat(parentStyle.paddingLeft) + parseFloat(parentStyle.paddingRight);
+    const paddingY = parseFloat(parentStyle.paddingTop) + parseFloat(parentStyle.paddingBottom);
+    const borderX = parseFloat(parentStyle.borderLeftWidth) + parseFloat(parentStyle.borderRightWidth);
+    const borderY = parseFloat(parentStyle.borderTopWidth) + parseFloat(parentStyle.borderBottomWidth);
+    
+    // Calculate available space
+    const availableWidth = parent.clientWidth - paddingX - borderX;
+    const availableHeight = parent.clientHeight - paddingY - borderY;
+    
+    // Check if dimensions actually changed
+    if (previousDimensions.current.width === availableWidth && 
+        previousDimensions.current.height === availableHeight) {
       return;
     }
     
-    // Skip if canvas not yet initialized
-    if (!fabricCanvasRef.current) {
-      return;
-    }
+    previousDimensions.current = { width: availableWidth, height: availableHeight };
     
-    logger.info("Canvas dimensions changed, updating grid");
-    
-    const now = Date.now();
-    
-    // Rate limit grid creation (at most once per second)
-    if (now - lastAttemptTime < 1000) {
-      logger.debug("Skipping grid creation - throttled");
-      return;
-    }
-    
-    // Update timestamp
-    updateLastAttemptTime(now);
-    
-    // Remove old grid objects
-    if (gridLayerRef.current.length > 0) {
-      logger.debug(`Removing ${gridLayerRef.current.length} old grid objects`);
+    // Resize canvas
+    if (canvas.setWidth && canvas.setHeight) {
+      canvas.setWidth(availableWidth);
+      canvas.setHeight(availableHeight);
       
-      // Get canvas instance
-      const canvas = fabricCanvasRef.current;
-      
-      // Remove each grid object
-      gridLayerRef.current.forEach(obj => {
-        if (canvas && canvas.contains(obj)) {
-          canvas.remove(obj);
-        }
+      // Call the dimensions change callback
+      if (onDimensionsChange) {
+        onDimensionsChange(availableWidth, availableHeight);
+      }
+    } else if (canvas.setDimensions) {
+      // Alternative API
+      canvas.setDimensions({
+        width: availableWidth,
+        height: availableHeight
       });
       
-      // Clear reference
-      gridLayerRef.current = [];
-    }
-    
-    // Create new grid with updated dimensions
-    if (fabricCanvasRef.current) {
-      try {
-        const canvas = fabricCanvasRef.current;
-        
-        // Ensure canvas dimensions are updated
-        if (canvas.width !== canvasDimensions.width || 
-            canvas.height !== canvasDimensions.height) {
-          canvas.setDimensions({
-            width: canvasDimensions.width,
-            height: canvasDimensions.height
-          });
-        }
-        
-        // Create new grid
-        const newGridObjects = createGrid(canvas);
-        gridLayerRef.current = newGridObjects;
-        
-        logger.info(`Created ${newGridObjects.length} new grid objects after dimension change`);
-      } catch (error) {
-        logger.error("Error creating grid after dimension change:", error);
+      // Call the dimensions change callback
+      if (onDimensionsChange) {
+        onDimensionsChange(availableWidth, availableHeight);
       }
     }
-  }, [
-    canvasDimensions.width, 
-    canvasDimensions.height, 
-    fabricCanvasRef, 
-    gridLayerRef,
-    createGrid,
-    lastAttemptTime,
-    updateLastAttemptTime
-  ]);
+    
+    // Request render after resize
+    if (canvas.requestRenderAll) {
+      canvas.requestRenderAll();
+    }
+  }, resizeThrottle), [fabricCanvasRef, onDimensionsChange, resizeThrottle]);
+  
+  // Set up resize observer for parent element
+  useEffect(() => {
+    if (!enableResize) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !canvas.wrapperEl) return;
+    
+    const parent = canvas.wrapperEl.parentElement;
+    if (!parent) return;
+    
+    // Initial resize
+    handleResize();
+    
+    // Set up resize observer
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(parent);
+    
+    // Also listen to window resize
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+      handleResize.cancel();
+    };
+  }, [fabricCanvasRef, handleResize, enableResize]);
+  
+  return {
+    handleResize
+  };
 };
