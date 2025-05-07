@@ -5,10 +5,11 @@ import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { ExtendedCanvas } from '@/types/fabric-unified';
+import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { asExtendedCanvas } from '@/types/canvas-types';
 
 interface UseLayerActionsProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -22,8 +23,12 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Use type assertion to ensure compatibility with existing hooks
-  const canvasRef = fabricCanvasRef as React.MutableRefObject<FabricCanvas | null>;
+  // Create a reference that properly casts the canvas for the hooks that expect FabricCanvas
+  const canvasRef = {
+    get current() {
+      return fabricCanvasRef.current ? asExtendedCanvas(fabricCanvasRef.current) : null;
+    }
+  } as React.MutableRefObject<FabricCanvas | null>;
   
   const { toggleLayerVisibility } = useLayerVisibility({ fabricCanvasRef: canvasRef, setLayers });
   const { toggleLayerLock } = useLayerLocking({ fabricCanvasRef: canvasRef, setLayers });

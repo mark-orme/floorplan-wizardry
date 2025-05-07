@@ -4,6 +4,7 @@
  */
 import { Canvas, Object as FabricObject, Point, Circle, Rect, Line } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
+import { Point as CorePoint } from '@/types/core/Point';
 
 // Re-export types
 export {
@@ -74,7 +75,8 @@ export const GRID_CONSTANTS = {
   SMALL_GRID: 10,
   LARGE_GRID: 50,
   GRID_COLOR: '#e0e0e0',
-  LARGE_GRID_COLOR: '#c0c0c0'
+  LARGE_GRID_COLOR: '#c0c0c0',
+  PIXELS_PER_METER: 100  // Add PIXELS_PER_METER here
 };
 
 // Helper functions
@@ -122,14 +124,22 @@ export interface FloorPlan {
   data?: any;
   thumbnail?: string;
   label?: string;
+  width?: number;
+  height?: number;
 }
 
 // Export MeasurementData type for compatibility
 export interface MeasurementData {
-  length?: number;
-  angle?: number;
+  distance: number | null;
+  angle?: number | null;
   units?: string;
-  startPoint?: FabricPoint;
-  endPoint?: FabricPoint;
+  unit?: string; // For backward compatibility
+  startPoint?: CorePoint | null;
+  endPoint?: CorePoint | null;
+  start?: CorePoint | null;
+  end?: CorePoint | null;
+  midPoint?: CorePoint | null;
+  snapped?: boolean;
+  snapType?: 'grid' | 'angle' | 'both';
+  pixelsPerMeter?: number;
 }
-

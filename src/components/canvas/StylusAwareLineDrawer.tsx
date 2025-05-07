@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
+import { MeasurementData } from '@/types/measurement/MeasurementData';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
@@ -35,25 +36,25 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   
   const {
     snapEnabled,
-    anglesEnabled, // Now properly supported by interface
+    anglesEnabled,
     measurementData,
     toggleGridSnapping,
-    toggleAngles, // Now properly supported by interface
+    toggleAngles,
     isDrawing,
-    renderTooltip // Now properly supported by interface
+    renderTooltip
   } = straightLineTool;
   
   useEffect(() => {
     if (isDrawing) {
       setShowMeasurement(true);
-    } else if (measurementData?.distance !== undefined) {
+    } else if (measurementData && measurementData.distance !== null && measurementData.distance !== undefined) {
       const timer = setTimeout(() => {
         setShowMeasurement(false);
       }, 3000);
       
       return () => clearTimeout(timer);
     }
-  }, [isDrawing, measurementData?.distance]);
+  }, [isDrawing, measurementData]);
   
   return (
     <>
@@ -63,10 +64,10 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
       {/* Enhanced measurement overlay */}
       <LineToolMeasurementOverlay
         visible={showMeasurement && !enabled}
-        distance={measurementData?.distance}
+        distance={measurementData?.distance !== undefined ? measurementData.distance : null}
         angle={measurementData?.angle}
-        isSnapped={measurementData?.snapped}
-        unit={measurementData?.unit}
+        isSnapped={!!measurementData?.snapped}
+        unit={measurementData?.unit || measurementData?.units || 'px'}
       />
       
       {/* Controls */}

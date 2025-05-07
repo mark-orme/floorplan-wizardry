@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 
 interface StylusCurveVisualizerProps {
@@ -64,7 +63,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       for (let i = 0; i < normalizedCurve.length; i++) {
         const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
         // Invert Y to make higher values go up
-        const y = canvas.height - normalizedCurve[i] * canvas.height;
+        const y = canvas.height - (normalizedCurve[i] || 0) * canvas.height;
         
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -79,7 +78,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       ctx.fillStyle = '#ef4444';
       for (let i = 0; i < normalizedCurve.length; i++) {
         const x = (i / Math.max(1, normalizedCurve.length - 1)) * canvas.width;
-        const y = canvas.height - normalizedCurve[i] * canvas.height;
+        const y = canvas.height - (normalizedCurve[i] || 0) * canvas.height;
         
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);

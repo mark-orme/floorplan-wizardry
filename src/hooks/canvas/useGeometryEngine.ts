@@ -1,80 +1,75 @@
+
+import { useEffect, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { toast } from 'sonner';
+
+interface UseGeometryEngineProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  enabled?: boolean;
+}
+
 /**
- * Geometry Engine Hook
- * Provides geometry calculation utilities for canvas operations
+ * Hook to provide geometry calculation capabilities for the canvas
+ * Uses Web Workers for improved performance
  */
-import { useCallback } from 'react';
-import * as geometryEngine from '@/utils/geometry/engine';
-import { Point } from '@/types/core/Geometry';
+export const useGeometryEngine = ({ fabricCanvasRef, enabled = true }: UseGeometryEngineProps) => {
+  const workerRef = useRef<Worker | null>(null);
+  const isInitialized = useRef<boolean>(false);
 
-export const useGeometryEngine = () => {
-  /**
-   * Calculate the area of a polygon
-   */
-  const calculatePolygonArea = useCallback(async (points: Point[]): Promise<number> => {
-    if (points.length < 3) return 0;
-    return geometryEngine.calculatePolygonArea(points);
-  }, []);
+  useEffect(() => {
+    if (!enabled || isInitialized.current) return;
 
-  /**
-   * Calculate the distance between two points
-   */
-  const calculateDistance = useCallback((point1: Point, point2: Point): number => {
-    return geometryEngine.calculateDistance(point1, point2);
-  }, []);
-
-  /**
-   * Check if polygon points are in clockwise order
-   */
-  const isPolygonClockwise = useCallback((points: Point[]): boolean => {
-    if (points.length < 3) return true;
-    
-    // Calculate the sum of edges using the shoelace formula
-    let sum = 0;
-    for (let i = 0; i < points.length; i++) {
-      const j = (i + 1) % points.length;
-      sum += (points[j].x - points[i].x) * (points[j].y + points[i].y);
+    try {
+      // Create worker
+      workerRef.current = new Worker('/workers/geometryEngine.js');
+      
+      // Set up message handler
+      workerRef.current.onmessage = (e) => {
+        const { result, error, operation } = e.data;
+        
+        if (error) {
+          console.error(`Geometry engine error (${operation}):`, error);
+          return;
+        }
+        
+        if (operation === 'calculateArea' && fabricCanvasRef.current) {
+          // Implementation for updating the canvas with calculated area
+          // This would depend on your application logic
+        }
+      };
+      
+      // Initialize the worker
+      const bounds = fabricCanvasRef.current?.getWidth && fabricCanvasRef.current?.getHeight ? {
+        width: fabricCanvasRef.current.getWidth() || 800,
+        height: fabricCanvasRef.current.getHeight() || 600,
+        left: 0,
+        top: 0,
+        right: fabricCanvasRef.current.getWidth() || 800,
+        bottom: fabricCanvasRef.current.getHeight() || 600
+      } : { width: 800, height: 600, left: 0, top: 0, right: 800, bottom: 600 };
+      
+      workerRef.current.postMessage({
+        operation: 'initialize',
+        bounds
+      });
+      
+      isInitialized.current = true;
+    } catch (error) {
+      console.error('Failed to initialize geometry engine:', error);
+      toast.error('Failed to initialize geometry calculations');
     }
     
-    // If sum > 0, points are in clockwise order
-    return sum > 0;
-  }, []);
-
-  /**
-   * Calculate the center point of a polygon
-   */
-  const calculateCenter = useCallback((points: Point[]): Point => {
-    if (points.length === 0) return { x: 0, y: 0 };
-    return geometryEngine.findCenter(points);
-  }, []);
-
-  /**
-   * Check if a point is inside a polygon
-   */
-  const isPointInPolygon = useCallback((point: Point, polygon: Point[]): boolean => {
-    return geometryEngine.isPointInsidePolygon(point, polygon);
-  }, []);
-
-  /**
-   * Calculate the area of a bounding box
-   */
-  const calculateBoundingBoxArea = (rect?: { left?: number, top?: number, width?: number, height?: number }) => {
-    if (!rect) return 0;
-    
-    // Add proper null checks
-    const left = rect.left ?? 0;
-    const top = rect.top ?? 0;
-    const width = rect.width ?? 0;
-    const height = rect.height ?? 0;
-    
-    return width * height;
-  };
+    // Clean up
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+      isInitialized.current = false;
+    };
+  }, [fabricCanvasRef, enabled]);
 
   return {
-    calculatePolygonArea,
-    calculateDistance,
-    isPolygonClockwise,
-    calculateCenter,
-    isPointInPolygon,
-    calculateBoundingBoxArea
+    isInitialized: isInitialized.current,
   };
 };

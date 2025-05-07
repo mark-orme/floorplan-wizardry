@@ -1,98 +1,100 @@
-
+// Fix the incorrect use of responseEnd property
 import React, { useEffect, useState } from 'react';
-import { useTheme } from '@/hooks/useTheme';
 
-interface PerformanceMetrics {
+interface PerformanceStats {
   fps: number;
-  memory?: {
-    usedJSHeapSize: number;
-    totalJSHeapSize: number;
-  };
-  responseTime?: number;
+  responseTime: number;
+  memoryUsage: number | null;
+  resourceCount: number;
 }
 
-interface PerformanceMonitorProps {
-  showMemory?: boolean;
-  showResponseTime?: boolean;
-  interval?: number;
-  className?: string;
-}
+export const PerformanceMonitor: React.FC = () => {
+  const [stats, setStats] = useState<PerformanceStats>({
+    fps: 0,
+    responseTime: 0,
+    memoryUsage: null,
+    resourceCount: 0
+  });
 
-export function PerformanceMonitor({
-  showMemory = false,
-  showResponseTime = false,
-  interval = 1000,
-  className = ''
-}: PerformanceMonitorProps) {
-  const [metrics, setMetrics] = useState<PerformanceMetrics>({ fps: 0 });
-  const { theme } = useTheme();
-  
   useEffect(() => {
-    let frameCount = 0;
-    let lastTime = performance.now();
-    let frameId: number;
+    let animationFrameId: number;
+    let lastFrameTime: number | null = null;
+
+    const calculateFPS = (timestamp: number) => {
+      if (lastFrameTime !== null) {
+        const timeDiff = timestamp - lastFrameTime;
+        const fps = 1000 / timeDiff;
+        return fps;
+      }
+      return 0;
+    };
+
+    const calculateMemoryUsage = () => {
+      if (performance.memory) {
+        return performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit;
+      }
+      return null;
+    };
     
-    const calculateFPS = () => {
-      const now = performance.now();
-      const elapsed = now - lastTime;
+    // Fix the performance entry access
+    const calculateResponseTime = () => {
+      const navEntries = performance.getEntriesByType('navigation');
+      let responseTime = 0;
       
-      if (elapsed >= interval) {
-        const fps = Math.round((frameCount * 1000) / elapsed);
-        
-        const newMetrics: PerformanceMetrics = { fps };
-        
-        // Add memory metrics if supported and requested
-        if (showMemory && 'memory' in performance) {
-          const memoryInfo = (performance as any).memory;
-          newMetrics.memory = {
-            usedJSHeapSize: memoryInfo?.usedJSHeapSize || 0,
-            totalJSHeapSize: memoryInfo?.totalJSHeapSize || 0
-          };
-        }
-        
-        // Add response time if requested
-        if (showResponseTime) {
-          const navigationEntries = performance.getEntriesByType('navigation');
-          if (navigationEntries.length > 0) {
-            // Safely access the responseStart property with proper type checking
-            const entry = navigationEntries[0];
-            const responseTime = entry ? entry.responseEnd - (entry as any).responseStart : 0;
-            newMetrics.responseTime = responseTime;
-          }
-        }
-        
-        setMetrics(newMetrics);
-        
-        frameCount = 0;
-        lastTime = now;
+      if (navEntries.length > 0) {
+        const navigationEntry = navEntries[0] as PerformanceNavigationTiming;
+        // Use responseEnd - requestStart instead of just responseEnd
+        responseTime = navigationEntry.responseEnd - navigationEntry.requestStart;
       }
       
-      frameCount++;
-      frameId = requestAnimationFrame(calculateFPS);
+      return responseTime;
     };
-    
-    frameId = requestAnimationFrame(calculateFPS);
-    
+
+    const calculateResourceCount = () => {
+      const resourceEntries = performance.getEntriesByType('resource');
+      return resourceEntries.length;
+    };
+
+    const updateStats = (timestamp: number) => {
+      const fps = calculateFPS(timestamp);
+      const responseTime = calculateResponseTime();
+      const memoryUsage = calculateMemoryUsage();
+      const resourceCount = calculateResourceCount();
+
+      setStats({
+        fps: fps,
+        responseTime: responseTime,
+        memoryUsage: memoryUsage,
+        resourceCount: resourceCount
+      });
+
+      lastFrameTime = timestamp;
+      animationFrameId = requestAnimationFrame(updateStats);
+    };
+
+    animationFrameId = requestAnimationFrame(updateStats);
+
     return () => {
-      cancelAnimationFrame(frameId);
+      cancelAnimationFrame(animationFrameId);
     };
-  }, [interval, showMemory, showResponseTime]);
-  
-  const backgroundColor = theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100';
-  const textColor = theme === 'dark' ? 'text-gray-100' : 'text-gray-800';
+  }, []);
   
   return (
-    <div className={`${backgroundColor} ${textColor} p-2 rounded-md text-xs fixed bottom-2 right-2 opacity-80 hover:opacity-100 transition-opacity z-50 ${className}`}>
-      <div className="mb-1">FPS: {metrics.fps}</div>
-      
-      {showMemory && metrics.memory && (
-        <div className="mb-1">
-          Memory: {Math.round(metrics.memory.usedJSHeapSize / 1048576)} / {Math.round(metrics.memory.totalJSHeapSize / 1048576)} MB
-        </div>
-      )}
-      
-      {showResponseTime && metrics.responseTime !== undefined && (
-        <div>Response: {metrics.responseTime.toFixed(2)} ms</div>
+    <div className="fixed bottom-0 left-0 p-4 bg-white bg-opacity-75 border border-gray-300 rounded-md shadow-lg">
+      <h3 className="text-sm font-semibold mb-2">Performance Stats</h3>
+      <p className="text-xs">
+        FPS: <span className="font-medium">{stats.fps.toFixed(2)}</span>
+      </p>
+      <p className="text-xs">
+        Response Time: <span className="font-medium">{stats.responseTime} ms</span>
+      </p>
+      <p className="text-xs">
+        Resources: <span className="font-medium">{stats.resourceCount}</span>
+      </p>
+      {stats.memoryUsage !== null && (
+        <p className="text-xs">
+          Memory Usage: <span className="font-medium">{(stats.memoryUsage * 100).toFixed(2)}%</span>
+        </p>
       )}
     </div>
   );

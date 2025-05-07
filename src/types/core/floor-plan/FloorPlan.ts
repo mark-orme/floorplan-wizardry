@@ -1,3 +1,4 @@
+
 /**
  * Core floor plan type definitions
  * @module types/core/floor-plan/FloorPlan
@@ -53,19 +54,21 @@ export interface FloorPlan {
   rooms: Room[];
   strokes: Stroke[];
   metadata: FloorPlanMetadata;
+  width?: number;  // Add width for compatibility
+  height?: number; // Add height for compatibility
+  data?: any;      // Add data for compatibility
+  thumbnail?: string; // Add thumbnail for compatibility
 }
 
 /**
  * Creates a new floor plan with default values
  */
-export function createFloorPlan(id: string, name: string): any {
+export function createFloorPlan(id: string, name: string): FloorPlan {
   const now = new Date().toISOString();
   
   return {
     id,
     name,
-    createdAt: now,
-    updatedAt: now,
     walls: [],
     rooms: [],
     strokes: [],

@@ -1,72 +1,69 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { FloorPlan } from '@/types/fabric-unified';
-import { toast } from 'sonner';
 
-export interface UsePropertyFloorPlanProps {
+interface UsePropertyFloorPlanProps {
   propertyId: string;
+  enabled?: boolean;
 }
 
-export const usePropertyFloorPlan = ({ propertyId }: UsePropertyFloorPlanProps) => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const usePropertyFloorPlan = ({ 
+  propertyId, 
+  enabled = true 
+}: UsePropertyFloorPlanProps) => {
+  const [selectedFloorPlan, setSelectedFloorPlan] = useState<string | null>(null);
   
-  // Load floor plans when property ID changes
+  // Query for floor plans
+  const { data: floorPlans, isLoading, error } = useQuery({
+    queryKey: ['propertyFloorPlans', propertyId],
+    queryFn: async (): Promise<FloorPlan[]> => {
+      // Simulated API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Mock data with compatible types
+      return [
+        {
+          id: 'floor-1',
+          name: 'Ground Floor',
+          label: 'Ground Floor',
+          width: 800,
+          height: 600,
+          data: { /* Floor plan data */ },
+          thumbnail: '/images/floor-1-thumb.png'
+        },
+        {
+          id: 'floor-2',
+          name: 'First Floor',
+          label: 'First Floor',
+          width: 800,
+          height: 600,
+          data: { /* Floor plan data */ },
+          thumbnail: '/images/floor-2-thumb.png'
+        }
+      ] as unknown as FloorPlan[]; // Cast to FloorPlan[] to ensure compatibility
+    },
+    enabled
+  });
+  
+  // Set the first floor plan as selected when data loads
   useEffect(() => {
-    async function loadFloorPlans() {
-      if (!propertyId) {
-        setFloorPlans([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      setIsLoading(true);
-      
-      try {
-        // Mock data - in a real app, fetch from API
-        const mockFloorPlans: FloorPlan[] = [
-          {
-            id: 'floor-1',
-            name: 'Ground Floor',
-            width: 1000,
-            height: 800,
-            level: 0,
-            updatedAt: new Date().toISOString(),
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          },
-          {
-            id: 'floor-2',
-            name: 'First Floor',
-            width: 1000,
-            height: 800,
-            level: 1,
-            updatedAt: new Date().toISOString(),
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          }
-        ];
-        
-        setFloorPlans(mockFloorPlans);
-      } catch (err) {
-        console.error('Failed to load floor plans:', err);
-        setError(err instanceof Error ? err : new Error('Failed to load floor plans'));
-        toast.error('Failed to load floor plans');
-      } finally {
-        setIsLoading(false);
-      }
+    if (floorPlans && floorPlans.length > 0 && !selectedFloorPlan) {
+      setSelectedFloorPlan(floorPlans[0].id);
     }
-    
-    loadFloorPlans();
-  }, [propertyId]);
+  }, [floorPlans, selectedFloorPlan]);
+  
+  // Get the currently selected floor plan
+  const currentFloorPlan = useCallback(() => {
+    if (!floorPlans || !selectedFloorPlan) return null;
+    return floorPlans.find(plan => plan.id === selectedFloorPlan) || null;
+  }, [floorPlans, selectedFloorPlan]);
   
   return {
-    floorPlans,
+    floorPlans: floorPlans || [],
+    selectedFloorPlan,
+    setSelectedFloorPlan,
+    currentFloorPlan: currentFloorPlan(),
     isLoading,
     error
   };

@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DrawingMode } from '@/constants/drawingModes';
 
 export interface DrawingMetricsState {
-  currentTool: DrawingMode | null;
+  currentTool: DrawingMode | string | null;
   startTime: number | null;
   drawingDuration: number;
   toolUsage: Record<string, number>;
@@ -20,7 +20,7 @@ export const drawingMetricsSlice = createSlice({
   name: 'drawingMetrics',
   initialState: initialDrawingMetricsState,
   reducers: {
-    startToolUsage: (state: DrawingMetricsState, action: PayloadAction<DrawingMode>) => {
+    startToolUsage: (state: DrawingMetricsState, action: PayloadAction<DrawingMode | string>) => {
       state.currentTool = action.payload;
       state.startTime = Date.now();
     },
@@ -46,7 +46,7 @@ export const drawingMetricsSlice = createSlice({
       return initialDrawingMetricsState;
     },
     
-    incrementToolUsage: (state: DrawingMetricsState, action: PayloadAction<{tool: DrawingMode; duration: number}>) => {
+    incrementToolUsage: (state: DrawingMetricsState, action: PayloadAction<{tool: DrawingMode | string; duration: number}>) => {
       const { tool, duration } = action.payload;
       state.toolUsage[tool] = (state.toolUsage[tool] || 0) + duration;
       state.drawingDuration += duration;
@@ -77,4 +77,7 @@ export const {
   clearStats
 } = drawingMetricsSlice.actions;
 
-export default drawingMetricsSlice.reducer;
+// Export the reducer for test compatibility
+export const drawingMetricsReducer = drawingMetricsSlice.reducer;
+
+export default drawingMetricsReducer;

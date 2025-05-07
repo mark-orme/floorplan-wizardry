@@ -23,6 +23,7 @@ export interface MeasurementData {
   // Additional properties
   midPoint?: Point | null;
   unit?: string;
+  units?: string; // For backward compatibility
   snapped?: boolean;
   snapType?: 'grid' | 'angle' | 'both';
   pixelsPerMeter?: number;
@@ -35,7 +36,9 @@ export function createEmptyMeasurementData(): MeasurementData {
   return {
     distance: null,
     angle: null,
-    unit: 'px'
+    unit: 'px',
+    units: 'px', // For backward compatibility
+    snapped: false
   };
 }
 
@@ -58,6 +61,7 @@ export function createMeasurementData(
     end: endPoint,      // Include both naming conventions
     midPoint: options.midPoint || getMidPoint(startPoint, endPoint),
     unit: options.unit || 'px',
+    units: options.units || options.unit || 'px', // For backward compatibility
     snapped: options.snapped || false,
     snapType: options.snapType,
     pixelsPerMeter: options.pixelsPerMeter || 100
@@ -81,7 +85,8 @@ export function normalizeMeasurementData(data: Partial<MeasurementData>): Measur
   const result: MeasurementData = {
     distance: data.distance ?? null,
     angle: data.angle ?? null,
-    unit: data.unit ?? 'px',
+    unit: data.unit ?? data.units ?? 'px',
+    units: data.units ?? data.unit ?? 'px',
     snapped: data.snapped ?? false
   };
   

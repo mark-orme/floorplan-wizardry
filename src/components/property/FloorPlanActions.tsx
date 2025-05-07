@@ -1,63 +1,120 @@
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AiOutlineEye, AiOutlineSend } from 'react-icons/ai';
-import { PropertyStatus } from "@/types/propertyTypes";
-import { handleError } from "@/utils/errorHandling";
-import { toast } from "sonner";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface FloorPlanActionsProps {
-  /** Whether the current user can edit the property */
+  floorPlanId: string;
+  propertyId: string;
   canEdit: boolean;
-  /** The role of the current user */
-  userRole: string;
-  /** Whether a status change submission is in progress */
-  isSubmitting: boolean;
-  /** Handler for property status changes */
-  onStatusChange: (status: PropertyStatus) => Promise<void>;
+  canDelete: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  className?: string;
 }
 
-export const FloorPlanActions = ({
+export const FloorPlanActions: React.FC<FloorPlanActionsProps> = ({
+  floorPlanId,
+  propertyId,
   canEdit,
-  userRole,
-  isSubmitting,
-  onStatusChange
-}: FloorPlanActionsProps) => {
-  /**
-   * Handle status change with error handling
-   * @param {PropertyStatus} newStatus - The new status to set
-   */
-  const handleStatusChange = async (newStatus: PropertyStatus) => {
+  canDelete,
+  onEdit,
+  onDelete,
+  className
+}) => {
+  const router = useRouter();
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit();
+    } else {
+      router.push(`/properties/${propertyId}/floor-plans/${floorPlanId}/edit`);
+    }
+  };
+  
+  const handleDelete = async () => {
     try {
-      await onStatusChange(newStatus);
-      toast.success("Status updated successfully");
-    } catch (error) {
-      handleError(error, 'error', {
-        component: 'FloorPlanActions',
-        operation: 'status-change',
-        context: { newStatus }
+      // Call API to delete floor plan
+      const response = await fetch(`/api/properties/${propertyId}/floor-plans/${floorPlanId}`, {
+        method: 'DELETE',
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete floor plan');
+      }
+      
+      toast.success('Floor plan deleted successfully');
+      
+      if (onDelete) {
+        onDelete();
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      let errorMessage: string;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else {
+        errorMessage = 'An unknown error occurred';
+      }
+      
+      console.error('Error deleting floor plan:', errorMessage);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
   
   return (
-    <div className="flex items-center justify-between w-full">
-      <div>
-        {!canEdit && (
-          <Badge variant="outline">
-            <AiOutlineEye className="h-3 w-3 mr-1" />
-            View Only
-          </Badge>
-        )}
-      </div>
-      {(userRole === 'MANAGER' || userRole === 'PHOTOGRAPHER') && (
+    <div className={`flex space-x-2 ${className || ''}`}>
+      {canEdit && (
         <Button 
-          disabled={isSubmitting} 
-          variant="default" 
-          onClick={() => handleStatusChange(PropertyStatus.PENDING_REVIEW)}
+          variant="outline" 
+          size="sm" 
+          onClick={handleEdit}
+          aria-label="Edit floor plan"
         >
-          <AiOutlineSend className="h-4 w-4 mr-2" />
-          Submit for Review
+          Edit
         </Button>
+      )}
+      
+      {canDelete && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              aria-label="Delete floor plan"
+            >
+              Delete
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                floor plan and all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

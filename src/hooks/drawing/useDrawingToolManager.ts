@@ -1,263 +1,267 @@
-/**
- * Centralized drawing tool manager
- * Provides unified handling of all drawing tools
- * @module hooks/drawing/useDrawingToolManager
- */
-import { useCallback, useState } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingTool } from "@/types/core/DrawingTool";
-import { DrawingMode } from "@/constants/drawingModes";
-import { useMouseEvents } from "./useMouseEvents";
-import { Point } from "@/types/core/Geometry";
-import { toast } from "sonner";
-import logger from "@/utils/logger";
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
+import { Point } from '@/types/core/Point';
 
-/**
- * Drawing state interface
- */
-export interface DrawingState {
-  isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  points: Point[];
-  currentDrawingObject: FabricObject | null;
-}
-
-/**
- * Props for the useDrawingToolManager hook
- */
-export interface UseDrawingToolManagerProps {
-  /** Reference to the Fabric canvas instance */
+interface UseDrawingToolManagerProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  /** Current active drawing tool */
-  tool: DrawingTool;
-  /** Function to save the current canvas state */
-  saveCurrentState?: () => void;
-  /** Line thickness for drawing */
-  lineThickness?: number;
-  /** Line color for drawing */
-  lineColor?: string;
-  /** Whether to use grid snapping */
-  snapToGrid?: boolean;
-  /** Function to snap a point to the grid */
-  snapPointToGrid?: (point: Point) => Point;
+  activeTool: DrawingMode;
+  onToolChange?: (tool: DrawingMode) => void;
 }
 
-/**
- * Return type for the useDrawingToolManager hook
- */
-export interface UseDrawingToolManagerResult {
-  /** Current drawing state */
-  drawingState: DrawingState;
-  /** Start drawing at a point */
-  startDrawing: (point: Point) => void;
-  /** Continue drawing to a point */
-  continueDrawing: (point: Point) => void;
-  /** End drawing at a point */
-  endDrawing: (point: Point) => void;
-  /** Cancel the current drawing */
-  cancelDrawing: () => void;
-  /** Mouse event handlers */
-  mouseHandlers: {
-    handleMouseDown: (e: MouseEvent | TouchEvent) => void;
-    handleMouseMove: (e: MouseEvent | TouchEvent) => void;
-    handleMouseUp: (e: MouseEvent | TouchEvent) => void;
-  };
+// Extended UseMouseEventsProps with needed properties
+interface UseMouseEventsProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  tool?: DrawingMode;
+  handleMouseDown: (e: MouseEvent | TouchEvent) => void;
+  handleMouseMove: (e: MouseEvent | TouchEvent) => void;
+  handleMouseUp: (e: MouseEvent | TouchEvent) => void;
+  onMouseDown?: (e: any) => void;
+  onMouseMove?: (e: any) => void;
+  onMouseUp?: (e: any) => void;
 }
 
-/**
- * Default drawing state
- */
-const defaultDrawingState: DrawingState = {
-  isDrawing: false,
-  startPoint: null,
-  currentPoint: null,
-  points: [],
-  currentDrawingObject: null
-};
-
-/**
- * Hook for centralized management of drawing tools
- * 
- * @param {UseDrawingToolManagerProps} props - Hook properties
- * @returns {UseDrawingToolManagerResult} Drawing tool state and handlers
- */
-export const useDrawingToolManager = (
-  props: UseDrawingToolManagerProps
-): UseDrawingToolManagerResult => {
-  const {
-    fabricCanvasRef,
-    tool,
-    saveCurrentState,
-    lineThickness = 2,
-    lineColor = "#000000",
-    snapToGrid = false,
-    snapPointToGrid = (point: Point) => point
-  } = props;
-
-  // Drawing state
-  const [drawingState, setDrawingState] = useState<DrawingState>(defaultDrawingState);
-
-  /**
-   * Start drawing at a point
-   */
-  const startDrawing = useCallback((point: Point): void => {
-    // Apply grid snapping if enabled
-    const processedPoint = snapToGrid ? snapPointToGrid(point) : point;
-    
-    logger.info("Starting drawing", { tool, point: processedPoint });
-    
-    // Save current state before starting new drawing
-    if (saveCurrentState) {
-      saveCurrentState();
+export const useDrawingToolManager = ({
+  fabricCanvasRef,
+  activeTool,
+  onToolChange
+}: UseDrawingToolManagerProps) => {
+  const [previousTool, setPreviousTool] = useState<DrawingMode>(activeTool);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
+  const [drawingObjects, setDrawingObjects] = useState<any[]>([]);
+  
+  // Track tool changes
+  useEffect(() => {
+    if (activeTool !== previousTool) {
+      // Clean up previous tool
+      cleanupCurrentTool();
+      
+      // Initialize new tool
+      initializeTool(activeTool);
+      
+      // Update previous tool
+      setPreviousTool(activeTool);
+      
+      // Notify parent of tool change
+      if (onToolChange) {
+        onToolChange(activeTool);
+      }
     }
-    
-    // Update drawing state
-    setDrawingState({
-      isDrawing: true,
-      startPoint: processedPoint,
-      currentPoint: processedPoint,
-      points: [processedPoint],
-      currentDrawingObject: null
-    });
-    
-    // Tool-specific start drawing logic
+  }, [activeTool, previousTool, onToolChange]);
+  
+  // Clean up current tool
+  const cleanupCurrentTool = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    
-    // Different behavior based on tool
-    switch (tool) {
-      case DrawingMode.STRAIGHT_LINE:
-        // Handled by useStraightLineTool
-        break;
-      case DrawingMode.DRAW:
-        // Using canvas free drawing mode
-        break;
-      default:
-        // Other tools
-        break;
-    }
-  }, [fabricCanvasRef, tool, saveCurrentState, snapToGrid, snapPointToGrid]);
-
-  /**
-   * Continue drawing to a point
-   */
-  const continueDrawing = useCallback((point: Point): void => {
-    if (!drawingState.isDrawing) return;
-    
-    // Apply grid snapping if enabled
-    const processedPoint = snapToGrid ? snapPointToGrid(point) : point;
-    
-    // Update drawing state
-    setDrawingState(prev => ({
-      ...prev,
-      currentPoint: processedPoint,
-      points: [...prev.points, processedPoint]
-    }));
-    
-    // Tool-specific continue drawing logic
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Different behavior based on tool
-    switch (tool) {
-      case DrawingMode.STRAIGHT_LINE:
-        // Handled by useStraightLineTool
-        break;
-      default:
-        // Other tools
-        break;
-    }
-  }, [fabricCanvasRef, tool, drawingState.isDrawing, snapToGrid, snapPointToGrid]);
-
-  /**
-   * End drawing at a point
-   */
-  const endDrawing = useCallback((point: Point): void => {
-    if (!drawingState.isDrawing) return;
-    
-    // Apply grid snapping if enabled
-    const processedPoint = snapToGrid ? snapPointToGrid(point) : point;
-    
-    logger.info("Ending drawing", { 
-      tool, 
-      startPoint: drawingState.startPoint, 
-      endPoint: processedPoint,
-      pointCount: drawingState.points.length + 1
-    });
-    
-    // Update drawing state
-    setDrawingState(prev => ({
-      ...prev,
-      isDrawing: false,
-      currentPoint: processedPoint,
-      points: [...prev.points, processedPoint]
-    }));
-    
-    // Tool-specific end drawing logic
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    // Create the final object based on the tool
-    switch (tool) {
-      case DrawingMode.STRAIGHT_LINE:
-        // Handled by useStraightLineTool
-        break;
-      default:
-        // Notify about other tools
-        toast.info(`Drawing completed with ${tool}`);
-        break;
-    }
-    
-    // Save the canvas state after drawing is complete
-    if (saveCurrentState) {
-      saveCurrentState();
-    }
-  }, [fabricCanvasRef, tool, drawingState, saveCurrentState, snapToGrid, snapPointToGrid]);
-
-  /**
-   * Cancel the current drawing
-   */
-  const cancelDrawing = useCallback((): void => {
-    if (!drawingState.isDrawing) return;
-    
-    logger.info("Canceling drawing", { tool });
-    
-    // Remove temporary drawing object if it exists
-    const canvas = fabricCanvasRef.current;
-    if (canvas && drawingState.currentDrawingObject) {
-      canvas.remove(drawingState.currentDrawingObject);
-      canvas.requestRenderAll();
-    }
     
     // Reset drawing state
-    setDrawingState(defaultDrawingState);
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
     
-    toast.info("Drawing canceled");
-  }, [fabricCanvasRef, tool, drawingState]);
-
-  // Get mouse event handlers
-  const { handleMouseDown, handleMouseMove, handleMouseUp } = useMouseEvents({
-    fabricCanvasRef,
-    tool,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    isDrawing: drawingState.isDrawing,
-    lineThickness,
-    lineColor
-  });
-
-  return {
-    drawingState,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing,
-    mouseHandlers: {
-      handleMouseDown,
-      handleMouseMove,
-      handleMouseUp
+    // Remove temporary drawing objects
+    drawingObjects.forEach(obj => {
+      if (canvas.contains(obj)) {
+        canvas.remove(obj);
+      }
+    });
+    setDrawingObjects([]);
+    
+    // Reset canvas state based on previous tool
+    switch (previousTool) {
+      case DrawingMode.DRAW:
+        canvas.isDrawingMode = false;
+        break;
+      case DrawingMode.SELECT:
+        canvas.selection = false;
+        break;
+      default:
+        break;
     }
+    
+    // Reset cursor
+    canvas.defaultCursor = 'default';
+  }, [fabricCanvasRef, previousTool, drawingObjects]);
+  
+  // Initialize tool
+  const initializeTool = useCallback((tool: DrawingMode) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    // Set canvas state based on tool
+    switch (tool) {
+      case DrawingMode.DRAW:
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.width = 2;
+        canvas.freeDrawingBrush.color = '#000000';
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.SELECT:
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+      case DrawingMode.LINE:
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.RECTANGLE:
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.CIRCLE:
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'crosshair';
+        break;
+      case DrawingMode.ERASER:
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'cell';
+        break;
+      default:
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+    }
+  }, [fabricCanvasRef]);
+  
+  // Get pointer position from event
+  const getPointerPosition = useCallback((event: any): Point | null => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !canvas.getPointer) return null;
+    
+    return canvas.getPointer(event);
+  }, [fabricCanvasRef]);
+
+  const pointerUtils = {
+    getPointerPosition,
+    lastPoint: null,
+    handleMouseDown: (e: any) => {
+      const point = getPointerPosition(e);
+      if (!point) return;
+      
+      setIsDrawing(true);
+      setStartPoint(point);
+      setCurrentPoint(point);
+      
+      // Tool-specific handling
+      handleToolMouseDown(activeTool, point);
+    },
+    handleMouseMove: (e: any) => {
+      const point = getPointerPosition(e);
+      if (!isDrawing || !point) return;
+      
+      setCurrentPoint(point);
+      
+      // Tool-specific handling
+      handleToolMouseMove(activeTool, point);
+    },
+    handleMouseUp: (e: any) => {
+      if (!isDrawing) return;
+      
+      const point = getPointerPosition(e);
+      
+      // Tool-specific handling
+      handleToolMouseUp(activeTool, point || currentPoint);
+      
+      setIsDrawing(false);
+    }
+  };
+  
+  // Tool-specific mouse down handler
+  const handleToolMouseDown = useCallback((tool: DrawingMode, point: Point) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    
+    switch (tool) {
+      case DrawingMode.LINE:
+        // Start drawing a line
+        break;
+      case DrawingMode.RECTANGLE:
+        // Start drawing a rectangle
+        break;
+      case DrawingMode.CIRCLE:
+        // Start drawing a circle
+        break;
+      default:
+        break;
+    }
+  }, [fabricCanvasRef]);
+  
+  // Tool-specific mouse move handler
+  const handleToolMouseMove = useCallback((tool: DrawingMode, point: Point) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !startPoint) return;
+    
+    switch (tool) {
+      case DrawingMode.LINE:
+        // Update line
+        break;
+      case DrawingMode.RECTANGLE:
+        // Update rectangle
+        break;
+      case DrawingMode.CIRCLE:
+        // Update circle
+        break;
+      default:
+        break;
+    }
+  }, [fabricCanvasRef, startPoint]);
+  
+  // Tool-specific mouse up handler
+  const handleToolMouseUp = useCallback((tool: DrawingMode, point: Point | null) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !startPoint || !point) return;
+    
+    switch (tool) {
+      case DrawingMode.LINE:
+        // Finalize line
+        break;
+      case DrawingMode.RECTANGLE:
+        // Finalize rectangle
+        break;
+      case DrawingMode.CIRCLE:
+        // Finalize circle
+        break;
+      default:
+        break;
+    }
+    
+    // Clear temporary drawing objects
+    setDrawingObjects([]);
+  }, [fabricCanvasRef, startPoint]);
+  
+  useEffect(() => {
+    // Register event handlers
+    const mouseEvents: UseMouseEventsProps = {
+      fabricCanvasRef,
+      tool: activeTool,
+      handleMouseDown: pointerUtils.handleMouseDown,
+      handleMouseMove: pointerUtils.handleMouseMove,
+      handleMouseUp: pointerUtils.handleMouseUp
+    };
+    
+    // Initialize tool on mount
+    initializeTool(activeTool);
+    
+    // Clean up on unmount
+    return () => {
+      cleanupCurrentTool();
+    };
+  }, [activeTool, fabricCanvasRef, initializeTool, cleanupCurrentTool]);
+  
+  return {
+    activeTool,
+    isDrawing,
+    startPoint,
+    currentPoint,
+    setActiveTool: onToolChange,
+    getPointerPosition
   };
 };

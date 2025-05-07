@@ -1,58 +1,63 @@
 
-import { useCallback, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Point } from '@/types/core/Point';
 
-interface UseLineAngleSnapOptions {
+interface UseLineAngleSnapProps {
   enabled?: boolean;
   angles?: number[];
+  threshold?: number;
 }
 
-/**
- * Hook for angle snapping functionality
- */
-export const useLineAngleSnap = ({
-  enabled = false,
-  angles = [0, 45, 90, 135, 180, 225, 270, 315]
-}: UseLineAngleSnapOptions = {}) => {
+export const useLineAngleSnap = ({ 
+  enabled = false, 
+  angles = [0, 45, 90, 135, 180, 225, 270, 315], 
+  threshold = 10 
+}: UseLineAngleSnapProps) => {
   const [anglesEnabled, setAnglesEnabled] = useState(enabled);
   
-  // Toggle angle snapping
   const toggleAngles = useCallback(() => {
     setAnglesEnabled(prev => !prev);
   }, []);
   
-  // Snap angle to predefined angles
-  const snapToAngle = useCallback((startPoint: Point, endPoint: Point): Point => {
-    if (!anglesEnabled) return endPoint;
+  const snapToAngle = useCallback((startPoint: Point, currentPoint: Point): Point => {
+    if (!anglesEnabled) return currentPoint;
     
-    const dx = endPoint.x - startPoint.x;
-    const dy = endPoint.y - startPoint.y;
-    
-    // Calculate distance and angle
+    // Calculate current angle
+    const dx = currentPoint.x - startPoint.x;
+    const dy = currentPoint.y - startPoint.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     
-    // Find closest snap angle
-    const snapAngle = angles.reduce((prev, curr) => {
-      return Math.abs(curr - angle) < Math.abs(prev - angle) ? curr : prev;
-    }, angles[0]);
+    // Find closest predefined angle
+    let closestAngle = angles[0] || 0;
+    let minDiff = 360;
     
-    // Convert back to radians
-    const snapRadians = snapAngle * (Math.PI / 180);
+    for (const snapAngle of angles) {
+      if (snapAngle !== undefined) {
+        const diff = Math.abs((angle + 360) % 360 - snapAngle);
+        if (diff < minDiff && diff < threshold) {
+          minDiff = diff;
+          closestAngle = snapAngle;
+        }
+      }
+    }
     
-    // Calculate new end point
-    return {
-      x: startPoint.x + Math.cos(snapRadians) * distance,
-      y: startPoint.y + Math.sin(snapRadians) * distance
-    };
-  }, [anglesEnabled, angles]);
+    // If angle is within threshold, snap to it
+    if (minDiff < threshold) {
+      const snapAngle = closestAngle * Math.PI / 180;
+      return {
+        x: startPoint.x + Math.cos(snapAngle) * distance,
+        y: startPoint.y + Math.sin(snapAngle) * distance
+      };
+    }
+    
+    return currentPoint;
+  }, [anglesEnabled, angles, threshold]);
   
   return {
     anglesEnabled,
     setAnglesEnabled,
-    toggleAngles,
-    snapToAngle
+    snapToAngle,
+    toggleAngles
   };
 };
-
-export default useLineAngleSnap;

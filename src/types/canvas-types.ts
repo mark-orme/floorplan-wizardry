@@ -13,10 +13,23 @@ declare module 'fabric' {
 
 export interface ExtendedFabricCanvas extends fabric.Canvas {
   wrapperEl: HTMLElement;
+  skipTargetFind?: boolean;
+  allowTouchScrolling?: boolean;
+  skipOffscreen?: boolean;
+  renderOnAddRemove?: boolean;
+  viewportTransform: number[]; // Ensure this is non-optional
+  isDrawingMode: boolean; // Ensure this is non-optional
 }
 
 export interface ExtendedFabricObject extends fabric.Object {
   evented?: boolean;
+  id?: string;
+  name?: string;
+  layerId?: string;
+  objectType?: string;
+  isCustomObject?: boolean;
+  isGridLine?: boolean;
+  customProps?: Record<string, any>;
 }
 
 export function asExtendedObject(obj: fabric.Object): fabric.Object {
@@ -24,6 +37,16 @@ export function asExtendedObject(obj: fabric.Object): fabric.Object {
 }
 
 export function asExtendedCanvas(canvas: fabric.Canvas): ExtendedFabricCanvas {
+  // Ensure viewportTransform is always an array
+  if (!canvas.viewportTransform) {
+    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+  }
+  
+  // Ensure isDrawingMode is always defined
+  if (canvas.isDrawingMode === undefined) {
+    (canvas as any).isDrawingMode = false;
+  }
+  
   return canvas as ExtendedFabricCanvas;
 }
 
@@ -58,3 +81,9 @@ export interface CanvasState {
   snapToGrid: boolean;
   gridSize: number;
 }
+
+// Add PIXELS_PER_METER constant for access in other files
+export const CANVAS_CONSTANTS = {
+  PIXELS_PER_METER: 100,
+  DEFAULT_GRID_SIZE: 20
+};

@@ -1,5 +1,6 @@
 
 import { DrawingMetricsState, initialDrawingMetricsState, drawingMetricsReducer, startToolUsage, endToolUsage } from '../drawingMetricsSlice';
+import { DrawingMode } from '@/constants/drawingModes';
 
 describe('Drawing Metrics', () => {
   let initialState: DrawingMetricsState;
@@ -13,7 +14,7 @@ describe('Drawing Metrics', () => {
   });
 
   it('should start tracking tool usage', () => {
-    const tool = 'select';
+    const tool = DrawingMode.SELECT;
     const newState = drawingMetricsReducer(initialState, startToolUsage(tool));
     expect(newState.currentTool).toBe(tool);
     expect(newState.startTime).toBeTruthy();
@@ -21,7 +22,7 @@ describe('Drawing Metrics', () => {
 
   it('should end tracking tool usage', () => {
     // First start tracking
-    const tool = 'rectangle';
+    const tool = DrawingMode.RECTANGLE;
     let state = drawingMetricsReducer(initialState, startToolUsage(tool));
     
     // Mock Date.now to return a consistent value for testing
@@ -31,7 +32,7 @@ describe('Drawing Metrics', () => {
     const mockDuration = mockEndTime - mockStartTime;
     
     // Mock time passing (4 seconds)
-    const mockDateNow = () => mockEndTime;
+    const mockDateNow = jest.fn(() => mockEndTime);
     global.Date.now = mockDateNow;
     
     state = { ...state, startTime: mockStartTime };

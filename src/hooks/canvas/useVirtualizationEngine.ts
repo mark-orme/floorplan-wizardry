@@ -1,131 +1,120 @@
-
-/**
- * Hook for canvas virtualization
- * Provides utilities for only rendering objects in the visible viewport
- */
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import logger from '@/utils/logger';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 interface UseVirtualizationEngineProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  viewportWidth: number;
-  viewportHeight: number;
-  paddingPx?: number;
+  enabled?: boolean;
+  margin?: number;
 }
 
-export const useVirtualizationEngine = ({
-  fabricCanvasRef,
-  viewportWidth,
-  viewportHeight,
-  paddingPx = 200
-}: UseVirtualizationEngineProps) => {
-  // Track whether we need virtualization
-  const [needsVirtualization, setNeedsVirtualization] = useState(false);
+/**
+ * Hook to manage canvas virtualization for improved performance
+ */
+export const useVirtualizationEngine = ({ fabricCanvasRef, enabled = true, margin = 50 }: UseVirtualizationEngineProps) => {
+  const [viewport, setViewport] = useState({ x1: 0, y1: 0, x2: 0, y2: 0 });
+  const isInitialized = useRef(false);
   
-  // Track visible area for virtualization
-  const visibleAreaRef = useRef({
-    left: 0,
-    top: 0,
-    right: viewportWidth,
-    bottom: viewportHeight
-  });
-  
-  // Track number of visible objects
-  const [visibleObjectCount, setVisibleObjectCount] = useState(0);
-  
-  // Virtual canvas rendering optimization
-  // Only render objects that are in or near the viewport
-  const updateVirtualization = useCallback(() => {
+  /**
+   * Update visible objects based on viewport
+   */
+  const updateVisibleObjects = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !needsVirtualization) return;
+    if (!canvas) return;
     
-    // Get current viewport transform
-    const vpt = canvas.viewportTransform;
-    if (!vpt) return;
+    // Get viewport bounds with safeguards
+    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+    const zoom = vpt[0] || 1;
+    const panX = vpt[4] || 0;
+    const panY = vpt[5] || 0;
     
-    // Calculate visible area with padding
-    const zoom = canvas.getZoom() || 1;
+    const viewportWidth = canvas.getWidth() / zoom;
+    const viewportHeight = canvas.getHeight() / zoom;
     
-    const visibleArea = {
-      left: -vpt[4] / zoom - paddingPx,
-      top: -vpt[5] / zoom - paddingPx,
-      right: (-vpt[4] + canvas.width!) / zoom + paddingPx,
-      bottom: (-vpt[5] + canvas.height!) / zoom + paddingPx
-    };
+    const x1 = -panX / zoom - margin;
+    const y1 = -panY / zoom - margin;
+    const x2 = x1 + viewportWidth + 2 * margin;
+    const y2 = y1 + viewportHeight + 2 * margin;
     
-    // Update reference
-    visibleAreaRef.current = visibleArea;
+    setViewport({ x1, y1, x2, y2 });
     
-    // Only render objects in or near the visible area
-    let visibleCount = 0;
-    
-    // Use requestAnimationFrame for better performance
-    requestAnimationFrame(() => {
-      canvas.forEachObject((obj) => {
-        // Skip grid objects which should always be visible
-        if ((obj as any).isGrid) return;
-        
-        const objBounds = obj.getBoundingRect();
-        
-        // Check if object is in visible area
-        const isVisible = !(
-          objBounds.left > visibleArea.right ||
-          objBounds.top > visibleArea.bottom ||
-          objBounds.left + objBounds.width < visibleArea.left ||
-          objBounds.top + objBounds.height < visibleArea.top
-        );
-        
-        // Update object visibility
-        if (isVisible !== obj.visible) {
-          obj.visible = isVisible;
-          obj.setCoords();
-        }
-        
-        if (isVisible) {
-          visibleCount++;
-        }
-      });
+    // Iterate through all objects and set visibility
+    canvas.forEachObject((obj: FabricObject) => {
+      const objWidth = obj.width || 0;
+      const objHeight = obj.height || 0;
+      const objLeft = obj.left || 0;
+      const objTop = obj.top || 0;
       
-      // Update visible count
-      setVisibleObjectCount(visibleCount);
+      const isVisible = !(
+        objLeft > x2 ||
+        objLeft + objWidth < x1 ||
+        objTop > y2 ||
+        objTop + objHeight < y1
+      );
       
-      // Log virtualization metrics
-      logger.debug('Virtualization update', {
-        totalObjects: canvas.getObjects().length,
-        visibleObjects: visibleCount,
-        zoom,
-        visibleArea
-      });
-      
-      canvas.requestRenderAll();
+      obj.visible = isVisible;
     });
-  }, [fabricCanvasRef, needsVirtualization, paddingPx]);
+    
+    // Add null check before invoking methods
+    if (canvas && canvas.requestRenderAll) {
+      canvas.requestRenderAll();
+    }
+  }, [fabricCanvasRef, options.margin, viewport]);
   
-  // Enable or disable virtualization
-  const setVirtualization = useCallback((enabled: boolean) => {
-    if (enabled === needsVirtualization) return;
-    
-    setNeedsVirtualization(enabled);
-    
-    // Reset all object visibility when disabling virtualization
-    if (!enabled && fabricCanvasRef.current) {
-      fabricCanvasRef.current.getObjects().forEach(obj => {
-        if (obj.visible !== undefined) {
-          obj.visible = true;
-        }
+  /**
+   * Toggle virtualization
+   */
+  const toggleVirtualization = useCallback(() => {
+    if (enabled) {
+      updateVisibleObjects();
+    } else {
+      fabricCanvasRef.current?.forEachObject((obj: FabricObject) => {
+        obj.visible = true;
       });
-      fabricCanvasRef.current.requestRenderAll();
+      fabricCanvasRef.current?.requestRenderAll();
+    }
+  }, [enabled, fabricCanvasRef, updateVisibleObjects]);
+  
+  /**
+   * Refresh virtualization
+   */
+  const refreshVirtualization = useCallback(() => {
+    if (enabled) {
+      updateVisibleObjects();
+    }
+  }, [enabled, updateVisibleObjects]);
+  
+  useEffect(() => {
+    if (!enabled || isInitialized.current) return;
+    
+    // Initial virtualization
+    updateVisibleObjects();
+    
+    // Set up event listeners for pan and zoom
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      canvas.on('object:moving', updateVisibleObjects);
+      canvas.on('object:scaling', updateVisibleObjects);
+      canvas.on('object:rotating', updateVisibleObjects);
+      canvas.on('viewport:changed', updateVisibleObjects);
     }
     
-    logger.info(`${enabled ? 'Enabling' : 'Disabling'} canvas virtualization`);
-  }, [fabricCanvasRef, needsVirtualization]);
+    isInitialized.current = true;
+    
+    // Clean up event listeners
+    return () => {
+      if (canvas) {
+        canvas.off('object:moving', updateVisibleObjects);
+        canvas.off('object:scaling', updateVisibleObjects);
+        canvas.off('object:rotating', updateVisibleObjects);
+        canvas.off('viewport:changed', updateVisibleObjects);
+      }
+      isInitialized.current = false;
+    };
+  }, [enabled, fabricCanvasRef, updateVisibleObjects]);
   
   return {
-    needsVirtualization,
-    visibleArea: visibleAreaRef.current,
-    visibleObjectCount,
-    updateVirtualization,
-    setVirtualization
+    virtualizationEnabled: enabled,
+    toggleVirtualization,
+    refreshVirtualization
   };
 };

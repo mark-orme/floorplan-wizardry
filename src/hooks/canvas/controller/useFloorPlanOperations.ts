@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { FloorPlan } from '@/types/FloorPlan';
+import { FloorPlan } from '@/types/fabric-unified';
 
 interface UseFloorPlanOperationsProps {
   canvas: ExtendedFabricCanvas | null;
@@ -25,15 +25,17 @@ export const useFloorPlanOperations = ({
     // Safety check to ensure floorPlan exists
     if (!floorPlan) return;
 
-    if (canvas && floorPlan) {
-      floorPlan.data = canvas.toJSON();
+    const updatedFloorPlan: FloorPlan = { ...floorPlan }; // Create a copy for type safety
+    
+    if (canvas) {
+      updatedFloorPlan.data = canvas.toJSON();
     }
     
     setFloorPlans(prevFloorPlans => {
       const updatedFloorPlans = [...prevFloorPlans];
       // Check again if index is valid
       if (currentFloorIndex >= 0 && currentFloorIndex < updatedFloorPlans.length) {
-        updatedFloorPlans[currentFloorIndex] = floorPlan;
+        updatedFloorPlans[currentFloorIndex] = updatedFloorPlan;
       }
       return updatedFloorPlans;
     });
