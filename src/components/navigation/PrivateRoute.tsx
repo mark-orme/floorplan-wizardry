@@ -22,7 +22,7 @@ export const PrivateRoute = ({ children, path }: PrivateRouteProps) => {
   return <Route path={path} element={<>{children}</>} />;
 };
 
-const redirectTo = (routePath: string | undefined) => {
+const redirectTo = (routePath: string): string => {
   if (!routePath) {
     return '/login'; // Default redirect path
   }

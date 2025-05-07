@@ -1,4 +1,6 @@
 
+/* @ts-nocheck */
+
 import { vi } from 'vitest';
 
 // Mock implementation of fabric.js for testing
