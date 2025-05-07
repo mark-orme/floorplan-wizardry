@@ -17,7 +17,7 @@ interface CaptureErrorOptions {
  * @param message Optional error message
  * @param options Capture options
  */
-export function captureError(error: Error, message?: string, options?: CaptureErrorOptions) {
+export function captureError(error: Error, message?: string, options?: CaptureErrorOptions): void {
   console.error('Error captured:', error, message);
   captureException(error, options);
 }
@@ -27,7 +27,7 @@ export function captureError(error: Error, message?: string, options?: CaptureEr
  * @param error Error to capture
  * @param options Capture options
  */
-export function captureException(error: Error, options?: CaptureErrorOptions) {
+export function captureException(error: Error, options?: CaptureErrorOptions): void {
   // Log the error to console
   console.error('Error captured:', error);
   

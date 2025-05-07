@@ -18,6 +18,23 @@ export interface CanvasErrorData {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Maps the canvas error severity to a Sentry level
+ */
+function mapSeverityToLevel(severity: 'low' | 'medium' | 'high' | 'critical' | undefined): string {
+  switch (severity) {
+    case 'critical':
+      return 'error';
+    case 'high':
+      return 'error';
+    case 'medium':
+      return 'warning';
+    case 'low':
+    default:
+      return 'info';
+  }
+}
+
 export const useCanvasErrorHandling = (options: UseCanvasErrorHandlingOptions = {}) => {
   const {
     onCanvasError,
@@ -77,9 +94,7 @@ export const useCanvasErrorHandling = (options: UseCanvasErrorHandlingOptions = 
           ...metadata,
           message: errorMessage
         },
-        level: severity === 'critical' ? 'error' : 
-               severity === 'high' ? 'error' :
-               severity === 'medium' ? 'warning' : 'info'
+        level: mapSeverityToLevel(severity)
       });
     }
   }, [onCanvasError, showToast, logToConsole, captureToSentry, componentName]);

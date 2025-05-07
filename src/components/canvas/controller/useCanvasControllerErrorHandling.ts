@@ -1,5 +1,6 @@
 
 import { useCallback } from 'react';
+import { handleError } from '@/utils/errorHandlingUtils';
 import { captureMessage } from '@/utils/sentryUtils';
 
 interface UseControllerErrorHandlingProps {
