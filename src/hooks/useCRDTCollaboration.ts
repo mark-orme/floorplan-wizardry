@@ -1,288 +1,225 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import * as Automerge from '@automerge/automerge';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { toast } from 'sonner';
-import { UUID } from '@/types/common';
-import logger from '@/utils/logger';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { useYjs } from 'yjs-reactjs-hooks';
+import * as Y from 'yjs';
 
-// Type for document change handle function
-type ChangeHandlerFn = (docId: string, changes: Uint8Array) => void;
-
-// CRDT document type
-interface CRDTDocument {
-  id: string;
-  objects: Record<string, any>;
-  lastModified: number;
+interface UseCRDTCollaborationProps {
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  documentId: string;
 }
 
-// Initial document
-const createInitialDocument = (): CRDTDocument => ({
-  id: crypto.randomUUID(),
-  objects: {},
-  lastModified: Date.now()
-});
+export const useCRDTCollaboration = ({
+  fabricCanvasRef,
+  documentId,
+}: UseCRDTCollaborationProps) => {
+  const [isReady, setIsReady] = useState(false);
+  const { ydoc, provider } = useYjs<{ objects: Y.Array<any> }>(documentId, () => ({
+    objects: new Y.Array()
+  }));
+  const isSynced = provider?.awareness.synced;
+  const objects = ydoc?.getArray('objects');
+  
+  const initialLoadRef = useRef(false);
 
-// Hook options
-interface UseCRDTCollaborationOptions {
-  canvas: FabricCanvas | null;
-  roomId?: string;
-  userId?: string;
-  onSync?: (success: boolean) => void;
-  enabled?: boolean;
-}
-
-/**
- * Hook for CRDT-based canvas collaboration
- * Uses Automerge for conflict-free replicated data type operations
- */
-export function useCRDTCollaboration({
-  canvas,
-  roomId = 'default-room',
-  userId = crypto.randomUUID(),
-  onSync,
-  enabled = true
-}: UseCRDTCollaborationOptions) {
-  // Document state
-  const [syncCount, setSyncCount] = useState(0);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState<Date | null>(null);
-  const [collaborators, setCollaborators] = useState<string[]>([]);
-  
-  // Document reference
-  const docRef = useRef<Automerge.Doc<CRDTDocument> | null>(null);
-  const changesQueueRef = useRef<Uint8Array[]>([]);
-  
-  // Network handlers reference
-  const handlersRef = useRef<{
-    onReceiveChanges?: ChangeHandlerFn;
-  }>({});
-  
-  // Initialize the document
-  useEffect(() => {
-    if (!enabled) return;
-    
-    // Initialize Automerge document
-    docRef.current = Automerge.init<CRDTDocument>();
-    docRef.current = Automerge.change(docRef.current, doc => {
-      Object.assign(doc, createInitialDocument());
-    });
-    
-    logger.info('CRDT document initialized', { roomId, userId });
-    
-    // Clean up
-    return () => {
-      docRef.current = null;
-      changesQueueRef.current = [];
-    };
-  }, [enabled, roomId, userId]);
-  
-  // Sync canvas objects to the CRDT document
-  const syncCanvasToDocument = useCallback(() => {
-    if (!canvas || !docRef.current || !enabled) return false;
+  // Helper function to serialize fabric objects
+  const serializeObject = (obj: any) => {
+    if (!obj) return null;
     
     try {
-      setIsSyncing(true);
-      
-      // Get all objects from canvas but filter out non-serializable ones
-      const canvasObjects = canvas.getObjects().filter(obj => {
-        // Skip certain object types like grid lines or temporary objects
-        return !obj.excludeFromExport && obj.type !== 'grid';
-      });
-      
-      // Create a serializable representation
-      const serializableObjects: Record<string, any> = {};
-      
-      canvasObjects.forEach(obj => {
-        // Ensure each object has an ID
-        const objId = obj.id || crypto.randomUUID();
-        if (!obj.id) {
-          // Set the ID if it doesn't exist
-          obj.set('id', objId);
-        }
-        
-        // Convert the object to a simple JSON representation
-        // We use toObject instead of toJSON to get a normal object
-        // We use toObject with the correct parameters
-        const objData = obj.toObject({ propertiesToInclude: ['id', 'type', 'left', 'top', 'width', 'height', 'scaleX', 'scaleY', 'angle'] });
-        serializableObjects[objId] = objData;
-      });
-      
-      // Update the document with new object data
-      docRef.current = Automerge.change(docRef.current, doc => {
-        doc.objects = serializableObjects;
-        doc.lastModified = Date.now();
-      });
-      
-      // Generate binary changes to send to peers
-      const changes = Automerge.getChanges(Automerge.init<CRDTDocument>(), docRef.current);
-      
-      // Update local states
-      setSyncCount(prev => prev + 1);
-      setLastSynced(new Date());
-      setIsSyncing(false);
-      
-      // Call callback
-      onSync?.(true);
-      
-      // Return changes for sending to peers
-      return changes.length > 0 ? changes[0] : null;
-    } catch (error) {
-      logger.error('Error syncing canvas to document', { error });
-      setIsSyncing(false);
-      onSync?.(false);
-      return false;
-    }
-  }, [canvas, enabled, onSync]);
-  
-  // Apply received changes to the document and canvas
-  const applyChangesToCanvas = useCallback((changes: Uint8Array) => {
-    if (!docRef.current || !canvas || !enabled) return;
-    
-    try {
-      // Apply changes to the document - Automerge v2+ returns a tuple with new doc
-      // but not a patch, so we need to handle this differently
-      const [newDoc] = Automerge.applyChanges(docRef.current, [changes]);
-      
-      // Update the document reference
-      docRef.current = newDoc;
-      
-      // We need to manually determine what changed
-      if (newDoc && newDoc.objects) {
-        // Get all existing objects for faster lookup
-        const existingObjects = canvas.getObjects().reduce<Record<string, FabricObject>>((acc, obj) => {
-          if (obj.id) {
-            acc[obj.id] = obj;
-          }
-          return acc;
-        }, {});
-        
-        // Process each object in the document
-        Object.entries(newDoc.objects).forEach(([objId, objData]) => {
-          if (!objData) return;
-          
-          // Type checking for objData
-          const typedObjData = objData as Record<string, unknown>;
-          
-          // Check if object exists in canvas
-          if (existingObjects[objId]) {
-            // Update existing object
-            const obj = existingObjects[objId];
-            
-            // Safely update properties with type checking
-            if ('left' in typedObjData && typeof typedObjData.left === 'number') {
-              obj.set('left', typedObjData.left);
-            }
-            if ('top' in typedObjData && typeof typedObjData.top === 'number') {
-              obj.set('top', typedObjData.top);
-            }
-            if ('scaleX' in typedObjData && typeof typedObjData.scaleX === 'number') {
-              obj.set('scaleX', typedObjData.scaleX);
-            }
-            if ('scaleY' in typedObjData && typeof typedObjData.scaleY === 'number') {
-              obj.set('scaleY', typedObjData.scaleY);
-            }
-            if ('angle' in typedObjData && typeof typedObjData.angle === 'number') {
-              obj.set('angle', typedObjData.angle);
-            }
-            
-            // Set coordinates after updating properties
-            obj.setCoords();
-          } else {
-            // Create new object if it doesn't exist
-            // This is a simplified version - in a real app, you would 
-            // need to create the proper object type based on objData.type
-            // and set all relevant properties
-            logger.info('Would create new object from CRDT data', { objectData: objData });
-            
-            // Example (not implemented here):
-            // const newObj = createFabricObject(objectData);
-            // canvas.add(newObj);
-          }
-        });
-        
-        // Render all changes
-        canvas.requestRenderAll();
-        
-        // Update sync status
-        setSyncCount(prev => prev + 1);
-        setLastSynced(new Date());
+      if (typeof obj.toObject === 'function') {
+        return obj.toObject();
       }
-    } catch (error) {
-      logger.error('Error applying changes to canvas', { error });
+      return JSON.parse(JSON.stringify(obj));
+    } catch (e) {
+      console.error('Error serializing object:', e);
+      return null;
     }
-  }, [canvas, enabled]);
-  
-  // Register a change handler for receiving changes from peers
-  const registerChangeHandler = useCallback((handler: ChangeHandlerFn) => {
-    handlersRef.current.onReceiveChanges = handler;
-    
-    return () => {
-      handlersRef.current.onReceiveChanges = undefined;
-    };
-  }, []);
-  
-  // Handle received changes from the network
-  const handleReceivedChanges = useCallback((docId: string, changes: Uint8Array) => {
-    if (docId !== roomId || !enabled) return;
-    
-    // Queue changes to process in order
-    changesQueueRef.current.push(changes);
-    
-    // Process all queued changes
-    if (changesQueueRef.current.length > 0 && !isSyncing) {
-      const nextChanges = changesQueueRef.current.shift();
-      if (nextChanges) {
-        applyChangesToCanvas(nextChanges);
-      }
-    }
-  }, [roomId, enabled, isSyncing, applyChangesToCanvas]);
-  
-  // Set up the change handler
-  useEffect(() => {
-    if (!enabled) return;
-    
-    // Register the handler for processing received changes
-    handlersRef.current.onReceiveChanges = handleReceivedChanges;
-    
-    return () => {
-      handlersRef.current.onReceiveChanges = undefined;
-    };
-  }, [enabled, handleReceivedChanges]);
-  
-  // Set up canvas event listeners to detect changes
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    // Sync when objects are modified, added, or removed
-    const handleObjectModified = () => {
-      const changes = syncCanvasToDocument();
-      if (changes) {
-        // In a real implementation, you would send these changes to peers
-        logger.info('Object modified, changes ready to send', { 
-          changesSize: changes.byteLength 
-        });
-      }
-    };
-    
-    // Add event listeners
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('object:added', handleObjectModified);
-    canvas.on('object:removed', handleObjectModified);
-    
-    // Clean up listeners
-    return () => {
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('object:added', handleObjectModified);
-      canvas.off('object:removed', handleObjectModified);
-    };
-  }, [canvas, enabled, syncCanvasToDocument]);
-  
-  return {
-    syncCount,
-    isSyncing,
-    lastSynced,
-    collaborators,
-    syncNow: syncCanvasToDocument,
-    registerChangeHandler
   };
-}
+
+  // Helper function to add a new object to the shared document
+  const addObjectToDocument = useCallback((obj: any) => {
+    if (!objects) return;
+    
+    const serialized = serializeObject(obj);
+    if (serialized) {
+      objects.push([serialized]);
+    }
+  }, [objects]);
+
+  // Helper function to remove an object from the shared document
+  const removeObjectFromDocument = useCallback((id: string) => {
+    if (!objects) return;
+    
+    objects.forEach((element, index) => {
+      if (element && element.id === id) {
+        objects.delete(index, 1);
+      }
+    });
+  }, [objects]);
+
+  // Helper function to modify an object in the shared document
+  const modifyObjectInDocument = useCallback((id: string, properties: any) => {
+    if (!objects) return;
+    
+    objects.forEach((element, index) => {
+      if (element && element.id === id) {
+        objects.delete(index, 1);
+        objects.insert(index, [properties]);
+      }
+    });
+  }, [objects]);
+
+  // Function to send a CRDT operation
+  const sendOperation = useCallback((operation: any) => {
+    switch (operation.type) {
+      case 'add':
+        addObjectToDocument(operation.object);
+        break;
+      case 'remove':
+        removeObjectFromDocument(operation.id);
+        break;
+      case 'modify':
+        modifyObjectInDocument(operation.id, operation.properties);
+        break;
+      default:
+        console.warn('Unknown operation type:', operation.type);
+    }
+  }, [addObjectToDocument, removeObjectFromDocument, modifyObjectInDocument]);
+
+  // Handle object addition to the canvas
+  const handleObjectAddition = useCallback((e: any) => {
+    if (!e || !e.target) return;
+    
+    try {
+      addObjectToDocument(e.target);
+    } catch (error) {
+      console.error('Error handling object addition:', error);
+    }
+  }, [addObjectToDocument]);
+
+  // Handle object removal from the canvas
+  const handleObjectRemoval = useCallback((e: any) => {
+    if (!e || !e.target) return;
+    
+    try {
+      removeObjectFromDocument(e.target.id);
+    } catch (error) {
+      console.error('Error handling object removal:', error);
+    }
+  }, [removeObjectFromDocument]);
+
+  // Handle object modification on the canvas
+  const handleObjectModification = (e: any) => {
+    if (!e || !e.target) return;
+    
+    try {
+      // Only proceed if the object exists
+      if (e.target && typeof e.target.toJSON === 'function') {
+        // Safely call methods on the object
+        sendOperation({
+          type: 'modify',
+          id: e.target.id,
+          properties: e.target.toJSON()
+        });
+      }
+    } catch (error) {
+      console.error('Error handling object modification:', error);
+    }
+  };
+
+  // Sync canvas objects with the shared document
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !objects || !isSynced) return;
+    
+    // Load initial objects from Yjs document to canvas
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      
+      // Clear existing objects on canvas
+      fabricCanvasRef.current.clear();
+      
+      // Load objects from Yjs
+      objects.forEach(item => {
+        if (item) {
+          try {
+            fabricCanvasRef.current?.loadFromJSON(
+              { objects: [item] },
+              () => {
+                fabricCanvasRef.current?.renderAll();
+              }
+            );
+          } catch (e) {
+            console.error('Error loading object from JSON:', e);
+          }
+        }
+      });
+      
+      fabricCanvasRef.current.renderAll();
+    }
+    
+    // Observe Yjs array changes and update canvas
+    const observer = (event: Y.YArrayEvent<any>) => {
+      if (!fabricCanvasRef.current) return;
+      
+      event.changes.delta.forEach(change => {
+        if (change.insert) {
+          change.insert.forEach(item => {
+            if (item) {
+              try {
+                fabricCanvasRef.current?.loadFromJSON(
+                  { objects: [item] },
+                  () => {
+                    fabricCanvasRef.current?.renderAll();
+                  }
+                );
+              } catch (e) {
+                console.error('Error loading object from JSON:', e);
+              }
+            }
+          });
+        } else if (change.delete) {
+          for (let i = 0; i < change.delete; i++) {
+            // Remove objects from canvas based on ID
+            const objectsToRemove = fabricCanvasRef.current?.getObjects().filter(obj => {
+              const yjsIndex = objects.toArray().findIndex(yjsObj => yjsObj.id === (obj as any).id);
+              return yjsIndex !== -1;
+            }) || [];
+            
+            objectsToRemove.forEach(obj => {
+              fabricCanvasRef.current?.remove(obj);
+            });
+          }
+        }
+      });
+      
+      fabricCanvasRef.current.renderAll();
+    };
+    
+    objects.observe(observer);
+    setIsReady(true);
+    
+    return () => {
+      objects.unobserve(observer);
+    };
+  }, [fabricCanvasRef, objects, isSynced]);
+
+  // Attach event listeners to the canvas
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.on('object:added', handleObjectAddition);
+    canvas.on('object:removed', handleObjectRemoval);
+    canvas.on('object:modified', handleObjectModification);
+
+    return () => {
+      canvas.off('object:added', handleObjectAddition);
+      canvas.off('object:removed', handleObjectRemoval);
+      canvas.off('object:modified', handleObjectModification);
+    };
+  }, [fabricCanvasRef, handleObjectAddition, handleObjectRemoval, handleObjectModification]);
+
+  return {
+    isReady
+  };
+};

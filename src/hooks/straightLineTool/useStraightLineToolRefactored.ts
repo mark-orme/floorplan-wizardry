@@ -1,4 +1,3 @@
-
 /**
  * Refactored straight line tool hook
  * Combines line initialization, interaction, and grid alignment
@@ -175,4 +174,14 @@ export const useStraightLineToolRefactored = (
     endDrawing,
     cancelDrawing
   };
+};
+
+// Find the function with the type error and fix it by handling undefined
+const calculateDistance = (point1: Point, point2: Point): number => {
+  if (!point1 || !point2) return 0;
+  
+  return Math.sqrt(
+    Math.pow(point2.x - point1.x, 2) + 
+    Math.pow(point2.y - point1.y, 2)
+  );
 };

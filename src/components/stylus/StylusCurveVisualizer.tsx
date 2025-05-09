@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-// Import full fabric namespace to ensure we can access the Path class
+import { Canvas } from 'fabric';
+// Import all from fabric to ensure we can access all classes
 import * as fabric from 'fabric';
 
 interface StylusCurveVisualizerProps {
@@ -18,7 +18,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
   strokeStyle = 'solid'
 }) => {
   const points = useRef<Array<{ x: number; y: number }>>([]);
-  const currentPath = useRef<fabric.Path | null>(null);
+  const currentPath = useRef<fabric.Object | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [pressure, setPressure] = useState(1);
   
@@ -48,19 +48,25 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       const pointer = canvas.getPointer(e.e);
       points.current = [pointer];
       
-      // Create a new path
-      currentPath.current = new fabric.Path([], {
-        stroke: color,
-        strokeWidth: strokeWidth * (e.pressure || 1),
-        fill: 'transparent',
-        strokeLineCap: 'round',
-        strokeLineJoin: 'round',
-        strokeDashArray: strokeStyle === 'dashed' ? [5, 5] : undefined,
-      });
-      
-      if (currentPath.current) {
-        canvas.add(currentPath.current);
+      // Create a new path using fabric.Path - make sure path data is valid
+      try {
+        // Create an empty path first to avoid issues with undefined path data
+        currentPath.current = new fabric.Path('M 0 0', {
+          stroke: color,
+          strokeWidth: strokeWidth * (e.pressure || 1),
+          fill: 'transparent',
+          strokeLineCap: 'round',
+          strokeLineJoin: 'round',
+          strokeDashArray: strokeStyle === 'dashed' ? [5, 5] : undefined,
+        });
+        
+        if (currentPath.current && canvas) {
+          canvas.add(currentPath.current);
+        }
+      } catch (err) {
+        console.error('Error creating path:', err);
       }
+      
       setPressure(e.pressure || 1);
     };
     
@@ -90,7 +96,7 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
     };
     
     const updateCurvePath = (currentPressure: number) => {
-      if (!currentPath.current) return;
+      if (!currentPath.current || !canvas) return;
       
       // Use a smooth curve approach
       let path = '';
@@ -114,13 +120,15 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       }
       
       if (path) {
-        currentPath.current.set({ 
-          path: path,
-          strokeWidth: strokeWidth * currentPressure
-        });
-        
-        if (canvas) {
+        try {
+          (currentPath.current as any).set({ 
+            path: path,
+            strokeWidth: strokeWidth * currentPressure
+          });
+          
           canvas.requestRenderAll();
+        } catch (err) {
+          console.error('Error updating path:', err);
         }
       }
     };

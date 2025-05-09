@@ -1,6 +1,6 @@
-
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import * as fabric from 'fabric';
+import { Canvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Point } from '@/types/core/Point';
 import { useMouseEvents } from './useMouseEvents';
@@ -23,9 +23,71 @@ export const useDrawingToolManager = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState<any>(null);
   
-  const handleMouseDown = useCallback((point: Point) => {
+  const createRectangle = useCallback((startPoint: Point, endPoint: Point) => {
+    if (!canvas) return null;
+    
+    const left = Math.min(startPoint.x, endPoint.x);
+    const top = Math.min(startPoint.y, endPoint.y);
+    const width = Math.abs(endPoint.x - startPoint.x);
+    const height = Math.abs(endPoint.y - startPoint.y);
+    
+    const rect = new fabric.Rect({
+      left,
+      top,
+      width,
+      height,
+      fill: 'transparent',
+      stroke: lineColor || '#000000',
+      strokeWidth: lineThickness || 2
+    });
+    
+    return rect;
+  }, [canvas, lineColor, lineThickness]);
+  
+  const createCircle = useCallback((startPoint: Point, endPoint: Point) => {
+    if (!canvas) return null;
+    
+    const left = Math.min(startPoint.x, endPoint.x);
+    const top = Math.min(startPoint.y, endPoint.y);
+    const radius = Math.sqrt(
+      Math.pow(endPoint.x - startPoint.x, 2) + 
+      Math.pow(endPoint.y - startPoint.y, 2)
+    ) / 2;
+    
+    const circle = new fabric.Circle({
+      left: left + Math.abs(endPoint.x - startPoint.x) / 2 - radius,
+      top: top + Math.abs(endPoint.y - startPoint.y) / 2 - radius,
+      radius,
+      fill: 'transparent',
+      stroke: lineColor || '#000000',
+      strokeWidth: lineThickness || 2
+    });
+    
+    return circle;
+  }, [canvas, lineColor, lineThickness]);
+  
+  const createLine = useCallback((startPoint: Point, endPoint: Point) => {
+    if (!canvas) return null;
+    
+    const line = new fabric.Line(
+      [startPoint.x, startPoint.y, endPoint.x, endPoint.y], 
+      {
+        stroke: lineColor || '#000000',
+        strokeWidth: lineThickness || 2
+      }
+    );
+    
+    return line;
+  }, [canvas, lineColor, lineThickness]);
+
+  const handleMouseDown = useCallback((e: any) => {
     if (!canvas || activeTool === DrawingMode.SELECT) return;
     
+    // Set drawing flag
+    const pointer = canvas.getPointer(e.e);
+    const startPoint = { x: pointer.x, y: pointer.y };
+    
+    // Store start point
     setIsDrawing(true);
     
     switch (activeTool) {
@@ -40,45 +102,21 @@ export const useDrawingToolManager = ({
       
       case DrawingMode.LINE:
         // Create a line
-        const line = new fabric.Line([point.x, point.y, point.x, point.y], {
-          stroke: lineColor,
-          strokeWidth: lineThickness,
-          selectable: false
-        });
-        
+        const line = createLine(startPoint, startPoint);
         canvas.add(line);
         setCurrentPath(line);
         break;
       
       case DrawingMode.RECTANGLE:
         // Create a rectangle
-        const rect = new fabric.Rect({
-          left: point.x,
-          top: point.y,
-          width: 0,
-          height: 0,
-          stroke: lineColor,
-          strokeWidth: lineThickness,
-          fill: 'transparent',
-          selectable: false
-        });
-        
+        const rect = createRectangle(startPoint, startPoint);
         canvas.add(rect);
         setCurrentPath(rect);
         break;
       
       case DrawingMode.CIRCLE:
         // Create a circle
-        const circle = new fabric.Circle({
-          left: point.x,
-          top: point.y,
-          radius: 0,
-          stroke: lineColor,
-          strokeWidth: lineThickness,
-          fill: 'transparent',
-          selectable: false
-        });
-        
+        const circle = createCircle(startPoint, startPoint);
         canvas.add(circle);
         setCurrentPath(circle);
         break;

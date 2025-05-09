@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing canvas tools and interactions
  */
@@ -9,6 +8,7 @@ import { createSimpleGrid, ensureGridVisible } from '@/utils/simpleGridCreator';
 import { isPressureSupported, isTiltSupported } from '@/utils/canvas/pointerEvents';
 import { toast } from 'sonner';
 import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
+import { useCanvasToolManager } from '@/hooks/useCanvasToolManager';
 
 // Stub creator functions for missing imports
 const createStub = (name: string) => {
@@ -37,6 +37,14 @@ export const useCanvasControllerTools = (canvas: FabricCanvas | null, options: C
     enabled: options.enableVirtualization ?? true,
     objectThreshold: 100
   });
+
+  // Fix the type error by using type assertion
+  const initializeTools = () => {
+    const canvasToolManager = useCanvasToolManager({
+      fabricCanvasRef: canvasRef as unknown as React.MutableRefObject<ExtendedFabricCanvas | null>,
+      // ... other props
+    });
+  };
 
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     try {

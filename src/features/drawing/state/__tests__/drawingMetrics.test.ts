@@ -12,7 +12,7 @@ describe('drawingMetrics reducer', () => {
 
   beforeEach(() => {
     originalDateNow = Date.now;
-    Date.now = jest.fn(() => 1600000000000);
+    Date.now = vi.fn(() => 1600000000000);
   });
 
   afterEach(() => {

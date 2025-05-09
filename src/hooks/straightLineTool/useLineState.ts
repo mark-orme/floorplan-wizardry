@@ -31,9 +31,20 @@ export const useLineState = ({
   const { snapEnabled, toggleGridSnapping, snapToGrid } = useEnhancedGridSnapping({
     initialSnapEnabled: true
   });
-  const { anglesEnabled, setAnglesEnabled, snapToAngle, toggleAngles } = useLineAngleSnap({ 
-    enabled: true
-  });
+  
+  // Use the updated hooks that include the compatibility methods
+  const angleSnapHook = useLineAngleSnap({ enabled: true });
+  const { 
+    isEnabled: anglesEnabled, 
+    snapAngle, 
+    toggleEnabled: toggleAngles 
+  } = angleSnapHook;
+  
+  // Modified snapToAngle wrapper that returns a Point
+  const adaptedSnapToAngle = (start: Point, end: Point): Point => {
+    const result = snapAngle(start, end);
+    return result.point;
+  };
 
   // Use line drawing hooks for canvas operations
   const { createLine, updateLine, finalizeLine, removeLine } = useLineDrawing({
@@ -49,7 +60,7 @@ export const useLineState = ({
     snapEnabled,
     snapToGrid,
     anglesEnabled,
-    snapToAngle,
+    snapToAngle: adaptedSnapToAngle,
     createLine,
     updateLine,
     finalizeLine,
@@ -76,9 +87,16 @@ export const useLineState = ({
     measurementData: { 
       startPoint: coreState.startPoint, 
       endPoint: coreState.currentPoint, 
-      distance: 0, 
+      distance: coreState.startPoint && coreState.currentPoint ? 
+        Math.sqrt(
+          Math.pow(coreState.currentPoint.x - coreState.startPoint.x, 2) + 
+          Math.pow(coreState.currentPoint.y - coreState.startPoint.y, 2)
+        ) : 0, 
       angle: 0, 
-      midPoint: { x: 0, y: 0 }, 
+      midPoint: coreState.startPoint && coreState.currentPoint ? {
+        x: (coreState.startPoint.x + coreState.currentPoint.x) / 2,
+        y: (coreState.startPoint.y + coreState.currentPoint.y) / 2
+      } : { x: 0, y: 0 }, 
       unit: 'px', 
       pixelsPerMeter: 100 
     }

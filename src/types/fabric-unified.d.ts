@@ -7,8 +7,8 @@ import { Point } from './core/Point';
 export interface MeasurementData {
   startPoint?: Point | null;
   endPoint?: Point | null;
-  distance?: number;
-  angle?: number;
+  distance?: number | undefined;
+  angle?: number | undefined;
   midPoint?: Point;
   unit?: string;
   units?: string;
@@ -27,7 +27,7 @@ export interface ExtendedCanvas {
   _objects: any[];
   viewportTransform: number[]; // non-optional
   allowTouchScrolling?: boolean;
-  renderOnAddRemove?: boolean;
+  renderOnAddRemove: boolean; // Changed to non-optional
   getActiveObject?: () => any;
   forEachObject?: (callback: (obj: any) => void) => void;
   zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
@@ -61,4 +61,15 @@ export interface GridOptions {
   showLabels?: boolean;
   showAxes?: boolean;
   thickness?: number;
+}
+
+/**
+ * Extended Performance interface with non-standard memory property
+ */
+export interface ExtendedPerformance extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    jsHeapSizeLimit: number;
+    totalJSHeapSize: number;
+  };
 }

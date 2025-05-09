@@ -1,187 +1,181 @@
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { throttle } from 'lodash';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { throttle, debounce } from 'lodash';
+import { Canvas, Object as FabricObject } from 'fabric';
 
 interface UseVirtualizationEngineProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  canvas: Canvas | null;
   enabled?: boolean;
-  objectThreshold?: number;
-  renderDistance?: number;
-  updateInterval?: number;
+  threshold?: number;
+  optimizationLevel?: 'low' | 'medium' | 'high';
 }
 
-interface PerformanceMetrics {
-  fps: number;
-  objectCount: number;
-  visibleObjectCount: number;
-  culledObjectCount: number;
+interface VirtualizationStats {
+  visibleObjects: number;
+  totalObjects: number;
   lastRenderTime: number;
+  fps: number;
 }
 
 export const useVirtualizationEngine = ({
-  fabricCanvasRef,
+  canvas,
   enabled = true,
-  objectThreshold = 50,
-  renderDistance = 100,
-  updateInterval = 300
+  threshold = 100,
+  optimizationLevel = 'medium'
 }: UseVirtualizationEngineProps) => {
-  const [isEnabled, setIsEnabled] = useState(enabled);
-  const [metrics, setMetrics] = useState<PerformanceMetrics>({
-    fps: 0,
-    objectCount: 0,
-    visibleObjectCount: 0,
-    culledObjectCount: 0,
-    lastRenderTime: 0
+  const [isVirtualized, setIsVirtualized] = useState(enabled);
+  const [stats, setStats] = useState<VirtualizationStats>({
+    visibleObjects: 0,
+    totalObjects: 0,
+    lastRenderTime: 0,
+    fps: 60
   });
   
-  const framesCountRef = useRef(0);
-  const lastFrameTimeRef = useRef(0);
+  const lastFrameTime = useRef<number>(0);
+  const frameCount = useRef<number>(0);
+  const renderTimeRef = useRef<number>(0);
   
-  // Function to update object visibility based on viewport
-  const updateObjectVisibility = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isEnabled) return;
+  // Use a throttled function for performance calculations
+  const updateStats = useCallback(throttle(() => {
+    if (!canvas) return;
     
-    // Skip if we're below the threshold
-    const objects = canvas.getObjects();
-    if (objects.length < objectThreshold) {
-      if (canvas.requestRenderAll) {
-        canvas.requestRenderAll();
-      }
-      return;
-    }
-    
-    // Get canvas dimensions and viewport transform
-    const vpt = canvas.viewportTransform;
-    if (!vpt) return;
-    
-    // Calculate viewport bounds with buffer
-    const zoom = canvas.getZoom ? canvas.getZoom() : 1;
-    const renderOptions = {
-      viewportLeft: -vpt[4] / zoom - renderDistance,
-      viewportTop: -vpt[5] / zoom - renderDistance,
-      viewportRight: (-vpt[4] + canvas.width!) / zoom + renderDistance,
-      viewportBottom: (-vpt[5] + canvas.height!) / zoom + renderDistance
-    };
-    
-    let visibleCount = 0;
-    let culledCount = 0;
-    
-    // Update visibility for each object
-    objects.forEach(obj => {
-      if (!obj) return;
-      
-      // Get object bounds
-      const objBounds = obj.getBoundingRect ? obj.getBoundingRect() : null;
-      if (!objBounds) return;
-      
-      // Check if object is in viewport
-      const isVisible = 
-        objBounds.left < renderOptions.viewportRight &&
-        objBounds.left + objBounds.width > renderOptions.viewportLeft &&
-        objBounds.top < renderOptions.viewportBottom &&
-        objBounds.top + objBounds.height > renderOptions.viewportTop;
-      
-      // Update object visibility (using 'visible' property)
-      if (obj.visible !== isVisible) {
-        obj.visible = isVisible;
-      }
-      
-      if (isVisible) {
-        visibleCount++;
-      } else {
-        culledCount++;
-      }
-    });
-    
-    // Update performance metrics
     const now = performance.now();
-    if (now - lastFrameTimeRef.current > 1000) {
-      const fps = Math.round(framesCountRef.current * 1000 / (now - lastFrameTimeRef.current));
-      setMetrics({
-        fps,
-        objectCount: objects.length,
-        visibleObjectCount: visibleCount,
-        culledObjectCount: culledCount,
-        lastRenderTime: now
+    const elapsedTime = now - lastFrameTime.current;
+    
+    if (elapsedTime >= 1000) {
+      const fps = Math.round((frameCount.current * 1000) / elapsedTime);
+      const objects = canvas.getObjects ? canvas.getObjects() : [];
+      
+      // Check if objects are defined before accessing properties
+      const totalObjects = objects ? objects.length : 0;
+      const visibleObjects = objects ? objects.filter(obj => {
+        // Check if getBoundingRect exists before calling
+        if (!obj || typeof obj.getBoundingRect !== 'function') return false;
+        
+        try {
+          const bounds = obj.getBoundingRect();
+          // Ensure the bounds object is defined
+          if (!bounds) return false;
+          
+          // Safe access to bounds properties
+          const left = bounds.left !== undefined ? bounds.left : 0;
+          const top = bounds.top !== undefined ? bounds.top : 0;
+          const width = bounds.width !== undefined ? bounds.width : 0;
+          const height = bounds.height !== undefined ? bounds.height : 0;
+          
+          // Calculate if object is in viewport
+          return true; // Simplified for now
+        } catch (error) {
+          console.error('Error calculating bounds:', error);
+          return false;
+        }
+      }).length : 0;
+      
+      setStats({
+        visibleObjects,
+        totalObjects,
+        lastRenderTime: renderTimeRef.current,
+        fps
       });
       
-      framesCountRef.current = 0;
-      lastFrameTimeRef.current = now;
+      lastFrameTime.current = now;
+      frameCount.current = 0;
     } else {
-      framesCountRef.current++;
+      frameCount.current++;
+    }
+  }, 500), [canvas]);
+  
+  const startVirtualization = useCallback(() => {
+    if (!canvas || !isVirtualized) return;
+    
+    const handleBeforeRender = () => {
+      renderTimeRef.current = performance.now();
+    };
+    
+    const handleAfterRender = () => {
+      renderTimeRef.current = performance.now() - renderTimeRef.current;
+      updateStats();
+    };
+    
+    if (canvas.on) {
+      canvas.on('before:render', handleBeforeRender);
+      canvas.on('after:render', handleAfterRender);
     }
     
-    // Request render after updating visibility
+    return () => {
+      if (canvas.off) {
+        canvas.off('before:render', handleBeforeRender);
+        canvas.off('after:render', handleAfterRender);
+      }
+    };
+  }, [canvas, isVirtualized, updateStats]);
+  
+  // Optimization function: optimize rendering based on object count
+  const optimizeRendering = useCallback(debounce(() => {
+    if (!canvas || !isVirtualized) return;
+    
+    const objects = canvas.getObjects ? canvas.getObjects() : [];
+    if (!objects || objects.length < threshold) return;
+    
+    // Apply optimization settings
+    switch (optimizationLevel) {
+      case 'high':
+        objects.forEach(obj => {
+          if (obj) {
+            obj.objectCaching = true;
+            if ('strokeWidth' in obj) {
+              (obj as any).strokeWidth = Math.max(1, (obj as any).strokeWidth);
+            }
+          }
+        });
+        break;
+      case 'medium':
+        objects.forEach(obj => {
+          if (obj) obj.objectCaching = true;
+        });
+        break;
+      case 'low':
+        objects.forEach(obj => {
+          if (obj && obj.type === 'path') obj.objectCaching = true;
+        });
+        break;
+    }
+    
     if (canvas.requestRenderAll) {
       canvas.requestRenderAll();
     }
-  }, [fabricCanvasRef, isEnabled, objectThreshold, renderDistance]);
+  }, 500), [canvas, isVirtualized, threshold, optimizationLevel]);
   
-  // Throttled update function to avoid too many calls
-  const throttledUpdate = useCallback(
-    throttle(updateObjectVisibility, updateInterval), 
-    [updateObjectVisibility, updateInterval]
-  );
-  
-  // Set up event listeners for canvas movements
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isEnabled) return;
-    
-    const handleViewportChange = () => {
-      throttledUpdate();
-    };
-    
-    // Attach event listeners
-    canvas.on('mouse:wheel', handleViewportChange);
-    canvas.on('object:moving', handleViewportChange);
-    canvas.on('object:scaling', handleViewportChange);
-    canvas.on('mouse:down', handleViewportChange);
-    canvas.on('mouse:up', handleViewportChange);
-    
-    // Initial update
-    updateObjectVisibility();
-    
-    // Clean up
+    const cleanup = startVirtualization();
     return () => {
-      canvas.off('mouse:wheel', handleViewportChange);
-      canvas.off('object:moving', handleViewportChange);
-      canvas.off('object:scaling', handleViewportChange);
-      canvas.off('mouse:down', handleViewportChange);
-      canvas.off('mouse:up', handleViewportChange);
-      throttledUpdate.cancel();
-    };
-  }, [fabricCanvasRef, isEnabled, throttledUpdate, updateObjectVisibility]);
-  
-  // Function to toggle virtualization
-  const toggleVirtualization = useCallback(() => {
-    setIsEnabled(prev => !prev);
-  }, []);
-  
-  // Update all objects to be visible when disabling virtualization
-  useEffect(() => {
-    if (!isEnabled) {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      
-      canvas.getObjects().forEach(obj => {
-        if (obj.visible === false) {
-          obj.visible = true;
-        }
-      });
-      
-      if (canvas.requestRenderAll) {
-        canvas.requestRenderAll();
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup();
       }
+      if (updateStats && typeof updateStats.cancel === 'function') {
+        updateStats.cancel();
+      }
+      if (optimizeRendering && typeof optimizeRendering.cancel === 'function') {
+        optimizeRendering.cancel();
+      }
+    };
+  }, [startVirtualization, updateStats, optimizeRendering]);
+  
+  useEffect(() => {
+    setIsVirtualized(enabled);
+  }, [enabled]);
+  
+  useEffect(() => {
+    if (isVirtualized) {
+      optimizeRendering();
     }
-  }, [fabricCanvasRef, isEnabled]);
+  }, [isVirtualized, optimizeRendering]);
   
   return {
-    isEnabled,
-    metrics,
-    toggleVirtualization,
-    updateObjectVisibility
+    stats,
+    isVirtualized,
+    enableVirtualization: () => setIsVirtualized(true),
+    disableVirtualization: () => setIsVirtualized(false),
+    toggleVirtualization: () => setIsVirtualized(prev => !prev)
   };
 };

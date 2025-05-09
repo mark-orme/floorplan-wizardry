@@ -8,7 +8,7 @@ declare module 'lodash' {
       trailing?: boolean;
       maxWait?: number;
     }
-  ): (...args: Parameters<T>) => ReturnType<T>;
+  ): T & { cancel: () => void };
 
   export function throttle<T extends (...args: any[]) => any>(
     func: T,
@@ -17,7 +17,7 @@ declare module 'lodash' {
       leading?: boolean;
       trailing?: boolean;
     }
-  ): (...args: Parameters<T>) => ReturnType<T>;
+  ): T & { cancel: () => void };
 
   export function clamp(number: number, lower?: number, upper?: number): number;
   export function isEqual(value: any, other: any): boolean;

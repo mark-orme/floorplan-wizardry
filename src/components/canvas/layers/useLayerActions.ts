@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
@@ -23,9 +23,8 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Create a reference that casts the canvas properly
-  // We'll make sure the viewportTransform is properly typed
-  const canvasRef = {
+  // Create a wrapper reference that properly handles the type conversion
+  const extendedCanvasRef = {
     get current() {
       const canvas = fabricCanvasRef.current;
       if (canvas) {
@@ -33,15 +32,28 @@ export const useLayerActions = ({
         if (canvas.viewportTransform === undefined) {
           canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
         }
+        // Ensure renderOnAddRemove has a default value
+        if (canvas.renderOnAddRemove === undefined) {
+          canvas.renderOnAddRemove = true;
+        }
       }
-      return canvas;
+      return canvas as unknown as ExtendedCanvas;
     }
   };
   
-  const { toggleLayerVisibility } = useLayerVisibility({ fabricCanvasRef: canvasRef, setLayers });
-  const { toggleLayerLock } = useLayerLocking({ fabricCanvasRef: canvasRef, setLayers });
+  // Use the properly typed refs for each hook
+  const { toggleLayerVisibility } = useLayerVisibility({ 
+    fabricCanvasRef: fabricCanvasRef as unknown as React.MutableRefObject<FabricCanvas | null>, 
+    setLayers 
+  });
+  
+  const { toggleLayerLock } = useLayerLocking({ 
+    fabricCanvasRef: fabricCanvasRef as unknown as React.MutableRefObject<FabricCanvas | null>, 
+    setLayers 
+  });
+  
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef: canvasRef,
+    fabricCanvasRef: extendedCanvasRef,
     layers,
     setLayers,
     activeLayerId,
