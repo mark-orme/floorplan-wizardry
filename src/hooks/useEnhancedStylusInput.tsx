@@ -30,8 +30,8 @@ export function useEnhancedStylusInput({
   const [tiltX, setTiltX] = useState(0);
   const [tiltY, setTiltY] = useState(0);
   const [activeProfile, setActiveProfile] = useState<StylusProfile>(DEFAULT_STYLUS_PROFILE);
-  const [start, setStart] = useState<{ x: number, y: number } | undefined>(undefined);
-  const [end, setEnd] = useState<{ x: number, y: number } | undefined>(undefined);
+  const [start, setStart] = useState<{ x: number, y: number } | null>(null);
+  const [end, setEnd] = useState<{ x: number, y: number } | null>(null);
 
   useEffect(() => {
     // Load the default profile
@@ -64,11 +64,11 @@ export function useEnhancedStylusInput({
       }
     };
 
-    // Fixed lines with optional chaining
+    // Fixed lines with proper null checks
     if (start && end) {
       const distance = Math.sqrt(
-        Math.pow((end?.x ?? 0) - (start?.x ?? 0), 2) + 
-        Math.pow((end?.y ?? 0) - (start?.y ?? 0), 2)
+        Math.pow((end.x) - (start.x), 2) + 
+        Math.pow((end.y) - (start.y), 2)
       );
       console.log('Distance:', distance);
     }
@@ -76,26 +76,19 @@ export function useEnhancedStylusInput({
     // Fixed another case with null checks
     if (start && end) {
       const angle = Math.atan2(
-        (end?.y ?? 0) - (start?.y ?? 0), 
-        (end?.x ?? 0) - (start?.x ?? 0)
+        (end.y) - (start.y), 
+        (end.x) - (start.x)
       );
       console.log('Angle:', angle);
     }
 
-    // Fix the error with event types by casting to 'any'
-    canvas.getElement().addEventListener('pointermove', handlePointerMove as any);
+    // Fix the error with event types by correctly casting
+    canvas.getElement().addEventListener('pointermove', handlePointerMove as unknown as EventListener);
     
-    // 'pointerrawupdate' is not a standard event type, so we need to cast it
-    // This is commented out to avoid errors, as it's not a standard event
-    /*
-    canvas.getElement().addEventListener('pointerrawupdate', (e: PointerEvent) => {
-      // Handle raw pointer updates here
-    } as any);
-    */
+    // Removed problematic pointerrawupdate event handler as it's not a standard event
 
     return () => {
-      canvas.getElement().removeEventListener('pointermove', handlePointerMove as any);
-      // canvas.getElement().removeEventListener('pointerrawupdate', handlePointerUpdate as any);
+      canvas.getElement().removeEventListener('pointermove', handlePointerMove as unknown as EventListener);
     };
   }, [canvas, enabled, lineThickness, activeProfile, start, end]);
 

@@ -1,7 +1,5 @@
-/**
- * STUB: This is a placeholder implementation to make the build pass.
- * Should be properly implemented when the straight line tool is needed.
- */
+
+import { useState } from 'react';
 import { Point } from '@/types/core/Point';
 
 export interface LineState {
@@ -15,31 +13,66 @@ export interface UseLineStateOptions {
 }
 
 export const useLineToolState = (options: UseLineStateOptions = {}) => {
-  // Default state
-  const lineState: LineState = {
+  const { snapToGrid = false, gridSize = 20 } = options;
+  
+  const [lineState, setLineState] = useState<LineState>({
     points: [],
     isActive: false
+  });
+
+  // Function to snap points to grid if snapToGrid is enabled
+  const snapPointToGrid = (point: Point): Point => {
+    if (!snapToGrid) return point;
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
   };
 
   // Action handlers
   const startLine = (point: Point) => {
-    // Implementation would go here
+    const snappedPoint = snapPointToGrid(point);
+    
+    setLineState({
+      points: [snappedPoint],
+      isActive: true
+    });
   };
 
   const updateLine = (point: Point) => {
-    // Implementation would go here
+    if (!lineState.isActive) return;
+    
+    const snappedPoint = snapPointToGrid(point);
+    
+    setLineState(prevState => ({
+      ...prevState,
+      points: [
+        prevState.points[0],
+        snappedPoint
+      ]
+    }));
   };
 
   const completeLine = () => {
-    // Implementation would go here
+    setLineState(prevState => ({
+      ...prevState,
+      isActive: false
+    }));
   };
 
   const cancelLine = () => {
-    // Implementation would go here
+    setLineState({
+      points: [],
+      isActive: false
+    });
   };
 
   const clearLines = () => {
-    // Implementation would go here
+    setLineState({
+      points: [],
+      isActive: false
+    });
   };
 
   return {

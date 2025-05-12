@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Rect, Circle, Text } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
 import { toast } from 'sonner';
 
@@ -56,7 +56,7 @@ export const useDrawingTool = ({ canvasRef }: UseDrawingToolProps) => {
     let shape;
     
     if (type === 'rect') {
-      shape = new fabric.Rect({
+      shape = new Rect({
         left: 100,
         top: 100,
         width: 100,
@@ -66,7 +66,7 @@ export const useDrawingTool = ({ canvasRef }: UseDrawingToolProps) => {
         strokeWidth: 1
       });
     } else if (type === 'circle') {
-      shape = new fabric.Circle({
+      shape = new Circle({
         left: 100,
         top: 100,
         radius: 50,
@@ -75,7 +75,7 @@ export const useDrawingTool = ({ canvasRef }: UseDrawingToolProps) => {
         strokeWidth: 1
       });
     } else if (type === 'text') {
-      shape = new fabric.Text('Text', {
+      shape = new Text('Text', {
         left: 100,
         top: 100,
         fontSize: 20,
@@ -83,28 +83,29 @@ export const useDrawingTool = ({ canvasRef }: UseDrawingToolProps) => {
       });
     }
     
-    if (shape) {
-      canvas.add(shape);
-      canvas.setActiveObject(shape);
+    if (shape && canvas.add) {
+      canvas.add(shape as any);
+      canvas.setActiveObject && canvas.setActiveObject(shape as any);
       canvas.renderAll();
     }
   }, [canvasRef, lineColor]);
   
-  // Fix the arguments to empty string instead of null
   const addText = useCallback((text = '', left = 100, top = 100) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    const textObj = new fabric.Text(text || 'Text', {
+    const textObj = new Text(text || 'Text', {
       left,
       top,
       fontSize: 20,
       fill: lineColor
     });
     
-    canvas.add(textObj);
-    canvas.setActiveObject(textObj);
-    canvas.renderAll();
+    if (canvas.add) {
+      canvas.add(textObj as any);
+      canvas.setActiveObject && canvas.setActiveObject(textObj as any);
+      canvas.renderAll();
+    }
   }, [canvasRef, lineColor]);
   
   return {

@@ -1,32 +1,35 @@
 
-import { Point } from './core/Point';
 import { DrawingMode } from '@/constants/drawingModes';
+import { Point } from '@/types/core/Point';
 
-/**
- * Simplified drawing state interface
- */
 export interface DrawingState {
   isDrawing: boolean;
-  startPoint: Point;
-  currentPoint: Point;
+  startPoint: Point | null;
+  currentPoint: Point | null;
   points: Point[];
-  tool?: DrawingMode;
-  lineColor?: string;
-  lineThickness?: number;
-  cursorPosition: Point;
-}
-
-/**
- * Create a default drawing state
- */
-export function createDefaultDrawingState(): DrawingState {
-  return {
-    isDrawing: false,
-    startPoint: { x: 0, y: 0 },
-    currentPoint: { x: 0, y: 0 },
-    points: [],
-    cursorPosition: { x: 0, y: 0 }
+  tool: DrawingMode;
+  lineColor: string;
+  lineThickness: number;
+  modifiers: {
+    shiftKey: boolean;
+    altKey: boolean;
+    ctrlKey: boolean;
   };
 }
 
-export default DrawingState;
+export function createDefaultDrawingState(): DrawingState {
+  return {
+    isDrawing: false,
+    startPoint: null,
+    currentPoint: null,
+    points: [],
+    tool: DrawingMode.DRAW,
+    lineColor: '#000000',
+    lineThickness: 2,
+    modifiers: {
+      shiftKey: false,
+      altKey: false,
+      ctrlKey: false
+    }
+  };
+}

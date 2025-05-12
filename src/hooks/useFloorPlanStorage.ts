@@ -1,11 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { toast } from 'sonner';
 
 // Import from our adapter instead of directly
-import { FloorPlan } from '@/utils/floorPlanTypeAdapter';
-import { DRAWING_CONSTANTS } from '@/constants/drawingConstants';
+import { FloorPlan, ensureFloorPlanMetadata } from '@/utils/floorPlanTypeAdapter';
+
+// Mock DRAWING_CONSTANTS if needed
+const DRAWING_CONSTANTS = {
+  STORAGE_KEY: 'floorPlanData'
+};
 
 interface UseFloorPlanStorageProps {
   canvas: FabricCanvas | null;
@@ -19,7 +24,7 @@ export const useFloorPlanStorage = ({
   storageKey = 'floorPlanData'
 }: UseFloorPlanStorageProps) => {
   const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(defaultFloorPlan || null);
-  const [storedData, setStoredData] = useLocalStorage(storageKey, null);
+  const [storedData, setStoredData] = useLocalStorage<string | null>(storageKey, null);
 
   // Load data from local storage on canvas initialization
   useEffect(() => {
@@ -69,7 +74,7 @@ export const useFloorPlanStorage = ({
       canvas.off('object:removed', handleObjectRemoved);
       canvas.off('canvas:cleared', handleCanvasCleared);
     };
-  }, [canvas, setStoredData]);
+  }, [canvas]);
 
   // Function to save canvas data to local storage
   const saveDataToStorage = () => {
