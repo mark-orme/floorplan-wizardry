@@ -9,6 +9,10 @@ declare module 'fabric' {
     x2: number;
     y2: number;
   }
+
+  interface Object {
+    objectCaching?: boolean;  // Add objectCaching as standard property
+  }
 }
 
 export interface ExtendedFabricCanvas extends fabric.Canvas {
@@ -16,7 +20,7 @@ export interface ExtendedFabricCanvas extends fabric.Canvas {
   skipTargetFind?: boolean;
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean;
-  renderOnAddRemove?: boolean;
+  renderOnAddRemove: boolean;
   viewportTransform: number[]; // Ensure this is non-optional
   isDrawingMode: boolean; // Ensure this is non-optional
 }
@@ -30,6 +34,7 @@ export interface ExtendedFabricObject extends fabric.Object {
   isCustomObject?: boolean;
   isGridLine?: boolean;
   customProps?: Record<string, any>;
+  objectCaching?: boolean;
 }
 
 export function asExtendedObject(obj: fabric.Object): fabric.Object {
@@ -45,6 +50,11 @@ export function asExtendedCanvas(canvas: fabric.Canvas): ExtendedFabricCanvas {
   // Ensure isDrawingMode is always defined
   if (canvas.isDrawingMode === undefined) {
     (canvas as any).isDrawingMode = false;
+  }
+
+  // Ensure renderOnAddRemove is always defined
+  if (canvas.renderOnAddRemove === undefined) {
+    (canvas as any).renderOnAddRemove = true;
   }
   
   return canvas as ExtendedFabricCanvas;
@@ -87,3 +97,23 @@ export const CANVAS_CONSTANTS = {
   PIXELS_PER_METER: 100,
   DEFAULT_GRID_SIZE: 20
 };
+
+// Add additional types for compatibility with useLayerActions.ts
+export interface ExtendedCanvas {
+  wrapperEl: HTMLElement;
+  initialize: () => void;
+  skipTargetFind: boolean;
+  _activeObject: any;
+  _objects: any[];
+  viewportTransform: number[];
+  allowTouchScrolling?: boolean;
+  renderOnAddRemove: boolean;
+  getActiveObject?: () => any;
+  forEachObject?: (callback: (obj: any) => void) => void;
+  zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
+}
+
+// Add mock for yjs modules until they're properly installed
+export type YDoc = any;
+export type YArray<T> = any;
+export type YMap<T> = any;

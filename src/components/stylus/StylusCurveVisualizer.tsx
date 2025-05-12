@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas } from 'fabric';
-// Import all from fabric to ensure we can access all classes
 import * as fabric from 'fabric';
 
 interface StylusCurveVisualizerProps {
@@ -48,10 +47,10 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       const pointer = canvas.getPointer(e.e);
       points.current = [pointer];
       
-      // Create a new path using fabric.Path - make sure path data is valid
+      // Create a new path
       try {
-        // Create an empty path first to avoid issues with undefined path data
-        currentPath.current = new fabric.Path('M 0 0', {
+        // Create an empty path to avoid issues
+        const pathObj = new fabric.Path('M 0 0', {
           stroke: color,
           strokeWidth: strokeWidth * (e.pressure || 1),
           fill: 'transparent',
@@ -60,8 +59,10 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
           strokeDashArray: strokeStyle === 'dashed' ? [5, 5] : undefined,
         });
         
-        if (currentPath.current && canvas) {
-          canvas.add(currentPath.current);
+        currentPath.current = pathObj;
+        
+        if (canvas) {
+          canvas.add(pathObj);
         }
       } catch (err) {
         console.error('Error creating path:', err);
@@ -121,10 +122,12 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
       
       if (path) {
         try {
-          (currentPath.current as any).set({ 
-            path: path,
-            strokeWidth: strokeWidth * currentPressure
-          });
+          if (currentPath.current && 'set' in currentPath.current) {
+            currentPath.current.set({ 
+              path: path,
+              strokeWidth: strokeWidth * currentPressure
+            });
+          }
           
           canvas.requestRenderAll();
         } catch (err) {
@@ -147,3 +150,4 @@ export const StylusCurveVisualizer: React.FC<StylusCurveVisualizerProps> = ({
 
   return null;
 };
+

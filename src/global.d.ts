@@ -17,9 +17,9 @@ declare module 'fabric' {
     enableRetinaScaling?: boolean;
     toObject?(): any;
     fire?(eventName: string, options?: any): Canvas;
-    add(...objects: any[]): Canvas;  // Critical fix: accept any objects
-    remove(...objects: any[]): Canvas;  // Critical fix: accept any objects
-    sendToBack(object: any): Canvas;  // Critical fix: accept any object
+    add(...objects: any[]): Canvas;
+    remove(...objects: any[]): Canvas;
+    sendToBack(object: any): Canvas;
     getActiveObjects(): any[];
     discardActiveObject(options?: any): Canvas;
   }
@@ -37,6 +37,7 @@ declare module 'fabric' {
     selectable?: boolean;
     evented?: boolean;
     type?: string;
+    objectCaching?: boolean;
     // Fix the 'set' method signature to be compatible with all expected usages
     set(options: Record<string, any>): any;
     set(property: string, value: any): any;
@@ -49,6 +50,29 @@ declare module 'fabric' {
 
   interface Text extends Object {
     text: string;
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
+  }
+
+  export class Path extends Object {
+    constructor(path: string, options?: any);
+    path: string | any[];
+    pathOffset: { x: number, y: number };
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
+  }
+
+  export class Circle extends Object {
+    constructor(options?: any);
+    radius: number;
+    set(options: Record<string, any>): any;
+    set(property: string, value: any): any;
+  }
+
+  export class Rect extends Object {
+    constructor(options?: any);
+    rx: number;
+    ry: number;
     set(options: Record<string, any>): any;
     set(property: string, value: any): any;
   }
@@ -103,3 +127,4 @@ declare module 'fabric' {
     onMouseDown?: (event: any) => void;
   }
 }
+

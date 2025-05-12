@@ -1,187 +1,186 @@
-/**
- * Refactored straight line tool hook
- * Combines line initialization, interaction, and grid alignment
- * @module hooks/straightLineTool/useStraightLineToolRefactored
- */
-import { useCallback, useEffect, useState, useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+
+import { useCallback, useState, useRef } from 'react';
+import { Canvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/constants/drawingModes';
-import { useLineInitialization } from './useLineInitialization';
-import { useLineInteraction } from './useLineInteraction';
-import { useGridAlignment, GridSnappingSettings } from './useGridAlignment';
+import { MeasurementData } from '@/types/fabric-unified';
+import useLineAngleSnap from './useLineAngleSnap';
 
-export interface StraightLineToolOptions {
-  color: string;
-  thickness: number;
-  dashed?: boolean;
+interface UseStraightLineToolRefactoredOptions {
+  canvas: Canvas | null;
+  color?: string;
+  thickness?: number;
   snapToGrid?: boolean;
-  gridSettings?: GridSnappingSettings;
+  gridSize?: number;
+  enabled?: boolean;
+  onLineCreated?: (start: Point, end: Point, measurement: MeasurementData) => void;
 }
 
-export interface StraightLineToolRefactoredResult {
-  isActive: boolean;
-  isDrawing: boolean;
-  isToolInitialized: boolean;
-  startDrawing: (canvas: FabricCanvas | null, pointer: Point) => void;
-  continueDrawing: (canvas: FabricCanvas | null, pointer: Point) => void;
-  endDrawing: (canvas: FabricCanvas | null) => void;
-  cancelDrawing: (canvas: FabricCanvas | null) => void;
-}
-
-/**
- * Refactored hook for straight line tool functionality
- * @param tool Current drawing tool
- * @param options Tool options
- * @returns Straight line tool functions and state
- */
-export const useStraightLineToolRefactored = (
-  tool: DrawingMode,
-  options: StraightLineToolOptions
-): StraightLineToolRefactoredResult => {
-  const [isToolInitialized, setIsToolInitialized] = useState(false);
-  const lineRef = useRef<Line | null>(null);
+export const useStraightLineToolRefactored = ({
+  canvas,
+  color = '#000000',
+  thickness = 2,
+  snapToGrid = false,
+  gridSize = 20,
+  enabled = false,
+  onLineCreated,
+}: UseStraightLineToolRefactoredOptions) => {
+  // State
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [activeLine, setActiveLine] = useState<any | null>(null);
+  const [measurementData, setMeasurementData] = useState<MeasurementData>({});
+  const startPointRef = useRef<Point | null>(null);
   
-  // Get line initialization functions
-  const { isActive, setIsActive, initializeTool, initializeLine, cleanupLine } = useLineInitialization();
+  // Angle snapping
+  const { snapAngle, toggleEnabled: toggleAngleSnap, isEnabled: angleSnapEnabled } = useLineAngleSnap();
   
-  // Get line interaction state and functions
-  const { 
-    isDrawing, 
-    startDrawing: startLineDrawing,
-    updateLine,
-    completeDrawing,
-    cancelDrawing: cancelLineDrawing
-  } = useLineInteraction();
+  // Calculate distance between two points
+  const calculateDistance = useCallback((p1: Point, p2: Point): number => {
+    if (!p1 || !p2) return 0;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
   
-  // Get grid alignment functions
-  const { snapToGrid, autoStraighten } = useGridAlignment({
-    enabled: options.snapToGrid ?? true,
-    gridSize: options.gridSettings?.gridSize ?? 20,
-    threshold: options.gridSettings?.threshold ?? 10
-  });
+  // Calculate angle between two points
+  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
+    if (!p1 || !p2) return 0;
+    let angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+    return Math.round(angle);
+  }, []);
   
-  // Initialize the tool
-  useEffect(() => {
-    setIsToolInitialized(tool === DrawingMode.STRAIGHT_LINE);
-    setIsActive(tool === DrawingMode.STRAIGHT_LINE);
+  // Handle mousedown
+  const handleMouseDown = useCallback((e: any) => {
+    if (!canvas || !enabled) return;
     
-    // Cleanup on unmount
-    return () => {
-      setIsToolInitialized(false);
-    };
-  }, [tool, setIsActive]);
-  
-  /**
-   * Start drawing a line
-   * @param canvas Fabric canvas
-   * @param pointer Starting point
-   */
-  const startDrawing = useCallback((
-    canvas: FabricCanvas | null, 
-    pointer: Point
-  ): void => {
-    if (!canvas || !isActive) return;
+    const pointer = canvas.getPointer(e.e);
+    const startPoint = { x: pointer.x, y: pointer.y };
     
     // Snap to grid if enabled
-    const snappedPoint = snapToGrid(pointer);
+    if (snapToGrid && gridSize) {
+      startPoint.x = Math.round(startPoint.x / gridSize) * gridSize;
+      startPoint.y = Math.round(startPoint.y / gridSize) * gridSize;
+    }
     
-    // Start drawing state
-    startLineDrawing(snappedPoint);
+    startPointRef.current = startPoint;
     
-    // Initialize line on canvas
-    const line = initializeLine(snappedPoint.x, snappedPoint.y, {
-      color: options.color,
-      thickness: options.thickness,
-      dashed: options.dashed
-    });
+    // Create measurement data
+    const initialData: MeasurementData = {
+      startPoint,
+      endPoint: startPoint,
+      distance: 0,
+      angle: 0,
+      unit: 'px',
+    };
+    
+    setMeasurementData(initialData);
+    setIsDrawing(true);
+    
+    // Create line
+    const line = new fabric.Line(
+      [startPoint.x, startPoint.y, startPoint.x, startPoint.y],
+      {
+        stroke: color,
+        strokeWidth: thickness,
+        selectable: false,
+        evented: false,
+      }
+    );
     
     canvas.add(line);
     canvas.renderAll();
+    setActiveLine(line);
     
-    lineRef.current = line;
-  }, [isActive, options, snapToGrid, startLineDrawing, initializeLine]);
+  }, [canvas, color, thickness, snapToGrid, gridSize, enabled]);
   
-  /**
-   * Continue drawing a line
-   * @param canvas Fabric canvas
-   * @param pointer Current point
-   */
-  const continueDrawing = useCallback((
-    canvas: FabricCanvas | null, 
-    pointer: Point
-  ): void => {
-    if (!canvas || !isDrawing || !lineRef.current) return;
+  // Handle mousemove
+  const handleMouseMove = useCallback((e: any) => {
+    if (!canvas || !isDrawing || !activeLine || !startPointRef.current) return;
     
-    // Apply grid snapping and auto-straightening
-    const snappedPoint = snapToGrid(pointer);
+    const pointer = canvas.getPointer(e.e);
+    let endPoint = { x: pointer.x, y: pointer.y };
     
-    // Auto-straighten the line if close to horizontal or vertical
-    const correctedPoint = lineRef.current && lineRef.current.x1 !== undefined
-      ? autoStraighten(
-          { x: lineRef.current.x1, y: lineRef.current.y1 },
-          snappedPoint
-        )
-      : snappedPoint;
-    
-    // Update the line
-    updateLine(canvas, lineRef.current, correctedPoint);
-  }, [isDrawing, snapToGrid, autoStraighten, updateLine]);
-  
-  /**
-   * End drawing a line
-   * @param canvas Fabric canvas
-   */
-  const endDrawing = useCallback((
-    canvas: FabricCanvas | null
-  ): void => {
-    if (!canvas || !isDrawing || !lineRef.current) return;
-    
-    // Complete the drawing
-    completeDrawing();
-    
-    // Line is kept on canvas, but we clear our reference
-    lineRef.current = null;
-  }, [isDrawing, completeDrawing]);
-  
-  /**
-   * Cancel drawing a line
-   * @param canvas Fabric canvas
-   */
-  const cancelDrawing = useCallback((
-    canvas: FabricCanvas | null
-  ): void => {
-    if (!canvas) return;
-    
-    // Cancel the drawing state
-    cancelLineDrawing(canvas, lineRef.current);
-    
-    // Clean up the line
-    if (lineRef.current && canvas.contains(lineRef.current)) {
-      canvas.remove(lineRef.current);
-      canvas.renderAll();
+    // Apply angle snapping if enabled
+    if (angleSnapEnabled) {
+      const snapped = snapAngle(startPointRef.current, endPoint);
+      endPoint = snapped.point;
     }
     
-    lineRef.current = null;
-  }, [cancelLineDrawing]);
+    // Snap to grid if enabled
+    if (snapToGrid && gridSize > 0) {
+      endPoint.x = Math.round(endPoint.x / gridSize) * gridSize;
+      endPoint.y = Math.round(endPoint.y / gridSize) * gridSize;
+    }
+    
+    // Calculate distance and angle
+    const distance = calculateDistance(startPointRef.current, endPoint);
+    const angle = calculateAngle(startPointRef.current, endPoint);
+    
+    // Update line
+    activeLine.set({
+      x2: endPoint.x,
+      y2: endPoint.y
+    });
+    
+    // Calculate midpoint
+    const midPoint = {
+      x: (startPointRef.current.x + endPoint.x) / 2,
+      y: (startPointRef.current.y + endPoint.y) / 2
+    };
+    
+    // Update measurement data
+    setMeasurementData({
+      startPoint: startPointRef.current,
+      endPoint,
+      distance,
+      angle,
+      midPoint,
+      unit: 'px',
+      snapped: angleSnapEnabled,
+    });
+    
+    canvas.renderAll();
+    
+  }, [canvas, isDrawing, activeLine, snapToGrid, gridSize, angleSnapEnabled, snapAngle, calculateDistance, calculateAngle]);
+  
+  // Handle mouseup
+  const handleMouseUp = useCallback(() => {
+    if (!canvas || !isDrawing || !activeLine || !startPointRef.current || !measurementData.endPoint) return;
+    
+    // Finalize line
+    activeLine.set({
+      selectable: true,
+      evented: true,
+    });
+    
+    // Notify about line creation
+    if (onLineCreated && measurementData.startPoint && measurementData.endPoint) {
+      onLineCreated(
+        measurementData.startPoint,
+        measurementData.endPoint,
+        measurementData
+      );
+    }
+    
+    // Reset state
+    setIsDrawing(false);
+    setActiveLine(null);
+    startPointRef.current = null;
+    
+    canvas.renderAll();
+    
+  }, [canvas, isDrawing, activeLine, onLineCreated, measurementData]);
   
   return {
-    isActive,
     isDrawing,
-    isToolInitialized,
-    startDrawing,
-    continueDrawing,
-    endDrawing,
-    cancelDrawing
+    measurementData,
+    activeLine,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    toggleAngleSnap,
+    angleSnapEnabled,
   };
 };
 
-// Find the function with the type error and fix it by handling undefined
-const calculateDistance = (point1: Point, point2: Point): number => {
-  if (!point1 || !point2) return 0;
-  
-  return Math.sqrt(
-    Math.pow(point2.x - point1.x, 2) + 
-    Math.pow(point2.y - point1.y, 2)
-  );
-};
+export default useStraightLineToolRefactored;

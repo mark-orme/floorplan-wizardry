@@ -1,5 +1,11 @@
 
 import { Point } from './core/Point';
+import { Canvas, Object as FabricObject, Line, Text, Circle, Rect, Path, ICanvasOptions } from 'fabric';
+
+/**
+ * Re-export fabric types for consistency
+ */
+export { Canvas, FabricObject, Line, Text, Circle, Rect, Path };
 
 /**
  * Measurement data for straight line tool
@@ -49,7 +55,24 @@ export interface DebugInfoState {
     lastFrameTime: number;
     averageFrameTime: number;
   };
+  canvasDimensions?: {
+    width: number;
+    height: number;
+  };
 }
+
+/**
+ * Default debug state
+ */
+export const DEFAULT_DEBUG_STATE: DebugInfoState = {
+  fps: 0,
+  objectCount: 0,
+  renderTime: 0,
+  performanceMetrics: {
+    lastFrameTime: 0,
+    averageFrameTime: 0
+  }
+};
 
 /**
  * Grid options for grid rendering
@@ -73,3 +96,4 @@ export interface ExtendedPerformance extends Performance {
     totalJSHeapSize: number;
   };
 }
+

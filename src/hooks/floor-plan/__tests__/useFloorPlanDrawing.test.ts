@@ -4,8 +4,8 @@ import { describe, test, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { act } from '@testing-library/react-hooks';
 
-// Import type and helper from floorPlan.ts
-import { FloorPlan, createEmptyFloorPlan } from '@/types/floorPlan';
+// Import type and helper from FloorPlan.ts (correct casing)
+import { FloorPlan, createEmptyFloorPlan } from '@/types/FloorPlan';
 
 // Import the hook
 import { useFloorPlanDrawing } from '../useFloorPlanDrawing';

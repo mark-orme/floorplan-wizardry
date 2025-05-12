@@ -1,157 +1,196 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
-interface UseCanvasGridProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { Canvas, Line } from 'fabric';
+
+interface UseCanvasGridOptions {
+  canvas: Canvas | null;
   initialGridSize?: number;
   initialVisible?: boolean;
 }
 
-export const useGrid = ({
-  fabricCanvasRef,
-  gridLayerRef,
+// Grid constants
+const GRID_CONSTANTS = {
+  SMALL_GRID: 20,
+  LARGE_GRID: 100,
+  GRID_COLOR: '#cccccc',
+  LARGE_GRID_COLOR: '#a0a0a0',
+  SMALL_GRID_COLOR: '#e0e0e0',
+  SMALL_GRID_WIDTH: 0.5,
+  LARGE_GRID_WIDTH: 1,
+  SMALL_GRID_SIZE: 20,
+  LARGE_GRID_SIZE: 100,
+  PIXELS_PER_METER: 100
+};
+
+export const useCanvasGrid = ({
+  canvas,
   initialGridSize = 20,
   initialVisible = true
-}: UseCanvasGridProps) => {
+}: UseCanvasGridOptions) => {
   const [gridSize, setGridSize] = useState(initialGridSize);
-  const [gridVisible, setGridVisible] = useState(initialVisible);
-
-  const createGrid = useCallback((canvas: FabricCanvas) => {
-    if (!canvas) return;
-
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-
-    if (!width || !height) return;
-
-    const gridLines: FabricObject[] = [];
-    const lineOptions = {
-      stroke: GRID_CONSTANTS.GRID_COLOR,
-      strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
-      selectable: false,
-      evented: false,
-      objectCaching: false,
-      excludeFromExport: true,
-      gridObject: true
-    };
-
-    // Vertical lines
-    for (let i = 0; i <= (width / gridSize); i++) {
-      const lineWidth = (i % 5 === 0) ? 1 : 0.5;
-      const lineColor = (i % 5 === 0) ? GRID_CONSTANTS.GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR;
-
-      const line = new FabricObject.Line([i * gridSize, 0, i * gridSize, height], {
-        ...lineOptions,
-        stroke: lineColor,
-        strokeWidth: lineWidth
+  const [isVisible, setIsVisible] = useState(initialVisible);
+  const gridLinesRef = useRef<Line[]>([]);
+  
+  // Create grid lines
+  const createGridLines = useCallback(() => {
+    if (!canvas) return [];
+    
+    const width = canvas.getWidth ? canvas.getWidth() : 800;
+    const height = canvas.getHeight ? canvas.getHeight() : 600;
+    
+    const gridLines: Line[] = [];
+    
+    // Small grid lines (vertical)
+    const smallGridSize = GRID_CONSTANTS.SMALL_GRID_SIZE;
+    for (let i = 0; i <= width; i += smallGridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        objectCaching: false,
       });
+      line.set('isGrid', true);
       gridLines.push(line);
     }
-
-    // Horizontal lines
-    for (let j = 0; j <= (height / gridSize); j++) {
-      const lineWidth = (j % 5 === 0) ? 1 : 0.5;
-      const lineColor = (j % 5 === 0) ? GRID_CONSTANTS.GRID_COLOR : GRID_CONSTANTS.SMALL_GRID_COLOR;
-
-      const line = new FabricObject.Line([0, j * gridSize, width, j * gridSize], {
-        ...lineOptions,
-        stroke: lineColor,
-        strokeWidth: lineWidth
+    
+    // Small grid lines (horizontal)
+    for (let i = 0; i <= height; i += smallGridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.SMALL_GRID_COLOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_CONSTANTS.SMALL_GRID_WIDTH,
+        objectCaching: false,
       });
+      line.set('isGrid', true);
       gridLines.push(line);
     }
-
-    gridLayerRef.current = gridLines;
-    canvas.add(...gridLines);
-    canvas.sendToBack(...gridLines);
-    canvas.requestRenderAll();
-  }, [gridSize, gridLayerRef]);
-
-  const toggleGridVisibility = useCallback(() => {
-    setGridVisible(prev => !prev);
-  }, []);
-
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    if (gridVisible) {
-      if (gridLayerRef.current.length === 0) {
-        createGrid(canvas);
-      } else {
-        gridLayerRef.current.forEach(line => {
-          if (canvas.contains(line)) {
-            line.visible = true;
-          } else {
-            canvas.add(line);
-          }
-          canvas.sendToBack(line);
-        });
-        canvas.requestRenderAll();
-      }
-    } else {
-      gridLayerRef.current.forEach(line => {
-        line.visible = false;
+    
+    // Large grid lines (vertical)
+    const largeGridSize = GRID_CONSTANTS.LARGE_GRID_SIZE;
+    for (let i = 0; i <= width; i += largeGridSize) {
+      const line = new Line([i, 0, i, height], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        objectCaching: false,
       });
-      canvas.requestRenderAll();
+      line.set('isGrid', true);
+      line.set('isLargeGrid', true);
+      gridLines.push(line);
     }
-  }, [gridVisible, fabricCanvasRef, gridLayerRef, createGrid]);
-
-  const setGrid = useCallback((canvas: FabricCanvas) => {
+    
+    // Large grid lines (horizontal)
+    for (let i = 0; i <= height; i += largeGridSize) {
+      const line = new Line([0, i, width, i], {
+        stroke: GRID_CONSTANTS.LARGE_GRID_COLOR,
+        selectable: false,
+        evented: false,
+        strokeWidth: GRID_CONSTANTS.LARGE_GRID_WIDTH,
+        objectCaching: false,
+      });
+      line.set('isGrid', true);
+      line.set('isLargeGrid', true);
+      gridLines.push(line);
+    }
+    
+    return gridLines;
+  }, [canvas]);
+  
+  // Show grid lines
+  const showGrid = useCallback(() => {
     if (!canvas) return;
-
-    createGrid(canvas);
-  }, [createGrid]);
-
-  const updateGrid = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
+    
     // Remove existing grid lines
-    if (gridLayerRef.current.length > 0) {
-      canvas.remove(...gridLayerRef.current);
-      gridLayerRef.current = [];
+    gridLinesRef.current.forEach(line => {
+      if (canvas.contains(line)) {
+        canvas.remove(line);
+      }
+    });
+    
+    // Create new grid lines
+    const gridLines = createGridLines();
+    
+    // Add to canvas
+    gridLines.forEach(line => {
+      canvas.add(line);
+      canvas.sendToBack(line);
+    });
+    
+    // Update ref
+    gridLinesRef.current = gridLines;
+    
+    // Update state
+    setIsVisible(true);
+    
+    // Render canvas
+    canvas.renderAll();
+  }, [canvas, createGridLines]);
+  
+  // Hide grid lines
+  const hideGrid = useCallback(() => {
+    if (!canvas) return;
+    
+    // Remove existing grid lines
+    gridLinesRef.current.forEach(line => {
+      if (canvas.contains(line)) {
+        canvas.remove(line);
+      }
+    });
+    
+    // Clear ref
+    gridLinesRef.current = [];
+    
+    // Update state
+    setIsVisible(false);
+    
+    // Render canvas
+    canvas.renderAll();
+  }, [canvas]);
+  
+  // Toggle grid visibility
+  const toggleGrid = useCallback(() => {
+    if (isVisible) {
+      hideGrid();
+    } else {
+      showGrid();
     }
-
-    // Create and add new grid lines
-    createGrid(canvas);
-  }, [createGrid, fabricCanvasRef, gridLayerRef]);
-
-  const setGridCellSize = useCallback((newSize: number) => {
-    setGridSize(newSize);
-  }, []);
-
-  const snapToGrid = useCallback((point: { x: number; y: number }) => {
-    const x = Math.round(point.x / gridSize) * gridSize;
-    const y = Math.round(point.y / gridSize) * gridSize;
-    return { x, y };
-  }, [gridSize]);
-
-  // Update the GRID_CONSTANTS with all required properties
-  const GRID_CONSTANTS = {
-    SMALL_GRID: 10,
-    LARGE_GRID: 50,
-    GRID_COLOR: '#cccccc',
-    LARGE_GRID_COLOR: '#999999',
-    PIXELS_PER_METER: 100,
-    SMALL_GRID_COLOR: '#dddddd',
-    SMALL_GRID_WIDTH: 0.5,
-    SMALL_GRID_SIZE: 10, // Add this
-    LARGE_GRID_SIZE: 50, // Add this
-    LARGE_GRID_WIDTH: 1   // Add this
-  };
-
+  }, [isVisible, hideGrid, showGrid]);
+  
+  // Update grid size
+  const updateGridSize = useCallback((size: number) => {
+    setGridSize(size);
+    if (isVisible) {
+      hideGrid();
+      showGrid();
+    }
+  }, [isVisible, hideGrid, showGrid]);
+  
+  // Initialize grid
+  useEffect(() => {
+    if (!canvas) return;
+    
+    // Show grid if initial visibility is true
+    if (initialVisible) {
+      showGrid();
+    }
+    
+    return () => {
+      hideGrid();
+    };
+  }, [canvas, initialVisible, showGrid, hideGrid]);
+  
   return {
+    isVisible,
     gridSize,
-    setGridSize: setGridCellSize,
-    gridVisible,
-    setGridVisible,
-    createGrid,
-    setGrid,
-    updateGrid,
-    toggleGridVisibility,
-    snapToGrid,
-    GRID_CONSTANTS
+    showGrid,
+    hideGrid,
+    toggleGrid,
+    updateGridSize,
+    gridLines: gridLinesRef.current
   };
 };
+
+export default useCanvasGrid;

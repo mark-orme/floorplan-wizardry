@@ -66,29 +66,33 @@ export const useLineAngleSnap = ({
   
   /**
    * Snap to angle with previous angle as reference
+   * This is for API compatibility with existing code
    */
-  const snapToAngle = useCallback((start: Point, end: Point) => {
+  const snapToAngle = useCallback((start: Point, end: Point): Point => {
     const result = snapAngle(start, end);
-    return result;
+    return result.point;
   }, [snapAngle]);
   
   /**
    * Toggle angle snapping
+   * This is for API compatibility with existing code
    */
   const toggleAngles = useCallback(() => {
     setEnabled(prev => !prev);
   }, []);
   
+  // Return additional properties for compatibility with existing code
   return { 
     snapAngle,
     resetAngle,
     isEnabled,
     toggleEnabled,
     setEnabled,
-    snapToAngle, // Add this for compatibility
-    toggleAngles, // Add this for compatibility
-    anglesEnabled: isEnabled // Add this for compatibility
+    snapToAngle,
+    toggleAngles,
+    anglesEnabled: isEnabled
   };
 };
 
 export default useLineAngleSnap;
+

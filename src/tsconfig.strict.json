@@ -8,8 +8,8 @@
     "strictFunctionTypes": false, // Changed to false to ease migration
     "strictBindCallApply": true,
     "strictPropertyInitialization": false, // Changed to false to ease migration
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
+    "noImplicitThis": false, // Changed to false to ease migration
+    "useUnknownInCatchVariables": false, // Changed to false to ease migration 
     "alwaysStrict": true,
     "noUncheckedIndexedAccess": false, // Changed to false to reduce migration burden
     "exactOptionalPropertyTypes": false, // Changed to false to reduce migration burden

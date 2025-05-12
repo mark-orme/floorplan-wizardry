@@ -1,105 +1,106 @@
 
-import { useRef } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { useCallback, useState } from 'react';
 import { Point } from '@/types/core/Point';
-import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
-import { useLineAngleSnap } from './useLineAngleSnap';
-import { useLineDrawing } from './useLineDrawing';
-import { useLineStateCore } from './useLineStateCore';
-import { useLineStateActions } from './useLineStateActions';
+import useLineAngleSnap from './useLineAngleSnap';
 
 interface UseLineStateOptions {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState: () => void;
+  gridSnapping?: boolean;
+  gridSize?: number;
 }
 
 /**
- * Hook for managing line tool state
+ * Hook for managing line drawing state
  */
 export const useLineState = ({ 
-  fabricCanvasRef, 
-  lineColor, 
-  lineThickness,
-  saveCurrentState 
-}: UseLineStateOptions) => {
-  // Get core state from the extracted hook
-  const coreState = useLineStateCore();
+  gridSnapping = false,
+  gridSize = 20
+}: UseLineStateOptions = {}) => {
+  // Line state
+  const [start, setStart] = useState<Point | null>(null);
+  const [end, setEnd] = useState<Point | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   
-  // Grid and angle snapping
-  const { snapEnabled, toggleGridSnapping, snapToGrid } = useEnhancedGridSnapping({
-    initialSnapEnabled: true
-  });
+  // Grid snapping
+  const [snapToGrid, setSnapToGrid] = useState(gridSnapping);
   
-  // Use the updated hooks that include the compatibility methods
-  const angleSnapHook = useLineAngleSnap({ enabled: true });
-  const { 
-    isEnabled: anglesEnabled, 
-    snapAngle, 
-    toggleEnabled: toggleAngles 
-  } = angleSnapHook;
+  // Angle snapping
+  const { snapAngle, isEnabled: anglesEnabled, setEnabled: setAnglesEnabled, toggleEnabled: toggleAngles } = useLineAngleSnap();
   
-  // Modified snapToAngle wrapper that returns a Point
-  const adaptedSnapToAngle = (start: Point, end: Point): Point => {
+  // Start drawing from a point
+  const startDrawing = useCallback((point: Point) => {
+    const snappedPoint = snapToGrid ? {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    } : point;
+
+    setStart(snappedPoint);
+    setEnd(snappedPoint);
+    setIsDrawing(true);
+  }, [gridSize, snapToGrid]);
+  
+  // Update line while drawing
+  const updateLine = useCallback((point: Point) => {
+    if (!isDrawing || !start) return;
+    
+    // Apply grid snapping if enabled
+    let snappedPoint = snapToGrid ? {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    } : point;
+    
+    // Apply angle snapping if enabled
+    if (anglesEnabled && start) {
+      const result = snapAngle(start, snappedPoint);
+      snappedPoint = result.point;
+    }
+    
+    setEnd(snappedPoint);
+  }, [isDrawing, start, snapToGrid, gridSize, anglesEnabled, snapAngle]);
+  
+  // Finish drawing
+  const finishDrawing = useCallback(() => {
+    if (!isDrawing || !start || !end) return null;
+    
+    const line = { start, end };
+    setIsDrawing(false);
+    setStart(null);
+    setEnd(null);
+    return line;
+  }, [isDrawing, start, end]);
+  
+  // Cancel drawing
+  const cancelDrawing = useCallback(() => {
+    setIsDrawing(false);
+    setStart(null);
+    setEnd(null);
+  }, []);
+  
+  // Toggle grid snapping
+  const toggleGridSnap = useCallback(() => {
+    setSnapToGrid(prev => !prev);
+  }, []);
+  
+  // Additional method to maintain compatibility
+  const snapToAngle = useCallback((start: Point, end: Point): Point => {
     const result = snapAngle(start, end);
     return result.point;
-  };
-
-  // Use line drawing hooks for canvas operations
-  const { createLine, updateLine, finalizeLine, removeLine } = useLineDrawing({
-    fabricCanvasRef,
-    lineColor,
-    lineThickness,
-    saveCurrentState
-  });
-  
-  // Get actions from the extracted hook
-  const actions = useLineStateActions({
-    coreState,
-    snapEnabled,
-    snapToGrid,
-    anglesEnabled,
-    snapToAngle: adaptedSnapToAngle,
-    createLine,
-    updateLine,
-    finalizeLine,
-    removeLine
-  });
+  }, [snapAngle]);
   
   return {
-    // State from core
-    ...coreState,
-    
-    // Snapping state
-    snapEnabled,
+    start,
+    end,
+    isDrawing,
+    startDrawing,
+    updateLine,
+    finishDrawing,
+    cancelDrawing,
+    snapToGrid,
+    toggleGridSnap,
+    setSnapToGrid,
     anglesEnabled,
-    
-    // Actions
-    ...actions,
-    
-    // Toggles
-    toggleSnap: toggleGridSnapping,
+    setAnglesEnabled,
     toggleAngles,
-    
-    // For backwards compatibility
-    toggleGridSnapping,
-    measurementData: { 
-      startPoint: coreState.startPoint, 
-      endPoint: coreState.currentPoint, 
-      distance: coreState.startPoint && coreState.currentPoint ? 
-        Math.sqrt(
-          Math.pow(coreState.currentPoint.x - coreState.startPoint.x, 2) + 
-          Math.pow(coreState.currentPoint.y - coreState.startPoint.y, 2)
-        ) : 0, 
-      angle: 0, 
-      midPoint: coreState.startPoint && coreState.currentPoint ? {
-        x: (coreState.startPoint.x + coreState.currentPoint.x) / 2,
-        y: (coreState.startPoint.y + coreState.currentPoint.y) / 2
-      } : { x: 0, y: 0 }, 
-      unit: 'px', 
-      pixelsPerMeter: 100 
-    }
+    snapToAngle
   };
 };
 

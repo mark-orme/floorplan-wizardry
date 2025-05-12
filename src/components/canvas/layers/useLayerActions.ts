@@ -5,8 +5,7 @@ import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { ExtendedCanvas } from '@/types/fabric-unified';
+import { ExtendedFabricCanvas, ExtendedCanvas } from '@/types/canvas-types';
 
 interface UseLayerActionsProps {
   fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
@@ -23,37 +22,22 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Create a wrapper reference that properly handles the type conversion
-  const extendedCanvasRef = {
-    get current() {
-      const canvas = fabricCanvasRef.current;
-      if (canvas) {
-        // Ensure viewportTransform is defined when needed
-        if (canvas.viewportTransform === undefined) {
-          canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-        }
-        // Ensure renderOnAddRemove has a default value
-        if (canvas.renderOnAddRemove === undefined) {
-          canvas.renderOnAddRemove = true;
-        }
-      }
-      return canvas as unknown as ExtendedCanvas;
-    }
-  };
-  
-  // Use the properly typed refs for each hook
+  // Cast for compatibility with both hook signatures
+  const fabricCanvasCompatRef = fabricCanvasRef as React.MutableRefObject<FabricCanvas | null>;
+
+  // Use properly typed hook dependencies
   const { toggleLayerVisibility } = useLayerVisibility({ 
-    fabricCanvasRef: fabricCanvasRef as unknown as React.MutableRefObject<FabricCanvas | null>, 
+    fabricCanvasRef: fabricCanvasCompatRef, 
     setLayers 
   });
   
   const { toggleLayerLock } = useLayerLocking({ 
-    fabricCanvasRef: fabricCanvasRef as unknown as React.MutableRefObject<FabricCanvas | null>, 
+    fabricCanvasRef: fabricCanvasCompatRef, 
     setLayers 
   });
   
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef: extendedCanvasRef,
+    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<ExtendedCanvas | null>,
     layers,
     setLayers,
     activeLayerId,

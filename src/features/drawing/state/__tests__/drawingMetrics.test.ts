@@ -2,6 +2,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { drawingMetricsSlice } from '../drawingMetricsSlice';
 import { DrawingMode } from '@/constants/drawingModes';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('drawingMetrics reducer', () => {
   // Use the reducer directly from the slice
