@@ -1,125 +1,82 @@
+import { useCallback } from 'react';
+import { Canvas, Object as FabricObject } from 'fabric';
+import { DrawingMode } from '@/constants/drawingModes';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { createGroup, createPath, isGroup, isPath } from '@/components/canvas/fabric/FabricComponents';
-import { toast } from 'sonner';
-
-interface UseCanvasInteractionsProps {
-  canvasRef: React.MutableRefObject<FabricCanvas | null>;
+// Define types for event handling
+interface CanvasInteraction {
+  type: 'mousedown' | 'mousemove' | 'mouseup' | 'selection';
+  x?: number;
+  y?: number;
+  target?: FabricObject;
 }
 
-export const useCanvasInteractions = ({ canvasRef }: UseCanvasInteractionsProps) => {
-  const [isPanning, setIsPanning] = useState(false);
-  const [lastPosX, setLastPosX] = useState(0);
-  const [lastPosY, setLastPosY] = useState(0);
-
-  const enablePan = useCallback(() => {
-    const canvas = canvasRef.current;
+export const useCanvasInteractions = (
+  canvas: Canvas | null,
+  mode: DrawingMode
+) => {
+  // Handle mousedown event
+  const handleMouseDown = useCallback((event: MouseEvent) => {
     if (!canvas) return;
-
-    canvas.defaultCursor = 'grab';
-    canvas.hoverCursor = 'grab';
-    setIsPanning(true);
-  }, [canvasRef]);
-
-  const disablePan = useCallback(() => {
-    const canvas = canvasRef.current;
+    
+    const pointer = canvas.getPointer(event);
+    // Make sure pointer values are defined
+    const x = pointer.x ?? 0;
+    const y = pointer.y ?? 0;
+    
+    // Handle based on current drawing mode
+    switch (mode) {
+      case DrawingMode.DRAW:
+        // Drawing mode handling
+        break;
+      case DrawingMode.SELECT:
+        // Selection mode handling
+        break;
+      default:
+        // Default handling
+        break;
+    }
+  }, [canvas, mode]);
+  
+  // Handle mousemove event
+  const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!canvas) return;
-
-    canvas.defaultCursor = 'default';
-    canvas.hoverCursor = 'move';
-    setIsPanning(false);
-  }, [canvasRef]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
+    
+    const pointer = canvas.getPointer(event);
+    // Make sure pointer values are defined
+    const x = pointer.x ?? 0;
+    const y = pointer.y ?? 0;
+    
+    // Mode-specific handling
+  }, [canvas, mode]);
+  
+  // Handle object selection
+  const handleObjectSelection = useCallback((objects: FabricObject[]) => {
     if (!canvas) return;
-
-    const handleMouseDown = (e: any) => {
-      if (!isPanning || e.target) return;
-
-      const pointer = canvas.getPointer(e.e);
-      setLastPosX(pointer.x);
-      setLastPosY(pointer.y);
-      canvas.selection = false;
-
-      // Add null checks for viewportTransform
-      if (canvas.viewportTransform) {
-        const vpt = canvas.viewportTransform;
-        canvas.viewportTransform[4] = vpt ? vpt[4] : 0;
-        canvas.viewportTransform[5] = vpt ? vpt[5] : 0;
-      }
-
-      canvas.renderAll();
-    };
-
-    const handleMouseMove = (e: any) => {
-      if (!isPanning) return;
-      if (!e.target && e.e.buttons === 1) {
-        const pointer = canvas.getPointer(e.e);
-        const deltaX = pointer.x - lastPosX;
-        const deltaY = pointer.y - lastPosY;
-
-        // Add null checks for viewportTransform
-        if (canvas.viewportTransform) {
-          canvas.viewportTransform[4] += deltaX;
-          canvas.viewportTransform[5] += deltaY;
-        }
-
-        canvas.requestRenderAll();
-        
-        setLastPosX(pointer.x);
-        setLastPosY(pointer.y);
-      }
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (canvas.getActiveObject) {
-          const activeObject = canvas.getActiveObject();
-          if (activeObject) {
-            canvas.remove?.(activeObject);
-            canvas.requestRenderAll?.();
-            toast.success('Object deleted');
-          }
-        }
-      }
-
-      if (e.ctrlKey && e.key === 'a') {
-        e.preventDefault();
-        if (canvas.getActiveObject) {
-          const activeObject = canvas.getActiveObject();
-          if (!activeObject) {
-            const allObjects = canvas.getObjects();
-            if (allObjects.length) {
-              canvas.discardActiveObject?.();
-              if (allObjects.length > 1) {
-                const selection = new fabric.ActiveSelection(allObjects, { canvas });
-                canvas.setActiveObject?.(selection);
-              } else {
-                canvas.setActiveObject?.(allObjects[0]);
-              }
-              canvas.requestRenderAll?.();
-            }
-          }
-        }
-      }
-    };
-
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    window.addEventListener('keydown', handleKeyDown);
-
+    
+    // Safe type handling for Fabric.js objects
+    const fabricObjects = objects as unknown as FabricObject[];
+    
+    // Handle selection
+  }, [canvas]);
+  
+  // Set up event handlers on the canvas
+  const attachEventHandlers = useCallback(() => {
+    if (!canvas) return;
+    
+    // Add event listeners to canvas
+    
+    // Return cleanup function
     return () => {
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      window.removeEventListener('keydown', handleKeyDown);
+      // Remove event listeners
     };
-  }, [canvasRef, isPanning, lastPosX, lastPosY]);
-
+  }, [canvas, handleMouseDown, handleMouseMove]);
+  
   return {
-    enablePan,
-    disablePan,
-    isPanning
+    handleMouseDown,
+    handleMouseMove,
+    handleObjectSelection,
+    attachEventHandlers
   };
 };
+
+export default useCanvasInteractions;

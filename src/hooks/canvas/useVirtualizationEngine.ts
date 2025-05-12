@@ -1,249 +1,142 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { Canvas } from 'fabric';
 
-interface UseVirtualizationEngineProps {
-  canvasRef: React.MutableRefObject<Canvas | null>;
-  // Add other props as needed
+import { useState, useEffect, useCallback } from 'react';
+import lodash from 'lodash';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
+import { DrawingMode } from '@/constants/drawingModes';
+
+// Define virtualization grid properties
+interface VirtualizationGrid {
+  cols: number;
+  rows: number;
+  cellWidth: number;
+  cellHeight: number;
+  visibleCells: Set<string>;
 }
 
-/**
- * Hook for optimizing canvas rendering with virtualization
- */
-export const useVirtualizationEngine = ({ canvasRef }: UseVirtualizationEngineProps) => {
-  const [isEnabled, setIsEnabled] = useState<boolean>(false);
-  const [viewportBounds, setViewportBounds] = useState<{
-    left: number;
+export function useVirtualizationEngine(canvas: FabricCanvas | null) {
+  const [grid, setGrid] = useState<VirtualizationGrid | null>(null);
+  const [viewportBoundary, setViewportBoundary] = useState<{
     top: number;
+    left: number;
     right: number;
     bottom: number;
   } | null>(null);
   
-  const visibleObjectsRef = useRef<Set<any>>(new Set());
-  const offscreenObjectsRef = useRef<Set<any>>(new Set());
-  
-  /**
-   * Check if an object is within the viewport
-   */
-  const isObjectInViewport = useCallback((obj: any, bounds: {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
-  }): boolean => {
-    if (!obj) return false;
-    
-    // Get object bounds
-    const objBounds = obj.getBoundingRect ? obj.getBoundingRect() : null;
-    if (!objBounds) return true; // If can't get bounds, consider it visible
-    
-    // Object is visible if any part of it intersects with the viewport
-    return !(
-      objBounds.left > bounds.right ||
-      objBounds.left + objBounds.width < bounds.left ||
-      objBounds.top > bounds.bottom ||
-      objBounds.top + objBounds.height < bounds.top
-    );
-  }, []);
-  
-  /**
-   * Update the viewport bounds based on the current canvas transformations
-   */
-  const updateViewportBounds = useCallback(() => {
-    const canvas = canvasRef.current;
+  // Initialize the virtualization grid
+  const initializeGrid = useCallback(() => {
     if (!canvas) return;
     
-    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-    const zoom = canvas.getZoom ? canvas.getZoom() : 1;
-    const width = canvas.getWidth ? canvas.getWidth() : 800;
-    const height = canvas.getHeight ? canvas.getHeight() : 600;
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
     
-    // Calculate viewport bounds
-    const bounds = {
-      left: -vpt[4] / zoom,
-      top: -vpt[5] / zoom,
-      right: (-vpt[4] + width) / zoom,
-      bottom: (-vpt[5] + height) / zoom,
-    };
+    const cellSize = 100; // Size of each virtual cell
+    const cols = Math.ceil(width / cellSize);
+    const rows = Math.ceil(height / cellSize);
     
-    setViewportBounds(bounds);
-    return bounds;
-  }, [canvasRef]);
-  
-  /**
-   * Update object visibility based on viewport
-   */
-  const updateObjectVisibility = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !isEnabled) return;
-    
-    const bounds = updateViewportBounds() || viewportBounds;
-    if (!bounds) return;
-    
-    // Process all objects
-    const objectsToProcess = [...(canvas.getObjects ? canvas.getObjects() : [])];
-    const visibleObjects = visibleObjectsRef.current;
-    const offscreenObjects = offscreenObjectsRef.current;
-    
-    visibleObjects.clear();
-    offscreenObjects.clear();
-    
-    // Process each object
-    objectsToProcess.forEach(obj => {
-      if (!obj) return;
-      
-      // Skip objects marked for skipping
-      if ((obj as any).skipVirtualization) return;
-      
-      // Check if object is in viewport
-      if (isObjectInViewport(obj, bounds)) {
-        visibleObjects.add(obj);
-        // Make object visible and enable caching
-        if (obj.visible === false) {
-          obj.set('visible', true);
-        }
-        if (obj.objectCaching === false) {
-          obj.set('objectCaching', true);
-        }
-      } else {
-        offscreenObjects.add(obj);
-        // Make object invisible and disable caching
-        if (obj.visible !== false) {
-          obj.set('visible', false);
-        }
-        if (obj.objectCaching !== false) {
-          obj.set('objectCaching', false);
-        }
-      }
+    setGrid({
+      cols,
+      rows,
+      cellWidth: cellSize,
+      cellHeight: cellSize,
+      visibleCells: new Set()
     });
     
-    canvas.renderAll();
-  }, [canvasRef, isEnabled, isObjectInViewport, updateViewportBounds, viewportBounds]);
+    updateVisibleCells();
+  }, [canvas]);
   
-  // Debounce and throttle for better performance
-  const debouncedUpdateVisibility = useRef(
-    debounce(() => {
-      updateObjectVisibility();
-    }, 100)
-  ).current;
-  
-  const throttledUpdateVisibility = useRef(
-    throttle(() => {
-      updateObjectVisibility();
-    }, 100)
-  ).current;
-  
-  /**
-   * Enable virtualization
-   */
-  const enableVirtualization = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  // Update which cells are currently visible
+  const updateVisibleCells = useCallback(() => {
+    if (!canvas || !grid) return;
     
-    setIsEnabled(true);
+    // Get current viewport from canvas transform
+    const vpt = canvas.viewportTransform;
+    if (!vpt) return;
     
-    // Set skipOffscreen to true for better performance
-    if ('skipOffscreen' in canvas) {
-      (canvas as any).skipOffscreen = true;
-    }
+    // Calculate viewport boundaries
+    const zoom = canvas.getZoom();
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
     
-    updateObjectVisibility();
-  }, [canvasRef, updateObjectVisibility]);
-  
-  /**
-   * Disable virtualization
-   */
-  const disableVirtualization = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const viewLeft = -vpt[4] / zoom;
+    const viewTop = -vpt[5] / zoom;
+    const viewRight = viewLeft + width / zoom;
+    const viewBottom = viewTop + height / zoom;
     
-    setIsEnabled(false);
-    
-    // Restore all objects to visible state
-    const allObjects = canvas.getObjects ? canvas.getObjects() : [];
-    allObjects.forEach(obj => {
-      if (obj && obj.visible === false) {
-        obj.set('visible', true);
-      }
+    // Store viewport boundary for debugging or other uses
+    setViewportBoundary({
+      left: viewLeft,
+      top: viewTop,
+      right: viewRight,
+      bottom: viewBottom
     });
     
-    // Disable skipOffscreen
-    if ('skipOffscreen' in canvas) {
-      (canvas as any).skipOffscreen = false;
+    // Determine which grid cells are visible
+    const visibleCells = new Set<string>();
+    
+    // Calculate visible cell range
+    const startCol = Math.floor(viewLeft / grid.cellWidth);
+    const endCol = Math.ceil(viewRight / grid.cellWidth);
+    const startRow = Math.floor(viewTop / grid.cellHeight);
+    const endRow = Math.ceil(viewBottom / grid.cellHeight);
+    
+    // Add all visible cells to the set
+    for (let col = startCol; col <= endCol; col++) {
+      for (let row = startRow; row <= endRow; row++) {
+        if (col >= 0 && col < grid.cols && row >= 0 && row < grid.rows) {
+          visibleCells.add(`${col}:${row}`);
+        }
+      }
     }
     
-    canvas.renderAll();
-  }, [canvasRef]);
+    setGrid(prev => prev ? {
+      ...prev,
+      visibleCells
+    } : null);
+    
+  }, [canvas, grid]);
   
-  /**
-   * Register event handlers
-   */
-  const registerEvents = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !isEnabled) return;
-    
-    // Attach event handlers
-    if (canvas.on) {
-      canvas.on('object:moving', throttledUpdateVisibility);
-      canvas.on('object:scaling', throttledUpdateVisibility);
-      canvas.on('object:rotating', throttledUpdateVisibility);
-      canvas.on('mouse:wheel', throttledUpdateVisibility);
-      canvas.on('zoom:changed', debouncedUpdateVisibility);
-      canvas.on('viewport:translate', debouncedUpdateVisibility);
-    }
-    
-    // Initial update
-    updateObjectVisibility();
-    
-  }, [canvasRef, isEnabled, debouncedUpdateVisibility, throttledUpdateVisibility, updateObjectVisibility]);
+  // Handle viewport changes (pan, zoom)
+  const handleViewportChange = useCallback(() => {
+    updateVisibleCells();
+  }, [updateVisibleCells]);
   
-  /**
-   * Unregister event handlers
-   */
-  const unregisterEvents = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    // Detach event handlers
-    if (canvas.off) {
-      canvas.off('object:moving', throttledUpdateVisibility);
-      canvas.off('object:scaling', throttledUpdateVisibility);
-      canvas.off('object:rotating', throttledUpdateVisibility);
-      canvas.off('mouse:wheel', throttledUpdateVisibility);
-      canvas.off('zoom:changed', debouncedUpdateVisibility);
-      canvas.off('viewport:translate', debouncedUpdateVisibility);
-    }
-    
-  }, [canvasRef, debouncedUpdateVisibility, throttledUpdateVisibility]);
-  
-  // Effect to handle setup and cleanup
+  // Attach and detach event handlers
   useEffect(() => {
-    if (isEnabled) {
-      registerEvents();
-    } else {
-      unregisterEvents();
-    }
+    if (!canvas) return;
+    
+    // Initialize the grid
+    initializeGrid();
+    
+    // Setup event listeners for canvas viewport changes
+    canvas.on('viewport:translate', handleViewportChange);
+    canvas.on('zoom:change', handleViewportChange);
+    canvas.on('canvas:resized', initializeGrid);
     
     return () => {
-      // Clean up
-      unregisterEvents();
-      if (typeof debouncedUpdateVisibility.cancel === 'function') {
-        debouncedUpdateVisibility.cancel();
-      }
-      if (typeof throttledUpdateVisibility.cancel === 'function') {
-        throttledUpdateVisibility.cancel();
-      }
+      canvas.off('viewport:translate', handleViewportChange);
+      canvas.off('zoom:change', handleViewportChange);
+      canvas.off('canvas:resized', initializeGrid);
     };
-  }, [isEnabled, registerEvents, unregisterEvents, debouncedUpdateVisibility, throttledUpdateVisibility]);
+  }, [canvas, initializeGrid, handleViewportChange]);
+  
+  // Debounced version of updateVisibleCells for performance
+  const debouncedUpdateVisibleCells = lodash.debounce(() => {
+    updateVisibleCells();
+  }, 100);
+  
+  // Throttled version of updateVisibleCells for continuous updates
+  const throttledUpdateVisibleCells = lodash.throttle(() => {
+    updateVisibleCells();
+  }, 50);
   
   return {
-    isEnabled,
-    enableVirtualization,
-    disableVirtualization,
-    visibleObjects: visibleObjectsRef.current,
-    offscreenObjects: offscreenObjectsRef.current,
-    viewportBounds,
-    updateObjectVisibility
+    grid,
+    viewportBoundary,
+    updateVisibleCells,
+    debouncedUpdateVisibleCells,
+    throttledUpdateVisibleCells
   };
-};
+}
 
 export default useVirtualizationEngine;
