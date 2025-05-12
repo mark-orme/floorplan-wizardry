@@ -1,70 +1,66 @@
 
-import { useCallback, useState } from 'react';
-import { Canvas } from 'fabric';
-import { Point } from '@/types/fabric-unified';
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/canvas-unified';
 
-export interface UseCanvasPanProps {
-  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+interface UseCanvasPanProps {
+  canvasRef: React.MutableRefObject<FabricCanvas | null>;
   enabled?: boolean;
-  onPanStart?: () => void;
-  onPanEnd?: () => void;
-  onPan?: (delta: Point) => void;
 }
 
-export const useCanvasPan = ({
-  fabricCanvasRef,
-  enabled = true,
-  onPanStart,
-  onPanEnd,
-  onPan
-}: UseCanvasPanProps) => {
+export const useCanvasPan = ({ canvasRef, enabled = false }: UseCanvasPanProps) => {
   const [isPanning, setIsPanning] = useState(false);
   const [lastPoint, setLastPoint] = useState<Point | null>(null);
-  
-  const startPan = useCallback((point: Point) => {
-    if (!enabled) return;
-    
+
+  const startPan = useCallback((point: { x: number, y: number }) => {
     setIsPanning(true);
     setLastPoint(point);
-    onPanStart?.();
-  }, [enabled, onPanStart]);
-  
-  const pan = useCallback((point: Point) => {
-    if (!isPanning || !lastPoint) return;
-    
-    const delta = {
-      x: point.x - lastPoint.x,
-      y: point.y - lastPoint.y
-    };
-    
-    const canvas = fabricCanvasRef.current;
-    if (canvas && canvas.viewportTransform) {
-      // Update viewport transform
-      canvas.viewportTransform[4] += delta.x;
-      canvas.viewportTransform[5] += delta.y;
-      canvas.requestRenderAll();
-      
-      // Call onPan callback
-      onPan?.(delta);
+  }, []);
+
+  const pan = useCallback((point: { x: number, y: number }) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !lastPoint || !isPanning) return;
+
+    // Calculate delta
+    const deltaX = point.x - lastPoint.x;
+    const deltaY = point.y - lastPoint.y;
+
+    // Update viewport transform with null check
+    if (canvas.viewportTransform) {
+      canvas.viewportTransform[4] += deltaX;
+      canvas.viewportTransform[5] += deltaY;
     }
+
+    canvas.requestRenderAll();
     
+    // Update last point
     setLastPoint(point);
-  }, [isPanning, lastPoint, fabricCanvasRef, onPan]);
-  
+  }, [canvasRef, lastPoint, isPanning]);
+
   const endPan = useCallback(() => {
-    if (!isPanning) return;
-    
     setIsPanning(false);
     setLastPoint(null);
-    onPanEnd?.();
-  }, [isPanning, onPanEnd]);
-  
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !enabled) return;
+
+    // Set cursor for panning
+    canvas.defaultCursor = 'grab';
+
+    return () => {
+      if (canvas) {
+        canvas.defaultCursor = 'default';
+      }
+    };
+  }, [canvasRef, enabled]);
+
   return {
     isPanning,
     startPan,
     pan,
-    endPan,
-    setIsPanning
+    endPan
   };
 };
 

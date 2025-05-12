@@ -5,11 +5,11 @@ import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { UnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
+import { UnifiedCanvas, asUnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
 import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 
 interface UseLayerActionsProps {
-  fabricCanvasRef: React.MutableRefObject<any>; // Use any to bridge the type gap
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | UnifiedCanvas | null>; // Updated to accept UnifiedCanvas
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;

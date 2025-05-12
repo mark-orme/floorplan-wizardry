@@ -1,13 +1,15 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { Canvas } from 'fabric';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { debounce, throttle } from 'lodash';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
+interface UseVirtualizationEngineProps {
+  canvasRef: React.MutableRefObject<Canvas | null>;
+  // Add other props as needed
+}
 
 /**
  * Hook for optimizing canvas rendering with virtualization
  */
-export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<Canvas | null>) => {
+export const useVirtualizationEngine = ({ canvasRef }: UseVirtualizationEngineProps) => {
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const [viewportBounds, setViewportBounds] = useState<{
     left: number;
@@ -16,13 +18,13 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     bottom: number;
   } | null>(null);
   
-  const visibleObjectsRef = useRef<Set<FabricObject>>(new Set());
-  const offscreenObjectsRef = useRef<Set<FabricObject>>(new Set());
+  const visibleObjectsRef = useRef<Set<any>>(new Set());
+  const offscreenObjectsRef = useRef<Set<any>>(new Set());
   
   /**
    * Check if an object is within the viewport
    */
-  const isObjectInViewport = useCallback((obj: FabricObject, bounds: {
+  const isObjectInViewport = useCallback((obj: any, bounds: {
     left: number;
     top: number;
     right: number;
@@ -47,7 +49,7 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
    * Update the viewport bounds based on the current canvas transformations
    */
   const updateViewportBounds = useCallback(() => {
-    const canvas = fabricCanvasRef.current as ExtendedFabricCanvas;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     
     const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
@@ -65,13 +67,13 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     
     setViewportBounds(bounds);
     return bounds;
-  }, [fabricCanvasRef]);
+  }, [canvasRef]);
   
   /**
    * Update object visibility based on viewport
    */
   const updateObjectVisibility = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas || !isEnabled) return;
     
     const bounds = updateViewportBounds() || viewportBounds;
@@ -115,7 +117,7 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     });
     
     canvas.renderAll();
-  }, [fabricCanvasRef, isEnabled, isObjectInViewport, updateViewportBounds, viewportBounds]);
+  }, [canvasRef, isEnabled, isObjectInViewport, updateViewportBounds, viewportBounds]);
   
   // Debounce and throttle for better performance
   const debouncedUpdateVisibility = useRef(
@@ -134,7 +136,7 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
    * Enable virtualization
    */
   const enableVirtualization = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     
     setIsEnabled(true);
@@ -145,13 +147,13 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     }
     
     updateObjectVisibility();
-  }, [fabricCanvasRef, updateObjectVisibility]);
+  }, [canvasRef, updateObjectVisibility]);
   
   /**
    * Disable virtualization
    */
   const disableVirtualization = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     
     setIsEnabled(false);
@@ -170,13 +172,13 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     }
     
     canvas.renderAll();
-  }, [fabricCanvasRef]);
+  }, [canvasRef]);
   
   /**
    * Register event handlers
    */
   const registerEvents = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas || !isEnabled) return;
     
     // Attach event handlers
@@ -192,13 +194,13 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
     // Initial update
     updateObjectVisibility();
     
-  }, [fabricCanvasRef, isEnabled, debouncedUpdateVisibility, throttledUpdateVisibility, updateObjectVisibility]);
+  }, [canvasRef, isEnabled, debouncedUpdateVisibility, throttledUpdateVisibility, updateObjectVisibility]);
   
   /**
    * Unregister event handlers
    */
   const unregisterEvents = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
     
     // Detach event handlers
@@ -211,7 +213,7 @@ export const useVirtualizationEngine = (fabricCanvasRef: React.MutableRefObject<
       canvas.off('viewport:translate', debouncedUpdateVisibility);
     }
     
-  }, [fabricCanvasRef, debouncedUpdateVisibility, throttledUpdateVisibility]);
+  }, [canvasRef, debouncedUpdateVisibility, throttledUpdateVisibility]);
   
   // Effect to handle setup and cleanup
   useEffect(() => {

@@ -15,11 +15,15 @@ export interface UnifiedCanvas extends Canvas {
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean;
   renderOnAddRemove: boolean;
-  viewportTransform: number[];
+  viewportTransform: number[]; // Ensure this is non-optional
   isDrawingMode: boolean;
   selection: boolean;
   defaultCursor: string;
   hoverCursor: string;
+  freeDrawingBrush: {
+    color: string;
+    width: number;
+  };
   getActiveObject?: () => any;
   forEachObject?: (callback: (obj: FabricObject) => void) => void;
   zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
@@ -36,7 +40,7 @@ export function isCanvas(obj: any): obj is Canvas {
 }
 
 /**
- * Type converter to safely cast a Canvas to an ExtendedCanvas
+ * Type converter to safely cast a Canvas to an UnifiedCanvas
  */
 export function asUnifiedCanvas(canvas: Canvas | null): UnifiedCanvas | null {
   if (!canvas) return null;
@@ -70,6 +74,13 @@ export function asUnifiedCanvas(canvas: Canvas | null): UnifiedCanvas | null {
     (canvas as any).hoverCursor = 'move';
   }
   
+  if ((canvas as any).freeDrawingBrush === undefined) {
+    (canvas as any).freeDrawingBrush = {
+      color: '#000000',
+      width: 1
+    };
+  }
+  
   return canvas as unknown as UnifiedCanvas;
 }
 
@@ -82,4 +93,11 @@ export function bridgeCanvasTypes<T extends Canvas>(
   return asUnifiedCanvas(canvas as Canvas);
 }
 
-export type { Point } from './core/Point';
+// Add this missing type for Point to fix some errors
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export type { Point as FabricPoint } from './core/Point';
+export type { ExtendedCanvas } from './fabric-unified';

@@ -10,7 +10,7 @@ export const useDrawingState = () => {
   const [drawingState, setDrawingState] = useState<DrawingState>(createDefaultDrawingState());
   
   const startDrawing = useCallback((x: number, y: number) => {
-    setDrawingState(prev => ({
+    setDrawingState((prev: DrawingState) => ({
       ...prev,
       isDrawing: true,
       startPoint: { x, y },
@@ -20,7 +20,7 @@ export const useDrawingState = () => {
   }, []);
   
   const updateDrawing = useCallback((x: number, y: number) => {
-    setDrawingState(prev => {
+    setDrawingState((prev: DrawingState) => {
       if (!prev.isDrawing) return prev;
       
       return {
@@ -32,7 +32,7 @@ export const useDrawingState = () => {
   }, []);
   
   const endDrawing = useCallback(() => {
-    setDrawingState(prev => ({
+    setDrawingState((prev: DrawingState) => ({
       ...prev,
       isDrawing: false
     }));
@@ -43,7 +43,7 @@ export const useDrawingState = () => {
   }, []);
   
   const updateCursorPosition = useCallback((x: number, y: number) => {
-    setDrawingState(prev => ({
+    setDrawingState((prev: DrawingState) => ({
       ...prev,
       cursorPosition: { x, y }
     }));

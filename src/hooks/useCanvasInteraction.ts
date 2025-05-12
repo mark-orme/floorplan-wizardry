@@ -1,87 +1,93 @@
-
-import { useCallback, useRef } from 'react';
-import { Object as FabricObject } from 'fabric';
-import { DrawingMode } from '@/constants/drawingModes';
-import { ExtendedFabricCanvas } from '@/types/fabric-unified';
+import { useCallback, useEffect, MutableRefObject } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
+import { ExtendedCanvas } from '@/types/fabric-unified'; // Fixed import
+import { ExtendedFabricCanvas, ExtendedFabricObject } from '@/types/canvas-types';
 
 interface UseCanvasInteractionProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
-  tool: DrawingMode;
-  saveCurrentState: () => void;
+  canvasRef: MutableRefObject<ExtendedCanvas | null>;
+  onSelectionChange?: (selected: boolean) => void;
+  onObjectModified?: (e: any) => void;
+  onObjectRemoved?: (e: any) => void;
+  onObjectAdded?: (e: any) => void;
+  onCanvasClicked?: (e: any) => void;
+  selectable?: boolean;
 }
 
 export const useCanvasInteraction = ({
-  fabricCanvasRef,
-  tool,
-  saveCurrentState
+  canvasRef,
+  onSelectionChange,
+  onObjectModified,
+  onObjectRemoved,
+  onObjectAdded,
+  onCanvasClicked,
+  selectable = true
 }: UseCanvasInteractionProps) => {
   const isDragging = useRef(false);
   const lastPosition = useRef({ x: 0, y: 0 });
 
   const handleObjectSelected = useCallback((opt: any) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || tool !== DrawingMode.SELECT) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !selectable) return;
 
     // Implementation goes here
     console.log('Object selected', opt.target);
-    saveCurrentState();
-  }, [fabricCanvasRef, tool, saveCurrentState]);
+    onSelectionChange && onSelectionChange(true);
+  }, [canvasRef, selectable, onSelectionChange]);
 
   const handleObjectModified = useCallback((opt: any) => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     // Implementation goes here
     console.log('Object modified', opt.target);
-    saveCurrentState();
-  }, [fabricCanvasRef, saveCurrentState]);
+    onObjectModified && onObjectModified(opt);
+  }, [canvasRef, onObjectModified]);
 
   const deleteSelectedObjects = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     const activeObjects = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
     if (activeObjects.length > 0) {
-      activeObjects.forEach((obj: FabricObject) => {
+      activeObjects.forEach((obj: ExtendedFabricObject) => {
         canvas.remove(obj);
       });
       if (canvas.discardActiveObject) {
         canvas.discardActiveObject();
       }
       canvas.renderAll();
-      saveCurrentState();
     }
-  }, [fabricCanvasRef, saveCurrentState]);
+  }, [canvasRef]);
 
   const enablePointSelection = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     canvas.selection = true;
-    canvas.forEachObject && canvas.forEachObject((obj: FabricObject) => {
+    canvas.forEachObject && canvas.forEachObject((obj: ExtendedFabricObject) => {
       obj.selectable = true;
     });
-  }, [fabricCanvasRef]);
+  }, [canvasRef]);
 
   const setupSelectionMode = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     // Use type-safe event handlers with correct parameters
     canvas.off('object:selected', handleObjectSelected as any);
     canvas.off('object:modified', handleObjectModified as any);
 
-    if (tool === DrawingMode.SELECT) {
+    if (selectable) {
       enablePointSelection();
       canvas.on('object:selected', handleObjectSelected as any);
       canvas.on('object:modified', handleObjectModified as any);
     } else {
       canvas.selection = false;
-      canvas.forEachObject && canvas.forEachObject((obj: FabricObject) => {
+      canvas.forEachObject && canvas.forEachObject((obj: ExtendedFabricObject) => {
         obj.selectable = false;
       });
     }
-  }, [fabricCanvasRef, tool, enablePointSelection, handleObjectSelected, handleObjectModified]);
+  }, [canvasRef, selectable, enablePointSelection, handleObjectSelected, handleObjectModified]);
 
   const startInteraction = useCallback((event: any) => {
     isDragging.current = true;

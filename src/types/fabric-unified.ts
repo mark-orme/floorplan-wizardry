@@ -63,12 +63,29 @@ export interface ExtendedCanvas extends Canvas {
     color: string;
     width: number;
   };
-  wrapperEl: HTMLElement; // Changed from HTMLDivElement to be more generic
-  viewportTransform: number[] | undefined; // Allow undefined to match Canvas type
+  wrapperEl: HTMLElement;
+  viewportTransform: number[]; // Make this non-optional
   renderOnAddRemove: boolean;
   skipTargetFind: boolean;
   allowTouchScrolling: boolean;
 }
+
+// Add DrawingState interface and createDefaultDrawingState function
+export interface DrawingState {
+  isDrawing: boolean;
+  startPoint: CorePoint | null;
+  currentPoint: CorePoint | null;
+  points: CorePoint[];
+  cursorPosition: CorePoint | null;
+}
+
+export const createDefaultDrawingState = (): DrawingState => ({
+  isDrawing: false,
+  startPoint: null,
+  currentPoint: null,
+  points: [],
+  cursorPosition: null
+});
 
 // Debug info state for useCanvasDebug
 export interface DebugInfoState {
@@ -143,6 +160,7 @@ export interface FloorPlan {
   label?: string;
   width?: number;
   height?: number;
+  level?: number; // Added level property
 }
 
 // Export MeasurementData type for compatibility
@@ -161,4 +179,3 @@ export interface MeasurementData {
   snapType?: 'grid' | 'angle' | 'both';
   pixelsPerMeter?: number;
 }
-

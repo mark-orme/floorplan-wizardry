@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Point';
+import { Point } from '@/types/canvas-unified';
 import { useLineStateCore } from './useLineStateCore';
 import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
 import { useLineAngleSnap } from './useLineAngleSnap';
@@ -46,8 +46,9 @@ export const useLineState = ({
     setCurrentPoint(snappedPoint);
     setIsDrawing(true);
     
-    // Create the initial line
-    currentLineRef.current = createLine(snappedPoint, snappedPoint);
+    // Fix function signature mismatch - line 35
+    // createLine should take a single point argument
+    currentLineRef.current = createLine(snappedPoint);
   }, [createLine, setIsDrawing, setStartPoint, setCurrentPoint, snapToGrid]);
   
   /**
@@ -68,7 +69,9 @@ export const useLineState = ({
     
     // Update the line on the canvas
     if (currentLineRef.current) {
-      updateDrawingLine(currentLineRef.current, startPoint, snappedPoint);
+      // Fix function signature mismatch - line 82
+      // updateDrawingLine should take the line and a point
+      updateDrawingLine(currentLineRef.current, snappedPoint);
     }
   }, [isDrawing, startPoint, updateDrawingLine, snapToGrid, snapToAngle, anglesEnabled, setCurrentPoint]);
   
@@ -79,7 +82,7 @@ export const useLineState = ({
     if (!isDrawing || !startPoint || !currentPoint) return null;
     
     // Finalize the line
-    const finalLine = finalizeLine(currentLineRef.current, startPoint, currentPoint);
+    const finalLine = finalizeLine(currentLineRef.current, currentPoint);
     
     // Save the current state for undo functionality
     saveCurrentState();
