@@ -13,7 +13,10 @@ export const usePropertyPageAuth = () => {
   const [hasError, setHasError] = useState(false);
   
   // Get auth context properly - always call hooks at the top level
-  const { user, userRole, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  
+  // Use a fallback role if userRole is not available in context
+  const userRole = (user as any)?.role || null;
   
   /**
    * Determines if user has access to property management based on role

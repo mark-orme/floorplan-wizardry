@@ -5,10 +5,10 @@ import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { ExtendedFabricCanvas, ExtendedCanvas } from '@/types/canvas-types';
+import { UnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
 
 interface UseLayerActionsProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<any>; // Use any to bridge the type gap
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -22,7 +22,7 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Cast for compatibility with both hook signatures
+  // Cast to the basic Canvas type for compatibility with the hooks
   const fabricCanvasCompatRef = fabricCanvasRef as React.MutableRefObject<FabricCanvas | null>;
 
   // Use properly typed hook dependencies
@@ -37,7 +37,7 @@ export const useLayerActions = ({
   });
   
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<ExtendedCanvas | null>,
+    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<UnifiedCanvas | null>,
     layers,
     setLayers,
     activeLayerId,

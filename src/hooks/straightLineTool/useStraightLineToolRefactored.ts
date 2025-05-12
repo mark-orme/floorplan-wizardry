@@ -1,186 +1,221 @@
-
-import { useCallback, useState, useRef } from 'react';
-import { Canvas } from 'fabric';
+// Import fabric library correctly
+import { fabric } from 'fabric';
+import { useState, useCallback, useMemo } from 'react';
 import { Point } from '@/types/core/Point';
 import { MeasurementData } from '@/types/fabric-unified';
-import useLineAngleSnap from './useLineAngleSnap';
 
-interface UseStraightLineToolRefactoredOptions {
-  canvas: Canvas | null;
-  color?: string;
-  thickness?: number;
-  snapToGrid?: boolean;
-  gridSize?: number;
-  enabled?: boolean;
-  onLineCreated?: (start: Point, end: Point, measurement: MeasurementData) => void;
-}
+// Default measurement data
+const defaultMeasurementData: MeasurementData = {
+  distance: 0,
+  angle: 0,
+  unit: 'px',
+  snapped: false
+};
 
-export const useStraightLineToolRefactored = ({
-  canvas,
-  color = '#000000',
-  thickness = 2,
-  snapToGrid = false,
-  gridSize = 20,
-  enabled = false,
-  onLineCreated,
-}: UseStraightLineToolRefactoredOptions) => {
-  // State
+/**
+ * Refactored hook for the straight line tool
+ */
+export const useStraightLineToolRefactored = (initialData: MeasurementData = defaultMeasurementData) => {
+  const [measurementData, setMeasurementData] = useState<MeasurementData>(initialData);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [activeLine, setActiveLine] = useState<any | null>(null);
-  const [measurementData, setMeasurementData] = useState<MeasurementData>({});
-  const startPointRef = useRef<Point | null>(null);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [endPoint, setEndPoint] = useState<Point | null>(null);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [snapToAngles, setSnapToAngles] = useState(false);
+  const [currentLine, setCurrentLine] = useState<fabric.Line | null>(null);
   
-  // Angle snapping
-  const { snapAngle, toggleEnabled: toggleAngleSnap, isEnabled: angleSnapEnabled } = useLineAngleSnap();
+  /**
+   * Calculate the angle between two points
+   */
+  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  }, []);
   
-  // Calculate distance between two points
+  /**
+   * Calculate the distance between two points
+   */
   const calculateDistance = useCallback((p1: Point, p2: Point): number => {
-    if (!p1 || !p2) return 0;
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
   
-  // Calculate angle between two points
-  const calculateAngle = useCallback((p1: Point, p2: Point): number => {
-    if (!p1 || !p2) return 0;
-    let angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * (180 / Math.PI);
-    if (angle < 0) angle += 360;
-    return Math.round(angle);
-  }, []);
-  
-  // Handle mousedown
-  const handleMouseDown = useCallback((e: any) => {
-    if (!canvas || !enabled) return;
-    
-    const pointer = canvas.getPointer(e.e);
-    const startPoint = { x: pointer.x, y: pointer.y };
-    
-    // Snap to grid if enabled
-    if (snapToGrid && gridSize) {
-      startPoint.x = Math.round(startPoint.x / gridSize) * gridSize;
-      startPoint.y = Math.round(startPoint.y / gridSize) * gridSize;
-    }
-    
-    startPointRef.current = startPoint;
-    
-    // Create measurement data
-    const initialData: MeasurementData = {
-      startPoint,
-      endPoint: startPoint,
-      distance: 0,
-      angle: 0,
-      unit: 'px',
+  /**
+   * Snap the point to the nearest grid cell
+   */
+  const snapPointToGrid = useCallback((point: Point, gridSize: number = 20): Point => {
+    if (!snapToGrid) return point;
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
     };
+  }, [snapToGrid]);
+  
+  /**
+   * Snap the end point to common angles from the start point
+   */
+  const snapToCommonAngles = useCallback((startP: Point, endP: Point): Point => {
+    if (!snapToAngles || !startP) return endP;
     
-    setMeasurementData(initialData);
-    setIsDrawing(true);
+    const angle = calculateAngle(startP, endP);
+    const distance = calculateDistance(startP, endP);
+    const snapAngle = Math.round(angle / 45) * 45;
     
-    // Create line
-    const line = new fabric.Line(
-      [startPoint.x, startPoint.y, startPoint.x, startPoint.y],
-      {
-        stroke: color,
-        strokeWidth: thickness,
-        selectable: false,
-        evented: false,
-      }
-    );
+    const snappedAngle = snapAngle * (Math.PI / 180);
+    return {
+      x: startP.x + Math.cos(snappedAngle) * distance,
+      y: startP.y + Math.sin(snappedAngle) * distance
+    };
+  }, [snapToAngles, calculateAngle, calculateDistance]);
+  
+  /**
+   * Create a new line on the canvas
+   */
+  const createLine = useCallback((canvas: fabric.Canvas | null, start: Point, end: Point, options?: any) => {
+    if (!canvas) return null;
+    
+    const line = new fabric.Line([start.x, start.y, end.x, end.y], {
+      stroke: options?.stroke || '#000000',
+      strokeWidth: options?.strokeWidth || 2,
+      selectable: true,
+      evented: true,
+      ...options
+    });
     
     canvas.add(line);
     canvas.renderAll();
-    setActiveLine(line);
-    
-  }, [canvas, color, thickness, snapToGrid, gridSize, enabled]);
+    return line;
+  }, []);
   
-  // Handle mousemove
-  const handleMouseMove = useCallback((e: any) => {
-    if (!canvas || !isDrawing || !activeLine || !startPointRef.current) return;
+  /**
+   * Update an existing line on the canvas
+   */
+  const updateLine = useCallback((line: fabric.Line | null, start: Point, end: Point) => {
+    if (!line) return;
     
-    const pointer = canvas.getPointer(e.e);
-    let endPoint = { x: pointer.x, y: pointer.y };
-    
-    // Apply angle snapping if enabled
-    if (angleSnapEnabled) {
-      const snapped = snapAngle(startPointRef.current, endPoint);
-      endPoint = snapped.point;
-    }
-    
-    // Snap to grid if enabled
-    if (snapToGrid && gridSize > 0) {
-      endPoint.x = Math.round(endPoint.x / gridSize) * gridSize;
-      endPoint.y = Math.round(endPoint.y / gridSize) * gridSize;
-    }
-    
-    // Calculate distance and angle
-    const distance = calculateDistance(startPointRef.current, endPoint);
-    const angle = calculateAngle(startPointRef.current, endPoint);
-    
-    // Update line
-    activeLine.set({
-      x2: endPoint.x,
-      y2: endPoint.y
+    line.set({
+      x1: start.x,
+      y1: start.y,
+      x2: end.x,
+      y2: end.y
     });
     
-    // Calculate midpoint
-    const midPoint = {
-      x: (startPointRef.current.x + endPoint.x) / 2,
-      y: (startPointRef.current.y + endPoint.y) / 2
-    };
+    if (line.canvas) {
+      line.canvas.renderAll();
+    }
+  }, []);
+  
+  /**
+   * Start drawing a line
+   */
+  const startDraw = useCallback((canvas: fabric.Canvas | null, point: Point) => {
+    setIsDrawing(true);
+    const snappedStart = snapPointToGrid(point);
+    setStartPoint(snappedStart);
+    setEndPoint(snappedStart);
+    
+    const newLine = createLine(canvas, snappedStart, snappedStart);
+    setCurrentLine(newLine);
     
     // Update measurement data
     setMeasurementData({
-      startPoint: startPointRef.current,
-      endPoint,
-      distance,
-      angle,
-      midPoint,
-      unit: 'px',
-      snapped: angleSnapEnabled,
+      startPoint: snappedStart,
+      endPoint: snappedStart,
+      distance: 0,
+      angle: 0,
+      unit: measurementData.unit || 'px',
+      snapped: snapToGrid
     });
-    
-    canvas.renderAll();
-    
-  }, [canvas, isDrawing, activeLine, snapToGrid, gridSize, angleSnapEnabled, snapAngle, calculateDistance, calculateAngle]);
+  }, [createLine, snapPointToGrid, measurementData.unit]);
   
-  // Handle mouseup
-  const handleMouseUp = useCallback(() => {
-    if (!canvas || !isDrawing || !activeLine || !startPointRef.current || !measurementData.endPoint) return;
+  /**
+   * Continue drawing a line (mousemove)
+   */
+  const continueDraw = useCallback((canvas: fabric.Canvas | null, point: Point) => {
+    if (!isDrawing || !startPoint) return;
     
-    // Finalize line
-    activeLine.set({
-      selectable: true,
-      evented: true,
-    });
-    
-    // Notify about line creation
-    if (onLineCreated && measurementData.startPoint && measurementData.endPoint) {
-      onLineCreated(
-        measurementData.startPoint,
-        measurementData.endPoint,
-        measurementData
-      );
+    // Snap end point if needed
+    let snappedEnd = snapPointToGrid(point);
+    if (snapToAngles) {
+      snappedEnd = snapToCommonAngles(startPoint, snappedEnd);
     }
     
-    // Reset state
+    // Update current end point
+    setEndPoint(snappedEnd);
+    
+    // Update the line
+    updateLine(currentLine, startPoint, snappedEnd);
+    
+    // Update measurement data
+    const distance = calculateDistance(startPoint, snappedEnd);
+    const angle = calculateAngle(startPoint, snappedEnd);
+    
+    setMeasurementData({
+      startPoint,
+      endPoint: snappedEnd,
+      distance,
+      angle,
+      unit: measurementData.unit || 'px',
+      snapped: snapToGrid || snapToAngles,
+      snapType: snapToAngles ? 'angle' : (snapToGrid ? 'grid' : undefined)
+    });
+  }, [isDrawing, startPoint, snapPointToGrid, snapToCommonAngles, updateLine, currentLine, calculateDistance, calculateAngle, measurementData.unit]);
+  
+  /**
+   * Complete the line drawing (mouseup)
+   */
+  const completeDraw = useCallback((canvas: fabric.Canvas | null) => {
     setIsDrawing(false);
-    setActiveLine(null);
-    startPointRef.current = null;
     
-    canvas.renderAll();
+    // Finalize the line - this is where you might add specific behaviors
+    // like recording the line's final position in app state
     
-  }, [canvas, isDrawing, activeLine, onLineCreated, measurementData]);
+    // Reset the current line reference but keep start/end for measurements
+    setCurrentLine(null);
+    
+    return {
+      start: startPoint,
+      end: endPoint,
+      distance: measurementData.distance || 0,
+      angle: measurementData.angle || 0
+    };
+  }, [startPoint, endPoint, measurementData]);
+  
+  /**
+   * Cancel the current drawing operation
+   */
+  const cancelDraw = useCallback((canvas: fabric.Canvas | null) => {
+    if (currentLine && canvas) {
+      canvas.remove(currentLine);
+      canvas.renderAll();
+    }
+    
+    setIsDrawing(false);
+    setStartPoint(null);
+    setEndPoint(null);
+    setCurrentLine(null);
+    
+    // Reset measurement data
+    setMeasurementData({
+      ...defaultMeasurementData,
+      unit: measurementData.unit
+    });
+  }, [currentLine, measurementData.unit]);
   
   return {
     isDrawing,
+    startPoint,
+    endPoint,
     measurementData,
-    activeLine,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    toggleAngleSnap,
-    angleSnapEnabled,
+    snapToGrid,
+    snapToAngles,
+    setSnapToGrid,
+    setSnapToAngles,
+    startDraw,
+    continueDraw,
+    completeDraw,
+    cancelDraw
   };
 };
-
-export default useStraightLineToolRefactored;

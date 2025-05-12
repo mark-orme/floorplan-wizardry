@@ -19,4 +19,18 @@ export interface FloorPlan {
   updated?: string;
   data?: any;
   thumbnail?: string;
+  width?: number;
+  height?: number;
+}
+
+/**
+ * Create an empty floor plan with default values
+ */
+export function createEmptyFloorPlan(overrides: Partial<FloorPlan> = {}): FloorPlan {
+  return {
+    id: crypto.randomUUID(),
+    name: 'Untitled Floor Plan',
+    created: new Date().toISOString(),
+    ...overrides
+  };
 }

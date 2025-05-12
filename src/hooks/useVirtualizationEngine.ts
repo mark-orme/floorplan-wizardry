@@ -34,10 +34,10 @@ export const useVirtualizationEngine = ({
 
     const zoom = canvas.getZoom() || 1;
     const visibleArea = {
-      left: -vpt[4] / zoom - paddingPx,
-      top: -vpt[5] / zoom - paddingPx,
-      right: (-vpt[4] + canvas.width!) / zoom + paddingPx,
-      bottom: (-vpt[5] + canvas.height!) / zoom + paddingPx
+      left: (-vpt[4] / zoom) - paddingPx,
+      top: (-vpt[5] / zoom) - paddingPx,
+      right: ((-vpt[4] + (canvas.width ?? viewportWidth)) / zoom) + paddingPx,
+      bottom: ((-vpt[5] + (canvas.height ?? viewportHeight)) / zoom) + paddingPx
     };
     
     visibleAreaRef.current = visibleArea;
@@ -66,7 +66,7 @@ export const useVirtualizationEngine = ({
       setVisibleObjectCount(visibleCount);
       canvas.requestRenderAll();
     });
-  }, [fabricCanvasRef, needsVirtualization, paddingPx]);
+  }, [fabricCanvasRef, needsVirtualization, paddingPx, viewportWidth, viewportHeight]);
 
   return {
     needsVirtualization,

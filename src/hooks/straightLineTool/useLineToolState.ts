@@ -25,7 +25,7 @@ export const useLineToolState = (
   
   // Get line state from the hook
   const lineState = useLineState({
-    fabricCanvasRef,
+    canvas: fabricCanvasRef.current,
     lineColor,
     lineThickness,
     saveCurrentState

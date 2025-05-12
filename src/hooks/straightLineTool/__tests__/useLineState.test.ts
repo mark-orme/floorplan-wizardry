@@ -4,6 +4,7 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useLineState } from '../useLineState';
 import { mockLineState, createMockCanvas, createMockLine, createCanvasRef } from './mockHelpers';
 import { Canvas as FabricCanvas } from 'fabric';
+import { Point } from '@/types/core/Point';
 
 // Mock dependencies
 vi.mock('../useLineStateCore', () => ({
@@ -45,7 +46,7 @@ vi.mock('../useLineDrawing', () => ({
 describe('useLineState', () => {
   const saveCurrentState = vi.fn();
   // Use the createCanvasRef helper to get a properly typed ref
-  const fabricCanvasRef = createCanvasRef();
+  const canvasRef = createCanvasRef();
   
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,19 +54,24 @@ describe('useLineState', () => {
   
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
+      canvas: canvasRef.current,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
     }));
     
     expect(result.current.isDrawing).toBeDefined();
-    expect(result.current.snapEnabled).toBeDefined();
+    // Check that snapEnabled can be accessed either directly or through a function
+    if (typeof result.current.snapEnabled === 'function') {
+      expect(result.current.snapEnabled()).toBeDefined();
+    } else {
+      expect(result.current.snapEnabled).toBeDefined();
+    }
   });
   
   it('should handle start drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
+      canvas: canvasRef.current,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -79,7 +85,7 @@ describe('useLineState', () => {
   
   it('should handle continue drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
+      canvas: canvasRef.current,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -87,13 +93,14 @@ describe('useLineState', () => {
     
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });
-      result.current.continueDrawing({ x: 30, y: 40 });
+      // Use updateLine instead of continueDrawing
+      result.current.updateLine({ x: 30, y: 40 });
     });
   });
   
   it('should handle complete drawing', () => {
     const { result } = renderHook(() => useLineState({
-      fabricCanvasRef,
+      canvas: canvasRef.current,
       lineColor: '#000000',
       lineThickness: 2,
       saveCurrentState
@@ -103,7 +110,8 @@ describe('useLineState', () => {
       // Use a single object with both properties
       const point = { x: 50, y: 60 };
       result.current.startDrawing(point);
-      result.current.completeDrawing();
+      // Use finishDrawing instead of completeDrawing
+      result.current.finishDrawing();
     });
   });
 });

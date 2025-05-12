@@ -1,105 +1,125 @@
-
-import { useCallback, useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 import { Point } from '@/types/core/Point';
-import useLineAngleSnap from './useLineAngleSnap';
+import { useLineStateCore } from './useLineStateCore';
+import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
+import { useLineAngleSnap } from './useLineAngleSnap';
+import { useLineDrawing } from './useLineDrawing';
 
-interface UseLineStateOptions {
-  gridSnapping?: boolean;
-  gridSize?: number;
+export interface UseLineStateOptions {
+  canvas: FabricCanvas | null;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState: () => void;
 }
 
 /**
- * Hook for managing line drawing state
+ * Hook for managing the state of the line tool
  */
-export const useLineState = ({ 
-  gridSnapping = false,
-  gridSize = 20
-}: UseLineStateOptions = {}) => {
-  // Line state
-  const [start, setStart] = useState<Point | null>(null);
-  const [end, setEnd] = useState<Point | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+export const useLineState = ({
+  canvas,
+  lineColor,
+  lineThickness,
+  saveCurrentState
+}: UseLineStateOptions) => {
+  const { isDrawing, setIsDrawing, startPoint, setStartPoint, currentPoint, setCurrentPoint } = 
+    useLineStateCore();
   
-  // Grid snapping
-  const [snapToGrid, setSnapToGrid] = useState(gridSnapping);
+  const { snapEnabled, toggleGridSnapping, snapToGrid } = 
+    useEnhancedGridSnapping();
   
-  // Angle snapping
-  const { snapAngle, isEnabled: anglesEnabled, setEnabled: setAnglesEnabled, toggleEnabled: toggleAngles } = useLineAngleSnap();
+  const { anglesEnabled, toggleAngles, snapToAngle } = 
+    useLineAngleSnap();
   
-  // Start drawing from a point
+  const { createLine, updateLine, finalizeLine, removeLine } = 
+    useLineDrawing(canvas, { lineColor, lineThickness });
+  
+  // Keep track of the current line
+  const currentLineRef = useRef<any>(null);
+  
+  /**
+   * Start drawing a line
+   */
   const startDrawing = useCallback((point: Point) => {
-    const snappedPoint = snapToGrid ? {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    } : point;
-
-    setStart(snappedPoint);
-    setEnd(snappedPoint);
+    const snappedPoint = snapToGrid(point);
+    setStartPoint(snappedPoint);
+    setCurrentPoint(snappedPoint);
     setIsDrawing(true);
-  }, [gridSize, snapToGrid]);
-  
-  // Update line while drawing
-  const updateLine = useCallback((point: Point) => {
-    if (!isDrawing || !start) return;
     
-    // Apply grid snapping if enabled
-    let snappedPoint = snapToGrid ? {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    } : point;
+    // Create the initial line
+    currentLineRef.current = createLine(snappedPoint, snappedPoint);
+  }, [createLine, setIsDrawing, setStartPoint, setCurrentPoint, snapToGrid]);
+  
+  /**
+   * Update the line while drawing
+   */
+  const updateLine = useCallback((point: Point) => {
+    if (!isDrawing || !startPoint) return;
+    
+    // Apply snapping if enabled
+    let snappedPoint = snapToGrid(point);
     
     // Apply angle snapping if enabled
-    if (anglesEnabled && start) {
-      const result = snapAngle(start, snappedPoint);
-      snappedPoint = result.point;
+    if (anglesEnabled && startPoint) {
+      snappedPoint = snapToAngle(startPoint, snappedPoint);
     }
     
-    setEnd(snappedPoint);
-  }, [isDrawing, start, snapToGrid, gridSize, anglesEnabled, snapAngle]);
-  
-  // Finish drawing
-  const finishDrawing = useCallback(() => {
-    if (!isDrawing || !start || !end) return null;
+    setCurrentPoint(snappedPoint);
     
-    const line = { start, end };
-    setIsDrawing(false);
-    setStart(null);
-    setEnd(null);
-    return line;
-  }, [isDrawing, start, end]);
+    // Update the line on the canvas
+    if (currentLineRef.current) {
+      updateLine(currentLineRef.current, startPoint, snappedPoint);
+    }
+  }, [isDrawing, startPoint, updateLine, snapToGrid, snapToAngle, anglesEnabled, setCurrentPoint]);
   
-  // Cancel drawing
+  /**
+   * Finish drawing a line
+   */
+  const finishDrawing = useCallback(() => {
+    if (!isDrawing || !startPoint || !currentPoint) return null;
+    
+    // Finalize the line
+    const finalLine = finalizeLine(currentLineRef.current, startPoint, currentPoint);
+    
+    // Save the current state for undo functionality
+    saveCurrentState();
+    
+    // Reset the drawing state
+    setIsDrawing(false);
+    setStartPoint(null);
+    setCurrentPoint(null);
+    currentLineRef.current = null;
+    
+    return finalLine;
+  }, [isDrawing, startPoint, currentPoint, finalizeLine, saveCurrentState, setIsDrawing, setStartPoint, setCurrentPoint]);
+  
+  /**
+   * Cancel the current drawing operation
+   */
   const cancelDrawing = useCallback(() => {
+    if (currentLineRef.current) {
+      removeLine(currentLineRef.current);
+    }
+    
     setIsDrawing(false);
-    setStart(null);
-    setEnd(null);
-  }, []);
-  
-  // Toggle grid snapping
-  const toggleGridSnap = useCallback(() => {
-    setSnapToGrid(prev => !prev);
-  }, []);
-  
-  // Additional method to maintain compatibility
-  const snapToAngle = useCallback((start: Point, end: Point): Point => {
-    const result = snapAngle(start, end);
-    return result.point;
-  }, [snapAngle]);
-  
+    setStartPoint(null);
+    setCurrentPoint(null);
+    currentLineRef.current = null;
+  }, [removeLine, setIsDrawing, setStartPoint, setCurrentPoint]);
+
   return {
-    start,
-    end,
+    start: startPoint,
+    end: currentPoint,
     isDrawing,
     startDrawing,
     updateLine,
     finishDrawing,
     cancelDrawing,
-    snapToGrid,
-    toggleGridSnap,
-    setSnapToGrid,
+    snapEnabled,
+    toggleSnapToGrid: toggleGridSnapping,
     anglesEnabled,
-    setAnglesEnabled,
-    toggleAngles,
+    toggleSnapToAngles: toggleAngles,
+    snapToGrid,
     snapToAngle
   };
 };

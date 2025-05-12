@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { FloorPlan } from '@/types/floorPlan';
+import { FloorPlan } from '@/types/FloorPlan'; // Ensure correct casing
 
 interface PropertyFormData {
   name: string;

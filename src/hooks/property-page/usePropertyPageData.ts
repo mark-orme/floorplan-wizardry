@@ -68,7 +68,12 @@ export const usePropertyPageData = () => {
     handleFilterChange,
     handleSortChange,
     refreshData: refreshProperties,
-    ...propertyData
+    // Include any additional properties from propertyData, but avoid duplicates
+    ...Object.fromEntries(
+      Object.entries(propertyData).filter(
+        ([key]) => !['properties', 'loading', 'error', 'refreshProperties'].includes(key)
+      )
+    )
   };
 };
 
