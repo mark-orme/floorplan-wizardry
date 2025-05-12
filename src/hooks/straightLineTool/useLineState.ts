@@ -31,7 +31,7 @@ export const useLineState = ({
   const { anglesEnabled, toggleAngles, snapToAngle } = 
     useLineAngleSnap();
   
-  const { createLine, updateLine, finalizeLine, removeLine } = 
+  const { createLine, updateLine: updateDrawingLine, finalizeLine, removeLine } = 
     useLineDrawing(canvas, { lineColor, lineThickness });
   
   // Keep track of the current line
@@ -68,9 +68,9 @@ export const useLineState = ({
     
     // Update the line on the canvas
     if (currentLineRef.current) {
-      updateLine(currentLineRef.current, startPoint, snappedPoint);
+      updateDrawingLine(currentLineRef.current, startPoint, snappedPoint);
     }
-  }, [isDrawing, startPoint, updateLine, snapToGrid, snapToAngle, anglesEnabled, setCurrentPoint]);
+  }, [isDrawing, startPoint, updateDrawingLine, snapToGrid, snapToAngle, anglesEnabled, setCurrentPoint]);
   
   /**
    * Finish drawing a line

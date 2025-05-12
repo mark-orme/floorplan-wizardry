@@ -6,6 +6,7 @@ import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
 import { UnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
+import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
 
 interface UseLayerActionsProps {
   fabricCanvasRef: React.MutableRefObject<any>; // Use any to bridge the type gap
@@ -37,7 +38,7 @@ export const useLayerActions = ({
   });
   
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef: fabricCanvasRef as React.MutableRefObject<UnifiedCanvas | null>,
+    fabricCanvasRef: fabricCanvasCompatRef,
     layers,
     setLayers,
     activeLayerId,

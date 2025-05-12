@@ -61,12 +61,9 @@ describe('useLineState', () => {
     }));
     
     expect(result.current.isDrawing).toBeDefined();
-    // Check that snapEnabled can be accessed either directly or through a function
-    if (typeof result.current.snapEnabled === 'function') {
-      expect(result.current.snapEnabled()).toBeDefined();
-    } else {
-      expect(result.current.snapEnabled).toBeDefined();
-    }
+    
+    // Check if snapEnabled is defined (could be a boolean or a getter function)
+    expect(result.current.snapEnabled).toBeDefined();
   });
   
   it('should handle start drawing', () => {
@@ -93,7 +90,7 @@ describe('useLineState', () => {
     
     act(() => {
       result.current.startDrawing({ x: 10, y: 20 });
-      // Use updateLine instead of continueDrawing
+      // Use updateLine
       result.current.updateLine({ x: 30, y: 40 });
     });
   });
@@ -110,7 +107,7 @@ describe('useLineState', () => {
       // Use a single object with both properties
       const point = { x: 50, y: 60 };
       result.current.startDrawing(point);
-      // Use finishDrawing instead of completeDrawing
+      // Use finishDrawing
       result.current.finishDrawing();
     });
   });

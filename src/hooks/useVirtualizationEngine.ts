@@ -44,10 +44,21 @@ export const useVirtualizationEngine = ({
     let visibleCount = 0;
 
     requestAnimationFrame(() => {
+      // Make sure forEachObject exists before calling it
+      if (typeof canvas.forEachObject !== 'function') return;
+      
       canvas.forEachObject((obj) => {
-        if ((obj as any).isGrid) return;
+        if (!obj) return;
         
-        const bounds = obj.getBoundingRect();
+        // Safe property access with null checks
+        const isGrid = (obj as any)?.isGrid;
+        if (isGrid) return;
+        
+        // Only call getBoundingRect if object exists and method is available
+        const bounds = obj && typeof obj.getBoundingRect === 'function' ? 
+          obj.getBoundingRect() : 
+          { left: 0, top: 0, width: 0, height: 0 };
+        
         const isVisible = !(
           bounds.left > visibleArea.right ||
           bounds.top > visibleArea.bottom ||
@@ -55,9 +66,12 @@ export const useVirtualizationEngine = ({
           bounds.top + bounds.height < visibleArea.top
         );
 
-        if (isVisible !== obj.visible) {
+        // Only set visible property if it exists on the object
+        if (obj && isVisible !== obj.visible) {
           obj.visible = isVisible;
-          obj.setCoords();
+          if (typeof obj.setCoords === 'function') {
+            obj.setCoords();
+          }
         }
 
         if (isVisible) visibleCount++;

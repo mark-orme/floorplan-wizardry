@@ -11,7 +11,7 @@ import { ExtendedCanvas as FabricUnifiedExtendedCanvas } from './fabric-unified'
 
 export interface UnifiedCanvas extends Canvas {
   wrapperEl: HTMLElement;
-  skipTargetFind?: boolean;
+  skipTargetFind: boolean; // Changed from optional to required
   allowTouchScrolling?: boolean;
   skipOffscreen?: boolean;
   renderOnAddRemove: boolean;
@@ -48,6 +48,26 @@ export function asUnifiedCanvas(canvas: Canvas | null): UnifiedCanvas | null {
   
   if ((canvas as any).renderOnAddRemove === undefined) {
     (canvas as any).renderOnAddRemove = true;
+  }
+  
+  if ((canvas as any).skipTargetFind === undefined) {
+    (canvas as any).skipTargetFind = false;
+  }
+  
+  if ((canvas as any).isDrawingMode === undefined) {
+    (canvas as any).isDrawingMode = false;
+  }
+  
+  if ((canvas as any).selection === undefined) {
+    (canvas as any).selection = true;
+  }
+  
+  if ((canvas as any).defaultCursor === undefined) {
+    (canvas as any).defaultCursor = 'default';
+  }
+  
+  if ((canvas as any).hoverCursor === undefined) {
+    (canvas as any).hoverCursor = 'move';
   }
   
   return canvas as unknown as UnifiedCanvas;

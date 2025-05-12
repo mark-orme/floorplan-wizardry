@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
 import { Canvas } from 'fabric';
-import { UnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
+import { UnifiedCanvas, asUnifiedCanvas } from '@/types/canvas-unified';
 
 interface UseCanvasControllerToolsProps {
   fabricCanvasRef: React.MutableRefObject<Canvas | UnifiedCanvas | null>;
@@ -22,8 +22,8 @@ export const useCanvasControllerTools = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Convert to unified canvas type
-    const unifiedCanvas = bridgeCanvasTypes(canvas);
+    // Create a unified canvas with all required properties
+    const unifiedCanvas = asUnifiedCanvas(canvas);
     if (!unifiedCanvas) return;
     
     // Set drawing mode based on tool

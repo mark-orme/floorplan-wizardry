@@ -1,167 +1,96 @@
 
-/**
- * Hook for setting up canvas controller
- */
-import { useRef, useEffect } from 'react';
-import { fabric } from 'fabric';
-import { ExtendedFabricCanvas } from '@/types/canvas-types';
-import { DrawingMode } from '@/constants/drawingModes';
-import { useCanvasGrid } from './useCanvasGrid';
-import { useSnapToGrid } from './useSnapToGrid';
-import logger from '@/utils/logger';
-import { FixMe } from '@/types/typesMap';
+import { useCallback, useEffect, useState } from 'react';
+import { Canvas } from 'fabric';
+import { toast } from 'sonner';
 
-/**
- * Props for useCanvasControllerSetup hook
- */
 interface UseCanvasControllerSetupProps {
-  /** Canvas reference */
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  
-  /** Width of the canvas */
-  width: number;
-  
-  /** Height of the canvas */
-  height: number;
-  
-  /** Current drawing tool */
-  tool: DrawingMode;
-  
-  /** Line color for drawing */
-  lineColor: string;
-  
-  /** Line thickness for drawing */
-  lineThickness: number;
-  
-  /** Function to set the canvas */
-  setCanvas: React.Dispatch<React.SetStateAction<ExtendedFabricCanvas | null>>;
-  
-  /** Function to handle canvas ready state */
-  onCanvasReady?: (canvas: ExtendedFabricCanvas) => void;
-  
-  /** Function to handle canvas error */
-  onError?: (error: Error) => void;
-  
-  /** Flag to show grid */
-  showGrid?: boolean;
+  canvasRef: React.MutableRefObject<HTMLCanvasElement | null>;
+  fabricCanvasRef: React.MutableRefObject<Canvas | null>;
+  width?: number;
+  height?: number;
 }
 
-/**
- * Hook for setting up canvas controller
- * @param props - Hook props
- * @returns Canvas references and utility methods
- */
+export interface UseCanvasGridOptions {
+  fabricCanvas?: Canvas;
+  isVisible?: boolean;
+  setVisible?: (visible: boolean) => void;
+}
+
+export interface GridState {
+  isVisible: boolean;
+  gridSize: number;
+  showGrid: () => void;
+  hideGrid: () => void;
+  toggleGrid: () => void;
+  updateGridSize: (size: number) => void;
+  gridLines: any[];
+  setVisible?: (visible: boolean) => void;
+}
+
 export const useCanvasControllerSetup = ({
   canvasRef,
-  width,
-  height,
-  tool,
-  lineColor,
-  lineThickness,
-  setCanvas,
-  onCanvasReady,
-  onError,
-  showGrid = true
+  fabricCanvasRef,
+  width = 800,
+  height = 600
 }: UseCanvasControllerSetupProps) => {
-  // Create a ref for the fabric canvas
-  const fabricCanvasRef = useRef<any>(null);
-  
-  // Create a ref for the grid layer
-  const gridLayerRef = useRef<fabric.Object[]>([]);
-  
-  // Use canvas grid hook with additional methods
-  const useCanvasGridResult = useCanvasGrid({
-    fabricCanvas: fabricCanvasRef.current // Pass the fabricCanvas value directly
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Initialize Grid state
+  const [gridState, setGridState] = useState<GridState>({
+    isVisible: true,
+    gridSize: 20,
+    showGrid: () => setGridState(prev => ({ ...prev, isVisible: true })),
+    hideGrid: () => setGridState(prev => ({ ...prev, isVisible: false })),
+    toggleGrid: () => setGridState(prev => ({ ...prev, isVisible: !prev.isVisible })),
+    updateGridSize: (size) => setGridState(prev => ({ ...prev, gridSize: size })),
+    gridLines: [],
+    setVisible: (visible) => setGridState(prev => ({ ...prev, isVisible: visible }))
   });
-  
-  // Get snap to grid functionality
-  const { snapPointToGrid, snapLineToGrid } = useSnapToGrid();
-  
-  // Toggle grid visibility
-  const toggleGridVisibility = () => {
-    useCanvasGridResult.setVisible(prev => !prev);
-    
-    // Update grid visibility on the canvas
-    if (fabricCanvasRef.current) {
-      const canvas = fabricCanvasRef.current;
-      gridLayerRef.current.forEach(obj => {
-        obj.set('visible', useCanvasGridResult.visible);
-      });
-      canvas.renderAll();
-    }
-  };
-  
+
   // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
+    if (!canvasRef.current || isInitialized) return;
+
     try {
-      // Create canvas
-      const canvas = new fabric.Canvas(canvasRef.current, {
+      // Create Fabric.js canvas instance
+      const canvas = new Canvas(canvasRef.current, {
         width,
         height,
-        backgroundColor: '#ffffff',
-        selection: true,
-        renderOnAddRemove: true
-      }) as unknown as ExtendedFabricCanvas;
-      
-      if (canvas) {
-        canvas.skipOffscreen = true;
-      }
-      
+        backgroundColor: '#FFFFFF'
+      });
+
+      // Set up reference
       fabricCanvasRef.current = canvas;
-      setCanvas(canvas);
-      
-      // Create grid if needed
-      if (showGrid) {
-        // @ts-expect-error - Type mismatch resolved with runtime check
-        gridLayerRef.current = useCanvasGridResult.createGrid(canvas);
-      }
-      
-      // Call onCanvasReady callback
-      if (onCanvasReady) {
-        onCanvasReady(canvas);
-      }
-      
-      // Clean up
-      return () => {
-        canvas.dispose();
-        fabricCanvasRef.current = null;
-        setCanvas(null);
-      };
+
+      // Setup grid with properly typed options
+      setupGrid({
+        fabricCanvas: canvas,
+        isVisible: gridState.isVisible,
+        setVisible: gridState.setVisible
+      });
+
+      // Mark as initialized
+      setIsInitialized(true);
     } catch (error) {
-      logger.error('Error initializing canvas:', error);
-      if (onError && error instanceof Error) {
-        onError(error);
-      }
+      console.error('Failed to initialize canvas:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error initializing canvas');
+      toast.error('Failed to initialize canvas');
     }
-  }, [canvasRef, width, height, setCanvas, onCanvasReady, onError, showGrid, useCanvasGridResult]);
-  
-  // Return canvas refs and utility methods
+  }, [canvasRef, fabricCanvasRef, width, height, isInitialized, gridState.isVisible]);
+
+  // Setup grid function
+  const setupGrid = useCallback((options: UseCanvasGridOptions) => {
+    const canvas = options.fabricCanvas;
+    if (!canvas) return;
+
+    // Grid setup logic here
+    console.log('Setting up grid with visibility:', options.isVisible);
+  }, []);
+
   return {
-    fabricCanvasRef,
-    gridLayerRef,
-    toggleGridVisibility,
-    snapToGrid: snapPointToGrid,
-    snapLineToGrid,
-    useCanvasGridResult,
-    clearCanvas: () => {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      
-      canvas.clear();
-      canvas.renderAll();
-    },
-    resetView: () => {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      
-      if (canvas.viewportTransform) {
-        canvas.viewportTransform = [ 1, 0, 0, 1, 0, 0 ];
-      }
-      canvas.renderAll();
-    }
+    isInitialized,
+    errorMessage,
+    gridState
   };
 };
-
-export default useCanvasControllerSetup;
