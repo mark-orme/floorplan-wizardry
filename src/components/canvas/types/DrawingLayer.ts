@@ -2,7 +2,7 @@
 import { Object as FabricObject } from 'fabric';
 
 /**
- * Represents a drawing layer in the canvas with associated objects
+ * Interface representing a drawing layer
  */
 export interface DrawingLayer {
   /** Unique identifier for the layer */
@@ -11,21 +11,44 @@ export interface DrawingLayer {
   /** Display name of the layer */
   name: string;
   
-  /** Whether the layer is visible */
+  /** Whether the layer is currently visible */
   visible: boolean;
   
-  /** Whether the layer is locked (objects cannot be modified) */
+  /** Whether the layer is locked for editing */
   locked: boolean;
   
-  /** Fabric objects belonging to this layer */
+  /** Fabric objects contained in this layer */
   objects: FabricObject[];
-  
-  /** Optional metadata for the layer */
-  metadata?: Record<string, any>;
-  
-  /** Optional z-index for ordering layers */
-  zIndex?: number;
-  
-  /** Optional opacity for the entire layer */
-  opacity?: number;
 }
+
+/**
+ * Create a new empty layer with default properties
+ * @param name Optional name for the layer
+ * @returns A new DrawingLayer object
+ */
+export function createLayer(name: string = `Layer ${Date.now()}`): DrawingLayer {
+  return {
+    id: `layer-${Date.now()}`,
+    name,
+    visible: true,
+    locked: false,
+    objects: []
+  };
+}
+
+/**
+ * Check if an object is a DrawingLayer
+ * @param obj Object to check
+ * @returns Whether the object is a DrawingLayer
+ */
+export function isDrawingLayer(obj: any): obj is DrawingLayer {
+  return obj &&
+    typeof obj === 'object' &&
+    'id' in obj &&
+    'name' in obj &&
+    'visible' in obj &&
+    'locked' in obj &&
+    'objects' in obj;
+}
+
+export default DrawingLayer;

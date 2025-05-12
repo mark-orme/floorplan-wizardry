@@ -1,14 +1,14 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
+import { Object as FabricObject } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { UnifiedCanvas, asUnifiedCanvas } from '@/types/canvas-unified';
+import { UnifiedCanvas } from '@/types/unified-canvas';
 
 interface UseLayerActionsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | UnifiedCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<UnifiedCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -22,8 +22,7 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Use the canvas reference directly without type conversions
-  // This simplifies our type hierarchy
+  // Use the unified canvas reference that's compatible with all our components
   
   const { toggleLayerVisibility } = useLayerVisibility({ 
     fabricCanvasRef, 

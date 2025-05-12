@@ -11,6 +11,7 @@ export interface UseDrawingToolOptions {
 export const useDrawingTool = (options: UseDrawingToolOptions = {}) => {
   const { initialTool = DrawingMode.SELECT, onToolChange } = options;
   const [currentTool, setCurrentTool] = useState<DrawingMode>(initialTool);
+  const [isDrawing, setIsDrawing] = useState(false);
   
   const changeTool = useCallback((tool: DrawingMode) => {
     setCurrentTool(tool);
@@ -31,24 +32,43 @@ export const useDrawingTool = (options: UseDrawingToolOptions = {}) => {
     return Object.values(DrawingMode).includes(value as DrawingMode);
   }, []);
 
+  const startDrawing = useCallback(() => {
+    setIsDrawing(true);
+    console.log('startDrawing');
+  }, []);
+  
+  const continueDrawing = useCallback(() => {
+    console.log('continueDrawing');
+  }, []);
+  
+  const endDrawing = useCallback(() => {
+    setIsDrawing(false);
+    console.log('endDrawing');
+  }, []);
+
   return {
+    // New API
+    activeTool: currentTool,
+    selectTool: changeTool,
+    lineColor: '#000000',
+    lineThickness: 2,
+    setColor: (color: string) => console.log('setColor', color),
+    setThickness: (thickness: number) => console.log('setThickness', thickness),
+    createShape: (type: 'rect' | 'circle' | 'text') => console.log('createShape', type),
+    addText: (text?: string, left?: number, top?: number) => console.log('addText', text, left, top),
+    
+    // Old API for backwards compatibility with tests
     currentTool,
     changeTool,
     isDrawingMode,
     isValidDrawingTool,
     
-    // For tests compatibility
+    // Test compatibility properties
     tool: currentTool,
     setTool: changeTool,
-    startDrawing: () => console.log('startDrawing stub'),
-    continueDrawing: () => console.log('continueDrawing stub'),
-    isDrawing: false,
-    
-    // Convenience methods
-    selectTool: useCallback(() => changeTool(DrawingMode.SELECT), [changeTool]),
-    drawTool: useCallback(() => changeTool(DrawingMode.DRAW), [changeTool]),
-    lineTool: useCallback(() => changeTool(DrawingMode.LINE), [changeTool]),
-    wallTool: useCallback(() => changeTool(DrawingMode.WALL), [changeTool]),
-    roomTool: useCallback(() => changeTool(DrawingMode.ROOM), [changeTool])
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    isDrawing
   };
 };

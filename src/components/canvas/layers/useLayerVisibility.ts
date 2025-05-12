@@ -1,10 +1,10 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
+import { UnifiedCanvas } from '@/types/unified-canvas';
 
 interface UseLayerVisibilityProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<UnifiedCanvas | null>;
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
 }
 
@@ -19,7 +19,9 @@ export const useLayerVisibility = ({ fabricCanvasRef, setLayers }: UseLayerVisib
           const newVisibility = !layer.visible;
           
           layer.objects.forEach(obj => {
-            (obj as any).visible = newVisibility;
+            if (obj) {
+              (obj as any).visible = newVisibility;
+            }
           });
           
           return {

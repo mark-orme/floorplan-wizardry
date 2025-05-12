@@ -2,10 +2,10 @@
 import { useCallback } from 'react';
 import { Object as FabricObject } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
-import { ExtendedCanvas } from '@/types/fabric-unified';
+import { UnifiedCanvas } from '@/types/unified-canvas';
 
 interface UseLayerOperationsProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<UnifiedCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -62,7 +62,7 @@ export const useLayerOperations = ({
     if (activeLayerId === layerId) {
       const remainingLayers = layers.filter(layer => layer.id !== layerId);
       if (remainingLayers.length > 0) {
-        setActiveLayerId(remainingLayers[0]?.id || ''); // Add null check here
+        setActiveLayerId(remainingLayers[0]?.id || '');
       }
     }
     

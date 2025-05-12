@@ -1,11 +1,10 @@
 
 import { useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { Canvas } from 'fabric';
-import { UnifiedCanvas, asUnifiedCanvas } from '@/types/canvas-unified';
+import { UnifiedCanvas, asUnifiedCanvas } from '@/types/unified-canvas';
 
 interface UseCanvasControllerToolsProps {
-  fabricCanvasRef: React.MutableRefObject<Canvas | UnifiedCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<UnifiedCanvas | null>;
   tool: DrawingMode;
   lineColor: string;
   lineThickness: number;
@@ -22,17 +21,13 @@ export const useCanvasControllerTools = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Create a unified canvas with all required properties
-    const unifiedCanvas = asUnifiedCanvas(canvas);
-    if (!unifiedCanvas) return;
-    
     // Set drawing mode based on tool
-    unifiedCanvas.isDrawingMode = tool === DrawingMode.DRAW;
+    canvas.isDrawingMode = tool === DrawingMode.DRAW;
     
     // Configure the brush if available
-    if (unifiedCanvas.freeDrawingBrush) {
-      unifiedCanvas.freeDrawingBrush.color = lineColor;
-      unifiedCanvas.freeDrawingBrush.width = lineThickness;
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = lineColor;
+      canvas.freeDrawingBrush.width = lineThickness;
     }
   }, [fabricCanvasRef, tool, lineColor, lineThickness]);
   

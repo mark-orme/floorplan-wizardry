@@ -1,6 +1,6 @@
 
 /**
- * Simplified FloorPlan type adapter with proper exports
+ * Floor plan type adapter with proper exports
  */
 
 /**

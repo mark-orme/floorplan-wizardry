@@ -1,10 +1,10 @@
 
 import { useCallback } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingLayer } from '../types/DrawingLayer';
+import { UnifiedCanvas } from '@/types/unified-canvas';
 
 interface UseLayerLockingProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<UnifiedCanvas | null>;
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
 }
 
@@ -19,8 +19,10 @@ export const useLayerLocking = ({ fabricCanvasRef, setLayers }: UseLayerLockingP
           const newLockState = !layer.locked;
           
           layer.objects.forEach(obj => {
-            (obj as any).selectable = !newLockState;
-            (obj as any).evented = !newLockState;
+            if (obj) {
+              (obj as any).selectable = !newLockState;
+              (obj as any).evented = !newLockState;
+            }
           });
           
           return {
