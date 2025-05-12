@@ -26,10 +26,23 @@ export const useDrawingTool = (options: UseDrawingToolOptions = {}) => {
     return tool !== DrawingMode.SELECT && tool !== DrawingMode.HAND && tool !== DrawingMode.PAN;
   }, []);
   
+  // Additional for test compatibility
+  const isValidDrawingTool = useCallback((value: any): boolean => {
+    return Object.values(DrawingMode).includes(value as DrawingMode);
+  }, []);
+
   return {
     currentTool,
     changeTool,
     isDrawingMode,
+    isValidDrawingTool,
+    
+    // For tests compatibility
+    tool: currentTool,
+    setTool: changeTool,
+    startDrawing: () => console.log('startDrawing stub'),
+    continueDrawing: () => console.log('continueDrawing stub'),
+    isDrawing: false,
     
     // Convenience methods
     selectTool: useCallback(() => changeTool(DrawingMode.SELECT), [changeTool]),

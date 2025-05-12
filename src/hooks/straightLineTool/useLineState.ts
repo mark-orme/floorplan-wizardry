@@ -1,130 +1,93 @@
-import { useState, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/canvas-unified';
-import { useLineStateCore } from './useLineStateCore';
-import { useEnhancedGridSnapping } from './useEnhancedGridSnapping';
-import { useLineAngleSnap } from './useLineAngleSnap';
-import { useLineDrawing } from './useLineDrawing';
 
-export interface UseLineStateOptions {
-  canvas: FabricCanvas | null;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState: () => void;
+import { useCallback, useState } from 'react';
+import { Point } from '@/types/core/Point';
+
+export interface LineState {
+  isDrawing: boolean;
+  startPoint: Point | null;
+  endPoint: Point | null;
+  lines: { start: Point; end: Point }[];
+  pendingLine: { start: Point; end: Point } | null;
 }
 
-/**
- * Hook for managing the state of the line tool
- */
-export const useLineState = ({
-  canvas,
-  lineColor,
-  lineThickness,
-  saveCurrentState
-}: UseLineStateOptions) => {
-  const { isDrawing, setIsDrawing, startPoint, setStartPoint, currentPoint, setCurrentPoint } = 
-    useLineStateCore();
-  
-  const { snapEnabled, toggleGridSnapping, snapToGrid } = 
-    useEnhancedGridSnapping();
-  
-  const { anglesEnabled, toggleAngles, snapToAngle } = 
-    useLineAngleSnap();
-  
-  const { createLine, updateLine: updateDrawingLine, finalizeLine, removeLine } = 
-    useLineDrawing(canvas, { lineColor, lineThickness });
-  
-  // Keep track of the current line
-  const currentLineRef = useRef<any>(null);
-  
-  /**
-   * Start drawing a line
-   */
-  const startDrawing = useCallback((point: Point) => {
-    const snappedPoint = snapToGrid(point);
-    setStartPoint(snappedPoint);
-    setCurrentPoint(snappedPoint);
-    setIsDrawing(true);
-    
-    // Fix function signature mismatch - line 35
-    // createLine should take a single point argument
-    currentLineRef.current = createLine(snappedPoint);
-  }, [createLine, setIsDrawing, setStartPoint, setCurrentPoint, snapToGrid]);
-  
-  /**
-   * Update the line while drawing
-   */
-  const updateLine = useCallback((point: Point) => {
-    if (!isDrawing || !startPoint) return;
-    
-    // Apply snapping if enabled
-    let snappedPoint = snapToGrid(point);
-    
-    // Apply angle snapping if enabled
-    if (anglesEnabled && startPoint) {
-      snappedPoint = snapToAngle(startPoint, snappedPoint);
-    }
-    
-    setCurrentPoint(snappedPoint);
-    
-    // Update the line on the canvas
-    if (currentLineRef.current) {
-      // Fix function signature mismatch - line 82
-      // updateDrawingLine should take the line and a point
-      updateDrawingLine(currentLineRef.current, snappedPoint);
-    }
-  }, [isDrawing, startPoint, updateDrawingLine, snapToGrid, snapToAngle, anglesEnabled, setCurrentPoint]);
-  
-  /**
-   * Finish drawing a line
-   */
-  const finishDrawing = useCallback(() => {
-    if (!isDrawing || !startPoint || !currentPoint) return null;
-    
-    // Finalize the line
-    const finalLine = finalizeLine(currentLineRef.current, currentPoint);
-    
-    // Save the current state for undo functionality
-    saveCurrentState();
-    
-    // Reset the drawing state
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    currentLineRef.current = null;
-    
-    return finalLine;
-  }, [isDrawing, startPoint, currentPoint, finalizeLine, saveCurrentState, setIsDrawing, setStartPoint, setCurrentPoint]);
-  
-  /**
-   * Cancel the current drawing operation
-   */
-  const cancelDrawing = useCallback(() => {
-    if (currentLineRef.current) {
-      removeLine(currentLineRef.current);
-    }
-    
-    setIsDrawing(false);
-    setStartPoint(null);
-    setCurrentPoint(null);
-    currentLineRef.current = null;
-  }, [removeLine, setIsDrawing, setStartPoint, setCurrentPoint]);
+export interface UseLineStateOptions {
+  initialState?: Partial<LineState>;
+  fabricCanvasRef?: React.MutableRefObject<any>;
+  snapEnabled?: boolean;
+  continueDrawing?: (point: Point) => void;
+  completeDrawing?: () => void;
+}
 
+export const useLineState = (options: UseLineStateOptions = {}) => {
+  const { initialState = {} } = options;
+  
+  const [lineState, setLineState] = useState<LineState>({
+    isDrawing: false,
+    startPoint: null,
+    endPoint: null,
+    lines: [],
+    pendingLine: null,
+    ...initialState
+  });
+  
+  const startLine = useCallback((point: Point) => {
+    setLineState(prev => ({
+      ...prev,
+      isDrawing: true,
+      startPoint: point,
+      pendingLine: { start: point, end: point }
+    }));
+  }, []);
+  
+  const updateLine = useCallback((point: Point) => {
+    setLineState(prev => {
+      if (!prev.isDrawing || !prev.startPoint) return prev;
+      
+      return {
+        ...prev,
+        endPoint: point,
+        pendingLine: { start: prev.startPoint, end: point }
+      };
+    });
+  }, []);
+  
+  const completeLine = useCallback(() => {
+    setLineState(prev => {
+      if (!prev.isDrawing || !prev.startPoint || !prev.endPoint) return prev;
+      
+      const newLine = { start: prev.startPoint, end: prev.endPoint };
+      return {
+        ...prev,
+        isDrawing: false,
+        lines: [...prev.lines, newLine],
+        pendingLine: null
+      };
+    });
+  }, []);
+  
+  const cancelLine = useCallback(() => {
+    setLineState(prev => ({
+      ...prev,
+      isDrawing: false,
+      pendingLine: null
+    }));
+  }, []);
+  
+  const clearLines = useCallback(() => {
+    setLineState(prev => ({
+      ...prev,
+      isDrawing: false,
+      lines: [],
+      pendingLine: null
+    }));
+  }, []);
+  
   return {
-    start: startPoint,
-    end: currentPoint,
-    isDrawing,
-    startDrawing,
+    lineState,
+    startLine,
     updateLine,
-    finishDrawing,
-    cancelDrawing,
-    snapEnabled,
-    toggleSnapToGrid: toggleGridSnapping,
-    anglesEnabled,
-    toggleSnapToAngles: toggleAngles,
-    snapToGrid,
-    snapToAngle
+    completeLine,
+    cancelLine,
+    clearLines
   };
 };
-
-export default useLineState;

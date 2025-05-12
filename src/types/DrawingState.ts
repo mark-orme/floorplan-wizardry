@@ -3,7 +3,7 @@ import { Point } from './core/Point';
 import { DrawingMode } from '@/constants/drawingModes';
 
 /**
- * Drawing state interface
+ * Simplified drawing state interface
  */
 export interface DrawingState {
   isDrawing: boolean;
@@ -13,9 +13,7 @@ export interface DrawingState {
   tool?: DrawingMode;
   lineColor?: string;
   lineThickness?: number;
-  distance: number;
   cursorPosition: Point;
-  currentZoom?: number;
 }
 
 /**
@@ -27,9 +25,7 @@ export function createDefaultDrawingState(): DrawingState {
     startPoint: { x: 0, y: 0 },
     currentPoint: { x: 0, y: 0 },
     points: [],
-    distance: 0,
-    cursorPosition: { x: 0, y: 0 },
-    currentZoom: 1
+    cursorPosition: { x: 0, y: 0 }
   };
 }
 

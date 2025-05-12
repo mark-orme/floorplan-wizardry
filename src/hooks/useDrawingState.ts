@@ -1,7 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { DrawingMode } from '@/constants/drawingModes';
-import { DrawingState, createDefaultDrawingState } from '@/types/fabric-unified';
+import { DrawingState, createDefaultDrawingState } from '@/types/DrawingState';
+import { Point } from '@/types/core/Point';
 
 export const useDrawingState = () => {
   const [currentTool, setCurrentTool] = useState<DrawingMode>(DrawingMode.SELECT);

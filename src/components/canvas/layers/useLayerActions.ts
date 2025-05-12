@@ -5,11 +5,10 @@ import { DrawingLayer } from '../types/DrawingLayer';
 import { useLayerVisibility } from './useLayerVisibility';
 import { useLayerLocking } from './useLayerLocking';
 import { useLayerOperations } from './useLayerOperations';
-import { UnifiedCanvas, asUnifiedCanvas, bridgeCanvasTypes } from '@/types/canvas-unified';
-import { ExtendedCanvas } from '@/types/canvas/ExtendedCanvas';
+import { UnifiedCanvas, asUnifiedCanvas } from '@/types/canvas-unified';
 
 interface UseLayerActionsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | UnifiedCanvas | null>; // Updated to accept UnifiedCanvas
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | UnifiedCanvas | null>;
   layers: DrawingLayer[];
   setLayers: React.Dispatch<React.SetStateAction<DrawingLayer[]>>;
   activeLayerId: string;
@@ -23,22 +22,21 @@ export const useLayerActions = ({
   activeLayerId,
   setActiveLayerId
 }: UseLayerActionsProps) => {
-  // Cast to the basic Canvas type for compatibility with the hooks
-  const fabricCanvasCompatRef = fabricCanvasRef as React.MutableRefObject<FabricCanvas | null>;
-
-  // Use properly typed hook dependencies
+  // Use the canvas reference directly without type conversions
+  // This simplifies our type hierarchy
+  
   const { toggleLayerVisibility } = useLayerVisibility({ 
-    fabricCanvasRef: fabricCanvasCompatRef, 
+    fabricCanvasRef, 
     setLayers 
   });
   
   const { toggleLayerLock } = useLayerLocking({ 
-    fabricCanvasRef: fabricCanvasCompatRef, 
+    fabricCanvasRef, 
     setLayers 
   });
   
   const { createNewLayer, deleteLayer } = useLayerOperations({
-    fabricCanvasRef: fabricCanvasCompatRef,
+    fabricCanvasRef,
     layers,
     setLayers,
     activeLayerId,

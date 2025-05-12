@@ -1,5 +1,20 @@
 
-import { FloorPlan } from '@/types/fabric-unified';
+/**
+ * Simplified FloorPlan type adapter with proper exports
+ */
+
+/**
+ * FloorPlan interface
+ */
+export interface FloorPlan {
+  id: string;
+  name: string;
+  created: string;
+  updated: string;
+  width: number;
+  height: number;
+  level?: number;
+}
 
 /**
  * Check if an object is a FloorPlan
@@ -26,8 +41,3 @@ export function createEmptyFloorPlan(): FloorPlan {
     height: 600
   };
 }
-
-/**
- * Export the FloorPlan type
- */
-export type { FloorPlan };

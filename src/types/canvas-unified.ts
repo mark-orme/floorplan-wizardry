@@ -1,21 +1,19 @@
 
 /**
- * Canvas Type Unification
+ * Simplified Canvas Type Unification
  * 
- * This file provides unified canvas types to bridge the different
- * canvas type interfaces in the application.
+ * This file provides a simplified, unified canvas type that removes unnecessary complexity
  */
 import { Canvas, Object as FabricObject } from 'fabric';
-import { ExtendedCanvas as CanvasTypesExtendedCanvas } from './canvas-types';
-import { ExtendedCanvas as FabricUnifiedExtendedCanvas } from './fabric-unified';
 
+/**
+ * A simplified unified canvas interface that works with Fabric.js
+ */
 export interface UnifiedCanvas extends Canvas {
   wrapperEl: HTMLElement;
-  skipTargetFind: boolean; // Changed from optional to required
-  allowTouchScrolling?: boolean;
-  skipOffscreen?: boolean;
+  skipTargetFind: boolean;
   renderOnAddRemove: boolean;
-  viewportTransform: number[]; // Ensure this is non-optional
+  viewportTransform: number[];
   isDrawingMode: boolean;
   selection: boolean;
   defaultCursor: string;
@@ -24,9 +22,6 @@ export interface UnifiedCanvas extends Canvas {
     color: string;
     width: number;
   };
-  getActiveObject?: () => any;
-  forEachObject?: (callback: (obj: FabricObject) => void) => void;
-  zoomToPoint?: (point: { x: number, y: number }, value: number) => void;
 }
 
 /**
@@ -40,12 +35,12 @@ export function isCanvas(obj: any): obj is Canvas {
 }
 
 /**
- * Type converter to safely cast a Canvas to an UnifiedCanvas
+ * Safely convert a Canvas to a UnifiedCanvas
  */
 export function asUnifiedCanvas(canvas: Canvas | null): UnifiedCanvas | null {
   if (!canvas) return null;
   
-  // Ensure required properties are defined
+  // Ensure required properties are defined with defaults
   if (!canvas.viewportTransform) {
     (canvas as any).viewportTransform = [1, 0, 0, 1, 0, 0];
   }
@@ -81,23 +76,18 @@ export function asUnifiedCanvas(canvas: Canvas | null): UnifiedCanvas | null {
     };
   }
   
-  return canvas as unknown as UnifiedCanvas;
+  return canvas as UnifiedCanvas;
 }
 
 /**
- * Convert between CanvasTypes.ExtendedCanvas and FabricUnified.ExtendedCanvas
+ * Simple Point interface
  */
-export function bridgeCanvasTypes<T extends Canvas>(
-  canvas: T | CanvasTypesExtendedCanvas | FabricUnifiedExtendedCanvas | null
-): UnifiedCanvas | null {
-  return asUnifiedCanvas(canvas as Canvas);
-}
-
-// Add this missing type for Point to fix some errors
 export interface Point {
   x: number;
   y: number;
 }
 
-export type { Point as FabricPoint } from './core/Point';
-export type { ExtendedCanvas } from './fabric-unified';
+/**
+ * Export ExtendedCanvas as an alias for UnifiedCanvas for backward compatibility
+ */
+export type ExtendedCanvas = UnifiedCanvas;

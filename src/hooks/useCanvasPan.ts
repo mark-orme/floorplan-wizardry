@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/canvas-unified';
+import { Point } from '@/types/core/Point';
 
 interface UseCanvasPanProps {
   canvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -12,12 +12,12 @@ export const useCanvasPan = ({ canvasRef, enabled = false }: UseCanvasPanProps) 
   const [isPanning, setIsPanning] = useState(false);
   const [lastPoint, setLastPoint] = useState<Point | null>(null);
 
-  const startPan = useCallback((point: { x: number, y: number }) => {
+  const startPan = useCallback((point: Point) => {
     setIsPanning(true);
     setLastPoint(point);
   }, []);
 
-  const pan = useCallback((point: { x: number, y: number }) => {
+  const pan = useCallback((point: Point) => {
     const canvas = canvasRef.current;
     if (!canvas || !lastPoint || !isPanning) return;
 
