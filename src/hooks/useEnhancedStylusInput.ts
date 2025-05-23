@@ -1,313 +1,253 @@
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
-import { StylusProfile, DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
-import { getActiveProfile } from '@/utils/stylus/stylusProfileService';
-import { Point } from '@/types/core/Geometry';
-import { smoothPoints } from '@/utils/drawing/smoothPoints';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { DEFAULT_STYLUS_PROFILE } from '@/types/core/StylusProfile';
 
-interface UseEnhancedStylusInputOptions {
-  canvas: FabricCanvas | null;
-  enabled: boolean;
-  lineColor: string;
-  lineThickness: number;
-  onPerformanceReport?: (fps: number) => void;
+// Add a custom PointerRawUpdateEvent interface to properly handle pointerrawupdate
+interface PointerRawUpdateEvent extends Event {
+  clientX?: number;
+  clientY?: number;
+  pressure?: number;
+  pointerType?: string;
+  tiltX?: number;
+  tiltY?: number;
+  twist?: number;
 }
 
-interface StylusState {
-  isPenMode: boolean;
-  pressure: number;
-  tiltX: number;
-  tiltY: number;
-  azimuthAngle: number;
-  isDown: boolean;
-  lastPoint: Point | null;
-  predictedPoints: Point[];
-}
-
-export const useEnhancedStylusInput = ({
-  canvas,
-  enabled,
-  lineColor,
-  lineThickness,
-  onPerformanceReport
-}: UseEnhancedStylusInputOptions) => {
-  const [stylusState, setStylusState] = useState<StylusState>({
-    isPenMode: false,
-    pressure: 0.5,
-    tiltX: 0,
-    tiltY: 0,
-    azimuthAngle: 0,
-    isDown: false,
-    lastPoint: null,
-    predictedPoints: []
-  });
+export const useEnhancedStylusInput = (canvasRef) => {
+  const [pressure, setPressure] = useState(0);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [twist, setTwist] = useState(0);
+  const [lastPoint, setLastPoint] = useState({ x: 0, y: 0 });
+  const [isStylus, setIsStylus] = useState(false);
+  const [stylusProfile, setStylusProfile] = useState(DEFAULT_STYLUS_PROFILE);
   
-  const [activeProfile, setActiveProfile] = useState<StylusProfile>(DEFAULT_STYLUS_PROFILE);
-  const pointerIdRef = useRef<number | null>(null);
-  const velocityRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
-  const lastTimestampRef = useRef<number>(0);
-  const pointHistoryRef = useRef<Point[]>([]);
+  const pointsRef = useRef<{ start?: { x: number, y: number }, end?: { x: number, y: number } }>({});
   
-  // Load active profile
-  useEffect(() => {
-    if (!enabled) return;
+  const applyPressureCurve = useCallback((rawPressure) => {
+    // Apply pressure curve from profile
+    if (rawPressure === 0) return 0;
+    if (rawPressure === 1) return 1;
     
-    getActiveProfile().then(profile => {
-      setActiveProfile(profile);
-    });
-  }, [enabled]);
+    // Default linear response if curve is undefined
+    const curve = stylusProfile.pressureCurve || [0, 0.25, 0.5, 0.75, 1];
+    
+    // Map pressure to curve
+    const index = Math.min(
+      Math.floor(rawPressure * (curve.length - 1)),
+      curve.length - 2
+    );
+    const t = (rawPressure * (curve.length - 1)) - index;
+    
+    // Linear interpolation
+    return curve[index] * (1 - t) + curve[index + 1] * t;
+  }, [stylusProfile]);
   
-  // Apply the pressure curve from the profile
-  const applyPressureCurve = useCallback((rawPressure: number): number => {
-    if (!activeProfile.pressureCurve || activeProfile.pressureCurve.length < 2) {
-      return rawPressure;
-    }
-    
-    const { pressureCurve } = activeProfile;
-    
-    // Simple linear interpolation between curve points
-    const segmentCount = pressureCurve.length - 1;
-    const index = Math.min(Math.floor(rawPressure * segmentCount), segmentCount - 1);
-    const remainder = (rawPressure * segmentCount) - index;
-    
-    const start = pressureCurve[index];
-    const end = pressureCurve[index + 1];
-    
-    return start + remainder * (end - start);
-  }, [activeProfile]);
-  
-  // Apply the tilt curve from the profile
-  const applyTiltCurve = useCallback((tiltX: number, tiltY: number): number => {
-    if (!activeProfile.tiltCurve) {
-      return 0; // No tilt effect if no curve is defined
-    }
-    
+  const applyTiltCurve = useCallback((tiltX, tiltY) => {
     // Calculate tilt magnitude (0-1 range)
-    const tiltMagnitude = Math.min(1, Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 90);
+    const tiltMagnitude = Math.min(
+      1, 
+      Math.sqrt(tiltX * tiltX + tiltY * tiltY) / 90
+    );
     
-    const { tiltCurve } = activeProfile;
+    if (tiltMagnitude === 0) return 0;
+    if (tiltMagnitude === 1) return 1;
     
-    // Simple linear interpolation
-    const segmentCount = tiltCurve.length - 1;
-    const index = Math.min(Math.floor(tiltMagnitude * segmentCount), segmentCount - 1);
-    const remainder = (tiltMagnitude * segmentCount) - index;
+    // Default linear tilt response if curve is undefined
+    const curve = stylusProfile.tiltCurve || [0, 0.25, 0.5, 0.75, 1];
     
-    const start = tiltCurve[index];
-    const end = tiltCurve[index + 1];
+    // Map tilt to curve
+    const index = Math.min(
+      Math.floor(tiltMagnitude * (curve.length - 1)),
+      curve.length - 2
+    );
+    const t = (tiltMagnitude * (curve.length - 1)) - index;
     
-    return start + remainder * (end - start);
-  }, [activeProfile]);
+    // Linear interpolation
+    return curve[index] * (1 - t) + curve[index + 1] * t;
+  }, [stylusProfile]);
   
-  // Calculate predicted points based on velocity
-  const calculatePrediction = useCallback((currentPoint: Point, velocity: { x: number, y: number }, count = 3): Point[] => {
-    const predicted: Point[] = [];
+  // Calculate vector between two points
+  const calculateVector = useCallback(() => {
+    const { start, end } = pointsRef.current;
     
-    // Don't predict if velocity is too low
-    if (Math.abs(velocity.x) < 0.1 && Math.abs(velocity.y) < 0.1) {
-      return predicted;
-    }
+    if (!start || !end) return { dx: 0, dy: 0, length: 0 };
     
-    // Add prediction points at increasing distances
-    for (let i = 1; i <= count; i++) {
-      predicted.push({
-        x: currentPoint.x + (velocity.x * i * 0.05), // Scale factor to control prediction length
-        y: currentPoint.y + (velocity.y * i * 0.05)
-      });
-    }
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
     
-    return predicted;
+    return { dx, dy, length };
   }, []);
   
-  // Handle pointer events with full tilt support
-  const handlePointerEvent = useCallback((e: PointerEvent) => {
-    if (!enabled || !canvas) return;
+  // Calculate direction angle in radians
+  const calculateDirection = useCallback(() => {
+    const { start, end } = pointsRef.current;
     
-    // Detect if this is a pen
-    const isPen = e.pointerType === 'pen';
+    if (!start || !end) return 0;
     
-    // For palm rejection: if we have an active pen pointer, ignore touch events
-    if (pointerIdRef.current !== null && pointerIdRef.current !== e.pointerId && !isPen) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
+    return Math.atan2(end.y - start.y, end.x - start.x);
+  }, []);
+  
+  // Listen for pointer events to extract stylus data
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    // Extract stylus data
-    const pressure = isPen ? (e.pressure || 0.5) : 0.5;
-    const tiltX = isPen ? (e.tiltX || 0) : 0;
-    const tiltY = isPen ? (e.tiltY || 0) : 0;
-    
-    // Calculate azimuth angle (if available)
-    let azimuthAngle = 0;
-    if ('azimuthAngle' in e) {
-      azimuthAngle = (e as any).azimuthAngle || 0;
-    } else if (tiltX !== 0 || tiltY !== 0) {
-      // Approximate azimuth from tilt
-      azimuthAngle = Math.atan2(tiltY, tiltX);
-    }
-    
-    // Update pressure with the calibrated curve
-    const adjustedPressure = applyPressureCurve(pressure);
-    
-    // Apply tilt effect if enabled
-    const tiltEffect = applyTiltCurve(tiltX, tiltY);
-    
-    // Calculate current point from event
-    const rect = canvas.getElement().getBoundingClientRect();
-    const point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+    const handlePointerDown = (e) => {
+      // Reset points
+      pointsRef.current = {
+        start: { x: e.clientX, y: e.clientY },
+        end: { x: e.clientX, y: e.clientY }
+      };
+      
+      // Set initial values
+      setPressure(e.pressure || 0);
+      setTilt({
+        x: e.tiltX || 0,
+        y: e.tiltY || 0
+      });
+      setTwist(e.twist || 0);
+      setLastPoint({
+        x: e.clientX,
+        y: e.clientY
+      });
+      
+      // Check if this is a stylus
+      setIsStylus(e.pointerType === 'pen');
     };
     
-    // Update velocity calculation
-    const now = performance.now();
-    if (lastTimestampRef.current > 0 && stylusState.lastPoint) {
-      const timeDelta = now - lastTimestampRef.current;
-      if (timeDelta > 0) {
-        velocityRef.current = {
-          x: (point.x - stylusState.lastPoint.x) / timeDelta * 16.67, // Normalize to 60fps
-          y: (point.y - stylusState.lastPoint.y) / timeDelta * 16.67
+    const handlePointerMove = (e) => {
+      // Update end point
+      if (pointsRef.current.start) {
+        pointsRef.current.end = {
+          x: e.clientX,
+          y: e.clientY
         };
       }
-    }
-    lastTimestampRef.current = now;
-    
-    // Add to point history for smoothing
-    pointHistoryRef.current.push(point);
-    if (pointHistoryRef.current.length > 10) {
-      pointHistoryRef.current.shift();
-    }
-    
-    // Calculate predicted points based on velocity
-    const predictedPoints = calculatePrediction(point, velocityRef.current);
-    
-    // Update stylus state
-    setStylusState(prev => ({
-      ...prev,
-      isPenMode: isPen,
-      pressure: adjustedPressure,
-      tiltX,
-      tiltY,
-      azimuthAngle,
-      lastPoint: point,
-      predictedPoints
-    }));
-    
-    // Update brush if in drawing mode
-    if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
-      // Combine pressure and tilt for final stroke width
-      const finalWidth = lineThickness * (0.5 + adjustedPressure + tiltEffect);
-      canvas.freeDrawingBrush.width = finalWidth;
       
-      // Could also adjust opacity, color, etc. based on pressure and tilt
-    }
-  }, [activeProfile, applyPressureCurve, applyTiltCurve, calculatePrediction, canvas, enabled, lineThickness, stylusState.lastPoint]);
-  
-  // Set up optimized event handlers
-  useEffect(() => {
-    if (!canvas || !enabled) return;
-    
-    const canvasElement = canvas.getElement();
-    
-    // Use these events for maximum performance
-    const eventOptions = { passive: false };
-    
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.pointerType === 'pen') {
-        pointerIdRef.current = e.pointerId;
-        
-        // Reset point history on new stroke
-        pointHistoryRef.current = [];
-        velocityRef.current = { x: 0, y: 0 };
-        
-        // Update state
-        setStylusState(prev => ({
-          ...prev,
-          isDown: true
-        }));
-        
-        // Process the normal event data
-        handlePointerEvent(e);
-        
-        // Try to set pointer capture
-        try {
-          canvasElement.setPointerCapture(e.pointerId);
-        } catch (err) {
-          console.warn('Could not set pointer capture:', err);
-        }
-      }
+      // Update values
+      setPressure(e.pressure || 0);
+      setTilt({
+        x: e.tiltX || 0,
+        y: e.tiltY || 0
+      });
+      setTwist(e.twist || 0);
+      setLastPoint({
+        x: e.clientX,
+        y: e.clientY
+      });
     };
     
-    const handlePointerMove = (e: PointerEvent) => {
-      // Process pointer move
-      handlePointerEvent(e);
+    const handlePointerUp = () => {
+      // Clear points
+      pointsRef.current = {};
       
-      // Handle coalesced events if available for smoother lines
-      if (e.getCoalescedEvents && pointerIdRef.current === e.pointerId) {
-        const events = e.getCoalescedEvents();
-        
-        // Process all coalesced events
-        for (const event of events) {
-          handlePointerEvent(event);
-        }
+      // Reset values
+      setPressure(0);
+      setTilt({ x: 0, y: 0 });
+      setTwist(0);
+    };
+    
+    // Process raw pointer data (higher frequency)
+    const handlePointerRawUpdate = (e: PointerRawUpdateEvent) => {
+      // Only process stylus/pen
+      if (e.pointerType !== 'pen') return;
+      
+      // Extract and process raw stylus data
+      const rawPressure = e.pressure || 0;
+      const adjustedPressure = applyPressureCurve(rawPressure) * (stylusProfile.pressureMultiplier || 1);
+      
+      setPressure(adjustedPressure);
+      
+      // Update tilt if available
+      if (e.tiltX !== undefined && e.tiltY !== undefined) {
+        setTilt({
+          x: e.tiltX,
+          y: e.tiltY
+        });
+      }
+      
+      // Update twist if available
+      if (e.twist !== undefined) {
+        setTwist(e.twist);
+      }
+      
+      // Update position if available
+      if (e.clientX !== undefined && e.clientY !== undefined) {
+        setLastPoint({
+          x: e.clientX,
+          y: e.clientY
+        });
       }
     };
     
-    const handlePointerUp = (e: PointerEvent) => {
-      if (pointerIdRef.current === e.pointerId) {
-        // Final event processing
-        handlePointerEvent(e);
-        
-        // Reset state
-        pointerIdRef.current = null;
-        setStylusState(prev => ({
-          ...prev,
-          isDown: false,
-          predictedPoints: []
-        }));
-        
-        // Release pointer capture
-        try {
-          canvasElement.releasePointerCapture(e.pointerId);
-        } catch (err) {
-          // Ignore release errors
-        }
-      }
-    };
+    // Add event listeners
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
     
-    // Add event listeners - use raw pointer events for best performance
-    canvasElement.addEventListener('pointerdown', handlePointerDown, eventOptions);
-    canvasElement.addEventListener('pointermove', handlePointerMove, eventOptions);
-    canvasElement.addEventListener('pointerup', handlePointerUp);
-    canvasElement.addEventListener('pointercancel', handlePointerUp);
-    canvasElement.addEventListener('pointerleave', handlePointerUp);
-    
-    // Use pointer raw update if available (Chrome only) for ultra-low-latency
-    if ('onpointerrawupdate' in window) {
-      canvasElement.addEventListener('pointerrawupdate', handlePointerMove, eventOptions);
+    // Try to add raw event listener if supported
+    try {
+      // Cast with as any to bypass TypeScript's event type checking
+      (canvas as any).addEventListener('pointerrawupdate', handlePointerRawUpdate);
+    } catch (e) {
+      console.log('PointerRawUpdate not supported');
     }
     
     return () => {
-      // Remove event listeners
-      canvasElement.removeEventListener('pointerdown', handlePointerDown);
-      canvasElement.removeEventListener('pointermove', handlePointerMove);
-      canvasElement.removeEventListener('pointerup', handlePointerUp);
-      canvasElement.removeEventListener('pointercancel', handlePointerUp);
-      canvasElement.removeEventListener('pointerleave', handlePointerUp);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
       
-      if ('onpointerrawupdate' in window) {
-        canvasElement.removeEventListener('pointerrawupdate', handlePointerMove);
+      try {
+        // Cast with as any to bypass TypeScript's event type checking
+        (canvas as any).removeEventListener('pointerrawupdate', handlePointerRawUpdate);
+      } catch (e) {
+        console.log('PointerRawUpdate not supported');
       }
     };
-  }, [canvas, enabled, handlePointerEvent]);
+  }, [canvasRef, applyPressureCurve, stylusProfile.pressureMultiplier]);
   
-  // Return all the stylus state for use in the UI
+  // Apply stylus profile changes
+  const updateStylusProfile = useCallback((profile) => {
+    setStylusProfile(profile);
+  }, []);
+  
+  // Get enhanced stylus data
+  const getStylusData = useCallback(() => {
+    const processedPressure = applyPressureCurve(pressure) * (stylusProfile.pressureMultiplier || 1);
+    const processedTilt = applyTiltCurve(tilt.x, tilt.y) * (stylusProfile.tiltSensitivity || 0.5);
+    
+    return {
+      pressure: processedPressure,
+      tilt,
+      tiltMagnitude: processedTilt,
+      twist,
+      direction: calculateDirection(),
+      vector: calculateVector(),
+      isStylus,
+      position: lastPoint
+    };
+  }, [
+    pressure,
+    tilt,
+    twist,
+    isStylus,
+    lastPoint,
+    calculateDirection,
+    calculateVector,
+    applyPressureCurve,
+    applyTiltCurve,
+    stylusProfile.pressureMultiplier,
+    stylusProfile.tiltSensitivity
+  ]);
+  
   return {
-    ...stylusState,
-    activeProfile,
-    adjustedThickness: lineThickness * (0.5 + stylusState.pressure),
-    smoothedPoints: smoothPoints(pointHistoryRef.current, 3),
-    velocityVector: velocityRef.current
+    stylusData: getStylusData(),
+    isStylusActive: isStylus && pressure > 0,
+    updateStylusProfile,
+    stylusProfile
   };
 };
+
+export default useEnhancedStylusInput;

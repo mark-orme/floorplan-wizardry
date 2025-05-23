@@ -1,15 +1,21 @@
 
 /**
- * Input method type for drawing tools
+ * Input method types for drawing tools
  */
-export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard' | string;
+export enum InputMethod {
+  MOUSE = 'mouse',
+  TOUCH = 'touch',
+  STYLUS = 'stylus',
+  KEYBOARD = 'keyboard',
+  PENCIL = 'pencil'
+}
 
 /**
  * Hook for detecting and managing input method for drawing tools
  */
 export const useLineInputMethod = () => {
   // Default to mouse input
-  return 'mouse' as InputMethod;
+  return InputMethod.MOUSE;
 };
 
 export default useLineInputMethod;

@@ -14,7 +14,9 @@ describe('useStraightLineTool', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       enabled: true,
-      canvas: mockCanvas
+      canvas: mockCanvas,
+      lineColor: '#000000',
+      lineThickness: 2
     }));
     
     expect(result.current.isDrawing).toBe(false);
@@ -25,7 +27,9 @@ describe('useStraightLineTool', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       enabled: true,
-      canvas: mockCanvas
+      canvas: mockCanvas,
+      lineColor: '#000000',
+      lineThickness: 2
     }));
     
     act(() => {
@@ -40,7 +44,9 @@ describe('useStraightLineTool', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
       enabled: true,
-      canvas: mockCanvas
+      canvas: mockCanvas,
+      lineColor: '#000000',
+      lineThickness: 2
     }));
     
     act(() => {
@@ -59,6 +65,8 @@ describe('useStraightLineTool', () => {
     const { result } = renderHook(() => useStraightLineTool({ 
       enabled: true,
       canvas: mockCanvas,
+      lineColor: '#000000',
+      lineThickness: 2,
       saveCurrentState
     }));
     

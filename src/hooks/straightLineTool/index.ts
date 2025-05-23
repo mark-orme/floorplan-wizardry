@@ -15,3 +15,6 @@ export { useFreehandAutoClean } from './useFreehandAutoClean';
 export { useLiveDistanceTooltip } from './useLiveDistanceTooltip';
 export { useLinePointerHandlers } from './useLinePointerHandlers';
 export { useMeasurementUpdates } from './useMeasurementUpdates';
+
+// Export types using export type syntax for TypeScript compatibility
+export type { UseStraightLineToolResult, UseStraightLineToolProps, MeasurementData } from './useStraightLineTool.d';
