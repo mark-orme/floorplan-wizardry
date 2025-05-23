@@ -24,14 +24,18 @@ export const useMultiTouchGestures = () => {
   const touchesRef = useRef<Touch[]>([]);
   
   // Calculate distance between two points
-  const calculateDistance = useCallback((point1: Touch, point2: Touch) => {
+  const calculateDistance = useCallback((point1: Touch | null, point2: Touch | null) => {
+    if (!point1 || !point2) return 0;
+    
     const dx = point2.clientX - point1.clientX;
     const dy = point2.clientY - point1.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
   
   // Calculate angle between two points
-  const calculateAngle = useCallback((point1: Touch, point2: Touch) => {
+  const calculateAngle = useCallback((point1: Touch | null, point2: Touch | null) => {
+    if (!point1 || !point2) return 0;
+    
     return Math.atan2(
       point2.clientY - point1.clientY,
       point2.clientX - point1.clientX
@@ -43,6 +47,9 @@ export const useMultiTouchGestures = () => {
     if (touches.length >= 2) {
       const touch1 = touches[0];
       const touch2 = touches[1];
+      
+      if (!touch1 || !touch2) return;
+      
       const distance = calculateDistance(touch1, touch2);
       const angle = calculateAngle(touch1, touch2);
       
@@ -70,6 +77,8 @@ export const useMultiTouchGestures = () => {
     
     const touch1 = touches[0];
     const touch2 = touches[1];
+    
+    if (!touch1 || !touch2) return;
     
     // Calculate new distance and angle
     const distance = calculateDistance(touch1, touch2);

@@ -1,30 +1,41 @@
 
+/**
+ * Point interface representing a 2D coordinate
+ */
 export interface Point {
   x: number;
   y: number;
 }
 
-export const isValidPoint = (point: any): point is Point => {
-  return point !== null && 
-         typeof point === 'object' && 
-         typeof point.x === 'number' && 
-         typeof point.y === 'number';
-};
+/**
+ * Create a new Point
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @returns Point object
+ */
+export function createPoint(x: number, y: number): Point {
+  return { x, y };
+}
 
-export const createPoint = (x: number = 0, y: number = 0): Point => ({ x, y });
+/**
+ * Check if two points are equal
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns True if points are equal
+ */
+export function pointsEqual(p1: Point | null | undefined, p2: Point | null | undefined): boolean {
+  if (!p1 || !p2) return false;
+  return p1.x === p2.x && p1.y === p2.y;
+}
 
-// Add the pointsEqual function that was referenced but missing
-export const pointsEqual = (a: Point | null | undefined, b: Point | null | undefined, threshold = 0): boolean => {
-  if (!a || !b) return false;
-  
-  if (threshold === 0) {
-    return a.x === b.x && a.y === b.y;
-  }
-  
-  const dx = Math.abs(a.x - b.x);
-  const dy = Math.abs(a.y - b.y);
-  return dx <= threshold && dy <= threshold;
-};
-
-// Alias for pointsEqual for backwards compatibility
-export const arePointsEqual = pointsEqual;
+/**
+ * Calculate the distance between two points
+ * @param p1 First point
+ * @param p2 Second point
+ * @returns Distance in pixels
+ */
+export function distance(p1: Point, p2: Point): number {
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}

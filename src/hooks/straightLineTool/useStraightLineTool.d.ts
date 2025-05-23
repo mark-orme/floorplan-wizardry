@@ -1,6 +1,8 @@
+
 import { Point } from '@/types/core/Point';
-import { Line } from 'fabric';
+import { Line, Canvas } from 'fabric';
 import { ReactNode } from 'react';
+import { InputMethod } from './useLineInputMethod';
 
 /**
  * Measurement data for line tools
@@ -11,6 +13,20 @@ export interface MeasurementData {
   snapped: boolean;
   unit: string;
   snapType?: 'grid' | 'angle' | 'both';
+}
+
+/**
+ * Props for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolProps {
+  isEnabled?: boolean;
+  enabled?: boolean; // Alias for isEnabled for backward compatibility
+  canvas: Canvas | null;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState?: () => void;
+  shiftKeyPressed?: boolean;
+  isActive?: boolean;
 }
 
 /**
@@ -46,19 +62,3 @@ export interface UseStraightLineToolResult {
   setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
   saveCurrentState: () => void;
 }
-
-/**
- * Props for the useStraightLineTool hook
- */
-export interface UseStraightLineToolProps {
-  isEnabled?: boolean;
-  enabled?: boolean; // Alias for isEnabled for backward compatibility
-  canvas: any;
-  lineColor: string;
-  lineThickness: number;
-  saveCurrentState?: () => void;
-  shiftKeyPressed?: boolean;
-  isActive?: boolean;
-}
-
-export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard' | string;

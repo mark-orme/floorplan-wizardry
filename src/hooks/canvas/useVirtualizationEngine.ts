@@ -36,11 +36,12 @@ export const useVirtualizationEngine = ({
     const width = canvas.width ?? viewportWidth;
     const height = canvas.height ?? viewportHeight;
     
+    // Add null checks with nullish coalescing operators
     const visibleArea = {
-      left: (-vpt[4] / zoom) - paddingPx,
-      top: (-vpt[5] / zoom) - paddingPx,
-      right: ((-vpt[4] + width) / zoom) + paddingPx,
-      bottom: ((-vpt[5] + height) / zoom) + paddingPx
+      left: (-(vpt[4] ?? 0) / zoom) - paddingPx,
+      top: (-(vpt[5] ?? 0) / zoom) - paddingPx,
+      right: ((-(vpt[4] ?? 0) + width) / zoom) + paddingPx,
+      bottom: ((-(vpt[5] ?? 0) + height) / zoom) + paddingPx
     };
     
     visibleAreaRef.current = visibleArea;
