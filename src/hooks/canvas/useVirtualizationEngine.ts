@@ -1,142 +1,154 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import lodash from 'lodash';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { Point } from '@/types/core/Point';
-import { DrawingMode } from '@/constants/drawingModes';
+import { debounce, throttle } from 'lodash'; // Importing lodash functions
 
-// Define virtualization grid properties
-interface VirtualizationGrid {
-  cols: number;
-  rows: number;
-  cellWidth: number;
-  cellHeight: number;
-  visibleCells: Set<string>;
+interface UseVirtualizationEngineProps {
+  canvas: FabricCanvas | null;
+  enabled?: boolean;
+  viewportPadding?: number;
+  updateInterval?: number;
 }
 
-export function useVirtualizationEngine(canvas: FabricCanvas | null) {
-  const [grid, setGrid] = useState<VirtualizationGrid | null>(null);
-  const [viewportBoundary, setViewportBoundary] = useState<{
-    top: number;
-    left: number;
-    right: number;
-    bottom: number;
-  } | null>(null);
+export const useVirtualizationEngine = ({
+  canvas,
+  enabled = true,
+  viewportPadding = 100,
+  updateInterval = 100
+}: UseVirtualizationEngineProps) => {
+  const [isEnabled, setIsEnabled] = useState(enabled);
+  const [performance, setPerformance] = useState<{
+    fps: number;
+    objectCount: number;
+    visibleObjectCount: number;
+  }>({ fps: 0, objectCount: 0, visibleObjectCount: 0 });
   
-  // Initialize the virtualization grid
-  const initializeGrid = useCallback(() => {
-    if (!canvas) return;
-    
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-    
-    const cellSize = 100; // Size of each virtual cell
-    const cols = Math.ceil(width / cellSize);
-    const rows = Math.ceil(height / cellSize);
-    
-    setGrid({
-      cols,
-      rows,
-      cellWidth: cellSize,
-      cellHeight: cellSize,
-      visibleCells: new Set()
-    });
-    
-    updateVisibleCells();
-  }, [canvas]);
+  const lastFrameTime = useRef(0);
+  const frameCount = useRef(0);
+  const lastFpsUpdate = useRef(0);
   
-  // Update which cells are currently visible
-  const updateVisibleCells = useCallback(() => {
-    if (!canvas || !grid) return;
+  // Get viewport bounds accounting for zoom and pan
+  const getViewportBounds = useCallback(() => {
+    if (!canvas || !canvas.viewportTransform) return { left: 0, top: 0, right: 0, bottom: 0 };
     
-    // Get current viewport from canvas transform
-    const vpt = canvas.viewportTransform;
-    if (!vpt) return;
-    
-    // Calculate viewport boundaries
     const zoom = canvas.getZoom();
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
+    const vpt = canvas.viewportTransform;
+    const width = canvas.getWidth() || 0;
+    const height = canvas.getHeight() || 0;
     
-    const viewLeft = -vpt[4] / zoom;
-    const viewTop = -vpt[5] / zoom;
-    const viewRight = viewLeft + width / zoom;
-    const viewBottom = viewTop + height / zoom;
+    return {
+      left: -vpt[4] / zoom - viewportPadding,
+      top: -vpt[5] / zoom - viewportPadding,
+      right: (-vpt[4] + width) / zoom + viewportPadding,
+      bottom: (-vpt[5] + height) / zoom + viewportPadding
+    };
+  }, [canvas, viewportPadding]);
+  
+  // Update the object visibility based on viewport
+  const updateObjectVisibility = useCallback(() => {
+    if (!canvas || !isEnabled) return;
     
-    // Store viewport boundary for debugging or other uses
-    setViewportBoundary({
-      left: viewLeft,
-      top: viewTop,
-      right: viewRight,
-      bottom: viewBottom
-    });
+    const bounds = getViewportBounds();
+    const objects = canvas.getObjects();
+    let visibleCount = 0;
     
-    // Determine which grid cells are visible
-    const visibleCells = new Set<string>();
-    
-    // Calculate visible cell range
-    const startCol = Math.floor(viewLeft / grid.cellWidth);
-    const endCol = Math.ceil(viewRight / grid.cellWidth);
-    const startRow = Math.floor(viewTop / grid.cellHeight);
-    const endRow = Math.ceil(viewBottom / grid.cellHeight);
-    
-    // Add all visible cells to the set
-    for (let col = startCol; col <= endCol; col++) {
-      for (let row = startRow; row <= endRow; row++) {
-        if (col >= 0 && col < grid.cols && row >= 0 && row < grid.rows) {
-          visibleCells.add(`${col}:${row}`);
+    objects.forEach(obj => {
+      if (!obj.getBoundingRect) return;
+      
+      const objBounds = obj.getBoundingRect();
+      const isVisible = 
+        objBounds.left < bounds.right &&
+        objBounds.top < bounds.bottom &&
+        objBounds.left + objBounds.width > bounds.left &&
+        objBounds.top + objBounds.height > bounds.top;
+      
+      // Only update visibility if it changed
+      if (obj.visible !== isVisible) {
+        obj.visible = isVisible;
+        
+        // Set the dirty flag if available
+        if ('dirty' in obj) {
+          (obj as any).dirty = true;
         }
       }
+      
+      if (isVisible) visibleCount++;
+    });
+    
+    // Update performance metrics
+    frameCount.current++;
+    const now = performance.now();
+    
+    if (now - lastFpsUpdate.current >= 1000) {
+      const fps = Math.round((frameCount.current * 1000) / (now - lastFpsUpdate.current));
+      
+      setPerformance({
+        fps,
+        objectCount: objects.length,
+        visibleObjectCount: visibleCount
+      });
+      
+      frameCount.current = 0;
+      lastFpsUpdate.current = now;
     }
-    
-    setGrid(prev => prev ? {
-      ...prev,
-      visibleCells
-    } : null);
-    
-  }, [canvas, grid]);
+  }, [canvas, getViewportBounds, isEnabled]);
   
-  // Handle viewport changes (pan, zoom)
-  const handleViewportChange = useCallback(() => {
-    updateVisibleCells();
-  }, [updateVisibleCells]);
+  // Create debounced and throttled versions of the update function
+  const debouncedUpdate = useCallback(
+    debounce(updateObjectVisibility, 100),
+    [updateObjectVisibility]
+  );
   
-  // Attach and detach event handlers
+  const throttledUpdate = useCallback(
+    throttle(updateObjectVisibility, updateInterval),
+    [updateObjectVisibility, updateInterval]
+  );
+  
+  // Set up event listeners for canvas events
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || !isEnabled) return;
     
-    // Initialize the grid
-    initializeGrid();
+    const handleViewportChange = () => {
+      throttledUpdate();
+    };
     
-    // Setup event listeners for canvas viewport changes
-    canvas.on('viewport:translate', handleViewportChange);
-    canvas.on('zoom:change', handleViewportChange);
-    canvas.on('canvas:resized', initializeGrid);
+    const handleObjectModification = () => {
+      debouncedUpdate();
+    };
+    
+    canvas.on('object:modified', handleObjectModification);
+    canvas.on('object:added', handleObjectModification);
+    canvas.on('object:removed', handleObjectModification);
+    canvas.on('zoom:changed', handleViewportChange);
+    canvas.on('viewportTransform:changed', handleViewportChange);
+    canvas.on('mouse:wheel', handleViewportChange);
+    
+    // Initial update
+    updateObjectVisibility();
     
     return () => {
-      canvas.off('viewport:translate', handleViewportChange);
-      canvas.off('zoom:change', handleViewportChange);
-      canvas.off('canvas:resized', initializeGrid);
+      canvas.off('object:modified', handleObjectModification);
+      canvas.off('object:added', handleObjectModification);
+      canvas.off('object:removed', handleObjectModification);
+      canvas.off('zoom:changed', handleViewportChange);
+      canvas.off('viewportTransform:changed', handleViewportChange);
+      canvas.off('mouse:wheel', handleViewportChange);
+      
+      debouncedUpdate.cancel();
+      throttledUpdate.cancel();
     };
-  }, [canvas, initializeGrid, handleViewportChange]);
+  }, [canvas, isEnabled, debouncedUpdate, throttledUpdate, updateObjectVisibility]);
   
-  // Debounced version of updateVisibleCells for performance
-  const debouncedUpdateVisibleCells = lodash.debounce(() => {
-    updateVisibleCells();
-  }, 100);
-  
-  // Throttled version of updateVisibleCells for continuous updates
-  const throttledUpdateVisibleCells = lodash.throttle(() => {
-    updateVisibleCells();
-  }, 50);
+  const toggleEnabled = useCallback(() => {
+    setIsEnabled(prev => !prev);
+  }, []);
   
   return {
-    grid,
-    viewportBoundary,
-    updateVisibleCells,
-    debouncedUpdateVisibleCells,
-    throttledUpdateVisibleCells
+    isEnabled,
+    toggleEnabled,
+    updateVisibility: updateObjectVisibility,
+    performance
   };
-}
+};
 
 export default useVirtualizationEngine;

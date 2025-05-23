@@ -1,10 +1,17 @@
 
 import { useCallback, useEffect, useRef } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 
 interface UseCanvasOptimizationProps {
   canvasRef: React.MutableRefObject<FabricCanvas | null>;
   enabled?: boolean;
+}
+
+// Extended FabricObject interface to include dirty property
+interface ExtendedFabricObject extends FabricObject {
+  dirty?: boolean;
+  objectCaching?: boolean;
+  visible?: boolean;
 }
 
 export const useCanvasOptimization = ({ 
@@ -32,15 +39,17 @@ export const useCanvasOptimization = ({
     // Add padding to ensure objects near edges are not optimized out
     const padding = 100;
 
-    objects.forEach(obj => {
-      if (!obj.getBoundingRect) return;
+    objects.forEach((obj: ExtendedFabricObject) => {
+      if (!obj || !obj.getBoundingRect) return;
 
       const bounds = obj.getBoundingRect();
+      if (!bounds) return;
+
       const isVisible = 
-        bounds.left * zoom + vpt[4] < width + padding &&
-        bounds.top * zoom + vpt[5] < height + padding &&
-        bounds.left * zoom + bounds.width * zoom + vpt[4] > -padding &&
-        bounds.top * zoom + bounds.height * zoom + vpt[5] > -padding;
+        bounds.left * zoom + (vpt[4] || 0) < (width || 0) + padding &&
+        bounds.top * zoom + (vpt[5] || 0) < (height || 0) + padding &&
+        bounds.left * zoom + bounds.width * zoom + (vpt[4] || 0) > -padding &&
+        bounds.top * zoom + bounds.height * zoom + (vpt[5] || 0) > -padding;
 
       // Skip optimization for small objects
       const isSmall = bounds.width * zoom < 10 || bounds.height * zoom < 10;
@@ -48,13 +57,17 @@ export const useCanvasOptimization = ({
       // Only set objectCaching for objects that need it
       if (obj.objectCaching !== !isSmall && obj.type !== 'group') {
         obj.objectCaching = !isSmall;
-        obj.dirty = true;
+        if (obj.dirty !== undefined) {
+          obj.dirty = true;
+        }
       }
 
       // Skip rendering for off-screen objects
       if (obj.visible !== isVisible) {
         obj.visible = isVisible;
-        obj.dirty = true;
+        if (obj.dirty !== undefined) {
+          obj.dirty = true;
+        }
       }
     });
   }, [canvasRef]);
@@ -117,7 +130,9 @@ export const useCanvasOptimization = ({
     // Set up canvas optimization properties
     canvas.renderOnAddRemove = false;
     canvas.skipTargetFind = false;
-    canvas.skipOffscreen = true;
+    if ('skipOffscreen' in canvas) {
+      (canvas as any).skipOffscreen = true;
+    }
 
     optimizeOffscreenObjects();
     startRenderLoop();
@@ -127,7 +142,9 @@ export const useCanvasOptimization = ({
       stopRenderLoop();
       if (canvas) {
         canvas.renderOnAddRemove = true;
-        canvas.skipOffscreen = false;
+        if ('skipOffscreen' in canvas) {
+          (canvas as any).skipOffscreen = false;
+        }
       }
     };
   }, [canvasRef, enabled, optimizeOffscreenObjects, startRenderLoop, stopRenderLoop]);

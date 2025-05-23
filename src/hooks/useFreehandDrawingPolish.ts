@@ -1,203 +1,257 @@
 
-import { useRef, useEffect } from 'react';
-import { Canvas, Object as FabricObject } from 'fabric';
-import { Point, createPoint, distanceBetweenPoints } from '@/utils/geometry/Point';
-import { createFabricPath, isPath, setPathData } from '@/utils/fabric/fabric-path-adapter';
+import { useCallback, useRef } from 'react';
+import { Canvas as FabricCanvas, Path } from 'fabric';
+import { Point } from '@/types/core/Point';
 
-interface FreehandDrawingOptions {
-  strokeWidth?: number;
-  strokeColor?: string;
-  simplifyTolerance?: number;
-  smoothingFactor?: number;
+interface UseFreehandDrawingPolishProps {
+  canvas: FabricCanvas | null;
+  smoothing?: number;
+  streamline?: number;
+  precision?: number;
 }
 
-/**
- * Enhanced freehand drawing with path optimization
- */
-export function useFreehandDrawingPolish(canvas: Canvas | null, options: FreehandDrawingOptions = {}) {
-  const pathRef = useRef<any>(null);
-  const pointsRef = useRef<Point[]>([]);
+export const useFreehandDrawingPolish = ({
+  canvas,
+  smoothing = 0.5,
+  streamline = 0.5,
+  precision = 0.5
+}: UseFreehandDrawingPolishProps) => {
+  // Store raw and processed points
+  const rawPoints = useRef<Point[]>([]);
+  const smoothedPoints = useRef<Point[]>([]);
   
-  useEffect(() => {
+  // Active drawing path
+  const activePath = useRef<Path | null>(null);
+  
+  // Helper function to create a new path
+  const createPath = useCallback((color: string, thickness: number) => {
+    if (!canvas) return null;
+    
+    // Create empty path
+    const path = new Path('M 0 0', {
+      stroke: color,
+      strokeWidth: thickness,
+      fill: 'transparent',
+      strokeLineCap: 'round',
+      strokeLineJoin: 'round'
+    });
+    
+    canvas.add(path);
+    return path;
+  }, [canvas]);
+  
+  // Start drawing
+  const startDrawing = useCallback((point: Point, color: string, thickness: number) => {
     if (!canvas) return;
     
-    const handlePathCreated = (e: any) => {
-      if (!e.path) return;
-      
-      try {
-        // Apply path optimization
-        optimizePath(e.path, {
-          simplifyTolerance: options.simplifyTolerance || 2,
-          smoothingFactor: options.smoothingFactor || 0.3
-        });
-      } catch (error) {
-        console.error('Error in path optimization:', error);
-      }
-    };
+    // Clear previous points
+    rawPoints.current = [point];
+    smoothedPoints.current = [point];
     
-    canvas.on('path:created', handlePathCreated);
-    
-    return () => {
-      canvas.off('path:created', handlePathCreated);
-    };
-  }, [canvas, options.simplifyTolerance, options.smoothingFactor]);
+    // Create new path
+    activePath.current = createPath(color, thickness);
+  }, [canvas, createPath]);
   
-  // Update brush settings when options change
-  useEffect(() => {
-    if (!canvas) return;
+  // Add point while drawing
+  const addPoint = useCallback((point: Point) => {
+    if (!canvas || !activePath.current) return;
     
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.width = options.strokeWidth || 2;
-      canvas.freeDrawingBrush.color = options.strokeColor || '#000000';
-    }
-  }, [canvas, options.strokeWidth, options.strokeColor]);
-  
-  /**
-   * Optimizes a path by simplifying and smoothing
-   */
-  const optimizePath = (path: any, settings: { simplifyTolerance: number, smoothingFactor: number }) => {
-    if (!isPath(path)) return;
+    // Add raw point
+    rawPoints.current.push(point);
     
-    try {
-      // Get path data
-      const pathData = path.path;
-      if (!pathData || !Array.isArray(pathData)) return;
-      
-      // Convert path data to points
-      const points = pathDataToPoints(pathData);
-      
-      // Simplify path
-      const simplifiedPoints = simplifyPath(points, settings.simplifyTolerance);
-      
-      // Smooth path
-      const smoothedPoints = smoothPath(simplifiedPoints, settings.smoothingFactor);
-      
-      // Convert back to path data
-      const newPathData = pointsToPathData(smoothedPoints);
-      
-      // Update path
-      setPathData(path, newPathData);
-    } catch (error) {
-      console.error('Error optimizing path:', error);
-    }
-  };
-  
-  /**
-   * Converts path data to array of points
-   */
-  const pathDataToPoints = (pathData: any[]): Point[] => {
-    const points: Point[] = [];
-    let currentX = 0;
-    let currentY = 0;
-    
-    for (let i = 0; i < pathData.length; i++) {
-      const command = pathData[i];
-      
-      switch (command[0]) {
-        case 'M': // Move to
-          currentX = command[1];
-          currentY = command[2];
-          points.push(createPoint(currentX, currentY));
-          break;
-        case 'L': // Line to
-          currentX = command[1];
-          currentY = command[2];
-          points.push(createPoint(currentX, currentY));
-          break;
-        case 'Q': // Quadratic curve
-          currentX = command[3];
-          currentY = command[4];
-          points.push(createPoint(currentX, currentY));
-          break;
-        case 'C': // Cubic curve
-          currentX = command[5];
-          currentY = command[6];
-          points.push(createPoint(currentX, currentY));
-          break;
+    // Apply streamlining (lagging behind the cursor)
+    let streamlinedPoint = point;
+    if (streamline > 0 && rawPoints.current.length > 1) {
+      const lastPoint = smoothedPoints.current[smoothedPoints.current.length - 1];
+      if (lastPoint) {
+        streamlinedPoint = {
+          x: lastPoint.x + (point.x - lastPoint.x) * (1 - streamline),
+          y: lastPoint.y + (point.y - lastPoint.y) * (1 - streamline)
+        };
       }
     }
     
-    return points;
-  };
+    // Add streamlined point
+    smoothedPoints.current.push(streamlinedPoint);
+    
+    // Update path if we have enough points
+    if (smoothedPoints.current.length >= 2) {
+      updatePath();
+    }
+  }, [canvas, streamline]);
   
-  /**
-   * Converts array of points to path data
-   */
-  const pointsToPathData = (points: Point[]): any[] => {
-    if (points.length === 0) return [];
+  // Update the path with current points
+  const updatePath = useCallback(() => {
+    if (!canvas || !activePath.current) return;
     
-    const pathData: any[] = [];
+    const points = smoothedPoints.current;
+    if (points.length < 2) return;
     
-    // Move to first point
-    pathData.push(['M', points[0].x, points[0].y]);
+    // Build SVG path data
+    let pathData = '';
     
-    // Add line segments
-    for (let i = 1; i < points.length; i++) {
-      pathData.push(['L', points[i].x, points[i].y]);
+    // Start point
+    const p0 = points[0];
+    if (p0) {
+      pathData = `M ${p0.x} ${p0.y}`;
     }
     
-    return pathData;
-  };
+    if (smoothing > 0) {
+      // Smooth curve using quadratic bezier curves
+      for (let i = 1; i < points.length; i++) {
+        const p1 = points[i];
+        const p_1 = points[i - 1];
+        
+        if (p_1 && p1) {
+          // Calculate control point
+          const cpx = (p_1.x + p1.x) / 2;
+          const cpy = (p_1.y + p1.y) / 2;
+          
+          // Add quadratic bezier segment
+          pathData += ` Q ${p_1.x} ${p_1.y}, ${cpx} ${cpy}`;
+        }
+      }
+      
+      // Add last segment
+      const lastPoint = points[points.length - 1];
+      if (lastPoint) {
+        pathData += ` L ${lastPoint.x} ${lastPoint.y}`;
+      }
+    } else {
+      // Simple polyline for no smoothing
+      for (let i = 1; i < points.length; i++) {
+        const p = points[i];
+        if (p) {
+          pathData += ` L ${p.x} ${p.y}`;
+        }
+      }
+    }
+    
+    // Apply path data to active path
+    activePath.current.set({ path: pathData });
+    canvas.renderAll();
+  }, [canvas, smoothing]);
   
-  /**
-   * Simplifies a path by removing points that are too close
-   */
-  const simplifyPath = (points: Point[], tolerance: number): Point[] => {
+  // Complete drawing
+  const completeDrawing = useCallback(() => {
+    if (!canvas || !activePath.current) return;
+    
+    // Final update to path
+    updatePath();
+    
+    // Simplify path if needed based on precision
+    if (precision < 1 && smoothedPoints.current.length > 10) {
+      const simplified = simplifyPoints(smoothedPoints.current, precision);
+      
+      if (simplified.length >= 2) {
+        // Build simplified path
+        let pathData = `M ${simplified[0].x} ${simplified[0].y}`;
+        
+        for (let i = 1; i < simplified.length; i++) {
+          pathData += ` L ${simplified[i].x} ${simplified[i].y}`;
+        }
+        
+        // Update path
+        activePath.current.set({ path: pathData });
+      }
+    }
+    
+    // Add path to canvas and reset
+    canvas.renderAll();
+    
+    // Reset state
+    const finishedPath = activePath.current;
+    activePath.current = null;
+    rawPoints.current = [];
+    smoothedPoints.current = [];
+    
+    return finishedPath;
+  }, [canvas, updatePath, precision]);
+  
+  // Simplify points using Ramer-Douglas-Peucker algorithm
+  const simplifyPoints = useCallback((points: Point[], tolerance: number): Point[] => {
+    // Base case: 2 or fewer points
     if (points.length <= 2) return points;
     
-    const result: Point[] = [points[0]];
+    // Convert tolerance from 0-1 range to a pixel value
+    const pixelTolerance = 5 + (1 - tolerance) * 10;
     
-    for (let i = 1; i < points.length; i++) {
-      const prevPoint = result[result.length - 1];
-      const currentPoint = points[i];
+    // Find the point with the maximum distance
+    let maxDistance = 0;
+    let maxIndex = 0;
+    
+    const startPoint = points[0];
+    const endPoint = points[points.length - 1];
+    
+    if (!startPoint || !endPoint) return points;
+    
+    for (let i = 1; i < points.length - 1; i++) {
+      const point = points[i];
+      if (!point) continue;
       
-      if (distanceBetweenPoints(prevPoint, currentPoint) >= tolerance) {
-        result.push(currentPoint);
+      const distance = perpendicularDistance(point, startPoint, endPoint);
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        maxIndex = i;
       }
     }
     
-    // Always include the last point
-    if (result[result.length - 1] !== points[points.length - 1]) {
-      result.push(points[points.length - 1]);
+    // If max distance is greater than tolerance, recursively simplify
+    if (maxDistance > pixelTolerance) {
+      // Recursive case
+      const firstHalf = simplifyPoints(points.slice(0, maxIndex + 1), tolerance);
+      const secondHalf = simplifyPoints(points.slice(maxIndex), tolerance);
+      
+      // Concatenate the two parts (removing duplicate point)
+      return [...firstHalf.slice(0, -1), ...secondHalf];
+    } else {
+      // Base case: All points in this segment are within tolerance
+      return [startPoint, endPoint];
     }
-    
-    return result;
-  };
+  }, []);
   
-  /**
-   * Smooths a path using Chaikin's algorithm
-   */
-  const smoothPath = (points: Point[], factor: number): Point[] => {
-    if (points.length <= 2) return points;
+  // Calculate perpendicular distance from point to line segment
+  const perpendicularDistance = useCallback((point: Point, lineStart: Point, lineEnd: Point): number => {
+    const dx = lineEnd.x - lineStart.x;
+    const dy = lineEnd.y - lineStart.y;
     
-    const result: Point[] = [];
-    
-    // Always include the first point
-    result.push(points[0]);
-    
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i];
-      const p1 = points[i + 1];
-      
-      // Calculate control points
-      const q0x = p0.x + (p1.x - p0.x) * factor;
-      const q0y = p0.y + (p1.y - p0.y) * factor;
-      
-      const q1x = p1.x - (p1.x - p0.x) * factor;
-      const q1y = p1.y - (p1.y - p0.y) * factor;
-      
-      // Add control points
-      result.push(createPoint(q0x, q0y));
-      result.push(createPoint(q1x, q1y));
+    // If the line is just a point, return the distance to that point
+    const lineLengthSquared = dx * dx + dy * dy;
+    if (lineLengthSquared === 0) {
+      const dx2 = point.x - lineStart.x;
+      const dy2 = point.y - lineStart.y;
+      return Math.sqrt(dx2 * dx2 + dy2 * dy2);
     }
     
-    // Always include the last point
-    result.push(points[points.length - 1]);
+    // Calculate the projection of the point onto the line
+    const t = ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / lineLengthSquared;
     
-    return result;
-  };
+    if (t < 0) {
+      // Point projects outside the line segment, near lineStart
+      const dx2 = point.x - lineStart.x;
+      const dy2 = point.y - lineStart.y;
+      return Math.sqrt(dx2 * dx2 + dy2 * dy2);
+    } else if (t > 1) {
+      // Point projects outside the line segment, near lineEnd
+      const dx2 = point.x - lineEnd.x;
+      const dy2 = point.y - lineEnd.y;
+      return Math.sqrt(dx2 * dx2 + dy2 * dy2);
+    } else {
+      // Point projects onto the line segment
+      const projectionX = lineStart.x + t * dx;
+      const projectionY = lineStart.y + t * dy;
+      const dx2 = point.x - projectionX;
+      const dy2 = point.y - projectionY;
+      return Math.sqrt(dx2 * dx2 + dy2 * dy2);
+    }
+  }, []);
   
   return {
-    optimizePath
+    startDrawing,
+    addPoint,
+    updatePath,
+    completeDrawing
   };
-}
+};
+
+export default useFreehandDrawingPolish;

@@ -6,6 +6,7 @@ export interface StylusProfile {
   tiltSensitivity: number;
   stabilization: number;
   pressureMultiplier: number;
+  tiltCurve?: number[]; // Add the missing property
 }
 
 export const DEFAULT_STYLUS_PROFILE: StylusProfile = {
@@ -14,7 +15,8 @@ export const DEFAULT_STYLUS_PROFILE: StylusProfile = {
   pressureCurve: [0, 0.25, 0.5, 0.75, 1],
   tiltSensitivity: 0.5,
   stabilization: 0.3,
-  pressureMultiplier: 1
+  pressureMultiplier: 1,
+  tiltCurve: [0, 0.25, 0.5, 0.75, 1] // Add default tiltCurve
 };
 
 export const PRESETS = {
@@ -24,7 +26,8 @@ export const PRESETS = {
     pressureCurve: [0.2, 0.4, 0.6, 0.8, 1],
     tiltSensitivity: 0.3,
     stabilization: 0.5,
-    pressureMultiplier: 1.2
+    pressureMultiplier: 1.2,
+    tiltCurve: [0.1, 0.3, 0.5, 0.7, 0.9]
   },
   HEAVY: {
     id: 'heavy',
@@ -32,7 +35,8 @@ export const PRESETS = {
     pressureCurve: [0, 0.1, 0.3, 0.6, 1],
     tiltSensitivity: 0.7,
     stabilization: 0.2,
-    pressureMultiplier: 0.8
+    pressureMultiplier: 0.8,
+    tiltCurve: [0, 0.2, 0.4, 0.7, 1]
   },
   LINEAR: {
     id: 'linear',
@@ -40,6 +44,7 @@ export const PRESETS = {
     pressureCurve: [0, 0.25, 0.5, 0.75, 1],
     tiltSensitivity: 0.5,
     stabilization: 0.3,
-    pressureMultiplier: 1
+    pressureMultiplier: 1,
+    tiltCurve: [0, 0.25, 0.5, 0.75, 1]
   }
 };

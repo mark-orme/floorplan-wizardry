@@ -1,272 +1,168 @@
 
-/**
- * Hook for managing drawing tools and operations
- * @module hooks/useDrawingTools
- */
-import { useCallback, useEffect } from "react";
-import { Canvas as FabricCanvas, Object as FabricObject } from "fabric";
-import { DrawingMode } from "@/constants/drawingModes";
-import { toast } from "sonner";
-import logger from "@/utils/logger";
+import { useCallback, useRef, useState } from 'react';
+import { Canvas as FabricCanvas } from 'fabric';
 
-interface UseDrawingToolsProps {
-  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
-  gridLayerRef: React.MutableRefObject<FabricObject[]>;
-  tool: DrawingMode;
-  setTool: React.Dispatch<React.SetStateAction<DrawingMode>>;
-  zoomLevel: number;
-  setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
-  lineThickness: number;
-  lineColor: string;
-  historyRef: React.MutableRefObject<{
-    past: FabricObject[][];
-    future: FabricObject[][];
-  }>;
-  floorPlans: any[];
-  currentFloor: number;
-  setFloorPlans: React.Dispatch<React.SetStateAction<any[]>>;
-  setGia: React.Dispatch<React.SetStateAction<number>>;
-  createGrid: (canvas: FabricCanvas) => FabricObject[];
+interface DrawingState {
+  previousStates: string[];
+  currentStateIndex: number;
+  maxStates: number;
 }
 
-/**
- * Hook that manages drawing tools and operations
- */
+interface UseDrawingToolsProps {
+  canvas: FabricCanvas | null;
+  maxUndoSteps?: number;
+}
+
 export const useDrawingTools = ({
-  fabricCanvasRef,
-  tool,
-  setTool,
-  zoomLevel,
-  setZoomLevel,
-  lineThickness,
-  lineColor,
-  historyRef,
-  createGrid
+  canvas,
+  maxUndoSteps = 20
 }: UseDrawingToolsProps) => {
-  /**
-   * Save current canvas state to history
-   */
-  const saveCurrentState = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Use a ref to avoid re-renders on state updates
+  const stateRef = useRef<DrawingState>({
+    previousStates: [],
+    currentStateIndex: -1,
+    maxStates: maxUndoSteps
+  });
+  
+  // Save canvas state for undo
+  const saveState = useCallback(() => {
+    if (!canvas || isSaving) return;
+    
+    setIsSaving(true);
     
     try {
-      // Store current state
-      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
+      // Convert canvas to JSON
+      const json = JSON.stringify(canvas.toJSON());
       
-      if (currentObjects.length > 0) {
-        logger.info(`Saving state with ${currentObjects.length} objects`);
-        
-        // Clone the past array and add current state
-        const newPast = [...historyRef.current.past, currentObjects];
-        
-        // Update history ref
-        historyRef.current = {
-          past: newPast,
-          future: []
-        };
+      const state = stateRef.current;
+      
+      // If we're not at the end of the undo history, remove future states
+      if (state.currentStateIndex < state.previousStates.length - 1) {
+        state.previousStates = state.previousStates.slice(0, state.currentStateIndex + 1);
       }
+      
+      // Add current state
+      state.previousStates.push(json);
+      
+      // Limit number of states
+      if (state.previousStates.length > state.maxStates) {
+        state.previousStates.shift();
+      } else {
+        state.currentStateIndex++;
+      }
+      
+      // Update undo/redo availability
+      setCanUndo(state.currentStateIndex > 0);
+      setCanRedo(state.currentStateIndex < state.previousStates.length - 1);
     } catch (error) {
-      logger.error("Error saving canvas state:", error);
+      console.error('Failed to save canvas state:', error);
+    } finally {
+      setIsSaving(false);
     }
-  }, [fabricCanvasRef, historyRef]);
+  }, [canvas, isSaving]);
   
-  /**
-   * Undo the last drawing action
-   */
+  // Undo last action
   const undo = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    try {
-      const { past, future } = historyRef.current;
-      
-      if (past.length === 0) {
-        toast.info("Nothing to undo");
-        return;
-      }
-      
-      // Get current state to add to future
-      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
-      
-      // Get the previous state
-      const previousState = past[past.length - 1];
-      
-      // Add current state to future
-      const newFuture = [...future, currentObjects];
-      
-      // Remove last state from past
-      const newPast = past.slice(0, past.length - 1);
-      
-      // Update history ref
-      historyRef.current = {
-        past: newPast,
-        future: newFuture
-      };
-      
-      // Remove all objects except grid
-      canvas.getObjects().forEach(obj => {
-        if (obj.objectType !== 'grid') {
-          canvas.remove(obj);
-        }
-      });
-      
-      // Add objects from previous state
-      previousState.forEach(obj => {
-        canvas.add(obj);
-      });
-      
-      // Render changes
-      canvas.requestRenderAll();
-      toast.success("Undo completed");
-    } catch (error) {
-      logger.error("Error undoing action:", error);
-      toast.error("Failed to undo: " + (error instanceof Error ? error.message : String(error)));
+    const state = stateRef.current;
+    
+    // Check if we can undo
+    if (state.currentStateIndex <= 0) {
+      setCanUndo(false);
+      return;
     }
-  }, [fabricCanvasRef, historyRef]);
+    
+    // Move back in history
+    state.currentStateIndex--;
+    
+    // Get previous state
+    const previousState = state.previousStates[state.currentStateIndex];
+    
+    if (previousState) {
+      // Load previous state
+      canvas.loadFromJSON(previousState, () => {
+        canvas.renderAll();
+        
+        // Update undo/redo availability
+        setCanUndo(state.currentStateIndex > 0);
+        setCanRedo(state.currentStateIndex < state.previousStates.length - 1);
+      });
+    }
+  }, [canvas]);
   
-  /**
-   * Redo the last undone action
-   */
+  // Redo last undone action
   const redo = useCallback(() => {
-    const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    try {
-      const { past, future } = historyRef.current;
-      
-      if (future.length === 0) {
-        toast.info("Nothing to redo");
-        return;
-      }
-      
-      // Get current state to add to past
-      const currentObjects = canvas.getObjects().filter(obj => obj.objectType !== 'grid');
-      
-      // Get the next state
-      const nextState = future[future.length - 1];
-      
-      // Add current state to past
-      const newPast = [...past, currentObjects];
-      
-      // Remove last state from future
-      const newFuture = future.slice(0, future.length - 1);
-      
-      // Update history ref
-      historyRef.current = {
-        past: newPast,
-        future: newFuture
-      };
-      
-      // Remove all objects except grid
-      canvas.getObjects().forEach(obj => {
-        if (obj.objectType !== 'grid') {
-          canvas.remove(obj);
-        }
+    const state = stateRef.current;
+    
+    // Check if we can redo
+    if (state.currentStateIndex >= state.previousStates.length - 1) {
+      setCanRedo(false);
+      return;
+    }
+    
+    // Move forward in history
+    state.currentStateIndex++;
+    
+    // Get next state
+    const nextState = state.previousStates[state.currentStateIndex];
+    
+    if (nextState) {
+      // Load next state
+      canvas.loadFromJSON(nextState, () => {
+        canvas.renderAll();
+        
+        // Update undo/redo availability
+        setCanUndo(state.currentStateIndex > 0);
+        setCanRedo(state.currentStateIndex < state.previousStates.length - 1);
       });
-      
-      // Add objects from next state
-      nextState.forEach(obj => {
-        canvas.add(obj);
-      });
-      
-      // Render changes
-      canvas.requestRenderAll();
-      toast.success("Redo completed");
-    } catch (error) {
-      logger.error("Error redoing action:", error);
-      toast.error("Failed to redo: " + (error instanceof Error ? error.message : String(error)));
     }
-  }, [fabricCanvasRef, historyRef]);
+  }, [canvas]);
   
-  /**
-   * Handle zoom operations
-   */
-  const handleZoom = useCallback((scaleFactor: number) => {
-    const canvas = fabricCanvasRef.current;
+  // Clear the canvas
+  const clearCanvas = useCallback(() => {
     if (!canvas) return;
     
-    try {
-      // Get current zoom
-      const currentZoom = canvas.getZoom();
-      
-      // Calculate new zoom
-      const newZoom = Math.max(0.1, Math.min(5, currentZoom * scaleFactor));
-      
-      // Apply zoom
-      canvas.setZoom(newZoom);
-      setZoomLevel(newZoom);
-      
-      // Render changes
-      canvas.requestRenderAll();
-      
-      // Recreate grid on extreme zoom changes
-      if (newZoom > 3 || newZoom < 0.3) {
-        if (createGrid) {
-          createGrid(canvas);
-        }
-      }
-    } catch (error) {
-      logger.error("Error zooming canvas:", error);
-      toast.error("Failed to zoom: " + (error instanceof Error ? error.message : String(error)));
-    }
-  }, [fabricCanvasRef, setZoomLevel, createGrid]);
+    // Save current state before clearing
+    saveState();
+    
+    // Clear canvas
+    canvas.clear();
+    canvas.backgroundColor = '#ffffff';
+    canvas.renderAll();
+  }, [canvas, saveState]);
   
-  // Apply tool changes to canvas
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
+  // Delete selected objects
+  const deleteSelectedObjects = useCallback(() => {
     if (!canvas) return;
     
-    try {
-      logger.info(`Applying tool change to canvas: ${tool}`);
-      
-      // Reset canvas modes
-      canvas.isDrawingMode = false;
-      canvas.selection = true;
-      
-      // Set proper cursor
-      canvas.defaultCursor = 'default';
-      canvas.hoverCursor = 'move';
-      
-      // Apply tool-specific settings
-      switch (tool) {
-        case DrawingMode.DRAW:
-          canvas.isDrawingMode = true;
-          canvas.freeDrawingBrush.color = lineColor;
-          canvas.freeDrawingBrush.width = lineThickness;
-          canvas.defaultCursor = 'crosshair';
-          canvas.hoverCursor = 'crosshair';
-          break;
-          
-        case DrawingMode.SELECT:
-          canvas.selection = true;
-          canvas.defaultCursor = 'default';
-          canvas.hoverCursor = 'move';
-          break;
-          
-        case DrawingMode.WALL:
-        case DrawingMode.ROOM:
-          canvas.defaultCursor = 'crosshair';
-          canvas.hoverCursor = 'crosshair';
-          break;
-          
-        case DrawingMode.ERASER:
-          canvas.defaultCursor = 'cell';
-          canvas.hoverCursor = 'cell';
-          break;
-      }
-      
-      // Render changes
-      canvas.requestRenderAll();
-    } catch (error) {
-      logger.error("Error applying tool change:", error);
+    // Save current state before deleting
+    saveState();
+    
+    // Delete selected objects
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length) {
+      canvas.remove(...activeObjects);
+      canvas.discardActiveObject();
+      canvas.renderAll();
     }
-  }, [fabricCanvasRef, tool, lineColor, lineThickness]);
+  }, [canvas, saveState]);
   
   return {
-    saveCurrentState,
+    saveState,
     undo,
     redo,
-    handleZoom
+    clearCanvas,
+    deleteSelectedObjects,
+    canUndo,
+    canRedo
   };
 };
+
+export default useDrawingTools;

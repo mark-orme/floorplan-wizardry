@@ -1,70 +1,90 @@
 
-/**
- * Hook for using geometry engine features
- */
-import { useCallback } from 'react';
-import * as engine from '@/utils/geometry/engine';
-import { Point } from '@/types/core/Geometry';
+import { useState, useCallback } from 'react';
+import { Point } from '@/types/core/Point';
+
+// Simple interface for geometry calculations
+interface GeometryCalculationResult {
+  distance: number;
+  angle: number;
+  isParallel: boolean;
+  isPerpendicular: boolean;
+}
 
 export const useGeometryEngine = () => {
-  // Calculate area using the geometry engine
-  const calculatePolygonArea = useCallback((points: Point[]): number => {
-    try {
-      return engine.calculatePolygonArea(points);
-    } catch (err) {
-      console.error('Error calculating area', err);
-      return 0;
-    }
-  }, []);
+  const [isReady, setIsReady] = useState(true);
   
-  // Check if polygon points are in clockwise order
-  const isPolygonClockwise = useCallback((points: Point[]): boolean => {
-    if (points.length < 3) return true;
+  // Calculate distance between two points with null safety
+  const calculateDistance = useCallback((point1: Point | null, point2: Point | null): number => {
+    if (!point1 || !point2) return 0;
     
-    // Calculate the sum of edges using the shoelace formula
-    let sum = 0;
-    for (let i = 0; i < points.length; i++) {
-      const j = (i + 1) % points.length;
-      sum += (points[j].x - points[i].x) * (points[j].y + points[i].y);
-    }
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
     
-    // If sum > 0, points are in clockwise order
-    return sum > 0;
+    return Math.sqrt(dx * dx + dy * dy);
   }, []);
   
-  // Calculate the center point of a polygon
-  const calculateCenter = useCallback((points: Point[]): Point => {
-    if (points.length === 0) return { x: 0, y: 0 };
-    return engine.findCenter(points);
+  // Calculate angle between two points with null safety
+  const calculateAngle = useCallback((point1: Point | null, point2: Point | null): number => {
+    if (!point1 || !point2) return 0;
+    
+    // Calculate angle in radians
+    const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
+    
+    // Convert to degrees
+    return angle * (180 / Math.PI);
   }, []);
   
-  // Check if a point is inside a polygon
-  const isPointInPolygon = useCallback((point: Point, polygon: Point[]): boolean => {
-    return engine.isPointInsidePolygon(point, polygon);
+  // Check if two lines are parallel with null safety
+  const areParallel = useCallback((line1Start: Point | null, line1End: Point | null, line2Start: Point | null, line2End: Point | null, tolerance = 0.1): boolean => {
+    if (!line1Start || !line1End || !line2Start || !line2End) return false;
+    
+    // Calculate angles
+    const angle1 = Math.atan2(line1End.y - line1Start.y, line1End.x - line1Start.x);
+    const angle2 = Math.atan2(line2End.y - line2Start.y, line2End.x - line2Start.x);
+    
+    // Calculate angle difference and normalize
+    const angleDiff = Math.abs(angle1 - angle2) % Math.PI;
+    
+    // Check if angles are very close or close to PI (180 degrees)
+    return angleDiff < tolerance || Math.abs(angleDiff - Math.PI) < tolerance;
   }, []);
   
-  // Scale a point from origin
-  const scalePoint = useCallback((point: Point, origin: Point, scale: number): Point => {
-    return engine.scalePoint(point, origin, scale, scale);
+  // Check if two lines are perpendicular with null safety
+  const arePerpendicular = useCallback((line1Start: Point | null, line1End: Point | null, line2Start: Point | null, line2End: Point | null, tolerance = 0.1): boolean => {
+    if (!line1Start || !line1End || !line2Start || !line2End) return false;
+    
+    // Calculate angles
+    const angle1 = Math.atan2(line1End.y - line1Start.y, line1End.x - line1Start.x);
+    const angle2 = Math.atan2(line2End.y - line2Start.y, line2End.x - line2Start.x);
+    
+    // Calculate angle difference and normalize
+    const angleDiff = Math.abs(angle1 - angle2) % Math.PI;
+    
+    // Check if angle difference is close to PI/2 (90 degrees)
+    return Math.abs(angleDiff - Math.PI / 2) < tolerance;
   }, []);
   
-  // Rotate a point around origin
-  const rotatePoint = useCallback((point: Point, origin: Point, angle: number): Point => {
-    return engine.rotatePoint(point, origin, angle);
-  }, []);
-  
-  // Check if a polygon is valid
-  const validatePolygon = useCallback((points: Point[]): boolean => {
-    return engine.validatePolygon(points);
-  }, []);
+  // Perform complete geometry calculation
+  const calculateGeometry = useCallback((point1: Point | null, point2: Point | null): GeometryCalculationResult => {
+    const distance = calculateDistance(point1, point2);
+    const angle = calculateAngle(point1, point2);
+    
+    return {
+      distance,
+      angle,
+      isParallel: false, // These need additional line references
+      isPerpendicular: false
+    };
+  }, [calculateDistance, calculateAngle]);
   
   return {
-    calculatePolygonArea,
-    isPolygonClockwise,
-    calculateCenter,
-    isPointInPolygon,
-    scalePoint,
-    rotatePoint,
-    validatePolygon
+    isReady,
+    calculateDistance,
+    calculateAngle,
+    areParallel,
+    arePerpendicular,
+    calculateGeometry
   };
 };
+
+export default useGeometryEngine;

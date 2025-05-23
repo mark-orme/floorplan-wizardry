@@ -27,8 +27,8 @@ export const useCanvasPan = ({ canvasRef, enabled = false }: UseCanvasPanProps) 
 
     // Update viewport transform with null check
     if (canvas.viewportTransform) {
-      canvas.viewportTransform[4] += deltaX;
-      canvas.viewportTransform[5] += deltaY;
+      canvas.viewportTransform[4] = (canvas.viewportTransform[4] || 0) + deltaX;
+      canvas.viewportTransform[5] = (canvas.viewportTransform[5] || 0) + deltaY;
     }
 
     canvas.requestRenderAll();

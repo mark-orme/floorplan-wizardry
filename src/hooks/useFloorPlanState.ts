@@ -26,7 +26,10 @@ export const useFloorPlanState = ({
     setFloorPlans(prev => {
       const updated = [...prev];
       if (typeof updater === 'function') {
-        updated[selectedFloorIndex] = updater(prev[selectedFloorIndex]);
+        // Ensure the previous floor plan is defined before calling updater
+        if (prev[selectedFloorIndex]) {
+          updated[selectedFloorIndex] = updater(prev[selectedFloorIndex]);
+        }
       } else {
         updated[selectedFloorIndex] = updater;
       }

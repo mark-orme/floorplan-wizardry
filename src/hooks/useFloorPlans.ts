@@ -1,78 +1,84 @@
 
-import { useState, useEffect } from 'react';
-import { FloorPlan } from '@/types/fabric-unified';
+import { useState, useCallback } from 'react';
+import { FloorPlan } from '@/utils/floorPlanTypeAdapter';
 
-export const useFloorPlans = (propertyId: string) => {
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+interface UseFloorPlansProps {
+  initialFloorPlans?: FloorPlan[];
+}
+
+export const useFloorPlans = ({ initialFloorPlans = [] }: UseFloorPlansProps) => {
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>(initialFloorPlans);
+  const [selectedFloorPlanIndex, setSelectedFloorPlanIndex] = useState<number>(0);
   
-  useEffect(() => {
-    const fetchFloorPlans = async () => {
-      if (!propertyId) {
-        setFloorPlans([]);
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        // In real app, this would be an API call
-        // Mock data for now
-        const mockPlans: FloorPlan[] = [
-          {
-            id: '1',
-            name: 'Ground Floor',
-            width: 800,
-            height: 600,
-            level: 0,
-            updatedAt: new Date().toISOString(),
-            walls: [],
-            rooms: [],
-            strokes: [],
-            data: {},
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          },
-          {
-            id: '2',
-            name: 'First Floor',
-            width: 800,
-            height: 600,
-            level: 1,
-            updatedAt: new Date().toISOString(),
-            walls: [],
-            rooms: [],
-            strokes: [],
-            data: {},
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          }
-        ];
-        
-        setFloorPlans(mockPlans);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch floor plans'));
-      } finally {
-        setLoading(false);
-      }
+  // Get the current selected floor plan
+  const currentFloorPlan = floorPlans[selectedFloorPlanIndex];
+  
+  // Add a new floor plan
+  const addFloorPlan = useCallback((floorPlan: Partial<FloorPlan>) => {
+    const now = new Date().toISOString();
+    
+    const newFloorPlan: FloorPlan = {
+      id: floorPlan.id || `floor-plan-${Date.now()}`,
+      name: floorPlan.name || 'New Floor Plan',
+      description: floorPlan.description || '',
+      createdAt: now,
+      updated: now,
+      modified: now,
+      width: floorPlan.width || 800,
+      height: floorPlan.height || 600,
+      ...floorPlan
     };
     
-    fetchFloorPlans();
-  }, [propertyId]);
+    setFloorPlans(prev => [...prev, newFloorPlan]);
+    return newFloorPlan;
+  }, []);
+  
+  // Update a floor plan
+  const updateFloorPlan = useCallback((index: number, updates: Partial<FloorPlan>) => {
+    setFloorPlans(prev => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = {
+          ...updated[index],
+          ...updates,
+          updated: new Date().toISOString(),
+          modified: new Date().toISOString()
+        };
+      }
+      return updated;
+    });
+  }, []);
+  
+  // Delete a floor plan
+  const deleteFloorPlan = useCallback((index: number) => {
+    setFloorPlans(prev => {
+      const updated = [...prev];
+      updated.splice(index, 1);
+      return updated;
+    });
+    
+    // Adjust selected index if needed
+    if (selectedFloorPlanIndex >= index) {
+      setSelectedFloorPlanIndex(prev => Math.max(0, prev - 1));
+    }
+  }, [selectedFloorPlanIndex]);
+  
+  // Select a floor plan
+  const selectFloorPlan = useCallback((index: number) => {
+    if (index >= 0 && index < floorPlans.length) {
+      setSelectedFloorPlanIndex(index);
+    }
+  }, [floorPlans.length]);
   
   return {
     floorPlans,
-    loading,
-    error,
-    refreshFloorPlans: () => {
-      setLoading(true);
-      // This would trigger the useEffect
-    }
+    setFloorPlans,
+    currentFloorPlan,
+    selectedFloorPlanIndex,
+    addFloorPlan,
+    updateFloorPlan,
+    deleteFloorPlan,
+    selectFloorPlan,
+    setSelectedFloorPlanIndex
   };
 };
-
-export default useFloorPlans;

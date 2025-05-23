@@ -1,56 +1,64 @@
 
-import { useCallback, useState } from 'react';
-import { Point, GRID_CONSTANTS } from '@/types/fabric-unified';
+import { useCallback } from 'react';
+import { Point } from '@/types/core/Point';
 
 interface UseGridSnappingProps {
-  initialSnapEnabled?: boolean;
-  gridSize?: number;
-  snapThreshold?: number;
+  gridSize: number;
+  enabled: boolean;
 }
 
 export const useGridSnapping = ({
-  initialSnapEnabled = true,
-  gridSize = GRID_CONSTANTS.SMALL_GRID_SIZE,
-  snapThreshold = 5
-}: UseGridSnappingProps = {}) => {
-  const [snapEnabled, setSnapEnabled] = useState(initialSnapEnabled);
-  const [gridSizeState, setGridSize] = useState(gridSize);
-  const [snapThresholdState, setSnapThreshold] = useState(snapThreshold);
+  gridSize = 20,
+  enabled = false
+}: UseGridSnappingProps) => {
+  // Snap a point to the grid
+  const snapToGrid = useCallback((point: Point): Point => {
+    if (!enabled) return point;
+    
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [gridSize, enabled]);
   
-  // Toggle snap to grid
-  const toggleSnap = useCallback(() => {
-    setSnapEnabled(prev => !prev);
-  }, []);
-
-  // Snap point to grid
-  const snapPointToGrid = useCallback((point: Point): Point => {
-    if (!snapEnabled) return point;
+  // Check if a point is on a grid line
+  const isOnGridLine = useCallback((point: Point, tolerance = 5): boolean => {
+    if (!enabled) return false;
     
-    const newX = Math.round(point.x / gridSizeState) * gridSizeState;
-    const newY = Math.round(point.y / gridSizeState) * gridSizeState;
+    const xOffset = point.x % gridSize;
+    const yOffset = point.y % gridSize;
     
-    return { x: newX, y: newY };
-  }, [snapEnabled, gridSizeState]);
+    return (
+      (xOffset <= tolerance || xOffset >= gridSize - tolerance) ||
+      (yOffset <= tolerance || yOffset >= gridSize - tolerance)
+    );
+  }, [gridSize, enabled]);
   
-  // Snap line to grid
-  const snapLineToGrid = useCallback((startPoint: Point, endPoint: Point): { start: Point, end: Point } => {
-    if (!snapEnabled) return { start: startPoint, end: endPoint };
+  // Get nearest grid point
+  const getNearestGridPoint = useCallback((point: Point): { x: number, y: number } => {
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  }, [gridSize]);
+  
+  // Get distance to nearest grid line
+  const getDistanceToGridLine = useCallback((point: Point): { x: number, y: number } => {
+    const xOffset = point.x % gridSize;
+    const yOffset = point.y % gridSize;
     
-    const snappedStart = snapPointToGrid(startPoint);
-    const snappedEnd = snapPointToGrid(endPoint);
-    
-    return { start: snappedStart, end: snappedEnd };
-  }, [snapEnabled, snapPointToGrid]);
-
+    return {
+      x: Math.min(xOffset, gridSize - xOffset),
+      y: Math.min(yOffset, gridSize - yOffset)
+    };
+  }, [gridSize]);
+  
   return {
-    snapEnabled,
-    setSnapEnabled,
-    gridSize: gridSizeState,
-    setGridSize,
-    snapThreshold: snapThresholdState,
-    setSnapThreshold,
-    toggleSnap,
-    snapPointToGrid,
-    snapLineToGrid
+    snapToGrid,
+    isOnGridLine,
+    getNearestGridPoint,
+    getDistanceToGridLine
   };
 };
+
+export default useGridSnapping;
