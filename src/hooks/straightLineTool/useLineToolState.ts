@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Point } from '@/types/core/Point';
+import { Point, createPoint } from '@/types/core/Point';
 
 export interface LineState {
   points: Point[];
@@ -45,14 +45,19 @@ export const useLineToolState = (options: UseLineStateOptions = {}) => {
     
     const snappedPoint = snapPointToGrid(point);
     
-    // Ensure we always have exactly 2 points and both are defined
-    setLineState(prevState => ({
-      ...prevState,
-      points: [
-        prevState.points[0] || createPoint(0, 0), // Provide default if undefined
-        snappedPoint
-      ]
-    }));
+    // Create a safe copy of points to ensure all are defined
+    setLineState(prevState => {
+      // Ensure we have a valid starting point
+      const startPoint = prevState.points[0] || createPoint(0, 0);
+      
+      return {
+        ...prevState,
+        points: [
+          startPoint,
+          snappedPoint
+        ]
+      };
+    });
   };
 
   const completeLine = () => {
@@ -85,10 +90,5 @@ export const useLineToolState = (options: UseLineStateOptions = {}) => {
     clearLines
   };
 };
-
-// Helper function added to fix the error
-function createPoint(x: number, y: number): Point {
-  return { x, y };
-}
 
 export default useLineToolState;

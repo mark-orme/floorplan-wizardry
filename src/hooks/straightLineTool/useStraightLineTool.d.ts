@@ -1,38 +1,64 @@
-
-import { MeasurementData } from '@/types/fabric-unified';
 import { Point } from '@/types/core/Point';
+import { Line } from 'fabric';
+import { ReactNode } from 'react';
 
-export interface UseStraightLineToolOptions {
-  lineColor?: string;
-  lineThickness?: number;
-  snapToGrid?: boolean;
-  snapToAngle?: boolean;
+/**
+ * Measurement data for line tools
+ */
+export interface MeasurementData {
+  distance: number | null;
+  angle: number | null;
+  snapped: boolean;
+  unit: string;
+  snapType?: 'grid' | 'angle' | 'both';
 }
 
+/**
+ * Result type for the useStraightLineTool hook
+ */
 export interface UseStraightLineToolResult {
+  isActive: boolean;
+  isEnabled: boolean;
+  currentLine: Line | null;
+  isToolInitialized: boolean;
   isDrawing: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  measurementData: MeasurementData;
+  toggleGridSnapping: () => void;
+  toggleAngles: () => void;
+  toggleSnap: () => void;
   startDrawing: (point: Point) => void;
   continueDrawing: (point: Point) => void;
-  completeDrawing: (point?: Point) => void;
+  endDrawing: () => void;
+  completeDrawing: (point: Point) => void;
   cancelDrawing: () => void;
-  snapEnabled: boolean;
-  snapAngleEnabled: boolean;
-  toggleGridSnapping: () => void;
-  toggleAngleSnapping: () => void;
-  setSnapEnabled: (enabled: boolean) => void;
-  setSnapAngleEnabled: (enabled: boolean) => void;
-  measurementData: MeasurementData | null;
-  
-  // Add missing properties that were causing errors
-  anglesEnabled: boolean;
-  toggleAngles: () => void;
-  renderTooltip: () => React.ReactNode | null;
-  handleMouseDown?: (point: Point) => void;
-  handleMouseMove?: (point: Point) => void;
-  handleMouseUp?: (point?: Point) => void;
+  handlePointerDown: (event: any) => void;
+  handlePointerMove: (event: any) => void;
+  handlePointerUp: (event: any) => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  handleKeyUp: (event: KeyboardEvent) => void;
+  renderTooltip: () => ReactNode;
+  setInputMethod: (method: InputMethod) => void;
+  shiftKeyPressed: boolean;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+  saveCurrentState: () => void;
+}
+
+/**
+ * Props for the useStraightLineTool hook
+ */
+export interface UseStraightLineToolProps {
+  isEnabled?: boolean;
+  enabled?: boolean; // Alias for isEnabled for backward compatibility
+  canvas: any;
+  lineColor: string;
+  lineThickness: number;
+  saveCurrentState?: () => void;
+  shiftKeyPressed?: boolean;
   isActive?: boolean;
 }
 
-export { MeasurementData } from '@/types/fabric-unified';
+export type InputMethod = 'mouse' | 'touch' | 'stylus' | 'keyboard' | string;

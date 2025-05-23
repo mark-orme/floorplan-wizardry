@@ -39,7 +39,7 @@ describe('useStraightLineTool', () => {
   // Basic initialization test
   it('should initialize with default values', () => {
     const { result } = renderHook(() => useStraightLineTool({
-      isEnabled: true,
+      enabled: true,
       canvas: null,
       lineColor: '#000000',
       lineThickness: 2
@@ -59,7 +59,7 @@ describe('useStraightLineTool', () => {
     } as any;
     
     const { result } = renderHook(() => useStraightLineTool({
-      isEnabled: true,
+      enabled: true,
       canvas: mockCanvas,
       lineColor: '#000000',
       lineThickness: 2

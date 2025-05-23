@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useStraightLineTool } from '../straightLineTool/useStraightLineTool';
 import { Point } from '@/types/core/Point';
-import { MeasurementData } from '../straightLineTool/useStraightLineTool.d';
 import { createCompleteMockCanvas } from '@/utils/test/createCompleteMockCanvas';
 
 describe('useStraightLineTool', () => {
@@ -14,7 +13,7 @@ describe('useStraightLineTool', () => {
   it('should initialize properly', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
-      isEnabled: true,
+      enabled: true,
       canvas: mockCanvas
     }));
     
@@ -25,7 +24,7 @@ describe('useStraightLineTool', () => {
   it('should handle mouse down event', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
-      isEnabled: true,
+      enabled: true,
       canvas: mockCanvas
     }));
     
@@ -40,7 +39,7 @@ describe('useStraightLineTool', () => {
   it('should handle mouse move event', () => {
     const mockCanvas = createCompleteMockCanvas();
     const { result } = renderHook(() => useStraightLineTool({ 
-      isEnabled: true,
+      enabled: true,
       canvas: mockCanvas
     }));
     
@@ -58,7 +57,7 @@ describe('useStraightLineTool', () => {
     const saveCurrentState = vi.fn();
     
     const { result } = renderHook(() => useStraightLineTool({ 
-      isEnabled: true,
+      enabled: true,
       canvas: mockCanvas,
       saveCurrentState
     }));

@@ -1,167 +1,264 @@
 
-import { useCallback, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, Line } from 'fabric';
-import { Point, pointsEqual } from '@/types/core/Point';
+import { useState, useCallback, useRef } from 'react';
+import { Canvas, Line } from 'fabric';
+import { Point, createPoint } from '@/types/core/Point';
+import { MeasurementData } from './useStraightLineTool.d';
+import { useGridSnapping } from '../useGridSnapping';
 import { useLineToolState } from './useLineToolState';
+import { InputMethod } from './useLineInputMethod';
 
-interface UseStraightLineToolProps {
-  canvas: FabricCanvas | null;
+export interface UseStraightLineToolProps {
+  enabled?: boolean;
+  isActive?: boolean;
+  canvas: Canvas | null;
   lineColor: string;
   lineThickness: number;
-  enabled: boolean;
-  showMeasurements?: boolean;
-  gridSnap?: boolean;
-  gridSize?: number;
-  onLineComplete?: (start: Point, end: Point) => void;
+  saveCurrentState?: () => void;
+  shiftKeyPressed?: boolean;
 }
 
+export interface UseStraightLineToolResult {
+  isActive: boolean;
+  isEnabled: boolean;
+  currentLine: Line | null;
+  isToolInitialized: boolean;
+  isDrawing: boolean;
+  lineState: any;
+  inputMethod: InputMethod;
+  isPencilMode: boolean;
+  snapEnabled: boolean;
+  anglesEnabled: boolean;
+  measurementData: MeasurementData;
+  toggleGridSnapping: () => void;
+  toggleAngles: () => void;
+  toggleSnap: () => void;
+  startDrawing: (point: Point) => void;
+  startLine: (point: Point) => void;
+  continueDrawing: (point: Point) => void;
+  updateLine: (point: Point) => void;
+  endDrawing: () => void;
+  completeDrawing: (point: Point) => void;
+  completeLine: () => void;
+  cancelDrawing: () => void;
+  cancelLine: () => void;
+  clearLines: () => void;
+  handlePointerDown: (event: any) => void;
+  handlePointerMove: (event: any) => void;
+  handlePointerUp: (event: any) => void;
+  handleKeyDown: (event: KeyboardEvent) => void;
+  handleKeyUp: (event: KeyboardEvent) => void;
+  renderTooltip: () => React.ReactNode | null;
+  setInputMethod: (method: InputMethod) => void;
+  shiftKeyPressed: boolean;
+  setCurrentLine: React.Dispatch<React.SetStateAction<Line | null>>;
+  saveCurrentState: () => void;
+}
+
+/**
+ * Hook for creating straight lines on canvas with enhanced functionality
+ */
 export const useStraightLineTool = ({
+  enabled = false,
+  isActive = false,
   canvas,
-  lineColor,
-  lineThickness,
-  enabled,
-  showMeasurements = true,
-  gridSnap = false,
-  gridSize = 20,
-  onLineComplete
-}: UseStraightLineToolProps) => {
-  const [activeLine, setActiveLine] = useState<Line | null>(null);
-  const [measurementLabel, setMeasurementLabel] = useState<any | null>(null);
-  
-  const { lineState, startLine, updateLine, completeLine, cancelLine, clearLines } = useLineToolState({
-    snapToGrid: gridSnap,
-    gridSize
+  lineColor = '#000000',
+  lineThickness = 2,
+  saveCurrentState = () => {},
+  shiftKeyPressed = false
+}: UseStraightLineToolProps): UseStraightLineToolResult => {
+  const [inputMethod, setInputMethod] = useState<InputMethod>('mouse');
+  const [isPencilMode, setIsPencilMode] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [anglesEnabled, setAnglesEnabled] = useState(false);
+  const [currentLine, setCurrentLine] = useState<Line | null>(null);
+  const [isToolInitialized, setIsToolInitialized] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | undefined>(undefined);
+  const [measurementData, setMeasurementData] = useState<MeasurementData>({
+    distance: null,
+    angle: null,
+    snapped: false,
+    unit: 'px'
   });
-  
-  // Handle mouse down - start line drawing
-  const handleMouseDown = useCallback((e: any) => {
-    if (!canvas || !enabled) return;
+
+  // Use the line tool state for managing points
+  const { lineState, startLine, updateLine, completeLine, cancelLine, clearLines } = useLineToolState({
+    snapToGrid: snapEnabled,
+    gridSize: 20
+  });
+
+  // Grid snapping hook
+  const { snapToGrid } = useGridSnapping({
+    gridSize: 20,
+    enabled: snapEnabled
+  });
+
+  // Calculate and set measurement data
+  const updateMeasurementData = useCallback((start: Point, end: Point) => {
+    if (!start || !end) return;
     
-    const pointer = canvas.getPointer(e.e);
-    startLine({ x: pointer.x, y: pointer.y });
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
     
-    // Create initial line
-    const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-      stroke: lineColor,
-      strokeWidth: lineThickness,
-      strokeLineCap: 'round',
-      strokeLineJoin: 'round',
-      selectable: false,
-      evented: false,
+    setMeasurementData({
+      distance,
+      angle,
+      snapped: snapEnabled,
+      unit: 'px'
     });
+  }, [snapEnabled]);
+
+  // Toggle grid snapping
+  const toggleGridSnapping = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+
+  // Toggle angle snapping
+  const toggleAngles = useCallback(() => {
+    setAnglesEnabled(prev => !prev);
+  }, []);
+
+  // Toggle snapping 
+  const toggleSnap = useCallback(() => {
+    setSnapEnabled(prev => !prev);
+  }, []);
+
+  // Start drawing a line
+  const startDrawing = useCallback((point: Point) => {
+    if (!canvas) return;
     
-    canvas.add(line);
-    setActiveLine(line);
+    // Create safe start point
+    const safePoint = point || createPoint(0, 0);
+    setStartPoint(safePoint);
+    startLine(safePoint);
     
-    // Create measurement label if needed
-    if (showMeasurements) {
-      const text = canvas.getElement().ownerDocument.createElement('div');
-      text.style.position = 'absolute';
-      text.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-      text.style.color = 'white';
-      text.style.padding = '4px 8px';
-      text.style.borderRadius = '4px';
-      text.style.fontSize = '12px';
-      text.style.pointerEvents = 'none';
-      text.style.zIndex = '1000';
-      text.textContent = '0 px';
-      
-      canvas.getElement().parentNode?.appendChild(text);
-      setMeasurementLabel(text);
+    // Create measurement data
+    updateMeasurementData(safePoint, safePoint);
+  }, [canvas, startLine, updateMeasurementData]);
+
+  // Continue drawing (update line)
+  const continueDrawing = useCallback((point: Point) => {
+    if (!canvas || !lineState.isActive) return;
+    
+    // Use safe point
+    const safePoint = point || createPoint(0, 0);
+    updateLine(safePoint);
+    
+    // Update measurement if we have a start point
+    if (startPoint) {
+      updateMeasurementData(startPoint, safePoint);
     }
-  }, [canvas, enabled, lineColor, lineThickness, showMeasurements, startLine]);
-  
-  // Handle mouse move - update line
-  const handleMouseMove = useCallback((e: any) => {
-    if (!canvas || !enabled || !lineState.isActive || !activeLine) return;
+  }, [canvas, lineState.isActive, updateLine, startPoint, updateMeasurementData]);
+
+  // Complete drawing the line
+  const completeDrawing = useCallback((point: Point) => {
+    if (!canvas || !lineState.isActive) return;
     
-    const pointer = canvas.getPointer(e.e);
-    updateLine({ x: pointer.x, y: pointer.y });
-    
-    // Update line position
-    if (lineState.points.length >= 1) {
-      const startPoint = lineState.points[0];
-      activeLine.set({
-        x1: startPoint.x,
-        y1: startPoint.y,
-        x2: pointer.x,
-        y2: pointer.y
-      });
-      canvas.renderAll();
-      
-      // Update measurement label
-      if (measurementLabel) {
-        const length = Math.sqrt(
-          Math.pow(pointer.x - startPoint.x, 2) +
-          Math.pow(pointer.y - startPoint.y, 2)
-        );
-        
-        measurementLabel.textContent = `${Math.round(length)} px`;
-        measurementLabel.style.left = `${(startPoint.x + pointer.x) / 2}px`;
-        measurementLabel.style.top = `${(startPoint.y + pointer.y) / 2 - 20}px`;
-      }
-    }
-  }, [canvas, enabled, activeLine, lineState, updateLine, measurementLabel]);
-  
-  // Handle mouse up - complete line
-  const handleMouseUp = useCallback(() => {
-    if (!canvas || !enabled || !lineState.isActive) return;
-    
+    // Finalize the line with the provided end point
+    const safePoint = point || createPoint(0, 0);
+    updateLine(safePoint);
     completeLine();
     
-    // Call the completion callback
-    if (onLineComplete && lineState.points.length >= 2) {
-      onLineComplete(lineState.points[0], lineState.points[1]);
-    }
+    // Save the current state for undo/redo
+    saveCurrentState();
     
-    // Reset active line
-    setActiveLine(null);
-    
-    // Remove measurement label
-    if (measurementLabel) {
-      measurementLabel.remove();
-      setMeasurementLabel(null);
-    }
-  }, [canvas, enabled, lineState, completeLine, onLineComplete, measurementLabel]);
-  
-  // Set up event handlers when tool is enabled
-  useEffect(() => {
+    // Clear the start point
+    setStartPoint(undefined);
+  }, [canvas, lineState.isActive, updateLine, completeLine, saveCurrentState]);
+
+  // Handle pointer down (start drawing)
+  const handlePointerDown = useCallback((event: any) => {
     if (!canvas || !enabled) return;
     
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    canvas.on('mouse:up', handleMouseUp);
+    const pointer = canvas.getPointer(event.e);
+    startDrawing({
+      x: pointer.x,
+      y: pointer.y
+    });
+  }, [canvas, enabled, startDrawing]);
+
+  // Handle pointer move (continue drawing)
+  const handlePointerMove = useCallback((event: any) => {
+    if (!canvas || !lineState.isActive) return;
     
-    // Set cursor and mode
-    canvas.defaultCursor = 'crosshair';
-    canvas.selection = false;
-    canvas.isDrawingMode = false;
+    const pointer = canvas.getPointer(event.e);
+    continueDrawing({
+      x: pointer.x,
+      y: pointer.y
+    });
+  }, [canvas, lineState.isActive, continueDrawing]);
+
+  // Handle pointer up (complete drawing)
+  const handlePointerUp = useCallback((event: any) => {
+    if (!canvas || !lineState.isActive) return;
     
-    return () => {
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      canvas.off('mouse:up', handleMouseUp);
-      
-      // Reset cursor
-      canvas.defaultCursor = 'default';
-      canvas.selection = true;
-      
-      // Clean up any active elements
-      if (activeLine && canvas.contains(activeLine)) {
-        canvas.remove(activeLine);
-      }
-      
-      if (measurementLabel) {
-        measurementLabel.remove();
-      }
-    };
-  }, [canvas, enabled, handleMouseDown, handleMouseMove, handleMouseUp, activeLine, measurementLabel]);
-  
+    const pointer = canvas.getPointer(event.e);
+    completeDrawing({
+      x: pointer.x,
+      y: pointer.y
+    });
+  }, [canvas, lineState.isActive, completeDrawing]);
+
+  // Handle key down event
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      cancelLine();
+      setStartPoint(undefined);
+    }
+  }, [cancelLine]);
+
+  // Handle key up event
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    // Handle key up events
+  }, []);
+
+  // Placeholder for tooltip rendering
+  const renderTooltip = useCallback(() => {
+    // This would be implemented to render a tooltip
+    return null;
+  }, []);
+
+  // Calculate if the tool is actually drawing
+  const isDrawing = lineState.isActive;
+
+  // Return the hook result with all required properties
   return {
+    isActive: enabled || isActive,
+    isEnabled: enabled,
+    currentLine,
+    isToolInitialized,
+    isDrawing,
     lineState,
+    inputMethod,
+    isPencilMode,
+    snapEnabled,
+    anglesEnabled,
+    measurementData,
+    toggleGridSnapping,
+    toggleAngles,
+    toggleSnap,
+    startDrawing,
+    startLine,
+    continueDrawing,
+    updateLine,
+    endDrawing: completeLine,
+    completeDrawing,
+    completeLine,
+    cancelDrawing: cancelLine,
+    cancelLine,
     clearLines,
-    cancelLine
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handleKeyDown,
+    handleKeyUp,
+    renderTooltip,
+    setInputMethod,
+    shiftKeyPressed,
+    setCurrentLine,
+    saveCurrentState
   };
 };
 
-export default useStraightLineTool;
+export type { MeasurementData };

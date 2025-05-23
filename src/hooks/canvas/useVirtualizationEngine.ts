@@ -1,154 +1,151 @@
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { debounce, throttle } from 'lodash'; // Importing lodash functions
+import { throttle, debounce } from 'lodash';
 
 interface UseVirtualizationEngineProps {
   canvas: FabricCanvas | null;
-  enabled?: boolean;
-  viewportPadding?: number;
-  updateInterval?: number;
+  threshold?: number;
+  checkIntervalMs?: number;
+}
+
+interface PerformanceMetrics {
+  fps: number;
+  objectCount: number;
+  visibleObjectCount: number;
+  now?: number;
 }
 
 export const useVirtualizationEngine = ({
   canvas,
-  enabled = true,
-  viewportPadding = 100,
-  updateInterval = 100
+  threshold = 100,
+  checkIntervalMs = 1000
 }: UseVirtualizationEngineProps) => {
-  const [isEnabled, setIsEnabled] = useState(enabled);
-  const [performance, setPerformance] = useState<{
-    fps: number;
-    objectCount: number;
-    visibleObjectCount: number;
-  }>({ fps: 0, objectCount: 0, visibleObjectCount: 0 });
+  // State handled with React.useState in the original implementation
+  // We'll use local variables for this simplified version
+  const metrics = {
+    fps: 0,
+    objectCount: 0,
+    visibleObjectCount: 0,
+    now: Date.now()
+  };
   
-  const lastFrameTime = useRef(0);
-  const frameCount = useRef(0);
-  const lastFpsUpdate = useRef(0);
-  
-  // Get viewport bounds accounting for zoom and pan
-  const getViewportBounds = useCallback(() => {
-    if (!canvas || !canvas.viewportTransform) return { left: 0, top: 0, right: 0, bottom: 0 };
+  // Virtualize objects that are outside the viewport
+  const virtualizeObjects = useCallback(() => {
+    if (!canvas) return;
     
-    const zoom = canvas.getZoom();
+    // Get canvas viewport bounds - add null checks
     const vpt = canvas.viewportTransform;
-    const width = canvas.getWidth() || 0;
-    const height = canvas.getHeight() || 0;
+    if (!vpt) return;
     
-    return {
-      left: -vpt[4] / zoom - viewportPadding,
-      top: -vpt[5] / zoom - viewportPadding,
-      right: (-vpt[4] + width) / zoom + viewportPadding,
-      bottom: (-vpt[5] + height) / zoom + viewportPadding
-    };
-  }, [canvas, viewportPadding]);
-  
-  // Update the object visibility based on viewport
-  const updateObjectVisibility = useCallback(() => {
-    if (!canvas || !isEnabled) return;
+    const zoom = canvas.getZoom() || 1;
+    const width = canvas.width || 0;
+    const height = canvas.height || 0;
     
-    const bounds = getViewportBounds();
-    const objects = canvas.getObjects();
+    // Calculate viewport bounds with null safety
+    const viewportLeft = -vpt[4] / zoom;
+    const viewportTop = -vpt[5] / zoom;
+    const viewportRight = viewportLeft + (width / zoom);
+    const viewportBottom = viewportTop + (height / zoom);
+    
+    // Expanded bounds with threshold
+    const expandedLeft = viewportLeft - threshold;
+    const expandedTop = viewportTop - threshold;
+    const expandedRight = viewportRight + threshold;
+    const expandedBottom = viewportBottom + threshold;
+    
+    // Loop through objects and check visibility
+    const objects = canvas.getObjects() || [];
     let visibleCount = 0;
     
     objects.forEach(obj => {
-      if (!obj.getBoundingRect) return;
+      if (!obj) return;
       
+      // Skip grid lines
+      if ((obj as any).objectType === 'grid') return;
+      
+      // Get object bounds
       const objBounds = obj.getBoundingRect();
-      const isVisible = 
-        objBounds.left < bounds.right &&
-        objBounds.top < bounds.bottom &&
-        objBounds.left + objBounds.width > bounds.left &&
-        objBounds.top + objBounds.height > bounds.top;
+      if (!objBounds) return;
       
-      // Only update visibility if it changed
-      if (obj.visible !== isVisible) {
-        obj.visible = isVisible;
-        
-        // Set the dirty flag if available
-        if ('dirty' in obj) {
-          (obj as any).dirty = true;
-        }
-      }
+      // Check if object is in expanded viewport
+      const isVisible = (
+        objBounds.left <= expandedRight &&
+        objBounds.left + objBounds.width >= expandedLeft &&
+        objBounds.top <= expandedBottom &&
+        objBounds.top + objBounds.height >= expandedTop
+      );
       
+      // Set visibility
+      obj.visible = isVisible;
       if (isVisible) visibleCount++;
     });
     
-    // Update performance metrics
-    frameCount.current++;
-    const now = performance.now();
+    // Update metrics
+    metrics.objectCount = objects.length;
+    metrics.visibleObjectCount = visibleCount;
+    metrics.now = Date.now();
     
-    if (now - lastFpsUpdate.current >= 1000) {
-      const fps = Math.round((frameCount.current * 1000) / (now - lastFpsUpdate.current));
-      
-      setPerformance({
-        fps,
-        objectCount: objects.length,
-        visibleObjectCount: visibleCount
-      });
-      
-      frameCount.current = 0;
-      lastFpsUpdate.current = now;
-    }
-  }, [canvas, getViewportBounds, isEnabled]);
+    // Render if visibility changed
+    canvas.requestRenderAll();
+    
+    return { objectCount: objects.length, visibleCount };
+  }, [canvas, threshold]);
   
-  // Create debounced and throttled versions of the update function
-  const debouncedUpdate = useCallback(
-    debounce(updateObjectVisibility, 100),
-    [updateObjectVisibility]
-  );
+  // Optimize canvas operations
+  const optimizeCanvas = useCallback(() => {
+    if (!canvas) return;
+    
+    // Skip rendering for objects outside viewport
+    canvas.skipTargetFind = false;
+    canvas.selection = true;
+    
+    // Virtualize objects
+    virtualizeObjects();
+  }, [canvas, virtualizeObjects]);
   
-  const throttledUpdate = useCallback(
-    throttle(updateObjectVisibility, updateInterval),
-    [updateObjectVisibility, updateInterval]
-  );
+  // Debounced and throttled versions for performance
+  const debouncedOptimize = debounce(optimizeCanvas, 300);
+  const throttledOptimize = throttle(optimizeCanvas, 150);
   
-  // Set up event listeners for canvas events
+  // Set up event listeners
   useEffect(() => {
-    if (!canvas || !isEnabled) return;
+    if (!canvas) return;
     
-    const handleViewportChange = () => {
-      throttledUpdate();
+    const handleZoom = () => {
+      throttledOptimize();
     };
     
-    const handleObjectModification = () => {
-      debouncedUpdate();
+    const handlePan = () => {
+      throttledOptimize();
     };
     
-    canvas.on('object:modified', handleObjectModification);
-    canvas.on('object:added', handleObjectModification);
-    canvas.on('object:removed', handleObjectModification);
-    canvas.on('zoom:changed', handleViewportChange);
-    canvas.on('viewportTransform:changed', handleViewportChange);
-    canvas.on('mouse:wheel', handleViewportChange);
+    const handleResize = () => {
+      debouncedOptimize();
+    };
     
-    // Initial update
-    updateObjectVisibility();
+    // Attach event listeners
+    canvas.on('mouse:wheel', handleZoom);
+    canvas.on('object:moving', handlePan);
+    window.addEventListener('resize', handleResize);
     
+    // Run initial optimization
+    optimizeCanvas();
+    
+    // Set up interval for regular check
+    const interval = setInterval(optimizeCanvas, checkIntervalMs);
+    
+    // Clean up
     return () => {
-      canvas.off('object:modified', handleObjectModification);
-      canvas.off('object:added', handleObjectModification);
-      canvas.off('object:removed', handleObjectModification);
-      canvas.off('zoom:changed', handleViewportChange);
-      canvas.off('viewportTransform:changed', handleViewportChange);
-      canvas.off('mouse:wheel', handleViewportChange);
-      
-      debouncedUpdate.cancel();
-      throttledUpdate.cancel();
+      clearInterval(interval);
+      canvas.off('mouse:wheel', handleZoom);
+      canvas.off('object:moving', handlePan);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [canvas, isEnabled, debouncedUpdate, throttledUpdate, updateObjectVisibility]);
-  
-  const toggleEnabled = useCallback(() => {
-    setIsEnabled(prev => !prev);
-  }, []);
+  }, [canvas, optimizeCanvas, throttledOptimize, debouncedOptimize, checkIntervalMs]);
   
   return {
-    isEnabled,
-    toggleEnabled,
-    updateVisibility: updateObjectVisibility,
-    performance
+    virtualizeObjects,
+    optimizeCanvas
   };
 };
-
-export default useVirtualizationEngine;

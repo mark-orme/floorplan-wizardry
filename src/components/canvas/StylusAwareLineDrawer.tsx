@@ -4,7 +4,6 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { useStraightLineTool } from '@/hooks/straightLineTool/useStraightLineTool';
 import { cn } from '@/lib/utils';
 import { LineToolMeasurementOverlay } from './LineToolMeasurementOverlay';
-import { MeasurementData } from '@/types/fabric-unified';
 
 interface StylusAwareLineDrawerProps {
   canvas: FabricCanvas | null;
@@ -27,7 +26,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   const [showMeasurement, setShowMeasurement] = useState(true);
   
   const straightLineTool = useStraightLineTool({
-    isEnabled: enabled,
+    enabled: enabled,
     canvas: canvas,
     lineColor: lineColor,
     lineThickness: lineThickness,
@@ -60,7 +59,7 @@ export const StylusAwareLineDrawer: React.FC<StylusAwareLineDrawerProps> = ({
   const distance = measurementData?.distance === null ? undefined : measurementData?.distance;
   const angle = measurementData?.angle === null ? undefined : measurementData?.angle;
   const isSnapped = measurementData?.snapped === true;
-  const unitValue = measurementData?.units || measurementData?.unit || 'px';
+  const unitValue = measurementData?.unit || 'px';
   
   return (
     <>
