@@ -6,7 +6,7 @@ import { Canvas, Object as FabricObject, ICanvasOptions } from 'fabric';
  */
 export interface ExtendedFabricCanvas extends Canvas {
   /** The DIV wrapper for sizing/DOM events */
-  wrapperEl?: HTMLDivElement;
+  wrapperEl?: HTMLElement;
 
   /** Optional helpers your hooks use */
   initialize: (element: string | HTMLCanvasElement, options?: ICanvasOptions) => Canvas;

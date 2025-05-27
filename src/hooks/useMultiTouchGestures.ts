@@ -28,7 +28,11 @@ export const useMultiTouchGestures = () => {
           { clientX: touch2.clientX, clientY: touch2.clientY, identifier: touch2.identifier }
         ];
         
-        lastDistanceRef.current = getTouchDistance(touchStartRef.current[0], touchStartRef.current[1]);
+        const startTouch1 = touchStartRef.current[0];
+        const startTouch2 = touchStartRef.current[1];
+        if (startTouch1 && startTouch2) {
+          lastDistanceRef.current = getTouchDistance(startTouch1, startTouch2);
+        }
       }
     }
   }, [getTouchDistance]);

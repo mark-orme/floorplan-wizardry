@@ -1,5 +1,5 @@
 
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
 import { ExtendedFabricCanvas } from '@/types/ExtendedFabricCanvas';
 
 /**
@@ -30,6 +30,13 @@ export function asExtendedCanvas(canvas: FabricCanvas): ExtendedFabricCanvas {
   }
   
   return extendedCanvas as ExtendedFabricCanvas;
+}
+
+/**
+ * Convert a Fabric Object to an Extended Object
+ */
+export function asExtendedObject(obj: FabricObject): FabricObject {
+  return obj;
 }
 
 /**
