@@ -60,10 +60,10 @@ export const useOptimizedCanvasState = ({
       canvas.clear();
       
       // Load canvas state if available
-      if (floorPlan.canvasJson) {
+      if (floorPlan.canvasJson && floorPlan.canvasJson.trim() !== '') {
         await new Promise<void>((resolve, reject) => {
           try {
-            canvas.loadFromJSON(JSON.parse(floorPlan.canvasJson), () => {
+            canvas.loadFromJSON(floorPlan.canvasJson, () => {
               resolve();
             });
           } catch (error) {
@@ -73,8 +73,8 @@ export const useOptimizedCanvasState = ({
         });
       }
       
-      // Update last saved JSON
-      setLastSavedJSON(floorPlan.canvasJson);
+      // Update last saved JSON - handle null/undefined properly
+      setLastSavedJSON(floorPlan.canvasJson || null);
       setHasUnsavedChanges(false);
       
       // Render the canvas

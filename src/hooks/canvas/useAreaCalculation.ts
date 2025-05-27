@@ -2,29 +2,23 @@
 import { useCallback } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 
-export function useAreaCalculation(canvas: FabricCanvas | null) {
-  // Calculate area of selected objects or the entire canvas
-  const calculateArea = useCallback(async () => {
-    if (!canvas) {
-      return { areaM2: 0 };
-    }
+export const useAreaCalculation = (canvas: FabricCanvas | null) => {
+  
+  const calculateArea = useCallback(async (): Promise<{ areaM2: number }> => {
+    if (!canvas) return { areaM2: 0 };
     
-    // Get selected objects, or all objects if none are selected
-    const objects = canvas.getActiveObjects().length 
-      ? canvas.getActiveObjects() 
-      : canvas.getObjects();
+    // Simple area calculation based on canvas objects
+    const objects = canvas.getObjects();
+    let totalArea = 0;
     
-    // Calculate area (simplified for example)
-    const areaPixels = objects.reduce((total, obj) => {
-      // This is a simplified calculation
-      const width = obj.width || 0;
-      const height = obj.height || 0;
-      return total + (width * height);
-    }, 0);
+    objects.forEach(obj => {
+      if (obj.width && obj.height) {
+        totalArea += obj.width * obj.height;
+      }
+    });
     
-    // Convert to m² (simplified)
-    const pixelsPerMeter = 100; // This would be based on scale
-    const areaM2 = areaPixels / (pixelsPerMeter * pixelsPerMeter);
+    // Convert pixels to square meters (simplified)
+    const areaM2 = totalArea / (100 * 100); // Assuming 100 pixels = 1 meter
     
     return { areaM2 };
   }, [canvas]);
@@ -32,4 +26,4 @@ export function useAreaCalculation(canvas: FabricCanvas | null) {
   return {
     calculateArea
   };
-}
+};

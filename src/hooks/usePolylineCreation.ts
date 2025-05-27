@@ -1,11 +1,8 @@
+
 import { useCallback } from "react";
-import { Canvas as FabricCanvas, Polyline, Object as FabricObject } from "fabric";
+import { Canvas as FabricCanvas, Object as FabricObject, Path } from "fabric";
 import { POLYLINE_STYLES } from "@/constants/drawingConstants";
 import { Point } from "@/types/geometryTypes";
-
-// Defined types for line cap and join styles
-type CanvasLineCap = "butt" | "round" | "square";
-type CanvasLineJoin = "bevel" | "round" | "miter";
 
 // Type for custom Fabric objects with additional properties
 interface CustomFabricObject extends FabricObject {
@@ -21,7 +18,7 @@ export const usePolylineCreation = (
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>
 ) => {
   /**
-   * Create a polyline from points with specified styles
+   * Create a polyline from points using Path instead of Polyline
    * @param {Point[]} points - Array of points
    * @param {Object} options - Style options
    * @returns {CustomFabricObject|null} Created polyline object or null if failed
@@ -46,33 +43,36 @@ export const usePolylineCreation = (
         return null;
       }
       
-      // Format points for fabric polyline
-      const pathPoints = points.map(point => ({ x: point.x, y: point.y }));
+      // Create SVG path from points
+      let pathString = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        pathString += ` L ${points[i].x} ${points[i].y}`;
+      }
       
-      // Create fabric polyline with merged options
-      const polyline = new Polyline(pathPoints, {
-        stroke: POLYLINE_STYLES.DEFAULT_STROKE_COLOR,
-        strokeWidth: POLYLINE_STYLES.DEFAULT_STROKE_WIDTH,
-        fill: POLYLINE_STYLES.DEFAULT_FILL,
-        opacity: POLYLINE_STYLES.DEFAULT_OPACITY,
+      // Create fabric path with merged options
+      const path = new Path(pathString, {
+        stroke: POLYLINE_STYLES.DEFAULT.stroke,
+        strokeWidth: POLYLINE_STYLES.DEFAULT.strokeWidth,
+        fill: POLYLINE_STYLES.DEFAULT.fill,
+        opacity: 1,
         selectable: true,
         evented: true,
         objectCaching: true,
-        strokeLineCap: POLYLINE_STYLES.DEFAULT_LINE_CAP as CanvasLineCap,
-        strokeLineJoin: POLYLINE_STYLES.DEFAULT_LINE_JOIN as CanvasLineJoin,
+        strokeLineCap: POLYLINE_STYLES.DEFAULT.strokeLineCap as any,
+        strokeLineJoin: POLYLINE_STYLES.DEFAULT.strokeLineJoin as any,
         // Merge with provided options
         ...options
       });
       
       // Add object type for identification
-      const customPolyline = polyline as unknown as CustomFabricObject;
-      customPolyline.objectType = 'line';
+      const customPath = path as unknown as CustomFabricObject;
+      customPath.objectType = 'line';
       
       // Add to canvas
-      canvas.add(customPolyline as unknown as FabricObject);
+      canvas.add(customPath as unknown as FabricObject);
       canvas.requestRenderAll();
       
-      return customPolyline;
+      return customPath;
     } catch (error) {
       console.error("Error creating polyline:", error);
       return null;
@@ -86,10 +86,10 @@ export const usePolylineCreation = (
    */
   const createWall = useCallback((points: Point[]): CustomFabricObject | null => {
     return createPolyline(points, {
-      stroke: POLYLINE_STYLES.WALL_STROKE_COLOR,
-      strokeWidth: POLYLINE_STYLES.WALL_STROKE_WIDTH,
-      fill: POLYLINE_STYLES.WALL_FILL,
-      opacity: POLYLINE_STYLES.WALL_OPACITY,
+      stroke: '#2563eb',
+      strokeWidth: 4,
+      fill: 'transparent',
+      opacity: 1,
       selectable: true,
       objectCaching: true
     });
@@ -102,10 +102,10 @@ export const usePolylineCreation = (
    */
   const createRoom = useCallback((points: Point[]): CustomFabricObject | null => {
     const polyline = createPolyline(points, {
-      stroke: POLYLINE_STYLES.ROOM_STROKE_COLOR,
-      strokeWidth: POLYLINE_STYLES.ROOM_STROKE_WIDTH,
-      fill: POLYLINE_STYLES.ROOM_FILL,
-      opacity: POLYLINE_STYLES.ROOM_OPACITY,
+      stroke: '#16a34a',
+      strokeWidth: 2,
+      fill: 'rgba(34, 197, 94, 0.1)',
+      opacity: 0.8,
       selectable: true,
       objectCaching: true
     });

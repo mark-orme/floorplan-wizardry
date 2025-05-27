@@ -1,151 +1,92 @@
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
-import { 
-  isPenEvent, 
-  getCoalescedEvents, 
-  configurePalmRejection,
-  optimizeCanvasForDrawing,
-  FrameTimer,
-  setupWebGLRendering
-} from '@/utils/canvas/pointerOptimizations';
 
 interface UseOptimizedStylusDrawingProps {
-  canvas: FabricCanvas | null;
-  enabled: boolean;
-  lineColor: string;
-  lineThickness: number;
-  onPerformanceReport?: (fps: number) => void;
+  fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
+  isEnabled?: boolean;
+  brushColor?: string;
+  brushWidth?: number;
 }
 
 export const useOptimizedStylusDrawing = ({
-  canvas,
-  enabled,
-  lineColor,
-  lineThickness,
-  onPerformanceReport
+  fabricCanvasRef,
+  isEnabled = false,
+  brushColor = '#000000',
+  brushWidth = 2
 }: UseOptimizedStylusDrawingProps) => {
-  const [isPenMode, setIsPenMode] = useState(false);
-  const [pressure, setPressure] = useState(0.5);
-  const cleanupFunctionsRef = useRef<Array<() => void>>([]);
-  const frameTimerRef = useRef<FrameTimer | null>(null);
-  const webGLCleanupRef = useRef<(() => void) | null>(null);
-  const targetFrameTime = 16; // Target 16ms per frame (60 FPS)
+  const [isDrawing, setIsDrawing] = useState(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   
-  // Set up performance monitoring
-  useEffect(() => {
-    if (!enabled) return;
+  // Configure brush settings
+  const configureBrush = useCallback(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !canvas.freeDrawingBrush) return;
     
-    frameTimerRef.current = new FrameTimer();
-    frameTimerRef.current.startMonitoring((fps, avgTime) => {
-      if (onPerformanceReport) {
-        onPerformanceReport(fps);
-      }
-      
-      // Log performance warnings if below target
-      if (avgTime > targetFrameTime) {
-        console.log(`Drawing performance: ${fps.toFixed(1)} FPS (${avgTime.toFixed(2)}ms/frame) - above target ${targetFrameTime}ms`);
-      }
-    });
-    
-    return () => {
-      if (frameTimerRef.current) {
-        frameTimerRef.current.stopMonitoring();
-      }
-    };
-  }, [enabled, onPerformanceReport, targetFrameTime]);
+    canvas.freeDrawingBrush.color = brushColor;
+    canvas.freeDrawingBrush.width = brushWidth;
+  }, [fabricCanvasRef, brushColor, brushWidth]);
   
-  // Set up advanced drawing optimizations
-  const setupAdvancedDrawing = useCallback(() => {
-    if (!canvas || !enabled) return;
+  // Handle stylus input with pressure sensitivity
+  const handleStylusInput = useCallback((event: PointerEvent) => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isEnabled) return;
     
-    const canvasElement = canvas.getElement();
+    const pressure = event.pressure || 1;
+    const dynamicWidth = brushWidth * pressure;
     
-    // Step 1: Apply canvas optimizations
-    optimizeCanvasForDrawing(canvasElement);
-    
-    // Step 2: Configure palm rejection
-    const palmRejectionCleanup = configurePalmRejection(canvasElement);
-    
-    // Step 3: Configure pen detection
-    const penDetectionHandler = (e: PointerEvent) => {
-      const isPen = e.pointerType === 'pen';
-      setIsPenMode(isPen);
-      
-      if (isPen) {
-        // Apply pressure sensitivity
-        const pressureValue = e.pressure || 0.5;
-        setPressure(pressureValue);
-        
-        if (canvas.freeDrawingBrush) {
-          // Scale line thickness based on pressure
-          canvas.freeDrawingBrush.width = lineThickness * (0.5 + pressureValue);
-        }
-      }
-    };
-    
-    // Step 4: Handle coalesced events for smoother lines
-    const pointerMoveHandler = (e: PointerEvent) => {
-      if (e.pointerType === 'pen' && canvas.isDrawingMode) {
-        const events = getCoalescedEvents(e);
-        
-        if (events.length > 1) {
-          console.log(`Processing ${events.length} coalesced events`);
-          // The canvas will handle the actual drawing
-        }
-      }
-    };
-    
-    // Add event listeners
-    canvasElement.addEventListener('pointerdown', penDetectionHandler);
-    canvasElement.addEventListener('pointermove', pointerMoveHandler, { passive: true });
-    
-    // Step 5: Set up WebGL rendering if needed
-    webGLCleanupRef.current = setupWebGLRendering(canvasElement);
-    
-    // Set up cleanup
-    cleanupFunctionsRef.current.push(
-      palmRejectionCleanup,
-      () => canvasElement.removeEventListener('pointerdown', penDetectionHandler),
-      () => canvasElement.removeEventListener('pointermove', pointerMoveHandler),
-      () => webGLCleanupRef.current && webGLCleanupRef.current()
-    );
-    
-    // Optimize the fabric.js canvas
     if (canvas.freeDrawingBrush) {
-      // Fix: Remove the decimate property reference
-      // Configure other brush properties that exist
-      canvas.freeDrawingBrush.limitedToCanvasSize = true;
+      canvas.freeDrawingBrush.width = dynamicWidth;
     }
-    
-    // Disable reactive rendering during active drawing for better performance
-    const originalRequestRenderAll = canvas.requestRenderAll.bind(canvas);
-    canvas.requestRenderAll = function() {
-      if (!this.isDrawingMode || !isPenMode) {
-        originalRequestRenderAll();
-      }
-    };
-    
-    cleanupFunctionsRef.current.push(() => {
-      canvas.requestRenderAll = originalRequestRenderAll;
-    });
-    
-  }, [canvas, enabled, lineThickness]);
+  }, [fabricCanvasRef, isEnabled, brushWidth]);
   
-  // Run setup when component mounts
+  // Start drawing
+  const startDrawing = useCallback((point: { x: number; y: number }) => {
+    if (!isEnabled) return;
+    
+    setIsDrawing(true);
+    lastPointRef.current = point;
+  }, [isEnabled]);
+  
+  // Continue drawing
+  const continueDrawing = useCallback((point: { x: number; y: number }) => {
+    if (!isDrawing || !lastPointRef.current) return;
+    
+    // Update last point
+    lastPointRef.current = point;
+  }, [isDrawing]);
+  
+  // End drawing
+  const endDrawing = useCallback(() => {
+    setIsDrawing(false);
+    lastPointRef.current = null;
+  }, []);
+  
+  // Set up event listeners
   useEffect(() => {
-    setupAdvancedDrawing();
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !isEnabled) return;
+    
+    const canvasElement = canvas.upperCanvasEl;
+    if (!canvasElement) return;
+    
+    canvasElement.addEventListener('pointermove', handleStylusInput);
     
     return () => {
-      // Clean up all optimizations
-      cleanupFunctionsRef.current.forEach(cleanup => cleanup());
-      cleanupFunctionsRef.current = [];
+      canvasElement.removeEventListener('pointermove', handleStylusInput);
     };
-  }, [setupAdvancedDrawing]);
+  }, [fabricCanvasRef, isEnabled, handleStylusInput]);
+  
+  // Configure brush when settings change
+  useEffect(() => {
+    configureBrush();
+  }, [configureBrush]);
   
   return {
-    isPenMode,
-    pressure,
-    // Add more useful state/methods as needed
+    isDrawing,
+    startDrawing,
+    continueDrawing,
+    endDrawing,
+    configureBrush
   };
 };

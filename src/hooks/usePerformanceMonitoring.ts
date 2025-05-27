@@ -30,7 +30,9 @@ export function usePerformanceMonitoring() {
     // Calculate visible objects (within viewport)
     const visibleObjects = canvas.getObjects().filter(obj => {
       // Simple check if object is within current viewport
-      return obj.isOnScreen?.() || true; // Fallback to true if method not available
+      // Use type assertion since isOnScreen might not be available
+      const hasIsOnScreen = (obj as any).isOnScreen;
+      return hasIsOnScreen ? hasIsOnScreen() : true; // Fallback to true if method not available
     });
     setVisibleObjectCount(visibleObjects.length);
     
@@ -70,7 +72,8 @@ export function usePerformanceMonitoring() {
       setObjectCount(canvas.getObjects().length);
       
       const visibleObjects = canvas.getObjects().filter(obj => {
-        return obj.isOnScreen?.() || true;
+        const hasIsOnScreen = (obj as any).isOnScreen;
+        return hasIsOnScreen ? hasIsOnScreen() : true;
       });
       setVisibleObjectCount(visibleObjects.length);
     }, 1000);

@@ -1,7 +1,6 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { Canvas as FabricCanvas, Object as FabricObject } from 'fabric';
-import { batchCanvasOperations, requestOptimizedRender } from '@/utils/canvas/renderOptimizer';
 
 interface UseOptimizedObjectManagementProps {
   fabricCanvasRef: React.MutableRefObject<FabricCanvas | null>;
@@ -28,7 +27,15 @@ export const useOptimizedObjectManagement = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isBatchingRef.current) return;
     
-    batchCanvasOperations(canvas, batchOperationsQueueRef.current);
+    // Execute each operation in the queue
+    batchOperationsQueueRef.current.forEach(operation => {
+      if (typeof operation === 'function') {
+        operation(canvas);
+      }
+    });
+    
+    // Render canvas once after all operations
+    canvas.renderAll();
     
     isBatchingRef.current = false;
     batchOperationsQueueRef.current = [];
@@ -49,7 +56,7 @@ export const useOptimizedObjectManagement = ({
       batchOperationsQueueRef.current.push(operation);
     } else {
       operation(canvas);
-      requestOptimizedRender(canvas, 'add-objects');
+      canvas.renderAll();
     }
   }, [fabricCanvasRef]);
   
@@ -68,7 +75,7 @@ export const useOptimizedObjectManagement = ({
       batchOperationsQueueRef.current.push(operation);
     } else {
       operation(canvas);
-      requestOptimizedRender(canvas, 'remove-objects');
+      canvas.renderAll();
     }
   }, [fabricCanvasRef]);
   
@@ -85,7 +92,9 @@ export const useOptimizedObjectManagement = ({
     const operation = (canvas: FabricCanvas) => {
       objectsArray.forEach(obj => {
         obj.set(properties);
-        obj.setCoords();
+        if (typeof obj.setCoords === 'function') {
+          obj.setCoords();
+        }
       });
     };
     
@@ -93,7 +102,7 @@ export const useOptimizedObjectManagement = ({
       batchOperationsQueueRef.current.push(operation);
     } else {
       operation(canvas);
-      requestOptimizedRender(canvas, 'update-objects');
+      canvas.renderAll();
     }
   }, [fabricCanvasRef]);
   

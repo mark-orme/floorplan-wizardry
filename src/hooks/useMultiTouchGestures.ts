@@ -1,152 +1,66 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
-// Define the GestureStateObject interface with startPoints
-interface GestureStateObject {
-  active: boolean;
-  startDistance: number;
-  currentDistance: number;
-  startAngle: number;
-  currentAngle: number;
-  startPoints: { point1: { x: number; y: number }; point2: { x: number; y: number } } | null;
+interface TouchData {
+  clientX: number;
+  clientY: number;
+  identifier: number;
 }
 
 export const useMultiTouchGestures = () => {
-  const [gestureState, setGestureState] = useState<GestureStateObject>({
-    active: false,
-    startDistance: 0,
-    currentDistance: 0,
-    startAngle: 0,
-    currentAngle: 0,
-    startPoints: null
-  });
+  const touchStartRef = useRef<TouchData[]>([]);
+  const lastDistanceRef = useRef<number>(0);
   
-  const touchesRef = useRef<Touch[]>([]);
-  
-  // Calculate distance between two points
-  const calculateDistance = useCallback((point1: Touch | null, point2: Touch | null) => {
-    if (!point1 || !point2) return 0;
-    
-    const dx = point2.clientX - point1.clientX;
-    const dy = point2.clientY - point1.clientY;
+  const getTouchDistance = useCallback((touch1: TouchData, touch2: TouchData): number => {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
   
-  // Calculate angle between two points
-  const calculateAngle = useCallback((point1: Touch | null, point2: Touch | null) => {
-    if (!point1 || !point2) return 0;
-    
-    return Math.atan2(
-      point2.clientY - point1.clientY,
-      point2.clientX - point1.clientX
-    ) * (180 / Math.PI);
-  }, []);
-  
-  // Start tracking a gesture
-  const startGesture = useCallback((touches: TouchList) => {
-    if (touches.length >= 2) {
-      const touch1 = touches[0];
-      const touch2 = touches[1];
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length >= 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
       
-      if (!touch1 || !touch2) return;
-      
-      const distance = calculateDistance(touch1, touch2);
-      const angle = calculateAngle(touch1, touch2);
-      
-      // Store the touches for later reference
-      touchesRef.current = [touch1, touch2];
-      
-      // Initialize gesture state
-      setGestureState({
-        active: true,
-        startDistance: distance,
-        currentDistance: distance,
-        startAngle: angle,
-        currentAngle: angle,
-        startPoints: {
-          point1: { x: touch1.clientX, y: touch1.clientY },
-          point2: { x: touch2.clientX, y: touch2.clientY }
-        }
-      });
+      if (touch1 && touch2) {
+        touchStartRef.current = [
+          { clientX: touch1.clientX, clientY: touch1.clientY, identifier: touch1.identifier },
+          { clientX: touch2.clientX, clientY: touch2.clientY, identifier: touch2.identifier }
+        ];
+        
+        lastDistanceRef.current = getTouchDistance(touchStartRef.current[0], touchStartRef.current[1]);
+      }
     }
-  }, [calculateDistance, calculateAngle]);
+  }, [getTouchDistance]);
   
-  // Update an active gesture
-  const updateGesture = useCallback((touches: TouchList) => {
-    if (!gestureState.active || touches.length < 2) return;
-    
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    
-    if (!touch1 || !touch2) return;
-    
-    // Calculate new distance and angle
-    const distance = calculateDistance(touch1, touch2);
-    const angle = calculateAngle(touch1, touch2);
-    
-    // Update gesture state
-    setGestureState(prev => ({
-      ...prev,
-      currentDistance: distance,
-      currentAngle: angle
-    }));
-    
-    // Update stored touches
-    touchesRef.current = [touch1, touch2];
-  }, [gestureState.active, calculateDistance, calculateAngle]);
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length >= 2 && touchStartRef.current.length >= 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      
+      if (touch1 && touch2) {
+        const currentTouch1 = { clientX: touch1.clientX, clientY: touch1.clientY, identifier: touch1.identifier };
+        const currentTouch2 = { clientX: touch2.clientX, clientY: touch2.clientY, identifier: touch2.identifier };
+        
+        const currentDistance = getTouchDistance(currentTouch1, currentTouch2);
+        const scale = currentDistance / lastDistanceRef.current;
+        
+        // Handle zoom gesture
+        console.log('Zoom scale:', scale);
+        
+        lastDistanceRef.current = currentDistance;
+      }
+    }
+  }, [getTouchDistance]);
   
-  // End the current gesture
-  const endGesture = useCallback(() => {
-    setGestureState({
-      active: false,
-      startDistance: 0,
-      currentDistance: 0,
-      startAngle: 0,
-      currentAngle: 0,
-      startPoints: null
-    });
-    
-    // Clear stored touches
-    touchesRef.current = [];
+  const handleTouchEnd = useCallback(() => {
+    touchStartRef.current = [];
+    lastDistanceRef.current = 0;
   }, []);
-  
-  // Calculate scale change
-  const getScale = useCallback(() => {
-    if (!gestureState.active || gestureState.startDistance === 0) return 1;
-    
-    return gestureState.currentDistance / gestureState.startDistance;
-  }, [gestureState.active, gestureState.currentDistance, gestureState.startDistance]);
-  
-  // Calculate rotation change in degrees
-  const getRotation = useCallback(() => {
-    if (!gestureState.active) return 0;
-    
-    // Ensure we have valid start points for calculation
-    const sp = gestureState.startPoints;
-    if (!sp) return 0;
-    
-    // Calculate the change in angle
-    let angleDiff = gestureState.currentAngle - gestureState.startAngle;
-    
-    // Normalize to -180 to 180 range
-    while (angleDiff > 180) angleDiff -= 360;
-    while (angleDiff < -180) angleDiff += 360;
-    
-    return angleDiff;
-  }, [
-    gestureState.active, 
-    gestureState.currentAngle, 
-    gestureState.startAngle,
-    gestureState.startPoints
-  ]);
   
   return {
-    gestureState,
-    isGestureActive: gestureState.active,
-    startGesture,
-    updateGesture,
-    endGesture,
-    getScale,
-    getRotation
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd
   };
 };

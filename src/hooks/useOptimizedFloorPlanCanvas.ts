@@ -1,3 +1,4 @@
+
 import { useCallback, useState, useRef } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { DrawingMode } from '@/constants/drawingModes';
@@ -5,6 +6,7 @@ import { useVirtualizedCanvas } from '@/hooks/useVirtualizedCanvas';
 import { useCanvasToolManager } from './canvas/useCanvasToolManager';
 import { useAreaCalculation } from './canvas/useAreaCalculation';
 import { createTransferableCanvasState } from '@/utils/transferableUtils';
+import { asExtendedCanvas } from '@/utils/canvas/canvasTypeUtils';
 import { toast } from 'sonner';
 
 interface UseOptimizedFloorPlanCanvasProps {
@@ -29,8 +31,20 @@ export const useOptimizedFloorPlanCanvas = ({
   const [activeLayerId, setActiveLayerId] = useState('default');
   const [calculatedArea, setCalculatedArea] = useState({ areaM2: 0 });
 
+  // Create extended canvas ref for compatibility
+  const extendedCanvasRef = useRef<any>(null);
+
+  // Update extended canvas ref when fabric canvas changes
+  const updateExtendedCanvasRef = useCallback((canvas: FabricCanvas | null) => {
+    if (canvas) {
+      extendedCanvasRef.current = asExtendedCanvas(canvas);
+    } else {
+      extendedCanvasRef.current = null;
+    }
+  }, []);
+
   const { performanceMetrics, refreshVirtualization } = useVirtualizedCanvas(
-    fabricCanvasRef,
+    extendedCanvasRef,
     { enabled: true }
   );
 
@@ -45,12 +59,13 @@ export const useOptimizedFloorPlanCanvas = ({
 
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     fabricCanvasRef.current = canvas;
+    updateExtendedCanvasRef(canvas);
     canvas.renderOnAddRemove = false;
     canvas.enableRetinaScaling = true;
     canvas.skipOffscreen = true;
     configureToolSettings();
     refreshVirtualization();
-  }, [configureToolSettings, refreshVirtualization]);
+  }, [configureToolSettings, refreshVirtualization, updateExtendedCanvasRef]);
 
   const handleCanvasError = useCallback((error: Error) => {
     console.error("Canvas error:", error);

@@ -1,11 +1,11 @@
 
 import { useCallback, useEffect } from 'react';
-import { ExtendedFabricCanvas } from '@/types/fabric-unified';
+import { ExtendedCanvas } from '@/types/fabric-unified';
 import { FabricPointerEvent } from '@/types/fabricEvents';
 import { DrawingMode } from '@/constants/drawingModes';
 
 interface UsePointerEventsProps {
-  fabricCanvasRef: React.MutableRefObject<ExtendedFabricCanvas | null>;
+  fabricCanvasRef: React.MutableRefObject<ExtendedCanvas | null>;
   currentTool: DrawingMode;
   onMouseDown?: (e: any) => void;
   onMouseMove?: (e: any) => void;
